@@ -28,8 +28,11 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
+            {/* Sticky Category Search Bar (Airbnb style) */}
+            <CategoryNavBar />
+
             <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="space-y-6 pb-20">
+                <div className="space-y-10 pb-20">
                     {activeTab === 'home' && (
                         <>
                             {/* Modern Trending Destinations Slider */}
@@ -84,6 +87,54 @@ export default function LandingPage() {
                     <div className="w-6 h-6 rounded-full flex items-center justify-center">🏔️</div>
                     <span className="text-[10px] font-medium">Tours</span>
                 </button>
+            </div>
+        </div>
+    );
+}
+
+// Airbnb-style Category Navigation Pill Bar
+function CategoryNavBar() {
+    const categories = [
+        { id: 'trending', label: 'Trending', icon: '🔥' },
+        { id: 'beach', label: 'Beachfront', icon: '🏝️' },
+        { id: 'mountains', label: 'Mountains', icon: '🏔️' },
+        { id: 'city', label: 'Cities', icon: '🏙️' },
+        { id: 'history', label: 'History', icon: '🏛️' },
+        { id: 'luxury', label: 'Luxury', icon: '💎' },
+        { id: 'cabins', label: 'Cabins', icon: '🛖' },
+        { id: 'arctic', label: 'Arctic', icon: '❄️' },
+        { id: 'desert', label: 'Desert', icon: '🏜️' },
+        { id: 'camping', label: 'Camping', icon: '⛺' },
+    ];
+
+    const [activeCategory, setActiveCategory] = useState('trending');
+
+    return (
+        <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
+            <div className="container mx-auto max-w-7xl px-4">
+                <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4 px-2">
+                    {categories.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setActiveCategory(cat.id)}
+                            className={`flex flex-col items-center gap-2 min-w-fit transition-all duration-200 group relative pb-2`}
+                        >
+                            <span className={`text-xl grayscale group-hover:grayscale-0 transition-all ${activeCategory === cat.id ? 'grayscale-0 scale-110' : ''}`}>
+                                {cat.icon}
+                            </span>
+                            <span className={`text-xs font-medium whitespace-nowrap ${activeCategory === cat.id ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                                {cat.label}
+                            </span>
+                            {activeCategory === cat.id && (
+                                <motion.div
+                                    layoutId="activeCategory"
+                                    className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-foreground"
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                            )}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
@@ -196,7 +247,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
 
             {/* Modern Slider */}
             <div className="relative">
-                <Card className="relative overflow-hidden border-0 shadow-xl h-48">
+                <Card className="relative overflow-hidden border-0 shadow-airbnb h-64 md:h-80 lg:h-96">
                     {/* Background Images */}
                     <div className="absolute inset-0">
                         {destinations.map((dest, index) => (
@@ -386,8 +437,8 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
                 </Button>
             </div>
 
-            {/* Hotels Grid */}
-            <div className="grid grid-cols-1 gap-4">
+            {/* Hotels Grid - Responsive grid System */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {featuredHotels.map((hotel, index) => (
                     <motion.div
                         key={hotel.id}
@@ -396,7 +447,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
                         transition={{ delay: 0.7 + index * 0.1 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-lg relative">
+                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-airbnb hover:shadow-xl transition-all duration-300 relative group">
                             <div className="relative z-10">
                                 {/* Image Slider */}
                                 <div className="relative h-40 overflow-hidden">
@@ -616,8 +667,8 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
                 </Button>
             </div>
 
-            {/* Tours Grid */}
-            <div className="grid grid-cols-1 gap-4">
+            {/* Tours Grid - Responsive grid System */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {featuredTours.map((tour, index) => (
                     <motion.div
                         key={tour.id}
@@ -626,7 +677,7 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
                         transition={{ delay: 0.9 + index * 0.1 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-lg relative">
+                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-airbnb hover:shadow-xl transition-all duration-300 relative group">
                             <div className="relative z-10">
                                 {/* Image Slider */}
                                 <div className="relative h-40 overflow-hidden">
