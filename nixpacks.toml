@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["node", "pnpm"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm --filter @tripavail/web build"]
+
+[start]
+cmd = "pnpm --filter @tripavail/web preview --host"
