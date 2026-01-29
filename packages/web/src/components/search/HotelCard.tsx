@@ -1,4 +1,4 @@
-import { Hotel } from "@tripavail/shared/src/services/searchService";
+import { Hotel } from "@tripavail/shared/services/searchService";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge"; // Need to install badge? Assuming basic divs for now if not
 import { Heart, Star } from "lucide-react";

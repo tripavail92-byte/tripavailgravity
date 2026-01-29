@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SearchForm } from "@/components/search/SearchForm";
 import { HotelGrid } from "@/components/search/HotelGrid";
-import { searchService, type Hotel } from "@tripavail/shared/src/services/searchService";
+import { searchService, type Hotel } from "@tripavail/shared/services/searchService";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";

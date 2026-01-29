@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { authService } from '@tripavail/shared/src/auth/service';
-import { roleService } from '@tripavail/shared/src/roles/service';
-import type { UserRole, RoleType } from '@tripavail/shared/src/roles/types';
+import { authService } from '@tripavail/shared/auth/service';
+import { roleService } from '@tripavail/shared/roles/service';
+import type { UserRole, RoleType } from '@tripavail/shared/roles/types';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthState {

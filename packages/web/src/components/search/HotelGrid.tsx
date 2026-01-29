@@ -1,4 +1,4 @@
-import { Hotel } from "@tripavail/shared/src/services/searchService";
+import { Hotel } from "@tripavail/shared/services/searchService";
 import { HotelCard } from "./HotelCard";
 import { Skeleton } from "@/components/ui/skeleton";
 

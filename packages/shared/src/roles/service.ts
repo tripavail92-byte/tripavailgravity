@@ -40,7 +40,7 @@ export class RoleService {
         });
 
         if (error) throw error;
-        return data as SwitchRoleResponse;
+        return data as unknown as SwitchRoleResponse;
     }
 
     /**

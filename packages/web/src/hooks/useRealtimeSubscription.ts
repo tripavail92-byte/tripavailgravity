@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { supabase } from '@tripavail/shared/src/core/client';
+import { supabase } from '@tripavail/shared/core/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
@@ -12,7 +12,7 @@ interface UseRealtimeOptions<T> {
     onData: (payload: RealtimePostgresChangesPayload<T>) => void;
 }
 
-export function useRealtimeSubscription<T = any>({
+export function useRealtimeSubscription<T extends Record<string, any> = any>({
     table,
     event = '*',
     schema = 'public',
