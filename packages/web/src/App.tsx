@@ -29,8 +29,7 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/auth" element={<LoginPage />} />
 
-                {/* Placeholder Routes */}
-                <Route path="/search" element={<div>Search Results (Coming Soon)</div>} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
 
                 {/* Fallback */}
