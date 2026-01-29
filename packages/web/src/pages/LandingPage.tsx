@@ -12,15 +12,19 @@ import { wishlistService } from '@/lib/wishlistService';
 
 export default function LandingPage() {
     return (
-        <div className="space-y-4 pb-8">
-            {/* Modern Trending Destinations Slider */}
-            <ModernTrendingSlider />
+        <div className="min-h-screen bg-background">
+            <div className="container mx-auto px-4 py-6 max-w-7xl">
+                <div className="space-y-4 pb-8">
+                    {/* Modern Trending Destinations Slider */}
+                    <ModernTrendingSlider />
 
-            {/* Featured Hotels Section */}
-            <FeaturedHotelsSection />
+                    {/* Featured Hotels Section */}
+                    <FeaturedHotelsSection />
 
-            {/* Featured Tours Section */}
-            <FeaturedToursSection />
+                    {/* Featured Tours Section */}
+                    <FeaturedToursSection />
+                </div>
+            </div>
         </div>
     );
 }
@@ -201,8 +205,8 @@ function ModernTrendingSlider() {
                                 key={`indicator-${index}`}
                                 onClick={() => goToSlide(index)}
                                 className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                        ? 'bg-white w-6'
-                                        : 'bg-white/50 hover:bg-white/70'
+                                    ? 'bg-white w-6'
+                                    : 'bg-white/50 hover:bg-white/70'
                                     }`}
                                 whileTap={{ scale: 0.9 }}
                             />
@@ -351,8 +355,8 @@ function FeaturedHotelsSection() {
                                     <motion.button
                                         onClick={(e) => handleToggleWishlist(hotel.id, e)}
                                         className={`absolute top-2 right-2 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 ${wishlistedPackages.has(hotel.id)
-                                                ? 'bg-primary text-white'
-                                                : 'bg-white/90 text-gray-600'
+                                            ? 'bg-primary text-white'
+                                            : 'bg-white/90 text-gray-600'
                                             }`}
                                         whileTap={{ scale: 0.9 }}
                                         whileHover={{ scale: 1.1 }}
@@ -580,8 +584,8 @@ function FeaturedToursSection() {
                                     <motion.button
                                         onClick={(e) => handleToggleWishlist(tour.id, e)}
                                         className={`absolute top-2 right-2 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 ${wishlistedTours.has(tour.id)
-                                                ? 'bg-primary text-white'
-                                                : 'bg-white/90 text-gray-600'
+                                            ? 'bg-primary text-white'
+                                            : 'bg-white/90 text-gray-600'
                                             }`}
                                         whileTap={{ scale: 0.9 }}
                                         whileHover={{ scale: 1.1 }}
