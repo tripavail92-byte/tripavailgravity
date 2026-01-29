@@ -16,7 +16,12 @@ const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
 const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+    console.warn('⚠️  Missing Supabase environment variables. Running in offline mode.');
+    console.warn('To enable Supabase features, set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create a proper client if env vars exist, otherwise create a mock client
+export const supabase = (supabaseUrl && supabaseAnonKey)
+    ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+    : createClient<Database>('https://placeholder.supabase.co', 'placeholder-key');
+
