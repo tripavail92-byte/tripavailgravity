@@ -14,11 +14,11 @@ export default function LandingPage() {
     const [activeTab, setActiveTab] = useState('home');
 
     const handlePackageSelect = (packageId: string) => {
-        console.log('Selected package:', packageId);
+        // Future: implement package details view
+        void packageId;
     };
 
     const handleNavigate = (screen: string) => {
-        console.log('Navigating to:', screen);
         if (screen === 'home') setActiveTab('home');
         if (screen === 'hotels') setActiveTab('hotels');
         if (screen === 'tours') setActiveTab('tours');
@@ -344,7 +344,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
     onNavigate: (screen: string) => void;
     onPackageSelect: (packageId: string) => void;
 }) {
-    console.log('FeaturedHotelsSection props:', { onNavigate, onPackageSelect });
+    // These props are ready for 'View All' and 'Package Click' functionality
     const [wishlistedPackages, setWishlistedPackages] = useState<Set<string>>(new Set());
 
     const featuredHotels = [
@@ -426,7 +426,11 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
                         <p className="text-xs text-muted-foreground">Handpicked luxury experiences</p>
                     </div>
                 </div>
-                <Button variant="ghost" className="text-primary text-sm">
+                <Button
+                    variant="ghost"
+                    className="text-primary text-sm"
+                    onClick={() => onNavigate('hotels')}
+                >
                     View All
                     <motion.div
                         animate={{ x: [0, 4, 0] }}
@@ -540,6 +544,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
                                                 className={`mt-1 px-3 py-1 bg-gradient-to-r ${hotel.gradient} text-white rounded-lg text-xs font-medium shadow-lg`}
                                                 whileTap={{ scale: 0.95 }}
                                                 whileHover={{ scale: 1.02 }}
+                                                onClick={() => onPackageSelect(hotel.id)}
                                             >
                                                 Book Now
                                             </motion.button>
@@ -557,7 +562,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
 
 // Featured Tours Section
 function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => void }) {
-    console.log('FeaturedToursSection onNavigate:', onNavigate);
+    // onNavigate is used for the 'View All' button
     const [wishlistedTours, setWishlistedTours] = useState<Set<string>>(new Set());
 
     const featuredTours = [
@@ -656,7 +661,11 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
                         <p className="text-xs text-muted-foreground">Unforgettable guided adventures</p>
                     </div>
                 </div>
-                <Button variant="ghost" className="text-primary text-sm">
+                <Button
+                    variant="ghost"
+                    className="text-primary text-sm"
+                    onClick={() => onNavigate('tours')}
+                >
                     View All
                     <motion.div
                         animate={{ x: [0, 4, 0] }}
