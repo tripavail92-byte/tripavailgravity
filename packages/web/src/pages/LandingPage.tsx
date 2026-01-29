@@ -11,26 +11,86 @@ import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { wishlistService } from '@/lib/wishlistService';
 
 export default function LandingPage() {
+    const [activeTab, setActiveTab] = useState('home');
+
+    const handlePackageSelect = (packageId: string) => {
+        console.log('Selected package:', packageId);
+    };
+
+    const handleNavigate = (screen: string) => {
+        console.log('Navigating to:', screen);
+        if (screen === 'home') setActiveTab('home');
+        if (screen === 'hotels') setActiveTab('hotels');
+        if (screen === 'tours') setActiveTab('tours');
+        if (screen === 'messages') setActiveTab('messages');
+        if (screen === 'profile') setActiveTab('profile');
+    };
+
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background text-foreground">
             <div className="container mx-auto px-4 py-6 max-w-7xl">
-                <div className="space-y-4 pb-8">
-                    {/* Modern Trending Destinations Slider */}
-                    <ModernTrendingSlider />
+                <div className="space-y-6 pb-20">
+                    {activeTab === 'home' && (
+                        <>
+                            {/* Modern Trending Destinations Slider */}
+                            <ModernTrendingSlider onNavigate={handleNavigate} />
 
-                    {/* Featured Hotels Section */}
-                    <FeaturedHotelsSection />
+                            {/* Featured Hotels Section */}
+                            <FeaturedHotelsSection onNavigate={handleNavigate} onPackageSelect={handlePackageSelect} />
 
-                    {/* Featured Tours Section */}
-                    <FeaturedToursSection />
+                            {/* Featured Tours Section */}
+                            <FeaturedToursSection onNavigate={handleNavigate} />
+                        </>
+                    )}
+
+                    {activeTab === 'hotels' && (
+                        <div className="py-20 text-center">
+                            <h2 className="text-2xl font-bold">Hotels Section</h2>
+                            <p className="text-muted-foreground">Coming Soon: HotelPackagesDisplay</p>
+                            <Button onClick={() => setActiveTab('home')} className="mt-4">Back to Home</Button>
+                        </div>
+                    )}
+
+                    {activeTab === 'tours' && (
+                        <div className="py-20 text-center">
+                            <h2 className="text-2xl font-bold">Tours Section</h2>
+                            <p className="text-muted-foreground">Coming Soon: FeaturedToursSection</p>
+                            <Button onClick={() => setActiveTab('home')} className="mt-4">Back to Home</Button>
+                        </div>
+                    )}
                 </div>
+            </div>
+
+            {/* Bottom Navigation Placeholder */}
+            <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t flex items-center justify-around px-6 z-50">
+                <button
+                    onClick={() => setActiveTab('home')}
+                    className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center">🏠</div>
+                    <span className="text-[10px] font-medium">Home</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('hotels')}
+                    className={`flex flex-col items-center gap-1 ${activeTab === 'hotels' ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center">🏨</div>
+                    <span className="text-[10px] font-medium">Hotels</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('tours')}
+                    className={`flex flex-col items-center gap-1 ${activeTab === 'tours' ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center">🏔️</div>
+                    <span className="text-[10px] font-medium">Tours</span>
+                </button>
             </div>
         </div>
     );
 }
 
 // Modern Trending Destinations Slider
-function ModernTrendingSlider() {
+function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => void }) {
     const [currentSlide, setCurrentSlide] = useState(0);
 
     const destinations = [
@@ -38,6 +98,8 @@ function ModernTrendingSlider() {
             id: 'santorini',
             name: 'Santorini',
             country: 'Greece',
+            emoji: '🏛️',
+            gradient: 'from-blue-500 to-cyan-500',
             price: 'From $899',
             image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW50b3JpbmklMjBncmVlY2V8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Stunning sunsets and white architecture'
@@ -46,6 +108,8 @@ function ModernTrendingSlider() {
             id: 'bali',
             name: 'Bali',
             country: 'Indonesia',
+            emoji: '🏝️',
+            gradient: 'from-green-500 to-emerald-500',
             price: 'From $599',
             image: 'https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiYWxpJTIwaW5kb25lc2lhfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Tropical paradise and cultural wonders'
@@ -54,6 +118,8 @@ function ModernTrendingSlider() {
             id: 'tokyo',
             name: 'Tokyo',
             country: 'Japan',
+            emoji: '🍣',
+            gradient: 'from-pink-500 to-rose-500',
             price: 'From $1299',
             image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0b2t5byUyMGphcGFufGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Modern metropolis meets ancient tradition'
@@ -62,6 +128,8 @@ function ModernTrendingSlider() {
             id: 'paris',
             name: 'Paris',
             country: 'France',
+            emoji: '🗼',
+            gradient: 'from-purple-500 to-indigo-500',
             price: 'From $999',
             image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGZyYW5jZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'City of lights and romantic adventures'
@@ -70,6 +138,8 @@ function ModernTrendingSlider() {
             id: 'dubai',
             name: 'Dubai',
             country: 'UAE',
+            emoji: '🏙️',
+            gradient: 'from-amber-500 to-orange-500',
             price: 'From $1199',
             image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHVhZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Luxury shopping and desert adventures'
@@ -119,7 +189,7 @@ function ModernTrendingSlider() {
                         <Flame className="w-5 h-5 text-orange-500" />
                     </motion.div>
                 </div>
-                <Button variant="ghost" className="text-primary text-sm">
+                <Button variant="ghost" className="text-primary text-sm" onClick={() => onNavigate('hotels')}>
                     View All
                 </Button>
             </div>
@@ -219,7 +289,11 @@ function ModernTrendingSlider() {
 }
 
 // Featured Hotels Section
-function FeaturedHotelsSection() {
+function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
+    onNavigate: (screen: string) => void;
+    onPackageSelect: (packageId: string) => void;
+}) {
+    console.log('FeaturedHotelsSection props:', { onNavigate, onPackageSelect });
     const [wishlistedPackages, setWishlistedPackages] = useState<Set<string>>(new Set());
 
     const featuredHotels = [
@@ -431,7 +505,8 @@ function FeaturedHotelsSection() {
 }
 
 // Featured Tours Section
-function FeaturedToursSection() {
+function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => void }) {
+    console.log('FeaturedToursSection onNavigate:', onNavigate);
     const [wishlistedTours, setWishlistedTours] = useState<Set<string>>(new Set());
 
     const featuredTours = [

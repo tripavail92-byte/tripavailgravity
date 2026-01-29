@@ -1,0 +1,1107 @@
+# TripAvail Home Screen - Complete Code Documentation
+
+## Overview
+The Home Screen is the main landing page for travelers in the TripAvail application. It features a dynamic, mobile-first design with trending destinations, featured hotels, and featured tours. The screen adapts based on the active bottom navigation tab, showing different content for home, hotels, tours, messages, and profile tabs.
+
+---
+
+## File Location
+`/modules/traveler/screens/HomeScreen.tsx`
+
+---
+
+## Architecture
+
+### Component Structure
+```
+HomeScreen (Main Component)
+├── ModernTrendingSlider
+├── FeaturedHotelsSection
+│   └── PackageImageSlider
+└── FeaturedToursSection
+    └── PackageImageSlider
+```
+
+### Key Features
+- **Tab-based Navigation**: Shows different content based on active tab
+- **Auto-sliding Carousels**: Trending destinations with auto-play
+- **Image Sliders**: Multi-image packages with smooth transitions
+- **Wishlist Integration**: Heart icon to save favorite packages
+- **Package Details**: Click to view detailed package information
+- **Responsive Design**: Mobile-first with smooth animations
+- **Dark Mode Support**: Fully themed components
+
+---
+
+## Props Interface
+
+```typescript
+interface HomeScreenProps {
+  onNavigate: (screen: string) => void;        // Navigation callback
+  activeTab?: string;                           // Current active tab
+  showDashboard?: boolean;                      // Toggle dashboard view
+  onDetailScreenChange?: (isDetailActive: boolean) => void;  // Detail screen callback
+}
+```
+
+---
+
+## Component Breakdown
+
+### 1. Main HomeScreen Component
+
+#### Purpose
+Acts as the primary routing component that conditionally renders different views based on the active tab.
+
+#### State Management
+```typescript
+const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+```
+
+#### Tab Routing Logic
+- **`activeTab === 'hotels'`**: Shows hotel packages or package details
+- **`activeTab === 'tours'`**: Shows tour packages placeholder
+- **`activeTab === 'messages'`**: Shows messages placeholder
+- **`activeTab === 'profile'`**: Shows profile placeholder
+- **`showDashboard === true`**: Shows traveler dashboard
+- **Default**: Shows trending destinations + featured hotels + featured tours
+
+#### Key Methods
+```typescript
+// Handle package selection
+const handlePackageSelect = (packageId: string) => {
+  setSelectedPackageId(packageId);
+  onDetailScreenChange?.(true);
+};
+
+// Navigate back from package detail
+const handleBackFromPackageDetail = () => {
+  setSelectedPackageId(null);
+  onDetailScreenChange?.(false);
+};
+
+// Handle booking action
+const handleBookNow = (packageId: string) => {
+  console.log('Booking package:', packageId);
+  onNavigate('booking');
+};
+
+// Toggle wishlist
+const handleToggleWishlist = (packageId: string, isWishlisted: boolean) => {
+  wishlistService.toggleWishlist(packageId);
+};
+```
+
+---
+
+### 2. ModernTrendingSlider Component
+
+#### Purpose
+Displays a full-width auto-sliding carousel of trending travel destinations with beautiful imagery and pricing.
+
+#### Props
+```typescript
+{ onNavigate: (screen: string) => void }
+```
+
+#### State
+```typescript
+const [currentSlide, setCurrentSlide] = useState(0);
+```
+
+#### Destinations Data Structure
+```typescript
+{
+  id: string;           // Unique identifier
+  name: string;         // Destination name (e.g., "Santorini")
+  country: string;      // Country name (e.g., "Greece")
+  emoji: string;        // Emoji representation (e.g., "🏛️")
+  gradient: string;     // Tailwind gradient classes
+  price: string;        // Price text (e.g., "From $899")
+  image: string;        // Unsplash image URL
+  description: string;  // Short description
+}
+```
+
+#### Featured Destinations (5 Total)
+1. **Santorini, Greece** - Blue gradient, $899
+2. **Bali, Indonesia** - Green gradient, $599
+3. **Tokyo, Japan** - Pink gradient, $1299
+4. **Paris, France** - Purple gradient, $999
+5. **Dubai, UAE** - Amber gradient, $1199
+
+#### Auto-Slide Logic
+```typescript
+useEffect(() => {
+  const timer = setInterval(() => {
+    setCurrentSlide((prev) => (prev + 1) % destinations.length);
+  }, 4000); // 4 seconds per slide
+
+  return () => clearInterval(timer);
+}, [destinations.length]);
+```
+
+#### Navigation Methods
+```typescript
+const nextSlide = () => {
+  setCurrentSlide((prev) => (prev + 1) % destinations.length);
+};
+
+const prevSlide = () => {
+  setCurrentSlide((prev) => (prev - 1 + destinations.length) % destinations.length);
+};
+
+const goToSlide = (index: number) => {
+  setCurrentSlide(index);
+};
+```
+
+#### UI Elements
+- **Chevron Navigation**: Left/right arrows for manual control
+- **Slide Indicators**: Bottom dots showing current position
+- **Image Overlay**: Dark gradient for text readability
+- **Animated Content**: Fade and scale transitions
+- **Price Display**: Prominent pricing information
+
+#### Animation Details
+```typescript
+// TrendingUp icon rotation
+animate={{ rotate: [0, 360] }}
+transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+
+// Flame icon pulse
+animate={{ scale: [1, 1.2, 1] }}
+transition={{ duration: 2, repeat: Infinity }}
+
+// Image transitions
+animate={{ 
+  opacity: index === currentSlide ? 1 : 0,
+  scale: index === currentSlide ? 1 : 1.1
+}}
+transition={{ duration: 0.7, ease: "easeInOut" }}
+```
+
+---
+
+### 3. PackageImageSlider Component
+
+#### Purpose
+A reusable component that displays multiple images with auto-sliding functionality and dot indicators.
+
+#### Props
+```typescript
+{
+  images: string[];          // Array of image URLs
+  alt: string;               // Alt text for accessibility
+  className?: string;        // Optional CSS classes
+  autoSlideDelay?: number;   // Milliseconds between slides (default: 5000)
+}
+```
+
+#### State
+```typescript
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+```
+
+#### Auto-Slide Implementation
+```typescript
+useEffect(() => {
+  if (images.length <= 1) return; // Skip if single image
+  
+  const timer = setInterval(() => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  }, autoSlideDelay);
+
+  return () => clearInterval(timer);
+}, [images.length, autoSlideDelay]);
+```
+
+#### Features
+- **Smooth Transitions**: Fade and scale animations
+- **Dot Indicators**: Visual feedback for current image
+- **Manual Control**: Click dots to jump to specific image
+- **Conditional Rendering**: Hides indicators for single images
+- **ImageWithFallback**: Uses custom component for reliability
+
+#### Animation
+```typescript
+animate={{ 
+  opacity: index === currentImageIndex ? 1 : 0,
+  scale: index === currentImageIndex ? 1 : 1.1
+}}
+transition={{ duration: 0.8, ease: "easeInOut" }}
+```
+
+---
+
+### 4. FeaturedHotelsSection Component
+
+#### Purpose
+Displays a curated list of featured hotel packages with pricing, ratings, and quick booking options.
+
+#### Props
+```typescript
+{
+  onNavigate: (screen: string) => void;
+  onPackageSelect: (packageId: string) => void;
+}
+```
+
+#### State
+```typescript
+const [wishlistedPackages, setWishlistedPackages] = useState<Set<string>>(new Set());
+```
+
+#### Hotel Package Data Structure
+```typescript
+{
+  id: string;               // Unique package ID
+  title: string;            // Package title
+  hotelName: string;        // Hotel name
+  location: string;         // City, Country
+  originalPrice: number;    // Original price
+  packagePrice: number;     // Discounted price
+  savings: number;          // Amount saved
+  rating: number;           // Star rating (1-5)
+  reviews: number;          // Number of reviews
+  duration: string;         // e.g., "3 Days, 2 Nights"
+  images: string[];         // Array of 4 image URLs
+  type: string;             // Package type (e.g., "Romantic")
+  badge: string;            // Badge text (e.g., "Most Popular")
+  gradient: string;         // Tailwind gradient for CTA button
+}
+```
+
+#### Featured Hotels (2 Total)
+
+##### 1. Paradise Beach Escape
+- **Hotel**: Azure Shores Resort
+- **Location**: Bali, Indonesia
+- **Price**: $599 (was $899, save $300)
+- **Rating**: 4.9 ⭐ (1,247 reviews)
+- **Duration**: 3 Days, 2 Nights
+- **Type**: Romantic
+- **Badge**: Most Popular (Rose gradient)
+- **Images**: 4 tropical resort photos
+
+##### 2. Alpine Luxury Retreat
+- **Hotel**: Mountain Crown Lodge
+- **Location**: Swiss Alps, Switzerland
+- **Price**: $999 (was $1,299, save $300)
+- **Rating**: 4.8 ⭐ (892 reviews)
+- **Duration**: 4 Days, 3 Nights
+- **Type**: Adventure
+- **Badge**: Premium (Purple/Indigo gradient)
+- **Images**: 4 mountain resort photos
+
+#### Key Methods
+
+##### Wishlist Toggle
+```typescript
+const handleToggleWishlist = (packageId: string, event: React.MouseEvent) => {
+  event.stopPropagation(); // Prevent card click
+  wishlistService.toggleWishlist(packageId);
+  const wishlist = wishlistService.getWishlist();
+  setWishlistedPackages(new Set(wishlist));
+};
+```
+
+##### Badge Gradient Mapping
+```typescript
+const getBadgeGradient = (badge: string) => {
+  switch (badge) {
+    case 'Most Popular': return 'bg-gradient-to-r from-primary to-rose-500';
+    case 'Premium': return 'bg-gradient-to-r from-purple-500 to-indigo-500';
+    default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+  }
+};
+```
+
+#### UI Elements
+
+##### Card Structure
+```
+Card (Clickable)
+├── Image Slider (4 images)
+│   ├── Badge (Top Left)
+│   ├── Heart/Wishlist Button (Top Right)
+│   └── Savings Badge (Bottom Right)
+└── Content Section
+    ├── Title & Hotel Name
+    ├── Location (with MapPin icon)
+    ├── Rating & Reviews
+    ├── Duration
+    ├── Pricing (strikethrough + current)
+    └── "Book Now" Button
+```
+
+##### Interactive Elements
+- **Card Click**: Opens package detail screen
+- **Heart Button**: Toggles wishlist (prevents card click)
+- **Book Now Button**: Smooth hover/tap animations
+- **Image Hover**: Subtle scale effect (1.02)
+- **Card Tap**: Scale down effect (0.98)
+
+#### Animations
+
+##### Card Entrance
+```typescript
+initial={{ opacity: 0, y: 20 }}
+animate={{ opacity: 1, y: 0 }}
+transition={{ delay: 0.7 + index * 0.1 }}
+```
+
+##### Badge Animations
+```typescript
+// Top badge
+initial={{ scale: 0 }}
+animate={{ scale: 1 }}
+transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
+
+// Savings badge
+initial={{ scale: 0, rotate: -180 }}
+animate={{ scale: 1, rotate: 0 }}
+transition={{ delay: 1 + index * 0.1, type: "spring" }}
+```
+
+##### Image Hover
+```typescript
+whileHover={{ scale: 1.02 }}
+transition={{ duration: 0.4 }}
+```
+
+---
+
+### 5. FeaturedToursSection Component
+
+#### Purpose
+Displays featured tour packages with detailed information about guided adventures, including difficulty levels and group sizes.
+
+#### Props
+```typescript
+{ onNavigate: (screen: string) => void }
+```
+
+#### State
+```typescript
+const [wishlistedTours, setWishlistedTours] = useState<Set<string>>(new Set());
+```
+
+#### Tour Package Data Structure
+```typescript
+{
+  id: string;               // Unique tour ID
+  title: string;            // Tour title
+  operator: string;         // Tour operator name
+  location: string;         // Destination
+  originalPrice: number;    // Original price
+  tourPrice: number;        // Discounted price
+  savings: number;          // Amount saved
+  rating: number;           // Star rating
+  reviews: number;          // Number of reviews
+  duration: string;         // e.g., "12 Days"
+  groupSize: string;        // e.g., "Max 8 People"
+  images: string[];         // Array of 4 image URLs
+  type: string;             // Tour type (e.g., "Adventure")
+  badge: string;            // Badge text (e.g., "Best Seller")
+  highlights: string[];     // Key features array
+  difficulty: string;       // "Easy" | "Moderate" | "Challenging"
+  includes: string[];       // What's included
+  gradient: string;         // Tailwind gradient for CTA
+}
+```
+
+#### Featured Tours (2 Total)
+
+##### 1. Epic Adventure Journey
+- **Operator**: Adventure Plus Tours
+- **Location**: Nepal Himalayas
+- **Price**: $999 (was $1,299, save $300)
+- **Rating**: 4.9 ⭐ (856 reviews)
+- **Duration**: 12 Days
+- **Group Size**: Max 8 People
+- **Type**: Adventure
+- **Badge**: Best Seller
+- **Difficulty**: Challenging (Red badge)
+- **Highlights**: Base Camp Trek, Expert Guide, All Meals, Safety Equipment
+- **Includes**: Accommodation, Meals, Transportation, Guide
+- **Images**: 4 Himalayan trek photos
+
+##### 2. Ancient Wonders Explorer
+- **Operator**: Heritage Discovery Tours
+- **Location**: Cairo, Egypt
+- **Price**: $749 (was $999, save $250)
+- **Rating**: 4.7 ⭐ (642 reviews)
+- **Duration**: 8 Days
+- **Group Size**: Max 12 People
+- **Type**: Cultural
+- **Badge**: Cultural Heritage
+- **Difficulty**: Easy (Green badge)
+- **Highlights**: Pyramid Tours, Museum Visits, Nile Cruise, Egyptologist
+- **Includes**: 5-Star Hotels, All Meals, Internal Flights, Guide
+- **Images**: 4 Egyptian landmark photos
+
+#### Key Methods
+
+##### Wishlist Toggle
+```typescript
+const handleToggleWishlist = (tourId: string, event: React.MouseEvent) => {
+  event.stopPropagation();
+  wishlistService.toggleWishlist(tourId);
+  const wishlist = wishlistService.getWishlist();
+  setWishlistedTours(new Set(wishlist));
+};
+```
+
+##### Badge Gradient Mapping
+```typescript
+const getBadgeGradient = (badge: string) => {
+  switch (badge) {
+    case 'Best Seller': return 'bg-gradient-to-r from-primary to-rose-500';
+    case 'Most Popular': return 'bg-gradient-to-r from-orange-500 to-red-500';
+    case 'Cultural Heritage': return 'bg-gradient-to-r from-amber-500 to-orange-500';
+    default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
+  }
+};
+```
+
+##### Difficulty Color Mapping
+```typescript
+const getDifficultyColor = (difficulty: string) => {
+  switch (difficulty) {
+    case 'Easy': return 'text-green-600 bg-green-100 dark:bg-green-500/20';
+    case 'Moderate': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-500/20';
+    case 'Challenging': return 'text-red-600 bg-red-100 dark:bg-red-500/20';
+    default: return 'text-gray-600 bg-gray-100 dark:bg-gray-500/20';
+  }
+};
+```
+
+#### UI Elements
+
+##### Card Structure
+```
+Card (Clickable)
+├── Image Slider (4 images)
+│   ├── Badge (Top Left)
+│   ├── Heart/Wishlist Button (Top Right)
+│   ├── Difficulty Badge (Bottom Left)
+│   └── Savings Badge (Bottom Right)
+└── Content Section
+    ├── Title & Operator Name
+    ├── Location (with MapPin icon)
+    ├── Rating & Reviews
+    ├── Duration & Group Size
+    ├── Pricing (strikethrough + current)
+    └── "Book Now" Button
+```
+
+##### Badge Animations
+```typescript
+// Top badge
+initial={{ scale: 0 }}
+animate={{ scale: 1 }}
+transition={{ delay: 1 + index * 0.1, type: "spring" }}
+
+// Difficulty badge
+initial={{ scale: 0, rotate: -180 }}
+animate={{ scale: 1, rotate: 0 }}
+transition={{ delay: 1.2 + index * 0.1, type: "spring" }}
+
+// Savings badge
+initial={{ scale: 0, rotate: 180 }}
+animate={{ scale: 1, rotate: 0 }}
+transition={{ delay: 1.1 + index * 0.1, type: "spring" }}
+```
+
+---
+
+## Dependencies
+
+### React & Motion
+```typescript
+import { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+```
+
+### Lucide Icons (24 total)
+```typescript
+import { 
+  Star, MapPin, Calendar, Users, Heart, Crown, 
+  Sparkles, Mountain, Coffee, Utensils, Plane,
+  ChevronRight, Clock, Award, Shield, TrendingUp,
+  Zap, Flame, Globe, Compass, Sun, Moon, Wind,
+  ChevronLeft
+} from 'lucide-react';
+```
+
+### UI Components
+```typescript
+import { Card } from '../../../components/ui/card';
+import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import { ImageWithFallback } from '../../../components/figma/ImageWithFallback';
+```
+
+### Feature Components
+```typescript
+import { HotelPackagesDisplay } from '../../../components/HotelPackagesDisplay';
+import { AirbnbHotelDetailScreen } from '../../../components/AirbnbHotelDetailScreen';
+```
+
+### Services
+```typescript
+import { wishlistService } from '../../../services/wishlistService';
+```
+
+### Other Components
+```typescript
+import DashboardScreen from './DashboardScreen';
+```
+
+---
+
+## Animation System
+
+### Motion.dev Integration
+All animations use `motion/react` (formerly Framer Motion) for smooth, performant animations.
+
+#### Animation Types Used
+
+##### 1. Fade In + Slide Up
+```typescript
+initial={{ opacity: 0, y: 20 }}
+animate={{ opacity: 1, y: 0 }}
+```
+
+##### 2. Scale + Rotate
+```typescript
+initial={{ scale: 0, rotate: -180 }}
+animate={{ scale: 1, rotate: 0 }}
+```
+
+##### 3. Continuous Rotation
+```typescript
+animate={{ rotate: [0, 360] }}
+transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+```
+
+##### 4. Pulse Effect
+```typescript
+animate={{ scale: [1, 1.2, 1] }}
+transition={{ duration: 2, repeat: Infinity }}
+```
+
+##### 5. Hover Scale
+```typescript
+whileHover={{ scale: 1.02 }}
+```
+
+##### 6. Tap Scale
+```typescript
+whileTap={{ scale: 0.98 }}
+```
+
+##### 7. Image Crossfade
+```typescript
+animate={{ 
+  opacity: index === currentIndex ? 1 : 0,
+  scale: index === currentIndex ? 1 : 1.1
+}}
+transition={{ duration: 0.8, ease: "easeInOut" }}
+```
+
+### Staggered Animations
+Components use sequential delays for cascading entrance effects:
+```typescript
+transition={{ delay: 0.7 + index * 0.1 }}
+```
+
+---
+
+## Responsive Design
+
+### Mobile-First Approach
+All components are designed for mobile devices and scale appropriately.
+
+#### Grid System
+```typescript
+// Single column on mobile
+<div className="grid grid-cols-1 gap-4">
+```
+
+#### Card Heights
+- **Trending Slider**: 192px (h-48)
+- **Package Image**: 160px (h-40)
+
+#### Spacing
+- **Section Gap**: 16px (space-y-4)
+- **Inner Spacing**: 12px (space-y-3)
+- **Card Padding**: 12px (p-3)
+
+### Dark Mode Support
+All components use Tailwind's dark mode classes:
+```typescript
+className="text-foreground dark:text-white"
+className="bg-card dark:bg-gray-800"
+className="text-muted-foreground dark:text-gray-400"
+```
+
+---
+
+## Image Optimization
+
+### ImageWithFallback Component
+All images use the custom `ImageWithFallback` component for:
+- **Graceful Degradation**: Fallback UI if image fails
+- **Performance**: Lazy loading built-in
+- **Accessibility**: Proper alt text handling
+
+### Unsplash Images
+All images are sourced from Unsplash with optimized parameters:
+```
+?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=...&ixlib=rb-4.1.0&q=80&w=1080
+```
+
+Parameters:
+- **crop=entropy**: Smart cropping
+- **q=80**: 80% quality for balance
+- **w=1080**: Max width 1080px
+- **fm=jpg**: JPEG format
+
+---
+
+## State Management
+
+### Local State
+```typescript
+// HomeScreen
+const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+
+// ModernTrendingSlider
+const [currentSlide, setCurrentSlide] = useState(0);
+
+// PackageImageSlider
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+// FeaturedHotelsSection
+const [wishlistedPackages, setWishlistedPackages] = useState<Set<string>>(new Set());
+
+// FeaturedToursSection
+const [wishlistedTours, setWishlistedTours] = useState<Set<string>>(new Set());
+```
+
+### External Services
+
+#### Wishlist Service
+```typescript
+// Add/remove from wishlist
+wishlistService.toggleWishlist(itemId);
+
+// Get all wishlisted items
+const wishlist = wishlistService.getWishlist();
+
+// Set state with wishlist
+setWishlistedItems(new Set(wishlist));
+```
+
+---
+
+## Navigation Flow
+
+### Tab Navigation
+```
+Home Tab (Default)
+├── Trending Destinations Slider
+├── Featured Hotels Section
+└── Featured Tours Section
+
+Hotels Tab
+└── HotelPackagesDisplay Component
+
+Tours Tab
+└── Coming Soon Placeholder
+
+Messages Tab
+└── Coming Soon Placeholder
+
+Profile Tab
+└── Coming Soon Placeholder
+```
+
+### Screen Navigation
+```typescript
+onNavigate('destinations')  // View all destinations
+onNavigate('hotels')        // View all hotels
+onNavigate('tours')         // View all tours
+onNavigate('tour-detail')   // View tour details
+onNavigate('booking')       // Booking flow
+```
+
+### Package Detail Flow
+```
+1. User clicks package card
+   ↓
+2. handlePackageSelect(packageId)
+   ↓
+3. setSelectedPackageId(packageId)
+   ↓
+4. onDetailScreenChange?.(true)
+   ↓
+5. AirbnbHotelDetailScreen renders
+   ↓
+6. User clicks back
+   ↓
+7. handleBackFromPackageDetail()
+   ↓
+8. setSelectedPackageId(null)
+   ↓
+9. onDetailScreenChange?.(false)
+   ↓
+10. Home screen re-renders
+```
+
+---
+
+## Performance Optimizations
+
+### 1. Conditional Rendering
+Only renders active tab content:
+```typescript
+if (activeTab === 'hotels') {
+  return <HotelPackagesDisplay />;
+}
+```
+
+### 2. Auto-Slide Cleanup
+Properly cleans up intervals:
+```typescript
+useEffect(() => {
+  const timer = setInterval(...);
+  return () => clearInterval(timer); // Cleanup
+}, [dependencies]);
+```
+
+### 3. Event Propagation
+Prevents unnecessary re-renders:
+```typescript
+event.stopPropagation(); // Prevent card click when clicking heart
+```
+
+### 4. Efficient State Updates
+Uses Set for wishlist state:
+```typescript
+setWishlistedPackages(new Set(wishlist)); // O(1) lookup
+```
+
+### 5. Image Loading
+Uses optimized Unsplash URLs with specific dimensions and quality.
+
+---
+
+## Accessibility Features
+
+### Semantic HTML
+- Proper heading hierarchy (`<h3>`, `<h4>`)
+- Descriptive button text
+- Accessible card structure
+
+### Keyboard Navigation
+- All interactive elements are keyboard accessible
+- Proper tab order maintained
+
+### Screen Reader Support
+```typescript
+<span className="sr-only">Delete</span> // Screen reader only text
+alt={`${alt} ${index + 1}`}              // Descriptive alt text
+```
+
+### Color Contrast
+- Text meets WCAG AA standards
+- Proper contrast in dark mode
+- Color-blind friendly gradients
+
+### Focus States
+All interactive elements have visible focus states via Tailwind's default styling.
+
+---
+
+## User Experience Features
+
+### 1. Visual Feedback
+- **Hover Effects**: Scale transforms on cards and buttons
+- **Tap Effects**: Scale down on tap for tactile feedback
+- **Loading States**: Smooth transitions between slides
+- **Wishlist Animation**: Heart fills when added
+
+### 2. Information Hierarchy
+- **Primary**: Package titles, prices
+- **Secondary**: Hotel names, ratings
+- **Tertiary**: Locations, durations, reviews
+
+### 3. Scannability
+- **Icons**: Visual anchors for information types
+- **Badges**: Quick identification of special offers
+- **Ratings**: Star icons with numeric values
+- **Savings**: Highlighted in green gradient
+
+### 4. Call-to-Action
+- **Prominent CTAs**: Gradient buttons with clear text
+- **Multiple Entry Points**: Cards, buttons, "View All" links
+- **Progressive Disclosure**: Cards → Detail → Booking
+
+---
+
+## TripAvail Design System Integration
+
+### Color Palette
+```typescript
+// Primary Colors
+'text-primary'           // Rose 600
+'bg-primary'             // Rose 600
+
+// Role-Based Colors
+'from-primary to-rose-500'        // Traveler
+'from-purple-500 to-indigo-500'   // Hotel Manager
+'from-amber-500 to-orange-500'    // Tour Operator
+
+// Status Colors
+'from-green-500 to-emerald-500'   // Savings badge
+'text-yellow-500'                 // Star ratings
+'text-blue-500'                   // Adventure icons
+
+// Neutral Colors
+'text-foreground'                 // Primary text
+'text-muted-foreground'           // Secondary text
+'bg-card'                         // Card background
+```
+
+### Typography
+```typescript
+// Headings
+'text-2xl font-bold'              // Main section titles
+'font-semibold'                   // Card titles
+'text-sm'                         // Supporting text
+'text-xs'                         // Labels and metadata
+
+// Font Weights
+'font-bold'                       // Prices, ratings
+'font-semibold'                   // Headings, badges
+'font-medium'                     // Buttons
+```
+
+### Spacing System
+```typescript
+'space-y-6'    // Large section spacing
+'space-y-4'    // Medium section spacing
+'space-y-3'    // Small section spacing
+'space-y-2'    // Card internal spacing
+'gap-4'        // Grid gap
+'gap-2'        // Icon + text gap
+'gap-1'        // Tight spacing
+```
+
+### Border Radius
+```typescript
+'rounded-full'   // Badges, buttons, indicators
+'rounded-lg'     // CTA buttons
+// Cards have no border radius (border-0)
+```
+
+### Shadows
+```typescript
+'shadow-xl'      // Trending slider
+'shadow-lg'      // Package cards, buttons
+```
+
+---
+
+## Future Enhancements
+
+### Planned Features
+1. **Real-time Data**: Connect to Supabase backend
+2. **Search Integration**: Filter packages by criteria
+3. **Infinite Scroll**: Load more packages on scroll
+4. **Advanced Filters**: Price range, ratings, amenities
+5. **Map View**: Interactive map of destinations
+6. **Social Sharing**: Share packages to social media
+7. **User Reviews**: Display and submit reviews
+8. **Comparison Tool**: Compare multiple packages
+9. **Price Alerts**: Notify users of price drops
+10. **Booking Calendar**: Check availability
+
+### Performance Improvements
+1. **Virtual Scrolling**: For large package lists
+2. **Image Lazy Loading**: Load images as needed
+3. **Code Splitting**: Lazy load components
+4. **Memoization**: Prevent unnecessary re-renders
+5. **Service Worker**: Offline support
+
+### Analytics Integration
+1. **Track Views**: Log package views
+2. **Track Clicks**: Monitor CTA performance
+3. **Track Wishlists**: Analyze user preferences
+4. **Conversion Funnel**: View → Detail → Book
+
+---
+
+## Testing Recommendations
+
+### Unit Tests
+```typescript
+// Test wishlist toggle
+test('should add package to wishlist', () => {...});
+test('should remove package from wishlist', () => {...});
+
+// Test navigation
+test('should navigate to package detail', () => {...});
+test('should navigate back from detail', () => {...});
+
+// Test auto-slide
+test('should auto-advance slider', () => {...});
+test('should loop back to first slide', () => {...});
+```
+
+### Integration Tests
+```typescript
+// Test tab switching
+test('should show hotels tab content', () => {...});
+test('should show tours tab content', () => {...});
+
+// Test package selection flow
+test('should select and deselect package', () => {...});
+```
+
+### E2E Tests
+```typescript
+// User journey
+test('user can browse and book package', () => {
+  // 1. View home screen
+  // 2. Click package card
+  // 3. View package details
+  // 4. Click book now
+  // 5. Complete booking
+});
+```
+
+---
+
+## Code Quality
+
+### TypeScript Coverage
+- ✅ All props are typed
+- ✅ All state is typed
+- ✅ All callbacks are typed
+
+### Best Practices
+- ✅ Functional components with hooks
+- ✅ Proper cleanup in useEffect
+- ✅ Event handler memoization
+- ✅ Accessibility attributes
+- ✅ Semantic HTML
+- ✅ Responsive design
+- ✅ Dark mode support
+- ✅ Performance optimizations
+
+### Code Organization
+- ✅ Single Responsibility Principle
+- ✅ Component composition
+- ✅ Reusable utilities
+- ✅ Clear naming conventions
+- ✅ Consistent formatting
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Images Not Loading
+- **Check**: Unsplash URLs are valid
+- **Solution**: Use ImageWithFallback component
+
+#### 2. Wishlist Not Persisting
+- **Check**: wishlistService is properly imported
+- **Solution**: Verify localStorage is available
+
+#### 3. Animations Stuttering
+- **Check**: Too many animations running
+- **Solution**: Reduce concurrent animations
+
+#### 4. Slider Not Auto-Advancing
+- **Check**: useEffect cleanup
+- **Solution**: Verify interval is set correctly
+
+#### 5. Dark Mode Issues
+- **Check**: Tailwind dark mode classes
+- **Solution**: Use proper theme tokens
+
+---
+
+## Related Documentation
+
+### Core Components
+- `/components/HotelPackagesDisplay.tsx` - Hotel packages grid
+- `/components/AirbnbHotelDetailScreen.tsx` - Package detail view
+- `/components/ui/card.tsx` - Card component
+- `/components/ui/button.tsx` - Button component
+- `/components/figma/ImageWithFallback.tsx` - Image component
+
+### Services
+- `/services/wishlistService.ts` - Wishlist management
+- `/services/dataService.ts` - Data fetching
+
+### Screens
+- `/modules/traveler/screens/DashboardScreen.tsx` - Traveler dashboard
+- `/modules/traveler/screens/ProfileScreen.tsx` - User profile
+
+### Hooks
+- `/hooks/useSearch.ts` - Search functionality
+- `/hooks/useDarkMode.ts` - Dark mode toggle
+
+---
+
+## Version History
+
+### v1.0.0 (Current)
+- Initial implementation
+- Trending destinations slider
+- Featured hotels section
+- Featured tours section
+- Wishlist integration
+- Package detail navigation
+- Dark mode support
+- Mobile-first responsive design
+
+---
+
+## Credits
+
+### Images
+- All images from [Unsplash](https://unsplash.com)
+- Optimized for web performance
+
+### Icons
+- [Lucide React](https://lucide.dev) - Icon library
+- Motion animations via motion/react
+
+### Design Inspiration
+- Airbnb - Clean, minimal design
+- Booking.com - Package structure
+- Expedia - Featured content layout
+
+---
+
+## Contact & Support
+
+For questions or issues related to the Home Screen:
+1. Check this documentation
+2. Review related component docs
+3. Check TripAvail project guidelines
+4. Contact the development team
+
+---
+
+**Last Updated**: January 2026  
+**Maintained By**: TripAvail Development Team  
+**License**: Proprietary
