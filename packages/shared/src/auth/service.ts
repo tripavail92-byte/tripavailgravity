@@ -15,6 +15,20 @@ export class AuthService {
     }
 
     /**
+     * Sign in with Google
+     */
+    async signInWithGoogle() {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    /**
      * Sign up with Email and Password
      */
     async signUp(email: string, password: string, fullName: string) {

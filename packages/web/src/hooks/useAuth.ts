@@ -13,6 +13,7 @@ interface AuthState {
     // Actions
     initialize: () => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
+    signInWithGoogle: () => Promise<void>;
     signUp: (email: string, password: string, fullName: string) => Promise<void>;
     signOut: () => Promise<void>;
     switchRole: (role: RoleType) => Promise<void>;
@@ -60,6 +61,16 @@ export const useAuth = create<AuthState>((set, get) => ({
         try {
             await authService.signIn(email, password);
             // State updated by onAuthStateChange listener
+        } catch (error) {
+            set({ isLoading: false });
+            throw error;
+        }
+    },
+
+    signInWithGoogle: async () => {
+        set({ isLoading: true });
+        try {
+            await authService.signInWithGoogle();
         } catch (error) {
             set({ isLoading: false });
             throw error;
