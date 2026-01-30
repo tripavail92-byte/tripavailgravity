@@ -11,7 +11,10 @@ import {
     BookCheck,
     Star,
     ShieldCheck,
-    Map
+    Map,
+    UserCircle,
+    MapPin,
+    CreditCard
 } from 'lucide-react';
 import { RoleType } from '@tripavail/shared/roles/types';
 
@@ -19,15 +22,17 @@ export interface NavItem {
     label: string;
     icon: any;
     href: string;
+    subtext?: string;
 }
 
 export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
     traveller: [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-        { label: 'My Trips', icon: Plane, href: '/trips' },
-        { label: 'Wishlist', icon: Heart, href: '/wishlist' },
-        { label: 'Rewards', icon: Gift, href: '/rewards' },
-        { label: 'Settings', icon: Settings, href: '/settings' },
+        { label: 'My Profile', icon: UserCircle, href: '/profile' },
+        { label: 'My Trips', icon: MapPin, href: '/trips', subtext: '2 upcoming' },
+        { label: 'Wishlist', icon: Heart, href: '/wishlist', subtext: '12 saved' },
+        { label: 'Payment Methods', icon: CreditCard, href: '/payment-methods' },
+        { label: 'Account Settings', icon: Settings, href: '/settings' },
         { label: 'Help & Support', icon: HelpCircle, href: '/help' },
     ],
     hotel_manager: [

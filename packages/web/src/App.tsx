@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/auth/LoginPage';
 import SearchPage from '@/pages/traveller/SearchPage';
+import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage';
 // import DashboardPage from '@/pages/dashboard/DashboardPage'; // To be created
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
                 <Route path="/auth" element={<LoginPage />} />
 
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/hotels/:id" element={<HotelDetailsPage />} />
                 <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
 
                 {/* Fallback */}

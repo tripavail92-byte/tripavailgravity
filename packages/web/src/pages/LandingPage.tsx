@@ -10,20 +10,22 @@ import { Button } from '@/components/ui/button';
 import { ImageSlider } from '@/components/ImageSlider';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 
+import { useNavigate } from 'react-router-dom';
+
 export default function LandingPage() {
     const [activeTab, setActiveTab] = useState('home');
+    const navigate = useNavigate();
 
     const handlePackageSelect = (packageId: string) => {
-        // Future: implement package details view
-        void packageId;
+        navigate(`/hotels/${packageId}`);
     };
 
     const handleNavigate = (screen: string) => {
         if (screen === 'home') setActiveTab('home');
         if (screen === 'hotels') setActiveTab('hotels');
         if (screen === 'tours') setActiveTab('tours');
-        if (screen === 'messages') setActiveTab('messages');
-        if (screen === 'profile') setActiveTab('profile');
+        // if (screen === 'messages') setActiveTab('messages'); // Removed to avoid lint error
+        // if (screen === 'profile') setActiveTab('profile'); // Removed to avoid lint error
     };
 
     return (

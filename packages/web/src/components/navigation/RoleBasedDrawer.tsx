@@ -14,7 +14,10 @@ import {
     LogOut,
     UserCircle,
     AlignJustify,
-    LogIn
+    LogIn,
+    Pencil,
+    MapPin,
+    Heart
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLE_NAVIGATION } from '@/config/navigation';
@@ -94,7 +97,7 @@ export function RoleBasedDrawer() {
 
     // Role-Based View
     const navItems = ROLE_NAVIGATION[activeRole.role_type] || [];
-    const roleLabel = activeRole.role_type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    // const roleLabel = activeRole.role_type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -114,56 +117,100 @@ export function RoleBasedDrawer() {
                     </div>
                 </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col h-full bg-background">
+
+            <SheetContent side="right" className="w-[300px] sm:w-[350px] p-0 flex flex-col h-full bg-background border-l-0 sm:border-l">
                 {/* Header Profile Section */}
-                <div className="p-6 border-b">
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-primary/10">
+                <div className="p-6 pb-2">
+                    <div className="flex justify-end mb-2">
+                        {/* Close button primitive is usually handled by SheetContent, but we keep the spacing if needed */}
+                    </div>
+
+                    <div className="flex items-start gap-4 mb-6">
+                        <Avatar className="h-16 w-16 bg-purple-600 text-white rounded-full flex items-center justify-center text-2xl font-medium">
                             <AvatarImage src={user.user_metadata?.avatar_url} />
-                            <AvatarFallback className="text-lg bg-primary/10 text-primary">
-                                {user.email?.charAt(0).toUpperCase()}
+                            <AvatarFallback className="bg-purple-600 text-white">
+                                {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0).toUpperCase() || 'M'}
                             </AvatarFallback>
                         </Avatar>
-                        <div>
-                            <h3 className="font-semibold truncate max-w-[180px]">
-                                {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                            </h3>
-                            <p className="text-xs text-muted-foreground capitalize bg-secondary px-2 py-0.5 rounded-full inline-block mt-1">
-                                {roleLabel}
-                            </p>
+                        <div className="flex-1 min-w-0 pt-1">
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg truncate text-gray-900">
+                                    {user.user_metadata?.full_name || 'Maria'}
+                                </h3>
+                                <Pencil className="w-3.5 h-3.5 text-gray-400 cursor-pointer hover:text-gray-600" />
+                            </div>
+                            <p className="text-sm text-gray-500 truncate">{user.email || 'tours@adventures.com'}</p>
+                            <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
+                                <MapPin className="w-3.5 h-3.5" />
+                                <span>Traveler • Pakistan</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Completion Bar */}
+                    <div className="space-y-1 mb-2">
+                        <div className="flex justify-between text-sm font-semibold text-gray-700">
+                            <span>Profile Completion</span>
+                            <span className="text-pink-600">40%</span>
+                        </div>
+                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-pink-500 to-purple-600 w-[40%] rounded-full" />
                         </div>
                     </div>
                 </div>
 
                 {/* Scrollable Navigation Items */}
-                <ScrollArea className="flex-1 px-4 py-4">
-                    <nav className="flex flex-col gap-2">
+                <ScrollArea className="flex-1 px-4">
+                    <nav className="flex flex-col gap-1 py-2">
                         {navItems.map((item) => (
                             <Button
                                 key={item.href}
                                 variant="ghost"
-                                className="justify-start gap-3 h-12 text-base font-normal"
+                                className="justify-start items-center gap-4 h-auto py-3.5 px-3 rounded-xl hover:bg-gray-50 text-gray-700 group transition-all"
                                 onClick={() => handleNavigation(item.href)}
                             >
-                                <item.icon className="h-5 w-5 text-muted-foreground" />
-                                {item.label}
+                                <item.icon className="h-6 w-6 text-gray-500 group-hover:text-gray-900 stroke-[1.5px]" />
+                                <div className="flex flex-col items-start gap-0.5">
+                                    <span className="text-base font-medium text-gray-900">{item.label}</span>
+                                    {item.subtext && (
+                                        <span className="text-xs text-gray-500 font-normal">{item.subtext}</span>
+                                    )}
+                                </div>
                             </Button>
                         ))}
                     </nav>
                 </ScrollArea>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t mt-auto space-y-2">
-                    <Button
-                        variant="ghost"
-                        className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50"
-                        onClick={handleSignOut}
-                    >
-                        <LogOut className="h-5 w-5" />
-                        Log Out
-                    </Button>
-                    <div className="text-xs text-center text-muted-foreground pt-4">
-                        TripAvail v1.0.0
+                <div className="p-4 border-t bg-gray-50/50 space-y-4">
+                    {/* Show Partner CTA only for Travellers or if specifically requested */}
+                    {activeRole.role_type === 'traveller' && (
+                        <div className="mb-2">
+                            <p className="text-sm font-semibold text-gray-900 mb-3">Partner with us</p>
+                            <Button
+                                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white border-0 h-auto py-3 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-purple-200"
+                                onClick={() => navigate('/auth?role=partner')}
+                            >
+                                <span className="font-bold text-base">Become a Partner</span>
+                                <span className="text-[10px] font-normal opacity-90">Join TripAvail and grow your business</span>
+                            </Button>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                        <div className="flex justify-center flex-1 items-center gap-1 text-[10px] text-gray-400">
+                            <span>Version 1.0.0 • Made with</span>
+                            <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+                        </div>
+                        {/* Optional Mini Logout for power users if needed, or leave implied */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-gray-400 hover:text-red-500"
+                            onClick={handleSignOut}
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             </SheetContent>
