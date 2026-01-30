@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
-    TrendingUp, Flame, ChevronLeft, ChevronRight, Crown, Mountain,
-    Star, MapPin, Calendar, Heart, ChevronRight as ChevronRightIcon, Users
+    TrendingUp, Flame, ChevronLeft, ChevronRight, Star, Heart, ChevronRight as ChevronRightIcon, Globe, Search, UserCircle, AlignJustify
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,10 @@ export default function LandingPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            {/* Sticky Category Search Bar (Airbnb style) */}
+            {/* Airbnb Header (Fixed) */}
+            <AirbnbHeader />
+
+            {/* Sticky Category Search Bar (Sticks below header) */}
             <CategoryNavBar />
 
             <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -92,6 +94,57 @@ export default function LandingPage() {
     );
 }
 
+// Airbnb Header Component
+function AirbnbHeader() {
+    return (
+        <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50 px-4 md:px-10 flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex-1 flex items-center">
+                <div className="flex items-center gap-1 cursor-pointer">
+                    {/* TripAvail Logo Icon (Rose) */}
+                    <svg viewBox="0 0 32 32" className="block h-8 w-8 fill-[#FF385C]" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation" focusable="false">
+                        <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 3.162.717 4.698-.217 1.722-1.077 3.325-2.678 4.318-1.554.965-3.328 1.5-5.36 1.5-4.137 0-7.38-2.676-8.917-6.236l-.089-.283C10.706 28.164 7.426 31 3.092 31c-1.996 0-3.79-.536-5.267-1.501-1.636-.998-2.5-2.597-2.73-4.318-.21-1.62.062-3.193.754-4.836L16 1zm0 2c-1.137 0-2.31 1.258-3.416 3.46l-.37.747c-1.897 3.906-5.83 12.276-6.818 14.594l-.152.365c-.56 1.39-.757 2.628-.584 3.79.166 1.118.916 2.372 2.148 3.174 2.822 1.838 6.463-1.054 9.18-5.34l.112-.178.65-.965.674 1.134c2.81 4.512 6.55 7.189 9.387 5.353 1.18-.763 1.956-2.023 2.152-3.175.176-1.16-.011-2.396-.566-3.743l-.15-.355c-1.028-2.336-4.9-10.372-6.84-14.414L20.897 6.48C19.79 4.258 17.137 3 16 3z"></path>
+                    </svg>
+                    <span className="hidden md:block font-bold text-xl text-[#FF385C] tracking-tighter">tripavail</span>
+                </div>
+            </div>
+
+            {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
+            <div className="hidden md:flex flex-1 justify-center">
+                <div className="flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4">
+                    <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">Anywhere</div>
+                    <div className="hidden lg:block h-6 w-[1px] bg-gray-300"></div>
+                    <div className="text-sm font-semibold hidden lg:block">Any week</div>
+                    <div className="h-6 w-[1px] bg-gray-300"></div>
+                    <div className="text-sm text-gray-500 font-normal flex items-center gap-3">
+                        Add guests
+                        <div className="bg-[#FF385C] rounded-full p-2 text-white">
+                            <Search className="w-3 h-3 stroke-[3px]" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right User Menu */}
+            <div className="flex-1 flex items-center justify-end gap-2">
+                <a href="#" className="hidden md:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors">
+                    Become a host
+                </a>
+                <button className="hidden md:flex p-3 hover:bg-muted rounded-full transition-colors">
+                    <Globe className="w-4 h-4" />
+                </button>
+
+                {/* Profile Pill (Drawer Menu Trigger) */}
+                <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow ml-1">
+                    <AlignJustify className="w-4 h-4 text-foreground/80" />
+                    <div className="bg-muted text-muted-foreground bg-gray-500/20 rounded-full p-1">
+                        <UserCircle className="w-6 h-6 fill-current text-gray-500" />
+                    </div>
+                </button>
+            </div>
+        </header>
+    );
+}
 // Airbnb-style Category Navigation Pill Bar
 function CategoryNavBar() {
     const categories = [
@@ -110,14 +163,14 @@ function CategoryNavBar() {
     const [activeCategory, setActiveCategory] = useState('trending');
 
     return (
-        <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
+        <div className="sticky top-20 z-40 w-full bg-background/95 backdrop-blur-md border-b shadow-sm pt-4">
             <div className="container mx-auto max-w-7xl px-4">
-                <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4 px-2">
+                <div className="flex items-center gap-8 overflow-x-auto no-scrollbar pb-4 px-2">
                     {categories.map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => setActiveCategory(cat.id)}
-                            className={`flex flex-col items-center gap-2 min-w-fit transition-all duration-200 group relative pb-2`}
+                            className="flex flex-col items-center gap-2 min-w-fit transition-all duration-200 group relative pb-2"
                         >
                             <span className={`text-xl grayscale group-hover:grayscale-0 transition-all ${activeCategory === cat.id ? 'grayscale-0 scale-110' : ''}`}>
                                 {cat.icon}
@@ -152,7 +205,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
             emoji: '🏛️',
             gradient: 'from-blue-500 to-cyan-500',
             price: 'From $899',
-            image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW50b3JpbmklMjBncmVlY2V8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
+            image: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW50b3JpbmklMjBncmVlY2VufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Stunning sunsets and white architecture'
         },
         {
@@ -182,7 +235,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
             emoji: '🗼',
             gradient: 'from-purple-500 to-indigo-500',
             price: 'From $999',
-            image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGZyYW5jZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwwYXJpcyUyMGZyYW5jZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'City of lights and romantic adventures'
         },
         {
@@ -192,7 +245,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
             emoji: '🏙️',
             gradient: 'from-amber-500 to-orange-500',
             price: 'From $1199',
-            image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHVhZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+            image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdWJhaSUyMHVhZXxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
             description: 'Luxury shopping and desert adventures'
         }
     ];
@@ -326,8 +379,8 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
                                 key={`indicator-${index}`}
                                 onClick={() => goToSlide(index)}
                                 className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                    ? 'bg-white w-6'
-                                    : 'bg-white/50 hover:bg-white/70'
+                                        ? 'bg-white w-6'
+                                        : 'bg-white/50 hover:bg-white/70'
                                     }`}
                                 whileTap={{ scale: 0.9 }}
                             />
@@ -339,220 +392,141 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
     );
 }
 
-// Featured Hotels Section
+// Featured Hotels Section (Horizontal Scroll Style)
 function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
     onNavigate: (screen: string) => void;
     onPackageSelect: (packageId: string) => void;
 }) {
-    // These props are ready for 'View All' and 'Package Click' functionality
-    const [wishlistedPackages, setWishlistedPackages] = useState<Set<string>>(new Set());
-
     const featuredHotels = [
         {
             id: 'luxury-beach-1',
             title: 'Paradise Beach Escape',
             hotelName: 'Azure Shores Resort',
             location: 'Bali, Indonesia',
-            originalPrice: 899,
             packagePrice: 599,
-            savings: 300,
             rating: 4.9,
-            reviews: 1247,
-            duration: '3 Days, 2 Nights',
             images: [
                 'https://images.unsplash.com/photo-1580450997544-8846a39f3dfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMHJlc29ydCUyMGJlYWNofGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHJlc29ydCUyMHBvb2x8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1571896349842-33c89424de2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHN1bnNldCUyMHJlc29ydHxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXNvcnQlMjByb29tfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHJlc29ydCUyMHBvb2x8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
             ],
-            badge: 'Most Popular',
-            gradient: 'from-rose-500 to-pink-500'
+            badge: 'Most Popular'
         },
         {
             id: 'luxury-resort-2',
             title: 'Alpine Luxury Retreat',
             hotelName: 'Mountain Crown Lodge',
             location: 'Swiss Alps, Switzerland',
-            originalPrice: 1299,
             packagePrice: 999,
-            savings: 300,
             rating: 4.8,
-            reviews: 892,
-            duration: '4 Days, 3 Nights',
             images: [
-                'https://images.unsplash.com/photo-1689729738920-edea97589328?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMGhvdGVsJTIwcmVzb3J0fGVufDF8fHx8MTc1NzMzNDczMHww&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMHNraSUyMHJlc29ydHxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMGxvZGdlfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1578662996442-48f60103fc96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHhhbHBpbmUlMjBsYWtlfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
+                'https://images.unsplash.com/photo-1689729738920-edea97589328?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxtb3VudGFpbiUyMGhvdGVsJTIwcmVzb3J0fGVufDF8fHx8MTc1NzMzNDczMHww&ixlib=rb-4.1.0&q=80&w=1080',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxtb3VudGFpbiUyMHNraSUyMHJlc29ydHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
             ],
-            badge: 'Premium',
-            gradient: 'from-blue-500 to-indigo-500'
+            badge: 'Premium'
+        },
+        {
+            id: 'city-hotel-3',
+            title: 'Urban Bliss Hotel',
+            hotelName: 'The Metropolitan',
+            location: 'New York, USA',
+            packagePrice: 450,
+            rating: 4.7,
+            images: [
+                'https://images.unsplash.com/photo-1566073771259-6a8506099945?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjBob3RlbHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+                'https://images.unsplash.com/photo-1582719508461-905c673771fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjByb29tfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
+            ],
+            badge: 'Guest favorite'
+        },
+        {
+            id: 'desert-camp-4',
+            title: 'Sahara Luxury Camp',
+            hotelName: 'Dunes Glamping',
+            location: 'Merzouga, Morocco',
+            packagePrice: 320,
+            rating: 4.9,
+            images: [
+                'https://images.unsplash.com/photo-1533692328991-081598976c53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnbGFtcGluZ3xlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+                'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjYW1waW5nfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
+            ],
+            badge: 'Unique Stay'
         }
     ];
-
-    const handleToggleWishlist = (packageId: string, event: React.MouseEvent) => {
-        event.stopPropagation();
-        wishlistService.toggleWishlist(packageId);
-        const wishlist = wishlistService.getWishlist();
-        setWishlistedPackages(new Set(wishlist));
-    };
-
-    const getBadgeGradient = (badge: string) => {
-        switch (badge) {
-            case 'Most Popular': return 'bg-gradient-to-r from-primary to-rose-500';
-            case 'Premium': return 'bg-gradient-to-r from-purple-500 to-indigo-500';
-            default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
-        }
-    };
 
     return (
         <motion.section
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="space-y-3"
+            className="space-y-6"
         >
             {/* Section Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                    >
-                        <Crown className="w-4 h-4 text-yellow-500" />
-                    </motion.div>
-                    <div>
-                        <h3 className="font-semibold text-foreground">Featured Hotels</h3>
-                        <p className="text-xs text-muted-foreground">Handpicked luxury experiences</p>
-                    </div>
+            <div className="flex items-center justify-between px-2">
+                <div>
+                    <h3 className="text-2xl font-bold text-foreground">Popular homes in Lahore</h3>
+                    <p className="text-muted-foreground text-sm">Guest favorites in the city</p>
                 </div>
-                <Button
-                    variant="ghost"
-                    className="text-primary text-sm"
-                    onClick={() => onNavigate('hotels')}
-                >
-                    View All
-                    <motion.div
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                        <ChevronRightIcon className="w-3 h-3 ml-1" />
-                    </motion.div>
-                </Button>
+                <div className="flex gap-2 hidden md:flex">
+                    <Button variant="outline" size="icon" className="rounded-full w-8 h-8 hover:scale-105 transition-transform">
+                        <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-full w-8 h-8 hover:scale-105 transition-transform">
+                        <ChevronRightIcon className="w-4 h-4" />
+                    </Button>
+                </div>
             </div>
 
-            {/* Hotels Grid - Responsive grid System */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* Horizontal Scroll Container */}
+            <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
                 {featuredHotels.map((hotel, index) => (
                     <motion.div
                         key={hotel.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                        whileTap={{ scale: 0.98 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 * index }}
+                        className="min-w-[280px] md:min-w-[320px] snap-start"
+                        onClick={() => onPackageSelect(hotel.id)}
                     >
-                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-airbnb hover:shadow-xl transition-all duration-300 relative group">
-                            <div className="relative z-10">
+                        <div className="group cursor-pointer space-y-3">
+                            <div className="relative aspect-square overflow-hidden rounded-xl bg-muted/50">
                                 {/* Image Slider */}
-                                <div className="relative h-40 overflow-hidden">
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        transition={{ duration: 0.4 }}
-                                        className="w-full h-full"
-                                    >
-                                        <ImageSlider
-                                            images={hotel.images}
-                                            alt={hotel.title}
-                                            autoSlideDelay={6000}
-                                        />
-                                    </motion.div>
-
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                                    {/* Badge */}
-                                    <motion.div
-                                        className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold text-white ${getBadgeGradient(hotel.badge)}`}
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ delay: 0.8 + index * 0.1, type: "spring" }}
-                                    >
-                                        {hotel.badge}
-                                    </motion.div>
-
-                                    {/* Heart Icon */}
-                                    <motion.button
-                                        onClick={(e) => handleToggleWishlist(hotel.id, e)}
-                                        className={`absolute top-2 right-2 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 ${wishlistedPackages.has(hotel.id)
-                                            ? 'bg-primary text-white'
-                                            : 'bg-white/90 text-gray-600'
-                                            }`}
-                                        whileTap={{ scale: 0.9 }}
-                                        whileHover={{ scale: 1.1 }}
-                                    >
-                                        <Heart className={`w-4 h-4 ${wishlistedPackages.has(hotel.id) ? 'fill-current' : ''}`} />
-                                    </motion.button>
-
-                                    {/* Savings Badge */}
-                                    <motion.div
-                                        className="absolute bottom-2 right-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-full text-xs font-semibold"
-                                        initial={{ scale: 0, rotate: -180 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        transition={{ delay: 1 + index * 0.1, type: "spring" }}
-                                    >
-                                        Save ${hotel.savings}
-                                    </motion.div>
+                                <div className="w-full h-full hover:scale-105 transition-transform duration-500">
+                                    <ImageSlider
+                                        images={hotel.images}
+                                        alt={hotel.title}
+                                        autoSlideDelay={0} // Disable constant movement, feels more 'pro'
+                                    />
                                 </div>
 
-                                {/* Content */}
-                                <div className="p-3 space-y-2">
-                                    {/* Header */}
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h4 className="font-semibold text-card-foreground mb-1">{hotel.title}</h4>
-                                            <p className="text-sm text-muted-foreground mb-1">{hotel.hotelName}</p>
-                                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                                <MapPin className="w-3 h-3" />
-                                                <span>{hotel.location}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Rating */}
-                                        <div className="text-right">
-                                            <div className="flex items-center gap-1 mb-1">
-                                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="font-semibold text-card-foreground text-sm">{hotel.rating}</span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">({hotel.reviews})</p>
-                                        </div>
+                                {/* Guest Favorite Badge */}
+                                {(hotel.badge === 'Most Popular' || hotel.badge === 'Guest favorite') && (
+                                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm z-10">
+                                        <span className="text-xs font-bold text-black block leading-none">Guest favorite</span>
                                     </div>
+                                )}
 
-                                    {/* Details & Pricing */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                            <Calendar className="w-3 h-3" />
-                                            <span>{hotel.duration}</span>
-                                        </div>
+                                {/* Heart Icon */}
+                                <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart">
+                                    <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
+                                </button>
+                            </div>
 
-                                        <div className="text-right">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-card-foreground">${hotel.packagePrice}</span>
-                                                <span className="text-sm text-muted-foreground line-through">${hotel.originalPrice}</span>
-                                            </div>
-
-                                            <motion.button
-                                                className={`mt-1 px-3 py-1 bg-gradient-to-r ${hotel.gradient} text-white rounded-lg text-xs font-medium shadow-lg`}
-                                                whileTap={{ scale: 0.95 }}
-                                                whileHover={{ scale: 1.02 }}
-                                                onClick={() => onPackageSelect(hotel.id)}
-                                            >
-                                                Book Now
-                                            </motion.button>
-                                        </div>
+                            {/* Clean Content (Airbnb Style) */}
+                            <div className="space-y-1 px-1">
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-semibold text-base truncate pr-2 text-foreground">{hotel.hotelName}</h4>
+                                    <div className="flex items-center gap-1">
+                                        <Star className="w-3 h-3 fill-black text-black" />
+                                        <span className="text-sm font-medium">{hotel.rating}</span>
                                     </div>
+                                </div>
+                                <p className="text-muted-foreground text-sm line-clamp-1">{hotel.title}</p>
+                                <p className="text-muted-foreground text-sm">Oct 22-27</p>
+                                <div className="flex items-baseline gap-1 mt-1">
+                                    <span className="font-bold text-base text-foreground">${hotel.packagePrice}</span>
+                                    <span className="text-sm font-normal text-muted-foreground">night</span>
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     </motion.div>
                 ))}
             </div>
@@ -561,247 +535,120 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
 }
 
 // Featured Tours Section
+// Featured Tours Section
 function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => void }) {
-    // onNavigate is used for the 'View All' button
-    const [wishlistedTours, setWishlistedTours] = useState<Set<string>>(new Set());
-
     const featuredTours = [
         {
             id: 'adventure-tour-1',
             title: 'Epic Adventure Journey',
-            operator: 'Adventure Plus Tours',
             location: 'Nepal Himalayas',
-            originalPrice: 1299,
             tourPrice: 999,
-            savings: 300,
             rating: 4.9,
-            reviews: 856,
-            duration: '12 Days',
-            groupSize: 'Max 8 People',
             images: [
                 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMGFkdmVudHVyZSUyMHRyZWt8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1465056836041-7f43ac27dcb5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaW1hbGF5YSUyMG1vdW50YWlufGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1578662996442-48f60103fc96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmVra2luZyUyMGNhbXB8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMHN1bW1pdHxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080'
+                'https://images.unsplash.com/photo-1578662996442-48f60103fc96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbHBpbmUlMjBsYWtlfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
             ],
-            badge: 'Best Seller',
-            difficulty: 'Challenging',
-            gradient: 'from-emerald-500 to-teal-500'
+            badge: 'Best Seller'
         },
         {
             id: 'cultural-tour-2',
-            title: 'Ancient Wonders Explorer',
-            operator: 'Heritage Discovery Tours',
-            location: 'Cairo, Egypt',
-            originalPrice: 999,
-            tourPrice: 749,
-            savings: 250,
-            rating: 4.7,
-            reviews: 642,
-            duration: '8 Days',
-            groupSize: 'Max 12 People',
+            title: 'Kyoto Ancient Temples',
+            location: 'Kyoto, Japan',
+            tourPrice: 799,
+            rating: 4.8,
             images: [
-                'https://images.unsplash.com/photo-1539650116574-75c0c6d73bbd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxweXJhbWlkcyUyMGVneXB0fGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1578662996442-48f60103fc96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGhpbnglMjBlZ3lwdHxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1471919743851-c4df8b6ee133?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlZ3lwdCUyMHRlbXBsZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-                'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuaWxlJTIwcml2ZXJ8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'
+                'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxreW90byUyMHRlbXBsZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+                'https://images.unsplash.com/photo-1528360983277-13d9b152c6d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqYXBhbiUyMGNoZXJyeSUyMGJsb3Nzb218ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'
             ],
-            badge: 'Cultural Heritage',
-            difficulty: 'Easy',
-            gradient: 'from-amber-500 to-orange-500'
+            badge: 'Cultural'
+        },
+        {
+            id: 'safari-tour-3',
+            title: 'Serengeti Safari',
+            location: 'Tanzania',
+            tourPrice: 1499,
+            rating: 5.0,
+            images: [
+                'https://images.unsplash.com/photo-1516426122078-c23e76319801?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWZhcml8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
+                'https://images.unsplash.com/photo-1535591273668-578e31182c4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiaWclMjBmaXZlJTIwc2FmYXJpfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080'
+            ],
+            badge: 'Once in a Lifetime'
         }
     ];
-
-    const handleToggleWishlist = (tourId: string, event: React.MouseEvent) => {
-        event.stopPropagation();
-        wishlistService.toggleWishlist(tourId);
-        const wishlist = wishlistService.getWishlist();
-        setWishlistedTours(new Set(wishlist));
-    };
-
-    const getBadgeGradient = (badge: string) => {
-        switch (badge) {
-            case 'Best Seller': return 'bg-gradient-to-r from-primary to-rose-500';
-            case 'Most Popular': return 'bg-gradient-to-r from-orange-500 to-red-500';
-            case 'Cultural Heritage': return 'bg-gradient-to-r from-amber-500 to-orange-500';
-            default: return 'bg-gradient-to-r from-gray-500 to-gray-600';
-        }
-    };
-
-    const getDifficultyColor = (difficulty: string) => {
-        switch (difficulty) {
-            case 'Easy': return 'text-green-600 bg-green-100 dark:bg-green-500/20';
-            case 'Moderate': return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-500/20';
-            case 'Challenging': return 'text-red-600 bg-red-100 dark:bg-red-500/20';
-            default: return 'text-gray-600 bg-gray-100 dark:bg-gray-500/20';
-        }
-    };
 
     return (
         <motion.section
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="space-y-3"
+            className="space-y-6"
         >
             {/* Section Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <motion.div
-                        animate={{
-                            rotate: [0, 10, -10, 0],
-                            scale: [1, 1.1, 1]
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                    >
-                        <Mountain className="w-4 h-4 text-blue-500" />
-                    </motion.div>
-                    <div>
-                        <h3 className="font-semibold text-foreground">Featured Tours</h3>
-                        <p className="text-xs text-muted-foreground">Unforgettable guided adventures</p>
-                    </div>
+            <div className="flex items-center justify-between px-2">
+                <div>
+                    <h3 className="text-2xl font-bold text-foreground">Top Experiences</h3>
+                    <p className="text-muted-foreground text-sm">Unforgettable activities to book now</p>
                 </div>
-                <Button
-                    variant="ghost"
-                    className="text-primary text-sm"
-                    onClick={() => onNavigate('tours')}
-                >
-                    View All
-                    <motion.div
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
+                <div className="flex gap-2 hidden md:flex">
+                    <Button
+                        variant="ghost"
+                        className="text-foreground font-semibold hover:bg-muted"
+                        onClick={() => onNavigate('tours')}
                     >
-                        <ChevronRightIcon className="w-3 h-3 ml-1" />
-                    </motion.div>
-                </Button>
+                        Show all
+                    </Button>
+                </div>
             </div>
 
-            {/* Tours Grid - Responsive grid System */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {/* Horizontal Scroll Container */}
+            <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
                 {featuredTours.map((tour, index) => (
                     <motion.div
                         key={tour.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.9 + index * 0.1 }}
-                        whileTap={{ scale: 0.98 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 * index }}
+                        className="min-w-[280px] md:min-w-[320px] snap-start"
                     >
-                        <Card className="overflow-hidden cursor-pointer border-0 bg-card shadow-airbnb hover:shadow-xl transition-all duration-300 relative group">
-                            <div className="relative z-10">
-                                {/* Image Slider */}
-                                <div className="relative h-40 overflow-hidden">
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        transition={{ duration: 0.4 }}
-                                        className="w-full h-full"
-                                    >
-                                        <ImageSlider
-                                            images={tour.images}
-                                            alt={tour.title}
-                                            autoSlideDelay={7000}
-                                        />
-                                    </motion.div>
-
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                                    {/* Badge */}
-                                    <motion.div
-                                        className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold text-white ${getBadgeGradient(tour.badge)}`}
-                                        initial={{ scale: 0 }}
-                                        animate={{ scale: 1 }}
-                                        transition={{ delay: 1 + index * 0.1, type: "spring" }}
-                                    >
-                                        {tour.badge}
-                                    </motion.div>
-
-                                    {/* Heart Icon */}
-                                    <motion.button
-                                        onClick={(e) => handleToggleWishlist(tour.id, e)}
-                                        className={`absolute top-2 right-2 w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 ${wishlistedTours.has(tour.id)
-                                            ? 'bg-primary text-white'
-                                            : 'bg-white/90 text-gray-600'
-                                            }`}
-                                        whileTap={{ scale: 0.9 }}
-                                        whileHover={{ scale: 1.1 }}
-                                    >
-                                        <Heart className={`w-4 h-4 ${wishlistedTours.has(tour.id) ? 'fill-current' : ''}`} />
-                                    </motion.button>
-
-                                    {/* Difficulty Badge */}
-                                    <motion.div
-                                        className={`absolute bottom-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(tour.difficulty)}`}
-                                        initial={{ scale: 0, rotate: -180 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        transition={{ delay: 1.2 + index * 0.1, type: "spring" }}
-                                    >
-                                        {tour.difficulty}
-                                    </motion.div>
-
-                                    {/* Savings Badge */}
-                                    <motion.div
-                                        className="absolute bottom-2 right-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-2 py-1 rounded-full text-xs font-semibold"
-                                        initial={{ scale: 0, rotate: 180 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        transition={{ delay: 1.1 + index * 0.1, type: "spring" }}
-                                    >
-                                        Save ${tour.savings}
-                                    </motion.div>
+                        <div className="group cursor-pointer space-y-3">
+                            <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted/50">
+                                {/* Image Slider (Vertical aspect for "Poster" look) */}
+                                <div className="w-full h-full hover:scale-105 transition-transform duration-500">
+                                    <ImageSlider
+                                        images={tour.images}
+                                        alt={tour.title}
+                                        autoSlideDelay={0}
+                                    />
                                 </div>
 
-                                {/* Content */}
-                                <div className="p-3 space-y-2">
-                                    {/* Header */}
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h4 className="font-semibold text-card-foreground mb-1">{tour.title}</h4>
-                                            <p className="text-sm text-muted-foreground mb-1">{tour.operator}</p>
-                                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                                <MapPin className="w-3 h-3" />
-                                                <span>{tour.location}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Rating */}
-                                        <div className="text-right">
-                                            <div className="flex items-center gap-1 mb-1">
-                                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                                <span className="font-semibold text-card-foreground text-sm">{tour.rating}</span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">({tour.reviews})</p>
-                                        </div>
+                                {/* Badge */}
+                                {tour.badge && (
+                                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm z-10">
+                                        <span className="text-xs font-bold text-black block leading-none">{tour.badge}</span>
                                     </div>
+                                )}
 
-                                    {/* Tour Details */}
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            <span>{tour.duration}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Users className="w-3 h-3" />
-                                            <span>{tour.groupSize}</span>
-                                        </div>
-                                    </div>
+                                {/* Heart Icon */}
+                                <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart">
+                                    <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
+                                </button>
+                            </div>
 
-                                    {/* Pricing */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-card-foreground">${tour.tourPrice}</span>
-                                            <span className="text-sm text-muted-foreground line-through">${tour.originalPrice}</span>
-                                        </div>
-
-                                        <motion.button
-                                            className={`px-3 py-1 bg-gradient-to-r ${tour.gradient} text-white rounded-lg text-xs font-medium shadow-lg`}
-                                            whileTap={{ scale: 0.95 }}
-                                            whileHover={{ scale: 1.02 }}
-                                        >
-                                            Book Now
-                                        </motion.button>
-                                    </div>
+                            {/* Clean Content */}
+                            <div className="space-y-1 px-1">
+                                <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                                    <span className="font-medium text-foreground">{tour.rating}</span>
+                                    <Star className="w-3 h-3 fill-foreground text-foreground" />
+                                    <span>·</span>
+                                    <span>{tour.location}</span>
+                                </div>
+                                <h4 className="font-semibold text-base line-clamp-1 text-foreground">{tour.title}</h4>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="font-bold text-base text-foreground">From ${tour.tourPrice}</span>
+                                    <span className="text-sm font-normal text-muted-foreground">/ person</span>
                                 </div>
                             </div>
-                        </Card>
+                        </div>
                     </motion.div>
                 ))}
             </div>
