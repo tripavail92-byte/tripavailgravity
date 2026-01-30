@@ -17,11 +17,11 @@ export class AuthService {
     /**
      * Sign in with Google
      */
-    async signInWithGoogle() {
+    async signInWithGoogle(redirectTo: string) {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo,
             },
         });
         if (error) throw error;

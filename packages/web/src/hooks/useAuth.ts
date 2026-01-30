@@ -70,7 +70,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     signInWithGoogle: async () => {
         set({ isLoading: true });
         try {
-            await authService.signInWithGoogle();
+            const redirectTo = `${window.location.origin}/auth/callback`;
+            await authService.signInWithGoogle(redirectTo);
         } catch (error) {
             set({ isLoading: false });
             throw error;
