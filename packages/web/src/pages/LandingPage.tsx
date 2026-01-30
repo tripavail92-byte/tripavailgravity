@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { wishlistService } from '@/lib/wishlistService';
+import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer';
 import {
     TrendingUp, Flame, ChevronLeft, ChevronRight, Star, Heart, ChevronRight as ChevronRightIcon, Globe, Search, UserCircle, AlignJustify
 } from 'lucide-react';
@@ -134,12 +136,8 @@ function AirbnbHeader() {
                 </button>
 
                 {/* Profile Pill (Drawer Menu Trigger) */}
-                <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow ml-1">
-                    <AlignJustify className="w-4 h-4 text-foreground/80" />
-                    <div className="bg-muted text-muted-foreground bg-gray-500/20 rounded-full p-1">
-                        <UserCircle className="w-6 h-6 fill-current text-gray-500" />
-                    </div>
-                </button>
+                {/* Role-Based Drawer Menu */}
+                <RoleBasedDrawer />
             </div>
         </header>
     );
