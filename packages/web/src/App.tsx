@@ -7,7 +7,8 @@ import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/auth/LoginPage';
 import SearchPage from '@/pages/traveller/SearchPage';
 import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage';
-// import DashboardPage from '@/pages/dashboard/DashboardPage'; // To be created
+import PartnerSelectionPage from '@/pages/partner/PartnerSelectionPage';
+import DashboardLayout from '@/layouts/DashboardLayout';
 
 function App() {
     const { initialize, initialized } = useAuth();
@@ -30,9 +31,13 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/auth" element={<LoginPage />} />
 
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/hotels/:id" element={<HotelDetailsPage />} />
-                <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
+                {/* Authenticated Routes with Drawer */}
+                <Route element={<DashboardLayout />}>
+                    <Route path="/search" element={<SearchPage />} />
+                    <Route path="/hotels/:id" element={<HotelDetailsPage />} />
+                    <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
+                    <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
+                </Route>
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
