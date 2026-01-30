@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ImageSlider } from '@/components/ImageSlider';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
-import { wishlistService } from '@/lib/wishlistService';
 
 export default function LandingPage() {
     const [activeTab, setActiveTab] = useState('home');
@@ -112,12 +111,12 @@ function AirbnbHeader() {
             {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
             <div className="hidden md:flex flex-1 justify-center">
                 <div className="flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4">
-                    <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">Anywhere</div>
+                    <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">Search destinations</div>
                     <div className="hidden lg:block h-6 w-[1px] bg-gray-300"></div>
-                    <div className="text-sm font-semibold hidden lg:block">Any week</div>
+                    <div className="text-sm font-semibold hidden lg:block">Add dates</div>
                     <div className="h-6 w-[1px] bg-gray-300"></div>
                     <div className="text-sm text-gray-500 font-normal flex items-center gap-3">
-                        Add guests
+                        Add travelers
                         <div className="bg-[#FF385C] rounded-full p-2 text-white">
                             <Search className="w-3 h-3 stroke-[3px]" />
                         </div>
@@ -128,7 +127,7 @@ function AirbnbHeader() {
             {/* Right User Menu */}
             <div className="flex-1 flex items-center justify-end gap-2">
                 <a href="#" className="hidden md:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors">
-                    Become a host
+                    Become a Partner
                 </a>
                 <button className="hidden md:flex p-3 hover:bg-muted rounded-full transition-colors">
                     <Globe className="w-4 h-4" />
@@ -379,8 +378,8 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
                                 key={`indicator-${index}`}
                                 onClick={() => goToSlide(index)}
                                 className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                                        ? 'bg-white w-6'
-                                        : 'bg-white/50 hover:bg-white/70'
+                                    ? 'bg-white w-6'
+                                    : 'bg-white/50 hover:bg-white/70'
                                     }`}
                                 whileTap={{ scale: 0.9 }}
                             />
@@ -487,7 +486,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
                         onClick={() => onPackageSelect(hotel.id)}
                     >
                         <div className="group cursor-pointer space-y-3">
-                            <div className="relative aspect-square overflow-hidden rounded-xl bg-muted/50">
+                            <div className="relative aspect-square overflow-hidden rounded-xl">
                                 {/* Image Slider */}
                                 <div className="w-full h-full hover:scale-105 transition-transform duration-500">
                                     <ImageSlider
@@ -499,7 +498,7 @@ function FeaturedHotelsSection({ onNavigate, onPackageSelect }: {
 
                                 {/* Guest Favorite Badge */}
                                 {(hotel.badge === 'Most Popular' || hotel.badge === 'Guest favorite') && (
-                                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm z-10">
+                                    <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-full shadow-sm z-10">
                                         <span className="text-xs font-bold text-black block leading-none">Guest favorite</span>
                                     </div>
                                 )}
@@ -611,7 +610,7 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
                         className="min-w-[280px] md:min-w-[320px] snap-start"
                     >
                         <div className="group cursor-pointer space-y-3">
-                            <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted/50">
+                            <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
                                 {/* Image Slider (Vertical aspect for "Poster" look) */}
                                 <div className="w-full h-full hover:scale-105 transition-transform duration-500">
                                     <ImageSlider
