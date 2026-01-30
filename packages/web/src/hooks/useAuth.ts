@@ -14,6 +14,7 @@ interface AuthState {
     initialize: () => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
     signInWithGoogle: () => Promise<void>;
+    devLogin: () => Promise<void>;
     signUp: (email: string, password: string, fullName: string) => Promise<void>;
     signOut: () => Promise<void>;
     switchRole: (role: RoleType) => Promise<void>;
@@ -76,6 +77,38 @@ export const useAuth = create<AuthState>((set, get) => ({
             set({ isLoading: false });
             throw error;
         }
+    },
+
+    devLogin: async () => {
+        set({ isLoading: true });
+        // Mock User Data
+        const mockUser: User = {
+            id: 'dev-user-id',
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: 'dev@tripavail.com',
+            phone: '',
+            app_metadata: { provider: 'email', providers: ['email'] },
+            user_metadata: { full_name: 'Dev Traveller', avatar_url: 'https://github.com/shadcn.png' },
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        } as User;
+
+        // Mock Role Data
+        const mockRole: UserRole = {
+            id: 'dev-role-id',
+            user_id: 'dev-user-id',
+            role_type: 'traveller',
+            is_active: true,
+            // enabled_at: new Date().toISOString(), // Optional or non-existent in strict type
+            profile_completion: 80,
+            verification_status: 'approved'
+        };
+
+        // Simulate network delay
+        setTimeout(() => {
+            set({ user: mockUser, activeRole: mockRole, isLoading: false });
+        }, 800);
     },
 
     signUp: async (email, password, fullName) => {
