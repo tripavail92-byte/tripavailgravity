@@ -278,8 +278,13 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
     }, [handlePlaceSelect]);
 
     const handleConfirmLocation = () => {
+        console.log('🗺️ LocationPicker: Confirm button clicked');
+        console.log('🗺️ LocationPicker: selectedLocation:', selectedLocation);
         if (selectedLocation) {
+            console.log('🗺️ LocationPicker: Calling onLocationSelect with:', selectedLocation);
             onLocationSelect(selectedLocation);
+        } else {
+            console.log('🗺️ LocationPicker: ERROR - No selectedLocation to confirm!');
         }
     };
 
