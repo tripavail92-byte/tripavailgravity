@@ -129,8 +129,36 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                     <Check className="w-5 h-5 text-green-600" />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-green-900">Location Selected</h4>
-                                    <p className="text-green-700 mb-2">{selectedLocation.address}</p>
+                                    <h4 className="font-semibold text-green-900 mb-2">Location Selected</h4>
+
+                                    {/* Editable Address Field */}
+                                    <div className="mb-2">
+                                        <label className="block text-sm font-medium text-green-800 mb-1">
+                                            Address (editable)
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            value={selectedLocation.address}
+                                            onChange={(e) => {
+                                                const updatedLocation = { ...selectedLocation, address: e.target.value };
+                                                setSelectedLocation(updatedLocation);
+                                                if (onUpdate) {
+                                                    onUpdate({
+                                                        locationData: updatedLocation,
+                                                        city: updatedLocation.city,
+                                                        area: updatedLocation.area,
+                                                        country: updatedLocation.country,
+                                                        address: updatedLocation.address,
+                                                        coordinates: updatedLocation.coordinates,
+                                                        ...additionalDetails
+                                                    });
+                                                }
+                                            }}
+                                            className="bg-white border-green-300"
+                                            placeholder="Edit address if needed (e.g., change house number)"
+                                        />
+                                    </div>
+
                                     <p className="text-sm text-green-600">
                                         {selectedLocation.city}, {selectedLocation.country}
                                     </p>
@@ -145,7 +173,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                     className="border-green-300 text-green-700 hover:bg-green-100"
                                 >
                                     <Edit3 size={14} className="mr-1" />
-                                    Edit
+                                    Change
                                 </Button>
                             </div>
 

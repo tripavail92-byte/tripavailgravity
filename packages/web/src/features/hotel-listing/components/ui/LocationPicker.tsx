@@ -198,11 +198,12 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             placeId: place.place_id || `custom_${Date.now()}`,
         };
 
-        console.log('🎯 Created locationData:', locationData);
         setSelectedLocation(locationData);
         setMarkerPosition({ lat, lng });
         setSearchQuery(place.formatted_address || '');
-        console.log('🎯 Updated selectedLocation state');
+
+        // Auto-save and close picker immediately
+        onLocationSelect(locationData);
 
         // Smooth pan to location
         if (map) {
