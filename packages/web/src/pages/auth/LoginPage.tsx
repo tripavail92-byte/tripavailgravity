@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -21,7 +22,16 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const { signIn, signUp, signInWithGoogle, devLogin, isLoading } = useAuth()
+  const { signIn, signUp, signInWithGoogle, devLogin, isLoading, user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (user) {
+      const redirectTo = searchParams.get('redirect') || '/dashboard'
+      navigate(redirectTo)
+    }
+  }, [user, navigate, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
