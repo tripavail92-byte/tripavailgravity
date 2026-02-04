@@ -29,6 +29,7 @@ import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
 import { LocationStep } from './steps/LocationStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
+import { RoomsStep } from './steps/RoomsStep';
 
 interface Step {
     id: number;
