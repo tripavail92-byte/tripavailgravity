@@ -162,10 +162,15 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
     const map = useMap();
 
     const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
-        if (!place.geometry?.location) return;
+        console.log('🎯 handlePlaceSelect called with place:', place);
+        if (!place.geometry?.location) {
+            console.log('❌ No geometry/location in place object!');
+            return;
+        }
 
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
+        console.log('🎯 Extracted coordinates:', { lat, lng });
 
         // Extract address components
         let city = '';
@@ -193,9 +198,11 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             placeId: place.place_id || `custom_${Date.now()}`,
         };
 
+        console.log('🎯 Created locationData:', locationData);
         setSelectedLocation(locationData);
         setMarkerPosition({ lat, lng });
         setSearchQuery(place.formatted_address || '');
+        console.log('🎯 Updated selectedLocation state');
 
         // Smooth pan to location
         if (map) {
