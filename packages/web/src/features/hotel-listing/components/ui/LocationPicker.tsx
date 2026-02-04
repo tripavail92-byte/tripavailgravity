@@ -156,9 +156,9 @@ function PlacesAutocomplete({
 
 function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: LocationPickerProps) {
     const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(initialLocation || null);
-    const [mapCenter, setMapCenter] = useState(initialLocation?.coordinates || DEFAULT_CENTER);
     const [searchQuery, setSearchQuery] = useState('');
     const [markerPosition, setMarkerPosition] = useState(initialLocation?.coordinates || null);
+    const [initialCenter] = useState(initialLocation?.coordinates || DEFAULT_CENTER);
     const map = useMap();
 
     const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
@@ -195,7 +195,6 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
 
         setSelectedLocation(locationData);
         setMarkerPosition({ lat, lng });
-        setMapCenter({ lat, lng });
         setSearchQuery(place.formatted_address || '');
 
         // Smooth pan to location
@@ -229,7 +228,6 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                     placeId: `custom_${Date.now()}`,
                 };
                 setSelectedLocation(locationData);
-                setMapCenter({ lat, lng });
             }
         });
     }, [handlePlaceSelect]);
@@ -324,8 +322,8 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             {/* Map Container - Full Height */}
             <div className="flex-1 relative bg-gray-100">
                 <Map
-                    center={mapCenter}
-                    zoom={markerPosition ? 16 : 12}
+                    defaultCenter={initialCenter}
+                    defaultZoom={12}
                     gestureHandling="greedy"
                     disableDefaultUI={true}
                     onClick={handleMapClick}
