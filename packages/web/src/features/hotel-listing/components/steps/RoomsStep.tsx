@@ -3,6 +3,7 @@ import { Plus, Edit3, Trash2, Users, Bed, DollarSign, Ruler } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'motion/react';
+import { RoomWizardModal } from './RoomWizardModal';
 
 export interface BedConfig {
     type: 'king' | 'queen' | 'double' | 'twin' | 'single' | 'sofaBed';
@@ -206,16 +207,13 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                 )}
             </AnimatePresence>
 
-            {/* Room Wizard Modal - TODO: Implement in next phase */}
-            {showWizard && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <Card className="max-w-2xl w-full p-6 bg-white">
-                        <h3 className="text-xl font-semibold mb-4">Room Configuration Wizard</h3>
-                        <p className="text-gray-600 mb-4">Wizard implementation coming next...</p>
-                        <Button onClick={() => setShowWizard(false)}>Close</Button>
-                    </Card>
-                </div>
-            )}
+            {/* Room Wizard Modal */}
+            <RoomWizardModal
+                isOpen={showWizard}
+                onClose={() => setShowWizard(false)}
+                onSave={handleSaveRoom}
+                editingRoom={editingRoom}
+            />
         </div>
     );
 }
