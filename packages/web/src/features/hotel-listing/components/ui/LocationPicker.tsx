@@ -346,6 +346,38 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                 </div>
             </div>
 
+            {/* Location Info and Confirm Button - Shown above map when location selected */}
+            <AnimatePresence>
+                {selectedLocation && (
+                    <motion.div
+                        initial={{ y: -100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -100, opacity: 0 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="bg-white border-b border-gray-200 px-6 py-4 shadow-md"
+                    >
+                        <div className="max-w-2xl mx-auto">
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <Check size={20} className="text-green-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-gray-900 truncate">{selectedLocation.address}</h3>
+                                    <p className="text-sm text-gray-600">{selectedLocation.city}, {selectedLocation.country}</p>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={handleConfirmLocation}
+                                className="w-full h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                            >
+                                <Check size={20} className="mr-2" />
+                                Confirm Location
+                            </Button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Map Container - Full Height */}
             <div className="flex-1 relative bg-gray-100">
                 <Map
