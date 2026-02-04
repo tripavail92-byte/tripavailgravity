@@ -36,6 +36,8 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotels/:id" element={<HotelDetailsPage />} />
           <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
+          <Route path="/manager/dashboard" element={<div>Hotel Manager Dashboard (Coming Soon)</div>} />
+          <Route path="/operator/dashboard" element={<div>Tour Operator Dashboard (Coming Soon)</div>} />
           <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
         </Route>
 

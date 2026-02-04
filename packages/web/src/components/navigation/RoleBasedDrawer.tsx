@@ -102,7 +102,15 @@ export function RoleBasedDrawer() {
 
   // Role-Based View
   const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
-  // const roleLabel = activeRole.role_type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  // Helper to format role label
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'hotel_manager': return 'Hotel Manager'
+      case 'tour_operator': return 'Tour Operator'
+      case 'traveller': return 'Traveler'
+      default: return 'User'
+    }
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -154,7 +162,7 @@ export function RoleBasedDrawer() {
               </p>
               <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                 <MapPin className="w-3.5 h-3.5" />
-                <span>Traveler • Pakistan</span>
+                <span>{getRoleLabel(activeRole?.role_type || 'traveller')} • Pakistan</span>
               </div>
             </div>
           </div>

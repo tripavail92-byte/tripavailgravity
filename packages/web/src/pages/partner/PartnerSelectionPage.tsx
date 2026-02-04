@@ -49,7 +49,14 @@ export default function PartnerSelectionPage() {
     setIsLoading(true)
     try {
       await switchRole(mode)
-      navigate('/dashboard')
+      // Redirect to specific dashboard based on role
+      if (mode === 'hotel_manager') {
+        navigate('/manager/dashboard')
+      } else if (mode === 'tour_operator') {
+        navigate('/operator/dashboard')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (error) {
       console.error('Failed to switch role:', error)
       alert('Failed to switch role. Please try again.')
