@@ -347,9 +347,10 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             </div>
 
             {/* Location Info and Confirm Button - Shown above map when location selected */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {selectedLocation && (
                     <motion.div
+                        key="location-confirm"
                         initial={{ y: -100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -100, opacity: 0 }}
