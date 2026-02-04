@@ -10,7 +10,7 @@ import {
     PhotosIcon,
     PricingIcon
 } from '@/features/hotel-listing/assets/HotelListingIcons';
-import { CompleteHotelListingFlow } from '@/features/hotel-listing/components/CompleteHotelListingFlow';
+import CompleteHotelListingFlow from '@/features/hotel-listing/components/CompleteHotelListingFlow';
 
 export default function ListHotelPage() {
     const [isStarted, setIsStarted] = useState(false);
@@ -22,7 +22,12 @@ export default function ListHotelPage() {
     };
 
     if (isStarted) {
-        return <CompleteHotelListingFlow initialPropertyType={selectedPropertyType} />;
+        return (
+            <CompleteHotelListingFlow
+                initialPropertyType={selectedPropertyType}
+                onBack={() => setIsStarted(false)}
+            />
+        );
     }
 
     return (

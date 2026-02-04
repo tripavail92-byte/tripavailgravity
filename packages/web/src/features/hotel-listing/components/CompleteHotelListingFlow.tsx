@@ -98,12 +98,14 @@ interface CompleteHotelListingFlowProps {
     onComplete?: (data: Partial<HotelData>) => void;
     onBack: () => void;
     onSaveAndExit?: () => void;
+    initialPropertyType?: string;
 }
 
-export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAndExit }: CompleteHotelListingFlowProps) {
+export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAndExit, initialPropertyType }: CompleteHotelListingFlowProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [completedSteps, setCompletedSteps] = useState<number[]>([]);
     const [hotelData, setHotelData] = useState<Partial<HotelData>>({
+        propertyType: initialPropertyType || '',
         amenities: [],
         rooms: [],
         houseRules: [],
@@ -234,7 +236,7 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
 
         // For step 1, show the property type selection icon
         if (stepId === 1) {
-            return <PropertyTypeIcon isActive={isActive} isSelected={isActive} size={size} />;
+            return <PropertyTypeIcon isSelected={isActive} size={size} />;
         }
 
         // For all other steps (2-9), show the premium 3D property vector
