@@ -197,15 +197,17 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
         }
     }, [map]);
 
-    const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
-        if (!event.latLng) return;
+    const handleMapClick = useCallback((event: any) => {
+        // For @vis.gl/react-google-maps, coordinates are in event.detail.latLng
+        const latLng = event.detail?.latLng;
+        if (!latLng) return;
 
-        const lat = event.latLng.lat();
-        const lng = event.latLng.lng();
+        const lat = latLng.lat;
+        const lng = latLng.lng;
 
         // Reverse geocode to get address
         const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
             if (status === 'OK' && results && results[0]) {
                 handlePlaceSelect(results[0]);
             } else {
@@ -288,23 +290,18 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             {/* Map Container */}
             <div className="flex-1 relative">
                 <Map
-                    defaultCenter={mapCenter}
-                    defaultZoom={12}
+                    center={mapCenter}
+                    zoom={12}
                     gestureHandling="greedy"
                     disableDefaultUI={false}
                     onClick={handleMapClick}
                     mapId="hotel-location-map"
+                    style={{ width: '100%', height: '100%' }}
                 >
                     {selectedLocation && (
                         <AdvancedMarker position={selectedLocation.coordinates}>
-                            <div className="relative">
-                                <motion.div
-                                    initial={{ scale: 0, y: -20 }}
-                                    animate={{ scale: 1, y: 0 }}
-                                    className="w-8 h-8 bg-[#ff5a5f] rounded-full border-4 border-white shadow-lg flex items-center justify-center"
-                                >
-                                    <MapPin size={16} className="text-white" />
-                                </motion.div>
+                            <div className="w-10 h-10 bg-[#ff5a5f] rounded-full border-4 border-white shadow-lg flex items-center justify-center">
+                                <MapPin size={20} className="text-white" />
                             </div>
                         </AdvancedMarker>
                     )}
