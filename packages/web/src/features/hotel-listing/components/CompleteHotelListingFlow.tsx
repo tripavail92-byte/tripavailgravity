@@ -161,9 +161,9 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
         },
         {
             id: 5,
-            title: 'Room Type',
-            description: 'Choose room category',
-            component: PlaceholderStep,
+            title: 'Room Types & Pricing',
+            description: 'Configure your room types',
+            component: RoomsStep,
             completed: completedSteps.includes(5),
             required: true
         },
@@ -422,9 +422,11 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                     (currentStep === 1 && !hotelData.propertyType) ||
                     (currentStep === 2 && (!hotelData.hotelName || !hotelData.description || !hotelData.contactEmail)) ||
                     (currentStep === 3 && !hotelData.coordinates) ||
-                    (currentStep === 4 && (!hotelData.amenities || hotelData.amenities.length === 0))
+                    (currentStep === 4 && (!hotelData.amenities || hotelData.amenities.length === 0)) ||
+                    (currentStep === 5 && (!hotelData.rooms || hotelData.rooms.length === 0))
                 }
             />
         </div>
     );
 }
+```
