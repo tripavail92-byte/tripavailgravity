@@ -367,7 +367,10 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                                     isCompleted={completedSteps.includes(currentStep)}
                                     existingData={hotelData}
                                     onUpdate={(data: any) => {
+                                        console.log('🏨 CompleteHotelListingFlow: onUpdate called with', data);
                                         const updatedData = { ...hotelData, ...data };
+                                        console.log('🏨 CompleteHotelListingFlow: Updated hotelData', updatedData);
+                                        console.log('🏨 CompleteHotelListingFlow: Coordinates:', updatedData.coordinates);
                                         setHotelData(updatedData);
                                     }}
                                     onBack={currentStep === 1 ? onBack : () => setCurrentStep(currentStep - 1)}

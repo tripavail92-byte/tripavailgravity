@@ -35,6 +35,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
     });
 
     const handleLocationSelect = (location: LocationData) => {
+        console.log('📍 LocationStep: Location selected', location);
         setSelectedLocation(location);
         setShowLocationPicker(false);
 
@@ -48,6 +49,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
             ...additionalDetails
         };
 
+        console.log('📍 LocationStep: Calling onUpdate with', updateData);
         if (onUpdate) {
             onUpdate(updateData);
         }
