@@ -1,10 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, MapPin, Navigation, X, Check, Loader2 } from 'lucide-react';
+import { Search, MapPin, X, Check, Loader2, LocateFixed } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 interface LocationData {
     address: string;
@@ -27,6 +26,20 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 // Default center (Lahore, Pakistan)
 const DEFAULT_CENTER = { lat: 31.5204, lng: 74.3587 };
 
+// Airbnb-style custom map styles
+const MAP_STYLES = [
+    {
+        featureType: 'poi',
+        elementType: 'labels',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'transit',
+        elementType: 'labels.icon',
+        stylers: [{ visibility: 'off' }]
+    }
+];
+
 function PlacesAutocomplete({
     onPlaceSelect,
     searchQuery,
@@ -41,30 +54,33 @@ function PlacesAutocomplete({
     const [isSearching, setIsSearching] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const handleSearch = useCallback(async (query: string) => {
-        if (!query.trim() || !map) {
+    useEffect(() => {
+        if (!searchQuery.trim() || !map) {
             setPredictions([]);
             return;
         }
 
         setIsSearching(true);
+        const timeoutId = setTimeout(async () => {
+            const service = new google.maps.places.AutocompleteService();
 
-        const service = new google.maps.places.AutocompleteService();
+            try {
+                const response = await service.getPlacePredictions({
+                    input: searchQuery,
+                    componentRestrictions: { country: 'pk' },
+                });
 
-        try {
-            const response = await service.getPlacePredictions({
-                input: query,
-                componentRestrictions: { country: 'pk' }, // Restrict to Pakistan, remove if worldwide
-            });
+                setPredictions(response.predictions || []);
+            } catch (error) {
+                console.error('Error fetching predictions:', error);
+                setPredictions([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
 
-            setPredictions(response.predictions || []);
-        } catch (error) {
-            console.error('Error fetching predictions:', error);
-            setPredictions([]);
-        } finally {
-            setIsSearching(false);
-        }
-    }, [map]);
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery, map]);
 
     const handlePredictionClick = useCallback(async (placeId: string) => {
         if (!map) return;
@@ -85,19 +101,10 @@ function PlacesAutocomplete({
         );
     }, [map, onPlaceSelect]);
 
-    // Debounced search
-    useState(() => {
-        const timeoutId = setTimeout(() => {
-            handleSearch(searchQuery);
-        }, 300);
-
-        return () => clearTimeout(timeoutId);
-    });
-
     return (
         <div className="relative">
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                 <Input
                     type="text"
                     placeholder="Search for your hotel location..."
@@ -107,10 +114,10 @@ function PlacesAutocomplete({
                         setShowSuggestions(true);
                     }}
                     onFocus={() => setShowSuggestions(true)}
-                    className="pl-10 pr-10 py-3 bg-gray-50 border-gray-200 rounded-xl"
+                    className="pl-12 pr-10 py-6 text-base bg-white border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow"
                 />
                 {isSearching && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" size={18} />
+                    <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin" size={20} />
                 )}
             </div>
 
@@ -121,25 +128,24 @@ function PlacesAutocomplete({
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto"
+                        className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-10 max-h-80 overflow-y-auto"
                     >
-                        {predictions.map((prediction, index) => (
-                            <motion.button
+                        {predictions.map((prediction) => (
+                            <button
                                 key={prediction.place_id}
                                 onClick={() => handlePredictionClick(prediction.place_id)}
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 first:rounded-t-xl last:rounded-b-xl"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
+                                className="w-full px-5 py-4 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl transition-colors"
                             >
-                                <div className="flex items-center gap-3">
-                                    <MapPin size={16} className="text-gray-400 flex-shrink-0" />
-                                    <div>
-                                        <p className="font-medium text-gray-900">{prediction.structured_formatting.main_text}</p>
-                                        <p className="text-sm text-gray-600">{prediction.structured_formatting.secondary_text}</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <MapPin size={18} className="text-gray-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 truncate">{prediction.structured_formatting.main_text}</p>
+                                        <p className="text-sm text-gray-500 truncate">{prediction.structured_formatting.secondary_text}</p>
                                     </div>
                                 </div>
-                            </motion.button>
+                            </button>
                         ))}
                     </motion.div>
                 )}
@@ -152,6 +158,7 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
     const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(initialLocation || null);
     const [mapCenter, setMapCenter] = useState(initialLocation?.coordinates || DEFAULT_CENTER);
     const [searchQuery, setSearchQuery] = useState('');
+    const [markerPosition, setMarkerPosition] = useState(initialLocation?.coordinates || null);
     const map = useMap();
 
     const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
@@ -187,23 +194,25 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
         };
 
         setSelectedLocation(locationData);
+        setMarkerPosition({ lat, lng });
         setMapCenter({ lat, lng });
         setSearchQuery(place.formatted_address || '');
 
-        // Pan map to location
+        // Smooth pan to location
         if (map) {
             map.panTo({ lat, lng });
-            map.setZoom(15);
+            map.setZoom(16);
         }
     }, [map]);
 
     const handleMapClick = useCallback((event: any) => {
-        // For @vis.gl/react-google-maps, coordinates are in event.detail.latLng
         const latLng = event.detail?.latLng;
         if (!latLng) return;
 
         const lat = latLng.lat;
         const lng = latLng.lng;
+
+        setMarkerPosition({ lat, lng });
 
         // Reverse geocode to get address
         const geocoder = new google.maps.Geocoder();
@@ -211,7 +220,6 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             if (status === 'OK' && results && results[0]) {
                 handlePlaceSelect(results[0]);
             } else {
-                // Fallback if geocoding fails
                 const locationData: LocationData = {
                     address: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                     city: 'Selected Location',
@@ -222,6 +230,24 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                 };
                 setSelectedLocation(locationData);
                 setMapCenter({ lat, lng });
+            }
+        });
+    }, [handlePlaceSelect]);
+
+    const handleMarkerDrag = useCallback((event: any) => {
+        const latLng = event.latLng;
+        if (!latLng) return;
+
+        const lat = latLng.lat();
+        const lng = latLng.lng();
+
+        setMarkerPosition({ lat, lng });
+
+        // Debounced reverse geocoding on drag end
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            if (status === 'OK' && results && results[0]) {
+                handlePlaceSelect(results[0]);
             }
         });
     }, [handlePlaceSelect]);
@@ -237,9 +263,10 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
 
-                // Reverse geocode
+                setMarkerPosition({ lat, lng });
+
                 const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
                     if (status === 'OK' && results && results[0]) {
                         handlePlaceSelect(results[0]);
                     }
@@ -260,100 +287,149 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
 
     return (
         <div className="fixed inset-0 bg-white z-50 flex flex-col">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3">
-                <div className="flex items-center gap-3">
-                    {onClose && (
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                        >
-                            <X size={20} />
-                        </button>
-                    )}
-                    <div className="flex-1">
-                        <h1 className="text-lg font-semibold text-gray-900">Where is your hotel located?</h1>
-                        <p className="text-sm text-gray-600">Pin the exact location on the map</p>
-                    </div>
+            {/* Minimal Header - Airbnb Style */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={onClose}
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                        <X size={24} className="text-gray-700" />
+                    </button>
+                    <h1 className="text-lg font-semibold text-gray-900">Confirm your address</h1>
+                    <div className="w-10" /> {/* Spacer for center alignment */}
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="bg-white border-b border-gray-200 px-4 py-3">
-                <PlacesAutocomplete
-                    onPlaceSelect={handlePlaceSelect}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                />
+            {/* Search Bar with Current Location */}
+            <div className="bg-white px-6 py-4 border-b border-gray-100">
+                <div className="max-w-2xl mx-auto flex gap-3">
+                    <div className="flex-1">
+                        <PlacesAutocomplete
+                            onPlaceSelect={handlePlaceSelect}
+                            searchQuery={searchQuery}
+                            setSearchQuery={setSearchQuery}
+                        />
+                    </div>
+                    <button
+                        onClick={getCurrentLocation}
+                        className="w-12 h-12 flex-shrink-0 bg-white border border-gray-300 rounded-full shadow-sm hover:shadow-md hover:bg-gray-50 transition-all flex items-center justify-center"
+                        title="Use current location"
+                    >
+                        <LocateFixed size={20} className="text-gray-700" />
+                    </button>
+                </div>
             </div>
 
-            {/* Map Container */}
-            <div className="flex-1 relative">
+            {/* Map Container - Full Height */}
+            <div className="flex-1 relative bg-gray-100">
                 <Map
                     center={mapCenter}
-                    zoom={12}
+                    zoom={markerPosition ? 16 : 12}
                     gestureHandling="greedy"
-                    disableDefaultUI={false}
+                    disableDefaultUI={true}
                     onClick={handleMapClick}
-                    mapId="hotel-location-map"
+                    mapId="airbnb-style-map"
                     style={{ width: '100%', height: '100%' }}
+                    zoomControl={true}
+                    zoomControlOptions={{
+                        position: 7, // RIGHT_BOTTOM
+                    }}
                 >
-                    {selectedLocation && (
-                        <AdvancedMarker position={selectedLocation.coordinates}>
-                            <div className="w-10 h-10 bg-[#ff5a5f] rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-                                <MapPin size={20} className="text-white" />
-                            </div>
+                    {markerPosition && (
+                        <AdvancedMarker
+                            position={markerPosition}
+                            draggable={true}
+                            onDragEnd={handleMarkerDrag}
+                        >
+                            <motion.div
+                                initial={{ scale: 0, y: -40 }}
+                                animate={{ scale: 1, y: 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                className="relative"
+                            >
+                                {/* Airbnb-style pin */}
+                                <div className="relative">
+                                    <div className="w-12 h-12 bg-[#FF385C] rounded-full border-4 border-white shadow-xl flex items-center justify-center cursor-grab active:cursor-grabbing">
+                                        <MapPin size={24} className="text-white" fill="white" />
+                                    </div>
+                                    {/* Pin shadow */}
+                                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-black/20 rounded-full blur-sm" />
+                                </div>
+                            </motion.div>
                         </AdvancedMarker>
                     )}
                 </Map>
 
-                {/* Current Location Button */}
-                <button
-                    onClick={getCurrentLocation}
-                    className="absolute bottom-4 right-4 w-12 h-12 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-                >
-                    <Navigation size={20} className="text-gray-700" />
-                </button>
-
-                {/* Map Overlay Info */}
-                {selectedLocation && (
+                {/* Instruction Text Overlay */}
+                {!selectedLocation && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="absolute bottom-4 left-4 right-4"
+                        className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-lg"
                     >
-                        <Card className="p-4 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
-                            <div className="flex items-start gap-3 mb-3">
-                                <MapPin size={20} className="text-[#ff5a5f] flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-gray-900">{selectedLocation.address}</h3>
-                                    <p className="text-sm text-gray-600">{selectedLocation.city}, {selectedLocation.country}</p>
-                                </div>
-                            </div>
-
-                            {/* Confirm Button inside the card */}
-                            <div className="flex gap-2">
-                                {onClose && (
-                                    <Button
-                                        variant="outline"
-                                        onClick={onClose}
-                                        className="flex-1"
-                                    >
-                                        Cancel
-                                    </Button>
-                                )}
-                                <Button
-                                    onClick={handleConfirmLocation}
-                                    className="flex-1 bg-[#ff5a5f] hover:bg-[#ff5a5f]/90 text-white"
-                                >
-                                    <Check size={16} className="mr-2" />
-                                    Confirm Location
-                                </Button>
-                            </div>
-                        </Card>
+                        <p className="text-sm font-medium text-gray-700">Click on the map to pin your location</p>
                     </motion.div>
                 )}
             </div>
+
+            {/* Sticky Bottom Bar - Airbnb Style */}
+            <AnimatePresence>
+                {selectedLocation && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="bg-white border-t border-gray-200 shadow-2xl"
+                    >
+                        <div className="px-6 py-6">
+                            <div className="max-w-4xl mx-auto">
+                                {/* Location Info */}
+                                <div className="mb-4">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                            <MapPin size={24} className="text-[#FF385C]" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-gray-900 text-lg mb-1">{selectedLocation.address}</h3>
+                                            <p className="text-gray-600">{selectedLocation.city}, {selectedLocation.country}</p>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                📍 {selectedLocation.coordinates.lat.toFixed(5)}, {selectedLocation.coordinates.lng.toFixed(5)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Confirmation Note */}
+                                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4">
+                                    <p className="text-sm text-blue-900">
+                                        <span className="font-medium">Tip:</span> You can drag the pin to adjust your exact location
+                                    </p>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={onClose}
+                                        className="flex-1 h-12 rounded-xl border-2 font-medium hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleConfirmLocation}
+                                        className="flex-1 h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                                    >
+                                        <Check size={20} className="mr-2" />
+                                        Confirm Location
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
