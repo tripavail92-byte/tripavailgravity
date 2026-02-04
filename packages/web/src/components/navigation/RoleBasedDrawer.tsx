@@ -75,14 +75,20 @@ export function RoleBasedDrawer() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/auth?role=hotel_manager')}
+                  onClick={() => {
+                    setIsOpen(false)
+                    navigate('/partner/onboarding')
+                  }}
                 >
                   Hotel Partner
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/auth?role=tour_operator')}
+                  onClick={() => {
+                    setIsOpen(false)
+                    navigate('/partner/onboarding')
+                  }}
                 >
                   Tour Operator
                 </Button>

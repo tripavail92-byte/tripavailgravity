@@ -32,10 +32,16 @@ export default function PartnerSelectionPage() {
   ]
 
   const handleSelectPartner = async (mode: 'hotel_manager' | 'tour_operator') => {
+    // If not logged in, redirect to auth with selected role
+    if (!activeRole) {
+      navigate(`/auth?role=${mode}`)
+      return
+    }
+
     // Check if user already has a partner role
-    if (activeRole?.role_type !== 'traveller') {
+    if (activeRole.role_type !== 'traveller') {
       alert(
-        `You have already selected ${activeRole?.role_type}. Partner role selection is permanent.`,
+        `You have already selected ${activeRole.role_type}. Partner role selection is permanent.`,
       )
       return
     }
@@ -65,7 +71,7 @@ export default function PartnerSelectionPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Choose Your Partner Type</h1>
           <p className="text-lg text-gray-600">Select how you want to earn with TripAvail</p>
-          {activeRole?.role_type !== 'traveller' && (
+          {activeRole && activeRole.role_type !== 'traveller' && (
             <p className="mt-4 text-amber-600 font-medium">
               ⚠️ You have already selected a partner role. This choice is permanent.
             </p>
@@ -113,7 +119,7 @@ export default function PartnerSelectionPage() {
                     className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    disabled={isLoading || activeRole?.role_type !== 'traveller'}
+                    disabled={isLoading || (!!activeRole && activeRole.role_type !== 'traveller')}
                   >
                     <span>Get Started</span>
                     <ArrowRight className="w-4 h-4" />
