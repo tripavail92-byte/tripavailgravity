@@ -323,42 +323,39 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="absolute bottom-20 left-4 right-4"
+                        className="absolute bottom-4 left-4 right-4"
                     >
-                        <Card className="p-4 bg-white/95 backdrop-blur-sm border border-gray-200">
-                            <div className="flex items-start gap-3">
+                        <Card className="p-4 bg-white/95 backdrop-blur-sm border border-gray-200 shadow-lg">
+                            <div className="flex items-start gap-3 mb-3">
                                 <MapPin size={20} className="text-[#ff5a5f] flex-shrink-0 mt-0.5" />
                                 <div className="flex-1">
                                     <h3 className="font-semibold text-gray-900">{selectedLocation.address}</h3>
                                     <p className="text-sm text-gray-600">{selectedLocation.city}, {selectedLocation.country}</p>
                                 </div>
                             </div>
+
+                            {/* Confirm Button inside the card */}
+                            <div className="flex gap-2">
+                                {onClose && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={onClose}
+                                        className="flex-1"
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
+                                <Button
+                                    onClick={handleConfirmLocation}
+                                    className="flex-1 bg-[#ff5a5f] hover:bg-[#ff5a5f]/90 text-white"
+                                >
+                                    <Check size={16} className="mr-2" />
+                                    Confirm Location
+                                </Button>
+                            </div>
                         </Card>
                     </motion.div>
                 )}
-            </div>
-
-            {/* Bottom Action Bar */}
-            <div className="bg-white border-t border-gray-200 px-4 py-4">
-                <div className="flex gap-3">
-                    {onClose && (
-                        <Button
-                            variant="outline"
-                            onClick={onClose}
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                    )}
-                    <Button
-                        onClick={handleConfirmLocation}
-                        disabled={!selectedLocation}
-                        className="flex-1 bg-[#ff5a5f] hover:bg-[#ff5a5f]/90 text-white disabled:bg-gray-200 disabled:text-gray-500"
-                    >
-                        <Check size={16} className="mr-2" />
-                        Confirm Location
-                    </Button>
-                </div>
             </div>
         </div>
     );
