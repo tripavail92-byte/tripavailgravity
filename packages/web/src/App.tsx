@@ -9,6 +9,7 @@ import LandingPage from '@/pages/LandingPage'
 import PartnerSelectionPage from '@/pages/partner/PartnerSelectionPage'
 import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage'
 import SearchPage from '@/pages/traveller/SearchPage'
+import ListHotelPage from '@/pages/manager/ListHotelPage'
 
 function App() {
   const { initialize, initialized } = useAuth()
@@ -40,6 +41,9 @@ function App() {
           <Route path="/operator/dashboard" element={<div>Tour Operator Dashboard (Coming Soon)</div>} />
           <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
         </Route>
+
+        {/* Full Screen Flows */}
+        <Route path="/manager/list-hotel" element={<ListHotelPage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

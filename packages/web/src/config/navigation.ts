@@ -35,7 +35,7 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
   ],
   hotel_manager: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
-    { label: 'List Your Hotel', icon: Building2, href: '/manager/properties/new' },
+    { label: 'List Your Hotel', icon: Building2, href: '/manager/list-hotel' },
     { label: 'List Packages', icon: Package, href: '/manager/packages' },
     { label: 'Calendar', icon: Calendar, href: '/manager/calendar' },
     { label: 'Bookings', icon: BookCheck, href: '/manager/bookings' },
