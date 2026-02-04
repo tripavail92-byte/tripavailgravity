@@ -212,20 +212,34 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
     }, [map]);
 
     const handleMapClick = useCallback((event: any) => {
+        console.log('🗺️ Map clicked! Event:', event);
         const latLng = event.detail?.latLng;
-        if (!latLng) return;
+        console.log('🗺️ Extracted latLng from event.detail:', latLng);
+
+        if (!latLng) {
+            console.log('❌ No latLng in event.detail!');
+            return;
+        }
 
         const lat = latLng.lat;
         const lng = latLng.lng;
+        console.log('🗺️ Coordinates:', { lat, lng });
 
+        console.log('📍 Setting marker position...');
         setMarkerPosition({ lat, lng });
 
         // Reverse geocode to get address
+        console.log('🔄 Starting reverse geocoding...');
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+            console.log('🔄 Geocoding complete. Status:', status);
+            console.log('🔄 Results:', results);
+
             if (status === 'OK' && results && results[0]) {
+                console.log('✅ Geocoding successful, calling handlePlaceSelect');
                 handlePlaceSelect(results[0]);
             } else {
+                console.log('⚠️ Geocoding failed or no results, creating fallback location');
                 const locationData: LocationData = {
                     address: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                     city: 'Selected Location',
@@ -234,6 +248,7 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                     coordinates: { lat, lng },
                     placeId: `custom_${Date.now()}`,
                 };
+                console.log('⚠️ Fallback locationData:', locationData);
                 setSelectedLocation(locationData);
             }
         });
