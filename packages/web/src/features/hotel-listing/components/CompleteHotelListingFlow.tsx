@@ -21,13 +21,14 @@ import {
 import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors';
 import { AirbnbBottomNav } from './ui/AirbnbBottomNav';
 
+// Placeholder steps for Phase 3+
+const PlaceholderStep = () => <div>Step content coming soon</div>;
+
 // Step Components
 import { PropertyTypeStep } from './steps/PropertyTypeStep';
 import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
 import { LocationStep } from './steps/LocationStep';
-
-// Placeholder steps for Phase 3+
-const PlaceholderStep = () => <div>Step content coming soon</div>;
+import { AmenitiesStep } from './steps/AmenitiesStep';
 
 interface Step {
     id: number;
@@ -153,7 +154,7 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
             id: 4,
             title: 'Amenities & Features',
             description: 'What facilities do you offer?',
-            component: PlaceholderStep,
+            component: AmenitiesStep,
             completed: completedSteps.includes(4),
             required: true
         },
@@ -402,6 +403,8 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                         handleStepComplete(2, { hotelName: hotelData.hotelName });
                     } else if (currentStepData?.id === 3 && hotelData.coordinates) {
                         handleStepComplete(3, { coordinates: hotelData.coordinates });
+                    } else if (currentStepData?.id === 4 && hotelData.amenities && hotelData.amenities.length > 0) {
+                        handleStepComplete(4, { amenities: hotelData.amenities });
                     } else if (currentStep < steps.length) {
                         // For placeholder steps
                         setCurrentStep(currentStep + 1);
@@ -414,7 +417,8 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                 nextDisabled={
                     (currentStep === 1 && !hotelData.propertyType) ||
                     (currentStep === 2 && (!hotelData.hotelName || !hotelData.description || !hotelData.contactEmail)) ||
-                    (currentStep === 3 && !hotelData.coordinates)
+                    (currentStep === 3 && !hotelData.coordinates) ||
+                    (currentStep === 4 && (!hotelData.amenities || hotelData.amenities.length === 0))
                 }
             />
         </div>
