@@ -15,5 +15,8 @@
     "pg": "^8.17.2",
     "turbo": "^1.11.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@vis.gl/react-google-maps": "^1.7.1"
   }
 }
