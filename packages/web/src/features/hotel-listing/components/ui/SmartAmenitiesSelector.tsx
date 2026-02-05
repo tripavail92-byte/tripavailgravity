@@ -122,20 +122,10 @@ export default function SmartAmenitiesSelector({
     return (
       <motion.button
         onClick={() => toggleAmenity(amenity.id)}
-        className={`relative ${isSelected
-          ? 'border-[1.5px]'
-          : 'border'
+        className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg transition-all ${isSelected
+            ? 'border-[1.5px] border-black bg-white'
+            : 'border border-gray-300 bg-white hover:border-gray-400'
           }`}
-        style={{
-          width: '100%',
-          maxWidth: '160px',
-          height: '130px',
-          padding: '20px 12px',
-          borderRadius: '8px',
-          borderColor: isSelected ? '#000000' : '#E0E0E0',
-          background: '#FFFFFF',
-          transition: 'border-color 0.2s ease, border-width 0.2s ease'
-        }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
