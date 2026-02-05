@@ -3,6 +3,7 @@ import { Coffee, Wifi, Car, Waves, Dumbbell, Utensils, Accessibility, Plane, Bat
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion } from 'motion/react';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 export interface ServicesData {
     breakfast: 'included' | 'optional' | 'none';
@@ -25,7 +26,7 @@ export interface ServicesData {
 
 interface ServicesStepProps {
     existingData?: { services?: ServicesData };
-    onUpdate?: (data: any) => void;
+    onUpdate?: (data: StepData) => void;
 }
 
 const FACILITY_ICONS = {
@@ -123,8 +124,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ breakfast: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.breakfast === opt.value
-                                        ? 'bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-200'
-                                        : 'hover:bg-gray-50 text-gray-600'
+                                    ? 'bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-200'
+                                    : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
                                 {opt.label}
@@ -152,8 +153,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ parking: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.parking === opt.value
-                                        ? 'bg-blue-50 text-blue-700 font-medium ring-1 ring-blue-200'
-                                        : 'hover:bg-gray-50 text-gray-600'
+                                    ? 'bg-blue-50 text-blue-700 font-medium ring-1 ring-blue-200'
+                                    : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
                                 {opt.label}
@@ -181,8 +182,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ wifi: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.wifi === opt.value
-                                        ? 'bg-purple-50 text-purple-700 font-medium ring-1 ring-purple-200'
-                                        : 'hover:bg-gray-50 text-gray-600'
+                                    ? 'bg-purple-50 text-purple-700 font-medium ring-1 ring-purple-200'
+                                    : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
                                 {opt.label}

@@ -3,6 +3,7 @@ import { Upload, X, Image as ImageIcon, Star, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'motion/react';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 export interface Photo {
     id: string;
@@ -20,7 +21,7 @@ export interface PhotoData {
 
 interface PhotosStepProps {
     existingData?: { photos?: PhotoData };
-    onUpdate?: (data: any) => void;
+    onUpdate?: (data: StepData) => void;
 }
 
 export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
