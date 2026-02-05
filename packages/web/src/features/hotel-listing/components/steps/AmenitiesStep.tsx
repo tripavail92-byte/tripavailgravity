@@ -185,7 +185,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
 
   return (
     <>
-      <div className="space-y-6" style={{ paddingBottom: selectedAmenities.length > 0 ? '120px' : '0', paddingLeft: '20px', paddingRight: '20px' }}>
+      <div className={`space-y-6 px-5 ${selectedAmenities.length > 0 ? 'pb-[120px]' : 'pb-0'}`}>
         {/* Search Bar - At Top */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -244,7 +244,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
         )}
 
         {/* Amenity Categories */}
-        <div style={{ marginTop: '32px' }}>
+        <div className="mt-8">
           {Object.entries(filteredCategories).map(([category, amenities], categoryIndex) => {
             const isExpanded = expandedCategories.includes(category) || searchQuery;
             const categoryAmenities = amenities as any[];
@@ -256,19 +256,18 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: (categoryIndex * 0.05) + 0.5 }}
-                style={{ marginBottom: '32px' }}
+                className="mb-8"
               >
                 <Card className="overflow-hidden shadow-none border-gray-200 dark:border-gray-700 dark:bg-gray-800">
                   {!searchQuery && (
                     <button
                       onClick={() => toggleCategory(category)}
-                      className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                      style={{ borderBottom: '1px solid #EAEAEA' }}
+                      className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-200"
                     >
                       <div className="flex items-center justify-between">
-                        <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#000000' }}>{category}</h3>
+                        <h3 className="text-[15px] font-medium text-black dark:text-white">{category}</h3>
                         <div className="flex items-center gap-2">
-                          <span style={{ fontSize: '14px', color: '#8C8C8C' }}>
+                          <span className="text-sm text-gray-500">
                             {categoryAmenities.filter(amenity => selectedAmenities.includes(amenity.id)).length}/
                             {categoryAmenities.length}
                           </span>
@@ -276,7 +275,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                             animate={{ rotate: isExpanded ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <svg className="w-5 h-5" style={{ color: '#8C8C8C' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </motion.div>
@@ -294,7 +293,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="grid grid-cols-2" style={{ gap: '18px 12px', padding: '20px' }}>
+                        <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
                           {categoryAmenities.map((amenity, amenityIndex) => {
                             const isSelected = selectedAmenities.includes(amenity.id);
                             const isHovered = hoveredAmenity === amenity.id;
@@ -315,24 +314,16 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                 onMouseEnter={() => setHoveredAmenity(amenity.id)}
                                 onMouseLeave={() => setHoveredAmenity(null)}
                                 className={`relative ${isSelected
-                                    ? 'border-[1.5px]'
-                                    : 'border'
+                                  ? 'border-[1.5px]'
+                                  : 'border'
                                   }`}
-                                style={{
-                                  width: '100%',
-                                  maxWidth: '160px',
-                                  height: '130px',
-                                  padding: '20px 12px',
-                                  borderRadius: '8px',
-                                  borderColor: isSelected ? '#000000' : '#E0E0E0',
-                                  background: '#FFFFFF',
-                                  transition: 'border-color 0.2s ease, border-width 0.2s ease'
-                                }}
+                                className={`w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${isSelected ? 'border-black' : 'border-gray-300'
+                                  }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                               >
                                 {/* Vertically Stacked: Icon Above Text, Both Centered */}
-                                <div className="flex flex-col items-center justify-center h-full" style={{ gap: '12px' }}>
+                                <div className="flex flex-col items-center justify-center h-full gap-3">
                                   {/* Icon - 40x40px with scale animation on selection */}
                                   <motion.div
                                     className="flex-shrink-0"
@@ -348,14 +339,8 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
 
                                   {/* Amenity Name - Centered */}
                                   <div className="text-center">
-                                    <h4
-                                      style={{
-                                        fontSize: '15px',
-                                        lineHeight: '20px',
-                                        fontWeight: isSelected ? 500 : 400,
-                                        color: '#1A1A1A'
-                                      }}
-                                    >
+                                    <h4 className={`text-[15px] leading-5 text-gray-900 ${isSelected ? 'font-medium' : 'font-normal'
+                                      }`}>
                                       {amenity.name}
                                     </h4>
                                   </div>
@@ -399,14 +384,11 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
           >
             <div className="max-w-4xl mx-auto px-5 py-4">
               <div className="flex items-start gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: 'rgba(157, 78, 221, 0.15)' }}
-                >
-                  <Check className="w-4 h-4" style={{ color: '#9D4EDD' }} />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-100">
+                  <Check className="w-4 h-4 text-purple-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium mb-2" style={{ color: '#6B21A8' }}>
+                  <h3 className="font-medium mb-2 text-purple-800">
                     {selectedAmenities.length} amenities selected
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -415,11 +397,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                       return amenity ? (
                         <span
                           key={amenityId}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs"
-                          style={{
-                            backgroundColor: 'rgba(157, 78, 221, 0.15)',
-                            color: '#7C3AED'
-                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700"
                         >
                           {amenity.name}
                         </span>
@@ -427,11 +405,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                     })}
                     {selectedAmenities.length > 5 && (
                       <span
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs"
-                        style={{
-                          backgroundColor: 'rgba(157, 78, 221, 0.15)',
-                          color: '#7C3AED'
-                        }}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700"
                       >
                         +{selectedAmenities.length - 5} more
                       </span>
