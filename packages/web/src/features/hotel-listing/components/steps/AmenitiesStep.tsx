@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Check, Search, X } from 'lucide-react';
+import { Check, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -313,11 +313,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                 onClick={() => toggleAmenity(amenity.id)}
                                 onMouseEnter={() => setHoveredAmenity(amenity.id)}
                                 onMouseLeave={() => setHoveredAmenity(null)}
-                                className={`relative ${isSelected
-                                  ? 'border-[1.5px]'
-                                  : 'border'
-                                  }`}
-                                className={`w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${isSelected ? 'border-black' : 'border-gray-300'
+                                className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${isSelected ? 'border-[1.5px] border-black' : 'border border-gray-300'
                                   }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
