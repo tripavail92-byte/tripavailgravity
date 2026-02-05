@@ -32,6 +32,8 @@ import { AmenitiesStep } from './steps/AmenitiesStep';
 import { RoomsStep } from './steps/RoomsStep';
 import { PoliciesStep } from './steps/PoliciesStep';
 import { PhotosStep } from './steps/PhotosStep';
+import { ServicesStep } from './steps/ServicesStep';
+import { ReviewStep } from './steps/ReviewStep';
 
 interface Step {
     id: number;
@@ -143,18 +145,9 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
         propertyType: initialPropertyType || '',
         amenities: [],
         rooms: [],
-        houseRules: [],
-        photos: {
-            exterior: [],
-            lobby: [],
-            rooms: [],
-            amenities: [],
-            dining: [],
-            other: []
-        },
-        services: [],
-        languages: [],
-        accessibility: []
+        policies: undefined,
+        photos: { propertyPhotos: [] },
+        services: undefined
     });
 
     const steps: Step[] = [
@@ -217,19 +210,19 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
             required: true
         },
         {
-            id: 12,
+            id: 8,
             title: 'Additional Services',
             description: 'Extra services and accessibility',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(12),
+            component: ServicesStep,
+            completed: completedSteps.includes(8),
             required: false
         },
         {
-            id: 13,
+            id: 9,
             title: 'Review & Publish',
             description: 'Review your listing before going live',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(13),
+            component: ReviewStep,
+            completed: completedSteps.includes(9),
             required: true
         }
     ];
