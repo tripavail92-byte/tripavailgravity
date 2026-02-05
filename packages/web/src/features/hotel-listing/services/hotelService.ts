@@ -1,4 +1,4 @@
-import { supabase } from '@tripfinal/shared';
+import { supabase } from '../../../../../shared/src/core/client';
 import { HotelData } from '../components/CompleteHotelListingFlow';
 
 /*

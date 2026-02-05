@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyDescriptionAI } from '../ui/PropertyDescriptionAI';
@@ -79,9 +80,11 @@ export function PropertyDetailsStep({ onComplete, existingData, onUpdate, onBack
                     <label className="block text-sm font-medium text-gray-700">
                         {propertyType} Description *
                     </label>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setShowAISuggestions(!showAISuggestions)}
-                        className="text-xs text-purple-600 hover:text-purple-700 transition-colors flex items-center gap-1"
+                        className="text-xs text-purple-600 hover:text-purple-700 h-auto p-0"
                     >
                         <motion.div
                             animate={{ rotate: showAISuggestions ? 180 : 0 }}
@@ -90,7 +93,7 @@ export function PropertyDetailsStep({ onComplete, existingData, onUpdate, onBack
                             ✨
                         </motion.div>
                         AI Assistant
-                    </button>
+                    </Button>
                 </div>
 
                 <Textarea

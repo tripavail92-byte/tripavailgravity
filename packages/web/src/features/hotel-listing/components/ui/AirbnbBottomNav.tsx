@@ -1,4 +1,4 @@
-import React from 'react';
+import { Button } from '@/components/ui/button';
 import { StepsProgressBar } from './StepsProgressBar';
 
 interface AirbnbBottomNavProps {
@@ -43,28 +43,26 @@ export function AirbnbBottomNav({
                 <div className="flex items-center justify-between">
                     {/* Back Button - Airbnb style text with underline */}
                     {showBack ? (
-                        <button
+                        <Button
+                            variant="link"
                             onClick={onBack}
-                            className="text-gray-900 font-semibold underline decoration-2 underline-offset-4 hover:text-gray-700 transition-colors"
+                            className="text-gray-900 font-semibold underline decoration-2 underline-offset-4 hover:text-gray-700 p-0"
                         >
                             {backLabel}
-                        </button>
+                        </Button>
                     ) : (
                         <div />
                     )}
 
                     {/* Next Button - Airbnb style black rounded button */}
                     {showNext && (
-                        <button
+                        <Button
                             onClick={onNext}
                             disabled={nextDisabled}
-                            className={`px-6 py-3 rounded-lg font-semibold transition-all ${nextDisabled
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-black text-white hover:bg-gray-800'
-                                }`}
+                            className="px-6 py-3 bg-black text-white hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400"
                         >
                             {nextLabel}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

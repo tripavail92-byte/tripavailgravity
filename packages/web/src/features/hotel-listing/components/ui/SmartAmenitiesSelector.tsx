@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   PoolIcon,
   HotTubIcon,
@@ -122,8 +123,8 @@ export default function SmartAmenitiesSelector({
       <motion.button
         onClick={() => toggleAmenity(amenity.id)}
         className={`relative ${isSelected
-            ? 'border-[1.5px]'
-            : 'border'
+          ? 'border-[1.5px]'
+          : 'border'
           }`}
         style={{
           width: '100%',
@@ -181,10 +182,10 @@ export default function SmartAmenitiesSelector({
         style={{ marginBottom: '32px' }}
       >
         <div className="overflow-hidden shadow-none border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-lg">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => onToggleCategory('🌟 Standout Amenities')}
-            className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-            style={{ borderBottom: isStandoutExpanded ? '1px solid #EAEAEA' : 'none' }}
+            className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-none border-b border-gray-200 data-[state=expanded]:border-b"
           >
             <div className="flex items-center justify-between">
               <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#000000' }}>
@@ -204,7 +205,7 @@ export default function SmartAmenitiesSelector({
                 </motion.div>
               </div>
             </div>
-          </button>
+          </Button>
 
           <AnimatePresence>
             {isStandoutExpanded && (
@@ -239,10 +240,10 @@ export default function SmartAmenitiesSelector({
         style={{ marginBottom: '32px' }}
       >
         <div className="overflow-hidden shadow-none border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-lg">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => onToggleCategory('⭐ Guest Essentials')}
-            className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-            style={{ borderBottom: isEssentialsExpanded ? '1px solid #EAEAEA' : 'none' }}
+            className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-none border-b border-gray-200 data-[state=expanded]:border-b"
           >
             <div className="flex items-center justify-between">
               <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#000000' }}>
@@ -262,7 +263,7 @@ export default function SmartAmenitiesSelector({
                 </motion.div>
               </div>
             </div>
-          </button>
+          </Button>
 
           <AnimatePresence>
             {isEssentialsExpanded && (

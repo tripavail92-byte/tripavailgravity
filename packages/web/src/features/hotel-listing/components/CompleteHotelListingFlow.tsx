@@ -46,8 +46,8 @@ interface Step {
     required: boolean;
 }
 
-interface HotelData {
 export interface HotelData {
+    // Basic Info
     propertyType: string;
     hotelName: string;
     description: string;
