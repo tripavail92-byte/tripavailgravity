@@ -5,11 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { getAmenityIcon } from '../../assets/AnimatedAmenityIcons';
 import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 interface AmenitiesStepProps {
-  onComplete: (data: any) => void;
-  existingData?: any;
-  onUpdate?: (data: any) => void;
+  onComplete: (data: StepData) => void;
+  existingData?: StepData;
+  onUpdate?: (data: StepData) => void;
 }
 
 interface AmenityItem {

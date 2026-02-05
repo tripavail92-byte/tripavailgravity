@@ -134,6 +134,9 @@ export interface HotelData {
     };
 }
 
+// Shared type for step component props - allows partial updates
+export type StepData = Partial<HotelData>;
+
 interface CompleteHotelListingFlowProps {
     onComplete?: (data: Partial<HotelData>) => void;
     onBack: () => void;
