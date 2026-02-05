@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PropertyDescriptionAI } from '../ui/PropertyDescriptionAI';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 interface PropertyDetailsStepProps {
-    onComplete: (data: any) => void;
-    existingData?: any;
-    onUpdate: (data: any) => void;
+    onComplete: (data: StepData) => void;
+    existingData?: StepData;
+    onUpdate: (data: StepData) => void;
     onBack: () => void;
 }
 

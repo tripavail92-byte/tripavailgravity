@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { AnimatedPropertyTypeIcons } from '../../assets/modern/AnimatedPropertyTypeIcons';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 interface PropertyTypeStepProps {
-    onComplete: (data: any) => void;
-    existingData?: any;
-    onUpdate: (data: any) => void;
+    onComplete: (data: StepData) => void;
+    existingData?: StepData;
+    onUpdate: (data: StepData) => void;
     onBack: () => void;
 }
 
