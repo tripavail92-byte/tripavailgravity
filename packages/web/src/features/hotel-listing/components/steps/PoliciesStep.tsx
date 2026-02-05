@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'motion/react';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 export interface PoliciesData {
     checkIn: string;
@@ -29,7 +30,7 @@ export interface PoliciesData {
 
 interface PoliciesStepProps {
     existingData?: { policies?: PoliciesData };
-    onUpdate?: (data: any) => void;
+    onUpdate?: (data: StepData) => void;
 }
 
 const TIME_OPTIONS = Array.from({ length: 24 }, (_, i) => {
@@ -153,8 +154,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
                             variant="outline"
                             onClick={() => handleUpdate({ cancellationPolicy: policy.value })}
                             className={`p-4 text-left h-auto ${policies.cancellationPolicy === policy.value
-                                    ? 'border-green-600 bg-green-50'
-                                    : 'border-gray-200'
+                                ? 'border-green-600 bg-green-50'
+                                : 'border-gray-200'
                                 }`}
                         >
                             <div className="font-semibold text-gray-900 mb-1">{policy.label}</div>

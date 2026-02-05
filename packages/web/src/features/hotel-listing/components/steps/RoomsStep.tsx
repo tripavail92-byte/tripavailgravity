@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'motion/react';
 import { RoomWizardModal } from './RoomWizardModal';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 export interface BedConfig {
     type: 'king' | 'queen' | 'double' | 'twin' | 'single' | 'sofaBed';
@@ -26,11 +27,11 @@ export interface RoomType {
 }
 
 interface RoomsStepProps {
-    onComplete?: (data: any) => void;
+    onComplete?: (data: StepData) => void;
     existingData?: {
         rooms?: RoomType[];
     };
-    onUpdate?: (data: any) => void;
+    onUpdate?: (data: StepData) => void;
 }
 
 export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps) {
