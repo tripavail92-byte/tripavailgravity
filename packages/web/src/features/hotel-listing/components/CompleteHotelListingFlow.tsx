@@ -30,6 +30,8 @@ import { PropertyDetailsStep } from './steps/PropertyDetailsStep';
 import { LocationStep } from './steps/LocationStep';
 import { AmenitiesStep } from './steps/AmenitiesStep';
 import { RoomsStep } from './steps/RoomsStep';
+import { PoliciesStep } from './steps/PoliciesStep';
+import { PhotosStep } from './steps/PhotosStep';
 
 interface Step {
     id: number;
@@ -169,50 +171,18 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
         },
         {
             id: 6,
-            title: 'Room Basic Info',
-            description: 'Tell us about your room',
-            component: PlaceholderStep,
+            title: 'Policies & Rules',
+            description: 'Set your property policies',
+            component: PoliciesStep,
             completed: completedSteps.includes(6),
             required: true
         },
         {
             id: 7,
-            title: 'Bed Configuration',
-            description: 'Select bed types',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(7),
-            required: true
-        },
-        {
-            id: 8,
-            title: 'Room Amenities',
-            description: 'Room-specific amenities',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(8),
-            required: true
-        },
-        {
-            id: 9,
-            title: 'Room Summary',
-            description: 'Review and save room',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(9),
-            required: true
-        },
-        {
-            id: 10,
-            title: 'Policies & Rules',
-            description: 'Set your property policies',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(10),
-            required: true
-        },
-        {
-            id: 11,
             title: 'Photos & Media',
             description: 'Showcase your property',
-            component: PlaceholderStep,
-            completed: completedSteps.includes(11),
+            component: PhotosStep,
+            completed: completedSteps.includes(7),
             required: true
         },
         {
