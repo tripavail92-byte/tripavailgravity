@@ -162,18 +162,22 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                                             {getRoomTypeLabel(room.type)}
                                         </span>
                                         <div className="flex gap-2">
-                                            <button
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={() => handleEditRoom(room)}
-                                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                                className="p-2"
                                             >
                                                 <Edit3 size={16} className="text-gray-600" />
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 onClick={() => handleDeleteRoom(room.id)}
-                                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                                className="p-2 hover:bg-red-50"
                                             >
                                                 <Trash2 size={16} className="text-red-600" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
 

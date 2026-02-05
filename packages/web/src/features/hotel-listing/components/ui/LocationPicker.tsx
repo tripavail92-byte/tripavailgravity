@@ -316,12 +316,14 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
             {/* Minimal Header - Airbnb Style */}
             <div className="bg-white border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={onClose}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 -ml-2 rounded-full"
                     >
                         <X size={24} className="text-gray-700" />
-                    </button>
+                    </Button>
                     <h1 className="text-lg font-semibold text-gray-900">Confirm your address</h1>
                     <div className="w-10" /> {/* Spacer for center alignment */}
                 </div>
@@ -337,13 +339,15 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                             setSearchQuery={setSearchQuery}
                         />
                     </div>
-                    <button
+                    <Button
+                        variant="outline"
+                        size="icon"
                         onClick={getCurrentLocation}
-                        className="w-12 h-12 flex-shrink-0 bg-white border border-gray-300 rounded-full shadow-sm hover:shadow-md hover:bg-gray-50 transition-all flex items-center justify-center"
+                        className="w-12 h-12 rounded-full"
                         title="Use current location"
                     >
                         <LocateFixed size={20} className="text-gray-700" />
-                    </button>
+                    </Button>
                 </div>
             </div>
 

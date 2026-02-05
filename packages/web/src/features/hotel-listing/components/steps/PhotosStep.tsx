@@ -177,8 +177,8 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
             {/* Upload Zone */}
             <Card
                 className={`p-8 border-2 border-dashed transition-all ${isDragging
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-gray-300 hover:border-gray-400'
                     }`}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -265,20 +265,24 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
 
                                     {/* Overlay Actions */}
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
-                                        <button
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => setCoverPhoto(photo.id)}
-                                            className="px-3 py-1.5 bg-white text-gray-900 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors flex items-center gap-1"
+                                            className="px-3 py-1.5 bg-white text-gray-900 hover:bg-gray-100"
                                         >
                                             <Star size={14} />
                                             Set as Cover
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
                                             onClick={() => deletePhoto(photo.id)}
-                                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors flex items-center gap-1"
+                                            className="px-3 py-1.5"
                                         >
                                             <X size={14} />
                                             Delete
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     {/* File Info */}

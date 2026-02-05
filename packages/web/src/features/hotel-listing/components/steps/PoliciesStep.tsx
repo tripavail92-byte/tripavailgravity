@@ -148,17 +148,18 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     {CANCELLATION_POLICIES.map((policy) => (
-                        <button
+                        <Button
                             key={policy.value}
+                            variant="outline"
                             onClick={() => handleUpdate({ cancellationPolicy: policy.value })}
-                            className={`p-4 border-2 rounded-lg text-left transition-all ${policies.cancellationPolicy === policy.value
+                            className={`p-4 text-left h-auto ${policies.cancellationPolicy === policy.value
                                     ? 'border-green-600 bg-green-50'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    : 'border-gray-200'
                                 }`}
                         >
                             <div className="font-semibold text-gray-900 mb-1">{policy.label}</div>
                             <div className="text-sm text-gray-600">{policy.description}</div>
-                        </button>
+                        </Button>
                     ))}
                 </div>
 
