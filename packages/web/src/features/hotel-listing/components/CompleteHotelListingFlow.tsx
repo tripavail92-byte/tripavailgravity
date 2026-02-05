@@ -34,6 +34,8 @@ import { PoliciesStep } from './steps/PoliciesStep';
 import { PhotosStep } from './steps/PhotosStep';
 import { ServicesStep } from './steps/ServicesStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { hotelService } from '../services/hotelService';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Step {
     id: number;
@@ -149,6 +151,8 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
         photos: { propertyPhotos: [] },
         services: undefined
     });
+    const [isPublishing, setIsPublishing] = useState(false);
+    const { user } = useAuth();
 
     const steps: Step[] = [
         {
@@ -291,6 +295,28 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
         }
     };
 
+    const handlePublish = async () => {
+        if (!user?.id) {
+            console.error('No user ID found');
+            return;
+        }
+
+        setIsPublishing(true);
+        try {
+            const result = await hotelService.publishListing(hotelData, user.id);
+            if (result.success) {
+                console.log('Published successfully!', result.hotelId);
+                if (onComplete) onComplete(hotelData);
+            } else {
+                console.error('Failed to publish', result.error);
+            }
+        } catch (error) {
+            console.error('Publish error:', error);
+        } finally {
+            setIsPublishing(false);
+        }
+    };
+
     const currentStepData = steps.find(step => step.id === currentStep);
 
     return (
@@ -369,6 +395,11 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                                         setHotelData(updatedData);
                                     }}
                                     onBack={currentStep === 1 ? onBack : () => setCurrentStep(currentStep - 1)}
+                                    // Props for ReviewStep
+                                    data={hotelData}
+                                    onEditStep={(stepId: number) => setCurrentStep(stepId)}
+                                    onPublish={handlePublish}
+                                    isPublishing={isPublishing}
                                 />
                             </div>
                         </motion.div>
