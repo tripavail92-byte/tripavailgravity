@@ -139,8 +139,8 @@ export default function SmartAmenitiesSelector({
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        {/* Vertically Stacked: Icon Above Text, Both Centered */}
-        <div className="flex flex-col items-center justify-center h-full" style={{ gap: '12px' }}>
+        {/* Vertically St acked: Icon Above Text, Both Centered */}
+        <div className="flex flex-col items-center justify-center h-full gap-3">
           {/* Icon - 40x40px with scale animation on selection */}
           <motion.div
             className="flex-shrink-0"
@@ -152,14 +152,8 @@ export default function SmartAmenitiesSelector({
 
           {/* Amenity Name - Centered */}
           <div className="text-center">
-            <h4
-              style={{
-                fontSize: '15px',
-                lineHeight: '20px',
-                fontWeight: isSelected ? 500 : 400,
-                color: '#1A1A1A'
-              }}
-            >
+            <h4 className={`text-[15px] leading-5 text-gray-900 ${isSelected ? 'font-medium' : 'font-normal'
+              }`}>
               {amenity.name}
             </h4>
           </div>
@@ -172,7 +166,7 @@ export default function SmartAmenitiesSelector({
   const isEssentialsExpanded = expandedCategories.includes('⭐ Guest Essentials');
 
   return (
-    <div style={{ marginTop: '32px' }}>
+    <div className="mt-8">
       {/* Standout Amenities Section - Collapsible Card */}
       <motion.div
         ref={(el) => refs.current['🌟 Standout Amenities'] = el}
@@ -188,18 +182,18 @@ export default function SmartAmenitiesSelector({
             className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-none border-b border-gray-200 data-[state=expanded]:border-b"
           >
             <div className="flex items-center justify-between">
-              <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#000000' }}>
+              <h3 className="text-[15px] font-medium text-black dark:text-white">
                 🌟 Standout Amenities
               </h3>
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: '14px', color: '#8C8C8C' }}>
+                <span className="text-sm text-gray-500">
                   {selectedAmenities.filter(id => STANDOUT_AMENITIES.find(a => a.id === id)).length}/{STANDOUT_AMENITIES.length}
                 </span>
                 <motion.div
                   animate={{ rotate: isStandoutExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <svg className="w-5 h-5" style={{ color: '#8C8C8C' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </motion.div>
@@ -246,7 +240,7 @@ export default function SmartAmenitiesSelector({
             className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-none border-b border-gray-200 data-[state=expanded]:border-b"
           >
             <div className="flex items-center justify-between">
-              <h3 style={{ fontSize: '15px', fontWeight: 500, color: '#000000' }}>
+              <h3 className="text-[15px] font-medium text-black dark:text-white">
                 ⭐ Guest Essentials
               </h3>
               <div className="flex items-center gap-2">
@@ -257,7 +251,7 @@ export default function SmartAmenitiesSelector({
                   animate={{ rotate: isEssentialsExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <svg className="w-5 h-5" style={{ color: '#8C8C8C' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </motion.div>

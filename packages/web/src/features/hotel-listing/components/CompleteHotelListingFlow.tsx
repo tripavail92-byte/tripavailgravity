@@ -328,13 +328,14 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                 transition={{ duration: 0.3 }}
                 className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b border-gray-100 px-4 py-3"
             >
-                <button
+                <Button
+                    variant="ghost"
                     onClick={handleSaveAndExit}
-                    className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors group"
+                    className="flex items-center gap-2 text-gray-700 hover:text-gray-900 group"
                 >
                     <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                     <span className="font-medium">Save & Exit</span>
-                </button>
+                </Button>
             </motion.div>
 
             {/* Scrollable Step Content */}
