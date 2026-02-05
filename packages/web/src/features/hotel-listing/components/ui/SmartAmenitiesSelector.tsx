@@ -173,7 +173,7 @@ export default function SmartAmenitiesSelector({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={{ marginBottom: '32px' }}
+        className="mb-8"
       >
         <div className="overflow-hidden shadow-none border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-lg">
           <Button
@@ -210,7 +210,7 @@ export default function SmartAmenitiesSelector({
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <div className="grid grid-cols-2" style={{ gap: '18px 12px', padding: '20px' }}>
+                <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
                   {STANDOUT_AMENITIES.map((amenity) => (
                     <AmenityCard
                       key={amenity.id}
@@ -231,7 +231,7 @@ export default function SmartAmenitiesSelector({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        style={{ marginBottom: '32px' }}
+        className="mb-8"
       >
         <div className="overflow-hidden shadow-none border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-lg">
           <Button
@@ -244,7 +244,7 @@ export default function SmartAmenitiesSelector({
                 ⭐ Guest Essentials
               </h3>
               <div className="flex items-center gap-2">
-                <span style={{ fontSize: '14px', color: '#8C8C8C' }}>
+                <span className="text-sm text-gray-500">
                   {selectedAmenities.filter(id => GUEST_ESSENTIALS.find(a => a.id === id)).length}/{GUEST_ESSENTIALS.length}
                 </span>
                 <motion.div
@@ -268,7 +268,7 @@ export default function SmartAmenitiesSelector({
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
-                <div className="grid grid-cols-2" style={{ gap: '18px 12px', padding: '20px' }}>
+                <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
                   {GUEST_ESSENTIALS.map((amenity) => (
                     <AmenityCard
                       key={amenity.id}
