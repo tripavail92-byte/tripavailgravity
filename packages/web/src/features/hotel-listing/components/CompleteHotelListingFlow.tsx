@@ -74,28 +74,59 @@ interface HotelData {
     }>;
 
     // Policies
-    checkIn: string;
-    checkOut: string;
-    cancellationPolicy: string;
-    houseRules: string[];
-    childrenPolicy: string;
-    petPolicy: string;
-    smokingPolicy: string;
-
-    // Photos
-    photos: {
-        exterior: string[];
-        lobby: string[];
-        rooms: string[];
-        amenities: string[];
-        dining: string[];
-        other: string[];
+    policies?: {
+        checkIn: string;
+        checkOut: string;
+        cancellationPolicy: 'flexible' | 'moderate' | 'strict' | 'non-refundable';
+        customCancellationText?: string;
+        houseRules: {
+            petsAllowed: boolean;
+            smokingAllowed: boolean;
+            eventsAllowed: boolean;
+            childrenAllowed: boolean;
+            quietHoursStart?: string;
+            quietHoursEnd?: string;
+            additionalRules?: string;
+        };
+        guestRequirements: {
+            minimumAge: number;
+            idRequired: boolean;
+            creditCardRequired: boolean;
+        };
     };
 
-    // Additional Services
-    services: string[];
-    languages: string[];
-    accessibility: string[];
+    // Photos
+    photos?: {
+        propertyPhotos: Array<{
+            id: string;
+            url: string;
+            fileName: string;
+            size: number;
+            uploadedAt: string;
+            order: number;
+            isCover?: boolean;
+        }>;
+    };
+
+    // Services
+    services?: {
+        breakfast: 'included' | 'optional' | 'none';
+        parking: 'free' | 'paid' | 'none';
+        wifi: 'free' | 'paid' | 'none';
+        facilities: {
+            pool: boolean;
+            gym: boolean;
+            spa: boolean;
+            restaurant: boolean;
+            roomService: boolean;
+            airportShuttle: boolean;
+            evCharging: boolean;
+        };
+        accessibility: {
+            wheelchairAccessible: boolean;
+            elevator: boolean;
+        };
+    };
 }
 
 interface CompleteHotelListingFlowProps {
