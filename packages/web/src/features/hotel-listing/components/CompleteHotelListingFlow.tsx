@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
     PropertyTypeIcon,
     // LocationIcon, 
