@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { motion } from 'motion/react';
 import type { StepData } from '../CompleteHotelListingFlow';
 
 export interface PoliciesData {

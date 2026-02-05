@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapPin, Navigation, Edit3, ArrowRight, Check } from 'lucide-react';
+import { MapPin, Navigation, Edit3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { LocationPicker } from '../ui/LocationPicker';
+import type { StepData } from '../CompleteHotelListingFlow';
 
 interface LocationData {
     address: string;
@@ -16,9 +17,9 @@ interface LocationData {
 }
 
 interface LocationStepProps {
-    onComplete: (data: any) => void;
-    existingData?: any;
-    onUpdate?: (data: any) => void;
+    onComplete: (data: StepData) => void;
+    existingData?: StepData;
+    onUpdate?: (data: StepData) => void;
     onBack?: () => void;
 }
 
