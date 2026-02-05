@@ -393,7 +393,9 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
                     (currentStep === 2 && (!hotelData.hotelName || !hotelData.description || !hotelData.contactEmail)) ||
                     (currentStep === 3 && !hotelData.coordinates) ||
                     (currentStep === 4 && (!hotelData.amenities || hotelData.amenities.length === 0)) ||
-                    (currentStep === 5 && (!hotelData.rooms || hotelData.rooms.length === 0))
+                    (currentStep === 5 && (!hotelData.rooms || hotelData.rooms.length === 0)) ||
+                    (currentStep === 6 && !hotelData.policies) ||
+                    (currentStep === 7 && (!hotelData.photos?.propertyPhotos || hotelData.photos.propertyPhotos.length < 5))
                 }
             />
         </div>
