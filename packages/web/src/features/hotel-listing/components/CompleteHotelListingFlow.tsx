@@ -47,9 +47,9 @@ interface Step {
 }
 
 interface HotelData {
-    // Basic Info
-    hotelName: string;
+export interface HotelData {
     propertyType: string;
+    hotelName: string;
     description: string;
     contactEmail: string;
     contactPhone: string;
