@@ -115,25 +115,29 @@ export const hotelService = {
     async saveDraft(data: Partial<HotelData>, userId: string, draftId?: string) {
         if (!userId) throw new Error('User ID required');
 
+        // Handle undefined or empty data
+        const safeData = data || {};
+
         const draftPayload = {
             owner_id: userId,
-            name: data.hotelName || 'Untitled Hotel',
-            description: data.description,
-            property_type: data.propertyType,
-            contact_email: data.contactEmail,
-            location: data.location?.address || '',
-            latitude: data.location?.lat,
-            longitude: data.location?.lng,
+            name: safeData.hotelName || 'Untitled Hotel',
+            description: safeData.description || null,
+            property_type: safeData.propertyType || null,
+            contact_email: safeData.contactEmail || null,
+            location: safeData.location?.address || null,
+            latitude: safeData.location?.lat || null,
+            longitude: safeData.location?.lng || null,
+            base_price_per_night: 0,
 
             // JSONB Columns
-            policies: data.policies,
-            services: data.services,
-            images: data.photos?.propertyPhotos,
-            amenities: data.amenities,
+            policies: safeData.policies || null,
+            services: safeData.services || null,
+            images: safeData.photos?.propertyPhotos || null,
+            amenities: safeData.amenities || null,
 
             // Draft-specific
             is_published: false,
-            draft_data: data, // Store entire form data for resuming
+            draft_data: safeData, // Store entire form data for resuming
             updated_at: new Date().toISOString()
         };
 
