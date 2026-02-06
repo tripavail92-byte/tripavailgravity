@@ -68,10 +68,10 @@ export function ListingsGrid() {
                         </button>
                     </div>
 
-                    {/* New Listing Button */}
                     <Button
                         onClick={handleNewListing}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                        style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
+                        className="text-white hover:opacity-90 transition-opacity"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         New Listing
@@ -87,7 +87,11 @@ export function ListingsGrid() {
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No published listings yet</h3>
                     <p className="text-gray-600 mb-6">Create your first listing to start receiving bookings</p>
-                    <Button onClick={handleNewListing} className=" bg-gradient-to-r from-blue-500 to-blue-600">
+                    <Button
+                        onClick={handleNewListing}
+                        style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
+                        className="text-white hover:opacity-90 transition-opacity"
+                    >
                         <Plus className="w-4 h-4 mr-2" />
                         Create Your First Listing
                     </Button>

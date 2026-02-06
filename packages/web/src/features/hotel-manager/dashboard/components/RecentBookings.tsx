@@ -50,7 +50,10 @@ function BookingCard({
         <div className={`p-4 rounded-lg ${config.bg} border border-gray-100`}>
             <div className="flex items-start gap-3">
                 {/* Guest Avatar */}
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
+                >
                     <User className="w-5 h-5 text-white" />
                 </div>
 
@@ -70,7 +73,7 @@ function BookingCard({
 
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-900">{totalPrice}</span>
-                        <Button variant="ghost" size="sm" className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                        <Button variant="ghost" size="sm" className="h-8 hover:bg-purple-50" style={{ color: '#9D4EDD' }}>
                             <MessageCircle className="w-3 h-3 mr-1" />
                             Message
                         </Button>
@@ -124,7 +127,7 @@ export function RecentBookings() {
                         <h2 className="text-xl font-semibold text-gray-900">Recent Bookings</h2>
                         <p className="text-sm text-gray-600 mt-1">Upcoming check-ins</p>
                     </div>
-                    <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                    <Button variant="ghost" className="hover:bg-purple-50" style={{ color: '#9D4EDD' }}>
                         View All
                     </Button>
                 </div>

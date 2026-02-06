@@ -135,7 +135,8 @@ export function DraftListingsAlert() {
                                         <Button
                                             variant="ghost"
                                             onClick={() => handleContinueSetup(draft.id)}
-                                            className="ml-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                            className="ml-4 hover:bg-purple-50"
+                                            style={{ color: '#9D4EDD' }}
                                         >
                                             Continue Setup
                                             <ArrowRight className="w-4 h-4 ml-2" />

@@ -32,8 +32,11 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
                     </div>
                 </div>
 
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                    <Icon className="w-6 h-6 text-blue-600" />
+                <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200"
+                    style={{ background: 'linear-gradient(135deg, rgba(157, 78, 221, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%)' }}
+                >
+                    <Icon className="w-6 h-6" style={{ color: '#9D4EDD' }} />
                 </div>
             </div>
         </Card>
