@@ -140,14 +140,66 @@ export type StepData = Partial<HotelData>;
 interface CompleteHotelListingFlowProps {
     onComplete?: (data: Partial<HotelData>) => void;
     onBack: () => void;
-    onSaveAndExit?: () => void;
+    onSaveAndExit?: (data: Partial<HotelData>) => void;
     initialPropertyType?: string;
+    initialData?: Partial<HotelData>;
+    initialDraftId?: string;
 }
 
-export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAndExit, initialPropertyType }: CompleteHotelListingFlowProps) {
-    const [currentStep, setCurrentStep] = useState(1);
-    const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-    const [hotelData, setHotelData] = useState<Partial<HotelData>>({
+// Calculate which step to start on based on completed data
+function calculateStartingStep(data?: Partial<HotelData>): number {
+    if (!data) return 1;
+
+    // Step 1: Property Type
+    if (!data.propertyType) return 1;
+
+    // Step 2: Property Details (hotelName, description, etc.)
+    if (!data.hotelName || !data.description) return 2;
+
+    // Step 3: Location
+    if (!data.location?.address) return 3;
+
+    // Step 4: Amenities
+    if (!data.amenities || data.amenities.length === 0) return 4;
+
+    // Step 5: Rooms
+    if (!data.rooms || data.rooms.length === 0) return 5;
+
+    // Step 6: Policies
+    if (!data.policies) return 6;
+
+    // Step 7: Photos
+    if (!data.photos?.propertyPhotos || data.photos.propertyPhotos.length === 0) return 7;
+
+    // Step 8: Services (optional, skip to review if empty)
+    if (!data.services) return 8;
+
+    // Step 9: Review
+    return 9;
+}
+
+// Calculate completed steps based on data
+function calculateCompletedSteps(data?: Partial<HotelData>): number[] {
+    if (!data) return [];
+
+    const completed: number[] = [];
+
+    if (data.propertyType) completed.push(1);
+    if (data.hotelName && data.description) completed.push(2);
+    if (data.location?.address) completed.push(3);
+    if (data.amenities && data.amenities.length > 0) completed.push(4);
+    if (data.rooms && data.rooms.length > 0) completed.push(5);
+    if (data.policies) completed.push(6);
+    if (data.photos?.propertyPhotos && data.photos.propertyPhotos.length > 0) completed.push(7);
+    if (data.services) completed.push(8);
+
+    return completed;
+}
+
+export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAndExit, initialPropertyType, initialData, initialDraftId }: CompleteHotelListingFlowProps) {
+    const [currentStep, setCurrentStep] = useState(calculateStartingStep(initialData));
+    const [completedSteps, setCompletedSteps] = useState<number[]>(calculateCompletedSteps(initialData));
+    const [hotelData, setHotelData] = useState<Partial<HotelData>>(initialData || {
         propertyType: initialPropertyType || '',
         amenities: [],
         rooms: [],

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors';
 import {
@@ -19,8 +19,35 @@ export default function ListHotelPage() {
     const [isStarted, setIsStarted] = useState(false);
     const [selectedPropertyType, setSelectedPropertyType] = useState<string>('hotel');
     const [draftId, setDraftId] = useState<string>();
+    const [draftData, setDraftData] = useState<any>();
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { user } = useAuth();
+    const [searchParams] = useSearchParams();
+
+    // Load draft if draftId in URL
+    useEffect(() => {
+        const urlDraftId = searchParams.get('draftId');
+        if (urlDraftId && user?.id) {
+            loadDraft(urlDraftId);
+        }
+    }, [searchParams, user?.id]);
+
+    const loadDraft = async (id: string) => {
+        setLoading(true);
+        const result = await hotelService.getDraft(id, user!.id);
+
+        if (result.success && result.draftData) {
+            setDraftId(id);
+            setDraftData(result.draftData);
+            setIsStarted(true);
+            toast.success('Draft loaded! Continue where you left off');
+        } else {
+            toast.error('Could not load draft');
+            navigate('/manager/dashboard');
+        }
+        setLoading(false);
+    };
 
     const handleStart = () => {
         setIsStarted(true);
@@ -42,10 +69,20 @@ export default function ListHotelPage() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
     if (isStarted) {
         return (
             <CompleteHotelListingFlow
                 initialPropertyType={selectedPropertyType}
+                initialData={draftData}
+                initialDraftId={draftId}
                 onBack={() => setIsStarted(false)}
                 onSaveAndExit={handleSaveAndExit}
             />

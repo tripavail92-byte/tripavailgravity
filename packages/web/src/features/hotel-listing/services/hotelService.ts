@@ -190,6 +190,33 @@ export const hotelService = {
         }
     },
 
+    async getDraft(draftId: string, userId: string) {
+        if (!userId) throw new Error('User ID required');
+        if (!draftId) throw new Error('Draft ID required');
+
+        try {
+            const { data, error } = await supabase
+                .from('hotels')
+                .select('*')
+                .eq('id', draftId)
+                .eq('owner_id', userId)
+                .eq('is_published', false)
+                .single();
+
+            if (error) throw error;
+
+            // Return the draft_data for restoring the form state
+            return {
+                success: true,
+                draft: data,
+                draftData: data.draft_data
+            };
+        } catch (error) {
+            console.error('Error fetching draft:', error);
+            return { success: false, error };
+        }
+    },
+
     async fetchPublishedListings(userId: string) {
         if (!userId) throw new Error('User ID required');
 
