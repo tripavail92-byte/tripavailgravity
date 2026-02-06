@@ -110,5 +110,98 @@ export const hotelService = {
             .getPublicUrl(filePath);
 
         return data.publicUrl;
+    },
+
+    async saveDraft(data: Partial<HotelData>, userId: string, draftId?: string) {
+        if (!userId) throw new Error('User ID required');
+
+        const draftPayload = {
+            owner_id: userId,
+            name: data.hotelName || 'Untitled Hotel',
+            description: data.description,
+            property_type: data.propertyType,
+            contact_email: data.contactEmail,
+            location: data.location?.address || '',
+            latitude: data.location?.lat,
+            longitude: data.location?.lng,
+
+            // JSONB Columns
+            policies: data.policies,
+            services: data.services,
+            images: data.photos?.propertyPhotos,
+            amenities: data.amenities,
+
+            // Draft-specific
+            is_published: false,
+            draft_data: data, // Store entire form data for resuming
+            updated_at: new Date().toISOString()
+        };
+
+        try {
+            if (draftId) {
+                // Update existing draft
+                const { data: hotel, error } = await supabase
+                    .from('hotels')
+                    .update(draftPayload)
+                    .eq('id', draftId)
+                    .eq('owner_id', userId)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                return { success: true, draftId: hotel.id };
+            } else {
+                // Create new draft
+                const { data: hotel, error } = await supabase
+                    .from('hotels')
+                    .insert(draftPayload)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                return { success: true, draftId: hotel.id };
+            }
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            return { success: false, error };
+        }
+    },
+
+    async fetchDrafts(userId: string) {
+        if (!userId) throw new Error('User ID required');
+
+        try {
+            const { data, error } = await supabase
+                .from('hotels')
+                .select('*')
+                .eq('owner_id', userId)
+                .eq('is_published', false)
+                .order('updated_at', { ascending: false });
+
+            if (error) throw error;
+            return { success: true, drafts: data };
+        } catch (error) {
+            console.error('Error fetching drafts:', error);
+            return { success: false, error, drafts: [] };
+        }
+    },
+
+    async fetchPublishedListings(userId: string) {
+        if (!userId) throw new Error('User ID required');
+
+        try {
+            const { data, error } = await supabase
+                .from('hotels')
+                .select('*, rooms(count)')
+                .eq('owner_id', userId)
+                .eq('is_published', true)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return { success: true, listings: data };
+        } catch (error) {
+            console.error('Error fetching listings:', error);
+            return { success: false, error, listings: [] };
+        }
     }
 };

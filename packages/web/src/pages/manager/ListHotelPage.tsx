@@ -11,14 +11,35 @@ import {
     PricingIcon
 } from '@/features/hotel-listing/assets/HotelListingIcons';
 import CompleteHotelListingFlow from '@/features/hotel-listing/components/CompleteHotelListingFlow';
+import { hotelService } from '@/features/hotel-listing/services/hotelService';
+import { useAuth } from '@/hooks/useAuth';
+import toast from 'react-hot-toast';
 
 export default function ListHotelPage() {
     const [isStarted, setIsStarted] = useState(false);
     const [selectedPropertyType, setSelectedPropertyType] = useState<string>('hotel');
+    const [draftId, setDraftId] = useState<string>();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleStart = () => {
         setIsStarted(true);
+    };
+
+    const handleSaveAndExit = async (data: any) => {
+        if (!user?.id) {
+            toast.error('Please log in to save your draft');
+            return;
+        }
+
+        const result = await hotelService.saveDraft(data, user.id, draftId);
+
+        if (result.success) {
+            toast.success('Draft saved successfully!');
+            navigate('/manager/dashboard');
+        } else {
+            toast.error('Failed to save draft');
+        }
     };
 
     if (isStarted) {
@@ -26,6 +47,7 @@ export default function ListHotelPage() {
             <CompleteHotelListingFlow
                 initialPropertyType={selectedPropertyType}
                 onBack={() => setIsStarted(false)}
+                onSaveAndExit={handleSaveAndExit}
             />
         );
     }
