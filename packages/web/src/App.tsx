@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
 
 import { useAuth } from '@/hooks/useAuth'
 import DashboardLayout from '@/layouts/DashboardLayout'
@@ -29,6 +30,7 @@ function App() {
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Toaster position="top-center" />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<LoginPage />} />
