@@ -10,6 +10,7 @@ import PartnerSelectionPage from '@/pages/partner/PartnerSelectionPage'
 import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage'
 import SearchPage from '@/pages/traveller/SearchPage'
 import ListHotelPage from '@/pages/manager/ListHotelPage'
+import DashboardPage from '@/pages/hotel-manager/DashboardPage'
 
 function App() {
   const { initialize, initialized } = useAuth()
@@ -37,7 +38,7 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotels/:id" element={<HotelDetailsPage />} />
           <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
-          <Route path="/manager/dashboard" element={<div>Hotel Manager Dashboard (Coming Soon)</div>} />
+          <Route path="/manager/dashboard" element={<DashboardPage />} />
           <Route path="/operator/dashboard" element={<div>Tour Operator Dashboard (Coming Soon)</div>} />
           <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
         </Route>
