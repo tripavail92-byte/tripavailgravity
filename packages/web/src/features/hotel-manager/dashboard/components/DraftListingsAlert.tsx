@@ -1,25 +1,79 @@
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useAuth } from '@/hooks/useAuth';
+import { hotelService } from '@/features/hotel-listing/services/hotelService';
+import { useNavigate } from 'react-router-dom';
+
+interface Draft {
+    id: string;
+    name: string;
+    draft_data: any;
+}
 
 export function DraftListingsAlert() {
-    // Mock data - will be replaced with real data
-    const drafts = [
-        {
-            id: '1',
-            name: 'Downtown Business Hotel',
-            completion: 75,
-            missing: ['Photos', 'Pricing'],
-        },
-        {
-            id: '2',
-            name: 'Lakeside Cabin Resort',
-            completion: 40,
-            missing: ['Rooms', 'Photos', 'Policies'],
-        },
-    ];
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [drafts, setDrafts] = useState<Draft[]>([]);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const fetchDrafts = async () => {
+            setLoading(true);
+            const result = await hotelService.fetchDrafts(user.id);
+            if (result.success && result.drafts) {
+                setDrafts(result.drafts);
+            }
+            setLoading(false);
+        };
+
+        fetchDrafts();
+    }, [user?.id]);
+
+    const calculateCompletion = (draftData: any) => {
+        const requiredFields = [
+            'propertyType',
+            'hotelName',
+            'description',
+            'amenities',
+            'rooms',
+            'policies',
+            'photos',
+        ];
+
+        const completed = requiredFields.filter(field => {
+            const value = draftData?.[field];
+            if (Array.isArray(value)) return value.length > 0;
+            if (typeof value === 'object') return Object.keys(value || {}).length > 0;
+            return !!value;
+        });
+
+        return Math.round((completed.length / requiredFields.length) * 100);
+    };
+
+    const getMissingItems = (draftData: any) => {
+        const missing: string[] = [];
+
+        if (!draftData?.hotelName) missing.push('Hotel Name');
+        if (!draftData?.description) missing.push('Description');
+        if (!draftData?.amenities?.length) missing.push('Amenities');
+        if (!draftData?.rooms?.length) missing.push('Rooms');
+        if (!draftData?.policies) missing.push('Policies');
+        if (!draftData?.photos?.propertyPhotos?.length) missing.push('Photos');
+
+        return missing.length > 0 ? missing : ['Minor Details'];
+    };
+
+    const handleContinueSetup = (draftId: string) => {
+        // TODO: Navigate to listing flow with draft data pre-populated
+        navigate(`/manager/list-hotel?draftId=${draftId}`);
+    };
+
+    if (loading) return null;
     if (drafts.length === 0) return null;
 
     return (
@@ -48,38 +102,47 @@ export function DraftListingsAlert() {
 
                         {/* Draft Items */}
                         <div className="space-y-3">
-                            {drafts.map((draft) => (
-                                <div
-                                    key={draft.id}
-                                    className="bg-white rounded-lg p-4 flex items-center justify-between"
-                                >
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h4 className="font-medium text-gray-900">{draft.name}</h4>
-                                            <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
-                                                {draft.completion}% Complete
-                                            </span>
+                            {drafts.map((draft) => {
+                                const completion = calculateCompletion(draft.draft_data);
+                                const missing = getMissingItems(draft.draft_data);
+
+                                return (
+                                    <div
+                                        key={draft.id}
+                                        className="bg-white rounded-lg p-4 flex items-center justify-between"
+                                    >
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <h4 className="font-medium text-gray-900">{draft.name}</h4>
+                                                <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                                                    {completion}% Complete
+                                                </span>
+                                            </div>
+
+                                            {/* Progress Bar */}
+                                            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                                <div
+                                                    className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                                                    style={{ width: `${completion}%` }}
+                                                />
+                                            </div>
+
+                                            <p className="text-sm text-gray-600">
+                                                Missing: {missing.join(', ')}
+                                            </p>
                                         </div>
 
-                                        {/* Progress Bar */}
-                                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                                            <div
-                                                className="bg-amber-500 h-2 rounded-full transition-all duration-500"
-                                                style={{ width: `${draft.completion}%` }}
-                                            />
-                                        </div>
-
-                                        <p className="text-sm text-gray-600">
-                                            Missing: {draft.missing.join(', ')}
-                                        </p>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => handleContinueSetup(draft.id)}
+                                            className="ml-4 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                        >
+                                            Continue Setup
+                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                        </Button>
                                     </div>
-
-                                    <Button variant="ghost" className="ml-4 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
-                                        Continue Setup
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
