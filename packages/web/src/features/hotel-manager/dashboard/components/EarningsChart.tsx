@@ -34,9 +34,9 @@ export function EarningsChart() {
             </div>
 
             {/* Chart Placeholder - Will be replaced with Recharts */}
-            <div className="h-80 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl flex items-center justify-center">
+            <div className="h-80 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center">
                 <div className="text-center">
-                    <Calendar className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                    <Calendar className="w-12 h-12 text-blue-400 mx-auto mb-3" />
                     <p className="text-gray-600 font-medium">Interactive chart coming soon</p>
                     <p className="text-sm text-gray-500 mt-1">Revenue visualization with Recharts</p>
                 </div>

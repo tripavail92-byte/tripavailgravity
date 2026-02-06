@@ -36,7 +36,7 @@ export function DashboardHeader() {
 
                         {/* User Menu */}
                         <Button variant="ghost" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
                                 <User className="w-5 h-5 text-white" />
                             </div>
                             <span className="hidden md:inline text-gray-900 font-medium">
