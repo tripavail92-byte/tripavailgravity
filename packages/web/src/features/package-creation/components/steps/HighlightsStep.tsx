@@ -40,6 +40,116 @@ const isPremiumHighlight = (name: string): boolean => {
     );
 };
 
+// Suggested free inclusions - universal options with clear usage details
+const getSuggestedFreeInclusions = (packageType: string): string[] => {
+    return [
+        'Breakfast for 2 (daily) — restaurant buffet or set menu',
+        'Late checkout to 3:00 PM — subject to availability; 1× per stay',
+        'Early check-in from 12:00 PM — subject to availability; 1× per stay',
+        'Welcome drink on arrival for 2 — 1× per guest',
+        'High-speed Wi-Fi',
+        'Spa wet-area access — sauna/steam/Jacuzzi, once per day',
+        'Romantic room setup — rose petals + towel art, 1st night only',
+        'In-room coffee/tea + two waters (daily)',
+        'Complimentary parking — for duration of stay',
+        'Pool / rooftop lounge access — standard hours'
+    ];
+};
+
+// Suggested discount offers with prices
+const getSuggestedDiscounts = (packageType: string): Array<{ name: string, originalPrice: number, discount: number }> => {
+    const discountMap: { [key: string]: Array<{ name: string, originalPrice: number, discount: number }> } = {
+        weekend: [
+            { name: 'Spa treatments', originalPrice: 100, discount: 20 },
+            { name: 'Restaurant dining', originalPrice: 60, discount: 15 },
+            { name: 'In-room dining', originalPrice: 45, discount: 10 },
+            { name: 'Laundry service', originalPrice: 40, discount: 10 },
+            { name: 'Extra night extension', originalPrice: 150, discount: 25 }
+        ],
+        romantic: [
+            { name: 'Couples massage', originalPrice: 200, discount: 30 },
+            { name: 'Photography session', originalPrice: 150, discount: 25 },
+            { name: 'Premium wine selection', originalPrice: 80, discount: 20 },
+            { name: 'Private dining upgrade', originalPrice: 120, discount: 35 },
+            { name: 'Flower arrangements', originalPrice: 60, discount: 15 }
+        ],
+        family: [
+            { name: 'Babysitting services', originalPrice: 50, discount: 20 },
+            { name: 'Theme park tickets', originalPrice: 80, discount: 15 },
+            { name: 'Kids activities extra', originalPrice: 40, discount: 25 },
+            { name: 'Family photography', originalPrice: 120, discount: 30 },
+            { name: 'Extra bed/crib', originalPrice: 30, discount: 50 }
+        ],
+        business: [
+            { name: 'Extended meeting room', originalPrice: 100, discount: 25 },
+            { name: 'Secretarial services', originalPrice: 80, discount: 20 },
+            { name: 'Business printing', originalPrice: 30, discount: 15 },
+            { name: 'Video conferencing', originalPrice: 70, discount: 30 },
+            { name: 'Translation services', originalPrice: 150, discount: 25 }
+        ],
+        adventure: [
+            { name: 'Adventure photography', originalPrice: 120, discount: 30 },
+            { name: 'Equipment insurance', originalPrice: 50, discount: 50 },
+            { name: 'Additional guides', originalPrice: 100, discount: 20 },
+            { name: 'Gear upgrades', originalPrice: 80, discount: 25 },
+            { name: 'Extra excursions', originalPrice: 150, discount: 15 }
+        ],
+        culinary: [
+            { name: 'Premium wine selection', originalPrice: 100, discount: 25 },
+            { name: 'Private chef service', originalPrice: 300, discount: 35 },
+            { name: 'Additional courses', originalPrice: 75, discount: 20 },
+            { name: 'Cooking equipment', originalPrice: 50, discount: 30 },
+            { name: 'Food delivery', originalPrice: 40, discount: 15 }
+        ],
+        wellness: [
+            { name: 'Additional spa services', originalPrice: 120, discount: 25 },
+            { name: 'Personal trainer session', originalPrice: 90, discount: 30 },
+            { name: 'Wellness products', originalPrice: 60, discount: 20 },
+            { name: 'Nutrition consultation', originalPrice: 100, discount: 35 },
+            { name: 'Extended treatments', originalPrice: 150, discount: 15 }
+        ],
+        luxury: [
+            { name: 'Luxury car service', originalPrice: 300, discount: 40 },
+            { name: 'Private dining chef', originalPrice: 400, discount: 30 },
+            { name: 'Premium experiences', originalPrice: 500, discount: 25 },
+            { name: 'Personal shopper', originalPrice: 200, discount: 35 },
+            { name: 'Yacht rental', originalPrice: 1000, discount: 20 }
+        ]
+    };
+
+    return discountMap[packageType] || discountMap.weekend;
+};
+
+// Get smart default price based on service name
+const getDefaultPrice = (serviceName: string): number => {
+    const priceMap: { [key: string]: number } = {
+        'spa': 100,
+        'massage': 150,
+        'restaurant': 60,
+        'dining': 50,
+        'laundry': 40,
+        'room service': 35,
+        'photography': 150,
+        'photo': 150,
+        'wine': 80,
+        'transfer': 100,
+        'car': 120,
+        'meeting': 100,
+        'guide': 100,
+        'equipment': 80,
+        'ticket': 80,
+        'babysit': 50,
+        'bed': 30,
+        'crib': 30
+    };
+
+    const key = Object.keys(priceMap).find(k =>
+        serviceName.toLowerCase().includes(k)
+    );
+
+    return key ? priceMap[key] : 50; // Default $50
+};
+
 interface HighlightsStepProps {
     onComplete: (data: StepData) => void;
     onUpdate: (data: StepData) => void;
@@ -62,13 +172,13 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
 
     // Dialog state for adding discount
     const [isDiscountDialogOpen, setIsDiscountDialogOpen] = useState(false);
+    const [editingDiscountIndex, setEditingDiscountIndex] = useState<number | null>(null);
     const [newDiscount, setNewDiscount] = useState({
         name: '',
         originalPrice: 100, // Default value
         discount: 20 // Default percentage
     });
 
-    // Sync back to global state when local state changes
     // Sync back to global state when local state changes
     useEffect(() => {
         onUpdate({
@@ -97,17 +207,35 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
         setInclusions(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Handler for adding a discount Offer
-    const addDiscountOfferFromDialog = () => {
+    // Handler for adding/updating a discount Offer
+    const saveDiscountOffer = () => {
         if (!newDiscount.name.trim()) return;
 
-        setDiscounts(prev => [...prev, {
-            name: newDiscount.name.trim(),
-            originalPrice: Number(newDiscount.originalPrice),
-            discount: Number(newDiscount.discount)
-        }]);
+        if (editingDiscountIndex !== null) {
+            // Update existing
+            setDiscounts(prev => prev.map((item, i) =>
+                i === editingDiscountIndex ? {
+                    name: newDiscount.name.trim(),
+                    originalPrice: Number(newDiscount.originalPrice),
+                    discount: Number(newDiscount.discount)
+                } : item
+            ));
+        } else {
+            // Add new
+            // Check for duplicates only on add
+            if (discounts.some(d => d.name.toLowerCase() === newDiscount.name.trim().toLowerCase())) {
+                return;
+            }
+
+            setDiscounts(prev => [...prev, {
+                name: newDiscount.name.trim(),
+                originalPrice: Number(newDiscount.originalPrice),
+                discount: Number(newDiscount.discount)
+            }]);
+        }
 
         setNewDiscount({ name: '', originalPrice: 100, discount: 20 });
+        setEditingDiscountIndex(null);
         setIsDiscountDialogOpen(false);
     };
 
@@ -116,16 +244,21 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
         setDiscounts(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Suggested inclusions (could be more extensive or dynamic based on package type)
-    const suggestedInclusions = [
-        'Daily Breakfast',
-        'Airport Transfer',
-        'Welcome Drink',
-        'Late Checkout',
-        'Room Upgrade',
-        'Spa Access',
-        'Wifi'
-    ].filter(s => !inclusions.some(i => i.name.toLowerCase() === s.toLowerCase()));
+    // Open discount dialog with data
+    const openDiscountDialog = (name: string = '', originalPrice: number = 0, discount: number = 10, index: number | null = null) => {
+        setNewDiscount({
+            name,
+            originalPrice: originalPrice || getDefaultPrice(name),
+            discount
+        });
+        setEditingDiscountIndex(index);
+        setIsDiscountDialogOpen(true);
+    };
+
+    const suggestedFreeInclusions = getSuggestedFreeInclusions(existingData?.packageType || 'weekend')
+        .filter(s => !inclusions.some(i => i.name.toLowerCase() === s.toLowerCase()));
+
+    const suggestedDiscounts = getSuggestedDiscounts(existingData?.packageType || 'weekend');
 
     // Calculate generic total value for preview (just an estimation for visual flair)
     const estimatedValue = inclusions.length * 50 + discounts.reduce((acc, d) => acc + (d.originalPrice * (d.discount / 100)), 0);
@@ -182,19 +315,21 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                             </div>
 
                             {/* Suggestions */}
-                            {suggestedInclusions.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    <span className="text-xs text-muted-foreground self-center mr-1">Suggestions:</span>
-                                    {suggestedInclusions.slice(0, 4).map(suggestion => (
-                                        <button
-                                            key={suggestion}
-                                            onClick={() => addFreeInclusion(suggestion)}
-                                            className="text-xs bg-secondary/50 hover:bg-secondary px-2 py-1 rounded-full transition-colors flex items-center gap-1"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                            {suggestion}
-                                        </button>
-                                    ))}
+                            {suggestedFreeInclusions.length > 0 && (
+                                <div className="space-y-2">
+                                    <span className="text-xs text-muted-foreground">Popular free inclusions:</span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {suggestedFreeInclusions.slice(0, 6).map(suggestion => (
+                                            <button
+                                                key={suggestion}
+                                                onClick={() => addFreeInclusion(suggestion)}
+                                                className="text-xs bg-secondary/50 hover:bg-secondary px-3 py-2 rounded-lg transition-colors flex items-center justify-between group/btn text-left"
+                                            >
+                                                <span className="truncate pr-2">{suggestion}</span>
+                                                <Plus className="w-3 h-3 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
 
@@ -260,7 +395,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
 
                                 <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" className="border-purple-200 hover:bg-purple-50 text-purple-700 dark:border-purple-800 dark:hover:bg-purple-900/50 dark:text-purple-300">
+                                        <Button variant="outline" onClick={() => openDiscountDialog()} className="border-purple-200 hover:bg-purple-50 text-purple-700 dark:border-purple-800 dark:hover:bg-purple-900/50 dark:text-purple-300">
                                             <Plus className="w-4 h-4 mr-2" />
                                             Add Offer
                                         </Button>
@@ -314,7 +449,9 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                             </div>
                                         </div>
                                         <DialogFooter>
-                                            <Button onClick={addDiscountOfferFromDialog} disabled={!newDiscount.name}>Add Offer</Button>
+                                            <Button onClick={saveDiscountOffer}>
+                                                {editingDiscountIndex !== null ? 'Update Offer' : 'Add Offer'}
+                                            </Button>
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
@@ -350,14 +487,24 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-muted-foreground hover:text-destructive h-8 w-8"
-                                                    onClick={() => removeDiscountOffer(index)}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                                        onClick={() => openDiscountDialog(item.name, item.originalPrice, item.discount, index)}
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-muted-foreground hover:text-destructive h-8 w-8"
+                                                        onClick={() => removeDiscountOffer(index)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </motion.div>
                                         );
                                     })}
@@ -365,10 +512,47 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
 
                                 {discounts.length === 0 && (
                                     <div className="text-center py-8 border-2 border-dashed border-purple-100 dark:border-purple-900/30 rounded-lg">
-                                        <p className="text-muted-foreground">No discount offers added yet</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Add discounts for Spa, Dining, or Activities</p>
+                                        <p className="text-muted-foreground">No custom offers added yet</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Add custom offers or select from popular ones below</p>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Discount Suggestions */}
+                            <div className="space-y-3 pt-4 border-t border-purple-100 dark:border-purple-900/30">
+                                <p className="text-xs text-muted-foreground font-medium">Popular discount offers:</p>
+                                <div className="space-y-2">
+                                    {suggestedDiscounts
+                                        .filter(suggestion => !discounts.some(item => item.name === suggestion.name))
+                                        .slice(0, 4)
+                                        .map((suggestion, index) => {
+                                            const finalPrice = suggestion.originalPrice - (suggestion.originalPrice * suggestion.discount / 100);
+                                            return (
+                                                <motion.button
+                                                    key={suggestion.name}
+                                                    onClick={() => openDiscountDialog(suggestion.name, suggestion.originalPrice, suggestion.discount)}
+                                                    className="w-full flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-slate-700 hover:border-purple-200 dark:hover:border-purple-800 text-left transition-all group"
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    transition={{ delay: index * 0.05 }}
+                                                    whileHover={{ x: 2 }}
+                                                >
+                                                    <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full group-hover:bg-white dark:group-hover:bg-slate-600 transition-colors">
+                                                        <Percent className="w-4 h-4 text-slate-600 dark:text-slate-300 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 block group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                                                            {suggestion.name}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                            ${suggestion.originalPrice} <span className="text-slate-300 px-1">→</span> <span className="font-medium text-green-600 dark:text-green-400">${finalPrice.toFixed(0)} ({suggestion.discount}% OFF)</span>
+                                                        </span>
+                                                    </div>
+                                                    <Plus className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                                                </motion.button>
+                                            );
+                                        })}
+                                </div>
                             </div>
                         </div>
                     </Card>
