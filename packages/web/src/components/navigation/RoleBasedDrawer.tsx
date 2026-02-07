@@ -171,10 +171,10 @@ export function RoleBasedDrawer() {
           <div className="space-y-1 mb-2">
             <div className="flex justify-between text-sm font-semibold text-gray-700">
               <span>Profile Completion</span>
-              <span className="text-pink-600">40%</span>
+              <span className="text-primary">40%</span>
             </div>
             <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-pink-500 to-purple-600 w-[40%] rounded-full" />
+              <div className="h-full bg-primary-gradient w-[40%] rounded-full" />
             </div>
           </div>
         </div>
