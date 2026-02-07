@@ -26,12 +26,12 @@ export function ListingCard({
     const statusConfig = {
         published: {
             badge: 'Published',
-            color: 'bg-green-100 text-green-700 border-green-200',
+            color: 'bg-success-foreground text-success border-success/20',
             icon: Play,
         },
         draft: {
             badge: 'Draft',
-            color: 'bg-amber-100 text-amber-700 border-amber-200',
+            color: 'bg-warning-foreground text-warning border-warning/20',
             icon: Edit,
         },
         paused: {

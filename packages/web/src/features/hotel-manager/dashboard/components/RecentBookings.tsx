@@ -25,19 +25,19 @@ function BookingCard({
     const statusConfig = {
         confirmed: {
             icon: CheckCircle,
-            color: 'text-green-600',
-            bg: 'bg-green-50',
+            color: 'text-success',
+            bg: 'bg-success-foreground',
             label: 'Confirmed',
         },
         pending: {
             icon: Clock,
-            color: 'text-amber-600',
-            bg: 'bg-amber-50',
+            color: 'text-warning',
+            bg: 'bg-warning-foreground',
             label: 'Pending',
         },
         'checkin-today': {
             icon: Calendar,
-            color: 'text-blue-600',
+            color: 'text-info',
             bg: 'bg-primary/10',
             label: 'Check-in Today',
         },

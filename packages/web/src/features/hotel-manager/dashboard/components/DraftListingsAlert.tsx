@@ -82,12 +82,12 @@ export function DraftListingsAlert() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <Card className="border-l-4 border-amber-500 bg-amber-50 p-6">
+            <Card className="border-l-4 border-warning bg-warning-foreground p-6">
                 <div className="flex items-start gap-4">
                     {/* Icon */}
                     <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                            <AlertCircle className="w-6 h-6 text-amber-600" />
+                        <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                            <AlertCircle className="w-6 h-6 text-warning" />
                         </div>
                     </div>
 
@@ -114,7 +114,7 @@ export function DraftListingsAlert() {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-3 mb-2">
                                                 <h4 className="font-medium text-gray-900">{draft.name}</h4>
-                                                <span className="text-xs font-medium text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                                                <span className="text-xs font-medium text-warning bg-warning-foreground px-2 py-1 rounded-full">
                                                     {completion}% Complete
                                                 </span>
                                             </div>
@@ -122,7 +122,7 @@ export function DraftListingsAlert() {
                                             {/* Progress Bar */}
                                             <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                                                 <div
-                                                    className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                                                    className="bg-warning h-2 rounded-full transition-all duration-500"
                                                     style={{ width: `${completion}%` }}
                                                 />
                                             </div>

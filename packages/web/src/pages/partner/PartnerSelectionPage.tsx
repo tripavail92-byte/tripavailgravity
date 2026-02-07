@@ -79,7 +79,7 @@ export default function PartnerSelectionPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Choose Your Partner Type</h1>
           <p className="text-lg text-gray-600">Select how you want to earn with TripAvail</p>
           {activeRole && activeRole.role_type !== 'traveller' && (
-            <p className="mt-4 text-amber-600 font-medium">
+            <p className="mt-4 text-warning font-medium">
               ⚠️ You have already selected a partner role. This choice is permanent.
             </p>
           )}

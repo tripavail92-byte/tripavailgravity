@@ -31,7 +31,7 @@ export function DashboardHeader() {
                         {/* Notifications */}
                         <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
                             <Bell className="w-6 h-6" />
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full" />
                         </button>
 
                         {/* Role-Based Drawer Menu (Profile Pill) */}
