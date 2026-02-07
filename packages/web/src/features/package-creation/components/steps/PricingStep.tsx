@@ -173,7 +173,12 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
             {/* Header */}
             <div className="text-center">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Package Pricing</h2>
-                <p className="text-gray-600">Select rooms from your hotel and set package prices</p>
+                <p className="text-gray-600">
+                    {existingData?.hotelName
+                        ? `Select rooms from ${existingData.hotelName} and set package prices`
+                        : 'Select rooms from your hotel and set package prices'
+                    }
+                </p>
             </div>
 
             {/* Info Banner */}

@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { HotelSelectionStep } from './steps/HotelSelectionStep';
 import { PackageTypeStep } from './steps/PackageTypeStep';
 import { BasicsStep } from './steps/BasicsStep';
 import { MediaStep } from './steps/MediaStep';
@@ -13,20 +14,18 @@ import { ReviewStep } from './steps/ReviewStep';
 import { PricingStep } from './steps/PricingStep';
 import { PackageData, StepData } from '../types';
 
-// Placeholder for future steps
-const PlaceholderStep = () => <div className="text-center py-12 text-gray-500">Step content coming soon...</div>;
-
 const STEPS = [
-    { id: 1, title: 'Package Type', component: PackageTypeStep },
-    { id: 2, title: 'Basics', component: BasicsStep },
-    { id: 3, title: 'Media', component: MediaStep },
-    { id: 4, title: 'Highlights', component: HighlightsStep },
-    { id: 5, title: 'Inclusions', component: InclusionsStep },
-    { id: 6, title: 'Exclusions', component: ExclusionsStep },
-    { id: 7, title: 'Pricing', component: PricingStep },
-    { id: 8, title: 'Availability', component: AvailabilityStep },
-    { id: 9, title: 'Policies', component: PoliciesStep },
-    { id: 10, title: 'Review', component: ReviewStep },
+    { id: 1, title: 'Select Hotel', component: HotelSelectionStep },
+    { id: 2, title: 'Package Type', component: PackageTypeStep },
+    { id: 3, title: 'Basics', component: BasicsStep },
+    { id: 4, title: 'Media', component: MediaStep },
+    { id: 5, title: 'Highlights', component: HighlightsStep },
+    { id: 6, title: 'Inclusions', component: InclusionsStep },
+    { id: 7, title: 'Exclusions', component: ExclusionsStep },
+    { id: 8, title: 'Pricing', component: PricingStep },
+    { id: 9, title: 'Availability', component: AvailabilityStep },
+    { id: 10, title: 'Policies', component: PoliciesStep },
+    { id: 11, title: 'Review', component: ReviewStep },
 ];
 
 export function CompletePackageCreationFlow() {
