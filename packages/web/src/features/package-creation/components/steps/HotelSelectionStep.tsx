@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StepData } from '../../types';
 import { cn } from '@/lib/utils';
+import { supabase } from '@tripavail/shared/core/client';
 
 interface HotelSelectionStepProps {
     onComplete: (data: StepData) => void;
@@ -34,42 +35,41 @@ export function HotelSelectionStep({ onComplete, onUpdate, existingData }: Hotel
         setLoading(true);
         setError(null);
         try {
-            // TODO: Replace with actual API call
-            // const response = await fetch('/api/users/me/hotels');
-            // const data = await response.json();
+            console.log('🏨 HotelSelectionStep: Fetching user hotels from Supabase');
 
-            // Simulated API call
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Fetch published hotels from Supabase
+            const { data: hotelsData, error: fetchError } = await supabase
+                .from('hotels')
+                .select('id, name, address, city, country, is_published, rooms(count)')
+                .eq('is_published', true)
+                .order('created_at', { ascending: false });
 
-            // Mock data - in production, this comes from backend
-            const mockHotels: Hotel[] = [
-                {
-                    id: 'hotel-1',
-                    name: 'Grand Plaza Hotel',
-                    address: '123 Main Street',
-                    city: 'New York',
-                    country: 'USA',
-                    roomCount: 25,
-                    status: 'published'
-                },
-                // Uncomment to test multi-hotel scenario
-                // {
-                //     id: 'hotel-2',
-                //     name: 'Seaside Resort & Spa',
-                //     address: '456 Beach Road',
-                //     city: 'Miami',
-                //     country: 'USA',
-                //     roomCount: 40,
-                //     status: 'published'
-                // }
-            ];
+            if (fetchError) {
+                console.error('❌ Error fetching hotels:', fetchError);
+                throw fetchError;
+            }
 
-            setHotels(mockHotels);
+            console.log('📦 Hotels fetched from database:', hotelsData);
+
+            // Transform database hotels to Hotel format
+            const userHotels: Hotel[] = (hotelsData || []).map(hotel => ({
+                id: hotel.id,
+                name: hotel.name,
+                address: hotel.address || 'No address',
+                city: hotel.city || undefined,
+                country: hotel.country || undefined,
+                roomCount: Array.isArray(hotel.rooms) ? hotel.rooms.length : 0,
+                status: 'published'
+            }));
+
+            console.log(`✅ Loaded ${userHotels.length} hotel(s)`);
+            setHotels(userHotels);
 
             // Auto-select and skip if only 1 hotel
-            if (mockHotels.length === 1) {
-                const hotel = mockHotels[0];
+            if (userHotels.length === 1) {
+                const hotel = userHotels[0];
                 setSelectedHotel(hotel);
+                console.log('🎯 Auto-selecting single hotel:', hotel.name);
                 // Auto-complete and move to next step
                 setTimeout(() => {
                     onComplete({
@@ -78,19 +78,22 @@ export function HotelSelectionStep({ onComplete, onUpdate, existingData }: Hotel
                         hotelAddress: hotel.address
                     });
                 }, 500);
-            } else if (mockHotels.length === 0) {
+            } else if (userHotels.length === 0) {
                 setError('No hotels found. Please create a hotel listing first.');
             }
 
             // Restore previously selected hotel if exists
             if (existingData?.hotelId) {
-                const existing = mockHotels.find(h => h.id === existingData.hotelId);
-                if (existing) setSelectedHotel(existing);
+                const existing = userHotels.find(h => h.id === existingData.hotelId);
+                if (existing) {
+                    console.log('✅ Restored previously selected hotel:', existing.name);
+                    setSelectedHotel(existing);
+                }
             }
 
         } catch (err) {
             setError('Failed to load your hotels. Please try again.');
-            console.error('Error fetching hotels:', err);
+            console.error('❌ Error fetching hotels:', err);
         } finally {
             setLoading(false);
         }
