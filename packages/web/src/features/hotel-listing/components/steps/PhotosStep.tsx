@@ -178,7 +178,7 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
             {/* Upload Zone */}
             <Card
                 className={`p-8 border-2 border-dashed transition-all ${isDragging
-                    ? 'border-blue-600 bg-blue-50'
+                    ? 'border-primary bg-primary/5'
                     : 'border-gray-300 hover:border-gray-400'
                     }`}
                 onDrop={handleDrop}
@@ -186,8 +186,8 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
                 onDragLeave={handleDragLeave}
             >
                 <div className="text-center">
-                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Upload size={32} className="text-blue-600" />
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Upload size={32} className="text-primary" />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         Drag & drop photos here

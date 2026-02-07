@@ -123,9 +123,9 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                         exit={{ opacity: 0, y: -20 }}
                         className="text-center py-16"
                     >
-                        <Card className="max-w-md mx-auto p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300">
-                            <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Bed size={40} className="text-blue-600" />
+                        <Card className="max-w-md mx-auto p-8 bg-gradient-to-br from-info-foreground to-info-foreground border-2 border-dashed border-info/40">
+                            <div className="w-20 h-20 bg-info/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Bed size={40} className="text-info" />
                             </div>
                             <h3 className="text-xl font-semibold text-gray-900 mb-2">No Room Types Added Yet</h3>
                             <p className="text-gray-600 mb-6">
@@ -159,7 +159,7 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                                 <Card className="p-6 hover:shadow-lg transition-shadow">
                                     {/* Room Type Badge */}
                                     <div className="flex items-center justify-between mb-4">
-                                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">
+                                        <span className="px-3 py-1 bg-info/10 text-info text-sm font-medium rounded-full">
                                             {getRoomTypeLabel(room.type)}
                                         </span>
                                         <div className="flex gap-2">
@@ -175,7 +175,7 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDeleteRoom(room.id)}
-                                                className="p-2 hover:bg-red-50"
+                                                className="p-2 hover:bg-error-foreground"
                                             >
                                                 <Trash2 size={16} className="text-red-600" />
                                             </Button>
@@ -201,7 +201,7 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
                                             <span>{room.size} m²</span>
                                         </div>
                                         <div className="flex items-center text-gray-900 font-semibold mt-4 pt-4 border-t">
-                                            <DollarSign size={18} className="mr-1 text-green-600" />
+                                            <DollarSign size={18} className="mr-1 text-success" />
                                             <span className="text-lg">{room.pricing.basePrice} {room.pricing.currency}/night</span>
                                         </div>
                                     </div>

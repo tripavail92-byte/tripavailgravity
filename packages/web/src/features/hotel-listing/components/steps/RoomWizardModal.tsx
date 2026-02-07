@@ -197,8 +197,8 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                                                     }
                                                 }}
                                                 className={`p-4 border-2 rounded-xl transition-all ${roomData.type === type.value
-                                                        ? 'border-blue-600 bg-blue-50'
-                                                        : 'border-gray-200 hover:border-gray-300'
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-gray-200 hover:border-gray-300'
                                                     }`}
                                             >
                                                 <div className="text-3xl mb-2">{type.icon}</div>
@@ -206,7 +206,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                                                 <div className="text-xs text-gray-600 mt-1">{type.priceRange}</div>
                                                 {roomData.type === type.value && (
                                                     <div className="mt-2">
-                                                        <Check size={20} className="text-blue-600 mx-auto" />
+                                                        <Check size={20} className="text-primary mx-auto" />
                                                     </div>
                                                 )}
                                             </button>
@@ -326,7 +326,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                                     </div>
 
                                     {roomData.beds && roomData.beds.length > 0 && (
-                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div className="bg-info-foreground border border-info/20 rounded-lg p-4">
                                             <p className="text-sm text-blue-900">
                                                 <strong>Selected:</strong>{' '}
                                                 {roomData.beds.map(b => `${b.quantity}x ${BED_TYPES.find(bt => bt.value === b.type)?.label}`).join(', ')}
@@ -386,7 +386,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                                     </div>
 
                                     {roomData.pricing && roomData.pricing.basePrice > 0 && (
-                                        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                                        <div className="bg-success-foreground border border-success/20 rounded-lg p-6">
                                             <h4 className="font-semibold text-green-900 mb-3">Summary</h4>
                                             <div className="space-y-2 text-sm text-green-800">
                                                 <p><strong>{roomData.name}</strong> ({roomData.count} room{roomData.count! > 1 ? 's' : ''})</p>

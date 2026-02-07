@@ -233,7 +233,7 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                             type="checkbox"
                             checked={services.accessibility.wheelchairAccessible}
                             onChange={() => handleAccessibilityToggle('wheelchairAccessible')}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                            className="w-5 h-5 text-primary rounded focus:ring-primary/50"
                         />
                         <span className="font-medium text-gray-700">Wheelchair Accessible</span>
                     </label>
@@ -242,7 +242,7 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                             type="checkbox"
                             checked={services.accessibility.elevator}
                             onChange={() => handleAccessibilityToggle('elevator')}
-                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                            className="w-5 h-5 text-primary rounded focus:ring-primary/50"
                         />
                         <span className="font-medium text-gray-700">Elevator / Lift</span>
                     </label>

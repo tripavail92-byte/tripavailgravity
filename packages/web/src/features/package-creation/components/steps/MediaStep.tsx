@@ -293,7 +293,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                     <div className="text-sm text-gray-600 font-medium">
                         {mediaItems.length} item{mediaItems.length !== 1 ? 's' : ''} uploaded
                         {mediaItems.length < 3 && (
-                            <span className="text-amber-600 ml-2">
+                            <span className="text-warning ml-2">
                                 • {3 - mediaItems.length} more required
                             </span>
                         )}

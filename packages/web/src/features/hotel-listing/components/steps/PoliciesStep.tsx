@@ -94,7 +94,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
-                        <Clock size={20} className="text-blue-600" />
+                        <Clock size={20} className="text-info" />
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-900">Check-in & Check-out Times</h3>
@@ -137,8 +137,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             {/* Cancellation Policy */}
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <Shield size={20} className="text-green-600" />
+                    <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                        <Shield size={20} className="text-success" />
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-900">Cancellation Policy</h3>
@@ -203,7 +203,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
                                     type="checkbox"
                                     checked={policies.houseRules[key as keyof typeof policies.houseRules] as boolean}
                                     onChange={(e) => handleHouseRulesUpdate({ [key]: e.target.checked })}
-                                    className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/50"
                                 />
                             </label>
                         ))}
@@ -291,7 +291,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
                                     type="checkbox"
                                     checked={policies.guestRequirements[key as keyof typeof policies.guestRequirements] as boolean}
                                     onChange={(e) => handleGuestRequirementsUpdate({ [key]: e.target.checked })}
-                                    className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mt-0.5"
+                                    className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/50 mt-0.5"
                                 />
                                 <div className="flex-1">
                                     <div className="text-sm font-medium text-gray-700">{label}</div>

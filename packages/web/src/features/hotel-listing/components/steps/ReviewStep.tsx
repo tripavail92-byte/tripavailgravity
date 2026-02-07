@@ -73,7 +73,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
             </Card>
 
             {/* Rooms (Step 5) */}
-            <Card className="p-6 relative group hover:border-blue-300 transition-all">
+            <Card className="p-6 relative group hover:border-primary/40 transition-all">
                 <Button
                     variant="ghost"
                     size="sm"
@@ -101,7 +101,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
             </Card>
 
             {/* Policies (Step 6) */}
-            <Card className="p-6 relative group hover:border-blue-300 transition-all">
+            <Card className="p-6 relative group hover:border-primary/40 transition-all">
                 <Button
                     variant="ghost"
                     size="sm"
@@ -132,7 +132,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
             </Card>
 
             {/* Services (Step 8) */}
-            <Card className="p-6 relative group hover:border-blue-300 transition-all">
+            <Card className="p-6 relative group hover:border-primary/40 transition-all">
                 <Button
                     variant="ghost"
                     size="sm"

@@ -127,7 +127,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                             {/* Selected Location Display */}
                             <div className="flex items-start gap-4 p-4 bg-success-foreground border border-success/20 rounded-xl">
                                 <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <Check className="w-5 h-5 text-green-600" />
+                                    <Check className="w-5 h-5 text-success" />
                                 </div>
                                 <div className="flex-1">
                                     <h4 className="font-semibold text-green-900 mb-2">Location Selected</h4>
@@ -155,15 +155,15 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                                     });
                                                 }
                                             }}
-                                            className="bg-white border-green-300"
+                                            className="bg-white border-success/20"
                                             placeholder="Edit address if needed (e.g., change house number)"
                                         />
                                     </div>
 
-                                    <p className="text-sm text-green-600">
+                                    <p className="text-sm text-success">
                                         {selectedLocation.city}, {selectedLocation.country}
                                     </p>
-                                    <div className="text-xs text-green-600 mt-1">
+                                    <div className="text-xs text-success mt-1">
                                         📍 {selectedLocation.coordinates.lat.toFixed(4)}, {selectedLocation.coordinates.lng.toFixed(4)}
                                     </div>
                                 </div>
@@ -208,7 +208,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                 >
-                                    <Navigation className="w-5 h-5 text-blue-500 mb-2" />
+                                    <Navigation className="w-5 h-5 text-info mb-2" />
                                     <p className="text-sm font-medium text-gray-900">Use Current</p>
                                     <p className="text-xs text-gray-600">Auto-detect location</p>
                                 </motion.button>

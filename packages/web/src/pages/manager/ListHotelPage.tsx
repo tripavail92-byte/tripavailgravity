@@ -114,7 +114,7 @@ export default function ListHotelPage() {
                         >
                             <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
                                 List your <br />
-                                <span className="text-blue-600">property</span> on <br />
+                                <span className="text-primary">property</span> on <br />
                                 TripAvail
                             </h1>
                             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
@@ -157,7 +157,7 @@ export default function ListHotelPage() {
                     </div>
 
                     {/* Right Column: 3D Animation */}
-                    <div className="relative h-[500px] flex items-center justify-center bg-blue-50/50 rounded-3xl border border-blue-100/50 overflow-hidden">
+                    <div className="relative h-[500px] flex items-center justify-center bg-primary/5 rounded-3xl border border-primary/10 overflow-hidden">
                         {/* Background blobs */}
                         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-200/30 rounded-full blur-3xl" />
                         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl" />

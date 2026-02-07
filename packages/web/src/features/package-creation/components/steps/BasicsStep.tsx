@@ -249,7 +249,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                         Package Title
                     </label>
                     <span className={cn("text-sm transition-colors",
-                        title.length > 60 ? "text-amber-600 font-medium" : "text-gray-400"
+                        title.length > 60 ? "text-warning font-medium" : "text-gray-400"
                     )}>
                         {title.length}/80
                     </span>
@@ -372,7 +372,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                                 <span>Good length</span>
                             </div>
                         ) : (
-                            <span className="text-sm text-amber-600 font-medium">
+                            <span className="text-sm text-warning font-medium">
                                 {50 - description.length} more characters needed
                             </span>
                         )}

@@ -364,8 +364,8 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                     >
                         <div className="max-w-2xl mx-auto">
                             <div className="flex items-center gap-4 mb-3">
-                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <Check size={20} className="text-green-600" />
+                                <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <Check size={20} className="text-success" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-gray-900 truncate">{selectedLocation.address}</h3>
@@ -465,7 +465,7 @@ function LocationPickerContent({ onLocationSelect, onClose, initialLocation }: L
                                 </div>
 
                                 {/* Confirmation Note */}
-                                <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-4">
+                                <div className="bg-info-foreground border border-info/20 rounded-xl px-4 py-3 mb-4">
                                     <p className="text-sm text-blue-900">
                                         <span className="font-medium">Tip:</span> You can drag the pin to adjust your exact location
                                     </p>
