@@ -11,6 +11,7 @@ import PartnerSelectionPage from '@/pages/partner/PartnerSelectionPage'
 import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage'
 import SearchPage from '@/pages/traveller/SearchPage'
 import ListHotelPage from '@/pages/manager/ListHotelPage'
+import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
 
         {/* Full Screen Flows */}
         <Route path="/manager/list-hotel" element={<ListHotelPage />} />
+        <Route path="/manager/list-package" element={<ListPackagePage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
