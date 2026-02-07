@@ -28,9 +28,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Flexible check-in', 'Late checkout', 'Weekend specials'],
         icon: Calendar,
         vector: WeekendGetawayVector,
-        color: 'text-green-500',
-        bg: 'bg-green-50',
-        border: 'border-green-200'
+        color: 'text-primary',
+        bg: 'bg-primary/5',
+        border: 'border-primary/20'
     },
     [PackageType.ROMANTIC_ESCAPE]: {
         label: 'Romantic Escape',
@@ -38,9 +38,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Couples amenities', 'Private dining', 'Spa treatments'],
         icon: Heart,
         vector: RomanticEscapeVector,
-        color: 'text-pink-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-pink-200'
+        border: 'border-primary/20'
     },
     [PackageType.FAMILY_ADVENTURE]: {
         label: 'Family Adventure',
@@ -48,9 +48,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Kid-friendly activities', 'Family rooms', 'Entertainment'],
         icon: Users,
         vector: FamilyAdventureVector,
-        color: 'text-blue-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-blue-200'
+        border: 'border-primary/20'
     },
     [PackageType.BUSINESS_ELITE]: {
         label: 'Business Elite',
@@ -58,9 +58,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Meeting rooms', 'Business center', 'Express services'],
         icon: Briefcase,
         vector: BusinessEliteVector,
-        color: 'text-gray-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-gray-200'
+        border: 'border-primary/20'
     },
     [PackageType.ADVENTURE_PACKAGE]: {
         label: 'Adventure Package',
@@ -68,9 +68,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Outdoor activities', 'Equipment rental', 'Guided tours'],
         icon: Mountain,
         vector: AdventurePackageVector,
-        color: 'text-orange-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-orange-200'
+        border: 'border-primary/20'
     },
     [PackageType.CULINARY_JOURNEY]: {
         label: 'Culinary Journey',
@@ -78,9 +78,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Chef specials', 'Wine pairings', 'Cooking classes'],
         icon: Utensils,
         vector: CulinaryJourneyVector,
-        color: 'text-amber-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-amber-200'
+        border: 'border-primary/20'
     },
     [PackageType.WELLNESS_RETREAT]: {
         label: 'Wellness Retreat',
@@ -88,9 +88,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Spa treatments', 'Yoga sessions', 'Healthy cuisine'],
         icon: Flower,
         vector: WellnessRetreatVector,
-        color: 'text-purple-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-purple-200'
+        border: 'border-primary/20'
     },
     [PackageType.LUXURY_EXPERIENCE]: {
         label: 'Luxury Experience',
@@ -98,9 +98,9 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Concierge service', 'Premium amenities', 'Exclusive access'],
         icon: Crown,
         vector: LuxuryExperienceVector,
-        color: 'text-yellow-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-yellow-200'
+        border: 'border-primary/20'
     },
     [PackageType.CUSTOM]: {
         label: 'Custom Package',
@@ -108,8 +108,8 @@ export const PACKAGE_TYPE_CONFIG = {
         features: ['Fully customizable', 'Your vision', 'Unlimited creativity'],
         icon: Briefcase,
         vector: CustomPackageVector,
-        color: 'text-indigo-500',
+        color: 'text-primary',
         bg: 'bg-primary/5',
-        border: 'border-indigo-200'
+        border: 'border-primary/20'
     }
 };
