@@ -26,7 +26,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
             </div>
 
             {/* Property Basics (Step 1-2) */}
-            <Card className="p-6 relative group hover:border-blue-300 transition-all">
+            <Card className="p-6 relative group hover:border-primary/30 transition-all">
                 <Button
                     variant="ghost"
                     size="sm"
@@ -52,7 +52,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
                     </div>
                     <div>
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded capitalize">
+                            <span className="bg-info/10 text-info text-xs font-semibold px-2.5 py-0.5 rounded capitalize">
                                 {data.propertyType}
                             </span>
                             {data.starRating && (
@@ -88,7 +88,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
                         <div key={room.id} className="p-4 border rounded-lg bg-gray-50">
                             <div className="flex justify-between items-start mb-2">
                                 <span className="font-medium text-gray-900">{room.name}</span>
-                                <span className="text-green-700 font-semibold bg-green-100 px-2 py-0.5 rounded text-xs">
+                                <span className="text-success font-semibold bg-success-foreground px-2 py-0.5 rounded text-xs">
                                     {formatCurrency(room.pricing.basePrice, room.pricing.currency)}
                                 </span>
                             </div>
@@ -168,7 +168,7 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
                     onClick={onPublish}
                     size="lg"
                     disabled={isPublishing}
-                    className="bg-blue-600 hover:bg-blue-700 text-white min-w-[200px]"
+                    className="bg-primary hover:bg-primary/90 text-white min-w-[200px]"
                 >
                     {isPublishing ? (
                         <>

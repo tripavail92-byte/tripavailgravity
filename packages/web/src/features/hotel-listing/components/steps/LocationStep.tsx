@@ -125,8 +125,8 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                             className="space-y-4"
                         >
                             {/* Selected Location Display */}
-                            <div className="flex items-start gap-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-start gap-4 p-4 bg-success-foreground border border-success/20 rounded-xl">
+                                <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center flex-shrink-0">
                                     <Check className="w-5 h-5 text-green-600" />
                                 </div>
                                 <div className="flex-1">
@@ -171,7 +171,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                     onClick={() => setShowLocationPicker(true)}
                                     variant="outline"
                                     size="sm"
-                                    className="border-green-300 text-green-700 hover:bg-green-100"
+                                    className="border-success/30 text-success hover:bg-success/10"
                                 >
                                     <Edit3 size={14} className="mr-1" />
                                     Change
@@ -204,7 +204,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                                         };
                                         handleLocationSelect(mockCurrentLocation);
                                     }}
-                                    className="p-3 border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+                                    className="p-3 border border-gray-200 rounded-lg hover:border-info/40 hover:bg-info-foreground transition-colors text-left"
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                 >
@@ -285,7 +285,7 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                 )}
 
                 {/* Location Tips */}
-                <Card className="p-4 bg-blue-50 border-blue-200">
+                <Card className="p-4 bg-info-foreground border-info/20">
                     <h4 className="font-semibold text-blue-900 mb-2">📍 Location Tips</h4>
                     <ul className="text-sm text-blue-800 space-y-1">
                         <li>• Accurate location helps guests find you easily</li>

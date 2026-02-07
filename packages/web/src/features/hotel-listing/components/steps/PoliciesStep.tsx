@@ -93,7 +93,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             {/* Check-in/Check-out Times */}
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
                         <Clock size={20} className="text-blue-600" />
                     </div>
                     <div>
@@ -153,7 +153,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
                             variant="outline"
                             onClick={() => handleUpdate({ cancellationPolicy: policy.value })}
                             className={`p-4 text-left h-auto ${policies.cancellationPolicy === policy.value
-                                ? 'border-green-600 bg-green-50'
+                                ? 'border-success bg-success/5'
                                 : 'border-gray-200'
                                 }`}
                         >

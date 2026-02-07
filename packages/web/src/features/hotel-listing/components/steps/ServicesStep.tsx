@@ -108,8 +108,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                 {/* Breakfast */}
                 <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                            <Coffee size={24} className="text-orange-600" />
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Coffee size={24} className="text-primary" />
                         </div>
                         <h3 className="font-semibold">Breakfast</h3>
                     </div>
@@ -124,7 +124,7 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ breakfast: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.breakfast === opt.value
-                                    ? 'bg-orange-50 text-orange-700 font-medium ring-1 ring-orange-200'
+                                    ? 'bg-primary/5 text-primary font-medium ring-1 ring-primary/20'
                                     : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
@@ -137,8 +137,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                 {/* Parking */}
                 <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                            <Car size={24} className="text-blue-600" />
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Car size={24} className="text-primary" />
                         </div>
                         <h3 className="font-semibold">Parking</h3>
                     </div>
@@ -153,7 +153,7 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ parking: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.parking === opt.value
-                                    ? 'bg-blue-50 text-blue-700 font-medium ring-1 ring-blue-200'
+                                    ? 'bg-primary/5 text-primary font-medium ring-1 ring-primary/20'
                                     : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
@@ -166,8 +166,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                 {/* WiFi */}
                 <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-purple-100 rounded-lg">
-                            <Wifi size={24} className="text-purple-600" />
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Wifi size={24} className="text-primary" />
                         </div>
                         <h3 className="font-semibold">Internet</h3>
                     </div>
@@ -182,7 +182,7 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 variant="ghost"
                                 onClick={() => handleUpdate({ wifi: opt.value as any })}
                                 className={`w-full text-left px-4 py-2 text-sm ${services.wifi === opt.value
-                                    ? 'bg-purple-50 text-purple-700 font-medium ring-1 ring-purple-200'
+                                    ? 'bg-primary/5 text-primary font-medium ring-1 ring-primary/20'
                                     : 'hover:bg-gray-50 text-gray-600'
                                     }`}
                             >
@@ -207,11 +207,11 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => handleFacilityToggle(key as any)}
                                 className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${isSelected
-                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                    ? 'border-primary bg-primary/5 text-primary'
                                     : 'border-gray-100 bg-white hover:border-gray-200 text-gray-600'
                                     }`}
                             >
-                                <Icon size={20} className={isSelected ? 'text-blue-600' : 'text-gray-400'} />
+                                <Icon size={20} className={isSelected ? 'text-primary' : 'text-gray-400'} />
                                 <span className="font-medium text-sm">{label}</span>
                             </motion.button>
                         );
@@ -222,8 +222,8 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
             {/* Accessibility */}
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                        <Accessibility size={24} className="text-green-600" />
+                    <div className="p-2 bg-success/10 rounded-lg">
+                        <Accessibility size={24} className="text-success" />
                     </div>
                     <h3 className="font-semibold">Accessibility</h3>
                 </div>
