@@ -37,10 +37,10 @@ export function HotelSelectionStep({ onComplete, onUpdate, existingData }: Hotel
         try {
             console.log('🏨 HotelSelectionStep: Fetching user hotels from Supabase');
 
-            // Fetch published hotels from Supabase
+            // Fetch published hotels from Supabase (selecting only core columns)
             const { data: hotelsData, error: fetchError } = await supabase
                 .from('hotels')
-                .select('id, name, address, city, country, is_published, rooms(count)')
+                .select('id, name, address, location, is_published')
                 .eq('is_published', true)
                 .order('created_at', { ascending: false });
 
@@ -51,16 +51,34 @@ export function HotelSelectionStep({ onComplete, onUpdate, existingData }: Hotel
 
             console.log('📦 Hotels fetched from database:', hotelsData);
 
-            // Transform database hotels to Hotel format
-            const userHotels: Hotel[] = (hotelsData || []).map(hotel => ({
-                id: hotel.id,
-                name: hotel.name,
-                address: hotel.address || 'No address',
-                city: hotel.city || undefined,
-                country: hotel.country || undefined,
-                roomCount: Array.isArray(hotel.rooms) ? hotel.rooms.length : 0,
-                status: 'published'
-            }));
+            if (!hotelsData) {
+                console.error('❌ hotelsData is undefined!');
+                setError('Failed to load hotels from database.');
+                setLoading(false);
+                return;
+            }
+
+            // Fetch room counts separately for each hotel
+            const hotelsWithRooms = await Promise.all(
+                hotelsData.map(async (hotel) => {
+                    const { count } = await supabase
+                        .from('rooms')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('hotel_id', hotel.id);
+
+                    return {
+                        id: hotel.id,
+                        name: hotel.name,
+                        address: hotel.address || hotel.location || 'No address',
+                        city: undefined,
+                        country: undefined,
+                        roomCount: count || 0,
+                        status: 'published' as const
+                    };
+                })
+            );
+
+            const userHotels: Hotel[] = hotelsWithRooms;
 
             console.log(`✅ Loaded ${userHotels.length} hotel(s)`);
             setHotels(userHotels);
