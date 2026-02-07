@@ -6,6 +6,7 @@ import { BasicsStep } from './steps/BasicsStep';
 import { MediaStep } from './steps/MediaStep';
 import { HighlightsStep } from './steps/HighlightsStep';
 import { AvailabilityStep } from './steps/AvailabilityStep';
+import { InclusionsStep } from './steps/InclusionsStep';
 import { PackageData, StepData } from '../types';
 
 // Placeholder for future steps
@@ -16,7 +17,7 @@ const STEPS = [
     { id: 2, title: 'Basics', component: BasicsStep },
     { id: 3, title: 'Media', component: MediaStep },
     { id: 4, title: 'Highlights', component: HighlightsStep },
-    { id: 5, title: 'Inclusions', component: PlaceholderStep },
+    { id: 5, title: 'Inclusions', component: InclusionsStep },
     { id: 6, title: 'Exclusions', component: PlaceholderStep },
     { id: 7, title: 'Pricing', component: PlaceholderStep },
     { id: 8, title: 'Availability', component: AvailabilityStep },
