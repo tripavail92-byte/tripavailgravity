@@ -179,8 +179,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             {/* House Rules */}
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <Home size={20} className="text-purple-600" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Home size={20} className="text-primary" />
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-900">House Rules</h3>
@@ -257,8 +257,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             {/* Guest Requirements */}
             <Card className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                        <UserCheck size={20} className="text-orange-600" />
+                    <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                        <UserCheck size={20} className="text-warning" />
                     </div>
                     <div>
                         <h3 className="font-semibold text-gray-900">Guest Requirements</h3>

@@ -324,7 +324,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Flame className="w-5 h-5 text-orange-500" />
+            <Flame className="w-5 h-5 text-primary" />
           </motion.div>
         </div>
         <Button
@@ -416,9 +416,8 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
               <motion.button
                 key={`indicator-${index}`}
                 onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/70'
-                }`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/70'
+                  }`}
                 whileTap={{ scale: 0.9 }}
               />
             ))}

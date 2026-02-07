@@ -39,9 +39,9 @@ export default function BecomePartnerPage() {
             className="hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden group"
             onClick={() => handleSelectRole('hotel_manager')}
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary-gradient opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <Building2 className="h-6 w-6" />
               </div>
               <CardTitle>Hotel Manager</CardTitle>
@@ -73,9 +73,9 @@ export default function BecomePartnerPage() {
             className="hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden group"
             onClick={() => handleSelectRole('tour_operator')}
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary-gradient opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mb-4">
+              <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <MapIcon className="h-6 w-6" />
               </div>
               <CardTitle>Tour Operator</CardTitle>

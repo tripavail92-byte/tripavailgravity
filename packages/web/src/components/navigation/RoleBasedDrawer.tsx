@@ -247,7 +247,7 @@ export function RoleBasedDrawer() {
           <div className="flex justify-between items-center">
             <div className="flex justify-center flex-1 items-center gap-1 text-[10px] text-gray-400">
               <span>Version 1.0.0 • Made with</span>
-              <Heart className="w-3 h-3 fill-pink-500 text-pink-500" />
+              <Heart className="w-3 h-3 fill-primary text-primary" />
             </div>
             {/* Optional Mini Logout for power users if needed, or leave implied */}
             <Button

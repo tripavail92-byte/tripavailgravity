@@ -288,7 +288,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                             exit={{ opacity: 0, height: 0 }}
                             className="space-y-2 overflow-hidden"
                         >
-                            <div className="flex items-center gap-1.5 text-sm text-purple-600 font-medium pl-1">
+                            <div className="flex items-center gap-1.5 text-sm text-primary font-medium pl-1">
                                 <Sparkles className="w-4 h-4" />
                                 <span>Smart suggestions based on your selection</span>
                             </div>

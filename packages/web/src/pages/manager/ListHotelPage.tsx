@@ -159,8 +159,8 @@ export default function ListHotelPage() {
                     {/* Right Column: 3D Animation */}
                     <div className="relative h-[500px] flex items-center justify-center bg-primary/5 rounded-3xl border border-primary/10 overflow-hidden">
                         {/* Background blobs */}
-                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-200/30 rounded-full blur-3xl" />
-                        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl" />
+                        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+                        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/15 rounded-full blur-3xl" />
 
                         <div className="scale-150 transform transition-transform duration-500 hover:scale-[1.6]">
                             <PremiumPropertyVector propertyType={selectedPropertyType as any} size={280} />

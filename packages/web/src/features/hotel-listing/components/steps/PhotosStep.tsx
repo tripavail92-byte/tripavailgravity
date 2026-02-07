@@ -225,7 +225,7 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
                     <div className="text-sm text-gray-600">
                         {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
                         {photos.length < 5 && (
-                            <span className="text-orange-600 ml-2">
+                            <span className="text-warning ml-2">
                                 • Minimum 5 photos required
                             </span>
                         )}

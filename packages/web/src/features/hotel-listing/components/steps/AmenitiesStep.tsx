@@ -380,11 +380,11 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
           >
             <div className="max-w-4xl mx-auto px-5 py-4">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-100">
-                  <Check className="w-4 h-4 text-purple-600" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-success/10">
+                  <Check className="w-4 h-4 text-success" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-medium mb-2 text-purple-800">
+                  <h3 className="font-medium mb-2 text-gray-800">
                     {selectedAmenities.length} amenities selected
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -393,7 +393,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                       return amenity ? (
                         <span
                           key={amenityId}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-primary/10 text-primary"
                         >
                           {amenity.name}
                         </span>
