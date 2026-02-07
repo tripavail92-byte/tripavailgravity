@@ -352,23 +352,37 @@ export default function CompleteHotelListingFlow({ onComplete, onBack, onSaveAnd
     };
 
     const handlePublish = async () => {
+        console.log('🚀 handlePublish called');
+        console.log('👤 User:', user);
+        console.log('📦 Hotel Data:', hotelData);
+
         if (!user?.id) {
-            console.error('No user ID found');
+            console.error('❌ No user ID found - cannot publish');
+            alert('Error: You must be logged in to publish. Please log in and try again.');
             return;
         }
 
+        console.log('✅ User ID found:', user.id);
         setIsPublishing(true);
+
         try {
+            console.log('📡 Calling hotelService.publishListing...');
             const result = await hotelService.publishListing(hotelData, user.id);
+            console.log('📡 hotelService response:', result);
+
             if (result.success) {
-                console.log('Published successfully!', result.hotelId);
+                console.log('✅ Published successfully!', result.hotelId);
+                alert(`Success! Hotel published with ID: ${result.hotelId}`);
                 if (onComplete) onComplete(hotelData);
             } else {
-                console.error('Failed to publish', result.error);
+                console.error('❌ Failed to publish:', result.error);
+                alert(`Failed to publish: ${JSON.stringify(result.error)}`);
             }
         } catch (error) {
-            console.error('Publish error:', error);
+            console.error('❌ Publish error:', error);
+            alert(`Error publishing hotel: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
+            console.log('🏁 Publishing complete, resetting state');
             setIsPublishing(false);
         }
     };
