@@ -9,6 +9,7 @@ import { RoomWizardModal } from '../../../hotel-listing/components/steps/RoomWiz
 import { RoomType } from '../../../hotel-listing/components/steps/RoomsStep';
 import { StepData } from '../../types';
 import { cn } from '@/lib/utils';
+import { supabase } from '@tripavail/shared/core/client';
 
 interface PricingStepProps {
     onComplete: (data: StepData) => void;
@@ -40,25 +41,49 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
         setLoading(true);
         setError(null);
         try {
-            // TODO: Replace with actual API call
-            // const response = await fetch('/api/hotels/${hotelId}/rooms');
-            // const data = await response.json();
+            const hotelId = existingData?.hotelId;
+            if (!hotelId) {
+                setError('No hotel selected. Please go back and select a hotel.');
+                setLoading(false);
+                return;
+            }
 
-            // Simulated data for now - in production, fetch from backend
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            console.log('🏨 Fetching rooms for hotel:', hotelId);
 
-            // Check if we have rooms in existing hotel listing data
-            // This would normally come from the backend
-            const mockRooms: RoomType[] = existingData?.hotelRooms as RoomType[] || [];
+            // Fetch rooms from Supabase
+            const { data: roomsData, error: fetchError } = await supabase
+                .from('rooms')
+                .select('*')
+                .eq('hotel_id', hotelId);
 
-            setHotelRooms(mockRooms);
+            if (fetchError) {
+                console.error('❌ Error fetching rooms:', fetchError);
+                throw fetchError;
+            }
 
-            if (mockRooms.length === 0) {
+            console.log('📦 Rooms fetched:', roomsData);
+
+            // Transform database rooms to RoomType format
+            const transformedRooms: RoomType[] = (roomsData || []).map(room => ({
+                id: room.id,
+                name: room.name,
+                description: room.description || '',
+                basePrice: room.price_override || 0,
+                currency: room.currency || 'USD',
+                capacity: room.capacity_adults || 2,
+                available: room.initial_stock || 0
+            }));
+
+            setHotelRooms(transformedRooms);
+
+            if (transformedRooms.length === 0) {
                 setError('No rooms found in your hotel listing. Add rooms to continue.');
+            } else {
+                console.log(`✅ Loaded ${transformedRooms.length} room(s)`);
             }
         } catch (err) {
             setError('Failed to load hotel rooms. Please try again.');
-            console.error('Error fetching rooms:', err);
+            console.error('❌ Error fetching rooms:', err);
         } finally {
             setLoading(false);
         }
