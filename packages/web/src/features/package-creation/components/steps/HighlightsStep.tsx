@@ -1,15 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { usePackageCreation } from '../CompletePackageCreationFlow';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import {
     Dialog,
     DialogContent,
@@ -22,16 +16,15 @@ import {
 import {
     Plus,
     Trash2,
-    ChevronDown,
     Sparkles,
     Percent,
-    Info
 } from 'lucide-react';
 import {
     getIconForHighlight
 } from '@/components/icons/packages/AnimatedHighlightIcons';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { StepData } from '../../types';
 
 // Helper to determine if a highlight should be visually prominent
 const isPremiumHighlight = (name: string): boolean => {
@@ -47,18 +40,24 @@ const isPremiumHighlight = (name: string): boolean => {
     );
 };
 
-export const HighlightsStep = () => {
-    const { data, updateData, onNext, onBack } = usePackageCreation();
+interface HighlightsStepProps {
+    onComplete: (data: StepData) => void;
+    onUpdate: (data: StepData) => void;
+    existingData?: StepData;
+    onBack: () => void;
+}
 
+export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: HighlightsStepProps) => {
     // Local state for free inclusions
     const [inclusions, setInclusions] = useState<Array<{ name: string; icon?: string }>>(
-        data.freeInclusions || []
+        existingData?.freeInclusions || []
     );
     const [newInclusion, setNewInclusion] = useState('');
 
     // Local state for discounts
+    // Local state for discounts
     const [discounts, setDiscounts] = useState<Array<{ name: string; originalPrice: number; discount: number; icon?: string }>>(
-        data.discountOffers || []
+        existingData?.discountOffers || []
     );
 
     // Dialog state for adding discount
@@ -70,11 +69,14 @@ export const HighlightsStep = () => {
     });
 
     // Sync back to global state when local state changes
+    // Sync back to global state when local state changes
     useEffect(() => {
-        updateData({
+        onUpdate({
+            ...existingData,
             freeInclusions: inclusions,
             discountOffers: discounts
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [inclusions, discounts]);
 
     // Handler for adding a free inclusion
@@ -462,7 +464,11 @@ export const HighlightsStep = () => {
                     Back
                 </Button>
                 <Button
-                    onClick={onNext}
+                    onClick={() => onComplete({
+                        ...existingData,
+                        freeInclusions: inclusions,
+                        discountOffers: discounts
+                    })}
                     size="lg"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                     disabled={inclusions.length === 0 && discounts.length === 0}
