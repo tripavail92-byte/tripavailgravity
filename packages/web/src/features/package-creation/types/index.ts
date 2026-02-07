@@ -19,7 +19,22 @@ export interface PackageData {
     name?: string;
     description?: string;
     durationDays?: number;
+    media?: {
+        photos: any[]; // We'll refine this type in MediaStep
+        video?: string;
+    };
 
+    // Highlights (Inclusions & Discounts)
+    freeInclusions?: Array<{
+        name: string;
+        icon?: string;
+    }>;
+    discountOffers?: Array<{
+        name: string;
+        originalPrice: number;
+        discount: number;
+        icon?: string;
+    }>;
     // We will expand this as we implement more steps
 }
 
@@ -29,5 +44,21 @@ export interface StepData {
     name?: string;
     description?: string;
     durationDays?: number;
+    media?: {
+        photos: any[];
+        video?: string;
+    };
+
+    // Highlights (Inclusions & Discounts)
+    freeInclusions?: Array<{
+        name: string;
+        icon?: string;
+    }>;
+    discountOffers?: Array<{
+        name: string;
+        originalPrice: number;
+        discount: number;
+        icon?: string;
+    }>;
     // We will expand this as we implement more steps
 }

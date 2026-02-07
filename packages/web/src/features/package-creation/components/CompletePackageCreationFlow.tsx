@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Button } from '@/components/ui/button';
 import { PackageTypeStep } from './steps/PackageTypeStep';
 import { BasicsStep } from './steps/BasicsStep';
+import { MediaStep } from './steps/MediaStep';
+import { HighlightsStep } from './steps/HighlightsStep';
 import { PackageData, StepData } from '../types';
 
 // Placeholder for future steps
@@ -12,8 +13,8 @@ const PlaceholderStep = () => <div className="text-center py-12 text-gray-500">S
 const STEPS = [
     { id: 1, title: 'Package Type', component: PackageTypeStep },
     { id: 2, title: 'Basics', component: BasicsStep },
-    { id: 3, title: 'Media', component: PlaceholderStep },
-    { id: 4, title: 'Highlights', component: PlaceholderStep },
+    { id: 3, title: 'Media', component: MediaStep },
+    { id: 4, title: 'Highlights', component: HighlightsStep },
     { id: 5, title: 'Inclusions', component: PlaceholderStep },
     { id: 6, title: 'Exclusions', component: PlaceholderStep },
     { id: 7, title: 'Pricing', component: PlaceholderStep },
@@ -93,17 +94,7 @@ export function CompletePackageCreationFlow() {
                 </AnimatePresence>
             </div>
 
-            {/* Bottom Navigation (if needed outside steps) */}
-            <div className="mt-8 flex justify-between">
-                <Button
-                    variant="outline"
-                    onClick={handleBack}
-                    disabled={currentStep === 1}
-                >
-                    Back
-                </Button>
-                {/* Next button logic is usually inside the step for validation purposes */}
-            </div>
+
         </div>
     );
 }
