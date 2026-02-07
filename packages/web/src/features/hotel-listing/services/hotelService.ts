@@ -26,12 +26,21 @@ export const hotelService = {
             name: data.hotelName,
             description: data.description,
             property_type: data.propertyType,
-            star_rating: data.starRating, // To be added to frontend state if missing
+            star_rating: data.starRating,
             contact_email: data.contactEmail,
-            location: data.location?.address || '',
+            contact_phone: data.contactPhone,
+
+            // Location breakdown
+            location: data.city && data.country ? `${data.city}, ${data.country}` : data.location?.address || '',
+            address: data.address,
+            country: data.country,
+            city: data.city,
+            area: data.area,
+            zip_code: data.zipCode,
             latitude: data.location?.lat,
             longitude: data.location?.lng,
-            base_price_per_night: 0, // Calculated from lowest room price?
+
+            base_price_per_night: 0, // Calculated from lowest room price
 
             // JSONB Columns
             policies: data.policies,
@@ -64,18 +73,20 @@ export const hotelService = {
             if (data.rooms && data.rooms.length > 0) {
                 const roomsPayload = data.rooms.map(room => ({
                     hotel_id: hotel.id,
+                    room_type: room.type,
                     name: room.name,
                     description: room.description,
-                    capacity_adults: room.maxGuests, // Simplified
+                    capacity_adults: room.maxGuests,
                     capacity_children: 0,
                     price_override: room.pricing.basePrice,
+                    currency: room.pricing.currency,
                     initial_stock: room.count,
 
-                    // New Columns
+                    // Additional columns
                     size_sqm: room.size,
-                    bed_config: room.beds, // Need to ensure format matches JSONB or adapt
+                    bed_config: room.beds,
                     amenities: room.amenities,
-                    images: [] // Room images to be handled
+                    images: []
                 }));
 
                 const { error: roomsError } = await supabase

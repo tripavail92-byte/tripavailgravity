@@ -54,6 +54,7 @@ export interface HotelData {
     description: string;
     contactEmail: string;
     contactPhone: string;
+    starRating?: number;
 
     // Location
     country: string;
@@ -61,7 +62,7 @@ export interface HotelData {
     area: string;
     address: string;
     zipCode: string;
-    coordinates?: { lat: number; lng: number };
+    location?: { address: string; lat: number; lng: number };
 
     // Amenities
     amenities: string[];
@@ -70,12 +71,17 @@ export interface HotelData {
     rooms: Array<{
         id: string;
         type: string;
-        capacity: number;
-        beds: string;
+        name: string;
+        description: string;
+        count: number;
+        maxGuests: number;
+        beds: any; // BedConfig[] from RoomsStep
         size: number;
         amenities: string[];
-        basePrice: number;
-        currency: string;
+        pricing: {
+            basePrice: number;
+            currency: string;
+        };
     }>;
 
     // Policies
