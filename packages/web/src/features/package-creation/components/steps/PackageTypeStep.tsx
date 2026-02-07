@@ -54,11 +54,21 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                                 </div>
                             )}
 
-                            <div className={cn(
-                                "w-12 h-12 rounded-lg flex items-center justify-center mb-4",
-                                isSelected ? "bg-white" : config.bg
-                            )}>
-                                <Icon className={cn("w-6 h-6", config.color)} />
+                            <div className="flex justify-center mb-4 h-24 items-center">
+                                {config.vector ? (
+                                    <config.vector
+                                        isActive={isSelected}
+                                        size={96}
+                                        className="w-24 h-24"
+                                    />
+                                ) : (
+                                    <div className={cn(
+                                        "w-12 h-12 rounded-lg flex items-center justify-center",
+                                        isSelected ? "bg-white" : config.bg
+                                    )}>
+                                        <Icon className={cn("w-6 h-6", config.color)} />
+                                    </div>
+                                )}
                             </div>
 
                             <h3 className={cn("font-semibold text-lg mb-1", isSelected ? "text-gray-900" : "text-gray-700")}>

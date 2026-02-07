@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { PackageTypeStep } from './steps/PackageTypeStep';
+import { BasicsStep } from './steps/BasicsStep';
 import { PackageData, StepData } from '../types';
 
 // Placeholder for future steps
@@ -10,7 +11,7 @@ const PlaceholderStep = () => <div className="text-center py-12 text-gray-500">S
 
 const STEPS = [
     { id: 1, title: 'Package Type', component: PackageTypeStep },
-    { id: 2, title: 'Basics', component: PlaceholderStep },
+    { id: 2, title: 'Basics', component: BasicsStep },
     { id: 3, title: 'Media', component: PlaceholderStep },
     { id: 4, title: 'Highlights', component: PlaceholderStep },
     { id: 5, title: 'Inclusions', component: PlaceholderStep },
