@@ -30,10 +30,10 @@ export const DESIGN_TOKENS = {
             gradient: 'linear-gradient(135deg, #FF385C 0%, #FF6B9D 100%)',
         },
         tourOperator: {
-            primary: '#10B981',            // Emerald
-            primaryLight: '#34D399',
-            primaryDark: '#059669',
-            gradient: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)',
+            primary: '#FD5E53',            // Bright Coral
+            primaryLight: '#FE8078',
+            primaryDark: '#E94A40',
+            gradient: '#FD5E53',           // Solid color (no gradient)
         },
     },
 
@@ -135,7 +135,7 @@ export const HSL_TOKENS = {
             primaryForeground: '0 0% 100%',
         },
         tourOperator: {
-            primary: '159 61% 51%',        // #10B981
+            primary: '4 98% 66%',          // #FD5E53
             primaryForeground: '0 0% 100%',
         },
     },

@@ -82,10 +82,11 @@
   }
 
   :root[data-role="tour-operator"] {
-    --primary: 159 61% 51%;
-    /* #10B981 */
+    --primary: 4 98% 66%;
+    /* #FD5E53 (Bright Coral) */
     --primary-foreground: 0 0% 100%;
-    --primary-gradient: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+    --primary-gradient: #FD5E53;
+    /* Solid color (no gradient) */
   }
 
   /* Semantic Colors - Consistent across all roles */
