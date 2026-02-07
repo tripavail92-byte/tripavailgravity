@@ -7,6 +7,9 @@ import { MediaStep } from './steps/MediaStep';
 import { HighlightsStep } from './steps/HighlightsStep';
 import { AvailabilityStep } from './steps/AvailabilityStep';
 import { InclusionsStep } from './steps/InclusionsStep';
+import { ExclusionsStep } from './steps/ExclusionsStep';
+import { PoliciesStep } from './steps/PoliciesStep';
+import { ReviewStep } from './steps/ReviewStep';
 import { PackageData, StepData } from '../types';
 
 // Placeholder for future steps
@@ -18,11 +21,11 @@ const STEPS = [
     { id: 3, title: 'Media', component: MediaStep },
     { id: 4, title: 'Highlights', component: HighlightsStep },
     { id: 5, title: 'Inclusions', component: InclusionsStep },
-    { id: 6, title: 'Exclusions', component: PlaceholderStep },
+    { id: 6, title: 'Exclusions', component: ExclusionsStep },
     { id: 7, title: 'Pricing', component: PlaceholderStep },
     { id: 8, title: 'Availability', component: AvailabilityStep },
-    { id: 9, title: 'Policies', component: PlaceholderStep },
-    { id: 10, title: 'Review', component: PlaceholderStep },
+    { id: 9, title: 'Policies', component: PoliciesStep },
+    { id: 10, title: 'Review', component: ReviewStep },
 ];
 
 export function CompletePackageCreationFlow() {
@@ -49,7 +52,18 @@ export function CompletePackageCreationFlow() {
         }
     };
 
+    const handleEdit = (stepId: number) => {
+        setCurrentStep(stepId);
+    };
+
+    const handleSubmit = () => {
+        console.log('Submitting package:', packageData);
+        // TODO: Submit to backend
+        alert('Package published successfully! 🎉');
+    };
+
     const CurrentStepComponent = STEPS[currentStep - 1].component;
+    const isReviewStep = currentStep === STEPS.length;
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -86,12 +100,21 @@ export function CompletePackageCreationFlow() {
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.2 }}
                     >
-                        <CurrentStepComponent
-                            onComplete={handleStepComplete}
-                            onUpdate={handleStepUpdate}
-                            existingData={packageData}
-                            onBack={handleBack}
-                        />
+                        {isReviewStep ? (
+                            <ReviewStep
+                                packageData={packageData}
+                                onBack={handleBack}
+                                onEdit={handleEdit}
+                                onSubmit={handleSubmit}
+                            />
+                        ) : (
+                            <CurrentStepComponent
+                                onComplete={handleStepComplete}
+                                onUpdate={handleStepUpdate}
+                                existingData={packageData}
+                                onBack={handleBack}
+                            />
+                        )}
                     </motion.div>
                 </AnimatePresence>
             </div>
