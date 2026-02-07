@@ -65,6 +65,21 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+
+  /* TripAvail Role-Based Themes */
+  :root[data-role="hotel-manager"] {
+    --primary: 273 75% 59%;
+    /* #9D4EDD */
+    --primary-foreground: 0 0% 100%;
+    --primary-gradient: linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%);
+  }
+
+  :root[data-role="traveller"] {
+    --primary: 350.5 100% 60%;
+    /* #FF385C */
+    --primary-foreground: 0 0% 100%;
+    --primary-gradient: linear-gradient(135deg, #FF385C 0%, #FF6B9D 100%);
+  }
 }
 
 @layer base {

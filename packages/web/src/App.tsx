@@ -15,11 +15,21 @@ import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
 
 function App() {
-  const { initialize, initialized } = useAuth()
+  const { initialize, initialized, activeRole } = useAuth()
 
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  // Apply role-based theme
+  useEffect(() => {
+    if (activeRole?.role_type) {
+      document.documentElement.setAttribute('data-role', activeRole.role_type)
+    } else {
+      // Default to traveller if no role or not logged in
+      document.documentElement.setAttribute('data-role', 'traveller')
+    }
+  }, [activeRole])
 
   if (!initialized) {
     return (

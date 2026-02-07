@@ -41,7 +41,7 @@ const isPremiumHighlight = (name: string): boolean => {
 };
 
 // Suggested free inclusions - universal options with clear usage details
-const getSuggestedFreeInclusions = (packageType: string): string[] => {
+const getSuggestedFreeInclusions = (_packageType: string): string[] => {
     return [
         'Breakfast for 2 (daily) — restaurant buffet or set menu',
         'Late checkout to 3:00 PM — subject to availability; 1× per stay',
@@ -266,7 +266,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                <h2 className="text-3xl font-bold tracking-tight text-primary">
                     Package Highlights
                 </h2>
                 <p className="text-muted-foreground max-w-[600px] mx-auto text-lg">
@@ -279,15 +279,15 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                 <div className="lg:col-span-2 space-y-8">
 
                     {/* Section 1: Free Inclusions */}
-                    <Card className="p-6 border-blue-100 dark:border-blue-900 shadow-sm overflow-hidden relative group">
+                    <Card className="p-6 border-primary/20 shadow-sm overflow-hidden relative group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Sparkles className="w-24 h-24 text-blue-500" />
+                            <Sparkles className="w-24 h-24 text-primary" />
                         </div>
 
                         <div className="relative z-10 space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                    <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Sparkles className="w-5 h-5 text-primary" />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-semibold">Free Inclusions</h3>
@@ -344,11 +344,11 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                 initial={{ opacity: 0, height: 0, y: 10 }}
                                                 animate={{ opacity: 1, height: 'auto', y: 0 }}
                                                 exit={{ opacity: 0, height: 0, scale: 0.9 }}
-                                                className="flex items-center justify-between p-3 bg-card border rounded-lg group hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+                                                className="flex items-center justify-between p-3 bg-card border rounded-lg group hover:border-primary/20 transition-colors"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                                                        <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" animate={false} />
+                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                        <Icon className="w-4 h-4 text-primary" animate={false} />
                                                     </div>
                                                     <span className="font-medium">{item.name}</span>
                                                 </div>
@@ -376,16 +376,16 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                     </Card>
 
                     {/* Section 2: Exclusive Discounts */}
-                    <Card className="p-6 border-purple-100 dark:border-purple-900 shadow-sm overflow-hidden relative group">
+                    <Card className="p-6 border-primary/20 shadow-sm overflow-hidden relative group">
                         <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Percent className="w-24 h-24 text-purple-500" />
+                            <Percent className="w-24 h-24 text-primary" />
                         </div>
 
                         <div className="relative z-10 space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                                        <Percent className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    <div className="p-2 bg-primary/10 rounded-lg">
+                                        <Percent className="w-5 h-5 text-primary" />
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-semibold">Exclusive Discounts</h3>
@@ -395,7 +395,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
 
                                 <Dialog open={isDiscountDialogOpen} onOpenChange={setIsDiscountDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" onClick={() => openDiscountDialog()} className="border-purple-200 hover:bg-purple-50 text-purple-700 dark:border-purple-800 dark:hover:bg-purple-900/50 dark:text-purple-300">
+                                        <Button variant="outline" onClick={() => openDiscountDialog()} className="border-primary/20 hover:bg-primary/5 text-primary">
                                             <Plus className="w-4 h-4 mr-2" />
                                             Add Offer
                                         </Button>
@@ -468,11 +468,11 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}
                                                 exit={{ opacity: 0, height: 0 }}
-                                                className="flex items-center justify-between p-4 bg-card border border-purple-100 dark:border-purple-900/50 rounded-lg"
+                                                className="flex items-center justify-between p-4 bg-card border border-primary/20 rounded-lg"
                                             >
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center">
-                                                        <Icon className="w-5 h-5 text-purple-600 dark:text-purple-400" animate={false} />
+                                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                        <Icon className="w-5 h-5 text-primary" animate={false} />
                                                     </div>
                                                     <div>
                                                         <div className="font-medium">{item.name}</div>
@@ -491,7 +491,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="h-8 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                                        className="h-8 text-xs text-primary hover:text-primary/80 hover:bg-primary/10"
                                                         onClick={() => openDiscountDialog(item.name, item.originalPrice, item.discount, index)}
                                                     >
                                                         Edit
@@ -511,7 +511,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                 </AnimatePresence>
 
                                 {discounts.length === 0 && (
-                                    <div className="text-center py-8 border-2 border-dashed border-purple-100 dark:border-purple-900/30 rounded-lg">
+                                    <div className="text-center py-8 border-2 border-dashed border-primary/20 rounded-lg">
                                         <p className="text-muted-foreground">No custom offers added yet</p>
                                         <p className="text-xs text-muted-foreground mt-1">Add custom offers or select from popular ones below</p>
                                     </div>
@@ -519,7 +519,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                             </div>
 
                             {/* Discount Suggestions */}
-                            <div className="space-y-3 pt-4 border-t border-purple-100 dark:border-purple-900/30">
+                            <div className="space-y-3 pt-4 border-t border-primary/10">
                                 <p className="text-xs text-muted-foreground font-medium">Popular discount offers:</p>
                                 <div className="space-y-2">
                                     {suggestedDiscounts
@@ -531,24 +531,24 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                 <motion.button
                                                     key={suggestion.name}
                                                     onClick={() => openDiscountDialog(suggestion.name, suggestion.originalPrice, suggestion.discount)}
-                                                    className="w-full flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-slate-700 hover:border-purple-200 dark:hover:border-purple-800 text-left transition-all group"
+                                                    className="w-full flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-primary/5 dark:hover:bg-slate-700 hover:border-primary/30 dark:hover:border-primary/30 text-left transition-all group"
                                                     initial={{ opacity: 0, x: -10 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: index * 0.05 }}
                                                     whileHover={{ x: 2 }}
                                                 >
                                                     <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full group-hover:bg-white dark:group-hover:bg-slate-600 transition-colors">
-                                                        <Percent className="w-4 h-4 text-slate-600 dark:text-slate-300 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
+                                                        <Percent className="w-4 h-4 text-slate-600 dark:text-slate-300 group-hover:text-primary dark:group-hover:text-primary" />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 block group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                                                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100 block group-hover:text-primary dark:group-hover:text-primary transition-colors">
                                                             {suggestion.name}
                                                         </span>
                                                         <span className="text-xs text-slate-500 dark:text-slate-400">
                                                             ${suggestion.originalPrice} <span className="text-slate-300 px-1">→</span> <span className="font-medium text-green-600 dark:text-green-400">${finalPrice.toFixed(0)} ({suggestion.discount}% OFF)</span>
                                                         </span>
                                                     </div>
-                                                    <Plus className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                                                    <Plus className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
                                                 </motion.button>
                                             );
                                         })}
@@ -589,11 +589,11 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                         className={cn(
                                                             "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all duration-300",
                                                             isPremium
-                                                                ? "bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200 text-amber-800 dark:from-amber-900/20 dark:to-yellow-900/20 dark:border-amber-700 dark:text-amber-300 shadow-sm"
+                                                                ? "bg-primary/5 border-primary/20 text-primary shadow-sm"
                                                                 : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
                                                         )}
                                                     >
-                                                        <Icon className={cn("w-3.5 h-3.5", isPremium ? "text-amber-600 dark:text-amber-400" : "text-slate-400")} animate={inclusions.length < 5} />
+                                                        <Icon className={cn("w-3.5 h-3.5", isPremium ? "text-primary" : "text-slate-400")} animate={inclusions.length < 5} />
                                                         <span className="font-medium">{item.name}</span>
                                                     </div>
                                                 );
@@ -629,9 +629,9 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                 {/* Value Summary */}
                                 {(inclusions.length > 0 || discounts.length > 0) && (
                                     <div className="pt-2">
-                                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-800 text-center">
+                                        <div className="bg-primary/5 p-3 rounded-lg border border-primary/10 text-center">
                                             <div className="text-xs text-muted-foreground">Total Added Value</div>
-                                            <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                            <div className="text-xl font-bold text-primary">
                                                 ~${estimatedValue.toFixed(0)}
                                             </div>
                                         </div>
@@ -654,7 +654,6 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                         discountOffers: discounts
                     })}
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                     disabled={inclusions.length === 0 && discounts.length === 0}
                 >
                     Continue

@@ -19,6 +19,9 @@ const config: Config = {
       },
     },
     extend: {
+      backgroundImage: {
+        'primary-gradient': 'var(--primary-gradient)',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -26,7 +29,7 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#e11d48', // Rose 600 as per documentation
+          DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
