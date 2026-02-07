@@ -70,8 +70,7 @@ export function ListingsGrid() {
 
                     <Button
                         onClick={handleNewListing}
-                        style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
-                        className="text-white hover:opacity-90 transition-opacity"
+                        className="bg-primary-gradient text-white hover:opacity-90 transition-opacity"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         New Listing
@@ -89,8 +88,7 @@ export function ListingsGrid() {
                     <p className="text-gray-600 mb-6">Create your first listing to start receiving bookings</p>
                     <Button
                         onClick={handleNewListing}
-                        style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
-                        className="text-white hover:opacity-90 transition-opacity"
+                        className="bg-primary-gradient text-white hover:opacity-90 transition-opacity"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Create Your First Listing
