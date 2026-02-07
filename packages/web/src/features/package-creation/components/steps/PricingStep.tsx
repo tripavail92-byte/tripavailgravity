@@ -90,6 +90,11 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
     };
 
     useEffect(() => {
+        console.log('🎯 PricingStep mounted');
+        console.log('📋 existingData:', existingData);
+        console.log('🏨 hotelId:', existingData?.hotelId);
+        console.log('🏢 hotelName:', existingData?.hotelName);
+
         fetchHotelRooms();
 
         // Load previously selected rooms if any
