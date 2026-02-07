@@ -16,7 +16,11 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
     const selectedType = existingData?.packageType;
 
     const handleSelect = (type: PackageType) => {
-        onUpdate({ ...existingData, packageType: type });
+        if (existingData?.packageType !== type) {
+            onUpdate({ ...existingData, packageType: type, name: '', description: '', durationDays: undefined });
+        } else {
+            onUpdate({ ...existingData, packageType: type });
+        }
     };
 
     return (

@@ -127,7 +127,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                 "A fully customizable package allowing you to mix and match accommodations, dining, and activities for a truly personalized stay."
             ]
         };
-        return packageType ? (suggestionMap[packageType] || suggestionMap[PackageType.WEEKEND_GETAWAY]) : [];
+        return packageType ? (suggestionMap[packageType] || []) : [];
     };
 
     const titleSuggestions = getTitleSuggestions(existingData?.packageType);
