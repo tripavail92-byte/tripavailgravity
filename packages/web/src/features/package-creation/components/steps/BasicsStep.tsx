@@ -297,7 +297,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                                     <motion.button
                                         key={index}
                                         onClick={() => handleTitleChange(suggestion)}
-                                        className="group relative px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:bg-purple-50 transition-all duration-200 shadow-sm hover:shadow-md text-left flex items-center gap-2"
+                                        className="group relative px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-full hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 shadow-sm hover:shadow-md text-left flex items-center gap-2"
                                         whileHover={{ scale: 1.02, y: -1 }}
                                         whileTap={{ scale: 0.98 }}
                                         initial={{ opacity: 0, y: 10 }}
@@ -305,7 +305,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                                         transition={{ delay: 0.1 + index * 0.05 }}
                                     >
                                         {suggestion}
-                                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-purple-500" />
+                                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                                     </motion.button>
                                 ))}
                             </div>
@@ -360,7 +360,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                     <button
                         onClick={handleGenerateSuggestion}
                         disabled={isGenerating}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50"
                     >
                         <RefreshCw className={cn("w-4 h-4", isGenerating && "animate-spin")} />
                         {isGenerating ? 'Generating...' : 'AI Suggest'}

@@ -46,7 +46,7 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                             className={cn(
                                 "relative p-6 rounded-xl border-2 text-left transition-all duration-200 h-full flex flex-col group",
                                 isSelected
-                                    ? "border-[#9D4EDD] bg-gradient-to-br from-purple-50 to-cyan-50 shadow-md ring-1 ring-[#9D4EDD]"
+                                    ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary"
                                     : cn(
                                         "border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm",
                                         isCustom && "border-dashed border-gray-300 bg-gray-50/50"

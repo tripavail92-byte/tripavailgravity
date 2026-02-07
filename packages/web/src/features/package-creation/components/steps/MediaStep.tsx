@@ -230,7 +230,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                 <Card
                     className={cn(
                         "p-10 border-2 border-dashed transition-all cursor-pointer group",
-                        isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50',
+                        isDragging ? 'border-primary bg-primary/10' : 'border-gray-300 hover:border-primary/40 hover:bg-gray-50',
                         showValidation && mediaItems.length < 3 && "border-red-300 bg-red-50"
                     )}
                     onDrop={handleDrop}
@@ -241,7 +241,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                     <div className="text-center">
                         <div className={cn(
                             "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors",
-                            isDragging ? "bg-purple-100 text-purple-600" : "bg-gray-100 text-gray-500 group-hover:bg-purple-100 group-hover:text-purple-600"
+                            isDragging ? "bg-primary/20 text-primary" : "bg-gray-100 text-gray-500 group-hover:bg-primary/20 group-hover:text-primary"
                         )}>
                             <Upload size={32} />
                         </div>

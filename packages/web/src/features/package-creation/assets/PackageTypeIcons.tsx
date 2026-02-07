@@ -39,7 +39,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Heart,
         vector: RomanticEscapeVector,
         color: 'text-pink-500',
-        bg: 'bg-pink-50',
+        bg: 'bg-primary/5',
         border: 'border-pink-200'
     },
     [PackageType.FAMILY_ADVENTURE]: {
@@ -49,7 +49,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Users,
         vector: FamilyAdventureVector,
         color: 'text-blue-500',
-        bg: 'bg-blue-50',
+        bg: 'bg-primary/5',
         border: 'border-blue-200'
     },
     [PackageType.BUSINESS_ELITE]: {
@@ -59,7 +59,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Briefcase,
         vector: BusinessEliteVector,
         color: 'text-gray-500',
-        bg: 'bg-gray-50',
+        bg: 'bg-primary/5',
         border: 'border-gray-200'
     },
     [PackageType.ADVENTURE_PACKAGE]: {
@@ -69,7 +69,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Mountain,
         vector: AdventurePackageVector,
         color: 'text-orange-500',
-        bg: 'bg-orange-50',
+        bg: 'bg-primary/5',
         border: 'border-orange-200'
     },
     [PackageType.CULINARY_JOURNEY]: {
@@ -79,7 +79,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Utensils,
         vector: CulinaryJourneyVector,
         color: 'text-amber-500',
-        bg: 'bg-amber-50',
+        bg: 'bg-primary/5',
         border: 'border-amber-200'
     },
     [PackageType.WELLNESS_RETREAT]: {
@@ -89,7 +89,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Flower,
         vector: WellnessRetreatVector,
         color: 'text-purple-500',
-        bg: 'bg-purple-50',
+        bg: 'bg-primary/5',
         border: 'border-purple-200'
     },
     [PackageType.LUXURY_EXPERIENCE]: {
@@ -99,7 +99,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Crown,
         vector: LuxuryExperienceVector,
         color: 'text-yellow-500',
-        bg: 'bg-yellow-50',
+        bg: 'bg-primary/5',
         border: 'border-yellow-200'
     },
     [PackageType.CUSTOM]: {
@@ -109,7 +109,7 @@ export const PACKAGE_TYPE_CONFIG = {
         icon: Briefcase,
         vector: CustomPackageVector,
         color: 'text-indigo-500',
-        bg: 'bg-indigo-50',
+        bg: 'bg-primary/5',
         border: 'border-indigo-200'
     }
 };
