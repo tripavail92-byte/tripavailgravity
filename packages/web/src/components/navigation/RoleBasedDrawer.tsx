@@ -210,7 +210,7 @@ export function RoleBasedDrawer() {
               <>
                 <p className="text-sm font-semibold text-gray-900 mb-3">Partner with us</p>
                 <Button
-                  className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 text-white border-0 h-auto py-3 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-purple-200"
+                  className="w-full bg-primary-gradient hover:opacity-90 text-white border-0 h-auto py-3 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
                   onClick={() => {
                     setIsOpen(false)
                     navigate('/partner/onboarding')
