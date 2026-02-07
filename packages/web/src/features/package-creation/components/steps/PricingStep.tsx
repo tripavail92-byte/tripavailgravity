@@ -66,12 +66,18 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
             // Transform database rooms to RoomType format
             const transformedRooms: RoomType[] = (roomsData || []).map(room => ({
                 id: room.id,
-                name: room.name,
+                type: room.room_type || 'standard',
+                name: room.name || 'Room',
                 description: room.description || '',
-                basePrice: room.price_override || 0,
-                currency: room.currency || 'USD',
-                capacity: room.capacity_adults || 2,
-                available: room.initial_stock || 0
+                count: room.initial_stock || 1,
+                maxGuests: room.capacity_adults || 2,
+                size: room.size_sqm || 0,
+                beds: room.bed_config || [],
+                amenities: Array.isArray(room.amenities) ? room.amenities : [],
+                pricing: {
+                    basePrice: room.price_override || 0,
+                    currency: room.currency || 'USD'
+                }
             }));
 
             setHotelRooms(transformedRooms);
