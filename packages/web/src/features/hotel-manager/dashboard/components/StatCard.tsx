@@ -22,8 +22,8 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
                     <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
 
                     <div className="flex items-center gap-1 text-sm">
-                        <TrendIcon className={`w-4 h-4 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
-                        <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                        <TrendIcon className={`w-4 h-4 ${isPositive ? 'text-success' : 'text-error'}`} />
+                        <span className={`font-medium ${isPositive ? 'text-success' : 'text-error'}`}>
                             {change}
                         </span>
                         {period && (

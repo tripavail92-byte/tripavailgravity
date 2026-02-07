@@ -231,7 +231,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                     className={cn(
                         "p-10 border-2 border-dashed transition-all cursor-pointer group",
                         isDragging ? 'border-primary bg-primary/10' : 'border-gray-300 hover:border-primary/40 hover:bg-gray-50',
-                        showValidation && mediaItems.length < 3 && "border-red-300 bg-red-50"
+                        showValidation && mediaItems.length < 3 && "border-error bg-error-foreground"
                     )}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
@@ -270,14 +270,14 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                             Browse Files
                         </Button>
                         {uploadError && (
-                            <p className="text-red-600 text-sm mt-4 bg-red-50 py-2 px-3 rounded inline-block">
+                            <p className="text-error text-sm mt-4 bg-error-foreground py-2 px-3 rounded inline-block">
                                 <span className="font-semibold">Error:</span> {uploadError}
                             </p>
                         )}
                     </div>
                 </Card>
                 {showValidation && mediaItems.length < 3 && (
-                    <p className="text-sm text-red-500 mt-2 pl-1">
+                    <p className="text-sm text-error mt-2 pl-1">
                         At least 3 photos are required to continue.
                     </p>
                 )}
@@ -366,7 +366,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                                             variant="destructive"
                                             size="sm"
                                             onClick={() => deleteMedia(item.id)}
-                                            className="h-8 text-xs bg-red-500 hover:bg-red-600 border-0"
+                                            className="h-8 text-xs bg-error hover:bg-error/90 border-0"
                                         >
                                             <X size={12} className="mr-1.5" />
                                             Remove

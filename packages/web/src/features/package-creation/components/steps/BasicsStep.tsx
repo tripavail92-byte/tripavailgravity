@@ -223,17 +223,17 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                         className={cn(
                             "h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm",
                             focusedField === 'hotelName' ? "border-black ring-1 ring-black shadow-md" : "border-gray-200 hover:border-gray-300",
-                            showValidation && !isHotelValid && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500"
+                            showValidation && !isHotelValid && "border-error bg-error-foreground focus:border-error focus:ring-error"
                         )}
                     />
                     {showValidation && !isHotelValid && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-error">
                             <AlertCircle className="w-5 h-5" />
                         </div>
                     )}
                 </div>
                 {showValidation && !isHotelValid && (
-                    <p className="text-sm text-red-500 pl-1">Hotel name is required (min 2 chars)</p>
+                    <p className="text-sm text-error pl-1">Hotel name is required (min 2 chars)</p>
                 )}
             </motion.div>
 
@@ -266,17 +266,17 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                         className={cn(
                             "h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm",
                             focusedField === 'title' ? "border-black ring-1 ring-black shadow-md" : "border-gray-200 hover:border-gray-300",
-                            showValidation && !isTitleValid && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500"
+                            showValidation && !isTitleValid && "border-error bg-error-foreground focus:border-error focus:ring-error"
                         )}
                     />
                     {showValidation && !isTitleValid && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-error">
                             <AlertCircle className="w-5 h-5" />
                         </div>
                     )}
                 </div>
                 {showValidation && !isTitleValid && (
-                    <p className="text-sm text-red-500 pl-1">Package title is required (min 5 chars)</p>
+                    <p className="text-sm text-error pl-1">Package title is required (min 5 chars)</p>
                 )}
 
                 {/* Smart Suggestions */}
@@ -337,12 +337,12 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                         className={cn(
                             "h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm text-center",
                             focusedField === 'duration' ? "border-black ring-1 ring-black shadow-md" : "border-gray-200 hover:border-gray-300",
-                            showValidation && !isDurationValid && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500"
+                            showValidation && !isDurationValid && "border-error bg-error-foreground focus:border-error focus:ring-error"
                         )}
                     />
                 </div>
                 {showValidation && !isDurationValid && (
-                    <p className="text-sm text-red-500 pl-1">Duration required</p>
+                    <p className="text-sm text-error pl-1">Duration required</p>
                 )}
             </motion.div>
 
@@ -367,7 +367,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                     </button>
                     <div className="flex items-center gap-2">
                         {description.length >= 50 ? (
-                            <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
+                            <div className="flex items-center gap-1 text-sm text-success font-medium">
                                 <CheckCircle2 className="w-4 h-4" />
                                 <span>Good length</span>
                             </div>
@@ -392,18 +392,18 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                         className={cn(
                             "min-h-[180px] resize-none text-base transition-all duration-200 bg-white rounded-xl shadow-sm leading-relaxed",
                             focusedField === 'description' ? "border-black ring-1 ring-black shadow-md" : "border-gray-200 hover:border-gray-300",
-                            showValidation && !isDescValid && "border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500"
+                            showValidation && !isDescValid && "border-error bg-error-foreground focus:border-error focus:ring-error"
                         )}
                         maxLength={1000}
                     />
                     {showValidation && !isDescValid && (
-                        <div className="absolute right-3 top-4 text-red-500">
+                        <div className="absolute right-3 top-4 text-error">
                             <AlertCircle className="w-5 h-5" />
                         </div>
                     )}
                 </div>
                 {showValidation && !isDescValid && (
-                    <p className="text-sm text-red-500 pl-1">Description is required (min 50 chars)</p>
+                    <p className="text-sm text-error pl-1">Description is required (min 50 chars)</p>
                 )}
                 <p className="text-sm text-gray-500 pl-1">
                     Use emotional language that resonates with your target audience.

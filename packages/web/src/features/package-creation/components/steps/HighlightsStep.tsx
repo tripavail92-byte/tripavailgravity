@@ -443,7 +443,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
 
                                             <div className="p-3 bg-secondary/30 rounded-lg text-sm flex justify-between items-center">
                                                 <span>New Price:</span>
-                                                <span className="font-bold text-green-600 dark:text-green-400">
+                                                <span className="font-bold text-success">
                                                     ${(newDiscount.originalPrice * (1 - newDiscount.discount / 100)).toFixed(2)}
                                                 </span>
                                             </div>
@@ -478,10 +478,10 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                         <div className="font-medium">{item.name}</div>
                                                         <div className="flex items-center gap-2 text-sm">
                                                             <span className="line-through text-muted-foreground">${item.originalPrice}</span>
-                                                            <span className="font-bold text-green-600 dark:text-green-400">
+                                                            <span className="font-bold text-success">
                                                                 ${(item.originalPrice * (1 - item.discount / 100)).toFixed(0)}
                                                             </span>
-                                                            <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded">
+                                                            <span className="text-xs bg-success-foreground text-success px-1.5 py-0.5 rounded">
                                                                 -{item.discount}%
                                                             </span>
                                                         </div>
@@ -545,7 +545,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                             {suggestion.name}
                                                         </span>
                                                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                            ${suggestion.originalPrice} <span className="text-slate-300 px-1">→</span> <span className="font-medium text-green-600 dark:text-green-400">${finalPrice.toFixed(0)} ({suggestion.discount}% OFF)</span>
+                                                            ${suggestion.originalPrice} <span className="text-slate-300 px-1">→</span> <span className="font-medium text-success">${finalPrice.toFixed(0)} ({suggestion.discount}% OFF)</span>
                                                         </span>
                                                     </div>
                                                     <Plus className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
@@ -564,7 +564,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                         <Card className="p-0 overflow-hidden border-2 shadow-lg bg-slate-50 dark:bg-slate-950/50">
                             <div className="bg-slate-900 text-white p-4">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                                    <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                                     <span className="text-xs font-medium text-slate-300 uppercase tracking-wider">Guest View</span>
                                 </div>
                                 <h4 className="font-semibold">Package Preview</h4>
@@ -618,7 +618,7 @@ export const HighlightsStep = ({ onComplete, onUpdate, existingData, onBack }: H
                                                     <span className="text-sm font-medium truncate max-w-[120px]" title={item.name}>{item.name}</span>
                                                     <div className="flex items-center gap-2 text-sm">
                                                         <span className="line-through text-slate-400 text-xs">${item.originalPrice}</span>
-                                                        <span className="font-bold text-green-600 dark:text-green-400">${(item.originalPrice * (1 - item.discount / 100)).toFixed(0)}</span>
+                                                        <span className="font-bold text-success">${(item.originalPrice * (1 - item.discount / 100)).toFixed(0)}</span>
                                                     </div>
                                                 </div>
                                             ))}
