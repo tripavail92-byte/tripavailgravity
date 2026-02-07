@@ -30,6 +30,7 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                 {Object.entries(PACKAGE_TYPE_CONFIG).map(([key, config]) => {
                     const type = key as PackageType;
                     const isSelected = selectedType === type;
+                    const isCustom = type === PackageType.CUSTOM;
                     const Icon = config.icon;
 
                     return (
@@ -39,19 +40,23 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                             whileTap={{ scale: 0.98 }}
                             onClick={() => handleSelect(type)}
                             className={cn(
-                                "relative p-6 rounded-xl border-2 text-left transition-all duration-200 h-full flex flex-col",
+                                "relative p-6 rounded-xl border-2 text-left transition-all duration-200 h-full flex flex-col group",
                                 isSelected
-                                    ? `border-${config.color.split('-')[1]}-500 ${config.bg} shadow-md`
-                                    : "border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm"
+                                    ? "border-[#9D4EDD] bg-gradient-to-br from-purple-50 to-cyan-50 shadow-md ring-1 ring-[#9D4EDD]"
+                                    : cn(
+                                        "border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm",
+                                        isCustom && "border-dashed border-gray-300 bg-gray-50/50"
+                                    )
                             )}
                         >
                             {isSelected && (
-                                <div className={cn(
-                                    "absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center text-white",
-                                    config.color.replace('text-', 'bg-')
-                                )}>
-                                    <Check className="w-4 h-4" />
-                                </div>
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="absolute top-3 right-3 w-6 h-6 bg-gradient-to-br from-[#9D4EDD] to-[#00D4FF] rounded-full flex items-center justify-center shadow-sm"
+                                >
+                                    <Check className="w-4 h-4 text-white" />
+                                </motion.div>
                             )}
 
                             <div className="flex justify-center mb-4 h-24 items-center">
@@ -59,7 +64,7 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                                     <config.vector
                                         isActive={isSelected}
                                         size={96}
-                                        className="w-24 h-24"
+                                        className="w-24 h-24 transition-transform duration-300 group-hover:scale-105"
                                     />
                                 ) : (
                                     <div className={cn(
@@ -75,9 +80,18 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                                 {config.label}
                             </h3>
 
-                            <p className="text-sm text-gray-500 leading-relaxed">
+                            <p className="text-sm text-gray-500 leading-relaxed mb-4">
                                 {config.description}
                             </p>
+
+                            <div className="space-y-1 mt-auto">
+                                {config.features?.map((feature, idx) => (
+                                    <div key={idx} className="flex items-center gap-2">
+                                        <div className={cn("w-1 h-1 rounded-full", isSelected ? "bg-gray-600" : "bg-gray-400")}></div>
+                                        <span className="text-xs text-gray-600">{feature}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </motion.button>
                     );
                 })}
@@ -91,7 +105,7 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
                 >
                     <button
                         onClick={() => onComplete({ packageType: selectedType })}
-                        className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                        className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
                     >
                         Continue with {PACKAGE_TYPE_CONFIG[selectedType].label}
                     </button>
