@@ -1,6 +1,6 @@
-import { Bell, Search, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer';
 
 export function DashboardHeader() {
     return (
@@ -34,18 +34,8 @@ export function DashboardHeader() {
                             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                         </button>
 
-                        {/* User Menu */}
-                        <Button variant="ghost" className="flex items-center gap-2">
-                            <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center"
-                                style={{ background: 'linear-gradient(135deg, #9D4EDD 0%, #00D4FF 100%)' }}
-                            >
-                                <User className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="hidden md:inline text-gray-900 font-medium">
-                                Sarah M.
-                            </span>
-                        </Button>
+                        {/* Role-Based Drawer Menu (Profile Pill) */}
+                        <RoleBasedDrawer />
                     </div>
                 </div>
             </div>
