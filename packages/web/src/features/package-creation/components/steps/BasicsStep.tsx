@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Building2, Sparkles, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Building2, Sparkles, ChevronRight, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -84,11 +84,68 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                 "Exclusive Stay"
             ]
         };
-
         return packageType ? (titleMap[packageType] || titleMap[PackageType.WEEKEND_GETAWAY]) : [];
     };
 
+    // Auto-suggestions based on package type for description
+    const getDescriptionSuggestions = (packageType?: PackageType) => {
+        const suggestionMap: { [key: string]: string[] } = {
+            [PackageType.WEEKEND_GETAWAY]: [
+                "Escape the ordinary with a perfect weekend retreat featuring luxury amenities and relaxation. Unwind in style with our curated weekend experience designed for maximum comfort and enjoyment. Your ideal weekend getaway awaits with premium accommodations and memorable experiences.",
+                "Experience the ultimate weekend escape with luxurious accommodations, world-class dining, and rejuvenating spa treatments. Perfect for couples or friends looking to recharge and create lasting memories in a serene setting."
+            ],
+            [PackageType.ROMANTIC_ESCAPE]: [
+                "Rekindle romance with an intimate escape featuring candlelit dinners and couples' spa treatments. Create unforgettable memories with your loved one in our romantic sanctuary of luxury and intimacy. Celebrate love with enchanting experiences designed for couples seeking romance and connection.",
+                "Ignite passion and romance with our exclusive couples' retreat. Enjoy private dining experiences, sunset views, couples massages, and luxurious suite accommodations designed to celebrate your love story."
+            ],
+            [PackageType.FAMILY_ADVENTURE]: [
+                "Adventure awaits the whole family with exciting activities, comfortable accommodations, and endless fun. Create lasting family memories with our specially curated experiences for guests of all ages. Perfect family getaway featuring kid-friendly amenities and entertainment for everyone to enjoy.",
+                "Bring the whole family for an unforgettable experience with activities for all ages. From kids' clubs to family suites, we've thought of everything to make your family vacation stress-free and fun."
+            ],
+            [PackageType.BUSINESS_ELITE]: [
+                "Elevate your business travel with premium accommodations and professional amenities for success. Experience seamless business hospitality with executive services and comfortable meeting spaces. Where business meets luxury - premium corporate packages designed for the discerning professional.",
+                "Maximize productivity and comfort with our business traveler package. Features include high-speed WiFi, executive lounge access, meeting room credits, and a dedicated workspace in your suite."
+            ],
+            [PackageType.ADVENTURE_PACKAGE]: [
+                "Unleash your adventurous spirit with thrilling outdoor experiences and comfortable base camp accommodations. Epic adventures await with guided excursions, equipment rentals, and cozy mountain lodge comfort. For thrill-seekers and nature lovers - your gateway to unforgettable outdoor adventures.",
+                "Feed your adventurous soul with hiking, rock climbing, kayaking, and more. All equipment and experienced guides included, with comfortable accommodations to rest after your exciting day."
+            ],
+            [PackageType.CULINARY_JOURNEY]: [
+                "Embark on a gastronomic journey with world-class cuisine, wine tastings, and culinary masterclasses. Savor exceptional flavors with our chef-curated dining experiences and gourmet adventures. A feast for all senses featuring artisanal cuisine, premium ingredients, and culinary excellence.",
+                "Indulge in a culinary adventure featuring multi-course tasting menus, sommelier-led wine pairings, cooking classes with our executive chef, and exclusive access to local food markets."
+            ],
+            [PackageType.WELLNESS_RETREAT]: [
+                "Rejuvenate your mind, body, and soul with holistic wellness treatments and serene accommodations. Find your inner peace with transformative wellness experiences in a tranquil sanctuary setting. Restore balance and vitality with our comprehensive wellness retreat featuring spa treatments and mindfulness.",
+                "Discover true relaxation with daily yoga sessions, meditation classes, therapeutic massages, organic wellness cuisine, and access to our state-of-the-art spa facilities."
+            ],
+            [PackageType.LUXURY_EXPERIENCE]: [
+                "Indulge in unparalleled luxury with exclusive VIP services, premium amenities, and world-class hospitality. Experience the pinnacle of hospitality with bespoke services and ultra-luxury accommodations. Where opulence meets excellence - an exclusive experience crafted for the most discerning guests.",
+                "Experience absolute luxury with butler service, private transfers, Michelin-star dining, premium suite accommodations, and personalized concierge attention to every detail."
+            ],
+            [PackageType.CUSTOM]: [
+                "Create your own unique experience tailored exactly to your preferences. Select from our premium amenities and services to design the perfect stay that meets directly to your specific needs and desires.",
+                "A fully customizable package allowing you to mix and match accommodations, dining, and activities for a truly personalized stay."
+            ]
+        };
+        return packageType ? (suggestionMap[packageType] || suggestionMap[PackageType.WEEKEND_GETAWAY]) : [];
+    };
+
     const titleSuggestions = getTitleSuggestions(existingData?.packageType);
+    const descriptionSuggestions = getDescriptionSuggestions(existingData?.packageType);
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerateSuggestion = () => {
+        setIsGenerating(true);
+        // Simulate AI generation delay
+        setTimeout(() => {
+            if (descriptionSuggestions.length > 0) {
+                const randomSuggestion = descriptionSuggestions[Math.floor(Math.random() * descriptionSuggestions.length)];
+                setDescription(randomSuggestion);
+            }
+            setIsGenerating(false);
+        }, 800);
+    };
 
     const handleTitleChange = (value: string) => setTitle(value);
     const handleDescriptionChange = (value: string) => setDescription(value);
@@ -300,6 +357,14 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                     <label className="text-base font-medium text-gray-900">
                         Detailed Description
                     </label>
+                    <button
+                        onClick={handleGenerateSuggestion}
+                        disabled={isGenerating}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw className={cn("w-4 h-4", isGenerating && "animate-spin")} />
+                        {isGenerating ? 'Generating...' : 'AI Suggest'}
+                    </button>
                     <div className="flex items-center gap-2">
                         {description.length >= 50 ? (
                             <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
