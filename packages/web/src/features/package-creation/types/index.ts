@@ -19,7 +19,6 @@ export interface PackageData {
     name?: string;
     description?: string;
     durationDays?: number;
-    durationDays?: number;
 
     // Media (Flat structure preferred)
     photos?: string[];
