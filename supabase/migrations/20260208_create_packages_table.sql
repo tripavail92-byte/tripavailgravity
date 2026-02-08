@@ -59,7 +59,14 @@ TO authenticated
 USING (bucket_id = 'package-media' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 -- RLS Policies for packages table
+-- RLS Policies for packages table
 ALTER TABLE packages ENABLE ROW LEVEL SECURITY;
+
+-- Grant permissions to authenticated and service_role
+GRANT ALL ON TABLE packages TO authenticated;
+GRANT ALL ON TABLE packages TO service_role;
+GRANT SELECT ON TABLE packages TO anon; -- Public packages are viewable by anon
+
 
 CREATE POLICY "Users can view their own packages"
 ON packages FOR SELECT
