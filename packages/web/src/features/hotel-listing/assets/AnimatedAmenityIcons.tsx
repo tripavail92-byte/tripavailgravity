@@ -27,7 +27,7 @@ export function WifiIcon({ isSelected, isHovered, size = 24, className = "" }: A
       <motion.path
         d="M12 20h.01M8.5 16.5a7 7 0 0 1 7 0M5 13a11 11 0 0 1 14 0M2 10a15 15 0 0 1 20 0"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         animate={{
@@ -81,7 +81,7 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
         rx="2"
         ry="2"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
           strokeDasharray: isSelected ? [0, 100, 100] : [100, 100, 100],
@@ -92,7 +92,7 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
       <motion.path
         d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         animate={{
           pathLength: isSelected ? [0, 1] : 1
         }}
@@ -103,7 +103,7 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
         cy="12"
         r="2"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,
@@ -140,7 +140,7 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
         height="14"
         rx="2"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill={isSelected ? `${baseColor}10` : 'none'}
         animate={{
           strokeDasharray: isSelected ? [0, 100] : [100, 100]
@@ -153,7 +153,7 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
         rx="6"
         ry="3"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           scaleX: isHovered ? [1, 1.1, 1] : 1,
@@ -298,7 +298,7 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
         height="8"
         rx="1"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           opacity: isHovered ? [0.3, 1, 0.3] : 1,
@@ -369,7 +369,7 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
       <motion.path
         d="M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         animate={{
           d: isHovered 
@@ -381,7 +381,7 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
       <motion.path
         d="M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         animate={{
           d: isHovered 
@@ -397,7 +397,7 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
       <motion.path
         d="M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         animate={{
           d: isHovered 
@@ -543,7 +543,7 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
       <motion.path
         d="M8 8c-2-2-2-5 0-7s5-2 7 0 2 5 0 7-5 2-7 0Z"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
@@ -557,7 +557,7 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
       <motion.path
         d="M16 16c2 2 2 5 0 7s-5 2-7 0-2-5 0-7 5-2 7 0Z"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
@@ -708,7 +708,7 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
       <motion.path
         d="M6 14c2-1 4-1 6 0s4 1 6 0"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         animate={{
           d: isHovered 
@@ -1479,7 +1479,7 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         cy="12"
         r="2"
         stroke={baseColor}
-        strokeWidth="1.5"
+        strokeWidth="2"
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,

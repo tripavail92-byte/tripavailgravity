@@ -10,20 +10,20 @@ interface AmenityIconProps {
 // Hook to detect dark mode
 const useDarkMode = () => {
   const [isDark, setIsDark] = useState(false);
-  
+
   useEffect(() => {
     const checkDarkMode = () => {
       setIsDark(document.documentElement.classList.contains('dark'));
     };
-    
+
     checkDarkMode();
-    
+
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
+
     return () => observer.disconnect();
   }, []);
-  
+
   return isDark;
 };
 
@@ -41,7 +41,7 @@ const getFillColor = (isDark: boolean, isSelected: boolean) => {
 export const PoolIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       <motion.rect
@@ -51,87 +51,25 @@ export const PoolIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =>
         height="30"
         rx="4"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
       />
-      {/* Water waves */}
-      {[...Array(4)].map((_, i) => (
+      {/* Water waves - simplified to 2 */}
+      {[...Array(2)].map((_, i) => (
         <motion.path
           key={i}
-          d={`M${20 + i * 10} ${45} Q${22 + i * 10} ${43} ${24 + i * 10} ${45}`}
-          stroke={color}
-          strokeWidth="1.5"
-          fill="none"
-          animate={{ 
-            opacity: [0.3, 0.8, 0.3],
-            y: [0, -2, 0]
-          }}
-          transition={{ 
-            duration: 2,
-            delay: i * 0.2,
-            repeat: Infinity 
-          }}
-        />
-      ))}
-      {/* Ladder */}
-      <rect x="60" y="35" width="3" height="20" rx="1" fill={color} />
-      <rect x="56" y="40" width="7" height="2" rx="1" fill={color} />
-      <rect x="56" y="48" width="7" height="2" rx="1" fill={color} />
-    </motion.svg>
-  );
-};
-
-export const HotTubIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode();
-  const color = getColor(isDark, isSelected);
-  
-  return (
-    <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-      <motion.ellipse
-        cx="40"
-        cy="48"
-        rx="22"
-        ry="15"
-        stroke={color}
-        strokeWidth="2.5"
-        fill="none"
-        animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
-        transition={{ duration: 1, repeat: Infinity }}
-      />
-      {/* Steam */}
-      {[0, 1, 2].map((i) => (
-        <motion.path
-          key={i}
-          d={`M${30 + i * 10} ${28} Q${30 + i * 10} ${24} ${32 + i * 10} ${20}`}
+          d={`M${25 + i * 15} ${45} Q${27 + i * 15} ${43} ${29 + i * 15} ${45}`}
           stroke={color}
           strokeWidth="2"
           strokeLinecap="round"
           fill="none"
           animate={{
-            opacity: [0, 0.8, 0],
-            y: [0, -8]
-          }}
-          transition={{
-            duration: 2,
-            delay: i * 0.4,
-            repeat: Infinity
-          }}
-        />
-      ))}
-      {/* Bubbles */}
-      {[...Array(5)].map((_, i) => (
-        <motion.circle
-          key={i}
-          cx={25 + i * 8}
-          cy={48}
-          r="2"
-          fill={color}
-          animate={{
-            y: [0, -10, -15],
-            opacity: [0, 0.6, 0],
-            scale: [0.5, 1, 0.5]
+            opacity: [0.3, 0.8, 0.3],
+            y: [0, -2, 0]
           }}
           transition={{
             duration: 2,
@@ -144,10 +82,53 @@ export const HotTubIcon = ({ size = 64, isSelected = false }: AmenityIconProps) 
   );
 };
 
+export const HotTubIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
+  const isDark = useDarkMode();
+  const color = getColor(isDark, isSelected);
+
+  return (
+    <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
+      <motion.ellipse
+        cx="40"
+        cy="48"
+        rx="22"
+        ry="15"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
+        transition={{ duration: 1, repeat: Infinity }}
+      />
+      {/* Steam - simplified to 2 */}
+      {[0, 1].map((i) => (
+        <motion.path
+          key={i}
+          d={`M${32 + i * 12} ${28} Q${32 + i * 12} ${24} ${34 + i * 12} ${20}`}
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+          animate={{
+            opacity: [0, 0.8, 0],
+            y: [0, -8]
+          }}
+          transition={{
+            duration: 2,
+            delay: i * 0.5,
+            repeat: Infinity
+          }}
+        />
+      ))}
+    </motion.svg>
+  );
+};
+
 export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Grill body */}
@@ -156,7 +137,9 @@ export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps
         cy="38"
         r="18"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -165,22 +148,12 @@ export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps
       <motion.path
         d="M 25 35 Q 40 25 55 35"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         fill="none"
       />
-      {/* Grill lines */}
-      {[0, 1, 2, 3].map((i) => (
-        <line
-          key={i}
-          x1={28 + i * 8}
-          y1={35}
-          x2={28 + i * 8}
-          y2={45}
-          stroke={color}
-          strokeWidth="1.5"
-        />
-      ))}
-      {/* Smoke */}
+      {/* Smoke - simplified */}
       {[0, 1].map((i) => (
         <motion.path
           key={i}
@@ -200,9 +173,9 @@ export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps
           }}
         />
       ))}
-      {/* Stand */}
-      <line x1="35" y1="56" x2="35" y2="65" stroke={color} strokeWidth="2.5" />
-      <line x1="45" y1="56" x2="45" y2="65" stroke={color} strokeWidth="2.5" />
+      {/* Legs */}
+      <line x1="30" y1="56" x2="30" y2="65" stroke={color} strokeWidth="2" strokeLinecap="round" />
+      <line x1="50" y1="56" x2="50" y2="65" stroke={color} strokeWidth="2" strokeLinecap="round" />
     </motion.svg>
   );
 };
@@ -210,7 +183,7 @@ export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps
 export const FirePitIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Fire pit circle */}
@@ -219,7 +192,7 @@ export const FirePitIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
         cy="50"
         r="18"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -271,7 +244,7 @@ export const FirePitIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 export const PoolTableIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Table */}
@@ -282,7 +255,7 @@ export const PoolTableIcon = ({ size = 64, isSelected = false }: AmenityIconProp
         height="25"
         rx="3"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -323,7 +296,7 @@ export const PoolTableIcon = ({ size = 64, isSelected = false }: AmenityIconProp
 export const PianoIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Piano body */}
@@ -334,7 +307,7 @@ export const PianoIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
         height="25"
         rx="2"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -390,7 +363,7 @@ export const PianoIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
 export const GymIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Barbell */}
@@ -436,7 +409,7 @@ export const GymIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => 
 export const BeachfrontIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Sun */}
@@ -454,12 +427,12 @@ export const BeachfrontIcon = ({ size = 64, isSelected = false }: AmenityIconPro
       <motion.path
         d="M 40 35 Q 30 30 35 25 Q 40 30 45 25 Q 50 30 40 35"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { y: [0, -2, 0] } : {}}
         transition={{ duration: 2, repeat: Infinity }}
       />
-      <line x1="40" y1="35" x2="40" y2="55" stroke={color} strokeWidth="2.5" />
+      <line x1="40" y1="35" x2="40" y2="55" stroke={color} strokeWidth="2" />
       {/* Waves */}
       {[0, 1, 2].map((i) => (
         <motion.path
@@ -486,14 +459,14 @@ export const BeachfrontIcon = ({ size = 64, isSelected = false }: AmenityIconPro
 export const MountainViewIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Mountains */}
       <motion.path
         d="M 10 60 L 30 25 L 50 60"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         strokeLinejoin="round"
         fill="none"
         animate={isSelected ? { strokeDashoffset: [0, 10] } : {}}
@@ -503,7 +476,7 @@ export const MountainViewIcon = ({ size = 64, isSelected = false }: AmenityIconP
       <motion.path
         d="M 35 60 L 50 35 L 70 60"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         strokeLinejoin="round"
         fill="none"
       />
@@ -528,7 +501,7 @@ export const MountainViewIcon = ({ size = 64, isSelected = false }: AmenityIconP
 export const LakeAccessIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Lake/water body */}
@@ -538,7 +511,7 @@ export const LakeAccessIcon = ({ size = 64, isSelected = false }: AmenityIconPro
         rx="28"
         ry="20"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 2, repeat: Infinity }}
@@ -593,7 +566,7 @@ export const LakeAccessIcon = ({ size = 64, isSelected = false }: AmenityIconPro
 export const WiFiIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {[0, 1, 2].map((i) => (
@@ -601,7 +574,7 @@ export const WiFiIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =>
           key={i}
           d={`M${20 - i * 8} ${45 + i * 5} Q40 ${35 + i * 3} ${60 + i * 8} ${45 + i * 5}`}
           stroke={color}
-          strokeWidth="2.5"
+          strokeWidth="2"
           strokeLinecap="round"
           fill="none"
           animate={{
@@ -631,7 +604,7 @@ export const WiFiIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =>
 export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       <motion.rect
@@ -641,7 +614,7 @@ export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
         height="32"
         rx="3"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.02, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -660,9 +633,9 @@ export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
         transition={{ duration: 2, repeat: Infinity }}
       />
       {/* Stand */}
-      <line x1="35" y1="57" x2="35" y2="63" stroke={color} strokeWidth="2.5" />
-      <line x1="45" y1="57" x2="45" y2="63" stroke={color} strokeWidth="2.5" />
-      <line x1="30" y1="63" x2="50" y2="63" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="35" y1="57" x2="35" y2="63" stroke={color} strokeWidth="2" />
+      <line x1="45" y1="57" x2="45" y2="63" stroke={color} strokeWidth="2" />
+      <line x1="30" y1="63" x2="50" y2="63" stroke={color} strokeWidth="2" strokeLinecap="round" />
     </motion.svg>
   );
 };
@@ -670,7 +643,7 @@ export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
 export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Refrigerator */}
@@ -681,7 +654,7 @@ export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
         height="40"
         rx="2"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.03, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -690,7 +663,7 @@ export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
       <rect x="30" y="28" width="2" height="6" rx="1" fill={color} />
       <rect x="30" y="44" width="2" height="6" rx="1" fill={color} />
       {/* Stove */}
-      <rect x="50" y="38" width="18" height="22" rx="2" stroke={color} strokeWidth="2.5" fill="none" />
+      <rect x="50" y="38" width="18" height="22" rx="2" stroke={color} strokeWidth="2" fill="none" />
       {/* Burners */}
       {[0, 1].map((i) => (
         <motion.circle
@@ -712,7 +685,7 @@ export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 export const WashingMachineIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       <motion.rect
@@ -722,7 +695,7 @@ export const WashingMachineIcon = ({ size = 64, isSelected = false }: AmenityIco
         height="42"
         rx="3"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.02, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -760,7 +733,7 @@ export const WashingMachineIcon = ({ size = 64, isSelected = false }: AmenityIco
 export const ParkingIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       <motion.rect
@@ -770,7 +743,7 @@ export const ParkingIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
         height="30"
         rx="3"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -794,7 +767,7 @@ export const ParkingIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 export const AirConditioningIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       <motion.rect
@@ -804,7 +777,7 @@ export const AirConditioningIcon = ({ size = 64, isSelected = false }: AmenityIc
         height="18"
         rx="2"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.03, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -850,7 +823,7 @@ export const AirConditioningIcon = ({ size = 64, isSelected = false }: AmenityIc
 export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Desk */}
@@ -864,8 +837,8 @@ export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: Amenit
         animate={isSelected ? { scaleX: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
       />
-      <line x1="20" y1="39" x2="20" y2="55" stroke={color} strokeWidth="2.5" />
-      <line x1="60" y1="39" x2="60" y2="55" stroke={color} strokeWidth="2.5" />
+      <line x1="20" y1="39" x2="20" y2="55" stroke={color} strokeWidth="2" />
+      <line x1="60" y1="39" x2="60" y2="55" stroke={color} strokeWidth="2" />
       {/* Laptop */}
       <motion.rect
         x="28"
@@ -884,7 +857,7 @@ export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: Amenit
         stroke={color}
         strokeWidth="2"
         fill="none"
-        animate={isSelected ? { 
+        animate={isSelected ? {
           rotateX: [0, -10, 0]
         } : {}}
         transition={{ duration: 2, repeat: Infinity }}
@@ -906,7 +879,7 @@ export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: Amenit
 export const PatioIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Floor tiles */}
@@ -921,13 +894,13 @@ export const PatioIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
             stroke={color}
             strokeWidth="1.5"
             fill="none"
-            animate={isSelected ? { 
+            animate={isSelected ? {
               opacity: [0.3, 0.8, 0.3]
             } : {}}
-            transition={{ 
+            transition={{
               duration: 2,
               delay: (row + col) * 0.1,
-              repeat: Infinity 
+              repeat: Infinity
             }}
           />
         ))
@@ -947,7 +920,7 @@ export const PatioIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
 export const OutdoorDiningIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Table */}
@@ -957,7 +930,7 @@ export const OutdoorDiningIcon = ({ size = 64, isSelected = false }: AmenityIcon
         rx="18"
         ry="12"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -978,7 +951,7 @@ export const OutdoorDiningIcon = ({ size = 64, isSelected = false }: AmenityIcon
 export const IndoorBonfireIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Fireplace */}
@@ -989,7 +962,7 @@ export const IndoorBonfireIcon = ({ size = 64, isSelected = false }: AmenityIcon
         height="28"
         rx="2"
         stroke={color}
-        strokeWidth="2.5"
+        strokeWidth="2"
         fill="none"
         animate={isSelected ? { scale: [1, 1.02, 1] } : {}}
         transition={{ duration: 1, repeat: Infinity }}
@@ -1023,12 +996,12 @@ export const IndoorBonfireIcon = ({ size = 64, isSelected = false }: AmenityIcon
 export const ScenicBalconyIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Railing */}
-      <line x1="15" y1="45" x2="65" y2="45" stroke={color} strokeWidth="2.5" />
-      <line x1="15" y1="55" x2="65" y2="55" stroke={color} strokeWidth="2.5" />
+      <line x1="15" y1="45" x2="65" y2="45" stroke={color} strokeWidth="2" />
+      <line x1="15" y1="55" x2="65" y2="55" stroke={color} strokeWidth="2" />
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <line
           key={i}
@@ -1067,21 +1040,21 @@ export const ScenicBalconyIcon = ({ size = 64, isSelected = false }: AmenityIcon
 export const ForestViewIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
   const isDark = useDarkMode();
   const color = getColor(isDark, isSelected);
-  
+
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
       {/* Trees */}
       {[0, 1, 2].map((i) => (
         <motion.g
           key={i}
-          animate={isSelected ? { 
+          animate={isSelected ? {
             y: [0, -2, 0],
             rotate: [0, i % 2 === 0 ? 2 : -2, 0]
           } : {}}
-          transition={{ 
+          transition={{
             duration: 2,
             delay: i * 0.3,
-            repeat: Infinity 
+            repeat: Infinity
           }}
           style={{ originX: `${25 + i * 15}px`, originY: "50px" }}
         >
@@ -1134,3 +1107,4 @@ export const ForestViewIcon = ({ size = 64, isSelected = false }: AmenityIconPro
     </motion.svg>
   );
 };
+
