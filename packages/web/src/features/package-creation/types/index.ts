@@ -19,8 +19,15 @@ export interface PackageData {
     name?: string;
     description?: string;
     durationDays?: number;
+    durationDays?: number;
+
+    // Media (Flat structure preferred)
+    photos?: string[];
+    video?: string;
+
+    // Legacy (keep for backward compat)
     media?: {
-        photos: any[]; // We'll refine this type in MediaStep
+        photos: any[];
         video?: string;
     };
 
