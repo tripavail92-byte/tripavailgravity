@@ -44,10 +44,17 @@ function App() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster position="top-center" />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<LoginPage />} />
 
-        {/* Authenticated Routes with Drawer */}
+        {/* Traveller Routes (Teal Theme) */}
+        <Route element={<TravellerLayout />}>
+          <Route path="/" element={<Homepage />} />
+          <Route path="/packages/:id" element={<PackageDetailsPage />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/hotel/:id" element={<HotelDetailsPage />} />
+        </Route>
+
+        {/* Authenticated Routes with Drawer (Purple Theme) */}
         <Route element={<DashboardLayout />}>
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotels/:id" element={<HotelDetailsPage />} />
