@@ -14,6 +14,8 @@ import ListHotelPage from '@/pages/manager/ListHotelPage'
 import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
 import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
+import Homepage from '@/pages/traveller/Homepage'
+import TravellerLayout from '@/layouts/TravellerLayout'
 
 function App() {
   const { initialize, initialized, activeRole } = useAuth()
