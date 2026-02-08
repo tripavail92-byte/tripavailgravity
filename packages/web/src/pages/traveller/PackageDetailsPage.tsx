@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users,
     ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone,
-    CreditCard, Gift, Key, Sparkles, Shield
+    CreditCard, Gift, Key, Sparkles, Shield, Globe
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -420,10 +420,9 @@ export default function PackageDetailsPage() {
                                 )}
                             </div>
                         )}
+                        {(packageData.free_inclusions?.length > 0 || packageData.discount_offers?.length > 0) && <div className="h-px bg-gray-200" />}
 
-                        <div className="h-px bg-gray-200" />
 
-                        {/* Highlights & Aggregated Amenities */}
                         {/* Highlights & Aggregated Amenities */}
                         {aggregatedAmenities.length > 0 && (
                             <div>
@@ -617,5 +616,57 @@ export default function PackageDetailsPage() {
 
             <Footer />
         </div >
+    );
+}
+
+function Footer() {
+    return (
+        <footer className="border-t border-gray-200 bg-gray-50 mt-12 py-12">
+            <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h4 className="font-bold text-gray-900 mb-4">Support</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                        <li><a href="#" className="hover:underline">Help Center</a></li>
+                        <li><a href="#" className="hover:underline">AirCover</a></li>
+                        <li><a href="#" className="hover:underline">Anti-discrimination</a></li>
+                        <li><a href="#" className="hover:underline">Disability support</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-gray-900 mb-4">Hosting</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                        <li><a href="#" className="hover:underline">TripAvail your home</a></li>
+                        <li><a href="#" className="hover:underline">AirCover for Hosts</a></li>
+                        <li><a href="#" className="hover:underline">Hosting resources</a></li>
+                        <li><a href="#" className="hover:underline">Community forum</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-gray-900 mb-4">TripAvail</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                        <li><a href="#" className="hover:underline">Newsroom</a></li>
+                        <li><a href="#" className="hover:underline">New features</a></li>
+                        <li><a href="#" className="hover:underline">Careers</a></li>
+                        <li><a href="#" className="hover:underline">Investors</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold text-gray-900 mb-4">Social</h4>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                        <li><a href="#" className="hover:underline">Twitter</a></li>
+                        <li><a href="#" className="hover:underline">Instagram</a></li>
+                        <li><a href="#" className="hover:underline">LinkedIn</a></li>
+                        <li><a href="#" className="hover:underline">Facebook</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+                <p>© 2026 TripAvail, Inc. · Privacy · Terms · Sitemap</p>
+                <div className="flex items-center gap-4 mt-4 md:mt-0">
+                    <div className="flex items-center gap-1"><Globe size={14} /> English (US)</div>
+                    <div>$ USD</div>
+                </div>
+            </div>
+        </footer>
     );
 }
