@@ -28,6 +28,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 1,
             title: 'Package Type',
             icon: Package,
+            optional: false,
             data: packageData.packageType,
             render: () => (
                 <div className="flex items-center gap-2">
@@ -41,6 +42,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 2,
             title: 'Basic Information',
             icon: FileText,
+            optional: false,
             data: packageData.name,
             render: () => (
                 <div className="space-y-2">
@@ -75,7 +77,8 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 3,
             title: 'Media',
             icon: Image,
-            data: packageData.photos?.length,
+            optional: true,  // Media is optional - can add later
+            data: packageData.photos?.length ?? 0,  // Ensure 0 instead of undefined
             render: () => (
                 <div>
                     <p className="text-sm text-gray-600 mb-2">
@@ -100,7 +103,8 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 4,
             title: 'Highlights',
             icon: Lightbulb,
-            data: packageData.highlights?.length,
+            optional: true,  // Highlights are optional
+            data: packageData.highlights?.length ?? 0,  // Ensure 0 instead of undefined
             render: () => (
                 <div className="space-y-1">
                     {packageData.highlights?.map((highlight, idx) => (
@@ -116,6 +120,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 5,
             title: 'Inclusions',
             icon: PlusCircle,
+            optional: false,
             data: packageData.inclusions?.length,
             render: () => (
                 <div className="flex flex-wrap gap-2">
@@ -131,6 +136,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 6,
             title: 'Exclusions',
             icon: XCircle,
+            optional: false,
             data: packageData.exclusions?.length,
             render: () => (
                 <div className="flex flex-wrap gap-2">
@@ -146,6 +152,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 8,
             title: 'Availability',
             icon: Calendar,
+            optional: false,
             data: packageData.availabilityType,
             render: () => (
                 <div className="space-y-2">
@@ -176,6 +183,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             id: 9,
             title: 'Policies',
             icon: FileText,
+            optional: false,
             data: packageData.cancellationPolicy,
             render: () => (
                 <div className="space-y-2">
@@ -192,9 +200,19 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
         }
     ];
 
-    const completedSections = sections.filter(s => s.data);
-    const totalSections = sections.length;
-    const completionPercentage = Math.round((completedSections.length / totalSections) * 100);
+    // Helper function to check if field has valid data
+    const hasValidData = (data: any) => {
+        if (data === undefined || data === null) return false;
+        if (typeof data === 'number') return data >= 0;  // 0 is valid for counts/lengths
+        if (typeof data === 'string') return data.length > 0;
+        if (Array.isArray(data)) return true;  // Empty arrays are valid
+        return Boolean(data);
+    };
+
+    // Only count required sections for completion percentage
+    const requiredSections = sections.filter(s => !s.optional);
+    const completedRequired = requiredSections.filter(s => hasValidData(s.data));
+    const completionPercentage = Math.round((completedRequired.length / requiredSections.length) * 100);
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
@@ -217,7 +235,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
                     />
                 </div>
                 <p className="text-sm text-gray-600">
-                    {completedSections.length} of {totalSections} sections completed
+                    {completedRequired.length} of {requiredSections.length} required sections completed
                 </p>
             </Card>
 
@@ -225,21 +243,24 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
             <div className="space-y-4">
                 {sections.map(section => {
                     const IconComponent = section.icon;
-                    const hasData = section.data !== undefined && section.data !== null;
+                    const isComplete = hasValidData(section.data);
 
                     return (
-                        <Card key={section.id} className={cn("p-6", !hasData && "bg-gray-50")}>
+                        <Card key={section.id} className={cn("p-6", !isComplete && "bg-gray-50")}>
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className={cn(
                                         "w-10 h-10 rounded-lg flex items-center justify-center",
-                                        hasData ? "bg-primary/10" : "bg-gray-200"
+                                        isComplete ? "bg-primary/10" : "bg-gray-200"
                                     )}>
-                                        <IconComponent size={20} className={hasData ? "text-primary" : "text-gray-400"} />
+                                        <IconComponent size={20} className={isComplete ? "text-primary" : "text-gray-400"} />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-gray-900">{section.title}</h3>
-                                        {!hasData && <p className="text-sm text-gray-500">Not completed</p>}
+                                        <h3 className="font-semibold text-gray-900">
+                                            {section.title}
+                                            {section.optional && <span className="ml-2 text-xs text-gray-500">(Optional)</span>}
+                                        </h3>
+                                        {!isComplete && <p className="text-sm text-gray-500">Not completed</p>}
                                     </div>
                                 </div>
                                 <Button
@@ -252,7 +273,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
                                     Edit
                                 </Button>
                             </div>
-                            {hasData && <div>{section.render()}</div>}
+                            {isComplete && <div>{section.render()}</div>}
                         </Card>
                     );
                 })}
