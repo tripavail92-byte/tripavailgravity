@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users, ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone, CreditCard, Gift, Key, Sparkles } from 'lucide-react';
+import {
+    Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users,
+    ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone,
+    CreditCard, Gift, Key, Sparkles, Shield
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -12,26 +16,82 @@ import { cn } from '@/lib/utils';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import { supabase } from '@/lib/supabase';
 
-// Helper for dynamic icons (reused)
-const getIconForText = (text: string) => {
-    const lower = text.toLowerCase();
-    if (lower.includes('wifi') || lower.includes('internet')) return Wifi;
-    if (lower.includes('coffee') || lower.includes('tea') || lower.includes('breakfast')) return Coffee;
-    if (lower.includes('dinner') || lower.includes('food') || lower.includes('dining')) return Utensils;
-    if (lower.includes('transfer') || lower.includes('transport') || lower.includes('car')) return Car;
-    if (lower.includes('family') || lower.includes('kid')) return Users;
-    if (lower.includes('business') || lower.includes('work')) return Briefcase;
-    if (lower.includes('view') || lower.includes('location')) return MapPin;
-    if (lower.includes('photo')) return Camera;
-    if (lower.includes('wine') || lower.includes('champagne') || lower.includes('drink')) return Wine;
-    if (lower.includes('ticket') || lower.includes('entry') || lower.includes('pass')) return Ticket;
-    if (lower.includes('music') || lower.includes('entertainment')) return Music;
-    if (lower.includes('tv') || lower.includes('movie')) return Tv;
-    if (lower.includes('smart') || lower.includes('app')) return Smartphone;
-    if (lower.includes('credit')) return CreditCard;
-    if (lower.includes('welcome') || lower.includes('gift')) return Gift;
-    if (lower.includes('access') || lower.includes('key')) return Key;
-    return Sparkles; // Default
+import {
+    PoolIcon, HotTubIcon, BBQGrillIcon, FirePitIcon, PoolTableIcon, PianoIcon, GymIcon,
+    BeachfrontIcon, MountainViewIcon, LakeAccessIcon, PatioIcon, OutdoorDiningIcon,
+    IndoorBonfireIcon, ScenicBalconyIcon, ForestViewIcon, WiFiIcon, TVIcon, KitchenIcon,
+    WashingMachineIcon, ParkingIcon, AirConditioningIcon, DedicatedWorkspaceIcon
+} from '@/features/hotel-listing/assets/PremiumAmenityIcons';
+
+// Helper to map string ID/Name to Icon Configuration
+const getAmenityConfig = (amenityStr: string) => {
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const id = normalize(amenityStr);
+    const lower = amenityStr.toLowerCase();
+
+    // 1. Premium Icons Map (Exact & Fuzzy matches)
+    const premiumMap: Record<string, { icon: any, label: string }> = {
+        'pool': { icon: PoolIcon, label: 'Swimming Pool' },
+        'swimmingpool': { icon: PoolIcon, label: 'Swimming Pool' },
+        'hottub': { icon: HotTubIcon, label: 'Hot Tub' },
+        'jacuzzi': { icon: HotTubIcon, label: 'Hot Tub' },
+        'bbqgrill': { icon: BBQGrillIcon, label: 'BBQ Grill' },
+        'firepit': { icon: FirePitIcon, label: 'Fire Pit' },
+        'pooltable': { icon: PoolTableIcon, label: 'Pool Table' },
+        'indoorbonfire': { icon: IndoorBonfireIcon, label: 'Indoor Bonfire' },
+        'piano': { icon: PianoIcon, label: 'Piano' },
+        'gym': { icon: GymIcon, label: 'Fitness Center' },
+        'fitnesscenter': { icon: GymIcon, label: 'Fitness Center' },
+        'lakeaccess': { icon: LakeAccessIcon, label: 'Lake Access' },
+        'beachfront': { icon: BeachfrontIcon, label: 'Beachfront' },
+        'mountainview': { icon: MountainViewIcon, label: 'Mountain View' },
+        'scenicbalcony': { icon: ScenicBalconyIcon, label: 'Scenic Balcony' },
+        'forestview': { icon: ForestViewIcon, label: 'Forest View' },
+        'wifi': { icon: WiFiIcon, label: 'WiFi' },
+        'internet': { icon: WiFiIcon, label: 'WiFi' },
+        'tv': { icon: TVIcon, label: 'TV' },
+        'kitchen': { icon: KitchenIcon, label: 'Kitchen' },
+        'washingmachine': { icon: WashingMachineIcon, label: 'Washing Machine' },
+        'parking': { icon: ParkingIcon, label: 'Parking' },
+        'freeparking': { icon: ParkingIcon, label: 'Free Parking' },
+        'paidparking': { icon: ParkingIcon, label: 'Paid Parking' },
+        'airconditioning': { icon: AirConditioningIcon, label: 'Air Conditioning' },
+        'ac': { icon: AirConditioningIcon, label: 'Air Conditioning' },
+        'dedicatedworkspace': { icon: DedicatedWorkspaceIcon, label: 'Workspace' },
+        'patio': { icon: PatioIcon, label: 'Patio' },
+        'outdoordining': { icon: OutdoorDiningIcon, label: 'Outdoor Dining' }
+    };
+
+    if (premiumMap[id]) {
+        return { Icon: premiumMap[id].icon, label: premiumMap[id].label };
+    }
+
+    // 2. Lucide Fallbacks (Preserving original getIconForText logic)
+    // We wrap Lucide icons to match the component signature (size prop)
+    const LucideWrapper = (Icon: any) => ({ size, className, isSelected }: any) => (
+        <div className={`flex items-center justify-center bg-primary/5 rounded-full w-12 h-12 ${className}`}>
+            <Icon size={size * 0.6} className="text-primary" />
+        </div>
+    );
+
+    if (lower.includes('coffee') || lower.includes('tea') || lower.includes('breakfast')) return { Icon: LucideWrapper(Coffee), label: amenityStr };
+    if (lower.includes('dinner') || lower.includes('food') || lower.includes('dining')) return { Icon: LucideWrapper(Utensils), label: amenityStr };
+    if (lower.includes('transfer') || lower.includes('transport') || lower.includes('car') || lower.includes('vehicle')) return { Icon: LucideWrapper(Car), label: amenityStr };
+    if (lower.includes('family') || lower.includes('kid')) return { Icon: LucideWrapper(Users), label: amenityStr };
+    if (lower.includes('business') || lower.includes('work')) return { Icon: LucideWrapper(Briefcase), label: amenityStr };
+    if (lower.includes('view') || lower.includes('location')) return { Icon: LucideWrapper(MapPin), label: amenityStr };
+    if (lower.includes('photo')) return { Icon: LucideWrapper(Camera), label: amenityStr };
+    if (lower.includes('wine') || lower.includes('champagne') || lower.includes('drink')) return { Icon: LucideWrapper(Wine), label: amenityStr };
+    if (lower.includes('ticket') || lower.includes('entry') || lower.includes('pass')) return { Icon: LucideWrapper(Ticket), label: amenityStr };
+    if (lower.includes('music') || lower.includes('entertainment')) return { Icon: LucideWrapper(Music), label: amenityStr };
+    if (lower.includes('smart') || lower.includes('app')) return { Icon: LucideWrapper(Smartphone), label: amenityStr };
+    if (lower.includes('credit')) return { Icon: LucideWrapper(CreditCard), label: amenityStr };
+    if (lower.includes('welcome') || lower.includes('gift')) return { Icon: LucideWrapper(Gift), label: amenityStr };
+    if (lower.includes('access') || lower.includes('key')) return { Icon: LucideWrapper(Key), label: amenityStr };
+    if (lower.includes('safety') || lower.includes('security')) return { Icon: LucideWrapper(Shield), label: amenityStr };
+
+    // Default Fallback
+    return { Icon: LucideWrapper(Sparkles), label: amenityStr };
 };
 
 
@@ -64,11 +124,15 @@ export default function PackageDetailsPage() {
 
                 // Fetch Hotel Amenities
                 if (pkg.hotel_id) {
-                    const { data: hotel } = await supabase
+                    const { data: hotel, error: hError } = await supabase
                         .from('hotels')
                         .select('amenities')
                         .eq('id', pkg.hotel_id)
                         .single();
+
+                    if (hError) {
+                        throw new Error(`Hotel Fetch Failed: ${hError.message} (${hError.code})`);
+                    }
 
                     if (hotel?.amenities) {
                         hotel.amenities.forEach((a: string) => amenitiesSet.add(a));
@@ -77,10 +141,14 @@ export default function PackageDetailsPage() {
 
                 // Fetch Room Amenities (if linked)
                 if (pkg.room_ids && pkg.room_ids.length > 0) {
-                    const { data: rooms } = await supabase
+                    const { data: rooms, error: rError } = await supabase
                         .from('rooms')
                         .select('amenities')
                         .in('id', pkg.room_ids);
+
+                    if (rError) {
+                        throw new Error(`Room Fetch Failed: ${rError.message} (${rError.code})`);
+                    }
 
                     if (rooms) {
                         rooms.forEach(room => {
@@ -106,8 +174,26 @@ export default function PackageDetailsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center flex-col gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-gray-500">Loading package details...</p>
+            </div>
+        );
+    }
+
+    // DEBUG: Show specific error if fetch failed
+    if (error) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                <h1 className="text-2xl font-bold text-red-600 mb-2">Error Loading Package</h1>
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200 max-w-md w-full overflow-auto">
+                    <p className="font-mono text-sm text-red-800">{String(error)}</p>
+                    {/* Show more details if available */}
+                    <pre className="text-xs text-red-600 mt-2 whitespace-pre-wrap">
+                        {JSON.stringify(error, null, 2)}
+                    </pre>
+                </div>
+                <Button className="mt-6" onClick={() => navigate('/')}>Return Home</Button>
             </div>
         );
     }
@@ -237,18 +323,19 @@ export default function PackageDetailsPage() {
                         <div className="h-px bg-gray-200" />
 
                         {/* Highlights & Aggregated Amenities */}
+                        {/* Highlights & Aggregated Amenities */}
                         {aggregatedAmenities.length > 0 && (
                             <div>
                                 <h2 className="text-xl font-semibold mb-6">Package Highlights & Amenities</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     {aggregatedAmenities.map((amenity: string, idx: number) => {
-                                        const Icon = getIconForText(amenity);
+                                        const { Icon, label } = getAmenityConfig(amenity);
                                         return (
-                                            <div key={idx} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
-                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                                    <Icon size={16} />
+                                            <div key={idx} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300 group">
+                                                <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
+                                                    <Icon size={40} isSelected={true} />
                                                 </div>
-                                                <span className="text-gray-700">{amenity}</span>
+                                                <span className="text-sm font-medium text-gray-900 text-center leading-snug">{label}</span>
                                             </div>
                                         );
                                     })}
