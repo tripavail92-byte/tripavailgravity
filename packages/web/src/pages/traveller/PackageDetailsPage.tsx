@@ -99,6 +99,7 @@ export default function PackageDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [packageData, setPackageData] = useState<any>(null);
+    const [roomData, setRoomData] = useState<any[]>([]);
     const [aggregatedAmenities, setAggregatedAmenities] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -151,6 +152,7 @@ export default function PackageDetailsPage() {
                     }
 
                     if (rooms) {
+                        setRoomData(rooms);
                         rooms.forEach(room => {
                             if (room.amenities && Array.isArray(room.amenities)) {
                                 (room.amenities as string[]).forEach(a => amenitiesSet.add(a));
@@ -217,8 +219,9 @@ export default function PackageDetailsPage() {
         exclusions,
         package_type,
         cancellation_policy,
-        payment_terms
-    } = packageData;
+        payment_terms,
+        hotel // We need hotel name/location
+    } = packageData || {};
 
     const allImages = media_urls && media_urls.length > 0
         ? media_urls
@@ -321,6 +324,45 @@ export default function PackageDetailsPage() {
                         </div>
 
                         <div className="h-px bg-gray-200" />
+
+                        {/* Accommodation Details (Room) */}
+                        {roomData && roomData.length > 0 && (
+                            <>
+                                <div>
+                                    <h2 className="text-xl font-semibold mb-4">Accommodation</h2>
+                                    {roomData.map((room: any, idx: number) => (
+                                        <div key={idx} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
+                                                    <p className="text-sm text-gray-500">{hotel?.name}</p>
+                                                </div>
+                                            </div>
+
+                                            {room.description && (
+                                                <p className="text-gray-600 text-sm mb-4 leading-relaxed">{room.description}</p>
+                                            )}
+
+                                            {/* Room Specific Amenities */}
+                                            {room.amenities && room.amenities.length > 0 && (
+                                                <div>
+                                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Room Features</h4>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        {room.amenities.map((amenity: string, i: number) => (
+                                                            <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                                                                <Check size={14} className="text-primary" />
+                                                                <span>{amenity}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-gray-200" />
+                            </>
+                        )}
 
                         {/* Free Inclusions & Exclusive Offers Grid */}
                         {(packageData.free_inclusions?.length > 0 || packageData.discount_offers?.length > 0) && (
@@ -571,6 +613,9 @@ export default function PackageDetailsPage() {
                     </div >
                 </div >
             </main >
+            {/* Debug Section Removed */}
+
+            <Footer />
         </div >
     );
 }
