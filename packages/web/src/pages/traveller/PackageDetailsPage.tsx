@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users, ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone, CreditCard, Gift, Key } from 'lucide-react';
+import { Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users, ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone, CreditCard, Gift, Key, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -11,11 +10,35 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { getPackageById } from '@/features/package-creation/services/packageService';
+import { supabase } from '@/lib/supabase';
+
+// Helper for dynamic icons (reused)
+const getIconForText = (text: string) => {
+    const lower = text.toLowerCase();
+    if (lower.includes('wifi') || lower.includes('internet')) return Wifi;
+    if (lower.includes('coffee') || lower.includes('tea') || lower.includes('breakfast')) return Coffee;
+    if (lower.includes('dinner') || lower.includes('food') || lower.includes('dining')) return Utensils;
+    if (lower.includes('transfer') || lower.includes('transport') || lower.includes('car')) return Car;
+    if (lower.includes('family') || lower.includes('kid')) return Users;
+    if (lower.includes('business') || lower.includes('work')) return Briefcase;
+    if (lower.includes('view') || lower.includes('location')) return MapPin;
+    if (lower.includes('photo')) return Camera;
+    if (lower.includes('wine') || lower.includes('champagne') || lower.includes('drink')) return Wine;
+    if (lower.includes('ticket') || lower.includes('entry') || lower.includes('pass')) return Ticket;
+    if (lower.includes('music') || lower.includes('entertainment')) return Music;
+    if (lower.includes('tv') || lower.includes('movie')) return Tv;
+    if (lower.includes('smart') || lower.includes('app')) return Smartphone;
+    if (lower.includes('credit')) return CreditCard;
+    if (lower.includes('welcome') || lower.includes('gift')) return Gift;
+    if (lower.includes('access') || lower.includes('key')) return Key;
+    return Sparkles; // Default
+};
 
 export default function PackageDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [packageData, setPackageData] = useState<any>(null);
+    const [aggregatedAmenities, setAggregatedAmenities] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -25,20 +48,59 @@ export default function PackageDetailsPage() {
     const [isGuestOpen, setIsGuestOpen] = useState(false);
 
     useEffect(() => {
-        const fetchPackage = async () => {
+        const fetchData = async () => {
             if (!id) return;
             try {
-                const data = await getPackageById(id);
-                setPackageData(data);
+                // 1. Fetch Package Data
+                const pkg = await getPackageById(id);
+                setPackageData(pkg);
+
+                // 2. Fetch Linked Hotel & Room Amenities
+                const amenitiesSet = new Set<string>();
+
+                // Add Package Highlights first
+                if (pkg.highlights) pkg.highlights.forEach((h: string) => amenitiesSet.add(h));
+
+                // Fetch Hotel Amenities
+                if (pkg.hotel_id) {
+                    const { data: hotel } = await supabase
+                        .from('hotels')
+                        .select('amenities')
+                        .eq('id', pkg.hotel_id)
+                        .single();
+
+                    if (hotel?.amenities) {
+                        hotel.amenities.forEach((a: string) => amenitiesSet.add(a));
+                    }
+                }
+
+                // Fetch Room Amenities (if linked)
+                if (pkg.room_ids && pkg.room_ids.length > 0) {
+                    const { data: rooms } = await supabase
+                        .from('rooms')
+                        .select('amenities')
+                        .in('id', pkg.room_ids);
+
+                    if (rooms) {
+                        rooms.forEach(room => {
+                            if (room.amenities && Array.isArray(room.amenities)) {
+                                (room.amenities as string[]).forEach(a => amenitiesSet.add(a));
+                            }
+                        });
+                    }
+                }
+
+                setAggregatedAmenities(Array.from(amenitiesSet));
+
             } catch (err: any) {
-                console.error('Error fetching package:', err);
+                console.error('Error fetching data:', err);
                 setError(err.message || 'Failed to load package details');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchPackage();
+        fetchData();
     }, [id]);
 
     if (loading) {
@@ -64,7 +126,6 @@ export default function PackageDetailsPage() {
         description,
         media_urls,
         cover_image,
-        highlights,
         inclusions,
         exclusions,
         package_type,
@@ -75,6 +136,9 @@ export default function PackageDetailsPage() {
     const allImages = media_urls && media_urls.length > 0
         ? media_urls
         : cover_image ? [cover_image] : [];
+
+    // ... rest of the component
+
 
     // Calculate nights if dates selected
     const nights = dateRange?.from && dateRange?.to

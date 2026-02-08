@@ -108,6 +108,7 @@ export async function publishPackage(packageData: PackageData, userId: string) {
         // Step 2: Prepare package payload
         const packagePayload = {
             owner_id: userId,
+            hotel_id: packageData.hotelId || null, // Link to hotel
             package_type: packageData.packageType || 'custom',
             name: packageData.name || 'Untitled Package',
             description: packageData.description || null,
@@ -118,6 +119,11 @@ export async function publishPackage(packageData: PackageData, userId: string) {
             exclusions: packageData.exclusions || null,
             cancellation_policy: packageData.cancellationPolicy || null,
             payment_terms: packageData.paymentTerms || null,
+
+            // Room Mapping
+            room_ids: packageData.roomIds || (packageData.selectedRooms ? Object.keys(packageData.selectedRooms) : []) || null,
+            rooms_config: packageData.selectedRooms || null,
+
             is_published: true
         };
 

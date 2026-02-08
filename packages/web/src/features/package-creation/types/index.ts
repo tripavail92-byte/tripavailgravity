@@ -16,9 +16,14 @@ export interface PackageData {
     // Basic Info
     packageType?: PackageType;
     hotelName?: string;
+    hotelId?: string; // Link to source hotel
     name?: string;
     description?: string;
     durationDays?: number;
+
+    // Room Configuration
+    roomIds?: string[]; // IDs of selected rooms
+    selectedRooms?: Record<string, any>; // Full configuration of selected rooms (prices, etc.)
 
     // Media (Flat structure preferred)
     photos?: string[];
