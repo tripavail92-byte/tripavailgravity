@@ -30,7 +30,24 @@ interface MediaStepProps {
 }
 
 export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaStepProps) {
-    const [mediaItems, setMediaItems] = useState<MediaItem[]>(existingData?.media?.photos || []);
+    // Initialize from flat photos array (preferred) or nested media object (legacy)
+    const initialItems = (existingData?.photos || existingData?.media?.photos || []).map((url: string | MediaItem) => {
+        // Handle if existing data is already MediaItem objects
+        if (typeof url === 'object' && 'url' in url) return url as MediaItem;
+
+        // Handle simple string URLs (reconstruct MediaItem)
+        return {
+            id: Math.random().toString(36).substring(7),
+            url: url as string,
+            fileName: 'image.jpg',
+            size: 0,
+            type: 'image',
+            uploadedAt: new Date().toISOString(),
+            order: 0
+        } as MediaItem;
+    });
+
+    const [mediaItems, setMediaItems] = useState<MediaItem[]>(initialItems);
     const [isDragging, setIsDragging] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [showValidation, setShowValidation] = useState(false);
@@ -38,10 +55,17 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
     // Update parent state on changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const updateParent = (items: MediaItem[]) => {
+        // Extract just the URLs/base64 strings for the parent state
+        // This ensures ReviewStep and packageService receive what they expect (string[])
+        const photoUrls = items.map(i => i.url);
+
         onUpdate({
             ...existingData,
+            photos: photoUrls, // Flat structure
+            video: items.find(i => i.type === 'video')?.url,
+            // Keep legacy structure sync just in case, but prefer flat
             media: {
-                photos: items, // Using 'photos' field for all media for now based on types, or we can expand types
+                photos: photoUrls,
                 video: items.find(i => i.type === 'video')?.url
             }
         });
