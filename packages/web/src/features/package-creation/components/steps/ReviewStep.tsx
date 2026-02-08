@@ -72,12 +72,17 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit, isPublishing
             id: 3,
             title: 'Media',
             icon: Image,
-            optional: true,  // Media is optional - can add later
+            optional: false,  // Media is REQUIRED - minimum 4 photos
             data: packageData.photos?.length ?? 0,  // Ensure 0 instead of undefined
             render: () => (
                 <div>
                     <p className="text-sm text-gray-600 mb-2">
                         {packageData.photos?.length || 0} photo(s) uploaded
+                        {(!packageData.photos || packageData.photos.length < 4) && (
+                            <span className="ml-2 text-error font-medium">
+                                (Minimum 4 required)
+                            </span>
+                        )}
                     </p>
                     {packageData.photos && packageData.photos.length > 0 && (
                         <div className="grid grid-cols-4 gap-2">
