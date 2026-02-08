@@ -13,6 +13,7 @@ import SearchPage from '@/pages/traveller/SearchPage'
 import ListHotelPage from '@/pages/manager/ListHotelPage'
 import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
+import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
 
 function App() {
   const { initialize, initialized, activeRole } = useAuth()
@@ -59,6 +60,9 @@ function App() {
         {/* Full Screen Flows */}
         <Route path="/manager/list-hotel" element={<ListHotelPage />} />
         <Route path="/manager/list-package" element={<ListPackagePage />} />
+
+        {/* Public Routes */}
+        <Route path="/packages/:id" element={<PackageDetailsPage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
