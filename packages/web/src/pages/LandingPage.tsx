@@ -13,6 +13,7 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { supabase } from '@/lib/supabase'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
@@ -24,7 +25,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
 
   const handlePackageSelect = (packageId: string) => {
-    navigate(`/hotels/${packageId}`)
+    navigate(`/packages/${packageId}`)
   }
 
   const handleNavigate = (screen: string) => {
@@ -436,60 +437,75 @@ function FeaturedHotelsSection({
   onNavigate: (screen: string) => void
   onPackageSelect: (packageId: string) => void
 }) {
-  const featuredHotels = [
-    {
-      id: 'luxury-beach-1',
-      title: 'Paradise Beach Escape',
-      hotelName: 'Azure Shores Resort',
-      location: 'Bali, Indonesia',
-      packagePrice: 599,
-      rating: 4.9,
-      images: [
-        'https://images.unsplash.com/photo-1580450997544-8846a39f3dfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMHJlc29ydCUyMGJlYWNofGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHJlc29ydCUyMHBvb2x8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Most Popular',
-    },
-    {
-      id: 'luxury-resort-2',
-      title: 'Alpine Luxury Retreat',
-      hotelName: 'Mountain Crown Lodge',
-      location: 'Swiss Alps, Switzerland',
-      packagePrice: 999,
-      rating: 4.8,
-      images: [
-        'https://images.unsplash.com/photo-1689729738920-edea97589328?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxtb3VudGFpbiUyMGhvdGVsJTIwcmVzb3J0fGVufDF8fHx8MTc1NzMzNDczMHww&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxtb3VudGFpbiUyMHNraSUyMHJlc29ydHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Premium',
-    },
-    {
-      id: 'city-hotel-3',
-      title: 'Urban Bliss Hotel',
-      hotelName: 'The Metropolitan',
-      location: 'New York, USA',
-      packagePrice: 450,
-      rating: 4.7,
-      images: [
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjBob3RlbHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1582719508461-905c673771fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjByb29tfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Guest favorite',
-    },
-    {
-      id: 'desert-camp-4',
-      title: 'Sahara Luxury Camp',
-      hotelName: 'Dunes Glamping',
-      location: 'Merzouga, Morocco',
-      packagePrice: 320,
-      rating: 4.9,
-      images: [
-        'https://images.unsplash.com/photo-1533692328991-081598976c53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnbGFtcGluZ3xlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjYW1waW5nfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Unique Stay',
-    },
-  ]
+  const [featuredHotels, setFeaturedHotels] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchPackages() {
+      try {
+        const { data, error } = await supabase
+          .from('packages')
+          .select(`
+            id,
+            name,
+            cover_image,
+            media_urls,
+            rooms_config,
+            package_type,
+            hotels (
+              name,
+              city,
+              country
+            )
+          `)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (error) throw error
+
+        if (data) {
+          const mappedPackages = data.map((pkg: any) => {
+            // Calculate best price
+            let price = 0;
+            if (pkg.rooms_config) {
+              const prices = Object.values(pkg.rooms_config).map((r: any) => Number(r.price) || 0).filter(p => p > 0);
+              if (prices.length > 0) price = Math.min(...prices);
+            }
+
+            // Get location string
+            const hotel = pkg.hotels;
+            const location = hotel ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '') : 'Multiple Locations';
+
+            // Images
+            const images = pkg.media_urls && pkg.media_urls.length > 0 ? pkg.media_urls : (pkg.cover_image ? [pkg.cover_image] : []);
+
+            return {
+              id: pkg.id,
+              title: pkg.name,
+              hotelName: hotel?.name || 'Partner Hotel',
+              location: location || 'Global',
+              packagePrice: price > 0 ? price : 'Contact',
+              rating: 5.0, // Benchmark
+              images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080'],
+              badge: 'New Arrival'
+            }
+          })
+          setFeaturedHotels(mappedPackages)
+        }
+      } catch (e) {
+        console.error('Error fetching featured packages:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchPackages()
+  }, [])
+
+  if (loading) {
+    return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
+  }
 
   return (
     <motion.section
@@ -501,8 +517,8 @@ function FeaturedHotelsSection({
       {/* Section Header */}
       <div className="flex items-center justify-between px-2">
         <div>
-          <h3 className="text-2xl font-bold text-foreground">Popular homes in Lahore</h3>
-          <p className="text-muted-foreground text-sm">Guest favorites in the city</p>
+          <h3 className="text-2xl font-bold text-foreground">Featured Experiences</h3>
+          <p className="text-muted-foreground text-sm">Curated packages for you</p>
         </div>
         <div className="flex gap-2 hidden md:flex">
           <Button
@@ -522,65 +538,73 @@ function FeaturedHotelsSection({
         </div>
       </div>
 
-      {/* Horizontal Scroll Container */}
-      <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
-        {featuredHotels.map((hotel, index) => (
-          <motion.div
-            key={hotel.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 * index }}
-            className="min-w-[280px] md:min-w-[320px] snap-start"
-            onClick={() => onPackageSelect(hotel.id)}
-          >
-            <div className="group cursor-pointer space-y-3">
-              <div className="relative aspect-square overflow-hidden rounded-xl">
-                {/* Image Slider */}
-                <div className="w-full h-full hover:scale-105 transition-transform duration-500">
-                  <ImageSlider
-                    images={hotel.images}
-                    alt={hotel.title}
-                    autoSlideDelay={0} // Disable constant movement, feels more 'pro'
-                  />
+      {featuredHotels.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-xl">
+          <p className="text-gray-500">No packages available at the moment.</p>
+        </div>
+      ) : (
+        /* Horizontal Scroll Container */
+        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
+          {featuredHotels.map((hotel, index) => (
+            <motion.div
+              key={hotel.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 * index }}
+              className="min-w-[280px] md:min-w-[320px] snap-start"
+              onClick={() => onPackageSelect(hotel.id)}
+            >
+              <div className="group cursor-pointer space-y-3">
+                <div className="relative aspect-square overflow-hidden rounded-xl">
+                  {/* Image Slider */}
+                  <div className="w-full h-full hover:scale-105 transition-transform duration-500">
+                    <ImageSlider
+                      images={hotel.images}
+                      alt={hotel.title}
+                      autoSlideDelay={0} // Disable constant movement, feels more 'pro'
+                    />
+                  </div>
+
+                  {/* Badge */}
+                  {hotel.badge && (
+                    <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-full shadow-sm z-10">
+                      <span className="text-xs font-bold text-black block leading-none">
+                        {hotel.badge}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Heart Icon */}
+                  <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart">
+                    <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
+                  </button>
                 </div>
 
-                {/* Guest Favorite Badge */}
-                {(hotel.badge === 'Most Popular' || hotel.badge === 'Guest favorite') && (
-                  <div className="absolute top-3 left-3 bg-white px-3 py-1.5 rounded-full shadow-sm z-10">
-                    <span className="text-xs font-bold text-black block leading-none">
-                      Guest favorite
+                {/* Clean Content (Airbnb Style) */}
+                <div className="space-y-1 px-1">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-semibold text-base truncate pr-2 text-foreground">
+                      {hotel.hotelName}
+                    </h4>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-black text-black" />
+                      <span className="text-sm font-medium">{hotel.rating}</span>
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm line-clamp-1">{hotel.title}</p>
+                  <p className="text-muted-foreground text-sm">{hotel.location}</p>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="font-bold text-base text-foreground">
+                      {typeof hotel.packagePrice === 'number' ? `$${hotel.packagePrice}` : hotel.packagePrice}
                     </span>
-                  </div>
-                )}
-
-                {/* Heart Icon */}
-                <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart">
-                  <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
-                </button>
-              </div>
-
-              {/* Clean Content (Airbnb Style) */}
-              <div className="space-y-1 px-1">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-semibold text-base truncate pr-2 text-foreground">
-                    {hotel.hotelName}
-                  </h4>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-black text-black" />
-                    <span className="text-sm font-medium">{hotel.rating}</span>
+                    {typeof hotel.packagePrice === 'number' && <span className="text-sm font-normal text-muted-foreground">/ night</span>}
                   </div>
                 </div>
-                <p className="text-muted-foreground text-sm line-clamp-1">{hotel.title}</p>
-                <p className="text-muted-foreground text-sm">Oct 22-27</p>
-                <div className="flex items-baseline gap-1 mt-1">
-                  <span className="font-bold text-base text-foreground">${hotel.packagePrice}</span>
-                  <span className="text-sm font-normal text-muted-foreground">night</span>
-                </div>
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </motion.section>
   )
 }
