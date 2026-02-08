@@ -50,7 +50,8 @@ function App() {
 
         {/* Traveller Routes (Teal Theme) */}
         <Route element={<TravellerLayout />}>
-          <Route path="/" element={<Homepage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/explore" element={<Homepage />} />
           <Route path="/packages/:id" element={<PackageDetailsPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotel/:id" element={<HotelDetailsPage />} />
