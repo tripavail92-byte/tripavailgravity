@@ -4,24 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PackageData } from '../../types';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
 
 interface ReviewStepProps {
     packageData: PackageData;
     onBack: () => void;
     onEdit: (stepId: number) => void;
     onSubmit: () => void;
+    isPublishing?: boolean;
+    publishError?: string | null;
 }
 
-export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStepProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleSubmit = async () => {
-        setIsSubmitting(true);
-        // Simulate submission
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        onSubmit();
-    };
+export function ReviewStep({ packageData, onBack, onEdit, onSubmit, isPublishing = false, publishError }: ReviewStepProps) {
+    // We use parent's isPublishing state and onSubmit callback directly
+    // No need for local handleSubmit wrapper
 
     const sections = [
         {
@@ -281,15 +276,15 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit }: ReviewStep
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-6">
-                <Button variant="outline" onClick={onBack} disabled={isSubmitting}>
+                <Button variant="outline" onClick={onBack} disabled={isPublishing}>
                     Back
                 </Button>
                 <Button
-                    onClick={handleSubmit}
-                    disabled={completionPercentage < 100 || isSubmitting}
+                    onClick={onSubmit}
+                    disabled={completionPercentage < 100 || isPublishing}
                     className="min-w-[140px]"
                 >
-                    {isSubmitting ? (
+                    {isPublishing ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Publishing...

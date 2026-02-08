@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HotelSelectionStep } from './steps/HotelSelectionStep';
@@ -13,6 +12,8 @@ import { PoliciesStep } from './steps/PoliciesStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { PricingStep } from './steps/PricingStep';
 import { PackageData, StepData } from '../types';
+import { publishPackage } from '../services/packageService';
+import { supabase } from '@/lib/supabase';
 
 const STEPS = [
     { id: 1, title: 'Select Hotel', component: HotelSelectionStep },
@@ -31,6 +32,8 @@ const STEPS = [
 export function CompletePackageCreationFlow() {
     const [currentStep, setCurrentStep] = useState(1);
     const [packageData, setPackageData] = useState<PackageData>({});
+    const [isPublishing, setIsPublishing] = useState(false);
+    const [publishError, setPublishError] = useState<string | null>(null);
 
     const handleStepComplete = (stepData: StepData) => {
         setPackageData(prev => ({ ...prev, ...stepData }));
@@ -56,10 +59,40 @@ export function CompletePackageCreationFlow() {
         setCurrentStep(stepId);
     };
 
-    const handleSubmit = () => {
-        console.log('Submitting package:', packageData);
-        // TODO: Submit to backend
-        alert('Package published successfully! 🎉');
+    const handleSubmit = async () => {
+        console.log('📦 Publishing package:', packageData);
+        setIsPublishing(true);
+        setPublishError(null);
+
+        try {
+            // Get current user
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                throw new Error('You must be logged in to publish packages');
+            }
+
+            console.log('👤 User ID:', user.id);
+
+            // Publish package (uploads media + saves to DB)
+            const publishedPackage = await publishPackage(packageData, user.id);
+
+            console.log('✅ Package published successfully!', publishedPackage);
+
+            // Success feedback
+            alert(`✅ Package "${publishedPackage.name}" published successfully with ID: ${publishedPackage.id}`);
+
+            // TODO: Redirect to dashboard or package detail page
+            // window.location.href = `/hotel-manager/packages/${publishedPackage.id}`;
+
+        } catch (error: any) {
+            console.error('❌ Failed to publish package:', error);
+            const errorMessage = error.message || 'Failed to publish package. Please try again.';
+            setPublishError(errorMessage);
+            alert(`❌ Error: ${errorMessage}`);
+        } finally {
+            setIsPublishing(false);
+        }
     };
 
     const CurrentStepComponent = STEPS[currentStep - 1].component;
@@ -100,26 +133,25 @@ export function CompletePackageCreationFlow() {
                         exit={{ opacity: 0, x: -20 }}
                         transition={{ duration: 0.2 }}
                     >
-                        {isReviewStep ? (
-                            <ReviewStep
+                        {!isReviewStep ? (
+                            <CurrentStepComponent
+                                existingData={packageData}
+                                onComplete={handleStepComplete}
+                                onUpdate={handleStepUpdate}
+                            />
+                        ) : (
+                            <CurrentStepComponent
                                 packageData={packageData}
                                 onBack={handleBack}
                                 onEdit={handleEdit}
                                 onSubmit={handleSubmit}
-                            />
-                        ) : (
-                            <CurrentStepComponent
-                                onComplete={handleStepComplete}
-                                onUpdate={handleStepUpdate}
-                                existingData={packageData}
-                                onBack={handleBack}
+                                isPublishing={isPublishing}
+                                publishError={publishError}
                             />
                         )}
                     </motion.div>
                 </AnimatePresence>
             </div>
-
-
         </div>
     );
 }
