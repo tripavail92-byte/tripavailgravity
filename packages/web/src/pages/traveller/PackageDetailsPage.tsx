@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users, ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone, CreditCard, Gift, Key } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
@@ -172,18 +172,52 @@ export default function PackageDetailsPage() {
                         <div className="h-px bg-gray-200" />
 
                         {/* Highlights */}
+                        {/* Highlights */}
                         {highlights && highlights.length > 0 && (
                             <div>
                                 <h2 className="text-xl font-semibold mb-6">Package Highlights</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {highlights.map((highlight: string, idx: number) => (
-                                        <div key={idx} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                                                <Star size={16} />
+                                    {highlights.map((highlight: string, idx: number) => {
+                                        // Simple logic to match icons based on keywords
+                                        // This duplicates logic from AnimatedHighlightIcons but keeps component self-contained for now
+                                        // or we can import getIconForHighlight if we export it properly.
+                                        // Let's try to dynamic import or use a helper component.
+
+                                        // Helper Component for Icon
+                                        const HighlightIconItem = ({ text }: { text: string }) => {
+                                            const lower = text.toLowerCase();
+                                            let Icon = Star;
+
+                                            // Mapping based on AnimatedHighlightIcons keywords
+                                            if (lower.includes('wifi') || lower.includes('internet')) Icon = Wifi;
+                                            else if (lower.includes('coffee') || lower.includes('tea') || lower.includes('breakfast')) Icon = Coffee;
+                                            else if (lower.includes('dinner') || lower.includes('food') || lower.includes('dining')) Icon = Utensils;
+                                            else if (lower.includes('transfer') || lower.includes('transport') || lower.includes('pickup')) Icon = Car;
+                                            else if (lower.includes('family') || lower.includes('kid')) Icon = Users;
+                                            else if (lower.includes('business') || lower.includes('work')) Icon = Briefcase;
+                                            else if (lower.includes('view') || lower.includes('location')) Icon = MapPin;
+                                            else if (lower.includes('photo')) Icon = Camera;
+                                            else if (lower.includes('wine') || lower.includes('champagne') || lower.includes('drink')) Icon = Wine;
+                                            else if (lower.includes('ticket') || lower.includes('entry') || lower.includes('pass')) Icon = Ticket;
+                                            else if (lower.includes('music') || lower.includes('entertainment')) Icon = Music;
+                                            else if (lower.includes('tv') || lower.includes('movie')) Icon = Tv;
+                                            else if (lower.includes('smart') || lower.includes('app')) Icon = Smartphone;
+                                            else if (lower.includes('credit')) Icon = CreditCard;
+                                            else if (lower.includes('welcome') || lower.includes('gift')) Icon = Gift;
+                                            else if (lower.includes('access') || lower.includes('key')) Icon = Key;
+
+                                            return <Icon size={16} />;
+                                        };
+
+                                        return (
+                                            <div key={idx} className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                                    <HighlightIconItem text={highlight} />
+                                                </div>
+                                                <span className="text-gray-700">{highlight}</span>
                                             </div>
-                                            <span className="text-gray-700">{highlight}</span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

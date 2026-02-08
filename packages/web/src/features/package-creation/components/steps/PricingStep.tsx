@@ -9,7 +9,7 @@ import { RoomWizardModal } from '../../../hotel-listing/components/steps/RoomWiz
 import { RoomType } from '../../../hotel-listing/components/steps/RoomsStep';
 import { StepData } from '../../types';
 import { cn } from '@/lib/utils';
-import { supabase } from '@tripavail/shared/core/client';
+import { supabase } from '@/lib/supabase';
 
 interface PricingStepProps {
     onComplete: (data: StepData) => void;

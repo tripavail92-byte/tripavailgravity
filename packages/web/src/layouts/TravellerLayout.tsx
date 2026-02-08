@@ -9,9 +9,9 @@ export default function TravellerLayout() {
         <div
             className="min-h-screen bg-background font-sans"
             style={{
-                // Override Primary Color to Teal/Cyan for Traveller Experience
-                // Tailwind Teal-500: #14b8a6 -> HSL 173 80 40
-                '--primary': '173 80% 40%',
+                // Override Primary Color to Airbnb Rose for Traveller Experience
+                // #FF385C -> HSL 351 100% 61%
+                '--primary': '351 100% 61%',
                 '--primary-foreground': '0 0% 100%',
             } as React.CSSProperties}
         >
