@@ -3,25 +3,77 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users,
     ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone,
-    CreditCard, Gift, Key, Sparkles, Shield, Globe
+    CreditCard, Gift, Key, Sparkles, Shield, Globe, Bed, Clock, Bus, Plane, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import { supabase } from '@/lib/supabase';
 
+
+
 import {
-    PoolIcon, HotTubIcon, BBQGrillIcon, FirePitIcon, PoolTableIcon, PianoIcon, GymIcon,
-    BeachfrontIcon, MountainViewIcon, LakeAccessIcon, PatioIcon, OutdoorDiningIcon,
-    IndoorBonfireIcon, ScenicBalconyIcon, ForestViewIcon, WiFiIcon, TVIcon, KitchenIcon,
-    WashingMachineIcon, ParkingIcon, AirConditioningIcon, DedicatedWorkspaceIcon
+    PoolIcon,
+    HotTubIcon,
+    BBQGrillIcon,
+    FirePitIcon,
+    PoolTableIcon,
+    IndoorBonfireIcon,
+    PianoIcon,
+    GymIcon,
+    LakeAccessIcon,
+    BeachfrontIcon,
+    MountainViewIcon,
+    ScenicBalconyIcon,
+    ForestViewIcon,
+    WiFiIcon,
+    TVIcon,
+    KitchenIcon,
+    WashingMachineIcon,
+    ParkingIcon,
+    AirConditioningIcon,
+    DedicatedWorkspaceIcon,
+    PatioIcon,
+    OutdoorDiningIcon
 } from '@/features/hotel-listing/assets/PremiumAmenityIcons';
+import { MiniBarIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons';
+import { motion } from 'motion/react';
+
+// Custom King Bed Icon based on PremiumStepIcons style
+const KingBedIcon = ({ size = 64, isSelected = false }: { size?: number, isSelected?: boolean }) => {
+    const color = '#1A1A1A';
+    return (
+        <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
+            <motion.g
+                animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
+                transition={{ duration: 1, repeat: isSelected ? Infinity : 0 }}
+            >
+                {/* Bed Frame */}
+                <rect x="15" y="35" width="50" height="30" rx="2" stroke={color} strokeWidth="2.5" fill="none" />
+
+                {/* Mattress Lines */}
+                <line x1="15" y1="45" x2="65" y2="45" stroke={color} strokeWidth="1.5" />
+
+                {/* Pillows */}
+                <rect x="20" y="28" width="16" height="10" rx="2" stroke={color} strokeWidth="2" fill="none"
+                    style={{ originX: "28px", originY: "33px" }}
+                />
+                <rect x="44" y="28" width="16" height="10" rx="2" stroke={color} strokeWidth="2" fill="none"
+                    style={{ originX: "52px", originY: "33px" }}
+                />
+
+                {/* Decorative Fold */}
+                <path d="M 15 55 Q 40 60 65 55" stroke={color} strokeWidth="1.5" fill="none" />
+            </motion.g>
+        </motion.svg>
+    );
+};
 
 // Helper to map string ID/Name to Icon Configuration
 const getAmenityConfig = (amenityStr: string) => {
@@ -44,8 +96,11 @@ const getAmenityConfig = (amenityStr: string) => {
         'fitnesscenter': { icon: GymIcon, label: 'Fitness Center' },
         'lakeaccess': { icon: LakeAccessIcon, label: 'Lake Access' },
         'beachfront': { icon: BeachfrontIcon, label: 'Beachfront' },
+        'oceanview': { icon: BeachfrontIcon, label: 'Ocean View' }, // Added Mapping
+        'seaview': { icon: BeachfrontIcon, label: 'Sea View' },     // Added Mapping
         'mountainview': { icon: MountainViewIcon, label: 'Mountain View' },
         'scenicbalcony': { icon: ScenicBalconyIcon, label: 'Scenic Balcony' },
+        'balcony': { icon: ScenicBalconyIcon, label: 'Balcony' },   // Added Mapping
         'forestview': { icon: ForestViewIcon, label: 'Forest View' },
         'wifi': { icon: WiFiIcon, label: 'WiFi' },
         'internet': { icon: WiFiIcon, label: 'WiFi' },
@@ -59,7 +114,11 @@ const getAmenityConfig = (amenityStr: string) => {
         'ac': { icon: AirConditioningIcon, label: 'Air Conditioning' },
         'dedicatedworkspace': { icon: DedicatedWorkspaceIcon, label: 'Workspace' },
         'patio': { icon: PatioIcon, label: 'Patio' },
-        'outdoordining': { icon: OutdoorDiningIcon, label: 'Outdoor Dining' }
+        'outdoordining': { icon: OutdoorDiningIcon, label: 'Outdoor Dining' },
+        'minibar': { icon: MiniBarIcon, label: 'Mini Bar' },         // Added Mapping
+        'kingbed': { icon: KingBedIcon, label: 'King Bed' },         // Added Mapping
+        'queenbed': { icon: KingBedIcon, label: 'Queen Bed' },       // Added Mapping
+        'beds': { icon: KingBedIcon, label: 'Beds' },                // Added Mapping
     };
 
     if (premiumMap[id]) {
@@ -89,6 +148,7 @@ const getAmenityConfig = (amenityStr: string) => {
     if (lower.includes('welcome') || lower.includes('gift')) return { Icon: LucideWrapper(Gift), label: amenityStr };
     if (lower.includes('access') || lower.includes('key')) return { Icon: LucideWrapper(Key), label: amenityStr };
     if (lower.includes('safety') || lower.includes('security')) return { Icon: LucideWrapper(Shield), label: amenityStr };
+    if (lower.includes('bed') || lower.includes('sleep')) return { Icon: KingBedIcon, label: amenityStr }; // Fallback for beds to KingBedIcon
 
     // Default Fallback
     return { Icon: LucideWrapper(Sparkles), label: amenityStr };
@@ -348,12 +408,18 @@ export default function PackageDetailsPage() {
                                                 <div>
                                                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Room Features</h4>
                                                     <div className="grid grid-cols-2 gap-3">
-                                                        {room.amenities.map((amenity: string, i: number) => (
-                                                            <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                                                                <Check size={14} className="text-primary" />
-                                                                <span>{amenity}</span>
-                                                            </div>
-                                                        ))}
+                                                        {room.amenities.map((amenity: string, i: number) => {
+                                                            const { Icon, label } = getAmenityConfig(amenity);
+                                                            return (
+                                                                <div key={i} className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                                                                    {/* Icon Rendering */}
+                                                                    <div className="mb-2 text-primary group-hover:scale-110 transition-transform duration-300">
+                                                                        <Icon size={32} isSelected={true} />
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-gray-700 text-center">{label}</span>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}
@@ -376,10 +442,10 @@ export default function PackageDetailsPage() {
                                         </h3>
                                         <div className="space-y-3">
                                             {packageData.free_inclusions.map((item: any, idx: number) => {
-                                                const Icon = getAmenityConfig(item.name).Icon;
+                                                const { Icon, label } = getAmenityConfig(item.name);
                                                 // Note: reusing getAmenityConfig for icons as it covers most inclusive bases
                                                 return (
-                                                    <div key={idx} className="flex items-center gap-3 p-3 bg-green-50/50 border border-green-100 rounded-lg">
+                                                    <div key={idx} className="flex items-start gap-3 p-3 bg-green-50/50 border border-green-100 rounded-lg">
                                                         <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 shrink-0">
                                                             <Check size={14} strokeWidth={3} />
                                                         </div>
