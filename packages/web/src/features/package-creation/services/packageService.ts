@@ -117,6 +117,11 @@ export async function publishPackage(packageData: PackageData, userId: string) {
             highlights: packageData.highlights || null,
             inclusions: packageData.inclusions || null,
             exclusions: packageData.exclusions || null,
+
+            // JSONB Fields for structured data
+            discount_offers: packageData.discountOffers || [],
+            free_inclusions: packageData.freeInclusions || [],
+
             cancellation_policy: packageData.cancellationPolicy || null,
             payment_terms: packageData.paymentTerms || null,
 

@@ -35,6 +35,15 @@ export interface PackageData {
         video?: string;
     };
 
+    // Content
+    highlights?: string[];
+    inclusions?: string[];
+    exclusions?: string[];
+
+    // Policies
+    cancellationPolicy?: string;
+    paymentTerms?: string;
+
     // Highlights (Inclusions & Discounts)
     freeInclusions?: Array<{
         name: string;

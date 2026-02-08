@@ -322,6 +322,65 @@ export default function PackageDetailsPage() {
 
                         <div className="h-px bg-gray-200" />
 
+                        {/* Free Inclusions & Exclusive Offers Grid */}
+                        {(packageData.free_inclusions?.length > 0 || packageData.discount_offers?.length > 0) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Free Inclusions */}
+                                {packageData.free_inclusions?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <Sparkles className="w-5 h-5 text-primary" />
+                                            Included Perks
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {packageData.free_inclusions.map((item: any, idx: number) => {
+                                                const Icon = getAmenityConfig(item.name).Icon;
+                                                // Note: reusing getAmenityConfig for icons as it covers most inclusive bases
+                                                return (
+                                                    <div key={idx} className="flex items-center gap-3 p-3 bg-green-50/50 border border-green-100 rounded-lg">
+                                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 shrink-0">
+                                                            <Check size={14} strokeWidth={3} />
+                                                        </div>
+                                                        <span className="font-medium text-gray-900">{item.name}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Exclusive Discount Offers */}
+                                {packageData.discount_offers?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                            <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">%</div>
+                                            Exclusive Offers
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {packageData.discount_offers.map((offer: any, idx: number) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-orange-100 rounded-lg shadow-sm hover:shadow-md transition-all group">
+                                                    <div>
+                                                        <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">{offer.name}</div>
+                                                        <div className="flex items-center gap-2 text-sm mt-0.5">
+                                                            <span className="line-through text-gray-400 text-xs">${offer.originalPrice}</span>
+                                                            <span className="font-bold text-success">${(offer.originalPrice * (1 - offer.discount / 100)).toFixed(0)}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end">
+                                                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-none mb-1">
+                                                            {offer.discount}% OFF
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="h-px bg-gray-200" />
+
                         {/* Highlights & Aggregated Amenities */}
                         {/* Highlights & Aggregated Amenities */}
                         {aggregatedAmenities.length > 0 && (
