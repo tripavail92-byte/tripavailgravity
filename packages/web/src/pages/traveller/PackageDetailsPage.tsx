@@ -18,140 +18,25 @@ import { supabase } from '@/lib/supabase';
 
 
 
-import {
-    PoolIcon,
-    HotTubIcon,
-    BBQGrillIcon,
-    FirePitIcon,
-    PoolTableIcon,
-    IndoorBonfireIcon,
-    PianoIcon,
-    GymIcon,
-    LakeAccessIcon,
-    BeachfrontIcon,
-    MountainViewIcon,
-    ScenicBalconyIcon,
-    ForestViewIcon,
-    WiFiIcon,
-    TVIcon,
-    KitchenIcon,
-    WashingMachineIcon,
-    ParkingIcon,
-    AirConditioningIcon,
-    DedicatedWorkspaceIcon,
-    PatioIcon,
-    OutdoorDiningIcon
-} from '@/features/hotel-listing/assets/PremiumAmenityIcons';
-import { MiniBarIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons';
-import { motion } from 'motion/react';
+import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons';
 
-// Custom King Bed Icon based on PremiumStepIcons style
-const KingBedIcon = ({ size = 64, isSelected = false }: { size?: number, isSelected?: boolean }) => {
-    const color = '#1A1A1A';
-    return (
-        <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
-            <motion.g
-                animate={isSelected ? { scale: [1, 1.05, 1] } : {}}
-                transition={{ duration: 1, repeat: isSelected ? Infinity : 0 }}
-            >
-                {/* Bed Frame */}
-                <rect x="15" y="35" width="50" height="30" rx="2" stroke={color} strokeWidth="2.5" fill="none" />
-
-                {/* Mattress Lines */}
-                <line x1="15" y1="45" x2="65" y2="45" stroke={color} strokeWidth="1.5" />
-
-                {/* Pillows */}
-                <rect x="20" y="28" width="16" height="10" rx="2" stroke={color} strokeWidth="2" fill="none"
-                    style={{ originX: "28px", originY: "33px" }}
-                />
-                <rect x="44" y="28" width="16" height="10" rx="2" stroke={color} strokeWidth="2" fill="none"
-                    style={{ originX: "52px", originY: "33px" }}
-                />
-
-                {/* Decorative Fold */}
-                <path d="M 15 55 Q 40 60 65 55" stroke={color} strokeWidth="1.5" fill="none" />
-            </motion.g>
-        </motion.svg>
-    );
+// Helper to normalize amenity strings to kebab-case for centralized icon lookup
+const normalizeAmenityId = (amenityStr: string): string => {
+    return amenityStr
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
 };
 
-// Helper to map string ID/Name to Icon Configuration
+// Helper to get amenity display config using centralized icon system
 const getAmenityConfig = (amenityStr: string) => {
-    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const id = normalize(amenityStr);
-    const lower = amenityStr.toLowerCase();
+    const normalizedId = normalizeAmenityId(amenityStr);
+    const IconComponent = getAmenityIcon(normalizedId);
 
-    // 1. Premium Icons Map (Exact & Fuzzy matches)
-    const premiumMap: Record<string, { icon: any, label: string }> = {
-        'pool': { icon: PoolIcon, label: 'Swimming Pool' },
-        'swimmingpool': { icon: PoolIcon, label: 'Swimming Pool' },
-        'hottub': { icon: HotTubIcon, label: 'Hot Tub' },
-        'jacuzzi': { icon: HotTubIcon, label: 'Hot Tub' },
-        'bbqgrill': { icon: BBQGrillIcon, label: 'BBQ Grill' },
-        'firepit': { icon: FirePitIcon, label: 'Fire Pit' },
-        'pooltable': { icon: PoolTableIcon, label: 'Pool Table' },
-        'indoorbonfire': { icon: IndoorBonfireIcon, label: 'Indoor Bonfire' },
-        'piano': { icon: PianoIcon, label: 'Piano' },
-        'gym': { icon: GymIcon, label: 'Fitness Center' },
-        'fitnesscenter': { icon: GymIcon, label: 'Fitness Center' },
-        'lakeaccess': { icon: LakeAccessIcon, label: 'Lake Access' },
-        'beachfront': { icon: BeachfrontIcon, label: 'Beachfront' },
-        'oceanview': { icon: BeachfrontIcon, label: 'Ocean View' }, // Added Mapping
-        'seaview': { icon: BeachfrontIcon, label: 'Sea View' },     // Added Mapping
-        'mountainview': { icon: MountainViewIcon, label: 'Mountain View' },
-        'scenicbalcony': { icon: ScenicBalconyIcon, label: 'Scenic Balcony' },
-        'balcony': { icon: ScenicBalconyIcon, label: 'Balcony' },   // Added Mapping
-        'forestview': { icon: ForestViewIcon, label: 'Forest View' },
-        'wifi': { icon: WiFiIcon, label: 'WiFi' },
-        'internet': { icon: WiFiIcon, label: 'WiFi' },
-        'tv': { icon: TVIcon, label: 'TV' },
-        'kitchen': { icon: KitchenIcon, label: 'Kitchen' },
-        'washingmachine': { icon: WashingMachineIcon, label: 'Washing Machine' },
-        'parking': { icon: ParkingIcon, label: 'Parking' },
-        'freeparking': { icon: ParkingIcon, label: 'Free Parking' },
-        'paidparking': { icon: ParkingIcon, label: 'Paid Parking' },
-        'airconditioning': { icon: AirConditioningIcon, label: 'Air Conditioning' },
-        'ac': { icon: AirConditioningIcon, label: 'Air Conditioning' },
-        'dedicatedworkspace': { icon: DedicatedWorkspaceIcon, label: 'Workspace' },
-        'patio': { icon: PatioIcon, label: 'Patio' },
-        'outdoordining': { icon: OutdoorDiningIcon, label: 'Outdoor Dining' },
-        'minibar': { icon: MiniBarIcon, label: 'Mini Bar' },         // Added Mapping
-        'kingbed': { icon: KingBedIcon, label: 'King Bed' },         // Added Mapping
-        'queenbed': { icon: KingBedIcon, label: 'Queen Bed' },       // Added Mapping
-        'beds': { icon: KingBedIcon, label: 'Beds' },                // Added Mapping
+    return {
+        Icon: IconComponent,
+        label: amenityStr
     };
-
-    if (premiumMap[id]) {
-        return { Icon: premiumMap[id].icon, label: premiumMap[id].label };
-    }
-
-    // 2. Lucide Fallbacks (Preserving original getIconForText logic)
-    // We wrap Lucide icons to match the component signature (size prop)
-    const LucideWrapper = (Icon: any) => ({ size, className, isSelected }: any) => (
-        <div className={`flex items-center justify-center bg-primary/5 rounded-full w-12 h-12 ${className}`}>
-            <Icon size={size * 0.6} className="text-primary" />
-        </div>
-    );
-
-    if (lower.includes('coffee') || lower.includes('tea') || lower.includes('breakfast')) return { Icon: LucideWrapper(Coffee), label: amenityStr };
-    if (lower.includes('dinner') || lower.includes('food') || lower.includes('dining')) return { Icon: LucideWrapper(Utensils), label: amenityStr };
-    if (lower.includes('transfer') || lower.includes('transport') || lower.includes('car') || lower.includes('vehicle')) return { Icon: LucideWrapper(Car), label: amenityStr };
-    if (lower.includes('family') || lower.includes('kid')) return { Icon: LucideWrapper(Users), label: amenityStr };
-    if (lower.includes('business') || lower.includes('work')) return { Icon: LucideWrapper(Briefcase), label: amenityStr };
-    if (lower.includes('view') || lower.includes('location')) return { Icon: LucideWrapper(MapPin), label: amenityStr };
-    if (lower.includes('photo')) return { Icon: LucideWrapper(Camera), label: amenityStr };
-    if (lower.includes('wine') || lower.includes('champagne') || lower.includes('drink')) return { Icon: LucideWrapper(Wine), label: amenityStr };
-    if (lower.includes('ticket') || lower.includes('entry') || lower.includes('pass')) return { Icon: LucideWrapper(Ticket), label: amenityStr };
-    if (lower.includes('music') || lower.includes('entertainment')) return { Icon: LucideWrapper(Music), label: amenityStr };
-    if (lower.includes('smart') || lower.includes('app')) return { Icon: LucideWrapper(Smartphone), label: amenityStr };
-    if (lower.includes('credit')) return { Icon: LucideWrapper(CreditCard), label: amenityStr };
-    if (lower.includes('welcome') || lower.includes('gift')) return { Icon: LucideWrapper(Gift), label: amenityStr };
-    if (lower.includes('access') || lower.includes('key')) return { Icon: LucideWrapper(Key), label: amenityStr };
-    if (lower.includes('safety') || lower.includes('security')) return { Icon: LucideWrapper(Shield), label: amenityStr };
-    if (lower.includes('bed') || lower.includes('sleep')) return { Icon: KingBedIcon, label: amenityStr }; // Fallback for beds to KingBedIcon
-
-    // Default Fallback
-    return { Icon: LucideWrapper(Sparkles), label: amenityStr };
 };
 
 
