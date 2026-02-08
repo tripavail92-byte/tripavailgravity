@@ -196,8 +196,14 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit, isPublishing
     ];
 
     // Helper function to check if field has valid data
-    const hasValidData = (data: any) => {
+    const hasValidData = (data: any, sectionId?: number) => {
         if (data === undefined || data === null) return false;
+
+        // Special case: Media section requires minimum 4 photos
+        if (sectionId === 3) {
+            return typeof data === 'number' && data >= 4;
+        }
+
         if (typeof data === 'number') return data >= 0;  // 0 is valid for counts/lengths
         if (typeof data === 'string') return data.length > 0;
         if (Array.isArray(data)) return true;  // Empty arrays are valid
@@ -206,7 +212,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit, isPublishing
 
     // Only count required sections for completion percentage
     const requiredSections = sections.filter(s => !s.optional);
-    const completedRequired = requiredSections.filter(s => hasValidData(s.data));
+    const completedRequired = requiredSections.filter(s => hasValidData(s.data, s.id));
     const completionPercentage = Math.round((completedRequired.length / requiredSections.length) * 100);
 
     return (
@@ -238,7 +244,7 @@ export function ReviewStep({ packageData, onBack, onEdit, onSubmit, isPublishing
             <div className="space-y-4">
                 {sections.map(section => {
                     const IconComponent = section.icon;
-                    const isComplete = hasValidData(section.data);
+                    const isComplete = hasValidData(section.data, section.id);
 
                     return (
                         <Card key={section.id} className={cn("p-6", !isComplete && "bg-gray-50")}>
