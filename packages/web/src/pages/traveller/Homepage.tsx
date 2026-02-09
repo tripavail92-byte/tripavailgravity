@@ -1,147 +1,197 @@
-
 import { useEffect, useState } from 'react';
-import { Search, MapPin, Calendar, Users, Briefcase, Mountain, Palmtree, Tent, Waves } from 'lucide-react';
+import {
+    MapPin, Search, Briefcase, Mountain, Palmtree, Tent, Waves, Clock, Star, Users
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PackageCard } from '@/components/traveller/PackageCard';
+import { TourCard } from '@/components/traveller/TourCard';
 import { supabase } from '@/lib/supabase';
-import { PackageData } from '@/features/package-creation/types';
+import { tourService, Tour } from '@/features/tour-operator/services/tourService';
+import { Badge } from '@/components/ui/badge';
 
 export default function Homepage() {
     const [packages, setPackages] = useState<any[]>([]);
+    const [tours, setTours] = useState<Tour[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPackages = async () => {
+        const fetchData = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('packages')
-                    .select('*')
-                    .eq('is_published', true)
-                    .order('created_at', { ascending: false })
-                    .limit(6);
+                const [{ data: pkgData, error: pkgError }, featuredTours] = await Promise.all([
+                    supabase
+                        .from('packages')
+                        .select('*')
+                        .eq('is_published', true)
+                        .order('created_at', { ascending: false })
+                        .limit(6),
+                    tourService.fetchFeaturedTours()
+                ]);
 
-                if (error) throw error;
-                setPackages(data || []);
+                if (pkgError) throw pkgError;
+                setPackages(pkgData || []);
+                setTours(featuredTours || []);
             } catch (err) {
-                console.error('Error fetching packages:', err);
+                console.error('Error fetching data:', err);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchPackages();
+        fetchData();
     }, []);
 
     const categories = [
-        { name: 'Beach', icon: Waves },
-        { name: 'Mountain', icon: Mountain },
-        { name: 'Adventure', icon: Tent },
+        { name: 'Adventure', icon: Mountain },
         { name: 'Business', icon: Briefcase },
-        { name: 'Luxury', icon: Palmtree },
+        { name: 'Beach', icon: Waves },
+        { name: 'Nature', icon: Palmtree },
+        { name: 'Camping', icon: Tent },
     ];
 
     return (
-        <div className="pb-20">
+        <div className="bg-white">
             {/* Hero Section */}
-            <div className="relative h-[500px] w-full bg-slate-900 overflow-hidden">
-                <img
-                    src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"
-                    alt="Travel Hero"
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1600&auto=format&fit=crop"
+                        alt="Hero background"
+                        className="w-full h-full object-cover brightness-75 transition-transform duration-1000 hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white" />
+                </div>
 
-                <div className="relative h-full max-w-7xl mx-auto px-4 flex flex-col justify-center items-center text-center">
-                    <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        Find your next <span className="text-primary text-cyan-400">adventure</span>
-                    </h1>
-                    <p className="text-lg text-gray-200 mb-8 max-w-2xl animate-in fade-in slide-in-from-bottom-5 duration-1000">
-                        Discover curated travel packages, luxury stays, and unforgettable experiences tailored just for you.
-                    </p>
+                <div className="relative z-10 max-w-4xl w-full px-4 text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8 }}
+                    >
+                        <h1 className="text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-2xl">
+                            Wander often, <br />
+                            <span className="text-secondary">wonder always.</span>
+                        </h1>
+                        <p className="text-xl text-white/90 mb-10 font-medium max-w-2xl mx-auto drop-shadow-lg">
+                            Discover hidden gems and curated travel experiences across the globe.
+                        </p>
 
-                    {/* Search Bar */}
-                    <div className="bg-white p-2 rounded-full shadow-2xl flex flex-col md:flex-row items-center gap-2 max-w-3xl w-full animate-in zoom-in duration-500">
-                        <div className="flex-1 px-6 py-3 border-r border-gray-100 w-full md:w-auto text-left">
-                            <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Where</label>
-                            <div className="flex items-center gap-2 text-gray-900 font-medium">
-                                <MapPin size={18} className="text-primary" />
-                                <span>Search destinations</span>
+                        <div className="bg-white p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2">
+                            <div className="flex-1 w-full px-6 flex items-center gap-3 border-b md:border-b-0 md:border-r border-gray-100 py-3 md:py-0">
+                                <Search className="w-5 h-5 text-primary" />
+                                <input
+                                    type="text"
+                                    placeholder="Where to next?"
+                                    className="w-full bg-transparent border-none outline-none font-bold text-gray-900 placeholder:text-gray-400"
+                                />
                             </div>
+                            <Button className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-white font-black text-lg transition-all hover:scale-[1.02] shadow-xl shadow-primary/20">
+                                Explore Now
+                            </Button>
                         </div>
-                        <div className="flex-1 px-6 py-3 border-r border-gray-100 w-full md:w-auto text-left">
-                            <label className="text-xs font-bold text-gray-500 uppercase block mb-1">When</label>
-                            <div className="flex items-center gap-2 text-gray-900 font-medium">
-                                <Calendar size={18} className="text-primary" />
-                                <span>Add dates</span>
-                            </div>
-                        </div>
-                        <div className="flex-1 px-6 py-3 w-full md:w-auto text-left">
-                            <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Who</label>
-                            <div className="flex items-center gap-2 text-gray-900 font-medium">
-                                <Users size={18} className="text-primary" />
-                                <span>Add guests</span>
-                            </div>
-                        </div>
-                        <Button size="lg" className="rounded-full w-full md:w-auto px-8 h-12 bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25">
-                            <Search size={20} />
-                        </Button>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
 
             {/* Categories */}
-            <div className="max-w-7xl mx-auto px-4 -mt-8 relative z-10 mb-16">
-                <div className="bg-white rounded-2xl shadow-xl p-6 flex items-center justify-between overflow-x-auto gap-8 no-scrollbar border border-gray-100">
-                    {categories.map((cat, idx) => (
-                        <div key={idx} className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group hover:opacity-100 opacity-60 transition-all">
-                            <div className="w-12 h-12 rounded-full bg-gray-50 group-hover:bg-primary/10 flex items-center justify-center text-gray-500 group-hover:text-primary transition-colors">
-                                <cat.icon size={24} />
-                            </div>
-                            <span className="text-sm font-medium text-gray-600 group-hover:text-primary">{cat.name}</span>
-                        </div>
-                    ))}
+            <div className="max-w-7xl mx-auto px-4 -mt-16 relative z-20 mb-20">
+                <div className="bg-white rounded-[3rem] shadow-xl shadow-gray-200/50 p-8 border border-gray-50">
+                    <div className="flex flex-wrap justify-center gap-4 md:gap-12">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.name}
+                                className="group flex flex-col items-center gap-3 p-4 transition-all hover:scale-110"
+                            >
+                                <div className="w-16 h-16 rounded-3xl bg-gray-50 flex items-center justify-center group-hover:bg-primary/10 group-hover:rotate-12 transition-all duration-500 shadow-sm">
+                                    <cat.icon className="w-7 h-7 text-gray-400 group-hover:text-primary transition-colors" />
+                                </div>
+                                <span className="text-sm font-black text-gray-500 group-hover:text-gray-900 transition-colors uppercase tracking-widest">{cat.name}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* Featured Section */}
-            <main className="max-w-7xl mx-auto px-4">
+            {/* Featured Section - Packages */}
+            <main className="max-w-7xl mx-auto px-4 mb-20">
                 <div className="flex items-end justify-between mb-8">
                     <div>
                         <h2 className="text-3xl font-bold text-gray-900 mb-2">Featured Packages</h2>
-                        <p className="text-gray-500">Handpicked experiences for your next journey</p>
+                        <p className="text-gray-500 font-medium">Handpicked hotel stays and experiences</p>
                     </div>
-                    <Button variant="outline" className="hidden md:flex">View all</Button>
+                    <Button variant="outline" className="rounded-xl border-gray-200 font-bold">View all packages</Button>
                 </div>
 
                 {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3].map(i => (
-                            <div key={i} className="h-[400px] bg-gray-100 rounded-2xl animate-pulse" />
+                            <div key={i} className="aspect-[4/5] bg-gray-100 rounded-3xl animate-pulse" />
                         ))}
                     </div>
                 ) : packages.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {packages.map((pkg) => (
-                            <PackageCard
+                            <TourCard
                                 key={pkg.id}
                                 id={pkg.id}
                                 image={pkg.cover_image || pkg.media_urls?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop'}
                                 title={pkg.name}
-                                location="Multiple Locations" // Placeholder until we have location in DB
-                                duration={3} // Placeholder
-                                rating={4.8} // Placeholder
-                                price={599} // Placeholder
+                                location="Multiple Locations"
+                                duration="3 Days"
+                                rating={4.8}
+                                price={599}
+                                currency="USD"
                                 type={pkg.package_type}
                             />
                         ))}
                     </div>
-                ) : (
-                    <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No packages found</h3>
-                        <p className="text-gray-500">Check back later for new travel experiences.</p>
-                    </div>
-                )}
+                ) : null}
             </main>
+
+            {/* Featured Section - Tours */}
+            <div className="bg-gray-50 py-20 border-y border-gray-100">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex items-end justify-between mb-12">
+                        <div>
+                            <Badge className="bg-primary/10 text-primary border-none mb-3 px-3 py-1 font-bold text-[10px] uppercase tracking-wider">Explore Tours</Badge>
+                            <h2 className="text-3xl font-bold text-gray-900 mb-2">Popular Tour Experiences</h2>
+                            <p className="text-gray-500 font-medium">Curated adventures led by local experts</p>
+                        </div>
+                        <Button variant="outline" className="rounded-xl border-gray-200 font-bold bg-white">Discover all tours</Button>
+                    </div>
+
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="aspect-[4/5] bg-gray-200/50 rounded-3xl animate-pulse" />
+                            ))}
+                        </div>
+                    ) : tours.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {tours.map((tour) => (
+                                <TourCard
+                                    key={tour.id}
+                                    id={tour.id}
+                                    image={tour.images?.[0] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'}
+                                    title={tour.title}
+                                    location={`${tour.location.city}, ${tour.location.country}`}
+                                    duration={tour.duration}
+                                    rating={tour.rating}
+                                    price={tour.price}
+                                    currency={tour.currency}
+                                    type={tour.tour_type}
+                                    isFeatured={tour.is_featured}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No featured tours yet</h3>
+                            <p className="text-gray-500 font-medium">Our local experts are preparing amazing experiences for you.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
+
+import { motion } from 'motion/react';

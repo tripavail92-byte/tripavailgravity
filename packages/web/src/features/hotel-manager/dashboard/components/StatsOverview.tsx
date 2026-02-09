@@ -1,9 +1,13 @@
 import { motion } from 'motion/react';
-import { DollarSign, Calendar, TrendingUp, Star } from 'lucide-react';
+import { DollarSign, Calendar, TrendingUp, Star, Users, MapPin } from 'lucide-react';
 import { StatCard } from './StatCard';
+import { useAuth } from '@/hooks/useAuth';
 
 export function StatsOverview() {
-    const stats = [
+    const { activeRole } = useAuth();
+    const isTourOperator = activeRole?.role_type === 'tour_operator';
+
+    const hotelStats = [
         {
             label: 'Total Revenue',
             value: '$12,450',
@@ -37,6 +41,43 @@ export function StatsOverview() {
             period: 'from 124 reviews',
         },
     ];
+
+    const tourStats = [
+        {
+            label: 'Tour Revenue',
+            value: '$8,240',
+            change: '+15.2%',
+            trend: 'up' as const,
+            icon: DollarSign,
+            period: 'this month',
+        },
+        {
+            label: 'Total Travellers',
+            value: '156',
+            change: '+22.4%',
+            trend: 'up' as const,
+            icon: Users,
+            period: 'this month',
+        },
+        {
+            label: 'Active Tours',
+            value: '12',
+            change: '+2',
+            trend: 'up' as const,
+            icon: MapPin,
+            period: 'published',
+        },
+        {
+            label: 'Experience Rating',
+            value: '4.9',
+            change: '+0.1',
+            trend: 'up' as const,
+            icon: Star,
+            period: 'from 84 reviews',
+        },
+    ];
+
+    const stats = isTourOperator ? tourStats : hotelStats;
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

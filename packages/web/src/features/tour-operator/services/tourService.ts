@@ -119,10 +119,86 @@ export const tourService = {
             .from('tours')
             .select('*')
             .eq('operator_id', operatorId)
+            .eq('is_published', true)
             .order('created_at', { ascending: false });
 
         if (error) {
             console.error(`Error fetching tours for operator ${operatorId}:`, error);
+            throw error;
+        }
+
+        return data as Tour[];
+    },
+
+    async fetchPublishedTours(operatorId: string) {
+        return this.getOperatorTours(operatorId);
+    },
+
+    async fetchDraftTours(operatorId: string) {
+        const { data, error } = await supabase
+            .from('tours')
+            .select('*')
+            .eq('operator_id', operatorId)
+            .eq('is_published', false)
+            .order('updated_at', { ascending: false });
+
+        if (error) {
+            console.error(`Error fetching drafts for operator ${operatorId}:`, error);
+            throw error;
+        }
+
+        return data as Tour[];
+    },
+
+    async saveTourDraft(data: Partial<Tour>, operatorId: string, draftId?: string) {
+        if (!operatorId) throw new Error('Operator ID required');
+
+        const draftPayload = {
+            operator_id: operatorId,
+            title: data.title || 'Untitled Tour',
+            tour_type: data.tour_type || 'Adventure',
+            location: data.location || {},
+            duration: data.duration || '1 day',
+            price: data.price || 0,
+            currency: data.currency || 'USD',
+            is_published: false,
+            draft_data: data,
+            updated_at: new Date().toISOString()
+        };
+
+        if (draftId) {
+            const { data: tour, error } = await supabase
+                .from('tours')
+                .update(draftPayload)
+                .eq('id', draftId)
+                .eq('operator_id', operatorId)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return { success: true, tourId: tour.id };
+        } else {
+            const { data: tour, error } = await supabase
+                .from('tours')
+                .insert(draftPayload)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return { success: true, tourId: tour.id };
+        }
+    },
+
+    async fetchFeaturedTours() {
+        const { data, error } = await supabase
+            .from('tours')
+            .select('*')
+            .eq('is_published', true)
+            .eq('is_featured', true)
+            .limit(8);
+
+        if (error) {
+            console.error('Error fetching featured tours:', error);
             throw error;
         }
 
