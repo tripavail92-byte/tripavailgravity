@@ -612,44 +612,59 @@ function FeaturedHotelsSection({
 // Featured Tours Section
 // Featured Tours Section
 function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => void }) {
-  const featuredTours = [
-    {
-      id: 'adventure-tour-1',
-      title: 'Epic Adventure Journey',
-      location: 'Nepal Himalayas',
-      tourPrice: 999,
-      rating: 4.9,
-      images: [
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb3VudGFpbiUyMGFkdmVudHVyZSUyMHRyZWt8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbHBpbmUlMjBsYWtlfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Best Seller',
-    },
-    {
-      id: 'cultural-tour-2',
-      title: 'Kyoto Ancient Temples',
-      location: 'Kyoto, Japan',
-      tourPrice: 799,
-      rating: 4.8,
-      images: [
-        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxreW90byUyMHRlbXBsZXxlbnwxfHx8fDE3NTczMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1528360983277-13d9b152c6d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqYXBhbiUyMGNoZXJyeSUyMGJsb3Nzb218ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Cultural',
-    },
-    {
-      id: 'safari-tour-3',
-      title: 'Serengeti Safari',
-      location: 'Tanzania',
-      tourPrice: 1499,
-      rating: 5.0,
-      images: [
-        'https://images.unsplash.com/photo-1516426122078-c23e76319801?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWZhcml8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-        'https://images.unsplash.com/photo-1535591273668-578e31182c4f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiaWclMjBmaXZlJTIwc2FmYXJpfGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-      ],
-      badge: 'Once in a Lifetime',
-    },
-  ]
+  const [featuredTours, setFeaturedTours] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchTours() {
+      try {
+        const { data, error } = await supabase
+          .from('tours')
+          .select('id,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (error) throw error
+
+        const mappedTours = (data || []).map((tour: any) => {
+          const locationObj = tour.location || {}
+          const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+
+          const images = Array.isArray(tour.images) ? tour.images : []
+
+          return {
+            id: tour.id,
+            title: tour.title,
+            location: location || 'Global',
+            tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+            rating: Number(tour.rating) || 0,
+            images:
+              images.length > 0
+                ? images
+                : [
+                    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+                  ],
+            badge: tour.is_featured ? 'Featured' : tour.tour_type,
+          }
+        })
+
+        setFeaturedTours(mappedTours)
+      } catch (e) {
+        console.error('Error fetching featured tours:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTours()
+  }, [])
+
+  if (loading) {
+    return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
+  }
 
   return (
     <motion.section
@@ -675,9 +690,14 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
         </div>
       </div>
 
-      {/* Horizontal Scroll Container */}
-      <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
-        {featuredTours.map((tour, index) => (
+      {featuredTours.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-xl">
+          <p className="text-gray-500">No tours available at the moment.</p>
+        </div>
+      ) : (
+        /* Horizontal Scroll Container */
+        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
+          {featuredTours.map((tour, index) => (
           <motion.div
             key={tour.id}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -719,16 +739,23 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
                   {tour.title}
                 </h4>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-bold text-base text-foreground">
-                    From ${tour.tourPrice}
-                  </span>
-                  <span className="text-sm font-normal text-muted-foreground">/ person</span>
+                  {typeof tour.tourPrice === 'number' ? (
+                    <>
+                      <span className="font-bold text-base text-foreground">
+                        From ${tour.tourPrice}
+                      </span>
+                      <span className="text-sm font-normal text-muted-foreground">/ person</span>
+                    </>
+                  ) : (
+                    <span className="font-bold text-base text-foreground">{tour.tourPrice}</span>
+                  )}
                 </div>
               </div>
             </div>
           </motion.div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.section>
   )
 }
