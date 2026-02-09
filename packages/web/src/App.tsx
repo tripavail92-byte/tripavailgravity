@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 
 import { useAuth } from '@/hooks/useAuth'
 import DashboardLayout from '@/layouts/DashboardLayout'
+import { RoleGuard } from '@/components/auth/RoleGuard'
 import LoginPage from '@/pages/auth/LoginPage'
 // Pages
 import LandingPage from '@/pages/LandingPage'
@@ -62,8 +63,25 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotels/:id" element={<HotelDetailsPage />} />
           <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
-          <Route path="/manager/dashboard" element={<DashboardPage />} />
-          <Route path="/operator/dashboard" element={<div>Tour Operator Dashboard (Coming Soon)</div>} />
+
+          <Route
+            path="/manager/dashboard"
+            element={
+              <RoleGuard allowedRoles={['hotel_manager']}>
+                <DashboardPage />
+              </RoleGuard>
+            }
+          />
+
+          <Route
+            path="/operator/dashboard"
+            element={
+              <RoleGuard allowedRoles={['tour_operator']}>
+                <div>Tour Operator Dashboard (Coming Soon)</div>
+              </RoleGuard>
+            }
+          />
+
           <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
         </Route>
 
