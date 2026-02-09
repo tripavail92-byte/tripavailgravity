@@ -1,6 +1,7 @@
 import { useState, ChangeEvent } from 'react';
 import { Card } from '@/components/ui/card';
-import { Camera, Upload, Trash2, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Camera, Upload, Trash2, Loader2, Info } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,61 +42,86 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Profile Picture</h3>
-                <p className="text-gray-600">Add a professional photo to build trust with travelers.</p>
-            </div>
+        <div className="space-y-12">
+            <div className="space-y-10 flex flex-col items-center">
+                <div className="text-center">
+                    <h3 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Add a profile photo</h3>
+                    <p className="text-lg text-gray-500 max-w-md mx-auto leading-relaxed font-medium">A great photo helps travelers get to know you before booking.</p>
+                </div>
 
-            <Card className="p-8 flex flex-col items-center space-y-6 border-gray-100 shadow-sm rounded-2xl">
                 <div className="relative group">
-                    <Avatar className="w-40 h-40 border-4 border-white shadow-xl ring-1 ring-gray-100">
-                        <AvatarImage src={selectedImage || ''} />
-                        <AvatarFallback className="bg-primary/5 text-primary text-4xl">
-                            {isUploading ? <Loader2 className="w-10 h-10 animate-spin opacity-50" /> : <Camera className="w-16 h-16 opacity-20" />}
-                        </AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                        <Avatar className="w-48 h-48 border-[6px] border-white shadow-2xl ring-1 ring-black/[0.05] transition-all group-hover:scale-[1.02]">
+                            <AvatarImage src={selectedImage || ''} alt="Profile Picture" />
+                            <AvatarFallback className="bg-primary/5 text-primary text-4xl">
+                                {isUploading ? <Loader2 className="w-12 h-12 animate-spin opacity-40" /> : <Camera className="w-20 h-20 opacity-30" aria-hidden="true" />}
+                            </AvatarFallback>
+                        </Avatar>
 
-                    {selectedImage && !isUploading && (
-                        <button
-                            onClick={removeImage}
-                            className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-2 shadow-lg border border-red-50 transition-all hover:scale-110 active:scale-90"
+                        {selectedImage && !isUploading && (
+                            <button
+                                onClick={removeImage}
+                                className="absolute -top-3 -right-3 bg-white text-red-500 rounded-2xl p-3 shadow-2xl border border-red-50 transition-all hover:scale-110 active:scale-90 z-10 hover:bg-red-50"
+                                aria-label="Remove image"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        <input
+                            type="file"
+                            id="profile-upload"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            disabled={isUploading}
+                            aria-label="Upload Profile Photo"
+                        />
+                        <label
+                            htmlFor="profile-upload"
+                            className={`absolute bottom-2 right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary-hover transition-all shadow-xl hover:scale-110 active:scale-95 border-[3px] border-white ${isUploading ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
                         >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" aria-hidden="true" />}
+                        </label>
+                    </div>
+                </div>
+
+                <div className="text-center space-y-4 max-w-sm">
+                    <div className="space-y-1">
+                        <h4 className="text-xl font-extrabold text-gray-900 tracking-tight">
+                            {isUploading ? 'Uploading...' : selectedImage ? 'Looking Great!' : 'Professionalism matters'}
+                        </h4>
+                        <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                            High-quality square photos (JPG or PNG) work best. Max size 5MB. Travelers prefer see your friendly face!
+                        </p>
+                    </div>
+
+                    {!selectedImage && !isUploading && (
+                        <div className="pt-4">
+                            <Button
+                                variant="ghost"
+                                asChild
+                                className="text-primary font-bold hover:bg-primary/5 rounded-2xl px-6"
+                            >
+                                <label htmlFor="profile-upload" className="cursor-pointer">
+                                    Choose from files
+                                </label>
+                            </Button>
+                        </div>
                     )}
-
-                    <input
-                        type="file"
-                        id="profile-upload"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                    />
-                    <label
-                        htmlFor="profile-upload"
-                        className={`absolute bottom-1 right-1 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110 active:scale-95 border-2 border-white ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        {isUploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Upload className="w-5 h-5 text-white" />}
-                    </label>
+                    {/* Informational Alert */}
+                    <Card className="bg-blue-50/50 border-blue-100 rounded-[32px] p-8 flex gap-6 transition-all hover:bg-blue-50 group">
+                        <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-blue-100 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110">
+                            <Info className="w-7 h-7 text-blue-500" />
+                        </div>
+                        <div className="space-y-2">
+                            <p className="font-black text-blue-900 uppercase tracking-widest text-xs italic">Why this matters</p>
+                            <p className="text-sm text-blue-800/80 leading-relaxed font-medium">
+                                A clear, professional profile picture significantly increases booking requests by appearing more trustworthy to travelers. Profiles with real photos receive up to 3x more interest.
+                            </p>
+                        </div>
+                    </Card>
                 </div>
-
-                <div className="text-center space-y-2">
-                    <h4 className="font-semibold text-gray-900">
-                        {isUploading ? 'Uploading...' : selectedImage ? 'Looking Great!' : 'Upload your photo'}
-                    </h4>
-                    <p className="text-sm text-gray-500 max-w-xs">
-                        High-quality square photos (JPG or PNG) work best. Max size 5MB.
-                    </p>
-                </div>
-            </Card>
-
-            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex gap-3">
-                <span className="text-blue-500 text-xl font-bold italic">i</span>
-                <p className="text-sm text-blue-800 leading-relaxed">
-                    A clear, professional profile picture significantly increases booking requests by appearing more trustworthy to travelers.
-                </p>
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { Card } from '@/components/ui/card';
 import { MapPin, Globe, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,30 +31,34 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
     };
 
     return (
-        <div className="space-y-6 w-full max-w-2xl mx-auto">
-            <div className="mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Coverage Area</h3>
-                <p className="text-gray-600">Where do you operate your tours?</p>
+        <div className="space-y-10">
+            <div>
+                <h3 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Coverage Area</h3>
+                <p className="text-lg text-gray-500 leading-relaxed font-medium">Where do you operate your tours?</p>
             </div>
 
-            <div className="space-y-8">
-                <div className="space-y-3">
-                    <Label htmlFor="location" className="text-sm font-semibold uppercase tracking-wider text-gray-500">Primary Operating City *</Label>
+            <Card className="p-8 space-y-10 border-gray-100 shadow-sm rounded-[32px] bg-white ring-1 ring-black/[0.02]">
+                <div className="space-y-4">
+                    <Label htmlFor="location" className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+                        Primary Operating City *
+                    </Label>
                     <div className="relative group">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-300 group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110" aria-hidden="true" />
                         <Input
                             id="location"
                             value={formData.primaryLocation}
                             onChange={e => update('primaryLocation', e.target.value)}
                             placeholder="e.g. Islamabad, Pakistan"
-                            className="pl-12 rounded-2xl border-gray-200 py-7 text-lg shadow-sm focus:ring-primary/20"
+                            className="pl-14 rounded-2xl border-gray-100 py-8 text-lg shadow-sm focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all placeholder:text-gray-300 font-medium"
                         />
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <Label className="text-sm font-semibold uppercase tracking-wider text-gray-500">Service Coverage Range *</Label>
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+                        Service Coverage Range *
+                    </Label>
+                    <div className="grid grid-cols-2 gap-6">
                         {COVERAGE_OPTIONS.map((opt) => {
                             const isSelected = formData.radius === opt.id;
                             return (
@@ -61,29 +66,30 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                                     key={opt.id}
                                     onClick={() => update('radius', opt.id)}
                                     whileTap={{ scale: 0.98 }}
-                                    className={`p-5 rounded-3xl border-2 text-left transition-all relative group h-full flex flex-col justify-between ${isSelected
-                                        ? 'border-primary bg-primary/5 shadow-md'
-                                        : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                                    className={`p-6 rounded-3xl border-2 text-left transition-all relative group h-full flex flex-col justify-between overflow-hidden ${isSelected
+                                        ? 'border-primary bg-primary/5 shadow-xl shadow-primary/5'
+                                        : 'border-gray-50 bg-white hover:border-gray-200 hover:shadow-lg hover:shadow-black/5'
                                         }`}
+                                    aria-pressed={isSelected}
                                 >
-                                    <div className="space-y-2">
+                                    <div className="space-y-4 w-full">
                                         <div className="flex justify-between items-start">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary'
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${isSelected ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30' : 'bg-gray-50 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary'
                                                 }`}>
-                                                <Globe className="w-5 h-5" />
+                                                <Globe className="w-7 h-7" aria-hidden="true" />
                                             </div>
                                             {isSelected && (
-                                                <div className="bg-primary text-white rounded-full p-0.5">
-                                                    <Check className="w-3 h-3" />
+                                                <div className="bg-primary text-white rounded-xl p-1.5 shadow-lg border-2 border-white">
+                                                    <Check className="w-3.5 h-3.5" />
                                                 </div>
                                             )}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-gray-900 leading-tight">{opt.title}</p>
-                                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{opt.desc}</p>
+                                            <p className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-gray-900'}`}>{opt.title}</p>
+                                            <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.15em] mt-1 leading-none">{opt.desc}</p>
                                         </div>
                                     </div>
-                                    <div className="mt-4 inline-flex px-2 px-2.5 py-1 bg-gray-100 rounded-lg text-[10px] font-bold text-gray-500 uppercase tracking-tighter self-start">
+                                    <div className={`mt-6 inline-flex px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest self-start transition-colors ${isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500'}`}>
                                         {opt.radius}
                                     </div>
                                 </motion.button>
@@ -91,16 +97,18 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                         })}
                     </div>
                 </div>
-            </div>
+            </Card>
 
-            <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-bold italic">?</div>
-                    <span className="font-bold text-primary text-sm">Need a custom range?</span>
+            <div className="bg-primary/5 border border-primary/10 rounded-[32px] p-8 flex gap-5 group transition-all hover:bg-primary/[0.07]">
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-primary/10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:rotate-12">
+                    <span className="text-primary text-2xl font-black italic">?</span>
                 </div>
-                <p className="text-sm text-primary/80 leading-relaxed px-1">
-                    Don't worry, you can always update your operating areas and specific destinations for each individual tour package later.
-                </p>
+                <div className="space-y-2">
+                    <span className="font-black text-primary text-sm uppercase tracking-widest italic">Need a custom range?</span>
+                    <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                        Don't worry, you can always update your operating areas and specific destinations for each individual tour package later.
+                    </p>
+                </div>
             </div>
         </div>
     );

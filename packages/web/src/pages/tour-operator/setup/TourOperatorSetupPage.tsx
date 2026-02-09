@@ -14,7 +14,7 @@ import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBo
 import { tourOperatorService, TourOperatorOnboardingData } from '@/features/tour-operator/services/tourOperatorService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
-import { Save } from 'lucide-react';
+import { Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const STEPS = [
@@ -37,6 +37,15 @@ export default function TourOperatorSetupPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
+    // Enforce Tour Operator theme on mount
+    useEffect(() => {
+        document.documentElement.setAttribute('data-role', 'tour_operator');
+        return () => {
+            // Revert will be handled by App.tsx base on auth state, 
+            // but we can be explicit if we wanted to.
+        };
+    }, []);
+
     // Load existing data on mount
     useEffect(() => {
         const loadExistingData = async () => {
@@ -45,8 +54,6 @@ export default function TourOperatorSetupPage() {
                 const data = await tourOperatorService.getOnboardingData(user.id);
                 if (data) {
                     setSetupData(data);
-                    // If setup is already completed, we might want to skip to the end or dashboard
-                    // But for now, let the user review
                 }
             } catch (error) {
                 console.error('Error loading onboarding data:', error);
@@ -105,7 +112,7 @@ export default function TourOperatorSetupPage() {
             <div className="min-h-screen flex items-center justify-center bg-white">
                 <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                    <p className="text-gray-500 font-medium">Loading your profile...</p>
+                    <p className="text-gray-500 font-medium tracking-tight">Loading your profile...</p>
                 </div>
             </div>
         );
@@ -114,27 +121,27 @@ export default function TourOperatorSetupPage() {
     const CurrentStepComponent = STEPS[currentStep].component;
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col font-sans">
             {/* Top Bar for Save & Exit */}
-            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-5">
+                <div className="max-w-content mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary font-bold">
+                        <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm border border-primary/20">
                             T
                         </div>
-                        <h1 className="font-bold text-gray-900 tracking-tight">Operator Setup</h1>
+                        <h1 className="font-black text-gray-900 tracking-tighter text-xl uppercase italic">Operator Setup</h1>
                     </div>
 
                     {currentStep < STEPS.length - 1 && (
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-xl border-gray-200 hover:border-primary hover:text-primary font-bold shadow-sm h-9"
+                            className="rounded-2xl border-gray-200 hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5 transition-all hover:scale-105 active:scale-95"
                             onClick={handleSaveAndExit}
                             disabled={isSaving}
                         >
                             {isSaving ? (
-                                <div className="h-4 w-4 border-2 border-primary border-t-transparent animate-spin rounded-full mr-2" />
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : (
                                 <Save className="w-4 h-4 mr-2" />
                             )}
@@ -144,7 +151,7 @@ export default function TourOperatorSetupPage() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-32 px-4 py-8 max-w-2xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto pb-32 px-6 py-12 max-w-2xl mx-auto w-full">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentStep}

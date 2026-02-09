@@ -67,7 +67,7 @@
   }
 
   /* TripAvail Role-Based Themes */
-  :root[data-role="hotel-manager"] {
+  :root[data-role="hotel_manager"] {
     --primary: 274 70% 60%;
     /* #9D4EDD */
     --primary-foreground: 0 0% 100%;
@@ -81,7 +81,7 @@
     --primary-gradient: linear-gradient(135deg, #FF385C 0%, #FF6B9D 100%);
   }
 
-  :root[data-role="tour-operator"] {
+  :root[data-role="tour_operator"] {
     --primary: 4 98% 66%;
     /* #FD5E53 (Bright Coral) */
     --primary-foreground: 0 0% 100%;
