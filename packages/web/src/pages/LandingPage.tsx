@@ -34,6 +34,10 @@ export default function LandingPage() {
     if (screen === 'tours') setActiveTab('tours')
   }
 
+  const handleTourSelect = (tourId: string) => {
+    navigate(`/tours/${tourId}`)
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Airbnb Header (Fixed) */}
@@ -56,7 +60,10 @@ export default function LandingPage() {
               />
 
               {/* Featured Tours Section */}
-              <FeaturedToursSection onNavigate={handleNavigate} />
+              <FeaturedToursSection
+                onNavigate={handleNavigate}
+                onTourSelect={handleTourSelect}
+              />
             </>
           )}
 
@@ -611,7 +618,13 @@ function FeaturedHotelsSection({
 
 // Featured Tours Section
 // Featured Tours Section
-function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => void }) {
+function FeaturedToursSection({
+  onNavigate,
+  onTourSelect,
+}: {
+  onNavigate: (screen: string) => void
+  onTourSelect: (tourId: string) => void
+}) {
   const [featuredTours, setFeaturedTours] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -704,6 +717,7 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 * index }}
             className="min-w-[280px] md:min-w-[320px] snap-start"
+            onClick={() => onTourSelect(tour.id)}
           >
             <div className="group cursor-pointer space-y-3">
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
