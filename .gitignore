@@ -29,10 +29,11 @@ pnpm-debug.log*
 # Key files to keep but ignore changes if template
 # !.env.example
 
-# Google Cloud Service Account Keys (NEVER commit these!)
+# Config files (Explicitly unignore to protect from generic patterns)
 *.json
 !package.json
 !package-lock.json
 !tsconfig.json
+!turbo.json
 !*config*.json
 !.vscode/*.json

@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+build
+.output
+.turbo
+.pnpm-store
+*.log
+.env*
+.DS_Store
+.vscode
+.idea
