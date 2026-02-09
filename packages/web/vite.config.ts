@@ -13,6 +13,22 @@ export default defineConfig({
       '@tripavail/shared': path.resolve(__dirname, '../shared/src'),
     },
   },
+  preview: {
+    port: parseInt(process.env.PORT || '4173'),
+    host: true,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['cmdk', 'lucide-react', 'date-fns', 'react-day-picker'],
+          'vendor-motion': ['motion', 'motion/react'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
