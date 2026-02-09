@@ -21,8 +21,8 @@ export interface TourOperatorOnboardingData {
         customServices: string[];
     };
     coverage?: {
-        primaryCity: string;
-        range: string;
+        primaryLocation: string;
+        radius: string;
     };
     policies?: {
         accepted: boolean;
@@ -53,8 +53,8 @@ export const tourOperatorService = {
             team_size: data.businessInfo?.teamSize,
             description: data.businessInfo?.description,
             categories: data.services?.categories,
-            primary_city: data.coverage?.primaryCity,
-            coverage_range: data.coverage?.range,
+            primary_city: data.coverage?.primaryCity || data.coverage?.primaryLocation, // Handle both mapping variants
+            coverage_range: data.coverage?.range || data.coverage?.radius, // Handle both mapping variants
             policies: data.policies,
             verification_documents: data.verification?.uploads,
             setup_completed: setupCompleted,
@@ -112,8 +112,8 @@ export const tourOperatorService = {
                     customServices: []
                 },
                 coverage: {
-                    primaryCity: profile.primary_city || '',
-                    range: profile.coverage_range || ''
+                    primaryLocation: profile.primary_city || '',
+                    radius: profile.coverage_range || ''
                 },
                 policies: profile.policies,
                 verification: {
