@@ -22,13 +22,11 @@ export default function TourDetailsPage() {
         const fetchTourDetails = async () => {
             if (!id) return;
             try {
-                // In a real app, we'd have fetchTourById. 
-                // For now, we'll fetch all and find the one to simulate the call.
-                const tours = await tourService.fetchPublishedTours('');
-                const foundTour = tours.find(t => t.id === id);
+                const foundTour = await tourService.getTourById(id);
                 setTour(foundTour || null);
             } catch (error) {
                 console.error('Error fetching tour details:', error);
+                setTour(null);
             } finally {
                 setLoading(false);
             }
