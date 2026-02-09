@@ -62,7 +62,7 @@ export default function HotelDetailsPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header / Nav */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-50 border-b flex items-center justify-between px-4 lg:px-20">
+      <header className="fixed top-16 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-40 border-b flex items-center justify-between px-4 lg:px-20">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -76,7 +76,7 @@ export default function HotelDetailsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-6xl pt-24 px-4 lg:px-6">
+      <main className="container mx-auto max-w-6xl pt-32 px-4 lg:px-6">
         {/* Title Section */}
         <div className="mb-6">
           <motion.h1

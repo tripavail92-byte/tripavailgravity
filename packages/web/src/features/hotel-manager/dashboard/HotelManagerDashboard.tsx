@@ -1,5 +1,4 @@
 import { motion } from 'motion/react';
-import { DashboardHeader } from './components/DashboardHeader';
 import { StatsOverview } from './components/StatsOverview';
 import { EarningsChart } from './components/EarningsChart';
 import { ListingsGrid } from './components/ListingsGrid';
@@ -9,9 +8,6 @@ import { DraftListingsAlert } from './components/DraftListingsAlert';
 export function HotelManagerDashboard() {
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <DashboardHeader />
-
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <motion.div

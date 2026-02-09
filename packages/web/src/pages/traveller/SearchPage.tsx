@@ -64,7 +64,7 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top Bar with Compact Search */}
-      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-md border-b sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Mobile: Logo only? Desktop: Mini Search Form? */}
           <div className="hidden md:block flex-1">
