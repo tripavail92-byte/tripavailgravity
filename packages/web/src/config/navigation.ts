@@ -10,6 +10,7 @@ import {
   Map,
   MapPin,
   Package,
+  Plus,
   Settings,
   ShieldCheck,
   UserCircle,
@@ -45,7 +46,9 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
     { label: 'Legal & Policies', icon: ShieldCheck, href: '/legal' },
   ],
   tour_operator: [
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/operator/dashboard' },
+    { label: 'Create New Tour', icon: Plus, href: '/operator/setup', subtext: 'Design a new tour experience' },
+    { label: 'Tour Operator Setup', icon: MapPin, href: '/operator/setup', subtext: 'Complete your profile' },
+    { label: 'Dashboard', icon: LayoutDashboard, href: '/operator/dashboard', subtext: '5 live • 2 draft' },
     { label: 'Post Trip Packages', icon: Map, href: '/operator/tours/new' },
     { label: 'Calendar', icon: Calendar, href: '/operator/calendar' },
     { label: 'Bookings', icon: BookCheck, href: '/operator/bookings' },

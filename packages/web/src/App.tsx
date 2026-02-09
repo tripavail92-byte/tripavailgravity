@@ -16,6 +16,7 @@ import ListHotelPage from '@/pages/manager/ListHotelPage'
 import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
 import OperatorDashboardPage from '@/pages/tour-operator/OperatorDashboardPage'
+import TourOperatorSetupPage from '@/pages/tour-operator/setup/TourOperatorSetupPage'
 import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
 import Homepage from '@/pages/traveller/Homepage'
 import TravellerLayout from '@/layouts/TravellerLayout'
@@ -80,6 +81,15 @@ function App() {
             element={
               <RoleGuard allowedRoles={['tour_operator']}>
                 <OperatorDashboardPage />
+              </RoleGuard>
+            }
+          />
+
+          <Route
+            path="/operator/setup"
+            element={
+              <RoleGuard allowedRoles={['tour_operator']}>
+                <TourOperatorSetupPage />
               </RoleGuard>
             }
           />
