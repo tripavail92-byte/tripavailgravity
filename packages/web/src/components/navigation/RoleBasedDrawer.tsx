@@ -244,20 +244,20 @@ export function RoleBasedDrawer() {
             )}
           </div>
 
-          <div className="flex justify-between items-center">
-            <div className="flex justify-center flex-1 items-center gap-1 text-[10px] text-gray-400">
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 py-6 rounded-xl transition-colors"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-semibold text-base">Sign Out</span>
+            </Button>
+
+            <div className="flex justify-center items-center gap-1 text-[10px] text-gray-400 pt-2">
               <span>Version 1.0.0 • Made with</span>
               <Heart className="w-3 h-3 fill-primary text-primary" />
             </div>
-            {/* Optional Mini Logout for power users if needed, or leave implied */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-gray-400 hover:text-red-500"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </SheetContent>
