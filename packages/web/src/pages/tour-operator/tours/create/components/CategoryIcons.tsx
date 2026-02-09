@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
 
 const iconVariants = {
-    initial: { scale: 1 },
-    hover: { scale: 1.1, dropShadow: '0px 10px 20px rgba(0,0,0,0.1)' },
+    initial: { scale: 1, filter: "drop-shadow(0px 0px 0px rgba(0,0,0,0))" },
+    hover: { scale: 1.1, filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.1))" },
 };
 
 export const AdventureIcon = () => (
@@ -19,6 +19,7 @@ export const AdventureIcon = () => (
                 fill="#E2E8F0"
                 stroke="#475569"
                 strokeWidth="2"
+                initial={{ y: 0 }}
                 animate={{ y: [0, -2, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             />
@@ -28,6 +29,7 @@ export const AdventureIcon = () => (
             <motion.circle
                 cx="75" cy="25" r="8"
                 fill="#FDE68A"
+                initial={{ scale: 1, opacity: 0.8 }}
                 animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
                 transition={{ duration: 4, repeat: Infinity }}
             />
@@ -53,6 +55,7 @@ export const CulturalIcon = () => (
                     fill="#F8FAFC"
                     stroke="#475569"
                     strokeWidth="1.5"
+                    initial={{ height: 35 }}
                     animate={{ height: [35, 37, 35] }}
                     transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
                 />
@@ -114,6 +117,7 @@ export const CityIcon = () => (
                     key={i}
                     x={50 + (i % 2) * 10} y={y} width="4" height="4"
                     fill="#FDE68A"
+                    initial={{ opacity: 0 }}
                     animate={{ opacity: [0, 1, 0.5, 1, 0] }}
                     transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
                 />
@@ -140,6 +144,7 @@ export const FoodIcon = () => (
                     stroke="#D1D5DB"
                     strokeWidth="2"
                     strokeLinecap="round"
+                    initial={{ y: 0, opacity: 0 }}
                     animate={{ y: [0, -10], opacity: [0, 1, 0] }}
                     transition={{ duration: 2, delay: i * 0.6, repeat: Infinity }}
                 />
@@ -164,6 +169,7 @@ export const BeachIcon = () => (
                 fill="#93C5FD"
                 stroke="#1D4ED8"
                 strokeWidth="2"
+                initial={{ d: "M10 70 Q30 60 50 70 Q70 80 90 70 V90 H10 Z" }}
                 animate={{
                     d: [
                         "M10 70 Q30 60 50 70 Q70 80 90 70 V90 H10 Z",
@@ -190,6 +196,7 @@ export const HistoricalIcon = () => (
             <motion.circle
                 cx="50" cy="50" r="2"
                 fill="white"
+                initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: [0, 1.5, 0], opacity: [0, 1, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
             />
@@ -209,6 +216,7 @@ export const ReligiousIcon = () => (
             <motion.circle
                 cx="50" cy="40" r="25"
                 fill="url(#glowGradient)"
+                initial={{ opacity: 0.3 }}
                 animate={{ opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 4, repeat: Infinity }}
             />

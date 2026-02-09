@@ -206,17 +206,24 @@ export const tourService = {
     },
 
     async uploadTourImages(operatorId: string, files: File[]) {
-        const uploadPromises = files.map(async (file) => {
+        const urls: string[] = [];
+
+        for (const file of files) {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
             const filePath = `${operatorId}/${fileName}`;
 
+            console.log(`📤 Uploading tour image: ${filePath}`);
+
             const { error: uploadError } = await supabase.storage
                 .from('tour-images')
-                .upload(filePath, file);
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
             if (uploadError) {
-                console.error(`Error uploading file ${file.name}:`, uploadError);
+                console.error(`❌ Error uploading file ${file.name}:`, uploadError);
                 throw uploadError;
             }
 
@@ -224,9 +231,9 @@ export const tourService = {
                 .from('tour-images')
                 .getPublicUrl(filePath);
 
-            return data.publicUrl;
-        });
+            urls.push(data.publicUrl);
+        }
 
-        return Promise.all(uploadPromises);
+        return urls;
     }
 };
