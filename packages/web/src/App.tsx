@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { useAuth } from '@/hooks/useAuth'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import { RoleGuard } from '@/components/auth/RoleGuard'
+import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import LoginPage from '@/pages/auth/LoginPage'
 // Pages
 import LandingPage from '@/pages/LandingPage'
@@ -83,7 +84,7 @@ function App() {
             }
           />
 
-          <Route path="/dashboard" element={<div>Dashboard (Coming Soon)</div>} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
         </Route>
 
         {/* Full Screen Flows */}

@@ -1,8 +1,12 @@
 import { Bell, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer';
+import { useAuth } from '@/hooks/useAuth';
 
 export function DashboardHeader() {
+    const { activeRole } = useAuth();
+    const roleTitle = activeRole?.role_type === 'tour_operator' ? 'Tour Operator' : 'Hotel Manager';
+
     return (
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,7 +14,7 @@ export function DashboardHeader() {
                     {/* Logo/Brand */}
                     <div className="flex items-center">
                         <h2 className="text-xl font-semibold text-gray-900">
-                            TripAvail Manager
+                            TripAvail {roleTitle}
                         </h2>
                     </div>
 
