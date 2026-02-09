@@ -15,7 +15,7 @@ interface TourDetailsStepProps {
 }
 
 const LANGUAGES = ['English', 'Spanish', 'French', 'German', 'Italian', 'Chinese', 'Japanese', 'Arabic'];
-const DIFFICULTY_LEVELS = ['Easy', 'Moderate', 'Challenging', 'Difficult', 'Expert'];
+const DIFFICULTY_LEVELS = ['easy', 'moderate', 'difficult'];
 
 export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsStepProps) {
     const toggleLanguage = (lang: string) => {
@@ -46,15 +46,17 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                         <div className="space-y-2">
                             <Label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Difficulty Level</Label>
                             <Select
-                                value={data.difficulty}
-                                onValueChange={(val) => onUpdate({ difficulty: val })}
+                                value={data.difficulty_level}
+                                onValueChange={(val) => onUpdate({ difficulty_level: val as any })}
                             >
                                 <SelectTrigger className="h-12 border-gray-200">
                                     <SelectValue placeholder="Select difficulty" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {DIFFICULTY_LEVELS.map(level => (
-                                        <SelectItem key={level} value={level}>{level}</SelectItem>
+                                        <SelectItem key={level} value={level}>
+                                            <span className="capitalize">{level}</span>
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -150,8 +152,8 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                                         key={lang}
                                         onClick={() => toggleLanguage(lang)}
                                         className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${(data.languages || []).includes(lang)
-                                                ? 'bg-primary border-primary text-white shadow-sm'
-                                                : 'bg-white border-gray-100 text-gray-500 hover:border-primary/30 hover:bg-primary/5'
+                                            ? 'bg-primary border-primary text-white shadow-sm'
+                                            : 'bg-white border-gray-100 text-gray-500 hover:border-primary/30 hover:bg-primary/5'
                                             }`}
                                     >
                                         {lang}

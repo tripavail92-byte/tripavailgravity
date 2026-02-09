@@ -52,19 +52,26 @@ export default function CreateTourPage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            // Ensure required fields
+            // Clean up and ensure required fields
             const dataToSave = {
                 ...tourData,
                 operator_id: user.id,
-                // Add default values for missing required fields if necessary
-            } as any; // Type assertion for now, validation should correspond to CreateTourDTO
+                is_active: true,
+                is_verified: false, // Default for new tours
+                is_featured: false,  // Default for new tours
+            };
 
-            await tourService.createTour(dataToSave);
+            // Remove any legacy fields that might cause schema mismatch
+            if ((dataToSave as any).difficulty) {
+                delete (dataToSave as any).difficulty;
+            }
+
+            await tourService.createTour(dataToSave as any);
             toast.success('Tour published successfully!');
             navigate('/operator/tours');
         } catch (error) {
             console.error('Error publishing tour:', error);
-            toast.error('Failed to publish tour.');
+            toast.error('Failed to publish tour. Please check all fields.');
         } finally {
             setIsSaving(false);
         }

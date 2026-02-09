@@ -55,18 +55,10 @@ export interface Tour {
     updated_at: string;
 }
 
-export interface CreateTourDTO {
-    title: string;
-    tour_type: string;
-    location: Tour['location'];
-    duration: string;
-    price: number;
-    currency: string;
-    operator_id: string;
-}
+export type CreateTourDTO = Omit<Tour, 'id' | 'created_at' | 'updated_at' | 'rating' | 'review_count' | 'is_active' | 'is_verified' | 'is_featured'>;
 
 export const tourService = {
-    async createTour(tourData: CreateTourDTO) {
+    async createTour(tourData: Partial<Tour>) {
         console.log('Creating tour with data:', tourData);
         const { data, error } = await supabase
             .from('tours')
