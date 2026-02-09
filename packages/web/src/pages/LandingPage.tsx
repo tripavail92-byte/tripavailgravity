@@ -561,7 +561,7 @@ function FeaturedHotelsSection({
                     <ImageSlider
                       images={hotel.images}
                       alt={hotel.title}
-                      autoSlideDelay={0} // Disable constant movement, feels more 'pro'
+                      autoSlideDelay={5000}
                     />
                   </div>
 
@@ -709,7 +709,7 @@ function FeaturedToursSection({ onNavigate }: { onNavigate: (screen: string) => 
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
                 {/* Image Slider (Vertical aspect for "Poster" look) */}
                 <div className="w-full h-full hover:scale-105 transition-transform duration-500">
-                  <ImageSlider images={tour.images} alt={tour.title} autoSlideDelay={0} />
+                  <ImageSlider images={tour.images} alt={tour.title} autoSlideDelay={5000} />
                 </div>
 
                 {/* Badge */}
