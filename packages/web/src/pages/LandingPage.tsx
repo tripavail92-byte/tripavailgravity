@@ -154,12 +154,12 @@ function AirbnbHeader() {
 
       {/* Right User Menu */}
       <div className="flex-1 flex items-center justify-end gap-2">
-        <a
-          href="#"
+        <button
+          onClick={() => navigate('/partner/onboarding')}
           className="hidden md:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
         >
           Become a Partner
-        </a>
+        </button>
         <button className="hidden md:flex p-3 hover:bg-muted rounded-full transition-colors">
           <Globe className="w-4 h-4" />
         </button>
