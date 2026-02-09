@@ -14,6 +14,7 @@ import SearchPage from '@/pages/traveller/SearchPage'
 import ListHotelPage from '@/pages/manager/ListHotelPage'
 import ListPackagePage from '@/pages/manager/ListPackagePage'
 import DashboardPage from '@/pages/hotel-manager/DashboardPage'
+import OperatorDashboardPage from '@/pages/tour-operator/OperatorDashboardPage'
 import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
 import Homepage from '@/pages/traveller/Homepage'
 import TravellerLayout from '@/layouts/TravellerLayout'
@@ -77,7 +78,7 @@ function App() {
             path="/operator/dashboard"
             element={
               <RoleGuard allowedRoles={['tour_operator']}>
-                <div>Tour Operator Dashboard (Coming Soon)</div>
+                <OperatorDashboardPage />
               </RoleGuard>
             }
           />
