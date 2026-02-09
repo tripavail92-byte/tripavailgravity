@@ -18,6 +18,8 @@ export function ImageSlider({
 
   useEffect(() => {
     if (images.length <= 1) return
+    // Treat 0/negative as "disabled". Some callers pass 0 to stop auto-sliding.
+    if (autoSlideDelay <= 0) return
 
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % images.length)
