@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Upload, FileCheck, Info } from 'lucide-react';
+import { ShieldCheck, Upload, FileCheck, Info, Loader2 } from 'lucide-react';
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 interface StepProps {
     onNext: () => void;
@@ -16,12 +19,26 @@ const DOCUMENTS = [
 ];
 
 export function VerificationStep({ onUpdate, data }: StepProps) {
+    const { user } = useAuth();
     const [uploads, setUploads] = useState<Record<string, boolean>>(data.verification?.uploads || {});
+    const [isUploading, setIsUploading] = useState<string | null>(null);
 
-    const handleUpload = (id: string) => {
-        const next = { ...uploads, [id]: true };
-        setUploads(next);
-        onUpdate({ verification: { uploads: next } });
+    const handleUpload = async (id: string, file: File) => {
+        if (!user?.id) return;
+
+        setIsUploading(id);
+        try {
+            await tourOperatorService.uploadAsset(user.id, file, `verification/${id}`);
+            const next = { ...uploads, [id]: true };
+            setUploads(next);
+            onUpdate({ verification: { uploads: next } });
+            toast.success('Document uploaded!');
+        } catch (error) {
+            console.error('Verification upload error:', error);
+            toast.error('Failed to upload document');
+        } finally {
+            setIsUploading(null);
+        }
     };
 
     return (
@@ -49,19 +66,39 @@ export function VerificationStep({ onUpdate, data }: StepProps) {
                             </div>
 
                             {uploads[doc.id] ? (
-                                <div className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border border-primary/20">
+                                <div className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border border-primary/20 flex items-center gap-2">
+                                    <FileCheck className="w-3.5 h-3.5" />
                                     Uploaded
                                 </div>
                             ) : (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-xl border-gray-200 hover:border-primary hover:text-primary transition-all font-semibold"
-                                    onClick={() => handleUpload(doc.id)}
-                                >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                    Upload
-                                </Button>
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        id={`upload-${doc.id}`}
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) handleUpload(doc.id, file);
+                                        }}
+                                        disabled={!!isUploading}
+                                    />
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        size="sm"
+                                        className="rounded-xl border-gray-200 hover:border-primary hover:text-primary transition-all font-semibold"
+                                        disabled={!!isUploading}
+                                    >
+                                        <label htmlFor={`upload-${doc.id}`} className="cursor-pointer flex items-center">
+                                            {isUploading === doc.id ? (
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            ) : (
+                                                <Upload className="w-4 h-4 mr-2" />
+                                            )}
+                                            {isUploading === doc.id ? 'Uploading...' : 'Upload'}
+                                        </label>
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </Card>

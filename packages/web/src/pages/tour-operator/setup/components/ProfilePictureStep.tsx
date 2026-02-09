@@ -1,7 +1,10 @@
 import { useState, ChangeEvent } from 'react';
 import { Card } from '@/components/ui/card';
-import { Camera, Upload, Trash2 } from 'lucide-react';
+import { Camera, Upload, Trash2, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 interface StepProps {
     onNext: () => void;
@@ -11,17 +14,24 @@ interface StepProps {
 
 export function ProfilePictureStep({ onUpdate, data }: StepProps) {
     const [selectedImage, setSelectedImage] = useState<string | null>(data.profilePicture || null);
+    const [isUploading, setIsUploading] = useState(false);
+    const { user } = useAuth();
 
-    const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageUrl = e.target?.result as string;
-                setSelectedImage(imageUrl);
-                onUpdate({ profilePicture: imageUrl });
-            };
-            reader.readAsDataURL(file);
+        if (!file || !user?.id) return;
+
+        setIsUploading(true);
+        try {
+            const publicUrl = await tourOperatorService.uploadAsset(user.id, file, 'profile');
+            setSelectedImage(publicUrl);
+            onUpdate({ profilePicture: publicUrl });
+            toast.success('Photo uploaded!');
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Failed to upload photo');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -42,11 +52,11 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
                     <Avatar className="w-40 h-40 border-4 border-white shadow-xl ring-1 ring-gray-100">
                         <AvatarImage src={selectedImage || ''} />
                         <AvatarFallback className="bg-primary/5 text-primary text-4xl">
-                            <Camera className="w-16 h-16 opacity-20" />
+                            {isUploading ? <Loader2 className="w-10 h-10 animate-spin opacity-50" /> : <Camera className="w-16 h-16 opacity-20" />}
                         </AvatarFallback>
                     </Avatar>
 
-                    {selectedImage && (
+                    {selectedImage && !isUploading && (
                         <button
                             onClick={removeImage}
                             className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-2 shadow-lg border border-red-50 transition-all hover:scale-110 active:scale-90"
@@ -61,18 +71,19 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
                         accept="image/*"
                         onChange={handleImageUpload}
                         className="hidden"
+                        disabled={isUploading}
                     />
                     <label
                         htmlFor="profile-upload"
-                        className="absolute bottom-1 right-1 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110 active:scale-95 border-2 border-white"
+                        className={`absolute bottom-1 right-1 w-10 h-10 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-all shadow-lg hover:scale-110 active:scale-95 border-2 border-white ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        <Upload className="w-5 h-5 text-white" />
+                        {isUploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Upload className="w-5 h-5 text-white" />}
                     </label>
                 </div>
 
                 <div className="text-center space-y-2">
                     <h4 className="font-semibold text-gray-900">
-                        {selectedImage ? 'Looking Great!' : 'Upload your photo'}
+                        {isUploading ? 'Uploading...' : selectedImage ? 'Looking Great!' : 'Upload your photo'}
                     </h4>
                     <p className="text-sm text-gray-500 max-w-xs">
                         High-quality square photos (JPG or PNG) work best. Max size 5MB.

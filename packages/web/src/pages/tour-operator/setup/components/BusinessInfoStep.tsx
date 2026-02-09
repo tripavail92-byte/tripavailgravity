@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Upload } from 'lucide-react';
+import { Building, Upload, Loader2 } from 'lucide-react';
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 interface StepProps {
     onNext: () => void;
@@ -13,6 +16,8 @@ interface StepProps {
 }
 
 export function BusinessInfoStep({ onUpdate, data }: StepProps) {
+    const { user } = useAuth();
+    const [isUploading, setIsUploading] = useState(false);
     const [formData, setFormData] = useState(data.businessInfo || {
         businessName: '',
         yearsInBusiness: '',
@@ -27,15 +32,20 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
         onUpdate({ businessInfo: newData });
     };
 
-    const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const logoUrl = e.target?.result as string;
-                handleInputChange('companyLogo', logoUrl);
-            };
-            reader.readAsDataURL(file);
+        if (!file || !user?.id) return;
+
+        setIsUploading(true);
+        try {
+            const publicUrl = await tourOperatorService.uploadAsset(user.id, file, 'logo');
+            handleInputChange('companyLogo', publicUrl);
+            toast.success('Logo uploaded!');
+        } catch (error) {
+            console.error('Logo upload error:', error);
+            toast.error('Failed to upload logo');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -53,7 +63,9 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                     </Label>
                     <div className="flex items-center gap-6 p-4 border-2 border-dashed border-gray-100 rounded-2xl">
                         <div className="w-24 h-24 bg-gray-50 rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 flex-shrink-0">
-                            {formData.companyLogo ? (
+                            {isUploading ? (
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                            ) : formData.companyLogo ? (
                                 <img src={formData.companyLogo} className="w-full h-full object-contain" />
                             ) : (
                                 <Building className="w-8 h-8 text-gray-300" />
@@ -66,13 +78,14 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                                 accept="image/*"
                                 onChange={handleLogoUpload}
                                 className="hidden"
+                                disabled={isUploading}
                             />
                             <label
                                 htmlFor="logo-upload"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 hover:bg-primary/10 text-primary rounded-xl cursor-pointer transition-all font-medium text-sm"
+                                className={`inline-flex items-center gap-2 px-4 py-2 bg-primary/5 hover:bg-primary/10 text-primary rounded-xl cursor-pointer transition-all font-medium text-sm ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                <Upload className="w-4 h-4" />
-                                {formData.companyLogo ? 'Change Logo' : 'Upload Logo'}
+                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                {isUploading ? 'Uploading...' : formData.companyLogo ? 'Change Logo' : 'Upload Logo'}
                             </label>
                             <p className="text-xs text-gray-400">
                                 PNG or SVG (max. 2MB). Squarish format looks best.
@@ -99,7 +112,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                         <Label className="text-sm font-semibold uppercase tracking-wider text-gray-500">Experience</Label>
                         <Select
                             value={formData.yearsInBusiness}
-                            onValueChange={(v) => handleInputChange('yearsInBusiness', v)}
+                            onValueChange={(v: string) => handleInputChange('yearsInBusiness', v)}
                         >
                             <SelectTrigger className="rounded-xl border-gray-200 py-6">
                                 <SelectValue placeholder="Years in bus..." />
@@ -116,7 +129,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                         <Label className="text-sm font-semibold uppercase tracking-wider text-gray-500">Team Size</Label>
                         <Select
                             value={formData.teamSize}
-                            onValueChange={(v) => handleInputChange('teamSize', v)}
+                            onValueChange={(v: string) => handleInputChange('teamSize', v)}
                         >
                             <SelectTrigger className="rounded-xl border-gray-200 py-6">
                                 <SelectValue placeholder="Members..." />

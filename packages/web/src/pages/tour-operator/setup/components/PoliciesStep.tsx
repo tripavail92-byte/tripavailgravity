@@ -12,14 +12,17 @@ import {
     ClipboardCheck,
     FileUp,
     AlertCircle,
-    Info,
     Trash2,
     CalendarDays,
     HeartPulse,
     ShieldAlert,
-    Wallet
+    Wallet,
+    Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'react-hot-toast';
 
 interface StepProps {
     onNext: () => void;
@@ -63,9 +66,11 @@ const POLICY_TEMPLATES = [
 export function PoliciesStep({ onUpdate, data }: StepProps) {
     const [accepted, setAccepted] = useState(data.policies?.accepted || false);
     const [expanded, setExpanded] = useState<string | null>(null);
+    const { user } = useAuth();
     const [policyMode, setPolicyMode] = useState<'templates' | 'upload'>(data.policies?.mode || 'templates');
     const [customPolicies, setCustomPolicies] = useState<Record<string, string>>(data.policies?.custom || {});
     const [uploads, setUploads] = useState<Record<string, boolean>>(data.policies?.uploads || {});
+    const [isUploading, setIsUploading] = useState<string | null>(null);
 
     const updateAllData = (newData: any) => {
         onUpdate({
@@ -95,10 +100,22 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
         handlePolicyChange(id, template);
     };
 
-    const handleUpload = (id: string) => {
-        const next = { ...uploads, [id]: true };
-        setUploads(next);
-        updateAllData({ uploads: next });
+    const handleUpload = async (id: string, file: File) => {
+        if (!user?.id) return;
+
+        setIsUploading(id);
+        try {
+            await tourOperatorService.uploadAsset(user.id, file, `policies/${id}`);
+            const next = { ...uploads, [id]: true };
+            setUploads(next);
+            updateAllData({ uploads: next });
+            toast.success('Policy document uploaded!');
+        } catch (error) {
+            console.error('Policy upload error:', error);
+            toast.error('Failed to upload policy document');
+        } finally {
+            setIsUploading(null);
+        }
     };
 
     return (
@@ -284,9 +301,33 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                                         </div>
                                     </div>
                                     {!uploads[id] ? (
-                                        <Button variant="ghost" size="sm" onClick={() => handleUpload(id)} className="h-8 w-8 p-0 rounded-lg hover:bg-primary/5 hover:text-primary">
-                                            <FileUp className="w-4 h-4" />
-                                        </Button>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                id={`upload-${id}`}
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleUpload(id, file);
+                                                }}
+                                                disabled={!!isUploading}
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                                className="h-8 w-8 p-0 rounded-lg hover:bg-primary/5 hover:text-primary"
+                                                disabled={!!isUploading}
+                                            >
+                                                <label htmlFor={`upload-${id}`} className="cursor-pointer flex items-center justify-center">
+                                                    {isUploading === id ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <FileUp className="w-4 h-4" />
+                                                    )}
+                                                </label>
+                                            </Button>
+                                        </div>
                                     ) : (
                                         <Check className="w-4 h-4 text-primary" />
                                     )}
