@@ -1,9 +1,8 @@
-import { Info, Users, Clock, Globe, Minus, Plus, Languages, Activity } from 'lucide-react';
+import { Activity, Minus, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tour } from '@/features/tour-operator/services/tourService';
 
