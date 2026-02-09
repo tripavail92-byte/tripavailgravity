@@ -486,7 +486,7 @@ export default function PackageDetailsPage() {
                                             </div>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="end">
-                                            <Calendar
+                                            <CalendarComponent
                                                 initialFocus
                                                 mode="range"
                                                 defaultMonth={dateRange?.from}
