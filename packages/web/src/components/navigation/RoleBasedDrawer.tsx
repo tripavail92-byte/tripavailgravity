@@ -231,7 +231,7 @@ export function RoleBasedDrawer() {
                     setIsOpen(false)
                     try {
                       await switchRole('traveller')
-                      navigate('/dashboard')
+                      navigate('/')
                     } catch (error) {
                       console.error('Failed to switch role', error)
                     }
