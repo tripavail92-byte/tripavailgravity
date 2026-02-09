@@ -4,7 +4,8 @@ import { motion } from 'motion/react';
 import {
     MapPin, Clock, Star, Check, X,
     ArrowLeft, Share2, Heart,
-    Info, ShieldCheck, Map, Camera, Loader2
+    Info, ShieldCheck, Map, Camera, Loader2,
+    Calendar, Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -153,8 +154,8 @@ export default function TourDetailsPage() {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
                                     className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 ${activeTab === tab.id
-                                            ? 'border-primary text-primary'
-                                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-gray-400 hover:text-gray-600'
                                         }`}
                                 >
                                     <tab.icon className="w-4 h-4" />
