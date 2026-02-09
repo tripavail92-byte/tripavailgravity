@@ -186,7 +186,7 @@ export const tourService = {
             .from('tours')
             .select('*')
             .eq('is_published', true)
-            .eq('is_featured', true)
+            .order('created_at', { ascending: false })
             .limit(8);
 
         if (error) {

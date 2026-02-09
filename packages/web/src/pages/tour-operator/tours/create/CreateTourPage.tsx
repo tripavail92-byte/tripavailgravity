@@ -57,6 +57,7 @@ export default function CreateTourPage() {
                 ...tourData,
                 operator_id: user.id,
                 is_active: true,
+                is_published: true,
                 is_verified: false, // Default for new tours
                 is_featured: false,  // Default for new tours
             };
