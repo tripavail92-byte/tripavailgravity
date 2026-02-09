@@ -21,25 +21,29 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
     const [images, setImages] = useState<string[]>(data.images || []);
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
-        if (!user?.id) return;
+        if (!user?.id || isUploading) return;
 
         setIsUploading(true);
         try {
             const urls = await tourService.uploadTourImages(user.id, acceptedFiles);
-            const newImages = [...images, ...urls];
-            setImages(newImages);
-            onUpdate({ images: newImages });
-            toast.success(`Uploaded ${urls.length} images`);
-        } catch (error) {
+            setImages(prev => {
+                const updated = [...prev, ...urls];
+                onUpdate({ images: updated });
+                return updated;
+            });
+            toast.success(`Successfully uploaded ${urls.length} image(s)`);
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            toast.error('Failed to upload images');
+            const message = error?.message || 'Failed to upload images';
+            toast.error(message);
         } finally {
             setIsUploading(false);
         }
-    }, [user?.id, images, onUpdate]);
+    }, [user?.id, isUploading, onUpdate]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
+        disabled: isUploading,
         accept: {
             'image/jpeg': [],
             'image/png': [],
