@@ -8,6 +8,7 @@ import { TourBasicsStep } from './components/TourBasicsStep';
 import { TourMediaStep } from './components/TourMediaStep';
 import { TourItineraryStep } from './components/TourItineraryStep';
 import { TourDetailsStep } from './components/TourDetailsStep';
+import { TourPricingStep } from './components/TourPricingStep';
 import { TourSchedulingStep } from './components/TourSchedulingStep';
 import { TourReviewStep } from './components/TourReviewStep';
 import { Loader2 } from 'lucide-react';
@@ -16,8 +17,9 @@ const STEPS = [
     { id: 'basics', title: 'Basics', component: TourBasicsStep },
     { id: 'media', title: 'Media', component: TourMediaStep },
     { id: 'itinerary', title: 'Itinerary', component: TourItineraryStep },
-    { id: 'details', title: 'Details', component: TourDetailsStep },
-    { id: 'scheduling', title: 'Scheduling', component: TourSchedulingStep },
+    { id: 'details', title: 'Requirements', component: TourDetailsStep },
+    { id: 'pricing', title: 'Pricing & Policies', component: TourPricingStep },
+    { id: 'scheduling', title: 'Dates & Availability', component: TourSchedulingStep },
     { id: 'review', title: 'Review', component: TourReviewStep },
 ];
 

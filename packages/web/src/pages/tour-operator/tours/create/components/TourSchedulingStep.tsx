@@ -1,11 +1,9 @@
-import { useState } from 'react';
-import { Tour } from '@/features/tour-operator/services/tourService';
+import { useState, useEffect } from 'react';
+import { Calendar, Plus, Trash2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Plus, Trash2 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { format, addHours } from 'date-fns';
+import { Tour } from '@/features/tour-operator/services/tourService';
 
 interface TourSchedulingStepProps {
     data: Partial<Tour>;
@@ -14,110 +12,122 @@ interface TourSchedulingStepProps {
     onBack: () => void;
 }
 
-// Temporary interface for schedules within this component.
-// Ideally, we should define Schedule interface in tourService.ts and export it.
-// For now, I'll assume we pass it as a separate field 'schedules' in data (which needs to be added to Tour type/DTO).
-interface ScheduleItem {
-    id: string;
-    start_time: string; // ISO string
-    end_time: string;   // ISO string
-    capacity: number;
-}
-
 export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSchedulingStepProps) {
-    // We need to cast data to any because 'schedules' is not yet on Tour interface
-    const [schedules, setSchedules] = useState<ScheduleItem[]>((data as any).schedules || []);
+    const [schedules, setSchedules] = useState(data.schedules || []);
 
     const addSchedule = () => {
-        // Default to tomorrow at 9 AM
-        const start = new Date();
-        start.setDate(start.getDate() + 1);
-        start.setHours(9, 0, 0, 0);
-
-        // Default duration 3 hours based on tour duration? 
-        // For now hardcode 3 hours or use data.duration parsers ideally.
-        const end = addHours(start, 3);
-
-        const newItem: ScheduleItem = {
-            id: Math.random().toString(36).substr(2, 9),
-            start_time: start.toISOString().slice(0, 16), // datetime-local format
-            end_time: end.toISOString().slice(0, 16),
-            capacity: data.max_participants || 20,
+        const newSchedule = {
+            id: crypto.randomUUID(),
+            date: '',
+            time: '',
+            capacity: data.max_participants || 10
         };
-        const newSchedules = [...schedules, newItem];
-        setSchedules(newSchedules);
-        onUpdate({ schedules: newSchedules } as any);
-    };
-
-    const updateSchedule = (id: string, field: keyof ScheduleItem, value: any) => {
-        const newSchedules = schedules.map(item =>
-            item.id === id ? { ...item, [field]: value } : item
-        );
-        setSchedules(newSchedules);
-        onUpdate({ schedules: newSchedules } as any);
+        const updated = [...schedules, newSchedule];
+        setSchedules(updated);
+        onUpdate({ schedules: updated });
     };
 
     const removeSchedule = (id: string) => {
-        const newSchedules = schedules.filter(item => item.id !== id);
-        setSchedules(newSchedules);
-        onUpdate({ schedules: newSchedules } as any);
+        const updated = schedules.filter(s => s.id !== id);
+        setSchedules(updated);
+        onUpdate({ schedules: updated });
+    };
+
+    const updateSchedule = (id: string, field: string, value: any) => {
+        const updated = schedules.map(s =>
+            s.id === id ? { ...s, [field]: value } : s
+        );
+        setSchedules(updated);
+        onUpdate({ schedules: updated });
     };
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h2 className="text-2xl font-bold text-gray-900">Dates & Availability</h2>
-                <p className="text-gray-500">Manage when this tour runs and how many people can join.</p>
-            </div>
+        <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                        <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold">Departure Dates</h2>
+                        <p className="text-white/80 text-sm">Add the specific dates and times when this tour will run.</p>
+                    </div>
+                </div>
+            </Card>
 
             <div className="space-y-4">
-                {schedules.map((schedule, index) => (
-                    <Card key={schedule.id} className="p-6 border-gray-200">
-                        <div className="flex justify-between items-start gap-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-                                <div className="space-y-2">
-                                    <Label>Start Time</Label>
-                                    <Input
-                                        type="datetime-local"
-                                        value={schedule.start_time}
-                                        onChange={(e) => updateSchedule(schedule.id, 'start_time', e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>End Time</Label>
-                                    <Input
-                                        type="datetime-local"
-                                        value={schedule.end_time}
-                                        onChange={(e) => updateSchedule(schedule.id, 'end_time', e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Capacity</Label>
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        value={schedule.capacity}
-                                        onChange={(e) => updateSchedule(schedule.id, 'capacity', parseInt(e.target.value))}
-                                    />
-                                </div>
+                {schedules.map((schedule) => (
+                    <Card key={schedule.id} className="p-6 border-gray-100 shadow-sm rounded-2xl hover:border-primary/20 transition-colors">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
+                            <div className="md:col-span-4 space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Departure Date</label>
+                                <Input
+                                    type="date"
+                                    value={schedule.date}
+                                    onChange={(e) => updateSchedule(schedule.id, 'date', e.target.value)}
+                                    className="h-11"
+                                />
                             </div>
-                            <div className="pt-8">
-                                <Button variant="ghost" size="icon" onClick={() => removeSchedule(schedule.id)} className="text-gray-400 hover:text-red-500">
-                                    <Trash2 size={18} />
+                            <div className="md:col-span-4 space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Start Time</label>
+                                <Input
+                                    type="time"
+                                    value={schedule.time}
+                                    onChange={(e) => updateSchedule(schedule.id, 'time', e.target.value)}
+                                    className="h-11"
+                                />
+                            </div>
+                            <div className="md:col-span-3 space-y-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Capacity</label>
+                                <Input
+                                    type="number"
+                                    value={schedule.capacity}
+                                    onChange={(e) => updateSchedule(schedule.id, 'capacity', parseInt(e.target.value))}
+                                    className="h-11"
+                                />
+                            </div>
+                            <div className="md:col-span-1 flex justify-end pb-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeSchedule(schedule.id)}
+                                    className="text-gray-400 hover:text-error hover:bg-error/5 h-11 w-11"
+                                >
+                                    <Trash2 size={20} />
                                 </Button>
                             </div>
                         </div>
                     </Card>
                 ))}
 
-                <Button onClick={addSchedule} variant="outline" className="w-full border-dashed border-2 py-8 text-gray-500 hover:text-primary hover:border-primary hover:bg-primary/5">
-                    <Plus className="mr-2" /> Add Departure Date
+                {schedules.length === 0 && (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
+                        <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h3 className="text-gray-900 font-bold">No dates scheduled</h3>
+                        <p className="text-sm text-gray-500">Add departure dates to let travelers book your tour.</p>
+                    </div>
+                )}
+
+                <Button
+                    onClick={addSchedule}
+                    variant="outline"
+                    className="w-full h-14 border-dashed border-2 border-gray-200 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
+                >
+                    <Plus className="w-5 h-5" />
+                    Add Departure Date
                 </Button>
             </div>
 
-            <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={onBack}>Back</Button>
-                <Button onClick={onNext} disabled={schedules.length === 0}>Next Step</Button>
+            <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+                <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none">Back</Button>
+                <Button
+                    onClick={onNext}
+                    size="lg"
+                    className="px-8 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none"
+                    disabled={schedules.length === 0}
+                >
+                    Next Step
+                </Button>
             </div>
         </div>
     );

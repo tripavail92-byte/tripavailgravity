@@ -28,6 +28,22 @@ export interface Tour {
     max_age: number;
     difficulty_level: 'easy' | 'moderate' | 'difficult';
     languages: string[];
+    // Pricing & Policies
+    group_discounts: boolean;
+    pricing_tiers: Array<{
+        id: string;
+        name: string;
+        minPeople: number;
+        maxPeople: number;
+        pricePerPerson: number;
+    }>;
+    seasonal_pricing: boolean;
+    peak_season_multiplier: number;
+    off_season_multiplier: number;
+    deposit_required: boolean;
+    deposit_percentage: number;
+    cancellation_policy: 'flexible' | 'moderate' | 'strict' | 'non-refundable';
+
     rating: number;
     review_count: number;
     is_active: boolean;
