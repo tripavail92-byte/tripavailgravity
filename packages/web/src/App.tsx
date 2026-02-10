@@ -31,6 +31,8 @@ const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutP
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
 const TravellerProfilePage = lazy(() => import('@/pages/traveller/TravellerProfilePage'))
 const AccountSettingsPage = lazy(() => import('@/pages/traveller/AccountSettingsPage'))
+const HotelManagerSettingsPage = lazy(() => import('@/pages/hotel-manager/HotelManagerSettingsPage'))
+const TourOperatorSettingsPage = lazy(() => import('@/pages/tour-operator/TourOperatorSettingsPage'))
 
 // Legal (public)
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
@@ -139,6 +141,26 @@ function App() {
             element={
               <RoleGuard allowedRoles={['tour_operator']}>
                 <CreateTourPage />
+              </RoleGuard>
+            }
+          />
+
+          {/* Hotel Manager Settings */}
+          <Route
+            path="/manager/settings"
+            element={
+              <RoleGuard allowedRoles={['hotel_manager']}>
+                <HotelManagerSettingsPage />
+              </RoleGuard>
+            }
+          />
+
+          {/* Tour Operator Settings */}
+          <Route
+            path="/operator/settings"
+            element={
+              <RoleGuard allowedRoles={['tour_operator']}>
+                <TourOperatorSettingsPage />
               </RoleGuard>
             }
           />
