@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Camera, Mail, Phone, MapPin, Map, Calendar, 
   CreditCard, Wallet, Lock, ChevronRight, Check, Edit, Save, X, Loader2
@@ -23,6 +23,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -768,105 +774,81 @@ export default function TravellerProfilePage() {
       </div>
 
       {/* Email Verification Modal */}
-      <AnimatePresence>
-        {showEmailVerification && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+      <Dialog open={showEmailVerification} onOpenChange={setShowEmailVerification}>
+        <DialogContent>
+          <DialogTitle>Verify Your Email</DialogTitle>
+          <DialogDescription>
+            We'll send a verification link to {profile?.email}
+          </DialogDescription>
+          
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowEmailVerification(false)}
             >
-              <GlassCard variant="card" className="p-6 rounded-2xl max-w-md">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Verify Your Email
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  We'll send a verification link to {profile.email}
-                </p>
-                
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowEmailVerification(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                    onClick={handleVerifyEmail}
-                    disabled={isVerifying}
-                  >
-                    {isVerifying ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Verification Link'
-                    )}
-                  </Button>
-                </div>
-              </GlassCard>
-            </motion.div>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 bg-primary hover:bg-primary/90"
+              onClick={handleVerifyEmail}
+              disabled={isVerifying}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Sending...
+                </>
+              ) : (
+                'Send Verification Link'
+              )}
+            </Button>
           </div>
-        )}
-      </AnimatePresence>
+        </DialogContent>
+      </Dialog>
 
       {/* Phone Verification Modal */}
-      <AnimatePresence>
-        {showPhoneVerification && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+      <Dialog open={showPhoneVerification} onOpenChange={setShowPhoneVerification}>
+        <DialogContent>
+          <DialogTitle>Verify Your Phone</DialogTitle>
+          <DialogDescription>
+            Enter the OTP (One-Time Password) sent to {profile?.phone}
+          </DialogDescription>
+          
+          <input
+            type="text"
+            placeholder="Enter 6-digit OTP"
+            value={phoneOTP}
+            onChange={(e) => setPhoneOTP(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            maxLength={6}
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mt-4"
+          />
+          
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowPhoneVerification(false)}
             >
-              <GlassCard variant="card" className="p-6 rounded-2xl max-w-md">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Verify Your Phone
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Enter the OTP (One-Time Password) sent to {profile.phone}
-                </p>
-                
-                <input
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={phoneOTP}
-                  onChange={(e) => setPhoneOTP(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mb-6"
-                />
-                
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowPhoneVerification(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                    onClick={handleVerifyPhoneOTP}
-                    disabled={isVerifying || phoneOTP.length !== 6}
-                  >
-                    {isVerifying ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify OTP'
-                    )}
-                  </Button>
-                </div>
-              </GlassCard>
-            </motion.div>
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 bg-primary hover:bg-primary/90"
+              onClick={handleVerifyPhoneOTP}
+              disabled={isVerifying || phoneOTP.length !== 6}
+            >
+              {isVerifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Verifying...
+                </>
+              ) : (
+                'Verify OTP'
+              )}
+            </Button>
           </div>
-        )}
-      </AnimatePresence>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
