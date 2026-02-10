@@ -105,6 +105,10 @@ export default function TourCheckoutPage() {
         }
     }, [loading, user, navigate]);
 
+    // Calculate totals
+    const totalPrice = (tour?.price || 0) * guestCount;
+    const maxGuests = Math.min(availableSlots || 0, tour?.max_participants || 20);
+
     // Create Stripe PaymentIntent when booking is created
     useEffect(() => {
         const createPaymentIntent = async () => {
@@ -169,9 +173,6 @@ export default function TourCheckoutPage() {
             cancelled = true;
         };
     }, [stripePromise]);
-
-    const totalPrice = (tour?.price || 0) * guestCount;
-    const maxGuests = Math.min(availableSlots || 0, tour?.max_participants || 20);
 
     const handleCreatePendingBooking = async () => {
         if (!user?.id || !tour?.id || !schedule?.id) {
