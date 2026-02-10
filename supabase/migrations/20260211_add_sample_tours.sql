@@ -176,7 +176,6 @@ BEGIN
         FROM public.tours t
         CROSS JOIN generate_series(1, 14) AS day_num
         WHERE t.operator_id = v_operator_id
-        AND t.created_at > NOW() - interval '5 minutes'
         AND NOT EXISTS (
             SELECT 1 FROM public.tour_schedules ts 
             WHERE ts.tour_id = t.id 
