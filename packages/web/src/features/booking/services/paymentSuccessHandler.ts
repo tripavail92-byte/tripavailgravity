@@ -2,12 +2,16 @@
  * Payment Success Handler Service
  * 
  * Handles the post-payment flow:
- * 1. Verify payment was successful with Stripe
- * 2. Confirm the pending booking
- * 3. Redirect to confirmation page
+ * 1. Validate booking is still pending & not expired
+ * 2. Confirm the pending booking (transition to confirmed)
+ * 3. Update payment status
+ * 
+ * ⚠️ CRITICAL: Must validate expiration!
+ * If Stripe returns success after 10-min hold expired,
+ * this must fail gracefully and tell user to rebook.
  */
 
-import { tourBookingService, TourBooking } from '@/features/booking';
+import { tourBookingService, TourBooking, validateBookingBeforePayment } from '@/features/booking';
 
 export interface PaymentSuccessResult {
   success: boolean;
@@ -18,13 +22,19 @@ export interface PaymentSuccessResult {
 /**
  * Handle successful payment by confirming the pending booking
  * Called after Stripe confirms payment_intent.succeeded
+ * 
+ * CRITICAL VALIDATIONS:
+ * 1. Booking exists
+ * 2. Booking status = pending (not already confirmed)
+ * 3. Booking hasn't expired (expires_at > now)
+ * 4. Booking ID matches payment intent
  */
 export async function handlePaymentSuccess(
   paymentIntentId: string,
   bookingId: string
 ): Promise<PaymentSuccessResult> {
   try {
-    // 1. Find the booking by payment intent ID to verify it exists
+    // STEP 1: Find the booking by payment intent ID to verify it exists
     const booking = await tourBookingService.getBookingByPaymentIntent(paymentIntentId);
     
     if (!booking) {
@@ -34,26 +44,30 @@ export async function handlePaymentSuccess(
       };
     }
 
-    // 2. Verify the booking ID matches (extra safety check)
+    // STEP 2: Verify the booking ID matches (extra safety check)
     if (booking.id !== bookingId) {
       return {
         success: false,
-        error: 'Booking ID mismatch',
+        error: 'Booking ID mismatch - possible security issue',
       };
     }
 
-    // 3. Check if booking is still pending (shouldn't be confirmed already)
-    if (booking.status !== 'pending') {
+    // STEP 3: VALIDATE booking state before confirming
+    // This checks: exists, status=pending, NOT expired
+    const validation = await validateBookingBeforePayment(bookingId);
+    
+    if (!validation.isValid) {
+      // Graceful failure if booking expired or invalid state
       return {
         success: false,
-        error: `Booking is already ${booking.status}`,
+        error: validation.error || 'Booking validation failed',
       };
     }
 
-    // 4. Confirm the pending booking (transition to confirmed)
+    // STEP 4: Confirm the pending booking (transition to confirmed)
     const confirmedBooking = await tourBookingService.confirmBooking(bookingId);
 
-    // 5. Update payment status to paid
+    // STEP 5: Update payment status to paid
     const finalBooking = await tourBookingService.updatePaymentStatus(
       bookingId,
       'paid',
