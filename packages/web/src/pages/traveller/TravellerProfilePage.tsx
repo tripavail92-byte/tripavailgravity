@@ -1,16 +1,21 @@
 /**
- * Traveller Profile Page
+ * Traveller Profile Page - LIVE VERSION
  * 
- * Airbnb-inspired minimalist profile screen with glassmorphism effects
- * Features: Profile completion, contact verification, payment methods, security
+ * Full-featured profile management with:
+ * - Real data integration via Supabase
+ * - Edit mode for all profile fields
+ * - Email/phone verification system
+ * - Avatar upload
+ * - Profile completion tracking
  */
 
-import { useState } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Camera, Mail, Phone, MapPin, Map, Calendar, 
-  CreditCard, Wallet, Lock, ChevronRight, Check, Edit
+  CreditCard, Wallet, Lock, ChevronRight, Check, Edit, Save, X, Loader2
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { GlassCard, GlassBadge } from '@/components/ui/glass';
 import { Button } from '@/components/ui/button';
 import { 
@@ -20,25 +25,8 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-
-// Mock user data (replace with real data from auth context/API)
-const mockProfileData = {
-  name: 'Maria Rodriguez',
-  email: 'maria.rodriguez@gmail.com',
-  phone: '+92 300 1234567',
-  address: 'House 45, Block B, DHA Phase 5',
-  city: 'Lahore, Pakistan',
-  bio: 'Travel enthusiast exploring the world one destination at a time. Love discovering hidden gems and authentic local experiences. ✈️🌍',
-  profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
-  joinDate: 'Member since Jan 2024',
-  dateOfBirth: new Date(1992, 4, 15),
-  emailVerified: true,
-  phoneVerified: false,
-  paymentMethods: {
-    mobileWallets: ['EasyPaisa', 'JazzCash'],
-    cards: ['Visa •••• 4242']
-  }
-};
+import toast from 'react-hot-toast';
+import { userProfileService, type UserProfile } from '@/services/userProfileService';
 
 interface ContactInfoItem {
   id: string;
@@ -50,32 +38,189 @@ interface ContactInfoItem {
   isRoseAccent?: boolean;
 }
 
+interface EditingField {
+  [key: string]: string;
+}
+
 export default function TravellerProfilePage() {
-  const [profile] = useState(mockProfileData);
-  const [dateOfBirth, setDateOfBirth] = useState<Date>(profile.dateOfBirth);
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingData, setEditingData] = useState<EditingField>({});
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Calculate profile completion
-  const calculateCompletion = () => {
-    const fields = [
-      profile.name,
-      profile.email,
-      profile.phone,
-      profile.address,
-      profile.city,
-      profile.bio,
-      profile.dateOfBirth,
-      profile.profileImage,
-    ];
-    const weights = [15, 15, 15, 15, 10, 10, 10, 10];
-    let total = 0;
-    fields.forEach((field, idx) => {
-      if (field) total += weights[idx];
-    });
-    return total;
+  // Verification modals
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  const [phoneOTP, setPhoneOTP] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Load profile on mount
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      setIsLoading(true);
+      const profileData = await userProfileService.getProfile();
+      setProfile(profileData);
+      
+      // Initialize editing data
+      setEditingData({
+        first_name: profileData?.first_name || '',
+        last_name: profileData?.last_name || '',
+        phone: profileData?.phone || '',
+        bio: profileData?.bio || '',
+        address: profileData?.address || '',
+        city: profileData?.city || '',
+      });
+
+      if (profileData?.date_of_birth) {
+        setDateOfBirth(new Date(profileData.date_of_birth));
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+      toast.error('Failed to load profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const profileCompletion = calculateCompletion();
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Reset editing data
+      setEditingData({
+        first_name: profile?.first_name || '',
+        last_name: profile?.last_name || '',
+        phone: profile?.phone || '',
+        bio: profile?.bio || '',
+        address: profile?.address || '',
+        city: profile?.city || '',
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleFieldChange = (field: string, value: string) => {
+    setEditingData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      
+      const updateData: any = {
+        first_name: editingData.first_name,
+        last_name: editingData.last_name,
+        phone: editingData.phone,
+        bio: editingData.bio,
+        address: editingData.address,
+        city: editingData.city,
+      };
+
+      if (dateOfBirth) {
+        updateData.date_of_birth = dateOfBirth.toISOString();
+      }
+
+      const updatedProfile = await userProfileService.updateProfile(updateData);
+      setProfile(updatedProfile);
+      setIsEditing(false);
+      toast.success('Profile saved successfully!');
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      toast.error('Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    try {
+      setIsVerifying(true);
+      await userProfileService.sendEmailVerification();
+      setShowEmailVerification(false);
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyPhone = async () => {
+    try {
+      setIsVerifying(true);
+      await userProfileService.sendPhoneVerification(profile?.phone || '');
+      setShowPhoneVerification(true);
+    } catch (error) {
+      console.error('Failed to send OTP:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyPhoneOTP = async () => {
+    try {
+      setIsVerifying(true);
+      await userProfileService.verifyPhoneOTP(profile?.phone || '', phoneOTP);
+      
+      // Reload profile to get updated verification status
+      await loadProfile();
+      setShowPhoneVerification(false);
+      setPhoneOTP('');
+    } catch (error) {
+      console.error('Failed to verify OTP:', error);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsLoading(true);
+      await userProfileService.uploadAvatar(file);
+      await loadProfile();
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+        <GlassCard variant="light" className="p-8 rounded-2xl text-center">
+          <p className="text-gray-600 mb-4">Failed to load profile</p>
+          <Button onClick={loadProfile} variant="outline">
+            Try Again
+          </Button>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+  const profileCompletion = userProfileService.calculateCompletion(profile);
 
   const contactInfo: ContactInfoItem[] = [
     {
@@ -83,34 +228,34 @@ export default function TravellerProfilePage() {
       icon: Mail,
       label: 'Email',
       value: profile.email,
-      verified: profile.emailVerified
+      verified: profile.email_verified || false
     },
     {
       id: 'phone',
       icon: Phone,
       label: 'Phone',
-      value: profile.phone,
-      verified: profile.phoneVerified
+      value: profile.phone || 'Not added',
+      verified: profile.phone_verified || false
     },
     {
       id: 'address',
       icon: MapPin,
       label: 'Address',
-      value: profile.address,
+      value: profile.address || 'Not added',
       verified: false
     },
     {
       id: 'location',
       icon: Map,
       label: 'City',
-      value: profile.city,
+      value: profile.city || 'Not added',
       verified: false
     },
     {
       id: 'dob',
       icon: Calendar,
       label: 'Date of Birth',
-      value: format(dateOfBirth, 'MMMM dd, yyyy'),
+      value: dateOfBirth ? format(dateOfBirth, 'MMMM dd, yyyy') : 'Not added',
       verified: true,
       isCalendar: true,
       isRoseAccent: true
@@ -123,15 +268,37 @@ export default function TravellerProfilePage() {
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <Edit className="w-4 h-4" />
-            Edit
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-2"
+            onClick={handleEditToggle}
+            disabled={isSaving}
+          >
+            {isEditing ? (
+              <>
+                <X className="w-4 h-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <Edit className="w-4 h-4" />
+                Edit
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+        {isEditing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-blue-700">
+              <strong>Editing mode:</strong> Make changes below and click Save to update your profile.
+            </p>
+          </div>
+        )}
         {/* Profile Header Card */}
         <GlassCard
           variant="card"
@@ -143,38 +310,89 @@ export default function TravellerProfilePage() {
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative mb-4">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                <img
-                  src={profile.profileImage}
-                  alt={profile.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10">
+                    <span className="text-2xl font-bold text-primary">
+                      {fullName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              {/* Camera Edit Button */}
-              <motion.button
-                className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Camera className="w-4 h-4" />
-              </motion.button>
+              {isEditing && (
+                <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800">
+                  <Camera className="w-4 h-4" />
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={isLoading}
+                  />
+                </label>
+              )}
             </div>
 
-            {/* Name */}
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-              {profile.name}
-            </h2>
+            {isEditing ? (
+              <>
+                <div className="w-full space-y-3 mb-4">
+                  <input
+                    type="text"
+                    placeholder="First name"
+                    value={editingData.first_name || ''}
+                    onChange={(e) => handleFieldChange('first_name', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last name"
+                    value={editingData.last_name || ''}
+                    onChange={(e) => handleFieldChange('last_name', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                  {fullName || 'Add your name'}
+                </h2>
+              </>
+            )}
 
-            {/* Bio */}
-            <p className="text-gray-600 mb-1 max-w-sm leading-relaxed">
-              {profile.bio}
-            </p>
+            {isEditing ? (
+              <textarea
+                placeholder="Tell us about yourself..."
+                value={editingData.bio || ''}
+                onChange={(e) => handleFieldChange('bio', e.target.value)}
+                rows={3}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-6"
+              />
+            ) : (
+              <>
+                <p className="text-gray-600 mb-1 max-w-sm leading-relaxed">
+                  {profile.bio || 'No bio added yet'}
+                </p>
+              </>
+            )}
             
             {/* Member Since */}
-            <p className="text-sm text-gray-500 mb-6">
-              {profile.joinDate}
-            </p>
+            {!isEditing && (
+              <p className="text-sm text-gray-500 mb-6">
+                {profile.created_at 
+                  ? `Member since ${format(new Date(profile.created_at), 'MMM yyyy')}`
+                  : 'New member'
+                }
+              </p>
+            )}
 
             {/* Profile Completion */}
             <div className="w-full">
@@ -194,29 +412,53 @@ export default function TravellerProfilePage() {
                   }}
                   initial={{ width: 0 }}
                   animate={{ width: `${profileCompletion}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
                 />
               </div>
             </div>
+
+            {isEditing && (
+              <div className="flex gap-3 mt-6 w-full">
+                <Button
+                  onClick={handleSaveProfile}
+                  className="flex-1 gap-2 bg-primary hover:bg-primary/90"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </GlassCard>
 
         {/* About Me Card */}
-        <GlassCard
-          variant="card"
-          className="p-6 rounded-2xl"
-          asMotion
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            About Me
-          </h3>
-          <p className="text-gray-600 leading-relaxed">
-            {profile.bio}
-          </p>
-        </GlassCard>
+        {!isEditing && (
+          <GlassCard
+            variant="card"
+            className="p-6 rounded-2xl"
+            asMotion
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              About Me
+            </h3>
+            <p className="text-gray-600 leading-relaxed">
+              {profile.bio || 'Add a bio to help other travelers know more about you'}
+            </p>
+          </GlassCard>
+        )}
 
         {/* Contact Information Card */}
         <GlassCard
@@ -239,8 +481,8 @@ export default function TravellerProfilePage() {
                 <Popover key={item.id} open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <motion.div
-                      className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                      whileHover={{ x: 4 }}
+                      className={`p-6 ${isEditing ? 'cursor-text' : 'hover:bg-gray-50/50'} transition-colors`}
+                      whileHover={!isEditing ? { x: 4 } : {}}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -257,19 +499,19 @@ export default function TravellerProfilePage() {
                           </div>
                           <div>
                             <div className="text-sm text-gray-500">{item.label}</div>
-                            <div className="font-medium text-gray-900">{item.value}</div>
+                            <div className={isEditing ? "text-sm text-blue-600 font-medium" : "font-medium text-gray-900"}>
+                              {item.value}
+                            </div>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          {item.verified ? (
+                          {item.verified && (
                             <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
                               Verified
                             </GlassBadge>
-                          ) : (
-                            <span className="text-xs text-gray-400">Not verified</span>
                           )}
-                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                          {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
                         </div>
                       </div>
                     </motion.div>
@@ -278,7 +520,7 @@ export default function TravellerProfilePage() {
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
                       mode="single"
-                      selected={dateOfBirth}
+                      selected={dateOfBirth || undefined}
                       onSelect={(date) => {
                         if (date) {
                           setDateOfBirth(date);
@@ -292,14 +534,15 @@ export default function TravellerProfilePage() {
                     />
                   </PopoverContent>
                 </Popover>
-              ) : (
+              ) : item.id === 'email' ? (
                 <motion.div
                   key={item.id}
-                  className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  whileHover={{ x: 4 }}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors cursor-pointer`}
+                  whileHover={!isEditing ? { x: 4 } : {}}
+                  onClick={() => !profile.email_verified && setShowEmailVerification(true)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1">
                       <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                         <item.icon size={20} className="text-gray-700" />
                       </div>
@@ -315,10 +558,113 @@ export default function TravellerProfilePage() {
                           Verified
                         </GlassBadge>
                       ) : (
-                        <span className="text-xs text-gray-400">Not verified</span>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs h-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowEmailVerification(true);
+                          }}
+                        >
+                          Verify
+                        </Button>
                       )}
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                      {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
                     </div>
+                  </div>
+                </motion.div>
+              ) : item.id === 'phone' ? (
+                <motion.div
+                  key={item.id}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors`}
+                  whileHover={!isEditing ? { x: 4 } : {}}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <item.icon size={20} className="text-gray-700" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500">{item.label}</div>
+                        {isEditing ? (
+                          <input
+                            type="tel"
+                            placeholder="Enter phone number"
+                            value={editingData.phone || ''}
+                            onChange={(e) => handleFieldChange('phone', e.target.value)}
+                            className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                          />
+                        ) : (
+                          <div className="font-medium text-gray-900">{item.value}</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {!isEditing && (
+                      <div className="flex items-center gap-3">
+                        {item.verified ? (
+                          <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
+                            Verified
+                          </GlassBadge>
+                        ) : profile.phone ? (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-xs h-7"
+                            onClick={() => handleVerifyPhone()}
+                            disabled={isVerifying}
+                          >
+                            {isVerifying ? 'Sending...' : 'Verify'}
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Not added</span>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={item.id}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors`}
+                  whileHover={!isEditing ? { x: 4 } : {}}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <item.icon size={20} className="text-gray-700" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-gray-500">{item.label}</div>
+                        {isEditing ? (
+                          item.id === 'address' ? (
+                            <input
+                              type="text"
+                              placeholder="Enter address"
+                              value={editingData.address || ''}
+                              onChange={(e) => handleFieldChange('address', e.target.value)}
+                              className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                            />
+                          ) : item.id === 'location' ? (
+                            <input
+                              type="text"
+                              placeholder="Enter city"
+                              value={editingData.city || ''}
+                              onChange={(e) => handleFieldChange('city', e.target.value)}
+                              className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                            />
+                          ) : (
+                            <div className="font-medium text-gray-900">{item.value}</div>
+                          )
+                        ) : (
+                          <div className="font-medium text-gray-900">{item.value}</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
                   </div>
                 </motion.div>
               )
@@ -342,7 +688,6 @@ export default function TravellerProfilePage() {
           </div>
           
           <div className="divide-y divide-gray-100">
-            {/* Mobile Wallets */}
             <motion.div
               className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
               whileHover={{ x: 4 }}
@@ -355,7 +700,7 @@ export default function TravellerProfilePage() {
                   <div>
                     <div className="font-medium text-gray-900">Mobile Wallets</div>
                     <div className="text-sm text-gray-500">
-                      {profile.paymentMethods.mobileWallets.join(', ')}
+                      EasyPaisa, JazzCash
                     </div>
                   </div>
                 </div>
@@ -363,7 +708,6 @@ export default function TravellerProfilePage() {
               </div>
             </motion.div>
 
-            {/* Payment Cards */}
             <motion.div
               className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
               whileHover={{ x: 4 }}
@@ -376,7 +720,7 @@ export default function TravellerProfilePage() {
                   <div>
                     <div className="font-medium text-gray-900">Credit & Debit Cards</div>
                     <div className="text-sm text-gray-500">
-                      {profile.paymentMethods.cards.join(', ')}
+                      Visa, Mastercard
                     </div>
                   </div>
                 </div>
@@ -422,6 +766,107 @@ export default function TravellerProfilePage() {
           </motion.div>
         </GlassCard>
       </div>
+
+      {/* Email Verification Modal */}
+      <AnimatePresence>
+        {showEmailVerification && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <GlassCard variant="card" className="p-6 rounded-2xl max-w-md">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Verify Your Email
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  We'll send a verification link to {profile.email}
+                </p>
+                
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowEmailVerification(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    onClick={handleVerifyEmail}
+                    disabled={isVerifying}
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Verification Link'
+                    )}
+                  </Button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Phone Verification Modal */}
+      <AnimatePresence>
+        {showPhoneVerification && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <GlassCard variant="card" className="p-6 rounded-2xl max-w-md">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Verify Your Phone
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Enter the OTP (One-Time Password) sent to {profile.phone}
+                </p>
+                
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={phoneOTP}
+                  onChange={(e) => setPhoneOTP(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mb-6"
+                />
+                
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowPhoneVerification(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-primary hover:bg-primary/90"
+                    onClick={handleVerifyPhoneOTP}
+                    disabled={isVerifying || phoneOTP.length !== 6}
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      'Verify OTP'
+                    )}
+                  </Button>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
