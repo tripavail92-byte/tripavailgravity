@@ -45,14 +45,12 @@ class AccountSettingsServiceClass {
   async getSettings(userId: string): Promise<AccountSettings> {
     try {
       const { data, error } = await supabase
-        .from('account_settings')
+        .from('account_settings' as any)
         .select('*')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
-      }
+      if (error) throw error
 
       // If no settings exist, return defaults
       if (!data) {
@@ -75,7 +73,7 @@ class AccountSettingsServiceClass {
         }
       }
 
-      return data as AccountSettings
+      return (data as unknown) as AccountSettings
     } catch (error) {
       console.error('Failed to fetch settings:', error)
       throw error
@@ -85,7 +83,7 @@ class AccountSettingsServiceClass {
   async updateSettings(userId: string, updates: Partial<AccountSettings>): Promise<AccountSettings> {
     try {
       const { data, error } = await supabase
-        .from('account_settings')
+        .from('account_settings' as any)
         .upsert({
           user_id: userId,
           ...updates,
@@ -97,7 +95,7 @@ class AccountSettingsServiceClass {
       if (error) throw error
 
       toast.success('Settings updated successfully')
-      return data as AccountSettings
+      return (data as unknown) as AccountSettings
     } catch (error) {
       console.error('Failed to update settings:', error)
       toast.error('Failed to update settings')
@@ -188,7 +186,7 @@ class AccountSettingsServiceClass {
     await this.updateSettings(userId, { two_factor_enabled: false })
   }
 
-  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+  async changePassword(_oldPassword: string, newPassword: string): Promise<void> {
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword

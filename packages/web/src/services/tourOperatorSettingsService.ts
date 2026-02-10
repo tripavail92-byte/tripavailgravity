@@ -58,15 +58,13 @@ export interface TourOperatorSettings {
 class TourOperatorSettingsServiceClass {
   async getSettings(operatorId: string): Promise<TourOperatorSettings> {
     try {
-      const { data, error } = await supabase
-        .from('tour_operator_settings')
+      const { data, error } = await (supabase
+        .from('tour_operator_settings' as any) as any)
         .select('*')
         .eq('operator_id', operatorId)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
-      }
+      if (error) throw error
 
       if (!data) {
         return {
@@ -101,7 +99,7 @@ class TourOperatorSettingsServiceClass {
         }
       }
 
-      return data as TourOperatorSettings
+      return (data as unknown) as TourOperatorSettings
     } catch (error) {
       console.error('Failed to fetch tour operator settings:', error)
       throw error
@@ -110,8 +108,8 @@ class TourOperatorSettingsServiceClass {
 
   async updateSettings(operatorId: string, updates: Partial<TourOperatorSettings>): Promise<TourOperatorSettings> {
     try {
-      const { data, error } = await supabase
-        .from('tour_operator_settings')
+      const { data, error } = await (supabase
+        .from('tour_operator_settings' as any) as any)
         .upsert({
           operator_id: operatorId,
           ...updates,
@@ -123,7 +121,7 @@ class TourOperatorSettingsServiceClass {
       if (error) throw error
 
       toast.success('Tour operator settings updated')
-      return data as TourOperatorSettings
+      return (data as unknown) as TourOperatorSettings
     } catch (error) {
       console.error('Failed to update tour operator settings:', error)
       toast.error('Failed to update settings')

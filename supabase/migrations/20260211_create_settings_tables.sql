@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS public.account_settings (
 
 CREATE TABLE IF NOT EXISTS public.hotel_manager_settings (
   manager_id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  property_id UUID REFERENCES public.hotel_listings(id) ON DELETE SET NULL,
+  property_id UUID,
   
   -- Business Information
   business_name TEXT,

@@ -50,22 +50,24 @@ class UserProfileService {
         throw new Error('No authenticated user')
       }
 
-      // Get profile from users table
-      const { data: profile, error } = await supabase
-        .from('profiles')
+      // NOTE: Avoid `.single()`/`.maybeSingle()` here.
+      // PostgREST returns HTTP 406 when 0 rows match object-returning queries,
+      // which shows up as noisy browser console errors even if handled.
+      const { data: profiles, error } = await (supabase
+        .from('profiles' as any) as any)
         .select('*')
         .eq('id', user.id)
-        .single()
+        .limit(1)
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
-      }
+      if (error) throw error
+
+      const profile = Array.isArray(profiles) ? profiles[0] : profiles
 
       // Return merged user + profile data
       return {
         id: user.id,
         email: user.email || '',
-        ...(profile || {})
+        ...((profile || {}) as any)
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -85,26 +87,28 @@ class UserProfileService {
       }
 
       // Update in profiles table
-      const { data: updated, error } = await supabase
-        .from('profiles')
+      const { data: updatedRows, error } = await (supabase
+        .from('profiles' as any) as any)
         .upsert({
           id: user.id,
           ...data,
+          email: user.email || '',
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'id'
         })
         .select()
-        .single()
 
       if (error) throw error
+
+      const updated = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows
 
       toast.success('Profile updated successfully')
       
       return {
         id: user.id,
         email: user.email || '',
-        ...updated
+        ...(((updated ?? { ...data }) as unknown) as any)
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -125,8 +129,8 @@ class UserProfileService {
       }
 
       // Resend verification email
-      const { error } = await supabase.auth.resendEnvelope({
-        type: 'email_change',
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
         email: user.email || ''
       })
 
@@ -146,7 +150,7 @@ class UserProfileService {
   async sendPhoneVerification(phone: string): Promise<void> {
     try {
       // Verify phone with custom function or Twilio API
-      const { data, error } = await supabase.functions.invoke('send-phone-otp', {
+      const { error } = await supabase.functions.invoke('send-phone-otp', {
         body: { phone }
       })
 
@@ -172,15 +176,15 @@ class UserProfileService {
       }
 
       // Verify OTP via custom function
-      const { data, error } = await supabase.functions.invoke('verify-phone-otp', {
+      const { error } = await supabase.functions.invoke('verify-phone-otp', {
         body: { phone, otp }
       })
 
       if (error) throw error
 
       // Mark phone as verified in profile
-      await supabase
-        .from('profiles')
+      await (supabase
+        .from('profiles' as any) as any)
         .update({ 
           phone_verified: true,
           phone: phone
@@ -208,7 +212,8 @@ class UserProfileService {
 
       const fileExt = file.name.split('.').pop()
       const fileName = `${user.id}-${Date.now()}.${fileExt}`
-      const filePath = `avatars/${fileName}`
+      // Store under <uid>/... so RLS policies can safely enforce ownership
+      const filePath = `${user.id}/${fileName}`
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage

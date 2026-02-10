@@ -54,14 +54,12 @@ class HotelManagerSettingsServiceClass {
   async getSettings(managerId: string): Promise<HotelManagerSettings> {
     try {
       const { data, error } = await supabase
-        .from('hotel_manager_settings')
+        .from('hotel_manager_settings' as any)
         .select('*')
         .eq('manager_id', managerId)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') {
-        throw error
-      }
+      if (error) throw error
 
       if (!data) {
         return {
@@ -92,7 +90,7 @@ class HotelManagerSettingsServiceClass {
         }
       }
 
-      return data as HotelManagerSettings
+      return (data as unknown) as HotelManagerSettings
     } catch (error) {
       console.error('Failed to fetch hotel settings:', error)
       throw error
@@ -102,7 +100,7 @@ class HotelManagerSettingsServiceClass {
   async updateSettings(managerId: string, updates: Partial<HotelManagerSettings>): Promise<HotelManagerSettings> {
     try {
       const { data, error } = await supabase
-        .from('hotel_manager_settings')
+        .from('hotel_manager_settings' as any)
         .upsert({
           manager_id: managerId,
           ...updates,
@@ -114,7 +112,7 @@ class HotelManagerSettingsServiceClass {
       if (error) throw error
 
       toast.success('Hotel settings updated')
-      return data as HotelManagerSettings
+      return (data as unknown) as HotelManagerSettings
     } catch (error) {
       console.error('Failed to update hotel settings:', error)
       toast.error('Failed to update settings')
@@ -192,7 +190,7 @@ class HotelManagerSettingsServiceClass {
 
   async suspendListings(managerId: string): Promise<void> {
     await supabase
-      .from('hotel_listings')
+      .from('hotel_listings' as any)
       .update({ suspended: true, suspended_at: new Date().toISOString() })
       .eq('manager_id', managerId)
     
@@ -201,7 +199,7 @@ class HotelManagerSettingsServiceClass {
 
   async resumeListings(managerId: string): Promise<void> {
     await supabase
-      .from('hotel_listings')
+      .from('hotel_listings' as any)
       .update({ suspended: false, suspended_at: null })
       .eq('manager_id', managerId)
     
