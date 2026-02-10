@@ -400,9 +400,15 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentReady, setPaymentReady] = useState(false);
 
   const handlePay = async () => {
     if (!stripe || !elements) return;
+    const paymentElement = elements.getElement(PaymentElement);
+    if (!paymentElement) {
+      setError('Payment form is still loading. Please wait a moment and try again.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -436,14 +442,27 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
 
   return (
     <div className="space-y-4">
-      <PaymentElement />
+      <PaymentElement
+        onReady={() => setPaymentReady(true)}
+        onChange={event => {
+          if (event.error) {
+            setError(event.error.message ?? 'Payment form error');
+          } else if (error) {
+            setError(null);
+          }
+        }}
+      />
+
+      {!paymentReady && !error && (
+        <div className="text-xs text-gray-500">Loading secure payment form...</div>
+      )}
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
       <Button
         className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
         onClick={handlePay}
-        disabled={!stripe || !elements || submitting}
+        disabled={!stripe || !elements || !paymentReady || submitting}
       >
         {submitting ? 'Processing...' : `Pay $${Number(props.total || 0).toLocaleString()}`}
       </Button>
