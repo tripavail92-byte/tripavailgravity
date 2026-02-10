@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
+import { SiteFooter } from '@/components/layout/SiteFooter';
 
 export default function TravellerLayout() {
     // We can also enforce the data-role attribute here if needed, 
@@ -18,6 +19,8 @@ export default function TravellerLayout() {
             <main className="min-h-screen relative">
                 <Outlet />
             </main>
+
+            <SiteFooter />
         </div>
     );
 }

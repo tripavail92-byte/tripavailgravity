@@ -30,6 +30,12 @@ const PackageDetailsPage = lazy(() => import('@/pages/traveller/PackageDetailsPa
 const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutPage'))
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
 
+// Legal (public)
+const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
+const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
+const RefundsPage = lazy(() => import('@/pages/legal/RefundsPage'))
+const ContactPage = lazy(() => import('@/pages/legal/ContactPage'))
+
 // Loading component
 const PageLoader = () => (
   <div className="h-screen w-screen flex items-center justify-center">
@@ -81,6 +87,12 @@ function App() {
           <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
           <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
           <Route path="/booking/package/confirmation" element={<PackageBookingConfirmationPage />} />
+
+          {/* Legal */}
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refunds" element={<RefundsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Route>
 
         {/* Authenticated Routes with Drawer (Purple Theme) */}

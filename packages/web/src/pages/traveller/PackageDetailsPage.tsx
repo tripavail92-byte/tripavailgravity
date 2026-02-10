@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { SiteFooter } from '@/components/layout/SiteFooter';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import { supabase } from '@/lib/supabase';
 import { packageBookingService } from '@/features/booking';
@@ -716,59 +717,7 @@ export default function PackageDetailsPage() {
             </main >
             {/* Debug Section Removed */}
 
-            <Footer />
+            <SiteFooter />
         </div >
-    );
-}
-
-function Footer() {
-    return (
-        <footer className="border-t border-gray-200 bg-gray-50 mt-12 py-12">
-            <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Support</h4>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" className="hover:underline">Help Center</a></li>
-                        <li><a href="#" className="hover:underline">AirCover</a></li>
-                        <li><a href="#" className="hover:underline">Anti-discrimination</a></li>
-                        <li><a href="#" className="hover:underline">Disability support</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Hosting</h4>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" className="hover:underline">TripAvail your home</a></li>
-                        <li><a href="#" className="hover:underline">AirCover for Hosts</a></li>
-                        <li><a href="#" className="hover:underline">Hosting resources</a></li>
-                        <li><a href="#" className="hover:underline">Community forum</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 className="font-bold text-gray-900 mb-4">TripAvail</h4>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" className="hover:underline">Newsroom</a></li>
-                        <li><a href="#" className="hover:underline">New features</a></li>
-                        <li><a href="#" className="hover:underline">Careers</a></li>
-                        <li><a href="#" className="hover:underline">Investors</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 className="font-bold text-gray-900 mb-4">Social</h4>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li><a href="#" className="hover:underline">Twitter</a></li>
-                        <li><a href="#" className="hover:underline">Instagram</a></li>
-                        <li><a href="#" className="hover:underline">LinkedIn</a></li>
-                        <li><a href="#" className="hover:underline">Facebook</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                <p>© 2026 TripAvail, Inc. · Privacy · Terms · Sitemap</p>
-                <div className="flex items-center gap-4 mt-4 md:mt-0">
-                    <div className="flex items-center gap-1"><Globe size={14} /> English (US)</div>
-                    <div>$ USD</div>
-                </div>
-            </div>
-        </footer>
     );
 }

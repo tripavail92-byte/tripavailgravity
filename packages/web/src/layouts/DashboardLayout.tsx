@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { DashboardHeader } from '@/features/hotel-manager/dashboard/components/DashboardHeader'
+import { SiteFooter } from '@/components/layout/SiteFooter'
 
 export default function DashboardLayout() {
   return (
@@ -8,6 +9,8 @@ export default function DashboardLayout() {
       <main className="min-h-screen">
         <Outlet />
       </main>
+
+      <SiteFooter />
     </div>
   )
 }
