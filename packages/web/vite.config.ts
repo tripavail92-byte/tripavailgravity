@@ -25,6 +25,7 @@ export default defineConfig({
           'vendor-ui': ['cmdk', 'lucide-react', 'date-fns', 'react-day-picker'],
           'vendor-motion': ['motion', 'motion/react'],
           'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-stripe': ['@stripe/react-stripe-js', '@stripe/stripe-js'],
         },
       },
     },

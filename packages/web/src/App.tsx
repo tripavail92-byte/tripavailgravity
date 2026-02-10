@@ -1,31 +1,41 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 
 import { useAuth } from '@/hooks/useAuth'
-import DashboardLayout from '@/layouts/DashboardLayout'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
-import LoginPage from '@/pages/auth/LoginPage'
-// Pages
-import LandingPage from '@/pages/LandingPage'
-import PartnerSelectionPage from '@/pages/partner/PartnerSelectionPage'
-import HotelDetailsPage from '@/pages/traveller/HotelDetailsPage'
-import SearchPage from '@/pages/traveller/SearchPage'
-import ListHotelPage from '@/pages/manager/ListHotelPage'
-import ListPackagePage from '@/pages/manager/ListPackagePage'
-import DashboardPage from '@/pages/hotel-manager/DashboardPage'
-import OperatorDashboardPage from '@/pages/tour-operator/OperatorDashboardPage'
-import TourOperatorSetupPage from '@/pages/tour-operator/setup/TourOperatorSetupPage'
-import CreateTourPage from '@/pages/tour-operator/tours/create/CreateTourPage'
-import TourDetailsPage from '@/pages/traveller/TourDetailsPage'
-import TourCheckoutPage from '@/pages/checkout/TourCheckoutPage'
-import BookingConfirmationPage from '@/pages/checkout/BookingConfirmationPage'
-import PackageBookingConfirmationPage from '@/pages/checkout/PackageBookingConfirmationPage'
-import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
-import PackageCheckoutPage from '@/pages/checkout/PackageCheckoutPage'
-import Homepage from '@/pages/traveller/Homepage'
+
+// Eager load critical components
+import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
+import LoginPage from '@/pages/auth/LoginPage'
+import LandingPage from '@/pages/LandingPage'
+
+// Lazy load all other pages
+const PartnerSelectionPage = lazy(() => import('@/pages/partner/PartnerSelectionPage'))
+const HotelDetailsPage = lazy(() => import('@/pages/traveller/HotelDetailsPage'))
+const SearchPage = lazy(() => import('@/pages/traveller/SearchPage'))
+const ListHotelPage = lazy(() => import('@/pages/manager/ListHotelPage'))
+const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
+const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
+const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
+const TourOperatorSetupPage = lazy(() => import('@/pages/tour-operator/setup/TourOperatorSetupPage'))
+const CreateTourPage = lazy(() => import('@/pages/tour-operator/tours/create/CreateTourPage'))
+const TourDetailsPage = lazy(() => import('@/pages/traveller/TourDetailsPage'))
+const TourCheckoutPage = lazy(() => import('@/pages/checkout/TourCheckoutPage'))
+const BookingConfirmationPage = lazy(() => import('@/pages/checkout/BookingConfirmationPage'))
+const PackageBookingConfirmationPage = lazy(() => import('@/pages/checkout/PackageBookingConfirmationPage'))
+const PackageDetailsPage = lazy(() => import('@/pages/traveller/PackageDetailsPage'))
+const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutPage'))
+const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
+
+// Loading component
+const PageLoader = () => (
+  <div className="h-screen w-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+)
 
 function App() {
   const { initialize, initialized, activeRole } = useAuth()
@@ -55,7 +65,8 @@ function App() {
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Toaster position="top-center" />
-      <Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
         <Route path="/auth" element={<LoginPage />} />
 
         {/* Traveller Routes (Teal Theme) */}
@@ -126,7 +137,8 @@ function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }
