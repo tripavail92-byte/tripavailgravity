@@ -106,6 +106,19 @@ export async function publishPackage(packageData: PackageData, userId: string) {
         }
 
         // Step 2: Prepare package payload
+        // Build room_configuration from selectedRooms
+        const roomConfiguration = packageData.selectedRooms 
+            ? {
+                rooms: packageData.roomIds?.map(roomId => ({
+                    room_id: roomId,
+                    room_type: packageData.selectedRooms?.[roomId]?.room_type || 'standard',
+                    count: 1
+                })) || [],
+                max_guests: packageData.maxGuests || 4,
+                fixed_price: packageData.fixedPrice || null
+            }
+            : {};
+
         const packagePayload = {
             owner_id: userId,
             hotel_id: packageData.hotelId || null, // Link to hotel
@@ -125,9 +138,14 @@ export async function publishPackage(packageData: PackageData, userId: string) {
             cancellation_policy: packageData.cancellationPolicy || null,
             payment_terms: packageData.paymentTerms || null,
 
-            // Room Mapping
-            room_ids: packageData.roomIds || (packageData.selectedRooms ? Object.keys(packageData.selectedRooms) : []) || null,
-            rooms_config: packageData.selectedRooms || null,
+            // Room Configuration (Option A: Fixed package)
+            room_configuration: roomConfiguration,
+            
+            // Pricing and booking rules
+            base_price_per_night: packageData.basePricePerNight || null,
+            minimum_nights: packageData.minimumNights || 1,
+            maximum_nights: packageData.maximumNights || 30,
+            max_guests: packageData.maxGuests || 4,
 
             is_published: true
         };

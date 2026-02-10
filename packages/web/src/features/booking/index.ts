@@ -16,8 +16,11 @@ export {
 // Payment Success Handler
 export {
   handlePaymentSuccess,
+  handlePackagePaymentSuccess,
   usePaymentConfirmation,
+  usePackagePaymentConfirmation,
   type PaymentSuccessResult,
+  type PackagePaymentSuccessResult,
 } from './services/paymentSuccessHandler';
 
 // Booking Validation
@@ -26,7 +29,11 @@ export {
   createBookingWithValidation,
   isBookingStillValid,
   validateBookingBeforePayment,
+  validatePackageAvailability,
+  createPackageBookingWithValidation,
+  validatePackageBookingBeforePayment,
   type BookingValidationResult,
+  type PackageValidationResult,
 } from './services/bookingValidation';
 
 // Jobs

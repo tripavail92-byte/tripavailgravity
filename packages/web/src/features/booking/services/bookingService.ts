@@ -22,12 +22,15 @@ export interface PackageBooking {
   id: string;
   package_id: string;
   traveler_id: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'refunded';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'refunded' | 'expired';
   total_price: number;
   guest_count: number;
   check_in_date?: string;
   check_out_date?: string;
   booking_date: string;
+  expires_at?: string; // 10-minute hold expiration timestamp
+  number_of_nights?: number;
+  price_per_night?: number;
   stripe_payment_intent_id?: string;
   payment_status?: 'unpaid' | 'processing' | 'paid' | 'failed' | 'refunded';
   payment_method?: string;
@@ -240,15 +243,112 @@ export const packageBookingService = {
     return (data as any[]).filter(b => b.packages?.owner_id === ownerId) as PackageBooking[];
   },
 
-  async createBooking(booking: Omit<PackageBooking, 'id' | 'booking_date'>): Promise<PackageBooking> {
+  async checkAvailability(
+    packageId: string,
+    checkIn: string,
+    checkOut: string
+  ): Promise<boolean> {
+    const { data, error } = await supabase.rpc('check_package_availability', {
+      package_id_param: packageId,
+      check_in_param: checkIn,
+      check_out_param: checkOut,
+    });
+
+    if (error) throw error;
+    return data as boolean;
+  },
+
+  async calculatePrice(
+    packageId: string,
+    checkIn: string,
+    checkOut: string
+  ): Promise<{ total_price: number; price_per_night: number; number_of_nights: number }> {
+    const { data, error } = await supabase.rpc('calculate_package_price', {
+      package_id_param: packageId,
+      check_in_param: checkIn,
+      check_out_param: checkOut,
+    });
+
+    if (error) throw error;
+    return data as { total_price: number; price_per_night: number; number_of_nights: number };
+  },
+
+  /**
+   * Create a pending booking with 10-minute hold
+   * Uses atomic DB function to prevent race conditions
+   */
+  async createPendingBooking(params: {
+    package_id: string;
+    traveler_id: string;
+    check_in_date: string;
+    check_out_date: string;
+    guest_count: number;
+  }): Promise<PackageBooking> {
+    const { data, error } = await supabase.rpc('create_package_booking_atomic', {
+      package_id_param: params.package_id,
+      traveler_id_param: params.traveler_id,
+      check_in_param: params.check_in_date,
+      check_out_param: params.check_out_date,
+      guest_count_param: params.guest_count,
+    });
+
+    if (error) throw error;
+
+    const bookingId = data as string;
+    const { data: booking, error: bookingError } = await supabase
+      .from('package_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
+
+    if (bookingError) throw bookingError;
+    return booking as PackageBooking;
+  },
+
+  /**
+   * Confirm a pending booking after successful payment
+   */
+  async confirmBooking(bookingId: string): Promise<PackageBooking> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .insert(booking)
+      .update({
+        status: 'confirmed',
+        payment_status: 'paid',
+      })
+      .eq('id', bookingId)
+      .eq('status', 'pending')
       .select()
       .single();
 
     if (error) throw error;
     return data as PackageBooking;
+  },
+
+  /**
+   * Auto-expire pending bookings past the 10-minute hold
+   */
+  async expirePendingBookings(): Promise<number> {
+    const { data, error } = await supabase
+      .from('package_bookings')
+      .update({ status: 'expired' })
+      .eq('status', 'pending')
+      .lt('expires_at', new Date().toISOString())
+      .select();
+
+    if (error) throw error;
+    return (data as any[]).length;
+  },
+
+  async getPendingBooking(bookingId: string): Promise<PackageBooking | null> {
+    const { data, error } = await supabase
+      .from('package_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .eq('status', 'pending')
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return (data as PackageBooking) || null;
   },
 
   async updatePaymentStatus(

@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import { supabase } from '@/lib/supabase';
+import { packageBookingService } from '@/features/booking';
 
 
 
@@ -53,6 +54,9 @@ export default function PackageDetailsPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [guests, setGuests] = useState(2);
     const [isGuestOpen, setIsGuestOpen] = useState(false);
+    const [priceQuote, setPriceQuote] = useState<{ total_price: number; price_per_night: number; number_of_nights: number } | null>(null);
+    const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+    const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -119,6 +123,53 @@ export default function PackageDetailsPage() {
         fetchData();
     }, [id]);
 
+    const formatDateParam = (date: Date) => format(date, 'yyyy-MM-dd');
+
+    useEffect(() => {
+        const checkAvailabilityAndPrice = async () => {
+            if (!id || !dateRange?.from || !dateRange?.to) {
+                setPriceQuote(null);
+                setAvailabilityError(null);
+                return;
+            }
+
+            const checkIn = formatDateParam(dateRange.from);
+            const checkOut = formatDateParam(dateRange.to);
+
+            setIsCheckingAvailability(true);
+            setAvailabilityError(null);
+
+            try {
+                const isAvailable = await packageBookingService.checkAvailability(
+                    id,
+                    checkIn,
+                    checkOut
+                );
+
+                if (!isAvailable) {
+                    setPriceQuote(null);
+                    setAvailabilityError('Selected dates are not available. Please choose different dates.');
+                    return;
+                }
+
+                const pricing = await packageBookingService.calculatePrice(
+                    id,
+                    checkIn,
+                    checkOut
+                );
+
+                setPriceQuote(pricing);
+            } catch (err: any) {
+                setPriceQuote(null);
+                setAvailabilityError(err?.message || 'Failed to check availability');
+            } finally {
+                setIsCheckingAvailability(false);
+            }
+        };
+
+        checkAvailabilityAndPrice();
+    }, [dateRange?.from, dateRange?.to, id]);
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center flex-col gap-4">
@@ -179,9 +230,55 @@ export default function PackageDetailsPage() {
     const nights = dateRange?.from && dateRange?.to
         ? Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
+    const basePrice = Number(packageData?.base_price_per_night || 0);
+    const displayBasePrice = priceQuote?.price_per_night || basePrice;
+    const totalPrice = priceQuote?.total_price || 0;
+    const maxGuests = packageData?.max_guests || 4;
 
-    const basePrice = 599; // Placeholder - usually from DB
-    const totalPrice = basePrice * guests;
+    const handleRequestToBook = async () => {
+        if (!id || !dateRange?.from || !dateRange?.to) {
+            setAvailabilityError('Please select check-in and check-out dates.');
+            return;
+        }
+
+        const checkIn = formatDateParam(dateRange.from);
+        const checkOut = formatDateParam(dateRange.to);
+
+        setIsCheckingAvailability(true);
+        setAvailabilityError(null);
+
+        try {
+            const isAvailable = await packageBookingService.checkAvailability(
+                id,
+                checkIn,
+                checkOut
+            );
+
+            if (!isAvailable) {
+                setAvailabilityError('Selected dates are not available. Please choose different dates.');
+                return;
+            }
+
+            const pricing = priceQuote || await packageBookingService.calculatePrice(
+                id,
+                checkIn,
+                checkOut
+            );
+
+            navigate(`/checkout/package/${id}`, {
+                state: {
+                    checkIn,
+                    checkOut,
+                    guestCount: guests,
+                    pricing,
+                },
+            });
+        } catch (err: any) {
+            setAvailabilityError(err?.message || 'Unable to start booking');
+        } finally {
+            setIsCheckingAvailability(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-white pb-20">
@@ -461,8 +558,10 @@ export default function PackageDetailsPage() {
                     < div className="relative" >
                         <div className="sticky top-24 border border-gray-200 rounded-xl p-6 shadow-xl shadow-gray-100/50 bg-white">
                             <div className="flex items-end gap-2 mb-6">
-                                <span className="text-2xl font-bold text-gray-900">${basePrice}</span>
-                                <span className="text-gray-500 mb-1">/ person</span>
+                                <span className="text-2xl font-bold text-gray-900">
+                                    {displayBasePrice > 0 ? `$${displayBasePrice}` : 'Price on request'}
+                                </span>
+                                {displayBasePrice > 0 && <span className="text-gray-500 mb-1">/ night</span>}
                             </div>
 
                             <div className="space-y-4 mb-6">
@@ -527,24 +626,36 @@ export default function PackageDetailsPage() {
                                                         variant="outline"
                                                         size="icon"
                                                         className="h-8 w-8 rounded-full"
-                                                        onClick={() => setGuests(guests + 1)}
+                                                        onClick={() => setGuests(Math.min(maxGuests, guests + 1))}
+                                                        disabled={guests >= maxGuests}
                                                     >
                                                         +
                                                     </Button>
                                                 </div>
                                             </div>
+                                            <p className="text-xs text-gray-500 mt-2">Max {maxGuests} guests</p>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
 
-                                <Button className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20">
-                                    Request to Book
+                                <Button
+                                    className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
+                                    onClick={handleRequestToBook}
+                                    disabled={isCheckingAvailability}
+                                >
+                                    {isCheckingAvailability ? 'Checking availability...' : 'Continue to Booking'}
                                 </Button>
 
-                                {nights > 0 && (
+                                {availabilityError && (
+                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                        {availabilityError}
+                                    </div>
+                                )}
+
+                                {nights > 0 && displayBasePrice > 0 && (
                                     <div className="pt-4 border-t border-gray-100 space-y-2">
                                         <div className="flex justify-between text-gray-600">
-                                            <span>${basePrice} x {guests} guests</span>
+                                            <span>${displayBasePrice} x {nights} night{nights > 1 ? 's' : ''}</span>
                                             <span>${totalPrice}</span>
                                         </div>
                                         <div className="flex justify-between text-lg font-bold text-gray-900 pt-2">

@@ -12,11 +12,13 @@
  * This prevents dead inventory from abandoned shopping carts
  */
 
-import { tourBookingService } from './bookingService';
+import { packageBookingService, tourBookingService } from '../services/bookingService';
 
 export interface ExpiryJobResult {
   success: boolean;
   expiredCount: number;
+  expiredTours: number;
+  expiredPackages: number;
   error?: string;
   timestamp: string;
 }
@@ -28,17 +30,26 @@ export async function expireOldPendingBookings(): Promise<ExpiryJobResult> {
   const timestamp = new Date().toISOString();
 
   try {
-    const expiredCount = await tourBookingService.expirePendingBookings();
+    const [expiredTours, expiredPackages] = await Promise.all([
+      tourBookingService.expirePendingBookings(),
+      packageBookingService.expirePendingBookings(),
+    ]);
+
+    const expiredCount = expiredTours + expiredPackages;
 
     return {
       success: true,
       expiredCount,
+      expiredTours,
+      expiredPackages,
       timestamp,
     };
   } catch (error) {
     return {
       success: false,
       expiredCount: 0,
+      expiredTours: 0,
+      expiredPackages: 0,
       error: error instanceof Error ? error.message : 'Unknown error',
       timestamp,
     };

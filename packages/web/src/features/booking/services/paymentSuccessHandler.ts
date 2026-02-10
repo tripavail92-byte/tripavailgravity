@@ -11,11 +11,24 @@
  * this must fail gracefully and tell user to rebook.
  */
 
-import { tourBookingService, TourBooking, validateBookingBeforePayment } from '@/features/booking';
+import {
+  packageBookingService,
+  tourBookingService,
+  type PackageBooking,
+  type TourBooking,
+  validateBookingBeforePayment,
+  validatePackageBookingBeforePayment,
+} from '@/features/booking';
 
 export interface PaymentSuccessResult {
   success: boolean;
   booking?: TourBooking;
+  error?: string;
+}
+
+export interface PackagePaymentSuccessResult {
+  success: boolean;
+  booking?: PackageBooking;
   error?: string;
 }
 
@@ -90,6 +103,62 @@ export async function handlePaymentSuccess(
 }
 
 /**
+ * Handle successful payment for package bookings
+ */
+export async function handlePackagePaymentSuccess(
+  paymentIntentId: string,
+  bookingId: string
+): Promise<PackagePaymentSuccessResult> {
+  try {
+    const booking = await packageBookingService.getBookingByPaymentIntent(paymentIntentId);
+
+    if (!booking) {
+      return {
+        success: false,
+        error: 'Booking not found for this payment',
+      };
+    }
+
+    if (booking.id !== bookingId) {
+      return {
+        success: false,
+        error: 'Booking ID mismatch - possible security issue',
+      };
+    }
+
+    const validation = await validatePackageBookingBeforePayment(bookingId);
+
+    if (!validation.isValid) {
+      return {
+        success: false,
+        error: validation.error || 'Booking validation failed',
+      };
+    }
+
+    const confirmedBooking = await packageBookingService.confirmBooking(bookingId);
+
+    const finalBooking = await packageBookingService.updatePaymentStatus(
+      bookingId,
+      'paid',
+      paymentIntentId,
+      'stripe_card'
+    );
+
+    return {
+      success: true,
+      booking: finalBooking,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Payment confirmation failed';
+    console.error('Package payment success handler error:', error);
+    return {
+      success: false,
+      error: message,
+    };
+  }
+}
+
+/**
  * Hook for handling payment completion in React components
  * Use this in the return URL page after Stripe redirects
  */
@@ -102,4 +171,18 @@ export function usePaymentConfirmation() {
   };
 
   return { confirmPayment };
+}
+
+/**
+ * Hook for handling package payment completion in React components
+ */
+export function usePackagePaymentConfirmation() {
+  const confirmPackagePayment = async (
+    paymentIntentId: string,
+    bookingId: string
+  ): Promise<PackagePaymentSuccessResult> => {
+    return handlePackagePaymentSuccess(paymentIntentId, bookingId);
+  };
+
+  return { confirmPackagePayment };
 }

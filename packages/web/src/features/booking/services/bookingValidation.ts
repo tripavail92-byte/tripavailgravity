@@ -8,12 +8,17 @@
  * - Ensures atomicity of booking creation
  */
 
-import { tourBookingService } from './bookingService';
+import { packageBookingService, tourBookingService } from './bookingService';
 
 export interface BookingValidationResult {
   isValid: boolean;
   availableSlots: number;
   requestedSlots: number;
+  error?: string;
+}
+
+export interface PackageValidationResult {
+  isValid: boolean;
   error?: string;
 }
 
@@ -170,6 +175,115 @@ export async function validateBookingBeforePayment(
     }
 
     // Check expiration
+    if (booking.expires_at) {
+      const expiresAt = new Date(booking.expires_at);
+      const now = new Date();
+
+      if (expiresAt <= now) {
+        return {
+          isValid: false,
+          error: 'Booking hold has expired. Please book again.',
+        };
+      }
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Validation error',
+    };
+  }
+}
+
+/**
+ * Validate package availability for selected date range
+ */
+export async function validatePackageAvailability(params: {
+  package_id: string;
+  check_in_date: string;
+  check_out_date: string;
+}): Promise<PackageValidationResult> {
+  try {
+    const available = await packageBookingService.checkAvailability(
+      params.package_id,
+      params.check_in_date,
+      params.check_out_date
+    );
+
+    if (!available) {
+      return {
+        isValid: false,
+        error: 'Package not available for selected dates',
+      };
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    return {
+      isValid: false,
+      error: error instanceof Error ? error.message : 'Package validation failed',
+    };
+  }
+}
+
+/**
+ * Safe package booking creation with overlap validation
+ */
+export async function createPackageBookingWithValidation(params: {
+  package_id: string;
+  traveler_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  guest_count: number;
+}) {
+  const validation = await validatePackageAvailability(params);
+
+  if (!validation.isValid) {
+    throw new Error(validation.error || 'Package validation failed');
+  }
+
+  try {
+    const booking = await packageBookingService.createPendingBooking(params);
+    return {
+      success: true,
+      booking,
+    };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+
+    if (errorMsg.includes('not available') || errorMsg.includes('Minimum') || errorMsg.includes('Maximum')) {
+      throw new Error(errorMsg);
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Validate package booking before payment
+ * Ensures: booking exists, status=pending, not expired
+ */
+export async function validatePackageBookingBeforePayment(
+  bookingId: string
+): Promise<{ isValid: boolean; error?: string }> {
+  try {
+    const booking = await packageBookingService.getPendingBooking(bookingId);
+
+    if (!booking) {
+      return {
+        isValid: false,
+        error: 'Booking not found',
+      };
+    }
+
+    if (booking.status !== 'pending') {
+      return {
+        isValid: false,
+        error: `Booking is ${booking.status}`,
+      };
+    }
+
     if (booking.expires_at) {
       const expiresAt = new Date(booking.expires_at);
       const now = new Date();
