@@ -21,8 +21,11 @@ serve(async (req) => {
 
   try {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? Deno.env.get('EDGE_SUPABASE_URL');
+    // Supabase disallows setting secrets that start with SUPABASE_.
+    // Use a non-reserved name for the service role key.
+    const supabaseServiceRoleKey =
+      Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('EDGE_SUPABASE_SERVICE_ROLE_KEY');
 
     if (!stripeSecretKey) {
       return new Response(JSON.stringify({ ok: false, error: 'Missing STRIPE_SECRET_KEY' }), {

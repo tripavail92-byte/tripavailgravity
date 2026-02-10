@@ -1,3 +1,9 @@
+.env
+.env.*
+stripe-export.env
+supabase-secrets.env
+supabase/.temp/
+tools/
 # Dependencies
 node_modules
 .pnpm-store
