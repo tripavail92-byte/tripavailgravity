@@ -13,6 +13,7 @@ import {
     Calendar, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { GlassCard } from '@/components/ui/glass';
 import { handlePaymentSuccess } from '@/features/booking';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 
@@ -101,10 +102,12 @@ export default function BookingConfirmationPage() {
     if (confirmationStatus === 'error') {
         return (
             <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-                <motion.div
+                <GlassCard
+                    asMotion
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="max-w-md w-full bg-white rounded-2xl p-8 shadow-xl text-center space-y-6"
+                    variant="card"
+                    className="max-w-md w-full rounded-2xl p-8 text-center space-y-6"
                 >
                     <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto">
                         <AlertCircle className="w-8 h-8 text-red-600" />
@@ -131,7 +134,7 @@ export default function BookingConfirmationPage() {
                             </Button>
                         </div>
                     </div>
-                </motion.div>
+                </GlassCard>
             </div>
         );
     }
@@ -157,11 +160,13 @@ export default function BookingConfirmationPage() {
 
             {/* Main Content */}
             <div className="max-w-2xl mx-auto px-4 py-8">
-                <motion.div
+                <GlassCard
+                    asMotion
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="bg-white rounded-2xl p-8 border border-gray-100 shadow-lg space-y-8"
+                    variant="card"
+                    className="rounded-2xl p-8 space-y-8"
                 >
                     {/* Confirmation Number */}
                     <div className="text-center p-6 bg-primary/5 rounded-xl border border-primary/20">
@@ -273,20 +278,22 @@ export default function BookingConfirmationPage() {
                             Download Confirmation
                         </Button>
                     </div>
-                </motion.div>
+                </GlassCard>
 
                 {/* Support Info */}
-                <motion.div
+                <GlassCard
+                    asMotion
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="mt-8 text-center"
+                    variant="light"
+                    className="mt-8 text-center rounded-2xl p-6"
                 >
                     <p className="text-gray-600 font-medium mb-2">Need help?</p>
                     <a href="mailto:support@tripavail.com" className="text-primary font-bold hover:underline">
                         Contact our support team
                     </a>
-                </motion.div>
+                </GlassCard>
             </div>
         </div>
     );

@@ -2,7 +2,7 @@ import * as React from 'react'
 import { motion, type HTMLMotionProps } from 'motion/react'
 import { cn } from '@/lib/utils'
 
-export type GlassVariant = 'light' | 'dark' | 'card' | 'nav' | 'nav-bottom' | 'button' | 'overlay' | 'badge'
+export type GlassVariant = 'light' | 'dark' | 'card' | 'nav' | 'nav-bottom' | 'button' | 'overlay' | 'badge' | 'performance'
 
 export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -31,12 +31,19 @@ export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
    */
   asMotion?: boolean
   /**
+   * Enable interactive hover effects (scale, glow)
+   * @default false
+   */
+  interactive?: boolean
+  /**
    * Motion props (only used when asMotion is true)
    */
   initial?: HTMLMotionProps<'div'>['initial']
   animate?: HTMLMotionProps<'div'>['animate']
   transition?: HTMLMotionProps<'div'>['transition']
   exit?: HTMLMotionProps<'div'>['exit']
+  whileHover?: HTMLMotionProps<'div'>['whileHover']
+  whileTap?: HTMLMotionProps<'div'>['whileTap']
 }
 
 const variantClasses: Record<GlassVariant, string> = {
@@ -48,6 +55,7 @@ const variantClasses: Record<GlassVariant, string> = {
   button: 'glass-button',
   overlay: 'glass-overlay',
   badge: 'glass-badge',
+  performance: 'glass-performance',
 }
 
 const blurClasses: Record<string, string> = {
@@ -79,7 +87,7 @@ const blurClasses: Record<string, string> = {
  * ```
  */
 export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ className, variant = 'light', blur, asSection, asArticle, asMotion, children, initial, animate, transition, exit, ...props }, ref) => {
+  ({ className, variant = 'light', blur, asSection, asArticle, asMotion, interactive, children, initial, animate, transition, exit, whileHover, whileTap, ...props }, ref) => {
     const glassClass = variantClasses[variant]
     const blurClass = blur ? blurClasses[blur] : ''
     
@@ -87,6 +95,7 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
       glassClass,
       blurClass,
       'transition-all duration-300',
+      interactive && 'hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01] cursor-pointer',
       className
     )
 
@@ -100,6 +109,8 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
           animate={animate}
           transition={transition}
           exit={exit}
+          whileHover={whileHover || (interactive ? { scale: 1.02, y: -2 } : undefined)}
+          whileTap={whileTap || (interactive ? { scale: 0.98 } : undefined)}
           {...(props as any)}
         >
           {children}

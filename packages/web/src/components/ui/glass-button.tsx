@@ -4,16 +4,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const glassButtonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-95',
   {
     variants: {
       variant: {
-        default: 'glass-button text-primary-foreground hover:opacity-90',
-        light: 'bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 hover:border-white/50',
-        dark: 'bg-black/20 backdrop-blur-md hover:bg-black/30 border border-white/20 hover:border-white/30 text-white',
-        outline: 'bg-white/10 backdrop-blur-sm border border-white/30 hover:bg-white/20',
-        ghost: 'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm',
-        floating: 'bg-white/90 backdrop-blur-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 border border-white/50',
+        default: 'glass-button text-primary-foreground hover:opacity-90 hover:shadow-md hover:shadow-primary/20',
+        light: 'bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-white/20',
+        dark: 'bg-black/20 backdrop-blur-md hover:bg-black/30 border border-white/20 hover:border-white/30 text-white hover:shadow-lg hover:shadow-black/20',
+        outline: 'bg-white/10 backdrop-blur-sm border border-white/30 hover:bg-white/20 hover:shadow-md',
+        ghost: 'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
+        floating: 'bg-white/90 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:-translate-y-1 border border-white/50 hover:scale-105',
       },
       size: {
         default: 'h-9 px-4 py-2',
