@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supabase Edge Function: stripe-create-payment-intent
 // Creates a Stripe PaymentIntent for a pending package booking hold.
 

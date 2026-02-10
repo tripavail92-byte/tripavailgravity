@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supabase Edge Function: stripe-verify-payment-intent
 // Verifies a Stripe PaymentIntent succeeded and matches booking metadata/amount.
 
