@@ -1,8 +1,8 @@
-
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Star, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { GlassBadge } from '@/components/ui/glass';
 
 interface PackageCardProps {
     id: string;
@@ -31,9 +31,9 @@ export function PackageCard({ id, image, title, location, duration, rating, pric
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute top-3 left-3">
-                    <Badge variant="secondary" className="glass-badge font-medium capitalize">
+                    <GlassBadge variant="light" size="default" className="font-medium capitalize">
                         {type.replace('-', ' ')}
-                    </Badge>
+                    </GlassBadge>
                 </div>
                 <div className="absolute top-3 right-3">
                     <button className="p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-white hover:text-red-500 transition-colors">

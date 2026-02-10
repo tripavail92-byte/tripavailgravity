@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { MapPin, Clock, Star, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { GlassBadge } from '@/components/ui/glass';
 
 interface TourCardProps {
     id: string;
@@ -53,9 +54,9 @@ export function TourCard({
                                 Featured
                             </Badge>
                         )}
-                        <Badge className="glass-badge text-gray-900 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+                        <GlassBadge variant="light" size="sm" className="text-gray-900 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
                             {type}
-                        </Badge>
+                        </GlassBadge>
                     </div>
 
                     <div className="absolute bottom-4 left-4 right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 opacity-0 group-hover:opacity-100">

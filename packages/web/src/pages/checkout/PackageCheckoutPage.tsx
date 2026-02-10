@@ -7,6 +7,7 @@ import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import {
   createPackageBookingWithValidation,
@@ -291,11 +292,14 @@ export default function PackageCheckoutPage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <motion.div
+            <GlassCard
+              asMotion
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-6 shadow-modern"
+              variant="card"
+              className="rounded-2xl shadow-modern"
             >
+              <GlassContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <Badge variant="secondary" className="mb-2 capitalize">
@@ -321,7 +325,8 @@ export default function PackageCheckoutPage() {
                   {state.guestCount} guest{state.guestCount > 1 ? 's' : ''}
                 </div>
               </div>
-            </motion.div>
+              </GlassContent>
+            </GlassCard>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -348,8 +353,11 @@ export default function PackageCheckoutPage() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 glass-card rounded-2xl p-6 shadow-modern">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Price Summary</h3>
+            <GlassCard variant="card" className="sticky top-24 rounded-2xl shadow-modern">
+              <GlassHeader className="p-6 pb-0">
+                <GlassTitle>Price Summary</GlassTitle>
+              </GlassHeader>
+              <GlassContent className="p-6 pt-4">
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex justify-between">
                   <span>${pricing?.price_per_night || 0} × {nights} night{nights !== 1 ? 's' : ''}</span>
@@ -405,7 +413,8 @@ export default function PackageCheckoutPage() {
                   </div>
                 </>
               )}
-            </div>
+              </GlassContent>
+            </GlassCard>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 
 import { Button } from '@/components/ui/button';
+import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 import { tourBookingService, TourBooking, createBookingWithValidation } from '@/features/booking';
 import { useAuth } from '@/hooks/useAuth';
@@ -300,12 +301,17 @@ export default function TourCheckoutPage() {
                     {/* Left Column: Booking Details */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Tour Summary */}
-                        <motion.div
+                        <GlassCard
+                            asMotion
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="glass-card rounded-2xl p-6 shadow-modern"
+                            variant="card"
+                            className="rounded-2xl shadow-modern"
                         >
-                            <h2 className="text-2xl font-bold text-gray-900 mb-4">Tour Details</h2>
+                            <GlassHeader className="p-6 pb-0">
+                                <GlassTitle>Tour Details</GlassTitle>
+                            </GlassHeader>
+                            <GlassContent className="p-6 pt-4">
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">{tour.title}</h3>
@@ -334,7 +340,8 @@ export default function TourCheckoutPage() {
                                     </p>
                                 </div>
                             </div>
-                        </motion.div>
+                            </GlassContent>
+                        </GlassCard>
 
                         {/* Guest Selector */}
                         {!pendingBooking && (
@@ -386,11 +393,14 @@ export default function TourCheckoutPage() {
 
                         {/* Pending Booking / Payment State */}
                         {pendingBooking && (
-                            <motion.div
+                            <GlassCard
+                                asMotion
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="glass-card rounded-2xl p-6 shadow-modern"
+                                variant="card"
+                                className="rounded-2xl shadow-modern"
                             >
+                                <GlassContent className="p-6">
                                 <div className="space-y-6">
                                     <div className="text-center">
                                         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -453,7 +463,8 @@ export default function TourCheckoutPage() {
                                         )}
                                     </div>
                                 </div>
-                            </motion.div>
+                                </GlassContent>
+                            </GlassCard>
                         )}
 
                         {/* Error Messages */}
@@ -472,8 +483,11 @@ export default function TourCheckoutPage() {
                     {/* Right Column: Price Summary */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-24 space-y-6">
-                            <div className="glass-card rounded-2xl p-6 shadow-modern">
-                                <h3 className="text-lg font-bold text-gray-900 mb-4">Price Summary</h3>
+                            <GlassCard variant="card" className="rounded-2xl shadow-modern">
+                                <GlassHeader className="p-6 pb-0">
+                                    <GlassTitle>Price Summary</GlassTitle>
+                                </GlassHeader>
+                                <GlassContent className="p-6 pt-4">
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-600 font-medium">
@@ -507,10 +521,12 @@ export default function TourCheckoutPage() {
                                         )}
                                     </Button>
                                 )}
-                            </div>
+                                </GlassContent>
+                            </GlassCard>
 
                             {/* Trust Badges */}
-                            <div className="glass-card rounded-2xl p-6 space-y-3">
+                            <GlassCard variant="card" className="rounded-2xl">
+                                <GlassContent className="p-6 space-y-3">
                                 <div className="flex items-center gap-3">
                                     <Shield className="w-5 h-5 text-green-600" />
                                     <span className="text-sm text-gray-600 font-medium">Secure Payment</span>
@@ -523,7 +539,8 @@ export default function TourCheckoutPage() {
                                     <Check className="w-5 h-5 text-green-600" />
                                     <span className="text-sm text-gray-600 font-medium">Instant Confirmation</span>
                                 </div>
-                            </div>
+                                </GlassContent>
+                            </GlassCard>
 
                             {/* Policy Info */}
                             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
