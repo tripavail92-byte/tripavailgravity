@@ -29,6 +29,8 @@ const PackageBookingConfirmationPage = lazy(() => import('@/pages/checkout/Packa
 const PackageDetailsPage = lazy(() => import('@/pages/traveller/PackageDetailsPage'))
 const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutPage'))
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
+const TravellerProfilePage = lazy(() => import('@/pages/traveller/TravellerProfilePage'))
+const AccountSettingsPage = lazy(() => import('@/pages/traveller/AccountSettingsPage'))
 
 // Legal (public)
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
@@ -87,6 +89,10 @@ function App() {
           <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
           <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
           <Route path="/booking/package/confirmation" element={<PackageBookingConfirmationPage />} />
+          
+          {/* Profile & Settings */}
+          <Route path="/profile" element={<TravellerProfilePage />} />
+          <Route path="/settings" element={<AccountSettingsPage />} />
 
           {/* Legal */}
           <Route path="/terms" element={<TermsPage />} />

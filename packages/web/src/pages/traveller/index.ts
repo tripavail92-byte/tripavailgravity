@@ -1,4 +1,10 @@
+// Traveller pages exports
+import Homepage from './Homepage';
+import TravellerProfilePage from './TravellerProfilePage';
+import AccountSettingsPage from './AccountSettingsPage';
 
-// Update this file to export Homepage
-import Homepage from './pages/traveller/Homepage';
-export { Homepage };
+export { 
+  Homepage,
+  TravellerProfilePage,
+  AccountSettingsPage
+};
