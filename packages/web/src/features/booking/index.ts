@@ -20,6 +20,15 @@ export {
   type PaymentSuccessResult,
 } from './services/paymentSuccessHandler';
 
+// Booking Validation
+export {
+  validateAvailableCapacity,
+  createBookingWithValidation,
+  isBookingStillValid,
+  validateBookingBeforePayment,
+  type BookingValidationResult,
+} from './services/bookingValidation';
+
 // Jobs
 export { expireOldPendingBookings } from './jobs/expiryJob';
 export type { ExpiryJobResult } from './jobs/expiryJob';

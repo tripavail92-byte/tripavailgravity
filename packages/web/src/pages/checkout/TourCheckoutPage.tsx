@@ -8,7 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
-import { tourBookingService, TourBooking } from '@/features/booking';
+import { tourBookingService, TourBooking, createBookingWithValidation } from '@/features/booking';
 import { useAuth } from '@/hooks/useAuth';
 
 interface CountdownTimer {
@@ -117,8 +117,9 @@ export default function TourCheckoutPage() {
         setBookingError(null);
 
         try {
-            // Create pending booking with 10-minute hold
-            const booking = await tourBookingService.createPendingBooking({
+            // Use safe booking creation with validation
+            // This handles race conditions and validates capacity atomically
+            const result = await createBookingWithValidation({
                 tour_id: tour.id,
                 schedule_id: schedule.id,
                 traveler_id: user.id,
@@ -131,7 +132,7 @@ export default function TourCheckoutPage() {
                 },
             });
 
-            setPendingBooking(booking);
+            setPendingBooking(result.booking);
 
             // TODO: Next step - proceed to Stripe payment form
             // For now, show the pending booking state with countdown
