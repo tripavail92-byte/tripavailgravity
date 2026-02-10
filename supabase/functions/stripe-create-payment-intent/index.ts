@@ -6,6 +6,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@15.12.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0?target=deno';
+import { verifySupabaseJwtFromRequest } from '../_shared/supabase_jwt.ts';
 
 function corsHeaders(origin: string | null) {
   return {
@@ -42,15 +43,6 @@ serve(async (req) => {
       });
     }
 
-    const authHeader = req.headers.get('Authorization');
-    const jwt = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
-    if (!jwt) {
-      return new Response(JSON.stringify({ ok: false, error: 'Missing Authorization bearer token' }), {
-        status: 401,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
-      });
-    }
-
     const body = await req.json().catch(() => null);
     const booking_id = body?.booking_id as string | undefined;
     const booking_type = (body?.booking_type as string | undefined) ?? 'package';
@@ -71,15 +63,16 @@ serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(jwt);
-    if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ ok: false, error: 'Invalid auth token' }), {
+    let userId: string;
+    try {
+      const verified = await verifySupabaseJwtFromRequest(req, supabaseUrl);
+      userId = verified.userId;
+    } catch (e) {
+      return new Response(JSON.stringify({ ok: false, error: 'Invalid JWT' }), {
         status: 401,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       });
     }
-
-    const userId = userData.user.id;
 
     const bookingSelect = isTour
       ? 'id, traveler_id, status, payment_status, expires_at, total_price, tour_id, schedule_id'
@@ -154,7 +147,7 @@ serve(async (req) => {
       {
         amount: amountCents,
         currency,
-        automatic_payment_methods: { enabled: true },
+        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
         metadata: {
           booking_id,
           booking_type: normalizedType,

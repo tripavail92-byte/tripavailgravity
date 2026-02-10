@@ -4,6 +4,17 @@
 # working directory name when running `supabase init`.
 project_id = "Tripfinal"
 
+# Edge Functions: per-function configuration
+#
+# Supabase's `verify_jwt` flag is incompatible with new JWT Signing Keys.
+# For functions that must work with Signing Keys, we disable the Edge Runtime
+# verification and perform JWT verification inside the function using JWKS.
+[functions.stripe-create-payment-intent]
+verify_jwt = false
+
+[functions.stripe-verify-payment-intent]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.
