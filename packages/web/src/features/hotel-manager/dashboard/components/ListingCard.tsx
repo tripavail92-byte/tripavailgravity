@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/card';
+import { GlassCard, GlassBadge } from '@/components/ui/glass';
 import { Button } from '@/components/ui/button';
 import { Building, Eye, Edit, Pause, Play, MoreVertical } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -45,7 +45,7 @@ export function ListingCard({
     const StatusIcon = config.icon;
 
     return (
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 group">
+        <GlassCard variant="card" className="overflow-hidden rounded-2xl hover:shadow-lg transition-shadow duration-200 group">
             {/* Image */}
             <div className="relative h-48 bg-gradient-to-br from-gray-200 to-gray-300">
                 {imageUrl ? (
@@ -57,10 +57,10 @@ export function ListingCard({
                 )}
 
                 {/* Status Badge */}
-                <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium border ${config.color} backdrop-blur-sm flex items-center gap-1`}>
+                <GlassBadge variant="light" className={`absolute top-3 left-3 flex items-center gap-1 ${config.color}`}>
                     <StatusIcon className="w-3 h-3" />
                     {config.badge}
-                </div>
+                </GlassBadge>
 
                 {/* Actions Menu */}
                 <button className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
@@ -101,6 +101,6 @@ export function ListingCard({
                     </Button>
                 </div>
             </div>
-        </Card>
+        </GlassCard>
     );
 }

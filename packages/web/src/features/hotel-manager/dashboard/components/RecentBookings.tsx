@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/glass';
 import { Button } from '@/components/ui/button';
 import { Calendar, MessageCircle, User, CheckCircle, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -120,7 +120,7 @@ export function RecentBookings() {
 
     return (
         <div>
-            <Card className="p-6">
+            <GlassCard variant="card" className="p-6 rounded-2xl">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h2 className="text-xl font-semibold text-gray-900">Recent Bookings</h2>
@@ -143,7 +143,7 @@ export function RecentBookings() {
                         </motion.div>
                     ))}
                 </div>
-            </Card>
+            </GlassCard>
         </div>
     );
 }

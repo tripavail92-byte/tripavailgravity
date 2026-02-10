@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import { HotelGrid } from '@/components/search/HotelGrid'
 import { SearchForm } from '@/components/search/SearchForm'
 import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -64,7 +65,7 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top Bar with Compact Search */}
-      <div className="bg-white/80 backdrop-blur-md border-b sticky top-16 z-40 shadow-sm">
+      <GlassCard variant="light" className="border-b sticky top-16 z-40 shadow-sm rounded-none">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Mobile: Logo only? Desktop: Mini Search Form? */}
           <div className="hidden md:block flex-1">
@@ -119,7 +120,7 @@ export default function SearchPage() {
             </SheetContent>
           </Sheet>
         </div>
-      </div>
+      </GlassCard>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

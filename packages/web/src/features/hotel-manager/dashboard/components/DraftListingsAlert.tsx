@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/glass';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -82,7 +82,7 @@ export function DraftListingsAlert() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <Card className="border-l-4 border-warning bg-warning-foreground p-6">
+            <GlassCard variant="card" className="border-l-4 border-warning bg-warning-foreground/80 rounded-2xl p-6">
                 <div className="flex items-start gap-4">
                     {/* Icon */}
                     <div className="flex-shrink-0">
@@ -146,7 +146,7 @@ export function DraftListingsAlert() {
                         </div>
                     </div>
                 </div>
-            </Card>
+            </GlassCard>
         </motion.div>
     );
 }

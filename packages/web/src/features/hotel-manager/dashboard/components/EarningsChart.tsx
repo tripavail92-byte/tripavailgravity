@@ -1,10 +1,10 @@
-import { Card } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/glass';
 import { Button } from '@/components/ui/button';
 import { Download, Calendar } from 'lucide-react';
 
 export function EarningsChart() {
     return (
-        <Card className="p-6">
+        <GlassCard variant="card" className="p-6 rounded-2xl">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
@@ -44,6 +44,6 @@ export function EarningsChart() {
                     <p className="text-sm text-gray-500 mt-1">Revenue visualization with Recharts</p>
                 </div>
             </div>
-        </Card>
+        </GlassCard>
     );
 }

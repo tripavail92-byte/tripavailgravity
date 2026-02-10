@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { GlassBadge } from '@/components/ui/glass';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 import { tourBookingService } from '@/features/booking';
 
@@ -145,7 +146,7 @@ export default function TourDetailsPage() {
                                 alt="Tour detail 2"
                                 className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute inset-0 glass-overlay flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Camera className="w-8 h-8 text-white mb-2" />
                             </div>
                         </div>
@@ -160,8 +161,8 @@ export default function TourDetailsPage() {
                     <div className="lg:col-span-2 space-y-10">
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
-                                <Badge className="bg-primary/10 text-primary border-none font-bold">{tour.tour_type}</Badge>
-                                <Badge className="bg-green-50 text-green-700 border-none font-bold">Verified Operator</Badge>
+                                <GlassBadge variant="primary" size="default" className="font-bold">{tour.tour_type}</GlassBadge>
+                                <GlassBadge variant="success" size="default" className="font-bold">Verified Operator</GlassBadge>
                             </div>
                             <h1 className="text-4xl font-black text-gray-900 leading-tight">
                                 {tour.title}

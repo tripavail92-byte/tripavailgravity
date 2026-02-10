@@ -19,6 +19,7 @@ import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { GlassCard } from '@/components/ui/glass'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
@@ -143,7 +144,7 @@ function AirbnbHeader() {
 
       {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
       <div className="hidden md:flex flex-1 justify-center">
-        <div className="flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4">
+        <GlassCard variant="light" className="flex items-center border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4">
           <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">
             Search destinations
           </div>
@@ -156,7 +157,7 @@ function AirbnbHeader() {
               <Search className="w-3 h-3 stroke-[3px]" />
             </div>
           </div>
-        </div>
+        </GlassCard>
       </div>
 
       {/* Right User Menu */}

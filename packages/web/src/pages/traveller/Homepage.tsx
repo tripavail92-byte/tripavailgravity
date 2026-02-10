@@ -74,7 +74,7 @@ export default function Homepage() {
                             Discover hidden gems and curated travel experiences across the globe.
                         </p>
 
-                        <div className="bg-white p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2">
+                        <GlassCard variant="light" className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-2">
                             <div className="flex-1 w-full px-6 flex items-center gap-3 border-b md:border-b-0 md:border-r border-gray-100 py-3 md:py-0">
                                 <Search className="w-5 h-5 text-primary" />
                                 <input
@@ -86,7 +86,7 @@ export default function Homepage() {
                             <Button className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-white font-black text-lg transition-all hover:scale-[1.02] shadow-xl shadow-primary/20">
                                 Explore Now
                             </Button>
-                        </div>
+                        </GlassCard>
                     </motion.div>
                 </div>
             </div>

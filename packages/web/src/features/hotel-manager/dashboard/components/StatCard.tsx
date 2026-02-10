@@ -1,5 +1,5 @@
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { GlassCard } from '@/components/ui/glass';
 
 interface StatCardProps {
     label: string;
@@ -15,7 +15,7 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
     const TrendIcon = isPositive ? TrendingUp : TrendingDown;
 
     return (
-        <Card className="p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer group">
+        <GlassCard variant="card" className="p-6 rounded-xl hover:shadow-lg transition-shadow duration-200 cursor-pointer group">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
@@ -39,6 +39,6 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
                     <Icon className="w-6 h-6" style={{ color: '#9D4EDD' }} />
                 </div>
             </div>
-        </Card>
+        </GlassCard>
     );
 }
