@@ -53,6 +53,7 @@ serve(async (req) => {
     const body = await req.json().catch(() => null);
     const booking_id = body?.booking_id as string | undefined;
     const payment_intent_id = body?.payment_intent_id as string | undefined;
+    const booking_type = (body?.booking_type as string | undefined) ?? 'package';
 
     if (!booking_id || !payment_intent_id) {
       return new Response(JSON.stringify({ ok: false, error: 'booking_id and payment_intent_id are required' }), {
@@ -75,8 +76,11 @@ serve(async (req) => {
 
     const userId = userData.user.id;
 
+    const normalizedType = String(booking_type).toLowerCase();
+    const tableName = normalizedType === 'tour' ? 'tour_bookings' : 'package_bookings';
+
     const { data: booking, error: bookingError } = await supabaseAdmin
-      .from('package_bookings')
+      .from(tableName)
       .select('id, traveler_id, stripe_payment_intent_id, total_price')
       .eq('id', booking_id)
       .single();

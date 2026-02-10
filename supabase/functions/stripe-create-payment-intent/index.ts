@@ -1,6 +1,7 @@
 // @ts-nocheck
 // Supabase Edge Function: stripe-create-payment-intent
-// Creates a Stripe PaymentIntent for a pending package booking hold.
+// Creates a Stripe PaymentIntent for a pending booking hold.
+// Supports: package_bookings and tour_bookings
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@15.12.0?target=deno';
@@ -52,12 +53,19 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => null);
     const booking_id = body?.booking_id as string | undefined;
+    const booking_type = (body?.booking_type as string | undefined) ?? 'package';
+
     if (!booking_id) {
       return new Response(JSON.stringify({ ok: false, error: 'booking_id is required' }), {
         status: 400,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       });
     }
+
+    const normalizedType = String(booking_type).toLowerCase();
+    const isTour = normalizedType === 'tour';
+    const tableName = isTour ? 'tour_bookings' : 'package_bookings';
+    const idempotencyKey = `${normalizedType}_booking_${booking_id}`;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false },
@@ -73,9 +81,13 @@ serve(async (req) => {
 
     const userId = userData.user.id;
 
+    const bookingSelect = isTour
+      ? 'id, traveler_id, status, payment_status, expires_at, total_price, tour_id, schedule_id'
+      : 'id, traveler_id, status, payment_status, expires_at, total_price';
+
     const { data: booking, error: bookingError } = await supabaseAdmin
-      .from('package_bookings')
-      .select('id, traveler_id, status, payment_status, expires_at, total_price')
+      .from(tableName)
+      .select(bookingSelect)
       .eq('id', booking_id)
       .single();
 
@@ -115,6 +127,21 @@ serve(async (req) => {
       });
     }
 
+    let currency = 'usd';
+    if (isTour) {
+      const tourId = booking.tour_id;
+      if (tourId) {
+        const { data: tourRow } = await supabaseAdmin
+          .from('tours')
+          .select('currency')
+          .eq('id', tourId)
+          .maybeSingle();
+
+        const found = String(tourRow?.currency || '').trim();
+        if (found) currency = found.toLowerCase();
+      }
+    }
+
     // Stripe amount is in the smallest currency unit.
     const amountCents = Math.round(totalPrice * 100);
 
@@ -126,21 +153,27 @@ serve(async (req) => {
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount: amountCents,
-        currency: 'usd',
+        currency,
         automatic_payment_methods: { enabled: true },
         metadata: {
           booking_id,
-          booking_type: 'package',
+          booking_type: normalizedType,
           traveler_id: userId,
+          ...(isTour
+            ? {
+                tour_id: booking.tour_id ?? '',
+                schedule_id: booking.schedule_id ?? '',
+              }
+            : {}),
         },
       },
       {
-        idempotencyKey: `package_booking_${booking_id}`,
+        idempotencyKey,
       }
     );
 
     await supabaseAdmin
-      .from('package_bookings')
+      .from(tableName)
       .update({
         stripe_payment_intent_id: paymentIntent.id,
         payment_status: 'processing',

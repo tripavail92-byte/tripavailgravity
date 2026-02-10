@@ -118,22 +118,30 @@ export default function TourCheckoutPage() {
             setBookingError(null);
 
             try {
+                const { data: sessionData } = await supabase.auth.getSession();
+                const accessToken = sessionData?.session?.access_token;
+
+                if (!accessToken) {
+                    throw new Error('Not authenticated');
+                }
+
                 const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
                     body: {
                         booking_id: pendingBooking.id,
                         booking_type: 'tour',
-                        amount: totalPrice,
-                        currency: tour?.currency?.toLowerCase() || 'usd',
-                        metadata: {
-                            tour_id: tour?.id,
-                            schedule_id: schedule?.id,
-                            traveler_id: user?.id,
-                            guest_count: guestCount,
-                        },
+                    },
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
                     },
                 });
 
                 if (error) {
+                    const msg = String((error as any)?.message || error);
+                    if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
+                        throw new Error(
+                            'Payments are not deployed for this Supabase project (missing Edge Function: stripe-create-payment-intent).'
+                        );
+                    }
                     throw error;
                 }
 
