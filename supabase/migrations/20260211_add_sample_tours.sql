@@ -28,7 +28,7 @@ BEGIN
             requirements, min_participants, max_participants, min_age, max_age,
             difficulty_level, languages, group_discounts, pricing_tiers, seasonal_pricing,
             peak_season_multiplier, off_season_multiplier, deposit_required, deposit_percentage,
-            cancellation_policy, rating, review_count, is_active, is_verified, is_featured
+            cancellation_policy, rating, review_count, is_active, is_verified, is_featured, is_published
         ) VALUES
         -- Tour 1: Adventure
         (
@@ -53,7 +53,7 @@ BEGIN
             '[{"id": "1", "name": "Solo/Duo", "minPeople": 1, "maxPeople": 2, "pricePerPerson": 189}, {"id": "2", "name": "Small Group", "minPeople": 3, "maxPeople": 6, "pricePerPerson": 169}, {"id": "3", "name": "Large Group", "minPeople": 7, "maxPeople": 12, "pricePerPerson": 149}]'::jsonb,
             false, 1.0, 1.0, true, 30,
             'moderate',
-            4.8, 127, true, true, true
+            4.8, 127, true, true, true, true
         ),
         -- Tour 2: Cultural
         (
@@ -78,7 +78,7 @@ BEGIN
             '[{"id": "1", "name": "Individual", "minPeople": 1, "maxPeople": 1, "pricePerPerson": 95}, {"id": "2", "name": "Group", "minPeople": 2, "maxPeople": 10, "pricePerPerson": 85}]'::jsonb,
             false, 1.0, 1.0, false, 0,
             'flexible',
-            4.9, 243, true, true, true
+            4.9, 243, true, true, true, true
         ),
         -- Tour 3: Adventure (Extreme)
         (
@@ -103,7 +103,7 @@ BEGIN
             '[{"id": "1", "name": "Standard", "minPeople": 1, "maxPeople": 8, "pricePerPerson": 199}]'::jsonb,
             true, 1.3, 0.85, true, 50,
             'strict',
-            5.0, 89, true, true, true
+            5.0, 89, true, true, true, true
         ),
         -- Tour 4:Cultural
         (
@@ -128,7 +128,7 @@ BEGIN
             '[{"id": "1", "name": "Adult", "minPeople": 1, "maxPeople": 99, "pricePerPerson": 65}, {"id": "2", "name": "Student/Senior", "minPeople": 1, "maxPeople": 99, "pricePerPerson": 55}]'::jsonb,
             false, 1.0, 1.0, false, 0,
             'flexible',
-            4.7, 512, true, true, false
+            4.7, 512, true, true, false, true
         ),
         -- Tour 5: Nature
         (
@@ -153,7 +153,7 @@ BEGIN
             '[{"id": "1", "name": "Private (1-2 pax)", "minPeople": 1, "maxPeople": 2, "pricePerPerson": 85}, {"id": "2", "name": "Private (3-4 pax)", "minPeople": 3, "maxPeople": 4, "pricePerPerson": 70}, {"id": "3", "name": "Private (5-6 pax)", "minPeople": 5, "maxPeople": 6, "pricePerPerson": 60}]'::jsonb,
             false, 1.0, 1.0, false, 0,
             'moderate',
-            4.8, 178, true, true, true
+            4.8, 178, true, true, true, true
         );
         
         -- Add tour schedules (14 days of availability for each tour)
