@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-    ArrowLeft, Clock, MapPin, Users, AlertCircle,
+    ArrowLeft, Clock, MapPin, AlertCircle,
     Loader2, Check, ChevronRight, Shield, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 import { tourBookingService, TourBooking, createBookingWithValidation } from '@/features/booking';
 import { useAuth } from '@/hooks/useAuth';

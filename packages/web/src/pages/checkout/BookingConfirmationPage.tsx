@@ -6,14 +6,13 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-    Check, Loader2, ArrowRight, Download, Share2,
-    Calendar, MapPin, Users, DollarSign, AlertCircle
+    Check, Loader2, Download,
+    Calendar, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { handlePaymentSuccess } from '@/features/booking';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 
@@ -42,16 +41,17 @@ export default function BookingConfirmationPage() {
             try {
                 const result = await handlePaymentSuccess(paymentIntentId, bookingId);
 
-                if (result.success && result.booking) {
-                    setConfirmedBooking(result.booking);
+                const booking = result.booking;
+                if (result.success && booking) {
+                    setConfirmedBooking(booking);
 
                     // Fetch tour and schedule details
-                    const foundTour = await tourService.getTourById(result.booking.tour_id);
+                    const foundTour = await tourService.getTourById(booking.tour_id);
                     setTour(foundTour);
 
                     if (foundTour) {
-                        const schedules = await tourService.getTourSchedules(result.booking.tour_id);
-                        const mainSchedule = schedules.find(s => s.id === result.booking.schedule_id);
+                        const schedules = await tourService.getTourSchedules(booking.tour_id);
+                        const mainSchedule = schedules.find(s => s.id === booking.schedule_id);
                         setSchedule(mainSchedule || null);
                     }
 

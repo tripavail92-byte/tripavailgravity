@@ -444,12 +444,8 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
     <div className="space-y-4">
       <PaymentElement
         onReady={() => setPaymentReady(true)}
-        onChange={event => {
-          if (event.error) {
-            setError(event.error.message ?? 'Payment form error');
-          } else if (error) {
-            setError(null);
-          }
+        onChange={() => {
+          if (error) setError(null);
         }}
       />
 

@@ -78,7 +78,7 @@ export async function handlePaymentSuccess(
     }
 
     // STEP 4: Confirm the pending booking (transition to confirmed)
-    const confirmedBooking = await tourBookingService.confirmBooking(bookingId);
+    await tourBookingService.confirmBooking(bookingId);
 
     // STEP 5: Update payment status to paid
     const finalBooking = await tourBookingService.updatePaymentStatus(
@@ -135,7 +135,7 @@ export async function handlePackagePaymentSuccess(
       };
     }
 
-    const confirmedBooking = await packageBookingService.confirmBooking(bookingId);
+    await packageBookingService.confirmBooking(bookingId);
 
     const finalBooking = await packageBookingService.updatePaymentStatus(
       bookingId,

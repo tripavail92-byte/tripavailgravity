@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "include": [
+    "packages/web/src",
+    "packages/shared/src"
+  ],
+  "exclude": [
+    "node_modules",
+    "supabase/**",
+    "**/dist/**",
+    "**/build/**"
+  ]
+}
