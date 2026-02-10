@@ -40,12 +40,66 @@ async function testStripeFlow() {
     console.log(`✅ Authenticated: ${authData.user.email} (${authData.user.id})`);
     const jwt = authData.session.access_token;
 
+    try {
+      const payloadPart = jwt.split('.')[1];
+      const padded = payloadPart + '='.repeat((4 - (payloadPart.length % 4)) % 4);
+      const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+      console.log('JWT payload:', {
+        iss: decoded.iss,
+        aud: decoded.aud,
+        exp: decoded.exp,
+        sub: decoded.sub,
+        role: decoded.role,
+      });
+    } catch (err) {
+      console.log('⚠️  Failed to decode JWT payload for debugging');
+    }
+
     // Step 2: Create booking hold
     console.log('\n2️⃣  Creating package booking hold...');
-    const checkInDate = new Date();
-    checkInDate.setDate(checkInDate.getDate() + 30); // 30 days from now
-    const checkOutDate = new Date(checkInDate);
-    checkOutDate.setDate(checkOutDate.getDate() + 3); // 3 nights minimum
+    const stayNights = 3;
+    const searchDays = 60;
+    let checkInDate = null;
+    let checkOutDate = null;
+
+    const baseDate = new Date();
+    baseDate.setDate(baseDate.getDate() + 30); // start search 30 days from now
+
+    for (let offset = 0; offset <= searchDays; offset += 1) {
+      const candidateCheckIn = new Date(baseDate);
+      candidateCheckIn.setDate(baseDate.getDate() + offset);
+      const candidateCheckOut = new Date(candidateCheckIn);
+      candidateCheckOut.setDate(candidateCheckOut.getDate() + stayNights);
+
+      const { data: available, error: availabilityError } = await supabase.rpc(
+        'check_package_availability',
+        {
+          package_id_param: TEST_PACKAGE_ID,
+          check_in_param: candidateCheckIn.toISOString(),
+          check_out_param: candidateCheckOut.toISOString(),
+        }
+      );
+
+      if (availabilityError) {
+        console.log(`❌ Availability check failed: ${availabilityError.message}`);
+        return;
+      }
+
+      if (available) {
+        checkInDate = candidateCheckIn;
+        checkOutDate = candidateCheckOut;
+        break;
+      }
+    }
+
+    if (!checkInDate || !checkOutDate) {
+      console.log('❌ No available dates found in the next 60 days');
+      return;
+    }
+
+    console.log(
+      `✅ Available dates found: ${checkInDate.toDateString()} → ${checkOutDate.toDateString()}`
+    );
 
     const { data: bookingId, error: holdError } = await supabase.rpc('create_package_booking_atomic', {
       package_id_param: TEST_PACKAGE_ID,
@@ -84,27 +138,39 @@ async function testStripeFlow() {
 
     // Step 3: Create Stripe PaymentIntent via Edge Function
     console.log('\n3️⃣  Creating Stripe PaymentIntent...');
-    const { data: piData, error: piError } = await supabase.functions.invoke(
-      'stripe-create-payment-intent',
-      {
-        body: { booking_id: bookingId },
-        headers: { Authorization: `Bearer ${jwt}` },
-      }
-    );
+    const piResponse = await fetch(`${SUPABASE_URL}/functions/v1/stripe-create-payment-intent`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        apikey: SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ booking_id: bookingId }),
+    });
 
-    if (piError) {
-      console.log(`❌ PaymentIntent creation failed: ${piError.message}`);
+    const piText = await piResponse.text();
+    if (!piResponse.ok) {
+      console.log(`❌ PaymentIntent creation failed: status ${piResponse.status}`);
+      console.log(piText || '(no response body)');
       return;
     }
 
-    if (!piData.ok) {
-      console.log(`❌ Edge function returned error: ${piData.error}`);
+    let piData = null;
+    try {
+      piData = JSON.parse(piText);
+    } catch {
+      console.log('❌ PaymentIntent creation failed: invalid JSON response');
+      console.log(piText || '(no response body)');
+      return;
+    }
+
+    if (!piData?.ok) {
+      console.log(`❌ Edge function returned error: ${piData?.error || 'Unknown error'}`);
       return;
     }
 
     console.log(`✅ PaymentIntent created successfully`);
     console.log(`   Client Secret: ${piData.client_secret.substring(0, 30)}...`);
-    console.log(`   Amount: $${piData.amount / 100}`);
 
     // Step 4: Verify booking status
     console.log('\n4️⃣  Verifying booking status...');

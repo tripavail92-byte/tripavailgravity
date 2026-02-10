@@ -49,29 +49,6 @@ serve(async (req) => {
       });
     }
 
-    // Decode JWT payload to extract user ID (JWT has 3 parts separated by dots: header.payload.signature)
-    let userId: string | undefined;
-    try {
-      const parts = jwt.split('.');
-      if (parts.length !== 3) {
-        throw new Error('Invalid JWT format');
-      }
-      // Decode the payload (second part). Add padding if necessary for Base64URL decoding.
-      const payload = parts[1];
-      const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-      const decoded = atob(padded);
-      const jwtPayload = JSON.parse(decoded);
-      userId = jwtPayload.sub; // 'sub' claim contains the user ID
-      if (!userId) {
-        throw new Error('No user ID in JWT');
-      }
-    } catch (err) {
-      return new Response(JSON.stringify({ ok: false, error: 'Invalid auth token: ' + (err instanceof Error ? err.message : 'unknown') }), {
-        status: 401,
-        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
-      });
-    }
-
     const body = await req.json().catch(() => null);
     const booking_id = body?.booking_id as string | undefined;
     if (!booking_id) {
@@ -84,6 +61,16 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false },
     });
+
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(jwt);
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ ok: false, error: 'Invalid auth token' }), {
+        status: 401,
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = userData.user.id;
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('package_bookings')
