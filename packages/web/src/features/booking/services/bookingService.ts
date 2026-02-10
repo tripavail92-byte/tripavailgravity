@@ -282,7 +282,26 @@ export const packageBookingService = {
     });
 
     if (error) throw toError(error, 'Failed to calculate package price');
-    return data as { total_price: number; price_per_night: number; number_of_nights: number };
+
+    // PostgREST returns SETOF / TABLE results as an array.
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) {
+      throw new Error('Failed to calculate package price: no pricing returned');
+    }
+
+    const total_price = Number((row as any).total_price);
+    const price_per_night = Number((row as any).price_per_night);
+    const number_of_nights = Number((row as any).number_of_nights);
+
+    if (
+      !Number.isFinite(total_price) ||
+      !Number.isFinite(price_per_night) ||
+      !Number.isFinite(number_of_nights)
+    ) {
+      throw new Error('Failed to calculate package price: invalid pricing response');
+    }
+
+    return { total_price, price_per_night, number_of_nights };
   },
 
   /**
