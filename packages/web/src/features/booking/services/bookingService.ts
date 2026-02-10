@@ -9,6 +9,7 @@ export interface TourBooking {
   total_price: number;
   pax_count: number;
   booking_date: string;
+  expires_at?: string; // 10-minute hold expiration timestamp
   stripe_payment_intent_id?: string;
   payment_status?: 'unpaid' | 'processing' | 'paid' | 'failed' | 'refunded';
   payment_method?: string;
@@ -100,14 +101,118 @@ export const tourBookingService = {
   async getBookingByPaymentIntent(paymentIntentId: string): Promise<TourBooking | null> {
     const { data, error } = await supabase
       .from('tour_bookings')
-      .select('*')
       .eq('stripe_payment_intent_id', paymentIntentId)
+      .select('*')
       .single();
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
     return (data as TourBooking) || null;
   },
-};
+
+  /**
+   * Calculate available slots for a schedule
+   * Formula: total_capacity - SUM(confirmed pax_count) - SUM(active pending pax_count)
+   * Active pending = status='pending' AND expires_at > NOW
+   */
+  async getAvailableSlots(scheduleId: string): Promise<number> {
+    const { data, error } = await supabase.rpc('get_available_slots', {
+      schedule_id_param: scheduleId,
+    });
+
+    if (error) throw error;
+    return data as number;
+  },
+
+  /**
+   * Create a pending booking (temporary hold for 10 minutes)
+   * This counts against available capacity immediately
+   * If not confirmed within 10 mins, it auto-expires and slots are released
+   */
+  async createPendingBooking(params: {
+    tour_id: string;
+    schedule_id: string;
+    traveler_id: string;
+    pax_count: number;
+    total_price: number;
+    metadata?: any;
+  }): Promise<TourBooking> {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // NOW + 10 minutes
+
+    const booking: Omit<TourBooking, 'id' | 'booking_date'> = {
+      tour_id: params.tour_id,
+      schedule_id: params.schedule_id,
+      traveler_id: params.traveler_id,
+      pax_count: params.pax_count,
+      total_price: params.total_price,
+      status: 'pending',
+      expires_at: expiresAt.toISOString(),
+      payment_status: 'unpaid',
+      metadata: params.metadata || {},
+    };
+
+    const { data, error } = await supabase
+      .from('tour_bookings')
+      .insert(booking)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as TourBooking;
+  },
+
+  /**
+   * Confirm a pending booking after successful payment
+   * Transitions: pending → confirmed
+   * Permanently deducts slots from schedule capacity
+   */
+  async confirmBooking(bookingId: string): Promise<TourBooking> {
+    const { data, error } = await supabase
+      .from('tour_bookings')
+      .update({
+        status: 'confirmed',
+        payment_status: 'paid',
+      })
+      .eq('id', bookingId)
+      .eq('status', 'pending') // Only confirm if currently pending
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as TourBooking;
+  },
+
+  /**
+   * Auto-expire pending bookings that have exceeded 10-minute hold
+   * Called by background job every 1-2 minutes
+   * Expired bookings release their reserved slots back to capacity
+   */
+  async expirePendingBookings(): Promise<number> {
+    const { data, error, status } = await supabase
+      .from('tour_bookings')
+      .update({ status: 'expired' })
+      .eq('status', 'pending')
+      .lt('expires_at', new Date().toISOString())
+      .select();
+
+    if (error) throw error;
+    return (data as any[]).length; // Return count of expired bookings
+  },
+
+  /**
+   * Get a pending booking by ID (useful for checking expiration status)
+   */
+  async getPendingBooking(bookingId: string): Promise<TourBooking | null> {
+    const { data, error } = await supabase
+      .from('tour_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .eq('status', 'pending')
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return (data as TourBooking) || null;
+  },
+}
 
 /**
  * Package Booking Service
