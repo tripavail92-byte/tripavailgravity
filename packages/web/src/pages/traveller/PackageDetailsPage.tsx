@@ -133,6 +133,22 @@ export default function PackageDetailsPage() {
                 return;
             }
 
+            const minNightsLocal = Number(packageData?.minimum_nights ?? 1);
+            const maxNightsLocal = Number(packageData?.maximum_nights ?? 30);
+            const nightsLocal = Math.round(
+                (dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            if (nightsLocal > 0 && (nightsLocal < minNightsLocal || nightsLocal > maxNightsLocal)) {
+                setPriceQuote(null);
+                setAvailabilityError(
+                    nightsLocal < minNightsLocal
+                        ? `Minimum ${minNightsLocal} nights required`
+                        : `Maximum ${maxNightsLocal} nights allowed`
+                );
+                return;
+            }
+
             const checkIn = formatDateParam(dateRange.from);
             const checkOut = formatDateParam(dateRange.to);
 
@@ -168,7 +184,7 @@ export default function PackageDetailsPage() {
         };
 
         checkAvailabilityAndPrice();
-    }, [dateRange?.from, dateRange?.to, id]);
+    }, [dateRange?.from, dateRange?.to, id, packageData?.minimum_nights, packageData?.maximum_nights]);
 
     if (loading) {
         return (
@@ -230,6 +246,16 @@ export default function PackageDetailsPage() {
     const nights = dateRange?.from && dateRange?.to
         ? Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
+    const minNights = Number(packageData?.minimum_nights ?? 1);
+    const maxNights = Number(packageData?.maximum_nights ?? 30);
+    const isStayLengthValid = nights <= 0 || (nights >= minNights && nights <= maxNights);
+    const stayLengthMessage = nights <= 0
+        ? `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`
+        : isStayLengthValid
+            ? `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`
+            : nights < minNights
+                ? `Minimum ${minNights} nights required`
+                : `Maximum ${maxNights} nights allowed`;
     const basePrice = Number(packageData?.base_price_per_night || 0);
     const displayBasePrice = priceQuote?.price_per_night || basePrice;
     const totalPrice = priceQuote?.total_price || 0;
@@ -238,6 +264,11 @@ export default function PackageDetailsPage() {
     const handleRequestToBook = async () => {
         if (!id || !dateRange?.from || !dateRange?.to) {
             setAvailabilityError('Please select check-in and check-out dates.');
+            return;
+        }
+
+        if (!isStayLengthValid) {
+            setAvailabilityError(stayLengthMessage);
             return;
         }
 
@@ -597,6 +628,15 @@ export default function PackageDetailsPage() {
                                         </PopoverContent>
                                     </Popover>
 
+                                    <div className="px-3 py-2 border-b border-gray-200">
+                                        <p className={cn(
+                                            'text-xs',
+                                            isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium'
+                                        )}>
+                                            {stayLengthMessage}
+                                        </p>
+                                    </div>
+
                                     {/* Guest Selector */}
                                     <Popover open={isGuestOpen} onOpenChange={setIsGuestOpen}>
                                         <PopoverTrigger asChild>
@@ -641,7 +681,7 @@ export default function PackageDetailsPage() {
                                 <Button
                                     className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
                                     onClick={handleRequestToBook}
-                                    disabled={isCheckingAvailability}
+                                    disabled={isCheckingAvailability || !dateRange?.from || !dateRange?.to || !isStayLengthValid}
                                 >
                                     {isCheckingAvailability ? 'Checking availability...' : 'Continue to Booking'}
                                 </Button>

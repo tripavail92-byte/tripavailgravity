@@ -1,5 +1,17 @@
 import { supabase } from '@/lib/supabase';
 
+function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
+  if (error instanceof Error) return error;
+  if (typeof error === 'string') return new Error(error);
+  if (error && typeof error === 'object') {
+    const maybeMessage = (error as any).message;
+    if (typeof maybeMessage === 'string' && maybeMessage.trim().length > 0) {
+      return new Error(maybeMessage);
+    }
+  }
+  return new Error(fallbackMessage);
+}
+
 export interface TourBooking {
   id: string;
   tour_id: string;
@@ -104,8 +116,8 @@ export const tourBookingService = {
   async getBookingByPaymentIntent(paymentIntentId: string): Promise<TourBooking | null> {
     const { data, error } = await supabase
       .from('tour_bookings')
-      .eq('stripe_payment_intent_id', paymentIntentId)
       .select('*')
+      .eq('stripe_payment_intent_id', paymentIntentId)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
@@ -190,7 +202,7 @@ export const tourBookingService = {
    * Expired bookings release their reserved slots back to capacity
    */
   async expirePendingBookings(): Promise<number> {
-    const { data, error, status } = await supabase
+    const { data, error } = await supabase
       .from('tour_bookings')
       .update({ status: 'expired' })
       .eq('status', 'pending')
@@ -254,7 +266,7 @@ export const packageBookingService = {
       check_out_param: checkOut,
     });
 
-    if (error) throw error;
+    if (error) throw toError(error, 'Failed to check package availability');
     return data as boolean;
   },
 
@@ -269,7 +281,7 @@ export const packageBookingService = {
       check_out_param: checkOut,
     });
 
-    if (error) throw error;
+    if (error) throw toError(error, 'Failed to calculate package price');
     return data as { total_price: number; price_per_night: number; number_of_nights: number };
   },
 
@@ -292,7 +304,7 @@ export const packageBookingService = {
       guest_count_param: params.guest_count,
     });
 
-    if (error) throw error;
+    if (error) throw toError(error, 'Failed to create booking hold');
 
     const bookingId = data as string;
     const { data: booking, error: bookingError } = await supabase
@@ -301,7 +313,7 @@ export const packageBookingService = {
       .eq('id', bookingId)
       .single();
 
-    if (bookingError) throw bookingError;
+    if (bookingError) throw toError(bookingError, 'Failed to load booking hold');
     return booking as PackageBooking;
   },
 

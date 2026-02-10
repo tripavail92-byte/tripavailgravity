@@ -72,7 +72,14 @@ export default function PackageCheckoutPage() {
 
   useEffect(() => {
     const loadPricing = async () => {
-      if (!id || !state?.checkIn || !state?.checkOut || pricing) return;
+      const hasValidPricing =
+        !!pricing &&
+        typeof pricing.number_of_nights === 'number' &&
+        pricing.number_of_nights > 0 &&
+        typeof pricing.total_price === 'number' &&
+        pricing.total_price > 0;
+
+      if (!id || !state?.checkIn || !state?.checkOut || hasValidPricing) return;
 
       try {
         const calculated = await packageBookingService.calculatePrice(
@@ -164,6 +171,19 @@ export default function PackageCheckoutPage() {
   const checkOutDate = format(new Date(state.checkOut), 'MMM d, yyyy');
   const nights = pricing?.number_of_nights || 0;
 
+  const minNights = Number(packageData?.minimum_nights ?? 1);
+  const maxNights = Number(packageData?.maximum_nights ?? 30);
+  const computedNights = Math.round(
+    (new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const stayNights = nights || computedNights;
+  const isStayLengthValid = stayNights > 0 && stayNights >= minNights && stayNights <= maxNights;
+  const stayLengthMessage = !isStayLengthValid
+    ? stayNights < minNights
+      ? `Minimum ${minNights} nights required`
+      : `Maximum ${maxNights} nights allowed`
+    : `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`;
+
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
       <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
@@ -224,6 +244,11 @@ export default function PackageCheckoutPage() {
                 We hold your booking for 10 minutes while you complete payment. If the timer expires,
                 you will need to start over.
               </p>
+                <p className={
+                  'mt-3 text-xs ' + (isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium')
+                }>
+                  {stayLengthMessage}
+                </p>
             </motion.div>
 
             {bookingError && (
@@ -250,7 +275,7 @@ export default function PackageCheckoutPage() {
               <Button
                 className="w-full h-12 mt-6 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
                 onClick={handleCreatePendingBooking}
-                disabled={processingBooking || !!pendingBooking}
+                disabled={processingBooking || !!pendingBooking || !isStayLengthValid}
               >
                 {processingBooking ? 'Creating hold...' : pendingBooking ? 'Hold active' : 'Hold booking'}
               </Button>

@@ -250,13 +250,18 @@ export async function createPackageBookingWithValidation(params: {
       booking,
     };
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorMsg =
+      error instanceof Error
+        ? error.message
+        : typeof (error as any)?.message === 'string'
+          ? String((error as any).message)
+          : 'Unknown error';
 
     if (errorMsg.includes('not available') || errorMsg.includes('Minimum') || errorMsg.includes('Maximum')) {
       throw new Error(errorMsg);
     }
 
-    throw error;
+    throw new Error(errorMsg);
   }
 }
 
