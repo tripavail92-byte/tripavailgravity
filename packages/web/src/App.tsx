@@ -21,6 +21,7 @@ import CreateTourPage from '@/pages/tour-operator/tours/create/CreateTourPage'
 import TourDetailsPage from '@/pages/traveller/TourDetailsPage'
 import TourCheckoutPage from '@/pages/checkout/TourCheckoutPage'
 import BookingConfirmationPage from '@/pages/checkout/BookingConfirmationPage'
+import PackageBookingConfirmationPage from '@/pages/checkout/PackageBookingConfirmationPage'
 import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
 import PackageCheckoutPage from '@/pages/checkout/PackageCheckoutPage'
 import Homepage from '@/pages/traveller/Homepage'
@@ -68,6 +69,7 @@ function App() {
           <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
           <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
           <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
+          <Route path="/booking/package/confirmation" element={<PackageBookingConfirmationPage />} />
         </Route>
 
         {/* Authenticated Routes with Drawer (Purple Theme) */}

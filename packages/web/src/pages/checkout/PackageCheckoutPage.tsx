@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react';
 import { format } from 'date-fns';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,8 @@ import {
   type PackageBooking,
 } from '@/features/booking';
 import { useAuth } from '@/hooks/useAuth';
+import { getStripe } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 
 interface CountdownTimer {
   minutes: number;
@@ -45,6 +48,9 @@ export default function PackageCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [processingBooking, setProcessingBooking] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
+  const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -120,6 +126,38 @@ export default function PackageCheckoutPage() {
     return () => clearInterval(interval);
   }, [pendingBooking?.expires_at]);
 
+  useEffect(() => {
+    const createPaymentIntent = async () => {
+      if (!pendingBooking?.id || clientSecret || creatingPaymentIntent) return;
+
+      setCreatingPaymentIntent(true);
+      setBookingError(null);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
+          body: { booking_id: pendingBooking.id },
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data?.client_secret) {
+          throw new Error(data?.error || 'Failed to start payment');
+        }
+
+        setClientSecret(String(data.client_secret));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to start payment';
+        setBookingError(message);
+      } finally {
+        setCreatingPaymentIntent(false);
+      }
+    };
+
+    createPaymentIntent();
+  }, [pendingBooking?.id, clientSecret, creatingPaymentIntent]);
+
   const handleCreatePendingBooking = async () => {
     if (!id || !user?.id || !state?.checkIn || !state?.checkOut || !state?.guestCount) {
       setBookingError('Missing booking details. Please try again.');
@@ -139,6 +177,7 @@ export default function PackageCheckoutPage() {
       });
 
       setPendingBooking(result.booking as PackageBooking);
+      setClientSecret(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create booking hold';
       setBookingError(message);
@@ -147,6 +186,23 @@ export default function PackageCheckoutPage() {
       setProcessingBooking(false);
     }
   };
+
+  const stripePromise = getStripe();
+
+  useEffect(() => {
+    let cancelled = false;
+    stripePromise
+      .then(stripe => {
+        if (!cancelled) setStripeAvailable(!!stripe);
+      })
+      .catch(() => {
+        if (!cancelled) setStripeAvailable(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stripePromise]);
 
   if (loading) {
     return (
@@ -272,22 +328,111 @@ export default function PackageCheckoutPage() {
                 </div>
               </div>
 
-              <Button
-                className="w-full h-12 mt-6 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
-                onClick={handleCreatePendingBooking}
-                disabled={processingBooking || !!pendingBooking || !isStayLengthValid}
-              >
-                {processingBooking ? 'Creating hold...' : pendingBooking ? 'Hold active' : 'Hold booking'}
-              </Button>
+              {!pendingBooking ? (
+                <>
+                  <Button
+                    className="w-full h-12 mt-6 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
+                    onClick={handleCreatePendingBooking}
+                    disabled={processingBooking || !isStayLengthValid}
+                  >
+                    {processingBooking ? 'Starting checkout...' : 'Continue to Payment'}
+                  </Button>
 
-              <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                <Shield className="w-4 h-4 text-emerald-500" />
-                Secure checkout. No charges until you confirm.
-              </div>
+                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                    <Shield className="w-4 h-4 text-emerald-500" />
+                    Secure checkout. You’ll enter card details next.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                    <div className="text-sm font-semibold text-gray-900 mb-3">Payment</div>
+
+                    {stripeAvailable === false ? (
+                      <div className="text-sm text-red-600">
+                        Payments are not configured.
+                      </div>
+                    ) : !clientSecret ? (
+                      <div className="text-sm text-gray-600">
+                        {creatingPaymentIntent ? 'Preparing secure payment...' : 'Preparing secure payment...'}
+                      </div>
+                    ) : (
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <PackagePaymentForm
+                          bookingId={pendingBooking.id}
+                          total={Number(pricing?.total_price || 0)}
+                        />
+                      </Elements>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                    <Shield className="w-4 h-4 text-emerald-500" />
+                    Your reservation expires when the timer ends.
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PackagePaymentForm(props: { bookingId: string; total: number }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePay = async () => {
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const returnUrl =
+        window.location.origin +
+        `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`;
+
+      const result = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: returnUrl },
+        redirect: 'if_required',
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || 'Payment failed');
+      }
+
+      const paymentIntentId = result.paymentIntent?.id;
+      if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
+        navigate(
+          `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <PaymentElement />
+
+      {error && <div className="text-sm text-red-600">{error}</div>}
+
+      <Button
+        className="w-full h-12 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
+        onClick={handlePay}
+        disabled={!stripe || !elements || submitting}
+      >
+        {submitting ? 'Processing...' : `Pay $${Number(props.total || 0).toLocaleString()}`}
+      </Button>
     </div>
   );
 }
