@@ -103,7 +103,7 @@ export default function TourDetailsPage() {
     return (
         <div className="bg-white min-h-screen pb-20">
             {/* Top Navigation */}
-            <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+            <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
                     <button
                         onClick={() => navigate(-1)}
@@ -300,8 +300,8 @@ export default function TourDetailsPage() {
 
                     {/* Right Column: Booking Card */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-24 space-y-6">
-                            <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xl shadow-gray-200/50 space-y-6">
+                        <div className="sticky top-20 z-30 space-y-6">
+                            <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-lg shadow-gray-200/30 space-y-6">
                                 <div className="flex items-baseline justify-between">
                                     <div className="space-y-1">
                                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Price per person</p>

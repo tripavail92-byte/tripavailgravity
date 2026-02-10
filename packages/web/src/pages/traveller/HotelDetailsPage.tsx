@@ -62,7 +62,7 @@ export default function HotelDetailsPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header / Nav */}
-      <header className="fixed top-16 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-40 border-b flex items-center justify-between px-4 lg:px-20">
+      <header className="fixed top-16 left-0 right-0 h-16 bg-white z-40 border-b flex items-center justify-between px-4 lg:px-20">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>
@@ -76,7 +76,7 @@ export default function HotelDetailsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-6xl pt-32 px-4 lg:px-6">
+      <main className="container mx-auto max-w-6xl pt-36 px-4 lg:px-6">
         {/* Title Section */}
         <div className="mb-6">
           <motion.h1
@@ -194,7 +194,7 @@ export default function HotelDetailsPage() {
 
           {/* Right Column: Booking Card (Sticky) */}
           <div className="relative">
-            <Card className="sticky top-24 p-6 shadow-airbnb border-border/50">
+            <Card className="sticky top-20 z-30 p-6 shadow-lg border-border/50">
               <div className="flex justify-between items-end mb-6">
                 <div>
                   <span className="text-2xl font-bold">${hotel.price}</span>
