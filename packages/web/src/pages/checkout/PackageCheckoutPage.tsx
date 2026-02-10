@@ -134,16 +134,30 @@ export default function PackageCheckoutPage() {
       setBookingError(null);
 
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        if (!accessToken) {
+          throw new Error('Not authenticated');
+        }
+
         const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
           body: { booking_id: pendingBooking.id },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
 
         if (error) {
           throw error;
         }
 
-        if (!data?.client_secret) {
+        if (!data?.ok) {
           throw new Error(data?.error || 'Failed to start payment');
+        }
+
+        if (!data?.client_secret) {
+          throw new Error('No client secret returned');
         }
 
         setClientSecret(String(data.client_secret));
