@@ -53,7 +53,7 @@ export function TourCard({
                                 Featured
                             </Badge>
                         )}
-                        <Badge className="bg-white/90 backdrop-blur-md text-gray-900 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider shadow-sm">
+                        <Badge className="glass-badge text-gray-900 border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
                             {type}
                         </Badge>
                     </div>

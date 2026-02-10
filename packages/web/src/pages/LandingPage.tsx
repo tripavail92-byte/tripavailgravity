@@ -90,7 +90,7 @@ export default function LandingPage() {
       </div>
 
       {/* Bottom Navigation Placeholder */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-card border-t flex items-center justify-around px-6 z-50">
+      <div className="fixed bottom-0 left-0 right-0 h-16 glass-nav-bottom flex items-center justify-around px-6 z-50">
         <button
           onClick={() => setActiveTab('home')}
           className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
@@ -728,7 +728,7 @@ function FeaturedToursSection({
 
                 {/* Badge */}
                 {tour.badge && (
-                  <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-md shadow-sm z-10">
+                  <div className="absolute top-3 left-3 glass-badge px-3 py-1.5 rounded-md z-10">
                     <span className="text-xs font-bold text-black block leading-none">
                       {tour.badge}
                     </span>

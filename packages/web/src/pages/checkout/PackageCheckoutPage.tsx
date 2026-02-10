@@ -294,7 +294,7 @@ export default function PackageCheckoutPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+              className="glass-card rounded-2xl p-6 shadow-modern"
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -348,7 +348,7 @@ export default function PackageCheckoutPage() {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div className="sticky top-24 glass-card rounded-2xl p-6 shadow-modern">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Price Summary</h3>
               <div className="space-y-3 text-sm text-gray-600">
                 <div className="flex justify-between">

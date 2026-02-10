@@ -31,7 +31,7 @@ export function PackageCard({ id, image, title, location, duration, rating, pric
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute top-3 left-3">
-                    <Badge variant="secondary" className="backdrop-blur-md bg-white/90 font-medium capitalize">
+                    <Badge variant="secondary" className="glass-badge font-medium capitalize">
                         {type.replace('-', ' ')}
                     </Badge>
                 </div>

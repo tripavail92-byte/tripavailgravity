@@ -21,8 +21,20 @@ const config: Config = {
     extend: {
       backgroundImage: {
         'primary-gradient': 'var(--primary-gradient)',
+        'glass-gradient-light': 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+        'glass-gradient-dark': 'linear-gradient(135deg, rgba(0,0,0,0.2), rgba(0,0,0,0.1))',
+      },
+      backdropBlur: {
+        xs: '2px',
+        '4xl': '80px',
       },
       colors: {
+        glass: {
+          light: 'rgba(255, 255, 255, 0.1)',
+          'light-border': 'rgba(255, 255, 255, 0.2)',
+          dark: 'rgba(0, 0, 0, 0.1)',
+          'dark-border': 'rgba(255, 255, 255, 0.1)',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

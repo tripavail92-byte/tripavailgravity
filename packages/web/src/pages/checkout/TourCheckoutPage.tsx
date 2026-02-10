@@ -303,7 +303,7 @@ export default function TourCheckoutPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+                            className="glass-card rounded-2xl p-6 shadow-modern"
                         >
                             <h2 className="text-2xl font-bold text-gray-900 mb-4">Tour Details</h2>
                             <div className="space-y-4">
@@ -389,7 +389,7 @@ export default function TourCheckoutPage() {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+                                className="glass-card rounded-2xl p-6 shadow-modern"
                             >
                                 <div className="space-y-6">
                                     <div className="text-center">
@@ -472,7 +472,7 @@ export default function TourCheckoutPage() {
                     {/* Right Column: Price Summary */}
                     <div className="lg:col-span-1">
                         <div className="sticky top-24 space-y-6">
-                            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                            <div className="glass-card rounded-2xl p-6 shadow-modern">
                                 <h3 className="text-lg font-bold text-gray-900 mb-4">Price Summary</h3>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between text-sm">
@@ -510,7 +510,7 @@ export default function TourCheckoutPage() {
                             </div>
 
                             {/* Trust Badges */}
-                            <div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-3">
+                            <div className="glass-card rounded-2xl p-6 space-y-3">
                                 <div className="flex items-center gap-3">
                                     <Shield className="w-5 h-5 text-green-600" />
                                     <span className="text-sm text-gray-600 font-medium">Secure Payment</span>
