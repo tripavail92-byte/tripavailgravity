@@ -19,6 +19,7 @@ import OperatorDashboardPage from '@/pages/tour-operator/OperatorDashboardPage'
 import TourOperatorSetupPage from '@/pages/tour-operator/setup/TourOperatorSetupPage'
 import CreateTourPage from '@/pages/tour-operator/tours/create/CreateTourPage'
 import TourDetailsPage from '@/pages/traveller/TourDetailsPage'
+import TourCheckoutPage from '@/pages/checkout/TourCheckoutPage'
 import PackageDetailsPage from '@/pages/traveller/PackageDetailsPage'
 import Homepage from '@/pages/traveller/Homepage'
 import TravellerLayout from '@/layouts/TravellerLayout'
@@ -62,6 +63,7 @@ function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/hotel/:id" element={<HotelDetailsPage />} />
           <Route path="/tours/:id" element={<TourDetailsPage />} />
+          <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
         </Route>
 
         {/* Authenticated Routes with Drawer (Purple Theme) */}

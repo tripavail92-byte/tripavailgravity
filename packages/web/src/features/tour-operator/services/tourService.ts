@@ -57,6 +57,22 @@ export interface Tour {
 
 export type CreateTourDTO = Omit<Tour, 'id' | 'created_at' | 'updated_at' | 'rating' | 'review_count' | 'is_active' | 'is_verified' | 'is_featured'>;
 
+/**
+ * Tour Schedule - One fixed departure/date slot for a tour
+ * Each tour has ONE schedule (one fixed departure)
+ */
+export interface TourSchedule {
+    id: string;
+    tour_id: string;
+    start_time: string; // ISO 8601 timestamp
+    end_time: string; // ISO 8601 timestamp
+    capacity: number; // Total seats/slots available
+    booked_count: number; // Currently booked/confirmed slots
+    price_override?: number; // Optional price for this specific schedule
+    status: 'scheduled' | 'cancelled' | 'completed';
+    created_at: string;
+}
+
 export const tourService = {
     async createTour(tourData: Partial<Tour>) {
         console.log('Creating tour with data:', tourData);
@@ -195,6 +211,34 @@ export const tourService = {
         }
 
         return data as Tour[];
+    },
+
+    /**
+     * Get schedule for a tour (typically ONE fixed departure per tour)
+     */
+    async getTourSchedules(tourId: string) {
+        const { data, error } = await supabase
+            .from('tour_schedules')
+            .select('*')
+            .eq('tour_id', tourId)
+            .eq('status', 'scheduled')
+            .order('start_time', { ascending: true });
+
+        if (error) {
+            console.error(`Error fetching schedules for tour ${tourId}:`, error);
+            throw error;
+        }
+
+        return (data as TourSchedule[]) || [];
+    },
+
+    /**
+     * Get the first available schedule for a tour (primarily used for travelers)
+     * Returns the earliest upcoming schedule
+     */
+    async getFirstAvailableSchedule(tourId: string): Promise<TourSchedule | null> {
+        const schedules = await this.getTourSchedules(tourId);
+        return schedules.length > 0 ? schedules[0] : null;
     },
 
     async uploadTourImages(operatorId: string, files: File[]) {

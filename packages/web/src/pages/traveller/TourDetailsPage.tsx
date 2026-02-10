@@ -5,16 +5,19 @@ import {
     MapPin, Clock, Star, Check, X,
     ArrowLeft, Share2, Heart,
     Info, ShieldCheck, Map, Camera, Loader2,
-    Calendar, Users
+    Calendar, Users, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { tourService, Tour } from '@/features/tour-operator/services/tourService';
+import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
+import { tourBookingService } from '@/features/booking';
 
 export default function TourDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [tour, setTour] = useState<Tour | null>(null);
+    const [schedule, setSchedule] = useState<TourSchedule | null>(null);
+    const [availableSlots, setAvailableSlots] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'itinerary' | 'policies'>('overview');
 
@@ -22,8 +25,27 @@ export default function TourDetailsPage() {
         const fetchTourDetails = async () => {
             if (!id) return;
             try {
+                // Fetch tour
                 const foundTour = await tourService.getTourById(id);
                 setTour(foundTour || null);
+
+                if (foundTour) {
+                    // Fetch schedule for this tour
+                    const tourSchedules = await tourService.getTourSchedules(id);
+                    const mainSchedule = tourSchedules[0] || null;
+                    setSchedule(mainSchedule);
+
+                    // Fetch available slots for this schedule
+                    if (mainSchedule) {
+                        try {
+                            const slots = await tourBookingService.getAvailableSlots(mainSchedule.id);
+                            setAvailableSlots(slots);
+                        } catch (slotError) {
+                            console.error('Error fetching available slots:', slotError);
+                            setAvailableSlots(0);
+                        }
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching tour details:', error);
                 setTour(null);
@@ -34,6 +56,26 @@ export default function TourDetailsPage() {
 
         fetchTourDetails();
     }, [id]);
+
+    const handleBookNow = () => {
+        if (!id) return;
+        navigate(`/checkout/tour/${id}`);
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    const formatTime = (dateString: string) => {
+        return new Date(dateString).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    };
 
     if (loading) {
         return (
@@ -273,26 +315,55 @@ export default function TourDetailsPage() {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="flex items-center gap-2 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
-                                                <Calendar className="w-4 h-4 text-primary" />
-                                                Select Date
-                                            </span>
-                                            <span className="text-gray-900 font-bold">Pick a date</span>
-                                        </div>
-                                        <div className="h-px bg-gray-200" />
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="flex items-center gap-2 text-gray-500 font-bold uppercase text-[10px] tracking-wider">
-                                                <Users className="w-4 h-4 text-primary" />
-                                                Travelers
-                                            </span>
-                                            <span className="text-gray-900 font-bold">2 Guests</span>
-                                        </div>
+                                    {/* Schedule Information */}
+                                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-3">
+                                        {schedule ? (
+                                            <>
+                                                <div className="flex items-start gap-3">
+                                                    <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
+                                                            Departure Date
+                                                        </p>
+                                                        <p className="text-gray-900 font-bold text-sm">
+                                                            {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-600 font-medium mt-1">
+                                                            Returns: {formatDate(schedule.end_time)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="h-px bg-blue-200" />
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="flex items-center gap-2 text-blue-600 font-bold uppercase text-[10px] tracking-wider">
+                                                        <Users className="w-4 h-4" />
+                                                        Seats Available
+                                                    </span>
+                                                    <span className="text-gray-900 font-black text-lg">
+                                                        {availableSlots !== null ? availableSlots : '—'}
+                                                    </span>
+                                                </div>
+                                                {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
+                                                    <div className="flex items-center gap-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
+                                                        <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                                                        <p className="text-xs text-orange-800 font-medium">Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!</p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                                <AlertCircle className="w-5 h-5 text-yellow-600" />
+                                                <p className="text-sm text-yellow-800 font-medium">No departure dates available</p>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <Button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                                        Book Experience
+                                    <Button 
+                                        onClick={handleBookNow}
+                                        disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
+                                        className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {!schedule ? 'No Dates Available' : schedule && availableSlots === 0 ? 'Sold Out' : 'Continue to Booking'}
                                     </Button>
 
                                     <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
