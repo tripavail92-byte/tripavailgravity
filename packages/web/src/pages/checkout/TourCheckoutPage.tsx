@@ -37,6 +37,7 @@ export default function TourCheckoutPage() {
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
     const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null);
+    const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false);
 
     // Fetch tour and schedule details
     useEffect(() => {
@@ -112,17 +113,23 @@ export default function TourCheckoutPage() {
     // Create Stripe PaymentIntent when booking is created
     useEffect(() => {
         const createPaymentIntent = async () => {
-            if (!pendingBooking?.id || clientSecret || creatingPaymentIntent) return;
+            if (!pendingBooking?.id || clientSecret || creatingPaymentIntent || paymentIntentAttempted) return;
 
             setCreatingPaymentIntent(true);
             setBookingError(null);
+            setPaymentIntentAttempted(true);
 
             try {
                 const { data: sessionData } = await supabase.auth.getSession();
-                const accessToken = sessionData?.session?.access_token;
+                let accessToken = sessionData?.session?.access_token;
 
                 if (!accessToken) {
-                    throw new Error('Not authenticated');
+                    const { data: refreshed } = await supabase.auth.refreshSession();
+                    accessToken = refreshed?.session?.access_token;
+                }
+
+                if (!accessToken) {
+                    throw new Error('Session expired. Please sign in again.');
                 }
 
                 const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
@@ -136,6 +143,9 @@ export default function TourCheckoutPage() {
                 });
 
                 if (error) {
+                    if ((error as any)?.status === 401) {
+                        throw new Error('Session expired. Please sign in again.');
+                    }
                     const msg = String((error as any)?.message || error);
                     if (msg.includes('404') || msg.toLowerCase().includes('not found')) {
                         throw new Error(
@@ -157,13 +167,22 @@ export default function TourCheckoutPage() {
             } catch (err) {
                 const message = err instanceof Error ? err.message : 'Failed to start payment';
                 setBookingError(message);
+                if (message.toLowerCase().includes('sign in again') || message.toLowerCase().includes('not authenticated')) {
+                    navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname));
+                }
             } finally {
                 setCreatingPaymentIntent(false);
             }
         };
 
         createPaymentIntent();
-    }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, totalPrice, tour?.currency, tour?.id, schedule?.id, user?.id, guestCount]);
+    }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, paymentIntentAttempted, totalPrice, tour?.currency, tour?.id, schedule?.id, user?.id, guestCount, navigate]);
+
+    useEffect(() => {
+        if (pendingBooking?.id) {
+            setPaymentIntentAttempted(false);
+        }
+    }, [pendingBooking?.id]);
 
     // Check Stripe availability
     const stripePromise = getStripe();

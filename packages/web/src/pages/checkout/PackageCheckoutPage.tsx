@@ -51,6 +51,7 @@ export default function PackageCheckoutPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
   const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null);
+  const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -128,17 +129,23 @@ export default function PackageCheckoutPage() {
 
   useEffect(() => {
     const createPaymentIntent = async () => {
-      if (!pendingBooking?.id || clientSecret || creatingPaymentIntent) return;
+      if (!pendingBooking?.id || clientSecret || creatingPaymentIntent || paymentIntentAttempted) return;
 
       setCreatingPaymentIntent(true);
       setBookingError(null);
+      setPaymentIntentAttempted(true);
 
       try {
         const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        let accessToken = sessionData?.session?.access_token;
 
         if (!accessToken) {
-          throw new Error('Not authenticated');
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          accessToken = refreshed?.session?.access_token;
+        }
+
+        if (!accessToken) {
+          throw new Error('Session expired. Please sign in again.');
         }
 
         const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
@@ -149,6 +156,9 @@ export default function PackageCheckoutPage() {
         });
 
         if (error) {
+          if ((error as any)?.status === 401) {
+            throw new Error('Session expired. Please sign in again.');
+          }
           throw error;
         }
 
@@ -164,13 +174,22 @@ export default function PackageCheckoutPage() {
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to start payment';
         setBookingError(message);
+        if (message.toLowerCase().includes('sign in again') || message.toLowerCase().includes('not authenticated')) {
+          navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname));
+        }
       } finally {
         setCreatingPaymentIntent(false);
       }
     };
 
     createPaymentIntent();
-  }, [pendingBooking?.id, clientSecret, creatingPaymentIntent]);
+  }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, paymentIntentAttempted, navigate]);
+
+  useEffect(() => {
+    if (pendingBooking?.id) {
+      setPaymentIntentAttempted(false);
+    }
+  }, [pendingBooking?.id]);
 
   const handleCreatePendingBooking = async () => {
     if (!id || !user?.id || !state?.checkIn || !state?.checkOut || !state?.guestCount) {
