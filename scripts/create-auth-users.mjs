@@ -71,6 +71,7 @@ const users = [
   "bali-adventures@tripavail.demo",
   "cultural-tours@tripavail.demo",
   "extreme-sports@tripavail.demo",
+  "traveler@test.com", // Test traveler for Stripe flow testing
 ];
 
 const defaultPassword = "demo123";
