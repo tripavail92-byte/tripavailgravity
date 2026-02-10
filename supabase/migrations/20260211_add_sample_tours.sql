@@ -10,7 +10,6 @@ BEGIN
     SELECT user_id INTO v_operator_id
     FROM public.user_roles
     WHERE role_type = 'tour_operator'
-    ORDER BY created_at
     LIMIT 1;
     
     -- If none exists, get the first user who has any role

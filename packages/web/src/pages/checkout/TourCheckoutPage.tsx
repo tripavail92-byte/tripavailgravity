@@ -5,10 +5,14 @@ import {
     ArrowLeft, Clock, MapPin, AlertCircle,
     Loader2, Check, ChevronRight, Shield, Lock
 } from 'lucide-react';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+
 import { Button } from '@/components/ui/button';
 import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService';
 import { tourBookingService, TourBooking, createBookingWithValidation } from '@/features/booking';
 import { useAuth } from '@/hooks/useAuth';
+import { getStripe } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 
 interface CountdownTimer {
     minutes: number;
@@ -30,6 +34,9 @@ export default function TourCheckoutPage() {
     const [bookingError, setBookingError] = useState<string | null>(null);
     const [pendingBooking, setPendingBooking] = useState<TourBooking | null>(null);
     const [countdown, setCountdown] = useState<CountdownTimer>({ minutes: 10, seconds: 0 });
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
+    const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null);
 
     // Fetch tour and schedule details
     useEffect(() => {
@@ -98,6 +105,71 @@ export default function TourCheckoutPage() {
         }
     }, [loading, user, navigate]);
 
+    // Create Stripe PaymentIntent when booking is created
+    useEffect(() => {
+        const createPaymentIntent = async () => {
+            if (!pendingBooking?.id || clientSecret || creatingPaymentIntent) return;
+
+            setCreatingPaymentIntent(true);
+            setBookingError(null);
+
+            try {
+                const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
+                    body: {
+                        booking_id: pendingBooking.id,
+                        booking_type: 'tour',
+                        amount: totalPrice,
+                        currency: tour?.currency?.toLowerCase() || 'usd',
+                        metadata: {
+                            tour_id: tour?.id,
+                            schedule_id: schedule?.id,
+                            traveler_id: user?.id,
+                            guest_count: guestCount,
+                        },
+                    },
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (!data?.ok) {
+                    throw new Error(data?.error || 'Failed to start payment');
+                }
+
+                if (!data?.client_secret) {
+                    throw new Error('No client secret returned');
+                }
+
+                setClientSecret(String(data.client_secret));
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'Failed to start payment';
+                setBookingError(message);
+            } finally {
+                setCreatingPaymentIntent(false);
+            }
+        };
+
+        createPaymentIntent();
+    }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, totalPrice, tour?.currency, tour?.id, schedule?.id, user?.id, guestCount]);
+
+    // Check Stripe availability
+    const stripePromise = getStripe();
+    useEffect(() => {
+        let cancelled = false;
+        stripePromise
+            .then(stripe => {
+                if (!cancelled) setStripeAvailable(!!stripe);
+            })
+            .catch(() => {
+                if (!cancelled) setStripeAvailable(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [stripePromise]);
+
     const totalPrice = (tour?.price || 0) * guestCount;
     const maxGuests = Math.min(availableSlots || 0, tour?.max_participants || 20);
 
@@ -132,9 +204,9 @@ export default function TourCheckoutPage() {
             });
 
             setPendingBooking(result.booking);
+            setClientSecret(null); // Reset client secret to trigger new payment intent
 
-            // TODO: Next step - proceed to Stripe payment form
-            // For now, show the pending booking state with countdown
+            // Payment form will be shown automatically via the useEffect
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to create booking hold';
             setBookingError(message);
@@ -325,16 +397,33 @@ export default function TourCheckoutPage() {
                                         </div>
                                     </div>
 
-                                    {/* TODO: Stripe Payment Form will go here */}
-                                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
-                                        <p className="text-sm text-blue-900 font-medium">
-                                            Payment form coming next... Click "Proceed to Payment" below
-                                        </p>
+                                    {/* Stripe Payment Form */}
+                                    <div className="space-y-4">
+                                        {stripeAvailable === false ? (
+                                            <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-center">
+                                                <p className="text-sm text-red-800 font-medium">
+                                                    Payments are not configured.
+                                                </p>
+                                            </div>
+                                        ) : !clientSecret ? (
+                                            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                                                <Loader2 className="w-5 h-5 animate-spin text-primary inline-block mr-2" />
+                                                <p className="text-sm text-blue-900 font-medium inline">
+                                                    {creatingPaymentIntent ? 'Preparing secure payment...' : 'Loading payment form...'}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                                                    <TourPaymentForm
+                                                        bookingId={pendingBooking.id}
+                                                        total={totalPrice}
+                                                        currency={tour.currency}
+                                                    />
+                                                </Elements>
+                                            </div>
+                                        )}
                                     </div>
-
-                                    <Button className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-lg shadow-xl shadow-primary/25">
-                                        Proceed to Payment
-                                    </Button>
                                 </div>
                             </motion.div>
                         )}
@@ -418,6 +507,78 @@ export default function TourCheckoutPage() {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function TourPaymentForm(props: { bookingId: string; total: number; currency: string }) {
+    const stripe = useStripe();
+    const elements = useElements();
+    const navigate = useNavigate();
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [paymentReady, setPaymentReady] = useState(false);
+
+    const handlePay = async () => {
+        if (!stripe || !elements) return;
+        const paymentElement = elements.getElement(PaymentElement);
+        if (!paymentElement) {
+            setError('Payment form is still loading. Please wait a moment and try again.');
+            return;
+        }
+        setSubmitting(true);
+        setError(null);
+
+        try {
+            const returnUrl =
+                window.location.origin +
+                `/booking/tour/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`;
+
+            const result = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: returnUrl },
+                redirect: 'if_required',
+            });
+
+            if (result.error) {
+                throw new Error(result.error.message || 'Payment failed');
+            }
+
+            const paymentIntentId = result.paymentIntent?.id;
+            if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
+                navigate(
+                    `/booking/tour/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`
+                );
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Payment failed');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <PaymentElement
+                onReady={() => setPaymentReady(true)}
+                onChange={() => {
+                    if (error) setError(null);
+                }}
+            />
+
+            {!paymentReady && !error && (
+                <div className="text-xs text-gray-500">Loading secure payment form...</div>
+            )}
+
+            {error && <div className="text-sm text-red-600">{error}</div>}
+
+            <Button
+                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-lg shadow-xl shadow-primary/25"
+                onClick={handlePay}
+                disabled={!stripe || !elements || !paymentReady || submitting}
+            >
+                {submitting ? 'Processing...' : `Pay ${props.currency} ${Number(props.total || 0).toFixed(2)}`}
+            </Button>
         </div>
     );
 }
