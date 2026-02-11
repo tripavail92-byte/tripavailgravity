@@ -143,7 +143,7 @@ export default function MyTripsPage() {
                                                 {/* Left: Image */}
                                                 <div className="w-full md:w-64 h-48 md:h-auto relative overflow-hidden">
                                                     <img 
-                                                        src={details?.main_image || details?.cover_image || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'} 
+                                                        src={trip.tours ? trip.tours.images?.[0] : trip.packages?.cover_image || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'} 
                                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
                                                         alt={details?.title || details?.name}
                                                     />
@@ -190,7 +190,7 @@ export default function MyTripsPage() {
                                                                 <div>
                                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Duration</p>
                                                                     <p className="text-sm font-bold text-gray-900 leading-none">
-                                                                        {details?.duration || `${details?.duration_days} Days` || 'N/A'}
+                                                                        {details?.duration || (details?.package_type ? details.package_type.replace('-', ' ') : 'Experience')}
                                                                     </p>
                                                                 </div>
                                                             </div>

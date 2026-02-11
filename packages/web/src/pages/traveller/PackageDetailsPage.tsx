@@ -198,11 +198,11 @@ export default function PackageDetailsPage() {
                     return;
                 }
 
-                const pricing = await packageBookingService.calculatePrice(
-                    packageData.id,
-                    checkIn,
-                    checkOut
-                );
+            const pricing = priceQuote || await packageBookingService.calculatePrice(
+                packageData.id,
+                checkIn,
+                checkOut
+            );
 
                 setPriceQuote(pricing);
             } catch (err: any) {
@@ -320,13 +320,13 @@ export default function PackageDetailsPage() {
                 return;
             }
 
-            const pricing = priceQuote || await packageBookingService.calculatePrice(
-                id,
-                checkIn,
-                checkOut
-            );
+                const pricing = await packageBookingService.calculatePrice(
+                    packageData.id,
+                    checkIn,
+                    checkOut
+                );
 
-            navigate(`/checkout/package/${id}`, {
+            navigate(`/checkout/package/${packageData.id}`, {
                 state: {
                     checkIn,
                     checkOut,

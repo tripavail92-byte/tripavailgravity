@@ -116,7 +116,7 @@ export default function TravelerDashboardPage() {
                                     <div className="p-6 flex flex-col md:flex-row gap-6">
                                         <div className="w-full md:w-40 h-28 rounded-2xl overflow-hidden shadow-sm">
                                             <img 
-                                                src={(nextTrip.tours || nextTrip.packages)?.main_image || (nextTrip.tours || nextTrip.packages)?.cover_image || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'} 
+                                                src={nextTrip.tours ? nextTrip.tours.images?.[0] : nextTrip.packages?.cover_image || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'} 
                                                 className="w-full h-full object-cover"
                                                 alt="Trip"
                                             />

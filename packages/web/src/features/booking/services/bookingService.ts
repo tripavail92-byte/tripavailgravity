@@ -58,7 +58,7 @@ export const tourBookingService = {
   async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('tour_bookings')
-      .select('*, tours(id, title, main_image, duration_days, duration_hours, location)')
+      .select('*, tours(id, title, images, duration, location)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false });
 
@@ -236,7 +236,7 @@ export const packageBookingService = {
   async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*, packages(id, name, main_image, duration_days, location)')
+      .select('*, packages(id, name, cover_image, package_type)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false });
 
