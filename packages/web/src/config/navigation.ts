@@ -27,8 +27,8 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
   traveller: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'My Profile', icon: UserCircle, href: '/profile' },
-    { label: 'My Trips', icon: MapPin, href: '/trips', subtext: '2 upcoming' },
-    { label: 'Wishlist', icon: Heart, href: '/wishlist', subtext: '12 saved' },
+    { label: 'My Trips', icon: MapPin, href: '/trips' },
+    { label: 'Wishlist', icon: Heart, href: '/wishlist' },
     { label: 'Payment Methods', icon: CreditCard, href: '/payment-methods' },
     { label: 'Account Settings', icon: Settings, href: '/settings' },
     { label: 'Help & Support', icon: HelpCircle, href: '/help' },

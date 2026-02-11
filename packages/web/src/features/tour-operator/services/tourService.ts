@@ -143,6 +143,21 @@ export const tourService = {
         return data as unknown as Tour[];
     },
 
+    async getToursByIds(ids: string[]) {
+        if (!ids.length) return [];
+        const { data, error } = await supabase
+            .from('tours')
+            .select('*')
+            .in('id', ids);
+
+        if (error) {
+            console.error('Error fetching tours by IDs:', error);
+            throw error;
+        }
+
+        return data as unknown as Tour[];
+    },
+
     async fetchPublishedTours(operatorId: string) {
         return this.getOperatorTours(operatorId);
     },

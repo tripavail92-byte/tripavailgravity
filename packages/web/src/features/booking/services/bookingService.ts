@@ -55,15 +55,15 @@ export interface PackageBooking {
  * Tour Booking Service
  */
 export const tourBookingService = {
-  async getTravelerBookings(travelerId: string): Promise<TourBooking[]> {
+  async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('tour_bookings')
-      .select('*')
+      .select('*, tours(id, title, main_image, duration_days, duration_hours, location)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false });
 
     if (error) throw error;
-    return data as TourBooking[];
+    return data;
   },
 
   async getOperatorBookings(operatorId: string): Promise<TourBooking[]> {
@@ -233,15 +233,15 @@ export const tourBookingService = {
  * Package Booking Service
  */
 export const packageBookingService = {
-  async getTravelerBookings(travelerId: string): Promise<PackageBooking[]> {
+  async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*')
+      .select('*, packages(id, name, main_image, duration_days, location)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false });
 
     if (error) throw error;
-    return data as PackageBooking[];
+    return data;
   },
 
   async getOwnerBookings(ownerId: string): Promise<PackageBooking[]> {
@@ -473,4 +473,19 @@ export const paymentWebhookService = {
     if (error && error.code !== 'PGRST116') throw error;
     return (data as PaymentWebhook) || null;
   },
+};
+
+export const bookingService = {
+  getTravelerBookings: async (travelerId: string): Promise<any[]> => {
+    const [tours, packages] = await Promise.all([
+      tourBookingService.getTravelerBookings(travelerId),
+      packageBookingService.getTravelerBookings(travelerId),
+    ]);
+    return [...tours, ...packages].sort((a, b) => 
+      new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime()
+    );
+  },
+  tour: tourBookingService,
+  package: packageBookingService,
+  webhook: paymentWebhookService
 };

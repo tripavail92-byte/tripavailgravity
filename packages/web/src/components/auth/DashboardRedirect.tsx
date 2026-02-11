@@ -21,7 +21,7 @@ export function DashboardRedirect() {
         ? '/manager/dashboard'
         : activeRole?.role_type === 'tour_operator'
             ? '/operator/dashboard'
-            : '/';
+            : '/dashboard/overview';
 
     return <Navigate to={defaultDashboard} replace />;
 }

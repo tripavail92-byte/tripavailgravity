@@ -205,3 +205,21 @@ export async function getPackageById(identifier: string) {
     if (error) throw error;
     return data;
 }
+
+/**
+ * Get multiple packages by IDs
+ */
+export async function getPackagesByIds(ids: string[]) {
+    if (!ids.length) return [];
+    const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .in('id', ids);
+
+    if (error) {
+        console.error('Error fetching packages by IDs:', error);
+        throw error;
+    }
+
+    return data;
+}
