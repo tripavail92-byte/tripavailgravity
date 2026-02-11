@@ -34,6 +34,7 @@ const AccountSettingsPage = lazy(() => import('@/pages/traveller/AccountSettings
 const WishlistPage = lazy(() => import('@/pages/traveller/WishlistPage'))
 const MyTripsPage = lazy(() => import('@/pages/traveller/MyTripsPage'))
 const TravelerDashboardPage = lazy(() => import('@/pages/traveller/TravelerDashboardPage'))
+const PaymentMethodsPage = lazy(() => import('@/pages/traveller/PaymentMethodsPage'))
 const HotelManagerSettingsPage = lazy(() => import('@/pages/hotel-manager/HotelManagerSettingsPage'))
 const TourOperatorSettingsPage = lazy(() => import('@/pages/tour-operator/TourOperatorSettingsPage'))
 
@@ -86,6 +87,7 @@ function App() {
         <Route element={<TravellerLayout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
+          <Route path="/payment-methods" element={<PaymentMethodsPage />} />
           <Route path="/explore" element={<Homepage />} />
           <Route path="/packages/:id" element={<PackageDetailsPage />} />
           <Route path="/search" element={<SearchPage />} />

@@ -4,6 +4,7 @@ import AccountSettingsPage from './AccountSettingsPage';
 import WishlistPage from './WishlistPage';
 import MyTripsPage from './MyTripsPage';
 import TravelerDashboardPage from './TravelerDashboardPage';
+import PaymentMethodsPage from './PaymentMethodsPage';
 
 export { 
   Homepage,
@@ -11,5 +12,6 @@ export {
   AccountSettingsPage,
   WishlistPage,
   MyTripsPage,
-  TravelerDashboardPage
+  TravelerDashboardPage,
+  PaymentMethodsPage
 };
