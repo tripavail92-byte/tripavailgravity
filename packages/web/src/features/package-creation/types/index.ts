@@ -44,6 +44,14 @@ export interface PackageData {
     cancellationPolicy?: string;
     paymentTerms?: string;
 
+    // Pricing & Booking Rules
+    maxGuests?: number;
+    fixedPrice?: number;
+    basePricePerNight?: number;
+    minimumNights?: number;
+    maximumNights?: number;
+    slug?: string;
+
     // Highlights (Inclusions & Discounts)
     freeInclusions?: Array<{
         name: string;

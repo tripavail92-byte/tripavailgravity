@@ -20,13 +20,27 @@ VALUES ('hotel-images', 'hotel-images', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policy to allow authenticated users to upload images
-CREATE POLICY " authenticated users can upload hotel images"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'hotel-images' AND auth.role() = 'authenticated');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = ' authenticated users can upload hotel images' AND tablename = 'objects' AND schemaname = 'storage'
+    ) THEN
+        CREATE POLICY " authenticated users can upload hotel images"
+        ON storage.objects FOR INSERT
+        TO authenticated
+        WITH CHECK (bucket_id = 'hotel-images' AND auth.role() = 'authenticated');
+    END IF;
+END $$;
 
 -- Policy to allow public to view hotel images
-CREATE POLICY "Public can view hotel images"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'hotel-images');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Public can view hotel images' AND tablename = 'objects' AND schemaname = 'storage'
+    ) THEN
+        CREATE POLICY "Public can view hotel images"
+        ON storage.objects FOR SELECT
+        TO public
+        USING (bucket_id = 'hotel-images');
+    END IF;
+END $$;

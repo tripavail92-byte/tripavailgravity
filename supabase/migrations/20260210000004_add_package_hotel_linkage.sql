@@ -22,13 +22,18 @@ COMMENT ON COLUMN public.packages.minimum_nights IS 'Minimum number of nights re
 COMMENT ON COLUMN public.packages.maximum_nights IS 'Maximum number of nights allowed for booking this package';
 
 -- Update RLS policies to include hotel ownership check
-CREATE POLICY "Hotel owners can view packages for their hotels" ON public.packages
-FOR SELECT
-TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.hotels 
-    WHERE hotels.id = packages.hotel_id 
-    AND hotels.owner_id = auth.uid()
-  )
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Hotel owners can view packages for their hotels' AND tablename = 'packages' AND schemaname = 'public') THEN
+        CREATE POLICY "Hotel owners can view packages for their hotels" ON public.packages
+        FOR SELECT
+        TO authenticated
+        USING (
+          EXISTS (
+            SELECT 1 FROM public.hotels 
+            WHERE hotels.id = packages.hotel_id 
+            AND hotels.owner_id = auth.uid()
+          )
+        );
+    END IF;
+END $$;

@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
-    MapPin, Search, Briefcase, Mountain, Palmtree, Tent, Waves, Clock, Star, Users
+    Search, Briefcase, Mountain, Palmtree, Tent, Waves
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TourCard } from '@/components/traveller/TourCard';
+import { PackageCard } from '@/components/traveller/PackageCard';
 import { supabase } from '@/lib/supabase';
 import { tourService, Tour } from '@/features/tour-operator/services/tourService';
 import { Badge } from '@/components/ui/badge';
+import { GlassCard } from '@/components/ui/glass';
+import { motion } from 'motion/react';
 
 export default function Homepage() {
     const [packages, setPackages] = useState<any[]>([]);
@@ -17,12 +20,12 @@ export default function Homepage() {
         const fetchData = async () => {
             try {
                 const [{ data: pkgData, error: pkgError }, featuredTours] = await Promise.all([
-                    supabase
-                        .from('packages')
+                    (supabase
+                        .from('packages' as any)
                         .select('*')
                         .eq('is_published', true)
                         .order('created_at', { ascending: false })
-                        .limit(6),
+                        .limit(6)) as any,
                     tourService.fetchFeaturedTours()
                 ]);
 
@@ -129,16 +132,16 @@ export default function Homepage() {
                 ) : packages.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {packages.map((pkg) => (
-                            <TourCard
+                            <PackageCard
                                 key={pkg.id}
                                 id={pkg.id}
+                                slug={pkg.slug}
                                 image={pkg.cover_image || pkg.media_urls?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop'}
                                 title={pkg.name}
                                 location="Multiple Locations"
-                                duration="3 Days"
+                                duration={3}
                                 rating={4.8}
                                 price={599}
-                                currency="USD"
                                 type={pkg.package_type}
                             />
                         ))}
@@ -170,6 +173,7 @@ export default function Homepage() {
                                 <TourCard
                                     key={tour.id}
                                     id={tour.id}
+                                    slug={tour.slug}
                                     image={tour.images?.[0] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'}
                                     title={tour.title}
                                     location={`${tour.location.city}, ${tour.location.country}`}
@@ -194,4 +198,3 @@ export default function Homepage() {
     );
 }
 
-import { motion } from 'motion/react';

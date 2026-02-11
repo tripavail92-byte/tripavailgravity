@@ -1,0 +1,111 @@
+-- Create packages table with proper schema
+CREATE TABLE IF NOT EXISTS packages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    
+    -- Package Classification
+    package_type TEXT NOT NULL,
+    
+    -- Basic Info
+    name TEXT NOT NULL,
+    description TEXT,
+    
+    -- Media
+    cover_image TEXT,
+    media_urls TEXT[],
+   
+    -- Content  
+    highlights TEXT[],
+    inclusions TEXT[],
+    exclusions TEXT[],
+    
+    -- Policies
+    cancellation_policy TEXT,
+    payment_terms TEXT,
+    
+    -- Status & Metadata
+    is_published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- Constraints
+    CONSTRAINT packages_name_min_length CHECK (char_length(name) >= 3)
+);
+
+-- Create Supabase Storage bucket
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('package-media', 'package-media', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for package-media bucket
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload package media' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Authenticated users can upload package media" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'package-media');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read access to package media' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public read access to package media" ON storage.objects FOR SELECT TO public USING (bucket_id = 'package-media');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own package media' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Users can update their own package media" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'package-media' AND auth.uid()::text = (storage.foldername(name))[1]);
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own package media' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Users can delete their own package media" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'package-media' AND auth.uid()::text = (storage.foldername(name))[1]);
+    END IF;
+END $$;
+
+-- RLS Policies for packages table
+ALTER TABLE packages ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    -- Permissions
+    GRANT ALL ON TABLE packages TO authenticated;
+    GRANT ALL ON TABLE packages TO service_role;
+    GRANT SELECT ON TABLE packages TO anon;
+
+    -- Policies
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view their own packages' AND tablename = 'packages') THEN
+        CREATE POLICY "Users can view their own packages" ON packages FOR SELECT TO authenticated USING (owner_id = auth.uid());
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own packages' AND tablename = 'packages') THEN
+        CREATE POLICY "Users can insert their own packages" ON packages FOR INSERT TO authenticated WITH CHECK (owner_id = auth.uid());
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own packages' AND tablename = 'packages') THEN
+        CREATE POLICY "Users can update their own packages" ON packages FOR UPDATE TO authenticated USING (owner_id = auth.uid());
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own packages' AND tablename = 'packages') THEN
+        CREATE POLICY "Users can delete their own packages" ON packages FOR DELETE TO authenticated USING (owner_id = auth.uid());
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public can view published packages' AND tablename = 'packages') THEN
+        CREATE POLICY "Public can view published packages" ON packages FOR SELECT TO public USING (is_published = true);
+    END IF;
+END $$;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_packages_owner_id ON packages(owner_id);
+CREATE INDEX IF NOT EXISTS idx_packages_published ON packages(is_published) WHERE is_published = true;
+CREATE INDEX IF NOT EXISTS idx_packages_package_type ON packages(package_type);
+CREATE INDEX IF NOT EXISTS idx_packages_created_at ON packages(created_at DESC);
+
+-- Trigger
+CREATE OR REPLACE FUNCTION update_packages_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS packages_updated_at ON packages;
+CREATE TRIGGER packages_updated_at
+BEFORE UPDATE ON packages
+FOR EACH ROW
+EXECUTE FUNCTION update_packages_updated_at();

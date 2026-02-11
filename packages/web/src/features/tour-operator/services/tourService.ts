@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 
 export interface Tour {
     id: string;
+    slug?: string;
     operator_id: string;
     title: string;
     tour_type: string;
@@ -76,9 +77,10 @@ export interface TourSchedule {
 export const tourService = {
     async createTour(tourData: Partial<Tour>) {
         console.log('Creating tour with data:', tourData);
+        // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
         const { data, error } = await supabase
             .from('tours')
-            .insert(tourData)
+            .insert(tourData as any)
             .select()
             .single();
 
@@ -87,14 +89,14 @@ export const tourService = {
             throw error;
         }
 
-        return data as Tour;
+        return data as unknown as Tour;
     },
 
     async updateTour(id: string, updates: Partial<Tour>) {
         console.log(`Updating tour ${id}:`, updates);
         const { data, error } = await supabase
             .from('tours')
-            .update({ ...updates, updated_at: new Date().toISOString() })
+            .update({ ...updates, updated_at: new Date().toISOString() } as any)
             .eq('id', id)
             .select()
             .single();
@@ -104,22 +106,25 @@ export const tourService = {
             throw error;
         }
 
-        return data as Tour;
+        return data as unknown as Tour;
     },
 
-    async getTourById(id: string) {
+    async getTourById(identifier: string) {
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+        const queryColumn = isUUID ? 'id' : 'slug';
+
         const { data, error } = await supabase
             .from('tours')
             .select('*')
-            .eq('id', id)
+            .eq(queryColumn, identifier)
             .single();
 
         if (error) {
-            console.error(`Error fetching tour ${id}:`, error);
+            console.error(`Error fetching tour ${identifier}:`, error);
             throw error;
         }
 
-        return data as Tour;
+        return data as unknown as Tour;
     },
 
     async getOperatorTours(operatorId: string) {
@@ -135,7 +140,7 @@ export const tourService = {
             throw error;
         }
 
-        return data as Tour[];
+        return data as unknown as Tour[];
     },
 
     async fetchPublishedTours(operatorId: string) {
@@ -155,7 +160,7 @@ export const tourService = {
             throw error;
         }
 
-        return data as Tour[];
+        return data as unknown as Tour[];
     },
 
     async saveTourDraft(data: Partial<Tour>, operatorId: string, draftId?: string) {
@@ -164,12 +169,36 @@ export const tourService = {
         const draftPayload = {
             operator_id: operatorId,
             title: data.title || 'Untitled Tour',
+            slug: data.slug || null,
             tour_type: data.tour_type || 'Adventure',
             location: data.location || {},
             duration: data.duration || '1 day',
             price: data.price || 0,
             currency: data.currency || 'USD',
             is_published: false,
+            // Provide defaults for required fields to satisfy DB constraints for drafts
+            images: data.images || [],
+            highlights: data.highlights || [],
+            inclusions: data.inclusions || [],
+            exclusions: data.exclusions || [],
+            requirements: data.requirements || [],
+            languages: data.languages || ['en'],
+            min_participants: data.min_participants || 1,
+            max_participants: data.max_participants || 10,
+            min_age: data.min_age || 5,
+            max_age: data.max_age || 80,
+            difficulty_level: data.difficulty_level || 'moderate',
+            cancellation_policy: data.cancellation_policy || 'moderate',
+            deposit_required: data.deposit_required ?? false,
+            deposit_percentage: data.deposit_percentage || 0,
+            group_discounts: data.group_discounts ?? false,
+            seasonal_pricing: data.seasonal_pricing ?? false,
+            peak_season_multiplier: data.peak_season_multiplier || 1.2,
+            off_season_multiplier: data.off_season_multiplier || 0.8,
+            pricing_tiers: data.pricing_tiers || [],
+            itinerary: data.itinerary || [],
+            schedules: data.schedules || [],
+            
             draft_data: data,
             updated_at: new Date().toISOString()
         };
@@ -177,7 +206,7 @@ export const tourService = {
         if (draftId) {
             const { data: tour, error } = await supabase
                 .from('tours')
-                .update(draftPayload)
+                .update(draftPayload as any)
                 .eq('id', draftId)
                 .eq('operator_id', operatorId)
                 .select()
@@ -188,7 +217,7 @@ export const tourService = {
         } else {
             const { data: tour, error } = await supabase
                 .from('tours')
-                .insert(draftPayload)
+                .insert(draftPayload as any)
                 .select()
                 .single();
 
@@ -210,7 +239,7 @@ export const tourService = {
             throw error;
         }
 
-        return data as Tour[];
+        return data as unknown as Tour[];
     },
 
     /**

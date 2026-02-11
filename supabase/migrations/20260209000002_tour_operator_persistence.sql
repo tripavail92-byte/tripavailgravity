@@ -26,25 +26,24 @@ VALUES ('tour-operator-assets', 'tour-operator-assets', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Storage Policies for tour-operator-assets
-CREATE POLICY "Authenticated users can upload operator assets"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'tour-operator-assets');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload operator assets' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Authenticated users can upload operator assets" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'tour-operator-assets');
+    END IF;
 
-CREATE POLICY "Public read access to operator assets"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'tour-operator-assets');
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read access to operator assets' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public read access to operator assets" ON storage.objects FOR SELECT TO public USING (bucket_id = 'tour-operator-assets');
+    END IF;
 
-CREATE POLICY "Users can update their own operator assets"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (bucket_id = 'tour-operator-assets' AND (storage.foldername(name))[1] = auth.uid()::text);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own operator assets' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Users can update their own operator assets" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'tour-operator-assets' AND (storage.foldername(name))[1] = auth.uid()::text);
+    END IF;
 
-CREATE POLICY "Users can delete their own operator assets"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (bucket_id = 'tour-operator-assets' AND (storage.foldername(name))[1] = auth.uid()::text);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own operator assets' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Users can delete their own operator assets" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'tour-operator-assets' AND (storage.foldername(name))[1] = auth.uid()::text);
+    END IF;
+END $$;
 
 -- 4. Enable updated_at trigger for tour_operator_profiles
 CREATE OR REPLACE FUNCTION update_tour_operator_profiles_updated_at()

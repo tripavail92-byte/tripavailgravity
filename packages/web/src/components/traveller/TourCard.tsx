@@ -6,6 +6,7 @@ import { GlassBadge } from '@/components/ui/glass';
 
 interface TourCardProps {
     id: string;
+    slug?: string;
     image: string;
     title: string;
     location: string;
@@ -20,6 +21,7 @@ interface TourCardProps {
 
 export function TourCard({
     id,
+    slug,
     image,
     title,
     location,
@@ -37,7 +39,7 @@ export function TourCard({
             viewport={{ once: true }}
             className="group cursor-pointer"
         >
-            <Link to={`/tours/${id}`}>
+            <Link to={`/tours/${slug || id}`}>
                 <div className="relative aspect-[4/5] rounded-3xl overflow-hidden mb-4 shadow-sm group-hover:shadow-xl transition-all duration-500">
                     <img
                         src={image}

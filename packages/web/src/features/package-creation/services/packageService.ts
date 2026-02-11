@@ -147,6 +147,7 @@ export async function publishPackage(packageData: PackageData, userId: string) {
             maximum_nights: packageData.maximumNights || 30,
             max_guests: packageData.maxGuests || 4,
 
+            slug: packageData.slug || null,
             is_published: true
         };
 
@@ -189,13 +190,16 @@ export async function getUserPackages(userId: string) {
 }
 
 /**
- * Get a single package by ID
+ * Get a single package by ID or Slug
  */
-export async function getPackageById(packageId: string) {
+export async function getPackageById(identifier: string) {
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    const queryColumn = isUUID ? 'id' : 'slug';
+
     const { data, error } = await supabase
         .from('packages')
         .select('*')
-        .eq('id', packageId)
+        .eq(queryColumn, identifier)
         .single();
 
     if (error) throw error;

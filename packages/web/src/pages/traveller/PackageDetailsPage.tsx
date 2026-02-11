@@ -60,11 +60,32 @@ export default function PackageDetailsPage() {
     const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
         const fetchData = async () => {
-            if (!id) return;
+            if (!id) {
+                console.warn('PackageDetailsPage: No ID found in params');
+                if (isMounted) setLoading(false);
+                return;
+            }
+
+            console.log(`PackageDetailsPage: Fetching package ${id}...`);
+            
+            // Timeout safety valve
+            const timeoutId = setTimeout(() => {
+                if (isMounted && loading) {
+                    console.error('PackageDetailsPage: Fetch timed out');
+                    setError('Request timed out. Please check your connection.');
+                    setLoading(false);
+                }
+            }, 10000); // 10 seconds
+
             try {
                 // 1. Fetch Package Data
                 const pkg = await getPackageById(id);
+                
+                if (!isMounted) return;
+                
+                console.log('PackageDetailsPage: Package loaded', pkg);
                 setPackageData(pkg);
 
                 // 2. Fetch Linked Hotel & Room Amenities
@@ -79,10 +100,10 @@ export default function PackageDetailsPage() {
                         .from('hotels')
                         .select('amenities')
                         .eq('id', pkg.hotel_id)
-                        .single();
+                        .maybeSingle();
 
                     if (hError) {
-                        throw new Error(`Hotel Fetch Failed: ${hError.message} (${hError.code})`);
+                        console.warn('PackageDetailsPage: Hotel fetch warning', hError);
                     }
 
                     if (hotel?.amenities) {
@@ -91,14 +112,15 @@ export default function PackageDetailsPage() {
                 }
 
                 // Fetch Room Amenities (if linked)
-                if (pkg.room_ids && pkg.room_ids.length > 0) {
+                const roomIds = pkg.room_configuration?.rooms?.map((r: any) => r.room_id) || [];
+                if (roomIds.length > 0) {
                     const { data: rooms, error: rError } = await supabase
                         .from('rooms')
                         .select('amenities')
-                        .in('id', pkg.room_ids);
+                        .in('id', roomIds);
 
                     if (rError) {
-                        throw new Error(`Room Fetch Failed: ${rError.message} (${rError.code})`);
+                         console.warn('PackageDetailsPage: Room fetch warning', rError);
                     }
 
                     if (rooms) {
@@ -111,24 +133,31 @@ export default function PackageDetailsPage() {
                     }
                 }
 
-                setAggregatedAmenities(Array.from(amenitiesSet));
+                if (isMounted) {
+                    setAggregatedAmenities(Array.from(amenitiesSet));
+                }
 
             } catch (err: any) {
-                console.error('Error fetching data:', err);
-                setError(err.message || 'Failed to load package details');
+                console.error('PackageDetailsPage: Error fetching data:', err);
+                if (isMounted) setError(err.message || 'Failed to load package details');
             } finally {
-                setLoading(false);
+                clearTimeout(timeoutId);
+                if (isMounted) setLoading(false);
             }
         };
 
         fetchData();
+        
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
     const formatDateParam = (date: Date) => format(date, 'yyyy-MM-dd');
 
     useEffect(() => {
         const checkAvailabilityAndPrice = async () => {
-            if (!id || !dateRange?.from || !dateRange?.to) {
+            if (!packageData?.id || !dateRange?.from || !dateRange?.to) {
                 setPriceQuote(null);
                 setAvailabilityError(null);
                 return;
@@ -158,7 +187,7 @@ export default function PackageDetailsPage() {
 
             try {
                 const isAvailable = await packageBookingService.checkAvailability(
-                    id,
+                    packageData.id,
                     checkIn,
                     checkOut
                 );
@@ -170,7 +199,7 @@ export default function PackageDetailsPage() {
                 }
 
                 const pricing = await packageBookingService.calculatePrice(
-                    id,
+                    packageData.id,
                     checkIn,
                     checkOut
                 );
@@ -185,7 +214,7 @@ export default function PackageDetailsPage() {
         };
 
         checkAvailabilityAndPrice();
-    }, [dateRange?.from, dateRange?.to, id, packageData?.minimum_nights, packageData?.maximum_nights]);
+    }, [dateRange?.from, dateRange?.to, packageData?.id, packageData?.minimum_nights, packageData?.maximum_nights]);
 
     if (loading) {
         return (

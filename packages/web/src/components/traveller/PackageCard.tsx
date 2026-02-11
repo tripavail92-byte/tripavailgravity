@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { MapPin, Star, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { GlassBadge } from '@/components/ui/glass';
 
 interface PackageCardProps {
     id: string;
+    slug?: string;
     image: string;
     title: string;
     location?: string;
@@ -15,14 +16,10 @@ interface PackageCardProps {
     type: string;
 }
 
-export function PackageCard({ id, image, title, location, duration, rating, price, type }: PackageCardProps) {
-    const navigate = useNavigate();
-
+export function PackageCard({ id, slug, image, title, location, duration, rating, price, type }: PackageCardProps) {
     return (
-        <Card
-            className="group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl"
-            onClick={() => navigate(`/packages/${id}`)}
-        >
+        <Link to={`/packages/${slug || id}`} className="block h-full">
+            <Card className="group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl h-full">
             {/* Image Container */}
             <div className="relative aspect-[4/3] overflow-hidden">
                 <img
@@ -79,6 +76,7 @@ export function PackageCard({ id, image, title, location, duration, rating, pric
                     </Badge>
                 </div>
             </div>
-        </Card>
+            </Card>
+        </Link>
     );
 }

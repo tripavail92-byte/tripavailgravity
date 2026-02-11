@@ -14,12 +14,12 @@ CREATE TABLE IF NOT EXISTS public.payment_webhooks (
 );
 
 -- Create indexes for fast lookups
-CREATE INDEX idx_payment_webhooks_stripe_event_id ON public.payment_webhooks(stripe_event_id);
-CREATE INDEX idx_payment_webhooks_booking_id ON public.payment_webhooks(booking_id);
-CREATE INDEX idx_payment_webhooks_booking_type ON public.payment_webhooks(booking_type);
-CREATE INDEX idx_payment_webhooks_event_type ON public.payment_webhooks(event_type);
-CREATE INDEX idx_payment_webhooks_processed ON public.payment_webhooks(processed);
-CREATE INDEX idx_payment_webhooks_created_at ON public.payment_webhooks(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_stripe_event_id ON public.payment_webhooks(stripe_event_id);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_booking_id ON public.payment_webhooks(booking_id);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_booking_type ON public.payment_webhooks(booking_type);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_event_type ON public.payment_webhooks(event_type);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_processed ON public.payment_webhooks(processed);
+CREATE INDEX IF NOT EXISTS idx_payment_webhooks_created_at ON public.payment_webhooks(created_at DESC);
 
 -- Enable RLS
 ALTER TABLE public.payment_webhooks ENABLE ROW LEVEL SECURITY;
@@ -29,9 +29,14 @@ GRANT ALL ON TABLE public.payment_webhooks TO service_role;
 GRANT ALL ON TABLE public.payment_webhooks TO authenticated;
 
 -- RLS policy for service role to handle webhooks
-CREATE POLICY "Service role manages payment webhooks" ON public.payment_webhooks
-    FOR ALL
-    USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Service role manages payment webhooks' AND tablename = 'payment_webhooks') THEN
+        CREATE POLICY "Service role manages payment webhooks" ON public.payment_webhooks
+            FOR ALL
+            USING (auth.role() = 'service_role');
+    END IF;
+END $$;
 
 -- Updated at trigger
 CREATE OR REPLACE FUNCTION update_payment_webhooks_updated_at()
@@ -42,6 +47,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS payment_webhooks_updated_at ON public.payment_webhooks;
 CREATE TRIGGER payment_webhooks_updated_at
 BEFORE UPDATE ON public.payment_webhooks
 FOR EACH ROW

@@ -172,8 +172,6 @@ function App() {
         <Route path="/manager/list-hotel" element={<ListHotelPage />} />
         <Route path="/manager/list-package" element={<ListPackagePage />} />
 
-        {/* Public Routes */}
-        <Route path="/packages/:id" element={<PackageDetailsPage />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

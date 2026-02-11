@@ -6,7 +6,6 @@ ALTER TABLE public.tour_bookings
 ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
 
 -- 2. Create indexes for the capacity calculation query
--- This speeds up: SELECT COUNT(*) FROM tour_bookings WHERE schedule_id = X AND status IN (pending, confirmed) AND (status != pending OR expires_at > now)
 CREATE INDEX IF NOT EXISTS idx_tour_bookings_schedule_status 
 ON public.tour_bookings(schedule_id, status);
 
@@ -15,11 +14,15 @@ ON public.tour_bookings(expires_at)
 WHERE status = 'pending';
 
 -- 3. Update RLS policies to allow status transitions (pending -> confirmed)
--- Already exists from base migration, but ensure travelers can transition their own bookings
-CREATE POLICY "Travelers can update own pending bookings" ON public.tour_bookings
-    FOR UPDATE
-    USING (auth.uid() = traveler_id AND status = 'pending')
-    WITH CHECK (auth.uid() = traveler_id AND status IN ('pending', 'confirmed', 'cancelled'));
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Travelers can update own pending bookings' AND tablename = 'tour_bookings' AND schemaname = 'public') THEN
+        CREATE POLICY "Travelers can update own pending bookings" ON public.tour_bookings
+            FOR UPDATE
+            USING (auth.uid() = traveler_id AND status = 'pending')
+            WITH CHECK (auth.uid() = traveler_id AND status IN ('pending', 'confirmed', 'cancelled'));
+    END IF;
+END $$;
 
 -- 4. Add helper function to calculate available slots (SQL function for consistency)
 CREATE OR REPLACE FUNCTION get_available_slots(schedule_id_param UUID)

@@ -175,26 +175,27 @@ BEGIN
 END;
 $$;
 
--- 4) Expiry helper (optional; keep as-is but ensure executable)
-CREATE OR REPLACE FUNCTION public.expire_package_bookings()
-RETURNS TABLE(expired_count INT)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  affected_rows INT;
-BEGIN
-  UPDATE public.package_bookings
-  SET status = 'expired'
-  WHERE status = 'pending'
-    AND expires_at IS NOT NULL
-    AND expires_at < NOW();
-
-  GET DIAGNOSTICS affected_rows = ROW_COUNT;
-  RETURN QUERY SELECT affected_rows;
-END;
-$$;
+                                                                                                                                                                                     
+-- Function: Expire old pending bookings (for scheduled job)                                                                                                                         
+CREATE OR REPLACE FUNCTION public.expire_package_bookings()                                                                                                                          
+RETURNS TABLE(expired_count INT)                                                                                                                                                     
+LANGUAGE plpgsql                                                                                                                                                                     
+SECURITY DEFINER                                                                                                                                                                     
+SET search_path = public                                                                                                                                                             
+AS $$                                                                                                                                                                                
+DECLARE                                                                                                                                                                              
+  affected_rows INT;                                                                                                                                                                 
+BEGIN                                                                                                                                                                                
+  UPDATE public.package_bookings                                                                                                                                                     
+  SET status = 'expired'                                                                                                                                                             
+  WHERE status = 'pending'                                                                                                                                                           
+    AND expires_at IS NOT NULL                                                                                                                                                       
+    AND expires_at < NOW();                                                                                                                                                          
+                                                                                                                                                                                     
+  GET DIAGNOSTICS affected_rows = ROW_COUNT;                                                                                                                                         
+  RETURN QUERY SELECT affected_rows;                                                                                                                                                 
+END;                                                                                                                                                                                 
+$$;     
 
 -- Permissions
 GRANT EXECUTE ON FUNCTION public.check_package_availability(UUID, TIMESTAMPTZ, TIMESTAMPTZ) TO anon, authenticated, service_role;
