@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     Loader2, ArrowLeft, Share2, Heart, MapPin, Star, Check, X, Calendar as CalendarIcon, Users,
-    ChevronDown, Wifi, Coffee, Utensils, Car, Briefcase, Camera, Wine, Ticket, Music, Tv, Smartphone,
-    CreditCard, Gift, Key, Sparkles, Shield, Globe, Bed, Clock, Bus, Plane, ChevronLeft, ChevronRight, Info
+    ChevronDown, Sparkles, Shield, Clock, AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -17,6 +16,15 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { getPackageById } from '@/features/package-creation/services/packageService';
 import { supabase } from '@/lib/supabase';
 import { packageBookingService } from '@/features/booking';
+import { 
+    GlassCard, 
+    GlassHeader, 
+    GlassTitle, 
+    GlassDescription,
+    GlassContent, 
+    GlassBadge,
+    GlassButton
+} from '@/components/ui/glass';
 
 
 
@@ -94,11 +102,11 @@ export default function PackageDetailsPage() {
                 // Add Package Highlights first
                 if (pkg.highlights) pkg.highlights.forEach((h: string) => amenitiesSet.add(h));
 
-                // Fetch Hotel Amenities
+                // Fetch Hotel Details & Amenities
                 if (pkg.hotel_id) {
                     const { data: hotel, error: hError } = await supabase
                         .from('hotels')
-                        .select('amenities')
+                        .select('name, amenities')
                         .eq('id', pkg.hotel_id)
                         .maybeSingle();
 
@@ -106,17 +114,21 @@ export default function PackageDetailsPage() {
                         console.warn('PackageDetailsPage: Hotel fetch warning', hError);
                     }
 
-                    if (hotel?.amenities) {
-                        hotel.amenities.forEach((a: string) => amenitiesSet.add(a));
+                    if (hotel) {
+                        if (hotel.amenities) {
+                            (hotel.amenities as string[]).forEach(a => amenitiesSet.add(a));
+                        }
+                        setPackageData((prev: any) => ({ ...prev, hotel }));
                     }
                 }
 
-                // Fetch Room Amenities (if linked)
-                const roomIds = pkg.room_configuration?.rooms?.map((r: any) => r.room_id) || [];
+                // Fetch Room Details & Amenities (if linked)
+                const roomConfig = pkg.room_configuration as any;
+                const roomIds = roomConfig?.rooms?.map((r: any) => r.room_id) || [];
                 if (roomIds.length > 0) {
                     const { data: rooms, error: rError } = await supabase
                         .from('rooms')
-                        .select('amenities')
+                        .select('name, description, amenities')
                         .in('id', roomIds);
 
                     if (rError) {
@@ -342,135 +354,217 @@ export default function PackageDetailsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white pb-20">
+        <div className="min-h-screen bg-gray-50/50 pb-20">
             {/* Header / Nav */}
-            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+            <GlassCard 
+                variant="nav" 
+                blur="md"
+                className="sticky top-0 z-40 border-b border-white/20"
+            >
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 hover:bg-white/20">
                         <ArrowLeft size={16} />
                         Back
                     </Button>
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon">
+                        <GlassButton variant="ghost" size="icon" className="rounded-full">
                             <Share2 size={18} />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                            <Heart size={18} />
-                        </Button>
+                        </GlassButton>
+                        <GlassButton variant="ghost" size="icon" className="rounded-full">
+                            <Heart size={18} className="text-red-500" />
+                        </GlassButton>
                     </div>
                 </div>
-            </div>
+            </GlassCard>
 
-            <main className="max-w-7xl mx-auto px-4 py-6">
+            <main className="max-w-7xl mx-auto px-4 py-8">
                 {/* Hero Gallery */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[300px] md:h-[400px] rounded-2xl overflow-hidden mb-8">
-                    <div className="md:col-span-2 h-full bg-gray-100 relative">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[300px] md:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl shadow-gray-200/50"
+                >
+                    <div className="md:col-span-2 h-full bg-gray-100 relative group overflow-hidden">
                         {allImages[0] ? (
-                            <img src={allImages[0]} alt={name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer" />
+                            <motion.img 
+                                whileHover={{ scale: 1.05 }}
+                                transition={{ duration: 0.8 }}
+                                src={allImages[0]} 
+                                alt={name} 
+                                className="w-full h-full object-cover cursor-pointer" 
+                            />
                         ) : (
                             <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
                         )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
-                    <div className="hidden md:grid grid-rows-2 gap-2 h-full">
-                        <div className="bg-gray-100 h-full relative overflow-hidden">
-                            {allImages[1] && <img src={allImages[1]} alt={name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer" />}
+                    <div className="hidden md:grid grid-rows-2 gap-3 h-full">
+                        <div className="bg-gray-100 h-full relative overflow-hidden group">
+                            {allImages[1] && (
+                                <motion.img 
+                                    whileHover={{ scale: 1.1 }}
+                                    src={allImages[1]} 
+                                    alt={name} 
+                                    className="w-full h-full object-cover cursor-pointer" 
+                                />
+                            )}
                         </div>
-                        <div className="bg-gray-100 h-full relative overflow-hidden">
-                            {allImages[2] && <img src={allImages[2]} alt={name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer" />}
+                        <div className="bg-gray-100 h-full relative overflow-hidden group">
+                            {allImages[2] && (
+                                <motion.img 
+                                    whileHover={{ scale: 1.1 }}
+                                    src={allImages[2]} 
+                                    alt={name} 
+                                    className="w-full h-full object-cover cursor-pointer" 
+                                />
+                            )}
                         </div>
                     </div>
-                    <div className="hidden md:grid grid-rows-2 gap-2 h-full">
-                        <div className="bg-gray-100 h-full relative overflow-hidden">
-                            {allImages[3] && <img src={allImages[3]} alt={name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer" />}
+                    <div className="hidden md:grid grid-rows-2 gap-3 h-full">
+                        <div className="bg-gray-100 h-full relative overflow-hidden group">
+                            {allImages[3] && (
+                                <motion.img 
+                                    whileHover={{ scale: 1.1 }}
+                                    src={allImages[3]} 
+                                    alt={name} 
+                                    className="w-full h-full object-cover cursor-pointer" 
+                                />
+                            )}
                         </div>
-                        <div className="bg-gray-100 h-full relative overflow-hidden">
-                            {allImages[4] && <img src={allImages[4]} alt={name} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 cursor-pointer" />}
+                        <div className="bg-gray-100 h-full relative overflow-hidden group">
+                            {allImages[4] && (
+                                <motion.img 
+                                    whileHover={{ scale: 1.1 }}
+                                    src={allImages[4]} 
+                                    alt={name} 
+                                    className="w-full h-full object-cover cursor-pointer" 
+                                />
+                            )}
                             {allImages.length > 5 && (
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium cursor-pointer hover:bg-black/40 transition-colors">
-                                    +{allImages.length - 5} photos
+                                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white font-bold cursor-pointer hover:bg-black/30 transition-colors">
+                                    <div className="text-center">
+                                        <div className="text-2xl">+{allImages.length - 5}</div>
+                                        <div className="text-xs uppercase tracking-wider">More Photos</div>
+                                    </div>
                                 </div>
                             )}
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-12">
                         {/* Title Section */}
-                        <div>
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                        >
                             <div className="flex items-start justify-between mb-2">
                                 <div>
-                                    <Badge variant="secondary" className="mb-3 capitalize">{package_type?.replace('-', ' ') || 'Custom Package'}</Badge>
-                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{name}</h1>
-                                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                                        <div className="flex items-center gap-1">
-                                            <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                                            <span className="font-medium text-gray-900">New</span>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <GlassBadge variant="primary" size="lg" className="capitalize">
+                                            {package_type?.replace('-', ' ') || 'Custom Package'}
+                                        </GlassBadge>
+                                        <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                                            Top Choice
+                                        </GlassBadge>
+                                    </div>
+                                    <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
+                                        {name}
+                                    </h1>
+                                    <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 font-medium">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-yellow-100 rounded-full">
+                                                <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                                            </div>
+                                            <span className="font-bold text-gray-900">New Experience</span>
                                         </div>
-                                        <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                                        <div className="flex items-center gap-1">
-                                            <MapPin size={16} />
-                                            <span>Multiple Locations</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-blue-100 rounded-full">
+                                                <MapPin size={16} className="text-blue-500" />
+                                            </div>
+                                            <span className="font-bold text-gray-900">Premium Destination</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-green-100 rounded-full">
+                                                <Shield size={16} className="text-green-500" />
+                                            </div>
+                                            <span className="font-bold text-gray-900">Secure Booking</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="h-px bg-gray-200" />
+                        </motion.div>
 
                         {/* Description */}
-                        <div>
-                            <h2 className="text-xl font-semibold mb-4">About this package</h2>
-                            <p className="text-gray-600 leading-relaxed whitespace-pre-line">{description || "No description provided."}</p>
-                        </div>
-
-                        <div className="h-px bg-gray-200" />
+                        <GlassCard variant="card" className="rounded-3xl border-none shadow-xl shadow-gray-100/50">
+                            <GlassHeader>
+                                <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
+                            </GlassHeader>
+                            <GlassContent>
+                                <p className="text-gray-600 leading-relaxed text-lg whitespace-pre-line">
+                                    {description || "Experience the ultimate getaway with our curated premium package designed for discerning travelers."}
+                                </p>
+                            </GlassContent>
+                        </GlassCard>
 
                         {/* Accommodation Details (Room) */}
                         {roomData && roomData.length > 0 && (
-                            <>
-                                <div>
-                                    <h2 className="text-xl font-semibold mb-4">Accommodation</h2>
-                                    {roomData.map((room: any, idx: number) => (
-                                        <div key={idx} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                                            <div className="flex items-start justify-between mb-4">
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-gray-900 px-2">Accommodation</h2>
+                                {roomData.map((room: any, idx: number) => (
+                                    <GlassCard key={idx} variant="card" className="rounded-3xl border-none shadow-xl shadow-gray-100/50 overflow-hidden">
+                                        <GlassHeader className="bg-gray-50/50 border-b border-gray-100 mb-6">
+                                            <div className="flex items-center justify-between">
                                                 <div>
-                                                    <h3 className="text-lg font-bold text-gray-900">{room.name}</h3>
-                                                    <p className="text-sm text-gray-500">{hotel?.name}</p>
+                                                    <GlassTitle className="text-xl font-bold text-primary">{room.name}</GlassTitle>
+                                                    <GlassDescription className="font-medium text-gray-500 flex items-center gap-1 mt-1">
+                                                        <MapPin size={14} /> {hotel?.name || 'Partner Hotel'}
+                                                    </GlassDescription>
                                                 </div>
+                                                <GlassBadge variant="info">Premium Room</GlassBadge>
                                             </div>
-
+                                        </GlassHeader>
+                                        <GlassContent>
                                             {room.description && (
-                                                <p className="text-gray-600 text-sm mb-4 leading-relaxed">{room.description}</p>
+                                                <p className="text-gray-600 mb-8 leading-relaxed italic border-l-4 border-primary/20 pl-4">
+                                                    "{room.description}"
+                                                </p>
                                             )}
 
                                             {/* Room Specific Amenities */}
                                             {room.amenities && room.amenities.length > 0 && (
-                                                <div>
-                                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Room Features</h4>
-                                                    <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-4">
+                                                    <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                                        <div className="w-1 h-4 bg-primary rounded-full" />
+                                                        Room Excellence
+                                                    </h4>
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         {room.amenities.map((amenity: string, i: number) => {
                                                             const { Icon, label } = getAmenityConfig(amenity);
                                                             return (
-                                                                <div key={i} className="flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-                                                                    {/* Icon Rendering */}
-                                                                    <div className="mb-2 text-primary group-hover:scale-110 transition-transform duration-300">
-                                                                        <Icon size={32} isSelected={true} />
+                                                                <motion.div 
+                                                                    key={i} 
+                                                                    whileHover={{ y: -5 }}
+                                                                    className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all group"
+                                                                >
+                                                                    <div className="mb-3 text-primary">
+                                                                        <Icon size={32} isHovered={true} />
                                                                     </div>
-                                                                    <span className="text-xs font-medium text-gray-700 text-center">{label}</span>
-                                                                </div>
+                                                                    <span className="text-xs font-bold text-gray-900 text-center uppercase tracking-tight">{label}</span>
+                                                                </motion.div>
                                                             );
                                                         })}
                                                     </div>
                                                 </div>
                                             )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="h-px bg-gray-200" />
-                            </>
+                                        </GlassContent>
+                                    </GlassCard>
+                                ))}
+                            </div>
                         )}
 
                         {/* Free Inclusions & Exclusive Offers Grid */}
@@ -478,74 +572,90 @@ export default function PackageDetailsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {/* Free Inclusions */}
                                 {packageData.free_inclusions?.length > 0 && (
-                                    <div>
-                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                            <Sparkles className="w-5 h-5 text-primary" />
-                                            Included Perks
-                                        </h3>
-                                        <div className="space-y-3">
-                                            {packageData.free_inclusions.map((item: any, idx: number) => {
-                                                const { Icon, label } = getAmenityConfig(item.name);
-                                                // Note: reusing getAmenityConfig for icons as it covers most inclusive bases
-                                                return (
-                                                    <div key={idx} className="flex items-start gap-3 p-3 bg-green-50/50 border border-green-100 rounded-lg">
-                                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 shrink-0">
+                                    <GlassCard variant="card" className="rounded-3xl border-none shadow-xl shadow-gray-100/50">
+                                        <GlassHeader>
+                                            <GlassTitle className="text-xl font-bold flex items-center gap-2">
+                                                <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                                                Included Perks
+                                            </GlassTitle>
+                                        </GlassHeader>
+                                        <GlassContent>
+                                            <div className="space-y-3">
+                                                {packageData.free_inclusions.map((item: any, idx: number) => (
+                                                    <motion.div 
+                                                        key={idx} 
+                                                        whileHover={{ x: 5 }}
+                                                        className="flex items-center gap-3 p-4 bg-green-50/30 border border-green-100/50 rounded-2xl"
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 shrink-0 shadow-sm">
                                                             <Check size={14} strokeWidth={3} />
                                                         </div>
-                                                        <span className="font-medium text-gray-900">{item.name}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
+                                                        <span className="font-bold text-gray-900 text-sm">{item.name}</span>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </GlassContent>
+                                    </GlassCard>
                                 )}
 
                                 {/* Exclusive Discount Offers */}
                                 {packageData.discount_offers?.length > 0 && (
-                                    <div>
-                                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                            <div className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">%</div>
-                                            Exclusive Offers
-                                        </h3>
-                                        <div className="space-y-3">
-                                            {packageData.discount_offers.map((offer: any, idx: number) => (
-                                                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-orange-100 rounded-lg shadow-sm hover:shadow-md transition-all group">
-                                                    <div>
-                                                        <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">{offer.name}</div>
-                                                        <div className="flex items-center gap-2 text-sm mt-0.5">
-                                                            <span className="line-through text-gray-400 text-xs">${offer.originalPrice}</span>
-                                                            <span className="font-bold text-success">${(offer.originalPrice * (1 - offer.discount / 100)).toFixed(0)}</span>
+                                    <GlassCard variant="card" className="rounded-3xl border-none shadow-xl shadow-gray-100/50">
+                                        <GlassHeader>
+                                            <GlassTitle className="text-xl font-bold flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xs">%</div>
+                                                Limited Offers
+                                            </GlassTitle>
+                                        </GlassHeader>
+                                        <GlassContent>
+                                            <div className="space-y-3">
+                                                {packageData.discount_offers.map((offer: any, idx: number) => (
+                                                    <motion.div 
+                                                        key={idx} 
+                                                        whileHover={{ scale: 1.02 }}
+                                                        className="flex items-center justify-between p-4 bg-white border border-orange-100 rounded-2xl shadow-sm group hover:border-orange-200 transition-all"
+                                                    >
+                                                        <div>
+                                                            <div className="font-bold text-gray-900 group-hover:text-primary transition-colors text-sm">{offer.name}</div>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="line-through text-gray-400 text-xs">${offer.originalPrice}</span>
+                                                                <span className="font-black text-success text-sm">${(offer.originalPrice * (1 - offer.discount / 100)).toFixed(0)}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end">
-                                                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-none mb-1">
-                                                            {offer.discount}% OFF
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                        <GlassBadge variant="warning" size="sm" className="font-black">
+                                                            -{offer.discount}%
+                                                        </GlassBadge>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </GlassContent>
+                                    </GlassCard>
                                 )}
                             </div>
                         )}
-                        {(packageData.free_inclusions?.length > 0 || packageData.discount_offers?.length > 0) && <div className="h-px bg-gray-200" />}
 
 
                         {/* Highlights & Aggregated Amenities */}
                         {aggregatedAmenities.length > 0 && (
-                            <div>
-                                <h2 className="text-xl font-semibold mb-6">Package Highlights & Amenities</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="space-y-8">
+                                <h2 className="text-2xl font-bold text-gray-900 px-2 flex items-center gap-2">
+                                    Amenities & Experience
+                                    <GlassBadge variant="outline" size="sm" className="font-medium ml-2">Verified</GlassBadge>
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     {aggregatedAmenities.map((amenity: string, idx: number) => {
                                         const { Icon, label } = getAmenityConfig(amenity);
                                         return (
-                                            <div key={idx} className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-all duration-300 group">
-                                                <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                                                    <Icon size={40} isSelected={true} />
+                                            <motion.div 
+                                                key={idx} 
+                                                whileHover={{ y: -8, scale: 1.05 }}
+                                                className="flex flex-col items-center justify-center p-4 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group"
+                                            >
+                                                <div className="mb-3 text-primary">
+                                                    <Icon size={48} isHovered={true} />
                                                 </div>
-                                                <span className="text-sm font-medium text-gray-900 text-center leading-snug">{label}</span>
-                                            </div>
+                                                <span className="text-[10px] font-black text-gray-900 text-center uppercase tracking-widest">{label}</span>
+                                            </motion.div>
                                         );
                                     })}
                                 </div>
@@ -557,95 +667,112 @@ export default function PackageDetailsPage() {
 
                         {/* Inclusions / Exclusions */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                                    <Check className="text-green-500" size={20} />
-                                    What's Included
-                                </h3>
-                                {inclusions && inclusions.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {inclusions.map((item: string, idx: number) => (
-                                            <li key={idx} className="flex items-start gap-3 text-gray-600">
-                                                <Check size={16} className="text-green-500 mt-1 shrink-0" />
-                                                <span>{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-gray-400 italic">No inclusions listed</p>
-                                )}
-                            </div>
+                            <GlassCard variant="card" className="rounded-3xl border-none bg-green-50/20">
+                                <GlassHeader>
+                                    <GlassTitle className="text-xl font-bold flex items-center gap-2 text-green-700">
+                                        <Check className="text-green-500" size={24} strokeWidth={3} />
+                                        What's Included
+                                    </GlassTitle>
+                                </GlassHeader>
+                                <GlassContent>
+                                    {inclusions && inclusions.length > 0 ? (
+                                        <ul className="space-y-4">
+                                            {inclusions.map((item: string, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-3 text-gray-700 font-medium">
+                                                    <div className="mt-1 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-gray-400 italic">No inclusions listed</p>
+                                    )}
+                                </GlassContent>
+                            </GlassCard>
 
-                            <div>
-                                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                                    <X className="text-red-500" size={20} />
-                                    What's Excluded
-                                </h3>
-                                {exclusions && exclusions.length > 0 ? (
-                                    <ul className="space-y-3">
-                                        {exclusions.map((item: string, idx: number) => (
-                                            <li key={idx} className="flex items-start gap-3 text-gray-600">
-                                                <X size={16} className="text-red-500 mt-1 shrink-0" />
-                                                <span className="break-all">{item}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-gray-400 italic">No exclusions listed</p>
-                                )}
-                            </div>
+                            <GlassCard variant="card" className="rounded-3xl border-none bg-red-50/20">
+                                <GlassHeader>
+                                    <GlassTitle className="text-xl font-bold flex items-center gap-2 text-red-700">
+                                        <X className="text-red-500" size={24} strokeWidth={3} />
+                                        What's Excluded
+                                    </GlassTitle>
+                                </GlassHeader>
+                                <GlassContent>
+                                    {exclusions && exclusions.length > 0 ? (
+                                        <ul className="space-y-4">
+                                            {exclusions.map((item: string, idx: number) => (
+                                                <li key={idx} className="flex items-start gap-3 text-gray-700 font-medium font-mono text-xs">
+                                                    <div className="mt-1.5 w-1 h-3 bg-red-500/30 rounded-full shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-gray-400 italic">No exclusions listed</p>
+                                    )}
+                                </GlassContent>
+                            </GlassCard>
                         </div>
 
-                        <div className="h-px bg-gray-200" />
-
                         {/* Policies */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
                             {cancellation_policy && (
-                                <div>
-                                    <h3 className="font-semibold mb-2">Cancellation Policy</h3>
-                                    <p className="text-gray-600 text-sm whitespace-pre-line">{cancellation_policy}</p>
+                                <div className="p-6 rounded-3xl bg-gray-100/50 border border-gray-200/50">
+                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Cancellation Policy</h3>
+                                    <p className="text-gray-500 text-sm leading-relaxed whitespace-pre-line font-medium">{cancellation_policy}</p>
                                 </div>
                             )}
                             {payment_terms && (
-                                <div>
-                                    <h3 className="font-semibold mb-2">Payment Terms</h3>
-                                    <p className="text-gray-600 text-sm whitespace-pre-line">{payment_terms}</p>
+                                <div className="p-6 rounded-3xl bg-gray-100/50 border border-gray-200/50">
+                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">Payment Terms</h3>
+                                    <p className="text-gray-500 text-sm leading-relaxed whitespace-pre-line font-medium">{payment_terms}</p>
                                 </div>
                             )}
                         </div>
                     </div >
 
                     {/* Sticky Sidebar - Booking Card */}
-                    < div className="relative" >
-                        <div className="sticky top-24 border border-gray-200 rounded-xl p-6 shadow-xl shadow-gray-100/50 bg-white">
-                            <div className="flex items-end gap-2 mb-6">
-                                <span className="text-2xl font-bold text-gray-900">
-                                    {displayBasePrice > 0 ? `$${displayBasePrice}` : 'Price on request'}
+                    <div className="relative">
+                        <GlassCard 
+                            variant="card" 
+                            className="sticky top-24 border-none shadow-2xl shadow-primary/10 rounded-[2.5rem] p-8 overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                            
+                            <div className="flex items-end gap-2 mb-8 relative">
+                                <span className="text-4xl font-black text-gray-900 tracking-tight">
+                                    {displayBasePrice > 0 ? `$${displayBasePrice.toLocaleString()}` : 'Price on request'}
                                 </span>
-                                {displayBasePrice > 0 && <span className="text-gray-500 mb-1">/ night</span>}
+                                {displayBasePrice > 0 && <span className="text-gray-500 font-bold mb-1.5 tracking-wide">/ night</span>}
                             </div>
 
-                            <div className="space-y-4 mb-6">
-                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="space-y-6 mb-8 relative">
+                                <div className="bg-gray-50/50 rounded-3xl border border-gray-100 overflow-hidden">
                                     {/* Date Picker Trigger */}
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <div className="grid grid-cols-2 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-                                                <div className="p-3 border-r border-gray-200">
-                                                    <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Check-in</label>
-                                                    <span className={cn("text-sm", !dateRange?.from && "text-gray-400")}>
-                                                        {dateRange?.from ? format(dateRange.from, 'MMM d') : 'Select'}
-                                                    </span>
+                                            <div className="grid grid-cols-2 border-b border-gray-100 cursor-pointer hover:bg-white/50 transition-all duration-300">
+                                                <div className="p-4 border-r border-gray-100">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">Check-in</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <CalendarIcon size={14} className="text-gray-400" />
+                                                        <span className={cn("font-bold text-sm", !dateRange?.from && "text-gray-400 italic")}>
+                                                            {dateRange?.from ? format(dateRange.from, 'MMM d, yyyy') : 'Select Date'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="p-3">
-                                                    <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Check-out</label>
-                                                    <span className={cn("text-sm", !dateRange?.to && "text-gray-400")}>
-                                                        {dateRange?.to ? format(dateRange.to, 'MMM d') : 'Select'}
-                                                    </span>
+                                                <div className="p-4">
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">Check-out</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <CalendarIcon size={14} className="text-gray-400" />
+                                                        <span className={cn("font-bold text-sm", !dateRange?.to && "text-gray-400 italic")}>
+                                                            {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select Date'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="end">
+                                        <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden shadow-2xl border-none" align="end">
                                             <CalendarComponent
                                                 initialFocus
                                                 mode="range"
@@ -653,94 +780,132 @@ export default function PackageDetailsPage() {
                                                 selected={dateRange}
                                                 onSelect={setDateRange}
                                                 numberOfMonths={2}
+                                                className="p-4"
                                                 disabled={(date) => date < new Date()}
                                             />
                                         </PopoverContent>
                                     </Popover>
 
-                                    <div className="px-3 py-2 border-b border-gray-200">
-                                        <p className={cn(
-                                            'text-xs',
-                                            isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium'
-                                        )}>
-                                            {stayLengthMessage}
-                                        </p>
+                                    <div className="px-4 py-3 border-b border-gray-100 bg-white/30 backdrop-blur-sm">
+                                        <div className="flex items-center gap-2">
+                                            <Clock size={14} className={isStayLengthValid ? "text-primary" : "text-red-500"} />
+                                            <p className={cn(
+                                                'text-[10px] font-black uppercase tracking-widest',
+                                                isStayLengthValid ? 'text-gray-500' : 'text-red-500'
+                                            )}>
+                                                {stayLengthMessage}
+                                            </p>
+                                        </div>
                                     </div>
 
                                     {/* Guest Selector */}
                                     <Popover open={isGuestOpen} onOpenChange={setIsGuestOpen}>
                                         <PopoverTrigger asChild>
-                                            <div className="p-3 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between">
+                                            <div className="p-4 cursor-pointer hover:bg-white/50 transition-all duration-300 flex items-center justify-between">
                                                 <div>
-                                                    <label className="text-xs font-bold text-gray-700 uppercase block mb-1">Guests</label>
-                                                    <span className="text-sm text-gray-900">{guests} guest{guests > 1 ? 's' : ''}</span>
+                                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">Travelers</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <Users size={14} className="text-gray-400" />
+                                                        <span className="font-bold text-sm text-gray-900">{guests} traveler{guests > 1 ? 's' : ''}</span>
+                                                    </div>
                                                 </div>
-                                                <ChevronDown size={16} className="text-gray-400" />
+                                                <ChevronDown size={16} className="text-primary" />
                                             </div>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-full p-4" align="start">
+                                        <PopoverContent className="w-[300px] p-6 rounded-3xl shadow-2xl border-none" align="start">
                                             <div className="flex items-center justify-between">
-                                                <span className="font-medium text-sm">Guests</span>
-                                                <div className="flex items-center gap-3">
-                                                    <Button
-                                                        variant="outline"
+                                                <div>
+                                                    <div className="font-black text-gray-900 text-sm uppercase tracking-wider">Travelers</div>
+                                                    <div className="text-[10px] text-gray-400 font-bold">Ages 13+</div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <GlassButton
+                                                        variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 rounded-full"
+                                                        className="h-10 w-10 rounded-2xl bg-gray-50 hover:bg-gray-100"
                                                         onClick={() => setGuests(Math.max(1, guests - 1))}
                                                         disabled={guests <= 1}
                                                     >
-                                                        -
-                                                    </Button>
-                                                    <span className="w-4 text-center">{guests}</span>
-                                                    <Button
-                                                        variant="outline"
+                                                        −
+                                                    </GlassButton>
+                                                    <span className="w-4 text-center font-black text-lg">{guests}</span>
+                                                    <GlassButton
+                                                        variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 rounded-full"
+                                                        className="h-10 w-10 rounded-2xl bg-gray-50 hover:bg-gray-100"
                                                         onClick={() => setGuests(Math.min(maxGuests, guests + 1))}
                                                         disabled={guests >= maxGuests}
                                                     >
                                                         +
-                                                    </Button>
+                                                    </GlassButton>
                                                 </div>
                                             </div>
-                                            <p className="text-xs text-gray-500 mt-2">Max {maxGuests} guests</p>
+                                            <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                <span>Capacity Limit</span>
+                                                <span className="text-primary">{maxGuests} Max</span>
+                                            </div>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
 
-                                <Button
-                                    className="w-full h-12 text-lg font-semibold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20"
-                                    onClick={handleRequestToBook}
-                                    disabled={isCheckingAvailability || !dateRange?.from || !dateRange?.to || !isStayLengthValid}
-                                >
-                                    {isCheckingAvailability ? 'Checking availability...' : 'Continue to Booking'}
-                                </Button>
+                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                    <Button
+                                        className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
+                                        onClick={handleRequestToBook}
+                                        disabled={isCheckingAvailability || !dateRange?.from || !dateRange?.to || !isStayLengthValid}
+                                    >
+                                        {isCheckingAvailability ? (
+                                            <Loader2 className="animate-spin" />
+                                        ) : (
+                                            'Confirm Booking'
+                                        )}
+                                    </Button>
+                                </motion.div>
 
-                                {availabilityError && (
-                                    <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                                        {availabilityError}
-                                    </div>
-                                )}
+                                <AnimatePresence>
+                                    {availabilityError && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="rounded-2xl bg-red-50 p-4 border border-red-100"
+                                        >
+                                            <p className="text-xs font-bold text-red-600 flex items-center gap-2">
+                                                <AlertCircle size={14} />
+                                                {availabilityError}
+                                            </p>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
                                 {nights > 0 && displayBasePrice > 0 && (
-                                    <div className="pt-4 border-t border-gray-100 space-y-2">
-                                        <div className="flex justify-between text-gray-600">
-                                            <span>${displayBasePrice} x {nights} night{nights > 1 ? 's' : ''}</span>
-                                            <span>${totalPrice}</span>
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="pt-6 border-t border-gray-100 space-y-4"
+                                    >
+                                        <div className="flex justify-between items-center text-gray-500 font-bold text-xs uppercase tracking-wider">
+                                            <span>${displayBasePrice.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}</span>
+                                            <span className="text-gray-900">${totalPrice.toLocaleString()}</span>
                                         </div>
-                                        <div className="flex justify-between text-lg font-bold text-gray-900 pt-2">
-                                            <span>Total</span>
-                                            <span>${totalPrice}</span>
+                                        <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
+                                            <span className="text-sm font-black text-gray-900 uppercase tracking-widest">Total Cost</span>
+                                            <span className="text-2xl font-black text-primary">${totalPrice.toLocaleString()}</span>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
                             </div>
 
-                            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                                <span className="w-2 h-2 rounded-full bg-green-500" />
-                                Free cancellation available
+                            <div className="flex flex-col items-center gap-4 relative">
+                                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Free Cancellation</span>
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight text-center">
+                                    Trusted by 10,000+ happy travelers this year
+                                </p>
                             </div>
-                        </div>
+                        </GlassCard>
                     </div >
                 </div >
             </main >
