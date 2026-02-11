@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Upload, FileCheck, Info, Loader2, Check } from 'lucide-react';
-import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
@@ -15,12 +15,11 @@ interface StepProps {
 }
 
 const DOCUMENTS = [
-    { id: 'business_reg', title: 'Business Registration', desc: 'Valid certificate of incorporation' },
-    { id: 'tourism_license', title: 'Tourism License', desc: 'Government issued operator permit' },
-    { id: 'id_verification', title: 'Identity Document', desc: 'Passport or National ID of owner' },
+    { id: 'passport', title: 'Passport / National ID', desc: 'Valid government issued identity document' },
+    { id: 'selfie', title: 'Selfie with ID', desc: 'Clear photo of yourself holding your ID' },
 ];
 
-export function VerificationStep({ onUpdate, data }: StepProps) {
+export function IdentityStep({ onUpdate, data }: StepProps) {
     const { user } = useAuth();
     const [uploads, setUploads] = useState<Record<string, boolean>>(data.verification?.uploads || {});
     const [urls, setUrls] = useState<Record<string, string>>(data.verification?.documentUrls || {});
@@ -31,7 +30,7 @@ export function VerificationStep({ onUpdate, data }: StepProps) {
 
         setIsUploading(id);
         try {
-            const publicUrl = await tourOperatorService.uploadAsset(user.id, file, `verification/${id}`);
+            const publicUrl = await hotelManagerService.uploadAsset(user.id, file, `verification/${id}`);
             const nextUploads = { ...uploads, [id]: true };
             const nextUrls = { ...urls, [id]: publicUrl };
             
@@ -63,8 +62,8 @@ export function VerificationStep({ onUpdate, data }: StepProps) {
                 >
                     <ShieldCheck className="w-12 h-12" aria-hidden="true" />
                 </motion.div>
-                <h3 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter uppercase italic">Trust & Verification</h3>
-                <p className="text-xl text-gray-500 max-w-md mx-auto leading-relaxed font-medium">Verify your business to earn the trusted badge and unlock full features.</p>
+                <h3 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter uppercase italic">Identity Check</h3>
+                <p className="text-xl text-gray-500 max-w-md mx-auto leading-relaxed font-medium">Verify your identity to ensure a secure platform for everyone.</p>
             </div>
 
             <div className="space-y-4">
@@ -133,9 +132,9 @@ export function VerificationStep({ onUpdate, data }: StepProps) {
                     <Info className="w-6 h-6 text-blue-500" />
                 </div>
                 <div className="space-y-2">
-                    <p className="font-black text-blue-900 text-xs uppercase tracking-widest italic">Review Process</p>
+                    <p className="font-black text-blue-900 text-xs uppercase tracking-widest italic">Data Privacy</p>
                     <p className="text-sm text-blue-800/80 leading-relaxed font-medium">
-                        Our compliance team will review your documents within 48-72 hours. You can still create drafts and partial packages while waiting for approval.
+                        Your identity documents are encrypted and stored securely. We only use them for verification purposes to prevent fraud and maintain platform integrity.
                     </p>
                 </div>
             </div>

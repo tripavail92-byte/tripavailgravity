@@ -20,6 +20,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [formData, setFormData] = useState(data.businessInfo || {
         businessName: '',
+        registrationNumber: '',
         yearsInBusiness: '',
         teamSize: '',
         businessDescription: '',
@@ -104,6 +105,19 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                         value={formData.businessName}
                         onChange={(e) => handleInputChange('businessName', e.target.value)}
                         placeholder="Official company name"
+                        className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
+                    />
+                </div>
+
+                <div className="space-y-3">
+                    <Label htmlFor="registrationNumber" className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+                        Business Registration Number
+                    </Label>
+                    <Input
+                        id="registrationNumber"
+                        value={formData.registrationNumber}
+                        onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
+                        placeholder="e.g. 12345-67890"
                         className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
                     />
                 </div>

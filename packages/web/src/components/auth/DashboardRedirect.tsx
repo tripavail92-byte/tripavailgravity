@@ -17,11 +17,17 @@ export function DashboardRedirect() {
     }
 
     // Determine default dashboard based on role
-    const defaultDashboard = activeRole?.role_type === 'hotel_manager'
-        ? '/manager/dashboard'
-        : activeRole?.role_type === 'tour_operator'
-            ? '/operator/dashboard'
-            : '/dashboard/overview';
+    let defaultDashboard = '/dashboard/overview';
+    
+    if (activeRole?.role_type === 'hotel_manager') {
+        defaultDashboard = activeRole.verification_status === 'incomplete' 
+            ? '/manager/setup' 
+            : '/manager/dashboard';
+    } else if (activeRole?.role_type === 'tour_operator') {
+        defaultDashboard = activeRole.verification_status === 'incomplete' 
+            ? '/operator/setup' 
+            : '/operator/dashboard';
+    }
 
     return <Navigate to={defaultDashboard} replace />;
 }

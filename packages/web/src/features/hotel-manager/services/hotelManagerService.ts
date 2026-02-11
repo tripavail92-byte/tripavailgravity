@@ -1,44 +1,37 @@
 import { supabase } from '../../../../../shared/src/core/client';
 
-export interface TourOperatorOnboardingData {
+export interface HotelManagerOnboardingData {
     personalInfo?: {
         firstName: string;
         lastName: string;
         email: string;
         phoneNumber: string;
-        contactPerson: string;
     };
     profilePicture?: string;
     businessInfo?: {
-        companyLogo: string;
         businessName: string;
-        yearsInBusiness: string;
-        teamSize: string;
-        description: string;
-        registrationNumber?: string;
+        registrationNumber: string;
+        businessAddress: string;
     };
-    services?: {
-        categories: string[];
-        customServices: string[];
-    };
-    coverage?: {
-        primaryLocation: string;
-        radius: string;
-    };
-    policies?: {
-        accepted: boolean;
-        mode: 'templates' | 'upload';
-        custom: Record<string, string>;
-        uploads: Record<string, boolean>;
+    propertyDetails?: {
+        propertyName: string;
+        propertyAddress: string;
+        ownershipType: 'owner' | 'manager' | 'lease';
     };
     verification?: {
         uploads: Record<string, boolean>;
         documentUrls?: Record<string, string>;
     };
+    bankInfo?: {
+        bankName: string;
+        accountHolder: string;
+        accountNumber: string;
+        routingNumber: string;
+    };
 }
 
-export const tourOperatorService = {
-    async saveOnboardingData(userId: string, data: Partial<TourOperatorOnboardingData>, setupCompleted: boolean = false) {
+export const hotelManagerService = {
+    async saveOnboardingData(userId: string, data: Partial<HotelManagerOnboardingData>, setupCompleted: boolean = false) {
         if (!userId) throw new Error('User ID required');
 
         const profilePayload = {
@@ -47,18 +40,14 @@ export const tourOperatorService = {
             last_name: data.personalInfo?.lastName,
             email: data.personalInfo?.email,
             phone_number: data.personalInfo?.phoneNumber,
-            contact_person: data.personalInfo?.contactPerson,
             profile_picture_url: data.profilePicture,
-            company_logo_url: data.businessInfo?.companyLogo,
-            company_name: data.businessInfo?.businessName,
-            years_experience: data.businessInfo?.yearsInBusiness,
-            team_size: data.businessInfo?.teamSize,
-            description: data.businessInfo?.description,
+            business_name: data.businessInfo?.businessName,
             registration_number: data.businessInfo?.registrationNumber,
-            categories: data.services?.categories,
-            primary_city: data.coverage?.primaryLocation,
-            coverage_range: data.coverage?.radius,
-            policies: data.policies,
+            business_address: data.businessInfo?.businessAddress,
+            property_name: data.propertyDetails?.propertyName,
+            property_address: data.propertyDetails?.propertyAddress,
+            ownership_type: data.propertyDetails?.ownershipType,
+            bank_info: data.bankInfo,
             verification_documents: data.verification?.uploads,
             verification_urls: data.verification?.documentUrls,
             setup_completed: setupCompleted,
@@ -66,9 +55,9 @@ export const tourOperatorService = {
         };
 
         try {
-            console.log('📤 Saving tour operator profile:', profilePayload);
+            console.log('📤 Saving hotel manager profile:', profilePayload);
             const { error } = await supabase
-                .from('tour_operator_profiles')
+                .from('hotel_manager_profiles')
                 .upsert(profilePayload);
 
             if (error) throw error;
@@ -79,12 +68,12 @@ export const tourOperatorService = {
                     .from('user_roles')
                     .update({ verification_status: 'pending' })
                     .eq('user_id', userId)
-                    .eq('role_type', 'tour_operator');
+                    .eq('role_type', 'hotel_manager');
             }
 
             return { success: true };
         } catch (error) {
-            console.error('❌ Error saving tour operator profile:', error);
+            console.error('❌ Error saving hotel manager profile:', error);
             throw error;
         }
     },
@@ -94,7 +83,7 @@ export const tourOperatorService = {
 
         try {
             const { data, error } = await supabase
-                .from('tour_operator_profiles')
+                .from('hotel_manager_profiles')
                 .select('*')
                 .eq('user_id', userId)
                 .single();
@@ -103,41 +92,33 @@ export const tourOperatorService = {
 
             if (!data) return null;
 
-            // Map DB columns back to frontend structure
             const profile = data as any;
-            const onboardingData: TourOperatorOnboardingData = {
+            return {
                 personalInfo: {
                     firstName: profile.first_name || '',
                     lastName: profile.last_name || '',
                     email: profile.email || '',
                     phoneNumber: profile.phone_number || '',
-                    contactPerson: profile.contact_person || '',
                 },
                 profilePicture: profile.profile_picture_url,
                 businessInfo: {
-                    companyLogo: profile.company_logo_url || '',
-                    businessName: profile.company_name || '',
-                    yearsInBusiness: profile.years_experience || '',
-                    teamSize: profile.team_size || '',
-                    description: profile.description || '',
+                    businessName: profile.business_name || '',
+                    registrationNumber: profile.registration_number || '',
+                    businessAddress: profile.business_address || '',
                 },
-                services: {
-                    categories: profile.categories || [],
-                    customServices: []
+                propertyDetails: {
+                    propertyName: profile.property_name || '',
+                    propertyAddress: profile.property_address || '',
+                    ownershipType: profile.ownership_type || 'owner',
                 },
-                coverage: {
-                    primaryLocation: profile.primary_city || '',
-                    radius: profile.coverage_range || ''
-                },
-                policies: profile.policies,
+                bankInfo: profile.bank_info || {},
                 verification: {
-                    uploads: profile.verification_documents || {}
+                    uploads: profile.verification_documents || {},
+                    documentUrls: profile.verification_urls || {}
                 }
-            };
-
-            return onboardingData;
+            } as HotelManagerOnboardingData;
         } catch (error) {
-            console.error('❌ Error fetching tour operator profile:', error);
+            console.error('❌ Error fetching hotel manager profile:', error);
             throw error;
         }
     },
@@ -151,13 +132,13 @@ export const tourOperatorService = {
 
         try {
             const { error: uploadError } = await supabase.storage
-                .from('tour-operator-assets')
+                .from('hotel-manager-assets')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
             const { data: urlData } = supabase.storage
-                .from('tour-operator-assets')
+                .from('hotel-manager-assets')
                 .getPublicUrl(filePath);
 
             return urlData.publicUrl;

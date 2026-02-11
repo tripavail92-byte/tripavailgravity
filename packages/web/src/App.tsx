@@ -21,6 +21,7 @@ const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
 const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
 const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
 const TourOperatorSetupPage = lazy(() => import('@/pages/tour-operator/setup/TourOperatorSetupPage'))
+const HotelManagerSetupPage = lazy(() => import('@/pages/hotel-manager/setup/HotelManagerSetupPage'))
 const CreateTourPage = lazy(() => import('@/pages/tour-operator/tours/create/CreateTourPage'))
 const TourDetailsPage = lazy(() => import('@/pages/traveller/TourDetailsPage'))
 const TourCheckoutPage = lazy(() => import('@/pages/checkout/TourCheckoutPage'))
@@ -135,14 +136,6 @@ function App() {
             }
           />
 
-          <Route
-            path="/operator/setup"
-            element={
-              <RoleGuard allowedRoles={['tour_operator']}>
-                <TourOperatorSetupPage />
-              </RoleGuard>
-            }
-          />
 
           <Route
             path="/operator/tours/new"
@@ -152,6 +145,7 @@ function App() {
               </RoleGuard>
             }
           />
+
 
           {/* Hotel Manager Settings */}
           <Route
@@ -179,6 +173,23 @@ function App() {
         {/* Full Screen Flows */}
         <Route path="/manager/list-hotel" element={<ListHotelPage />} />
         <Route path="/manager/list-package" element={<ListPackagePage />} />
+        
+        <Route
+          path="/manager/setup"
+          element={
+            <RoleGuard allowedRoles={['hotel_manager']}>
+              <HotelManagerSetupPage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="/operator/setup"
+          element={
+            <RoleGuard allowedRoles={['tour_operator']}>
+              <TourOperatorSetupPage />
+            </RoleGuard>
+          }
+        />
 
 
         {/* Fallback */}
