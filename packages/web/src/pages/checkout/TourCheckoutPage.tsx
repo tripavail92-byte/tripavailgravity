@@ -49,7 +49,8 @@ export default function TourCheckoutPage() {
                 setTour(foundTour);
 
                 if (foundTour) {
-                    const schedules = await tourService.getTourSchedules(id);
+                    // IMPORTANT: Use foundTour.id (UUID) instead of id (which might be a slug)
+                    const schedules = await tourService.getTourSchedules(foundTour.id);
                     const mainSchedule = schedules[0];
                     setSchedule(mainSchedule);
 

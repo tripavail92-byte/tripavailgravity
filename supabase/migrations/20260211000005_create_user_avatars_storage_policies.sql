@@ -7,7 +7,7 @@
 -- you are NOT running this as an owner/admin role.
 -- Run this in Supabase Dashboard → SQL Editor as the project owner (it typically runs as `postgres`).
 -- If the storage tables are owned by `supabase_storage_admin`, run the next line first:
--- SET ROLE supabase_storage_admin;
+SET ROLE supabase_storage_admin;
 
 -- Ensure storage.objects RLS is enabled
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
@@ -44,3 +44,5 @@ CREATE POLICY "Users delete own avatars" ON storage.objects
     bucket_id = 'user-avatars'
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
+
+RESET ROLE;

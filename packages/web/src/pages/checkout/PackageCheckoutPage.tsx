@@ -90,8 +90,9 @@ export default function PackageCheckoutPage() {
       if (!id || !state?.checkIn || !state?.checkOut || hasValidPricing) return;
 
       try {
+        // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
         const calculated = await packageBookingService.calculatePrice(
-          id,
+          packageData.id,
           state.checkIn,
           state.checkOut
         );
@@ -202,8 +203,9 @@ export default function PackageCheckoutPage() {
     setBookingError(null);
 
     try {
+      // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
       const result = await createPackageBookingWithValidation({
-        package_id: id,
+        package_id: packageData.id,
         traveler_id: user.id,
         check_in_date: state.checkIn,
         check_out_date: state.checkOut,

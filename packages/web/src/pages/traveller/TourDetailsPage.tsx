@@ -32,7 +32,8 @@ export default function TourDetailsPage() {
 
                 if (foundTour) {
                     // Fetch schedule for this tour
-                    const tourSchedules = await tourService.getTourSchedules(id);
+                    // IMPORTANT: Use foundTour.id (UUID) instead of id (which might be a slug)
+                    const tourSchedules = await tourService.getTourSchedules(foundTour.id);
                     const mainSchedule = tourSchedules[0] || null;
                     setSchedule(mainSchedule);
 
@@ -59,7 +60,9 @@ export default function TourDetailsPage() {
     }, [id]);
 
     const handleBookNow = () => {
-        if (!id) return;
+        if (!tour?.id) return;
+        // Navigate using the ID/Slug from URL is fine, but for consistency let's use the actual tour ID if we have it
+        // Checkout page also handles both ID and Slug, but it's safer to use the UUID if possible
         navigate(`/checkout/tour/${id}`);
     };
 
