@@ -310,7 +310,7 @@ export default function PackageDetailsPage() {
 
         try {
             const isAvailable = await packageBookingService.checkAvailability(
-                id,
+                packageData.id,
                 checkIn,
                 checkOut
             );

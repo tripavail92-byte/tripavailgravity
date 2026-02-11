@@ -87,7 +87,7 @@ export default function PackageCheckoutPage() {
         typeof pricing.total_price === 'number' &&
         pricing.total_price > 0;
 
-      if (!id || !state?.checkIn || !state?.checkOut || hasValidPricing) return;
+      if (!id || !packageData?.id || !state?.checkIn || !state?.checkOut || hasValidPricing) return;
 
       try {
         // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
@@ -103,7 +103,7 @@ export default function PackageCheckoutPage() {
     };
 
     loadPricing();
-  }, [id, state?.checkIn, state?.checkOut, pricing]);
+  }, [id, packageData?.id, state?.checkIn, state?.checkOut, pricing]);
 
   useEffect(() => {
     if (!pendingBooking?.expires_at) return;
