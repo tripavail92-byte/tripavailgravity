@@ -32,8 +32,10 @@ export interface TourOperatorOnboardingData {
         uploads: Record<string, boolean>;
     };
     verification?: {
-        uploads: Record<string, boolean>;
-        documentUrls?: Record<string, string>;
+        idCardUrl: string;
+        selfieUrl: string;
+        matchingScore: number;
+        businessDocs: Record<string, string>;
     };
 }
 
@@ -59,8 +61,12 @@ export const tourOperatorService = {
             primary_city: data.coverage?.primaryLocation,
             coverage_range: data.coverage?.radius,
             policies: data.policies,
-            verification_documents: data.verification?.uploads,
-            verification_urls: data.verification?.documentUrls,
+            verification_documents: {
+                idCardUrl: data.verification?.idCardUrl,
+                selfieUrl: data.verification?.selfieUrl,
+                matchingScore: data.verification?.matchingScore
+            },
+            verification_urls: data.verification?.businessDocs,
             setup_completed: setupCompleted,
             updated_at: new Date().toISOString()
         };
@@ -130,9 +136,12 @@ export const tourOperatorService = {
                     radius: profile.coverage_range || ''
                 },
                 policies: profile.policies,
-                verification: {
-                    uploads: profile.verification_documents || {}
-                }
+                verification: profile.verification_documents ? {
+                    idCardUrl: profile.verification_documents.idCardUrl || '',
+                    selfieUrl: profile.verification_documents.selfieUrl || '',
+                    matchingScore: profile.verification_documents.matchingScore || 0,
+                    businessDocs: profile.verification_urls || {}
+                } : undefined
             };
 
             return onboardingData;
