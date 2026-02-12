@@ -11,7 +11,9 @@ import {
     Loader2, 
     AlertCircle,
     ScanFace,
-    CreditCard
+    CreditCard,
+    Camera,
+    UserCheck
 } from 'lucide-react';
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
 import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService';
@@ -47,11 +49,20 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
         setIsUploading(true);
         try {
             const url = await service.uploadAsset(user.id, file, 'verification/id_card');
+            
+            // Validate if it's actually an ID
+            const validation = await aiVerificationService.validateIdCard(url, user.id, role);
+            
+            if (!validation.valid) {
+                toast.error(validation.reason || 'Invalid ID document. Please upload a clear photo of your ID.');
+                return;
+            }
+
             setIdCardUrl(url);
             setSubStep('selfie');
-            toast.success('ID Card uploaded!');
+            toast.success('ID Card validated!');
         } catch (error) {
-            toast.error('Upload failed. Try again.');
+            toast.error('Verification failed. Try again.');
         } finally {
             setIsUploading(false);
         }
@@ -65,15 +76,15 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             setSelfieUrl(url);
             setSubStep('verifying');
             
-            // Run AI Verification
-            const result = await aiVerificationService.compareFaceToId(idCardUrl, url);
+            // Run AI Verification with Role and User Context
+            const result = await aiVerificationService.compareFaceToId(idCardUrl, url, user.id, role);
             setVerificationResult(result);
             setSubStep('result');
             
             if (result.match) {
                 toast.success('Identity Verified!');
             } else {
-                toast.error('Identity documents do not match.');
+                toast.error(result.reason || 'Biometric match failed.');
             }
         } catch (error) {
             toast.error('Verification failed. Try again.');
@@ -135,8 +146,26 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                             <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6">
                                 <ScanFace className="w-8 h-8" />
                             </div>
-                            <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Step 2: Verification Selfie</h4>
-                            <p className="text-gray-500 mt-2 font-medium">Take a photo of yourself holding the same ID card at chest level. Make sure both your face and the ID details are visible.</p>
+                            <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Step 2: Selfie with ID</h4>
+                            <p className="text-gray-500 mt-2 font-medium px-4">
+                                Hold your ID card next to your face at chest level. 
+                                <span className="block mt-1 font-bold text-gray-900 italic">Both your face and the ID details must be clearly visible.</span>
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="p-4 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center text-center space-y-2">
+                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-500">
+                                    <UserCheck className="w-6 h-6" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase text-green-700 tracking-widest">Face Visible</p>
+                            </div>
+                            <div className="p-4 bg-green-50 rounded-2xl border border-green-100 flex flex-col items-center text-center space-y-2">
+                                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-green-500">
+                                    <CreditCard className="w-6 h-6" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase text-green-700 tracking-widest">ID Card Near Face</p>
+                            </div>
                         </div>
 
                         <Card className="p-12 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center bg-gray-50/50 rounded-[32px]">
@@ -153,11 +182,12 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                             />
                             <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="selfie-upload" className="cursor-pointer">
-                                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
-                                    Take / Upload Selfie
+                                    {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Camera className="mr-2" />}
+                                    Take KYC Selfie
                                 </label>
                             </Button>
                         </Card>
+                        <button onClick={() => setSubStep('id_front')} className="w-full text-center text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-primary">← Re-upload ID</button>
                     </motion.div>
                 )}
 

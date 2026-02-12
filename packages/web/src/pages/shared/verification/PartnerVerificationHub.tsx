@@ -6,9 +6,10 @@ import { PropertyOwnershipSubFlow } from '../../hotel-manager/setup/components/v
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
 import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Loader2, CheckCircle2, ShieldCheck, Clock, History, FileText, UserCheck } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { supabase } from '../../../../../shared/src/core/client';
 
 export function PartnerVerificationHub() {
     const { user, activeRole } = useAuth();
@@ -22,6 +23,8 @@ export function PartnerVerificationHub() {
         ownershipDocs: {}
     });
 
+    const [activityLogs, setActivityLogs] = useState<any[]>([]);
+
     const role = activeRole?.role_type;
     const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService;
 
@@ -33,7 +36,6 @@ export function PartnerVerificationHub() {
                 if (data?.verification) {
                     const ver = data.verification as any;
                     setVerificationData(ver);
-                    // Determine starting step based on existing data
                     if (ver.matchingScore > 0) {
                         if (role === 'hotel_manager' && !ver.ownershipDocs?.titleDeedUrl) {
                             setStep('property');
@@ -42,6 +44,15 @@ export function PartnerVerificationHub() {
                         }
                     }
                 }
+
+                // Fetch activity logs
+                const { data: logs } = await supabase
+                    .from('verification_activity_logs' as any)
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                
+                if (logs) setActivityLogs(logs);
             } catch (error) {
                 console.error('Error loading verification status:', error);
             } finally {
@@ -53,6 +64,16 @@ export function PartnerVerificationHub() {
 
     const handleIdentityComplete = (idData: any) => {
         setVerificationData((prev: any) => ({ ...prev, ...idData }));
+        // Refresh logs after a completion
+        const refreshLogs = async () => {
+            const { data: logs } = await supabase
+                .from('verification_activity_logs' as any)
+                .select('*')
+                .eq('user_id', user?.id)
+                .order('created_at', { ascending: false });
+            if (logs) setActivityLogs(logs);
+        };
+        refreshLogs();
         setStep('docs');
     };
 
@@ -200,6 +221,52 @@ export function PartnerVerificationHub() {
                     </p>
                 </div>
             </Card>
+
+            {/* Verification History Section */}
+            {activityLogs.length > 0 && (
+                <div className="max-w-2xl mx-auto space-y-6 pt-12 pb-20">
+                    <div className="flex items-center gap-3 px-2">
+                        <History className="w-5 h-5 text-gray-400" />
+                        <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">Verification History</h4>
+                    </div>
+                    <div className="space-y-4">
+                        {activityLogs.map((log) => (
+                            <Card key={log.id} className="p-6 border-0 shadow-sm bg-white/50 backdrop-blur-sm rounded-3xl flex items-start gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                                    log.status === 'success' ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'
+                                }`}>
+                                    {log.event_type === 'document_validation' ? <FileText className="w-6 h-6" /> : <UserCheck className="w-6 h-6" />}
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <div className="flex justify-between items-start">
+                                        <p className="font-bold text-gray-900 capitalize">
+                                            {log.event_type.replace('_', ' ')}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(log.created_at).toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                                        {log.details?.reason || (log.status === 'success' ? 'Verification step completed successfully.' : 'Verification failed.')}
+                                    </p>
+                                    {log.details?.score && (
+                                        <div className="pt-2 flex items-center gap-2">
+                                            <div className="h-1.5 min-w-[100px] bg-gray-100 rounded-full overflow-hidden flex-1">
+                                                <div 
+                                                    className={`h-full transition-all ${log.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`} 
+                                                    style={{ width: `${log.details.score}%` }} 
+                                                />
+                                            </div>
+                                            <span className="text-[10px] font-black text-gray-900 whitespace-nowrap">{log.details.score}% match</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
