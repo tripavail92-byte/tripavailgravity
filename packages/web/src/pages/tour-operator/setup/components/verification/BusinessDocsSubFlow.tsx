@@ -108,7 +108,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
 
             <div className="mt-12 flex justify-center">
                 <Button 
-                    className="rounded-2xl h-14 bg-primary-gradient px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 min-w-[300px]"
+                    className="rounded-2xl h-14 bg-primary-gradient text-white px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 min-w-[300px]"
                     disabled={!isAllComplete}
                     onClick={() => onComplete(urls)}
                 >

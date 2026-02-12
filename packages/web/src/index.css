@@ -85,8 +85,8 @@
     --primary: 4 98% 66%;
     /* #FD5E53 (Bright Coral) */
     --primary-foreground: 0 0% 100%;
-    --primary-gradient: #FD5E53;
-    /* Solid color (no gradient) */
+    --primary-gradient: linear-gradient(135deg, #FD5E53 0%, #FF8A71 100%);
+    /* Real gradient for background-image compatibility */
   }
 
   /* Semantic Colors - Consistent across all roles */
@@ -168,7 +168,8 @@
     -webkit-backdrop-filter: blur(10px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.2);
     will-change: backdrop-filter;
-    transform: translateZ(0); /* GPU acceleration */
+    transform: translateZ(0);
+    /* GPU acceleration */
   }
 
   .glass-dark {
@@ -259,9 +260,12 @@
 
   /* Glass Animation Utilities */
   @keyframes pulse-subtle {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
     }
+
     50% {
       opacity: 0.92;
     }
@@ -273,6 +277,7 @@
 
   /* Mobile-Optimized Glass (Less blur for performance) */
   @media (max-width: 768px) {
+
     .glass,
     .glass-card,
     .glass-nav {

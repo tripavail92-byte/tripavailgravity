@@ -113,7 +113,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                                 onChange={(e) => e.target.files?.[0] && handleIdUpload(e.target.files[0])}
                                 disabled={isUploading}
                             />
-                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
+                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="id-upload" className="cursor-pointer">
                                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
                                     Select ID Card
@@ -151,7 +151,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                                 onChange={(e) => e.target.files?.[0] && handleSelfieUpload(e.target.files[0])}
                                 disabled={isUploading}
                             />
-                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
+                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="selfie-upload" className="cursor-pointer">
                                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
                                     Take / Upload Selfie
@@ -210,7 +210,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
 
                             {verificationResult?.match ? (
                                 <Button 
-                                    className="mt-10 rounded-2xl h-14 bg-primary-gradient px-12 font-black uppercase tracking-widest border-0"
+                                    className="mt-10 rounded-2xl h-14 bg-primary-gradient text-white px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
                                     onClick={() => onComplete({
                                         idCardUrl,
                                         selfieUrl,

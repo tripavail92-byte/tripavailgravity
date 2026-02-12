@@ -89,7 +89,7 @@ export function PropertyOwnershipSubFlow({ onComplete, initialData }: PropertyOw
                                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'deed')}
                                 disabled={isUploading}
                             />
-                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
+                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="deed-upload" className="cursor-pointer">
                                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
                                     Upload Deed / Lease
@@ -126,7 +126,7 @@ export function PropertyOwnershipSubFlow({ onComplete, initialData }: PropertyOw
                                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'bill')}
                                 disabled={isUploading}
                             />
-                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
+                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="bill-upload" className="cursor-pointer">
                                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Upload className="mr-2" />}
                                     Upload Utility Bill
@@ -165,7 +165,7 @@ export function PropertyOwnershipSubFlow({ onComplete, initialData }: PropertyOw
                                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], 'live')}
                                 disabled={isUploading}
                             />
-                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
+                            <Button asChild className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20">
                                 <label htmlFor="live-upload" className="cursor-pointer">
                                     {isUploading ? <Loader2 className="animate-spin mr-2" /> : <Camera className="mr-2" />}
                                     Capture Live Property Photo
@@ -209,7 +209,7 @@ export function PropertyOwnershipSubFlow({ onComplete, initialData }: PropertyOw
                             </div>
 
                             <Button 
-                                className="mt-10 rounded-2xl h-14 bg-primary-gradient px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 w-full"
+                                className="mt-10 rounded-2xl h-14 bg-primary-gradient text-white px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 w-full"
                                 onClick={() => onComplete({
                                     titleDeedUrl,
                                     utilityBillUrl,
