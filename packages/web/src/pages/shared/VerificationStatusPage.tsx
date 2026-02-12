@@ -21,7 +21,7 @@ export default function VerificationStatusPage() {
 
     const status = activeRole?.verification_status || 'incomplete';
     const roleLabel = activeRole?.role_type === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator';
-    const setupPath = activeRole?.role_type === 'hotel_manager' ? '/manager/setup' : '/operator/setup';
+    const setupPath = activeRole?.role_type === 'hotel_manager' ? '/manager/setup?step=verification' : '/operator/setup?step=verification';
 
     const getStatusContent = () => {
         switch (status) {

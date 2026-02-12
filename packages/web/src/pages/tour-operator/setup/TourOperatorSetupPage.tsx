@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { WelcomeStep } from './components/WelcomeStep';
 import { PersonalInfoStep } from './components/PersonalInfoStep';
 import { ProfilePictureStep } from './components/ProfilePictureStep';
@@ -36,6 +36,18 @@ export default function TourOperatorSetupPage() {
     const [isSaving, setIsSaving] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // Handle deep linking to specific steps
+    useEffect(() => {
+        const stepId = searchParams.get('step');
+        if (stepId === 'verification') {
+            const verificationIndex = STEPS.findIndex(s => s.id === 'verification');
+            if (verificationIndex !== -1) {
+                setCurrentStep(verificationIndex);
+            }
+        }
+    }, [searchParams]);
 
     // Enforce Tour Operator theme on mount
     useEffect(() => {

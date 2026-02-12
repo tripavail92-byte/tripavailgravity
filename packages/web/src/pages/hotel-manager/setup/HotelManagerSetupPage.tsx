@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav';
 import { hotelManagerService, HotelManagerOnboardingData } from '@/features/hotel-manager/services/hotelManagerService';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +32,18 @@ export default function HotelManagerSetupPage() {
     const [isSaving, setIsSaving] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // Handle deep linking to specific steps
+    useEffect(() => {
+        const stepId = searchParams.get('step');
+        if (stepId === 'verification' || stepId === 'identity') {
+            const index = STEPS.findIndex(s => s.id === 'identity' || s.id === 'verification');
+            if (index !== -1) {
+                setCurrentStep(index);
+            }
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-role', 'hotel_manager');
