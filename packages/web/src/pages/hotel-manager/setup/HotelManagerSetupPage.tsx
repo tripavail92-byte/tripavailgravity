@@ -10,17 +10,11 @@ import { Button } from '@/components/ui/button';
 import { GlassProgress } from '@/components/ui/glass/GlassProgress';
 
 import { WelcomeStep } from './components/WelcomeStep';
-import { IdentityStep } from './components/IdentityStep';
-import { BusinessLicenseStep } from './components/BusinessLicenseStep';
-import { PropertyOwnershipStep } from './components/PropertyOwnershipStep';
 import { BankDetailsStep } from './components/BankDetailsStep';
 import { CompletionStep } from './components/CompletionStep';
 
 const STEPS = [
     { id: 'welcome', title: 'Welcome', component: WelcomeStep },
-    { id: 'identity', title: 'Identity', component: IdentityStep },
-    { id: 'business', title: 'Business', component: BusinessLicenseStep },
-    { id: 'property', title: 'Property', component: PropertyOwnershipStep },
     { id: 'bank', title: 'Payments', component: BankDetailsStep },
     { id: 'completion', title: 'Finish', component: CompletionStep },
 ];
@@ -34,14 +28,10 @@ export default function HotelManagerSetupPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
-    // Handle deep linking to specific steps
     useEffect(() => {
         const stepId = searchParams.get('step');
-        if (stepId === 'verification' || stepId === 'identity') {
-            const index = STEPS.findIndex(s => s.id === 'identity' || s.id === 'verification');
-            if (index !== -1) {
-                setCurrentStep(index);
-            }
+        if (stepId === 'welcome') {
+            setCurrentStep(0);
         }
     }, [searchParams]);
 

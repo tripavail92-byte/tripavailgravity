@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Card } from '@/components/ui/card';
-import { Trophy, LayoutDashboard, Map, ArrowRight } from 'lucide-react';
+import { Trophy, LayoutDashboard, Map, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function CompletionStep() {
@@ -32,6 +32,24 @@ export function CompletionStep() {
                     </p>
 
                     <div className="pt-10 space-y-4 w-full">
+                        <Card
+                            className="p-6 border-primary/20 bg-primary/5 shadow-md rounded-3xl hover:bg-primary/10 transition-all cursor-pointer group ring-1 ring-primary/20"
+                            onClick={() => navigate('/operator/verification')}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                                        <ShieldCheck className="w-6 h-6" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="font-bold text-gray-900">Verify Identity</p>
+                                        <p className="text-xs text-gray-500">Enable bookings with biometric matching</p>
+                                    </div>
+                                </div>
+                                <ArrowRight className="w-5 h-5 text-primary transform group-hover:translate-x-1 transition-all" />
+                            </div>
+                        </Card>
+
                         <Card
                             className="p-6 border-gray-100 shadow-sm rounded-3xl hover:border-primary/20 transition-all cursor-pointer group bg-white ring-1 ring-black/[0.02]"
                             onClick={() => navigate('/operator/dashboard')}

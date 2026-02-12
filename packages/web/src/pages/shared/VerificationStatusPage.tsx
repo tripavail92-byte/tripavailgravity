@@ -1,27 +1,25 @@
 import { motion } from 'motion/react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { 
-    ShieldCheck, 
     Clock, 
-    AlertCircle, 
-    CheckCircle2, 
-    ArrowRight,
     Search,
     FileText,
-    Shield
+    ShieldCheck,
+    CheckCircle2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { GlassCard } from '@/components/ui/glass';
 
+import { PartnerVerificationHub } from './verification/PartnerVerificationHub';
+
 export default function VerificationStatusPage() {
     const { activeRole } = useAuth();
-    const navigate = useNavigate();
 
     const status = activeRole?.verification_status || 'incomplete';
     const roleLabel = activeRole?.role_type === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator';
-    const setupPath = activeRole?.role_type === 'hotel_manager' ? '/manager/setup?step=verification' : '/operator/setup?step=verification';
+    
+    // Determine if we should show the active verification hub
+    const showHub = status === 'incomplete' || status === 'rejected';
 
     const getStatusContent = () => {
         switch (status) {
@@ -30,15 +28,12 @@ export default function VerificationStatusPage() {
                     icon: <CheckCircle2 className="w-16 h-16 text-green-500" />,
                     title: "Verified Partner",
                     description: `Your ${roleLabel} account has been fully verified. You have full access to all platform features.`,
-                    color: "bg-green-500",
-                    action: null
                 };
             case 'pending':
                 return {
                     icon: <Clock className="w-16 h-16 text-amber-500 animate-pulse-slow" />,
                     title: "Verification Pending",
                     description: "Your documents are currently under review by our compliance team. This typically takes 48-72 hours.",
-                    color: "bg-amber-500",
                     action: (
                         <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
                             <p className="text-sm text-amber-800 font-medium">
@@ -47,37 +42,8 @@ export default function VerificationStatusPage() {
                         </div>
                     )
                 };
-            case 'rejected':
-                return {
-                    icon: <AlertCircle className="w-16 h-16 text-red-500" />,
-                    title: "Verification Declined",
-                    description: "We couldn't verify your account with the provided documents. Please review the requirements and re-submit.",
-                    color: "bg-red-500",
-                    action: (
-                        <Button 
-                            className="mt-8 rounded-2xl px-8 bg-red-600 hover:bg-red-700 h-12 font-bold"
-                            onClick={() => navigate(setupPath)}
-                        >
-                            Re-submit Documents <ArrowRight className="ml-2 w-5 h-5" />
-                        </Button>
-                    )
-                };
-            case 'incomplete':
             default:
-                return {
-                    icon: <Shield className="w-16 h-16 text-primary" />,
-                    title: "Verification Required",
-                    description: "You haven't completed your partner profile yet. Verification is required to list your services and accept bookings.",
-                    color: "bg-primary",
-                    action: (
-                        <Button 
-                            className="mt-8 rounded-2xl px-8 bg-primary-gradient hover:opacity-90 border-0 h-12 font-bold text-white shadow-lg shadow-primary/20"
-                            onClick={() => navigate(setupPath)}
-                        >
-                            Complete Setup <ArrowRight className="ml-2 w-5 h-5" />
-                        </Button>
-                    )
-                };
+                return null;
         }
     };
 
@@ -108,27 +74,33 @@ export default function VerificationStatusPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <GlassCard variant="card" className="rounded-[32px] p-12 text-center relative overflow-hidden">
-                        {/* Decorative Background Elements */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full -ml-32 -mb-32 blur-3xl" />
-
-                        <div className="relative z-10 flex flex-col items-center">
-                            <div className="mb-8 p-6 bg-white rounded-3xl shadow-xl shadow-gray-200/50">
-                                {content.icon}
-                            </div>
-
-                            <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-4 italic uppercase">
-                                {content.title}
-                            </h2>
-                            
-                            <p className="text-xl text-gray-500 max-w-xl mx-auto font-medium leading-relaxed">
-                                {content.description}
-                            </p>
-
-                            {content.action}
+                    {showHub ? (
+                        <div className="pt-8">
+                            <PartnerVerificationHub />
                         </div>
-                    </GlassCard>
+                    ) : content ? (
+                        <GlassCard variant="card" className="rounded-[32px] p-12 text-center relative overflow-hidden">
+                            {/* Decorative Background Elements */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl" />
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full -ml-32 -mb-32 blur-3xl" />
+
+                            <div className="relative z-10 flex flex-col items-center">
+                                <div className="mb-8 p-6 bg-white rounded-3xl shadow-xl shadow-gray-200/50">
+                                    {content.icon}
+                                </div>
+
+                                <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-4 italic uppercase">
+                                    {content.title}
+                                </h2>
+                                
+                                <p className="text-xl text-gray-500 max-w-xl mx-auto font-medium leading-relaxed">
+                                    {content.description}
+                                </p>
+
+                                {content.action}
+                            </div>
+                        </GlassCard>
+                    ) : null}
 
                     {/* Trust Indicators */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">

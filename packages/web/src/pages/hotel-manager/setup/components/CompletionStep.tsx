@@ -37,20 +37,26 @@ export function CompletionStep() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-                <div className="p-6 bg-primary/[0.03] border border-primary/10 rounded-[32px] flex flex-col gap-3">
-                    <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center">
+                <div 
+                    className="p-6 bg-primary/[0.03] border border-primary/20 rounded-[32px] flex flex-col gap-3 cursor-pointer hover:bg-primary/[0.06] transition-all group"
+                    onClick={() => navigate('/manager/verification')}
+                >
+                    <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
                         <ShieldCheck className="w-5 h-5" />
                     </div>
-                    <p className="font-black text-xs uppercase tracking-widest text-primary italic">Verification</p>
-                    <p className="text-sm text-primary/80 font-medium">Our team will verify your documents within 48-72 hours.</p>
+                    <p className="font-black text-xs uppercase tracking-widest text-primary italic">Verify Identity</p>
+                    <p className="text-sm text-primary/80 font-medium">Complete your high-trust matching to enable all features.</p>
                 </div>
 
-                <div className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex flex-col gap-3">
-                    <div className="w-10 h-10 bg-white text-gray-400 rounded-xl flex items-center justify-center border border-gray-100">
+                <div 
+                    className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex flex-col gap-3 cursor-pointer hover:bg-gray-100 transition-all group"
+                    onClick={() => navigate('/manager/dashboard')}
+                >
+                    <div className="w-10 h-10 bg-white text-gray-400 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
                         <ArrowRight className="w-5 h-5" />
                     </div>
-                    <p className="font-black text-xs uppercase tracking-widest text-gray-400 italic">Next Steps</p>
-                    <p className="text-sm text-gray-500 font-medium">You can now head to your dashboard and start drafting your properties.</p>
+                    <p className="font-black text-xs uppercase tracking-widest text-gray-400 italic">Dashboard</p>
+                    <p className="text-sm text-gray-500 font-medium">Head to your control center and start managing listings.</p>
                 </div>
             </div>
 

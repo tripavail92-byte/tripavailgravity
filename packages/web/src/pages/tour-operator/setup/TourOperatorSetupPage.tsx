@@ -8,7 +8,6 @@ import { BusinessInfoStep } from './components/BusinessInfoStep';
 import { ServicesStep } from './components/ServicesStep';
 import { CoverageAreaStep } from './components/CoverageAreaStep';
 import { PoliciesStep } from './components/PoliciesStep';
-import { VerificationStep } from './components/VerificationStep';
 import { CompletionStep } from './components/CompletionStep';
 import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav';
 import { tourOperatorService, TourOperatorOnboardingData } from '@/features/tour-operator/services/tourOperatorService';
@@ -25,7 +24,6 @@ const STEPS = [
     { id: 'services', title: 'Tour Services', component: ServicesStep },
     { id: 'coverage', title: 'Coverage Area', component: CoverageAreaStep },
     { id: 'policies', title: 'Policies', component: PoliciesStep },
-    { id: 'verification', title: 'Verification', component: VerificationStep },
     { id: 'completion', title: 'Complete', component: CompletionStep },
 ];
 
@@ -41,11 +39,8 @@ export default function TourOperatorSetupPage() {
     // Handle deep linking to specific steps
     useEffect(() => {
         const stepId = searchParams.get('step');
-        if (stepId === 'verification') {
-            const verificationIndex = STEPS.findIndex(s => s.id === 'verification');
-            if (verificationIndex !== -1) {
-                setCurrentStep(verificationIndex);
-            }
+        if (stepId === 'welcome') {
+             setCurrentStep(0);
         }
     }, [searchParams]);
 
