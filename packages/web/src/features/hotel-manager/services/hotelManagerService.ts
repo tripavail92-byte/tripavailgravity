@@ -19,8 +19,15 @@ export interface HotelManagerOnboardingData {
         ownershipType: 'owner' | 'manager' | 'lease';
     };
     verification?: {
-        uploads: Record<string, boolean>;
-        documentUrls?: Record<string, string>;
+        idCardUrl: string;
+        selfieUrl: string;
+        matchingScore: number;
+        businessDocs: Record<string, string>;
+        ownershipDocs: {
+            titleDeedUrl: string;
+            utilityBillUrl: string;
+            propertyLivePhotoUrl: string;
+        };
     };
     bankInfo?: {
         bankName: string;
@@ -48,8 +55,13 @@ export const hotelManagerService = {
             property_address: data.propertyDetails?.propertyAddress,
             ownership_type: data.propertyDetails?.ownershipType,
             bank_info: data.bankInfo,
-            verification_documents: data.verification?.uploads,
-            verification_urls: data.verification?.documentUrls,
+            verification_documents: {
+                idCardUrl: data.verification?.idCardUrl,
+                selfieUrl: data.verification?.selfieUrl,
+                matchingScore: data.verification?.matchingScore,
+                ownershipDocs: data.verification?.ownershipDocs
+            },
+            verification_urls: data.verification?.businessDocs,
             setup_completed: setupCompleted,
             updated_at: new Date().toISOString()
         };
@@ -112,10 +124,17 @@ export const hotelManagerService = {
                     ownershipType: profile.ownership_type || 'owner',
                 },
                 bankInfo: profile.bank_info || {},
-                verification: {
-                    uploads: profile.verification_documents || {},
-                    documentUrls: profile.verification_urls || {}
-                }
+                verification: profile.verification_documents ? {
+                    idCardUrl: profile.verification_documents.idCardUrl || '',
+                    selfieUrl: profile.verification_documents.selfieUrl || '',
+                    matchingScore: profile.verification_documents.matchingScore || 0,
+                    businessDocs: profile.verification_urls || {},
+                    ownershipDocs: profile.verification_documents.ownershipDocs || {
+                        titleDeedUrl: '',
+                        utilityBillUrl: '',
+                        propertyLivePhotoUrl: ''
+                    }
+                } : undefined
             } as HotelManagerOnboardingData;
         } catch (error) {
             console.error('❌ Error fetching hotel manager profile:', error);

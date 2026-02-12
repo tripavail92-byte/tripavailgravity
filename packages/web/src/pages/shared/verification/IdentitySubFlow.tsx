@@ -14,6 +14,7 @@ import {
     CreditCard
 } from 'lucide-react';
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService';
+import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService';
 import { aiVerificationService } from '@/features/verification/services/aiVerificationService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
@@ -26,11 +27,12 @@ interface IdentitySubFlowProps {
         matchingScore: number;
     }) => void;
     initialData?: any;
+    role: 'tour_operator' | 'hotel_manager';
 }
 
 type SubStep = 'id_front' | 'selfie' | 'verifying' | 'result';
 
-export function IdentitySubFlow({ onComplete, initialData }: IdentitySubFlowProps) {
+export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFlowProps) {
     const { user } = useAuth();
     const [subStep, setSubStep] = useState<SubStep>('id_front');
     const [idCardUrl, setIdCardUrl] = useState<string>(initialData?.idCardUrl || '');
@@ -38,11 +40,13 @@ export function IdentitySubFlow({ onComplete, initialData }: IdentitySubFlowProp
     const [isUploading, setIsUploading] = useState(false);
     const [verificationResult, setVerificationResult] = useState<{ match: boolean; score: number; reason?: string } | null>(null);
 
+    const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService;
+
     const handleIdUpload = async (file: File) => {
         if (!user?.id) return;
         setIsUploading(true);
         try {
-            const url = await tourOperatorService.uploadAsset(user.id, file, 'verification/id_card');
+            const url = await service.uploadAsset(user.id, file, 'verification/id_card');
             setIdCardUrl(url);
             setSubStep('selfie');
             toast.success('ID Card uploaded!');
@@ -57,7 +61,7 @@ export function IdentitySubFlow({ onComplete, initialData }: IdentitySubFlowProp
         if (!user?.id) return;
         setIsUploading(true);
         try {
-            const url = await tourOperatorService.uploadAsset(user.id, file, 'verification/selfie');
+            const url = await service.uploadAsset(user.id, file, 'verification/selfie');
             setSelfieUrl(url);
             setSubStep('verifying');
             

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { IdentitySubFlow } from './verification/IdentitySubFlow';
+import { IdentitySubFlow } from '../../../shared/verification/IdentitySubFlow';
 import { BusinessDocsSubFlow } from './verification/BusinessDocsSubFlow';
 
 interface StepProps {
@@ -51,6 +51,7 @@ export function VerificationStep({ onUpdate, data }: StepProps) {
                         <IdentitySubFlow 
                             onComplete={handleIdentityComplete}
                             initialData={data.verification}
+                            role="tour_operator"
                         />
                     </motion.div>
                 ) : (

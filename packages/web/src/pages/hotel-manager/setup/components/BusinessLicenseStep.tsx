@@ -23,7 +23,7 @@ export function BusinessLicenseStep({ onUpdate, data }: StepProps) {
         registrationNumber: '',
         businessAddress: '',
     });
-    const [uploads, setUploads] = useState<Record<string, boolean>>(data.verification?.uploads || {});
+    const [uploads, setUploads] = useState<Record<string, string>>(data.verification?.businessDocs || {});
     const [isUploading, setIsUploading] = useState<string | null>(null);
 
     const handleInputChange = (field: string, value: string) => {
@@ -37,14 +37,13 @@ export function BusinessLicenseStep({ onUpdate, data }: StepProps) {
         setIsUploading(id);
         try {
             const publicUrl = await hotelManagerService.uploadAsset(user.id, file, `verification/${id}`);
-            const nextUploads = { ...uploads, [id]: true };
-            const nextUrls = { ...data.verification?.documentUrls, [id]: publicUrl };
+            const urls = { ...data.verification?.businessDocs, [id]: publicUrl };
             
-            setUploads(nextUploads);
+            setUploads(urls);
             onUpdate({ 
                 verification: { 
-                    uploads: nextUploads,
-                    documentUrls: nextUrls
+                    ...data.verification,
+                    businessDocs: urls
                 } 
             });
             toast.success('License uploaded!');
