@@ -84,12 +84,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
   ]
 
   const quickFilterChips = [
-    { id: 'beach', label: 'Beach', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-    { id: 'city', label: 'City Break', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
-    { id: 'adventure', label: 'Adventure', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
-    { id: 'luxury', label: 'Luxury', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' },
-    { id: 'budget', label: 'Budget-Friendly', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
-    { id: 'romantic', label: 'Romantic', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' }
+    { id: 'beach', label: 'Beach' },
+    { id: 'city', label: 'City Break' },
+    { id: 'adventure', label: 'Adventure' },
+    { id: 'luxury', label: 'Luxury' },
+    { id: 'budget', label: 'Budget-Friendly' },
+    { id: 'romantic', label: 'Romantic' }
   ]
 
   // Voice search functionality
@@ -216,7 +216,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
 
           {/* Glass Modal */}
           <motion.div
-            className="relative w-full max-w-2xl max-h-[85vh] glass-card rounded-2xl overflow-hidden"
+            className="relative w-full max-w-2xl max-h-[85vh] glass-card rounded-2xl overflow-hidden shadow-xl flex flex-col"
             initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
@@ -251,8 +251,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto">
-              <div className="p-4 space-y-6 max-w-md mx-auto">
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-6 md:space-y-8">
                 {/* Main Search Input - Glass Effect */}
                 <div className="space-y-4">
                   <div className="relative">
@@ -262,7 +262,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                       value={filters.query}
                       onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      className="pl-12 pr-12 py-4 glass-search rounded-xl text-lg placeholder:text-gray-500 shadow-sm"
+                      className="pl-12 pr-12 py-4 glass-search rounded-xl text-base md:text-lg text-foreground placeholder:text-muted-foreground shadow-sm border-white/20 focus-visible:ring-0 focus-visible:ring-offset-0"
                       autoFocus
                     />
                     
@@ -305,89 +305,93 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   </AnimatePresence>
                 </div>
 
-                {/* Recent Searches */}
-                <AnimatePresence>
-                  {showRecentSearches && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-4"
-                    >
-                      <h4 className="font-semibold text-foreground flex items-center gap-2">
-                        <Clock className="w-5 h-5" />
-                        Recent Searches
-                      </h4>
-                      <div className="space-y-3">
-                        {recentSearches.map((search) => {
-                          const IconComponent = search.icon
+                <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+                  {/* Left Column */}
+                  <div className="space-y-6">
+                    {/* Recent Searches */}
+                    <AnimatePresence>
+                      {showRecentSearches && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-4"
+                        >
+                          <h4 className="font-semibold text-foreground flex items-center gap-2">
+                            <Clock className="w-5 h-5" />
+                            Recent Searches
+                          </h4>
+                          <div className="space-y-3">
+                            {recentSearches.map((search) => {
+                              const IconComponent = search.icon
+                              return (
+                                <motion.button
+                                  key={search.id}
+                                  onClick={() => handleRecentSearchClick(search)}
+                                  className="w-full flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  <div className="w-12 h-12 glass-chip rounded-xl flex items-center justify-center">
+                                    <IconComponent className="w-6 h-6 text-muted-foreground" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-foreground truncate">{search.query}</p>
+                                    <p className="text-muted-foreground truncate">{search.location}</p>
+                                  </div>
+                                </motion.button>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Quick Filter Chips */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-foreground">Quick Filters</h4>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowQuickFilters(!showQuickFilters)}
+                          className="text-primary"
+                        >
+                          {showQuickFilters ? 'Less' : 'More'}
+                          <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showQuickFilters ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3">
+                        {quickFilterChips.slice(0, showQuickFilters ? undefined : 6).map((chip) => {
+                          const isSelected = filters.experienceType.includes(chip.id)
                           return (
                             <motion.button
-                              key={search.id}
-                              onClick={() => handleRecentSearchClick(search)}
-                              className="w-full flex items-center gap-4 p-4 glass-chip hover:active rounded-xl transition-colors text-left shadow-sm"
+                              key={chip.id}
+                              onClick={() => handleQuickFilterClick(chip.id)}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 glass-chip hover:active ${
+                                isSelected
+                                  ? 'active bg-primary/15 text-primary border-primary/30 dark:bg-primary/20'
+                                  : 'text-foreground'
+                              }`}
                               whileTap={{ scale: 0.98 }}
+                              whileHover={{ scale: 1.02 }}
                             >
-                              <div className="w-12 h-12 glass-chip rounded-xl flex items-center justify-center">
-                                <IconComponent className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                              </div>
-                              <div className="flex-1">
-                                <p className="font-semibold text-foreground">{search.query}</p>
-                                <p className="text-gray-500 dark:text-gray-400">{search.location}</p>
-                              </div>
+                              {chip.label}
                             </motion.button>
                           )
                         })}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Quick Filter Chips */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-foreground">Quick Filters</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowQuickFilters(!showQuickFilters)}
-                      className="text-primary"
-                    >
-                      {showQuickFilters ? 'Less' : 'More'}
-                      <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showQuickFilters ? 'rotate-180' : ''}`} />
-                    </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex flex-wrap gap-3">
-                    {quickFilterChips.slice(0, showQuickFilters ? undefined : 6).map((chip) => {
-                      const isSelected = filters.experienceType.includes(chip.id)
-                      return (
-                        <motion.button
-                          key={chip.id}
-                          onClick={() => handleQuickFilterClick(chip.id)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-                            isSelected 
-                              ? 'bg-primary text-white shadow-sm' 
-                              : `${chip.color} glass-chip hover:active`
-                          }`}
-                          whileTap={{ scale: 0.98 }}
-                          whileHover={{ scale: 1.02 }}
-                        >
-                          {chip.label}
-                        </motion.button>
-                      )
-                    })}
-                  </div>
-                </div>
 
-                {/* Trending Packages */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-foreground flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5" />
-                    Trending Packages
-                  </h4>
-                  <div className="grid gap-4">
-                    {trendingPackages.map((package_) => {
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5" />
+                      Trending Packages
+                    </h4>
+                    <div className="grid gap-4">
+                      {trendingPackages.map((package_) => {
                       const getPackageIcon = (type: string) => {
                         switch (type) {
                           case 'hotel': return Building
@@ -403,7 +407,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                         <motion.button
                           key={package_.id}
                           onClick={() => handleTrendingClick(package_)}
-                          className="flex items-center gap-4 p-4 glass-chip hover:active rounded-xl transition-colors text-left shadow-sm"
+                          className="flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
                           whileTap={{ scale: 0.98 }}
                         >
                           <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
@@ -437,7 +441,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                           </div>
                         </motion.button>
                       )
-                    })}
+                      })}
+                    </div>
                   </div>
                 </div>
 
