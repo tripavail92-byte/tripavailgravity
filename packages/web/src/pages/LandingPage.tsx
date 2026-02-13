@@ -1,11 +1,11 @@
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronRight as ChevronRightIcon,
   Flame,
   Globe,
   Heart,
   Search,
+  SlidersHorizontal,
   Star,
   TrendingUp,
 } from 'lucide-react'
@@ -46,10 +46,7 @@ export default function LandingPage() {
       {/* Airbnb Header (Fixed) */}
       <AirbnbHeader />
 
-      {/* Sticky Category Search Bar (Sticks below header) */}
-      <CategoryNavBar />
-
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-6">
         <div className="space-y-10 pb-20">
           {activeTab === 'home' && (
             <>
@@ -157,7 +154,7 @@ function AirbnbHeader() {
           <div className="hidden md:flex flex-1 justify-center">
             <GlassCard
               variant="light"
-              className="flex items-center border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4"
+              className="flex w-full max-w-3xl items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2"
               onClick={() => setIsSearchOverlayOpen(true)}
               role="button"
               tabIndex={0}
@@ -165,14 +162,29 @@ function AirbnbHeader() {
                 if (e.key === 'Enter' || e.key === ' ') setIsSearchOverlayOpen(true)
               }}
             >
-              <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">
-                Search destinations
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="text-sm font-semibold truncate">Search by destination or keyword</div>
+                <div className="hidden lg:block h-6 w-[1px] bg-gray-300" />
+                <div className="text-sm text-muted-foreground hidden lg:block">Add dates</div>
+                <div className="h-6 w-[1px] bg-gray-300" />
+                <div className="text-sm text-muted-foreground font-normal truncate">Add travelers</div>
               </div>
-              <div className="hidden lg:block h-6 w-[1px] bg-gray-300"></div>
-              <div className="text-sm font-semibold hidden lg:block">Add dates</div>
-              <div className="h-6 w-[1px] bg-gray-300"></div>
-              <div className="text-sm text-gray-500 font-normal flex items-center gap-3">
-                Add travelers
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  className="hidden lg:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsSearchOverlayOpen(true)
+                  }}
+                  aria-label="Open search filters"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="text-sm font-medium">Filters</span>
+                </button>
+
                 <div className="bg-[#FF385C] rounded-full p-2 text-white">
                   <Search className="w-3 h-3 stroke-[3px]" />
                 </div>
@@ -204,57 +216,6 @@ function AirbnbHeader() {
         onSearch={handleSearch}
       />
     </>
-  )
-}
-// Airbnb-style Category Navigation Pill Bar
-function CategoryNavBar() {
-  const categories = [
-    { id: 'trending', label: 'Trending', icon: '🔥' },
-    { id: 'beach', label: 'Beachfront', icon: '🏝️' },
-    { id: 'mountains', label: 'Mountains', icon: '🏔️' },
-    { id: 'city', label: 'Cities', icon: '🏙️' },
-    { id: 'history', label: 'History', icon: '🏛️' },
-    { id: 'luxury', label: 'Luxury', icon: '💎' },
-    { id: 'cabins', label: 'Cabins', icon: '🛖' },
-    { id: 'arctic', label: 'Arctic', icon: '❄️' },
-    { id: 'desert', label: 'Desert', icon: '🏜️' },
-    { id: 'camping', label: 'Camping', icon: '⛺' },
-  ]
-
-  const [activeCategory, setActiveCategory] = useState('trending')
-
-  return (
-    <div className="sticky top-20 z-40 w-full bg-background/95 backdrop-blur-md border-b shadow-sm pt-4">
-      <div className="container mx-auto max-w-7xl px-4">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pb-4 px-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className="flex flex-col items-center gap-2 min-w-fit transition-all duration-200 group relative pb-2"
-            >
-              <span
-                className={`text-xl grayscale group-hover:grayscale-0 transition-all ${activeCategory === cat.id ? 'grayscale-0 scale-110' : ''}`}
-              >
-                {cat.icon}
-              </span>
-              <span
-                className={`text-xs font-medium whitespace-nowrap ${activeCategory === cat.id ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}`}
-              >
-                {cat.label}
-              </span>
-              {activeCategory === cat.id && (
-                <motion.div
-                  layoutId="activeCategory"
-                  className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-foreground"
-                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
   )
 }
 
