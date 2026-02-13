@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { TripAvailSearchBar, type SearchFilters } from './TripAvailSearchBar'
+import { SearchOverlay } from './SearchOverlay'
 
 const POPULAR_LOCATIONS = [
   'Maldives',
@@ -28,7 +30,7 @@ const POPULAR_LOCATIONS = [
   'New York, USA',
 ]
 
-export function SearchForm({ className }: { className?: string }) {
+export function SearchForm({ className, variant = 'full' }: { className?: string; variant?: 'full' | 'compact' }) {
   const navigate = useNavigate()
 
   // State
@@ -36,6 +38,7 @@ export function SearchForm({ className }: { className?: string }) {
   const [date, setDate] = useState<DateRange | undefined>()
   const [guests, setGuests] = useState(1)
   const [openLocation, setOpenLocation] = useState(false)
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,10 +52,44 @@ export function SearchForm({ className }: { className?: string }) {
     navigate(`/search?${params.toString()}`)
   }
 
+  const handleAdvancedSearch = (filters: SearchFilters) => {
+    const params = new URLSearchParams()
+    if (filters.query) params.set('q', filters.query)
+    if (filters.location) params.set('location', filters.location)
+    if (filters.category && filters.category !== 'all') params.set('category', filters.category)
+    if (filters.duration) params.set('duration', filters.duration)
+    if (filters.priceRange[0] !== 0) params.set('minPrice', filters.priceRange[0].toString())
+    if (filters.priceRange[1] !== 5000) params.set('maxPrice', filters.priceRange[1].toString())
+    if (filters.minRating > 0) params.set('minRating', filters.minRating.toString())
+    if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
+    
+    navigate(`/search?${params.toString()}`)
+    setIsSearchOverlayOpen(false)
+  }
+
+  // If compact variant, use TripAvailSearchBar
+  if (variant === 'compact') {
+    return (
+      <>
+        <TripAvailSearchBar
+          onSearch={handleAdvancedSearch}
+          onSearchOverlayToggle={(isOpen) => setIsSearchOverlayOpen(isOpen)}
+          className={className}
+        />
+        <SearchOverlay
+          isOpen={isSearchOverlayOpen}
+          onClose={() => setIsSearchOverlayOpen(false)}
+          onSearch={handleAdvancedSearch}
+        />
+      </>
+    )
+  }
+
+  // Full variant - original form
   return (
     <div
       className={cn(
-        'p-4 bg-white rounded-2xl shadow-xl w-full max-w-4xl border border-gray-100',
+        'p-4 glass-card rounded-2xl shadow-modern w-full max-w-4xl border border-white/20',
         className,
       )}
     >

@@ -5,8 +5,9 @@ import { useSearchParams } from 'react-router-dom'
 
 import { HotelGrid } from '@/components/search/HotelGrid'
 import { SearchForm } from '@/components/search/SearchForm'
+import { TripAvailSearchBar, type SearchFilters } from '@/components/search/TripAvailSearchBar'
+import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { Button } from '@/components/ui/button'
-import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
@@ -25,10 +26,12 @@ export default function SearchPage() {
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [priceRange, setPriceRange] = useState<{ min?: number; max?: number }>({})
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
 
   // Parse URL params
   const location = searchParams.get('q') || undefined
   const guests = parseInt(searchParams.get('guests') || '1')
+  const minRating = parseFloat(searchParams.get('minRating') || '0')
 
   const performSearch = useCallback(async () => {
     setIsLoading(true)
@@ -57,20 +60,48 @@ export default function SearchPage() {
     table: 'hotels',
     onData: (payload) => {
       console.log('Realtime update:', payload)
-      // Optimistic update or refetch. Refetching is safer for MVP.
       performSearch()
     },
   })
 
+  const handleAdvancedSearch = (filters: SearchFilters) => {
+    // Update URL params based on filters
+    const params = new URLSearchParams()
+    if (filters.query) params.set('q', filters.query)
+    if (filters.location) params.set('location', filters.location)
+    if (filters.category && filters.category !== 'all') params.set('category', filters.category)
+    if (filters.duration) params.set('duration', filters.duration)
+    if (filters.priceRange[0] !== 0) params.set('minPrice', filters.priceRange[0].toString())
+    if (filters.priceRange[1] !== 5000) params.set('maxPrice', filters.priceRange[1].toString())
+    if (filters.minRating > 0) params.set('minRating', filters.minRating.toString())
+    if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
+    
+    window.history.pushState({}, '', `/search?${params.toString()}`)
+    
+    // Update price range and trigger search
+    setPriceRange({
+      min: filters.priceRange[0] !== 0 ? filters.priceRange[0] : undefined,
+      max: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined
+    })
+    
+    setIsSearchOverlayOpen(false)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Top Bar with Compact Search */}
-      <GlassCard variant="light" className="border-b sticky top-16 z-40 shadow-sm rounded-none">
+    <div className="min-h-screen bg-gray-50 dark:bg-background flex flex-col">
+      {/* Top Bar with Compact Search - Glass Effect */}
+      <div className="glass-nav border-b sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          {/* Mobile: Logo only? Desktop: Mini Search Form? */}
+          {/* Desktop: Advanced Search Bar */}
           <div className="hidden md:block flex-1">
-            <SearchForm className="p-0 shadow-none border-0 bg-transparent flex-row items-center" />
+            <TripAvailSearchBar 
+              onSearch={handleAdvancedSearch}
+              onSearchOverlayToggle={(isOpen) => setIsSearchOverlayOpen(isOpen)}
+              className="p-0 shadow-none"
+            />
           </div>
+          
+          {/* Mobile: Logo */}
           <div className="md:hidden font-bold text-primary">TripAvail</div>
 
           {/* Filters Trigger */}
@@ -120,7 +151,14 @@ export default function SearchPage() {
             </SheetContent>
           </Sheet>
         </div>
-      </GlassCard>
+      </div>
+
+      {/* Search Overlay for Mobile */}
+      <SearchOverlay
+        isOpen={isSearchOverlayOpen}
+        onClose={() => setIsSearchOverlayOpen(false)}
+        onSearch={handleAdvancedSearch}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
