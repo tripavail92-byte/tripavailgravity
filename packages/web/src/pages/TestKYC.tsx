@@ -18,26 +18,22 @@ export default function TestKYC() {
         addLog("Starting KYC Test with local assets...");
 
         try {
-            // Asset URLs (served from public folder)
-            const idFront = '/test-assets/id_front.png';
-            const idBack = '/test-assets/id_back.png'; // Using back as selfie for test, or user meant front+back?
-            // The user provided "front and back side of ... id card".
-            // However, the verification flow requires ID + Selfie.
-            // If we send "Back of ID" as "Selfie", the AI *should* fail the face match.
-            // Let's test that specifically.
+            // Asset URLs (served from public folder) - MUST BE ABSOLUTE for Edge Function
+            const origin = window.location.origin;
+            // SWAPPED per user request (screenshot timestamps imply reverse order)
+            const idFront = `${origin}/test-assets/id_back.png`; 
+            const idBack = `${origin}/test-assets/id_front.png`; 
             
             addLog(`Analyzing ID Front: ${idFront}`);
             const idValidation = await aiVerificationService.validateIdCard(idFront, 'test-user', 'tour_operator');
             addLog(`ID Validation Result: ${JSON.stringify(idValidation, null, 2)}`);
 
             if (!idValidation.valid) {
-                 addLog("❌ ID Validation Failed. Aborting.");
-                 setLoading(false);
-                 return;
+                 addLog(`❌ ID Validation Failed. Reason: ${idValidation.reason}`);
+                 // Note: We CONTINUE here for debugging purposes to see if Face Match also fails/works
             }
 
-            addLog(`Running Face Match (Selfie = Back of ID [${idBack}])...`);
-            // Intentionally using back of ID as selfie to see if it fails/passes as expected
+            addLog(`Running Face Match (Selfie = Back of ID)...`);
             const faceMatch = await aiVerificationService.compareFaceToId(idFront, idBack, 'test-user', 'tour_operator');
             addLog(`Face Match Result: ${JSON.stringify(faceMatch, null, 2)}`);
 
@@ -52,16 +48,16 @@ export default function TestKYC() {
 
     return (
         <div className="p-10 max-w-4xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold">KYC Debug Console</h1>
+            <h1 className="text-3xl font-bold">KYC Debug Console (v3.1)</h1>
             
             <div className="grid grid-cols-2 gap-8">
                 <Card className="p-4">
-                    <h3 className="font-bold mb-2">ID Front (Asset 1)</h3>
-                    <img src="/test-assets/id_front.png" className="w-full rounded-lg" alt="ID Front" />
+                    <h3 className="font-bold mb-2">ID Front (Corrected)</h3>
+                    <img src="/test-assets/id_back.png" className="w-full rounded-lg" alt="ID Front" />
                 </Card>
                 <Card className="p-4">
-                    <h3 className="font-bold mb-2">Selfie / ID Back (Asset 2)</h3>
-                    <img src="/test-assets/id_back.png" className="w-full rounded-lg" alt="Test Asset 2" />
+                    <h3 className="font-bold mb-2">Selfie / ID Back (Corrected)</h3>
+                    <img src="/test-assets/id_front.png" className="w-full rounded-lg" alt="ID Back" />
                 </Card>
             </div>
 
