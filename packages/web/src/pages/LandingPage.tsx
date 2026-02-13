@@ -154,7 +154,7 @@ function AirbnbHeader() {
           <div className="hidden md:flex flex-1 justify-center min-w-0">
             <GlassCard
               variant="light"
-              className="flex w-full max-w-3xl items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2"
+              className="flex w-full max-w-xl lg:max-w-2xl xl:max-w-3xl items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
               onClick={() => setIsSearchOverlayOpen(true)}
               role="button"
               tabIndex={0}
@@ -164,16 +164,18 @@ function AirbnbHeader() {
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="text-sm font-semibold truncate">Search by destination or keyword</div>
-                <div className="hidden lg:block h-6 w-[1px] bg-gray-300" />
-                <div className="text-sm text-muted-foreground hidden lg:block">Add dates</div>
-                <div className="h-6 w-[1px] bg-gray-300" />
-                <div className="text-sm text-muted-foreground font-normal truncate">Add travelers</div>
+                <div className="hidden xl:block h-6 w-[1px] bg-gray-300" />
+                <div className="text-sm text-muted-foreground hidden xl:block">Add dates</div>
+                <div className="hidden xl:block h-6 w-[1px] bg-gray-300" />
+                <div className="text-sm text-muted-foreground font-normal hidden xl:block truncate">
+                  Add travelers
+                </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  className="hidden lg:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
+                  className="hidden xl:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -183,6 +185,19 @@ function AirbnbHeader() {
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   <span className="text-sm font-medium">Filters</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="hidden lg:flex xl:hidden items-center justify-center rounded-full p-2 hover:bg-muted/40 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsSearchOverlayOpen(true)
+                  }}
+                  aria-label="Open filters"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
                 </button>
 
                 <div className="bg-[#FF385C] rounded-full p-2 text-white">
@@ -207,9 +222,16 @@ function AirbnbHeader() {
 
             <button
               onClick={() => navigate('/partner/onboarding')}
-              className="hidden lg:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
+              className="hidden xl:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
             >
               Become a Partner
+            </button>
+
+            <button
+              onClick={() => navigate('/partner/onboarding')}
+              className="hidden lg:block xl:hidden text-sm font-semibold hover:bg-muted rounded-full px-3 py-3 transition-colors"
+            >
+              Partner
             </button>
             <button className="hidden lg:flex p-3 hover:bg-muted rounded-full transition-colors">
               <Globe className="w-4 h-4" />
