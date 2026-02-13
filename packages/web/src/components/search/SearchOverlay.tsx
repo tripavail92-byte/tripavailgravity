@@ -2,12 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { 
   Search, X, MapPin, Calendar, Star, Filter,
-  TrendingUp, Clock, Mic, MicOff, DollarSign,
-  Building, History, ChevronDown, Camera, Sparkles, Globe
+  Clock, Mic, MicOff, DollarSign,
+  Building, History, ChevronDown, Globe
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import type { SearchFilters } from './TripAvailSearchBar'
 
@@ -42,45 +41,6 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
     { id: 1, query: "Paris Hotels", location: "Paris, France", icon: Building },
     { id: 2, query: "Beach Tours", location: "Maldives", icon: Globe },
     { id: 3, query: "City Break", location: "New York, USA", icon: Building }
-  ]
-
-  const trendingPackages = [
-    { 
-      id: 1, 
-      name: "5-Star Beach Resort Package", 
-      location: "Bali, Indonesia",
-      popularity: 95, 
-      type: "Hotel Package",
-      packageType: "hotel",
-      duration: "5 days, 4 nights",
-      avgPrice: "$299/package",
-      originalPrice: "$450",
-      savings: "33% off"
-    },
-    { 
-      id: 2, 
-      name: "Cultural City Tour", 
-      location: "Tokyo, Japan",
-      popularity: 88, 
-      type: "Tour Package",
-      packageType: "tour",
-      duration: "7 days guided tour",
-      avgPrice: "$650/person",
-      originalPrice: "$850",
-      savings: "24% off"
-    },
-    { 
-      id: 3, 
-      name: "Romantic Sunset Package", 
-      location: "Santorini, Greece",
-      popularity: 92, 
-      type: "Hotel + Tour Package",
-      packageType: "combo",
-      duration: "4 days, 3 nights",
-      avgPrice: "$580/couple",
-      originalPrice: "$750",
-      savings: "23% off"
-    }
   ]
 
   const quickFilterChips = [
@@ -166,16 +126,6 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
       ...prev,
       query: search.query,
       location: search.location
-    }))
-    handleSearch()
-  }
-
-  // Handle trending package click
-  const handleTrendingClick = (package_: typeof trendingPackages[0]) => {
-    setFilters(prev => ({
-      ...prev,
-      query: package_.name,
-      location: package_.location
     }))
     handleSearch()
   }
@@ -309,8 +259,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   </AnimatePresence>
                 </div>
 
-                <div className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
-                  {/* Left Column */}
+                <div className="space-y-6">
                   <div className="space-y-6 min-w-0">
                     {/* Recent Searches */}
                     <AnimatePresence>
@@ -385,61 +334,6 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                           )
                         })}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column */}
-                  <div className="space-y-4 min-w-0">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
-                      Trending Packages
-                    </h4>
-                    <div className="grid gap-4">
-                      {trendingPackages.map((package_) => {
-                      const getPackageIcon = (type: string) => {
-                        switch (type) {
-                          case 'hotel': return Building
-                          case 'tour': return Camera
-                          case 'combo': return Sparkles
-                          default: return Globe
-                        }
-                      }
-                      
-                      const IconComponent = getPackageIcon(package_.packageType)
-                      
-                      return (
-                        <motion.button
-                          key={package_.id}
-                          onClick={() => handleTrendingClick(package_)}
-                            className="w-full min-w-0 flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <div className="w-14 h-14 rounded-xl flex items-center justify-center glass-chip">
-                            <IconComponent className={`w-7 h-7 ${
-                              package_.packageType === 'hotel' 
-                                ? 'text-blue-600 dark:text-blue-400' 
-                                : package_.packageType === 'tour'
-                                ? 'text-orange-600 dark:text-orange-400'
-                                : 'text-purple-600 dark:text-purple-400'
-                            }`} />
-                          </div>
-                            <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                <h5 className="font-semibold text-foreground truncate">{package_.name}</h5>
-                                <p className="text-gray-500 dark:text-gray-400">{package_.location}</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{package_.duration}</p>
-                              </div>
-                                <div className="text-right ml-3 shrink-0">
-                                <p className="font-bold text-primary">{package_.avgPrice}</p>
-                                <p className="text-sm text-gray-400 line-through">{package_.originalPrice}</p>
-                                <Badge variant="secondary" className="text-xs mt-1">{package_.savings}</Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </motion.button>
-                      )
-                      })}
                     </div>
                   </div>
                 </div>
