@@ -118,10 +118,22 @@ export default function LandingPage() {
 
 // Airbnb Header Component
 function AirbnbHeader() {
+  const navigate = useNavigate()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
 
   const handleSearch = (_filters: SearchFilters) => {
+    const params = new URLSearchParams()
+    if (_filters.query) params.set('q', _filters.query)
+    if (_filters.location) params.set('location', _filters.location)
+    if (_filters.category && _filters.category !== 'all') params.set('category', _filters.category)
+    if (_filters.duration) params.set('duration', _filters.duration)
+    if (_filters.priceRange[0] !== 0) params.set('minPrice', _filters.priceRange[0].toString())
+    if (_filters.priceRange[1] !== 5000) params.set('maxPrice', _filters.priceRange[1].toString())
+    if (_filters.minRating > 0) params.set('minRating', _filters.minRating.toString())
+    if (_filters.experienceType.length > 0) params.set('types', _filters.experienceType.join(','))
+
     setIsSearchOverlayOpen(false)
+    navigate(`/search?${params.toString()}`)
   }
 
   return (

@@ -1,6 +1,6 @@
 import { type Hotel, searchService } from '@tripavail/shared/services/searchService'
 import { SlidersHorizontal, Search } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { HotelGrid } from '@/components/search/HotelGrid'
@@ -22,40 +22,64 @@ import {
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 
 export default function SearchPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [priceRange, setPriceRange] = useState<{ min?: number; max?: number }>({})
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
 
-  // Parse URL params
-  const location = searchParams.get('q') || undefined
-  const guests = parseInt(searchParams.get('guests') || '1')
-  const minRating = parseFloat(searchParams.get('minRating') || '0')
+  const parsedCriteria = useMemo(() => {
+    const q = searchParams.get('q') || ''
+    const locationParam = searchParams.get('location') || ''
+    const guests = Number.parseInt(searchParams.get('guests') || '1', 10)
+    const minPrice = Number.parseInt(searchParams.get('minPrice') || '', 10)
+    const maxPrice = Number.parseInt(searchParams.get('maxPrice') || '', 10)
+    const minRating = Number.parseFloat(searchParams.get('minRating') || '0')
+
+    return {
+      location: (q || locationParam || undefined) as string | undefined,
+      guests: Number.isFinite(guests) && guests > 0 ? guests : 1,
+      minPrice: Number.isFinite(minPrice) ? minPrice : undefined,
+      maxPrice: Number.isFinite(maxPrice) ? maxPrice : undefined,
+      minRating: Number.isFinite(minRating) ? minRating : 0,
+    }
+  }, [searchParams])
 
   const performSearch = useCallback(async (customFilters?: {
     location?: string
     guests?: number
     minPrice?: number
     maxPrice?: number
+    minRating?: number
   }) => {
     setIsLoading(true)
     try {
-      const searchParams = customFilters || {
-        location,
-        guests,
-        minPrice: priceRange.min,
-        maxPrice: priceRange.max,
+      const effective = customFilters || {
+        location: parsedCriteria.location,
+        guests: parsedCriteria.guests,
+        minPrice: parsedCriteria.minPrice ?? priceRange.min,
+        maxPrice: parsedCriteria.maxPrice ?? priceRange.max,
+        minRating: parsedCriteria.minRating,
       }
-      
-      const results = await searchService.searchHotels(searchParams)
-      setHotels(results)
+
+      const results = await searchService.searchHotels({
+        location: effective.location,
+        guests: effective.guests,
+        minPrice: effective.minPrice,
+        maxPrice: effective.maxPrice,
+      })
+
+      const filteredByRating = (effective.minRating || 0) > 0
+        ? results.filter((h) => (h.rating ?? 0) >= (effective.minRating || 0))
+        : results
+
+      setHotels(filteredByRating)
     } catch (error) {
       console.error('Search failed', error)
     } finally {
       setIsLoading(false)
     }
-  }, [location, guests, priceRange.min, priceRange.max])
+  }, [parsedCriteria.location, parsedCriteria.guests, parsedCriteria.minPrice, parsedCriteria.maxPrice, parsedCriteria.minRating, priceRange.min, priceRange.max])
 
   // Initial load & when params change
   useEffect(() => {
@@ -82,8 +106,8 @@ export default function SearchPage() {
     if (filters.priceRange[1] !== 5000) params.set('maxPrice', filters.priceRange[1].toString())
     if (filters.minRating > 0) params.set('minRating', filters.minRating.toString())
     if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
-    
-    window.history.pushState({}, '', `/search?${params.toString()}`)
+
+    setSearchParams(params)
     
     // Update price range state
     setPriceRange({
@@ -96,9 +120,10 @@ export default function SearchPage() {
     // Trigger the actual search with the new filter values
     performSearch({
       location: filters.query || filters.location || undefined,
-      guests: guests,
+      guests: parsedCriteria.guests,
       minPrice: filters.priceRange[0] !== 0 ? filters.priceRange[0] : undefined,
       maxPrice: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined,
+      minRating: filters.minRating > 0 ? filters.minRating : 0,
     })
   }
 
@@ -184,7 +209,7 @@ export default function SearchPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">
-          {location ? `Stays in ${location}` : 'All Stays'}
+          {parsedCriteria.location ? `Stays in ${parsedCriteria.location}` : 'All Stays'}
         </h1>
 
         <HotelGrid hotels={hotels} isLoading={isLoading} />
