@@ -255,8 +255,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
             </div>
 
             {/* Body */}
-            <div className="relative flex-1 overflow-y-auto">
-              <div className="p-4 md:p-6 space-y-6 md:space-y-8">
+            <div className="relative flex-1 overflow-y-auto overflow-x-hidden">
+              <div className="p-4 md:p-6 space-y-6 md:space-y-8 overflow-x-hidden">
                 {/* Main Search Input - Glass Effect */}
                 <div className="space-y-4">
                   <div className="relative">
@@ -311,7 +311,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
 
                 <div className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
                   {/* Left Column */}
-                  <div className="space-y-6">
+                  <div className="space-y-6 min-w-0">
                     {/* Recent Searches */}
                     <AnimatePresence>
                       {showRecentSearches && (
@@ -319,7 +319,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="space-y-4"
+                          className="space-y-4 glass-suggestion rounded-2xl p-4"
                         >
                           <h4 className="font-semibold text-foreground flex items-center gap-2">
                             <Clock className="w-5 h-5" />
@@ -332,7 +332,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                                 <motion.button
                                   key={search.id}
                                   onClick={() => handleRecentSearchClick(search)}
-                                  className="w-full flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
+                                  className="w-full min-w-0 flex items-center gap-4 p-4 glass-chip hover:active rounded-xl transition-colors text-left"
                                   whileTap={{ scale: 0.98 }}
                                 >
                                   <div className="w-12 h-12 glass-chip rounded-xl flex items-center justify-center">
@@ -351,7 +351,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                     </AnimatePresence>
 
                     {/* Quick Filter Chips */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 glass-suggestion rounded-2xl p-4">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-foreground">Quick Filters</h4>
                         <Button
@@ -389,7 +389,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   </div>
 
                   {/* Right Column */}
-                  <div className="space-y-4">
+                  <div className="space-y-4 min-w-0">
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <TrendingUp className="w-5 h-5" />
                       Trending Packages
@@ -411,7 +411,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                         <motion.button
                           key={package_.id}
                           onClick={() => handleTrendingClick(package_)}
-                          className="flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
+                            className="w-full min-w-0 flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
                           whileTap={{ scale: 0.98 }}
                         >
                           <div className="w-14 h-14 rounded-xl flex items-center justify-center glass-chip">
@@ -423,14 +423,14 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                                 : 'text-purple-600 dark:text-purple-400'
                             }`} />
                           </div>
-                          <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
                                 <h5 className="font-semibold text-foreground truncate">{package_.name}</h5>
                                 <p className="text-gray-500 dark:text-gray-400">{package_.location}</p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">{package_.duration}</p>
                               </div>
-                              <div className="text-right ml-3">
+                                <div className="text-right ml-3 shrink-0">
                                 <p className="font-bold text-primary">{package_.avgPrice}</p>
                                 <p className="text-sm text-gray-400 line-through">{package_.originalPrice}</p>
                                 <Badge variant="secondary" className="text-xs mt-1">{package_.savings}</Badge>
