@@ -127,7 +127,7 @@ function AirbnbHeader() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50">
-        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center md:gap-3">
+        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
           {/* Logo */}
           <div className="flex items-center shrink-0">
             <div className="flex items-center gap-1 cursor-pointer">
@@ -149,10 +149,10 @@ function AirbnbHeader() {
           </div>
 
           {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
-          <div className="hidden md:flex flex-1 justify-center min-w-0">
+          <div className="hidden md:flex justify-center min-w-0">
             <GlassCard
               variant="light"
-              className="flex w-full min-w-0 items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
+              className="flex w-full max-w-2xl 2xl:max-w-3xl min-w-0 items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
               onClick={() => setIsSearchOverlayOpen(true)}
               role="button"
               tabIndex={0}
@@ -162,10 +162,10 @@ function AirbnbHeader() {
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="text-sm font-semibold truncate">Search by destination or keyword</div>
-                <div className="hidden xl:block h-6 w-[1px] bg-gray-300" />
-                <div className="text-sm text-muted-foreground hidden xl:block">Add dates</div>
-                <div className="hidden xl:block h-6 w-[1px] bg-gray-300" />
-                <div className="text-sm text-muted-foreground font-normal hidden xl:block truncate">
+                <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
+                <div className="text-sm text-muted-foreground hidden 2xl:block">Add dates</div>
+                <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
+                <div className="text-sm text-muted-foreground font-normal hidden 2xl:block truncate">
                   Add travelers
                 </div>
               </div>
@@ -173,7 +173,7 @@ function AirbnbHeader() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  className="hidden xl:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
+                  className="hidden 2xl:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -187,7 +187,7 @@ function AirbnbHeader() {
 
                 <button
                   type="button"
-                  className="hidden lg:flex xl:hidden items-center justify-center rounded-full p-2 hover:bg-muted/40 transition-colors"
+                  className="hidden lg:flex 2xl:hidden items-center justify-center rounded-full p-2 hover:bg-muted/40 transition-colors"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
