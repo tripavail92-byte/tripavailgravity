@@ -10,7 +10,6 @@ import {
     Check, 
     Loader2, 
     AlertCircle,
-    ScanFace,
     CreditCard,
     Camera,
     UserCheck
@@ -21,6 +20,7 @@ import { aiVerificationService } from '@/features/verification/services/aiVerifi
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { KYCSelfieVector } from '@/features/verification/assets/KYCSelfieVector';
 
 interface IdentitySubFlowProps {
     onComplete: (data: { 
@@ -143,8 +143,8 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                         className="space-y-8"
                     >
                         <div className="text-center">
-                            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6">
-                                <ScanFace className="w-8 h-8" />
+                            <div className="flex justify-center mb-6">
+                                <KYCSelfieVector size={240} className="filter drop-shadow-xl" />
                             </div>
                             <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Step 2: Selfie with ID</h4>
                             <p className="text-gray-500 mt-2 font-medium px-4">
