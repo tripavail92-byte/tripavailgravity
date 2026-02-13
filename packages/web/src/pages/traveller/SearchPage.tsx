@@ -33,15 +33,22 @@ export default function SearchPage() {
   const guests = parseInt(searchParams.get('guests') || '1')
   const minRating = parseFloat(searchParams.get('minRating') || '0')
 
-  const performSearch = useCallback(async () => {
+  const performSearch = useCallback(async (customFilters?: {
+    location?: string
+    guests?: number
+    minPrice?: number
+    maxPrice?: number
+  }) => {
     setIsLoading(true)
     try {
-      const results = await searchService.searchHotels({
+      const searchParams = customFilters || {
         location,
         guests,
         minPrice: priceRange.min,
         maxPrice: priceRange.max,
-      })
+      }
+      
+      const results = await searchService.searchHotels(searchParams)
       setHotels(results)
     } catch (error) {
       console.error('Search failed', error)
@@ -78,7 +85,7 @@ export default function SearchPage() {
     
     window.history.pushState({}, '', `/search?${params.toString()}`)
     
-    // Update price range and trigger search
+    // Update price range state
     setPriceRange({
       min: filters.priceRange[0] !== 0 ? filters.priceRange[0] : undefined,
       max: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined
@@ -86,8 +93,13 @@ export default function SearchPage() {
     
     setIsSearchOverlayOpen(false)
     
-    // Trigger the actual search
-    performSearch()
+    // Trigger the actual search with the new filter values
+    performSearch({
+      location: filters.query || filters.location || undefined,
+      guests: guests,
+      minPrice: filters.priceRange[0] !== 0 ? filters.priceRange[0] : undefined,
+      maxPrice: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined,
+    })
   }
 
   return (
