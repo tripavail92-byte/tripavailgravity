@@ -1,5 +1,5 @@
 import { type Hotel, searchService } from '@tripavail/shared/services/searchService'
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, Search } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -85,6 +85,9 @@ export default function SearchPage() {
     })
     
     setIsSearchOverlayOpen(false)
+    
+    // Trigger the actual search
+    performSearch()
   }
 
   return (
@@ -101,8 +104,14 @@ export default function SearchPage() {
             />
           </div>
           
-          {/* Mobile: Logo */}
-          <div className="md:hidden font-bold text-primary">TripAvail</div>
+          {/* Mobile: Search Button */}
+          <button
+            onClick={() => setIsSearchOverlayOpen(true)}
+            className="md:hidden flex items-center gap-2 px-4 py-2 glass-chip rounded-full text-sm font-medium hover:active"
+          >
+            <Search className="w-4 h-4" />
+            Search destinations...
+          </button>
 
           {/* Filters Trigger */}
           <Sheet>
