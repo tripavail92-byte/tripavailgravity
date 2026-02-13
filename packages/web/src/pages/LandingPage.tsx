@@ -17,6 +17,8 @@ import { supabase } from '@/lib/supabase'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
+import { SearchOverlay } from '@/components/search/SearchOverlay'
+import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
@@ -121,8 +123,24 @@ export default function LandingPage() {
 // Airbnb Header Component
 function AirbnbHeader() {
   const navigate = useNavigate()
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+
+  const handleSearch = (filters: SearchFilters) => {
+    const params = new URLSearchParams()
+    if (filters.query) params.set('q', filters.query)
+    if (filters.location) params.set('location', filters.location)
+    if (filters.priceRange?.[0] && filters.priceRange[0] !== 0) params.set('minPrice', String(filters.priceRange[0]))
+    if (filters.priceRange?.[1] && filters.priceRange[1] !== 5000) params.set('maxPrice', String(filters.priceRange[1]))
+    if (filters.minRating && filters.minRating > 0) params.set('minRating', String(filters.minRating))
+    if (filters.experienceType?.length) params.set('types', filters.experienceType.join(','))
+
+    setIsSearchOverlayOpen(false)
+    navigate(`/search?${params.toString()}`)
+  }
+
   return (
-    <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50 px-4 md:px-10 flex items-center justify-between">
+    <>
+      <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50 px-4 md:px-10 flex items-center justify-between">
       {/* Logo */}
       <div className="flex-1 flex items-center">
         <div className="flex items-center gap-1 cursor-pointer">
@@ -145,7 +163,16 @@ function AirbnbHeader() {
 
       {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
       <div className="hidden md:flex flex-1 justify-center">
-        <GlassCard variant="light" className="flex items-center border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4">
+        <GlassCard
+          variant="light"
+          className="flex items-center border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2 gap-4"
+          onClick={() => setIsSearchOverlayOpen(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') setIsSearchOverlayOpen(true)
+          }}
+        >
           <div className="text-sm font-semibold truncate max-w-[100px] lg:max-w-none">
             Search destinations
           </div>
@@ -177,7 +204,14 @@ function AirbnbHeader() {
         {/* Role-Based Drawer Menu */}
         <RoleBasedDrawer />
       </div>
-    </header>
+      </header>
+
+      <SearchOverlay
+        isOpen={isSearchOverlayOpen}
+        onClose={() => setIsSearchOverlayOpen(false)}
+        onSearch={handleSearch}
+      />
+    </>
   )
 }
 // Airbnb-style Category Navigation Pill Bar
