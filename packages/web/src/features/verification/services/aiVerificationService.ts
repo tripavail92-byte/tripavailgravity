@@ -8,6 +8,7 @@ interface VerificationResult {
 }
 
 export const aiVerificationService = {
+    // v3.0 - Backend Verification Active
     /**
      * Helper to log verification activity to Supabase
      */
@@ -42,69 +43,18 @@ export const aiVerificationService = {
         userId: string, 
         role: 'tour_operator' | 'hotel_manager'
     ): Promise<VerificationResult> {
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
-        
-        if (!apiKey) {
-            return {
-                success: true,
-                score: 85,
-                match: true,
-                reason: "Developer Mode: Simulated match"
-            };
-        }
-
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o-mini",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Analyze these two images. Image 1 is a Government ID. Image 2 is a selfie of a person holding that ID. 1) Does the person in the selfie match the photo on the ID? 2) Is the person in the selfie CLEARLY holding the same ID card shown in Image 1? 3) Return a similarity score (0-100) and a detailed justification. Return ONLY a JSON object with keys: 'match' (boolean), 'score' (number), and 'reason' (string)."
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: { url: idCardUrl }
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: { url: selfieUrl }
-                                }
-                            ]
-                        }
-                    ],
-                    max_tokens: 300,
-                    response_format: { type: "json_object" }
-                })
+            const { data, error } = await supabase.functions.invoke('verify-identity', {
+                body: { idCardUrl, selfieUrl, userId, role, taskType: 'face_match' }
             });
 
-            if (!response.ok) throw new Error('AI verification failed');
-
-            const data = await response.json();
-            const result = JSON.parse(data.choices[0].message.content);
-
-            // Log activity
-            await this.logActivity({
-                userId,
-                role,
-                eventType: 'biometric_match',
-                status: result.match ? 'success' : 'failure',
-                details: { score: result.score, reason: result.reason }
-            });
+            if (error) throw error;
 
             return {
                 success: true,
-                score: result.score,
-                match: result.match,
-                reason: result.reason
+                score: data.score,
+                match: data.match,
+                reason: data.reason
             };
         } catch (error: any) {
             console.error('AI Matching Error:', error);
@@ -112,7 +62,7 @@ export const aiVerificationService = {
                 success: false,
                 score: 0,
                 match: false,
-                reason: error.message
+                reason: error.message || "Verification server busy"
             };
         }
     },
@@ -125,62 +75,20 @@ export const aiVerificationService = {
         userId: string,
         role: 'tour_operator' | 'hotel_manager'
     ): Promise<{ valid: boolean; reason?: string }> {
-        const apiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
-        
-        if (!apiKey) {
-            return { valid: true, reason: "Developer Mode: Simulated success" };
-        }
-
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-4o-mini",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Analyze this image. Is it a valid government-issued ID (Passport, ID Card, or Driver's License)? Also check for quality: is it blurry, is there heavy glare, or is the document cut off? Return ONLY a JSON object with keys: 'valid' (boolean) and 'reason' (string, if invalid explaining why, if valid confirming document type)."
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: { url: imageUrl }
-                                }
-                            ]
-                        }
-                    ],
-                    max_tokens: 200,
-                    response_format: { type: "json_object" }
-                })
+            const { data, error } = await supabase.functions.invoke('verify-identity', {
+                body: { idCardUrl: imageUrl, userId, role, taskType: 'validate_id' }
             });
 
-            if (!response.ok) throw new Error('AI validation failed');
-
-            const data = await response.json();
-            const result = JSON.parse(data.choices[0].message.content);
-
-            // Log activity
-            await this.logActivity({
-                userId,
-                role,
-                eventType: 'document_validation',
-                status: result.valid ? 'success' : 'failure',
-                details: { reason: result.reason }
-            });
+            if (error) throw error;
 
             return {
-                valid: result.valid,
-                reason: result.reason
+                valid: data.valid,
+                reason: data.reason
             };
         } catch (error: any) {
             console.error('AI Validation Error:', error);
-            return { valid: false, reason: "Verification server busy. Please try again." };
+            return { valid: false, reason: `Error: ${error.message || 'Verification server busy'}` };
         }
     }
 };
