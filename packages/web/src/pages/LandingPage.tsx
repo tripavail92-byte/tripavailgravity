@@ -42,7 +42,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Airbnb Header (Fixed) */}
       <AirbnbHeader />
 
