@@ -203,27 +203,40 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[100] bg-white dark:bg-background"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.2 }}
+          aria-modal="true"
+          role="dialog"
         >
-          {/* Full Screen Search Container */}
-          <div className="h-full flex flex-col">
-            {/* Header with Close Button - Glass Effect */}
-            <div className="sticky top-0 glass-nav z-[110] px-4 py-4">
+          {/* Blurred Backdrop */}
+          <div className="absolute inset-0 glass-overlay" onMouseDown={onClose} />
+
+          {/* Glass Modal */}
+          <motion.div
+            className="relative w-full max-w-2xl max-h-[85vh] glass-card rounded-2xl overflow-hidden"
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
+            transition={{ duration: 0.2 }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-4 py-4 border-b border-white/20">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <motion.button
                     onClick={onClose}
-                    className="w-10 h-10 glass-chip rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="w-10 h-10 glass-chip rounded-full flex items-center justify-center transition-colors"
                     whileTap={{ scale: 0.95 }}
                     whileHover={{ scale: 1.05 }}
+                    aria-label="Close search"
                   >
-                    <X className="w-5 h-5 text-gray-700 dark:text-foreground" />
+                    <X className="w-5 h-5 text-foreground" />
                   </motion.button>
-                  <h1 className="text-2xl font-bold text-foreground">Search TripAvail</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-foreground truncate">Search TripAvail</h1>
                 </div>
                 <Button
                   variant="ghost"
@@ -237,8 +250,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
               </div>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Body */}
+            <div className="overflow-y-auto">
               <div className="p-4 space-y-6 max-w-md mx-auto">
                 {/* Main Search Input - Glass Effect */}
                 <div className="space-y-4">
@@ -533,38 +546,39 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   )}
                 </AnimatePresence>
 
-                {/* Search Buttons */}
-                <div className="sticky bottom-0 glass-nav-bottom border-t pt-6 pb-8 z-[110]">
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setFilters({
-                          query: '',
-                          category: 'all',
-                          location: '',
-                          duration: '',
-                          priceRange: [0, 5000],
-                          minRating: 0,
-                          experienceType: []
-                        })
-                      }}
-                      className="flex-1 h-12 text-base rounded-xl glass-chip"
-                    >
-                      Clear All
-                    </Button>
-                    <Button
-                      onClick={handleSearch}
-                      className="flex-2 h-12 bg-gradient-to-r from-[#FF385C] to-[#FF6B9D] hover:opacity-90 text-white font-semibold flex items-center gap-2 text-base rounded-xl shadow-lg"
-                    >
-                      <Search className="w-5 h-5" />
-                      Search
-                    </Button>
-                  </div>
-                </div>
               </div>
             </div>
-          </div>
+
+            {/* Footer */}
+            <div className="px-4 py-4 border-t border-white/20">
+              <div className="flex gap-4 max-w-md mx-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilters({
+                      query: '',
+                      category: 'all',
+                      location: '',
+                      duration: '',
+                      priceRange: [0, 5000],
+                      minRating: 0,
+                      experienceType: [],
+                    })
+                  }}
+                  className="flex-1 h-12 text-base rounded-xl glass-chip"
+                >
+                  Clear All
+                </Button>
+                <Button
+                  onClick={handleSearch}
+                  className="flex-1 h-12 font-semibold flex items-center gap-2 text-base rounded-xl"
+                >
+                  <Search className="w-5 h-5" />
+                  Search
+                </Button>
+              </div>
+            </div>
+        </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
