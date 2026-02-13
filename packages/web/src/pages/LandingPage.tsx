@@ -129,9 +129,9 @@ function AirbnbHeader() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50">
-        <div className="container mx-auto max-w-7xl h-full px-4 md:px-10 flex items-center justify-between">
+        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3">
           {/* Logo */}
-          <div className="flex-1 flex items-center">
+          <div className="flex items-center shrink-0">
             <div className="flex items-center gap-1 cursor-pointer">
               {/* TripAvail Logo Icon (Rose) */}
               <svg
@@ -151,7 +151,7 @@ function AirbnbHeader() {
           </div>
 
           {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
-          <div className="hidden md:flex flex-1 justify-center">
+          <div className="hidden md:flex flex-1 justify-center min-w-0">
             <GlassCard
               variant="light"
               className="flex w-full max-w-3xl items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-6 pr-2"
@@ -193,14 +193,25 @@ function AirbnbHeader() {
           </div>
 
           {/* Right User Menu */}
-          <div className="flex-1 flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsSearchOverlayOpen(true)}
+              className="md:hidden inline-flex items-center gap-2 border border-white/30 rounded-full px-3 py-2 hover:bg-muted/30 transition-colors"
+              aria-label="Open search"
+            >
+              <Search className="w-4 h-4" />
+              <span className="text-sm font-medium">Search</span>
+              <SlidersHorizontal className="w-4 h-4 opacity-80" />
+            </button>
+
             <button
               onClick={() => navigate('/partner/onboarding')}
-              className="hidden md:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
+              className="hidden lg:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
             >
               Become a Partner
             </button>
-            <button className="hidden md:flex p-3 hover:bg-muted rounded-full transition-colors">
+            <button className="hidden lg:flex p-3 hover:bg-muted rounded-full transition-colors">
               <Globe className="w-4 h-4" />
             </button>
 
