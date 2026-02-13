@@ -1,4 +1,4 @@
-import { AlignJustify, Heart, LogIn, LogOut, MapPin, Pencil, UserCircle } from 'lucide-react'
+import { AlignJustify, Backpack, Heart, LogIn, LogOut, MapPin, Pencil, UserCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -54,9 +54,12 @@ export function RoleBasedDrawer() {
         <SheetTrigger asChild>
           <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0">
             <AlignJustify className="w-4 h-4 text-foreground/80 group-hover:text-foreground" />
-            <div className="bg-muted text-muted-foreground bg-gray-500/10 rounded-full p-1 group-hover:bg-gray-500/20 transition-colors">
-              <UserCircle className="w-6 h-6 fill-current text-gray-500" />
-            </div>
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={undefined} alt="Traveler" />
+              <AvatarFallback aria-label="Traveler" className="bg-muted text-muted-foreground">
+                <Backpack className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
           </button>
         </SheetTrigger>
         <SheetContent side="right" className="w-[92vw] max-w-[350px] sm:w-[350px]">
@@ -117,17 +120,12 @@ export function RoleBasedDrawer() {
       <SheetTrigger asChild>
         <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0">
           <AlignJustify className="w-4 h-4 text-foreground/80 group-hover:text-foreground" />
-          <div className="bg-muted text-muted-foreground bg-gray-500/10 rounded-full p-1 group-hover:bg-gray-500/20 transition-colors">
-            {/* Use User Avatar if available, else fallback */}
-            {user.user_metadata?.avatar_url ? (
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={user.user_metadata.avatar_url} />
-                <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            ) : (
-              <UserCircle className="w-6 h-6 fill-current text-gray-500" />
-            )}
-          </div>
+          <Avatar className="h-7 w-7">
+            <AvatarImage src={user.user_metadata?.avatar_url} alt="Traveler" />
+            <AvatarFallback aria-label="Traveler" className="bg-muted text-muted-foreground">
+              {user.email ? user.email.charAt(0).toUpperCase() : <Backpack className="h-4 w-4" />}
+            </AvatarFallback>
+          </Avatar>
         </button>
       </SheetTrigger>
 
