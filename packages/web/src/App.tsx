@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import TestKYC from './pages/TestKYC';
 import { Toaster } from 'react-hot-toast'
 
 import { useAuth } from '@/hooks/useAuth'
@@ -84,6 +85,7 @@ function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route path="/auth" element={<LoginPage />} />
+        <Route path="/test-kyc" element={<TestKYC />} />
 
         {/* Traveller Routes (Teal Theme) */}
         <Route element={<TravellerLayout />}>
