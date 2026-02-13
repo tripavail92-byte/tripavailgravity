@@ -2,7 +2,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Flame,
-  Globe,
   Heart,
   Search,
   SlidersHorizontal,
@@ -119,7 +118,6 @@ export default function LandingPage() {
 
 // Airbnb Header Component
 function AirbnbHeader() {
-  const navigate = useNavigate()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
 
   const handleSearch = (_filters: SearchFilters) => {
@@ -129,14 +127,14 @@ function AirbnbHeader() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50">
-        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3">
+        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3 md:grid md:grid-cols-[auto_1fr_auto] md:items-center md:gap-3">
           {/* Logo */}
           <div className="flex items-center shrink-0">
             <div className="flex items-center gap-1 cursor-pointer">
               {/* TripAvail Logo Icon (Rose) */}
               <svg
                 viewBox="0 0 32 32"
-                className="block h-8 w-8 fill-[#FF385C]"
+                className="block h-8 w-8 fill-current text-primary"
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
                 role="presentation"
@@ -144,7 +142,7 @@ function AirbnbHeader() {
               >
                 <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 3.162.717 4.698-.217 1.722-1.077 3.325-2.678 4.318-1.554.965-3.328 1.5-5.36 1.5-4.137 0-7.38-2.676-8.917-6.236l-.089-.283C10.706 28.164 7.426 31 3.092 31c-1.996 0-3.79-.536-5.267-1.501-1.636-.998-2.5-2.597-2.73-4.318-.21-1.62.062-3.193.754-4.836L16 1zm0 2c-1.137 0-2.31 1.258-3.416 3.46l-.37.747c-1.897 3.906-5.83 12.276-6.818 14.594l-.152.365c-.56 1.39-.757 2.628-.584 3.79.166 1.118.916 2.372 2.148 3.174 2.822 1.838 6.463-1.054 9.18-5.34l.112-.178.65-.965.674 1.134c2.81 4.512 6.55 7.189 9.387 5.353 1.18-.763 1.956-2.023 2.152-3.175.176-1.16-.011-2.396-.566-3.743l-.15-.355c-1.028-2.336-4.9-10.372-6.84-14.414L20.897 6.48C19.79 4.258 17.137 3 16 3z"></path>
               </svg>
-              <span className="hidden md:block font-bold text-xl text-[#FF385C] tracking-tighter">
+              <span className="hidden md:block font-bold text-xl text-primary tracking-tighter">
                 tripavail
               </span>
             </div>
@@ -154,7 +152,7 @@ function AirbnbHeader() {
           <div className="hidden md:flex flex-1 justify-center min-w-0">
             <GlassCard
               variant="light"
-              className="flex w-full max-w-xl lg:max-w-2xl xl:max-w-3xl items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
+              className="flex w-full min-w-0 items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
               onClick={() => setIsSearchOverlayOpen(true)}
               role="button"
               tabIndex={0}
@@ -200,7 +198,7 @@ function AirbnbHeader() {
                   <SlidersHorizontal className="w-4 h-4" />
                 </button>
 
-                <div className="bg-[#FF385C] rounded-full p-2 text-white">
+                <div className="bg-primary rounded-full p-2 text-primary-foreground">
                   <Search className="w-3 h-3 stroke-[3px]" />
                 </div>
               </div>
@@ -218,23 +216,6 @@ function AirbnbHeader() {
               <Search className="w-4 h-4" />
               <span className="hidden sm:inline text-sm font-medium">Search</span>
               <SlidersHorizontal className="w-4 h-4 opacity-80" />
-            </button>
-
-            <button
-              onClick={() => navigate('/partner/onboarding')}
-              className="hidden xl:block text-sm font-semibold hover:bg-muted rounded-full px-4 py-3 transition-colors"
-            >
-              Become a Partner
-            </button>
-
-            <button
-              onClick={() => navigate('/partner/onboarding')}
-              className="hidden lg:block xl:hidden text-sm font-semibold hover:bg-muted rounded-full px-3 py-3 transition-colors"
-            >
-              Partner
-            </button>
-            <button className="hidden lg:flex p-3 hover:bg-muted rounded-full transition-colors">
-              <Globe className="w-4 h-4" />
             </button>
 
             {/* Role-Based Drawer Menu */}
