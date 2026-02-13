@@ -42,6 +42,9 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
     const [isUploading, setIsUploading] = useState(false);
     const [verificationResult, setVerificationResult] = useState<{ match: boolean; score: number; reason?: string } | null>(null);
 
+    // Verify deployment version
+    console.log("TripAvail Verification System v2.1 [Vector+AI]");
+
     const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService;
 
     const handleIdUpload = async (file: File) => {
