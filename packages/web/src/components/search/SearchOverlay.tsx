@@ -212,19 +212,23 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
           role="dialog"
         >
           {/* Blurred Backdrop */}
-          <div className="absolute inset-0 glass-overlay" onMouseDown={onClose} />
+          <div
+            className="absolute inset-0 bg-black/25 dark:bg-black/45 backdrop-blur-md"
+            onMouseDown={onClose}
+          />
 
           {/* Glass Modal */}
           <motion.div
-            className="relative w-full max-w-2xl max-h-[85vh] glass-card rounded-2xl overflow-hidden shadow-xl flex flex-col"
+            className="relative w-full max-w-2xl lg:max-w-3xl max-h-[90vh] md:max-h-[85vh] rounded-2xl overflow-hidden shadow-xl flex flex-col bg-white/45 dark:bg-background/25 backdrop-blur-2xl backdrop-saturate-150 border border-white/25 dark:border-white/10"
             initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.2 }}
             onMouseDown={(e) => e.stopPropagation()}
           >
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 to-transparent dark:from-white/5" />
             {/* Header */}
-            <div className="px-4 py-4 border-b border-white/20">
+            <div className="relative px-4 py-4 border-b border-white/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">
                   <motion.button
@@ -251,8 +255,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4 space-y-6 md:space-y-8">
+            <div className="relative flex-1 overflow-y-auto">
+              <div className="p-4 md:p-6 space-y-6 md:space-y-8">
                 {/* Main Search Input - Glass Effect */}
                 <div className="space-y-4">
                   <div className="relative">
@@ -305,7 +309,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   </AnimatePresence>
                 </div>
 
-                <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
+                <div className="space-y-6 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
                   {/* Left Column */}
                   <div className="space-y-6">
                     {/* Recent Searches */}
@@ -410,13 +414,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                           className="flex items-center gap-4 p-4 glass-suggestion hover:active rounded-xl transition-colors text-left"
                           whileTap={{ scale: 0.98 }}
                         >
-                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                            package_.packageType === 'hotel' 
-                              ? 'bg-blue-100 dark:bg-blue-900/30' 
-                              : package_.packageType === 'tour'
-                              ? 'bg-orange-100 dark:bg-orange-900/30'
-                              : 'bg-purple-100 dark:bg-purple-900/30'
-                          }`}>
+                          <div className="w-14 h-14 rounded-xl flex items-center justify-center glass-chip">
                             <IconComponent className={`w-7 h-7 ${
                               package_.packageType === 'hotel' 
                                 ? 'text-blue-600 dark:text-blue-400' 
@@ -555,7 +553,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-4 border-t border-white/20">
+            <div className="relative px-4 py-4 border-t border-white/20">
               <div className="flex gap-4 max-w-md mx-auto">
                 <Button
                   variant="outline"
