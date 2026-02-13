@@ -52,14 +52,14 @@ export function RoleBasedDrawer() {
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow ml-1 group">
+          <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0">
             <AlignJustify className="w-4 h-4 text-foreground/80 group-hover:text-foreground" />
             <div className="bg-muted text-muted-foreground bg-gray-500/10 rounded-full p-1 group-hover:bg-gray-500/20 transition-colors">
               <UserCircle className="w-6 h-6 fill-current text-gray-500" />
             </div>
           </button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[300px] sm:w-[350px]">
+        <SheetContent side="right" className="w-[92vw] max-w-[350px] sm:w-[350px]">
           <SheetHeader className="text-left">
             <SheetTitle>Welcome to TripAvail</SheetTitle>
             <SheetDescription>Sign in to manage your trips and preferences.</SheetDescription>
@@ -115,7 +115,7 @@ export function RoleBasedDrawer() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow ml-1 group">
+        <button className="flex items-center gap-2 border rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0">
           <AlignJustify className="w-4 h-4 text-foreground/80 group-hover:text-foreground" />
           <div className="bg-muted text-muted-foreground bg-gray-500/10 rounded-full p-1 group-hover:bg-gray-500/20 transition-colors">
             {/* Use User Avatar if available, else fallback */}
@@ -133,7 +133,7 @@ export function RoleBasedDrawer() {
 
       <SheetContent
         side="right"
-        className="w-[300px] sm:w-[350px] p-0 flex flex-col h-full bg-background border-l-0 sm:border-l"
+        className="w-[92vw] max-w-[350px] sm:w-[350px] p-0 flex flex-col h-full bg-background border-l-0 sm:border-l"
       >
         {/* Header Profile Section */}
         <div className="p-6 pb-2">

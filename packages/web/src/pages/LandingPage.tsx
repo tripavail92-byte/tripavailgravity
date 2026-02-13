@@ -197,11 +197,11 @@ function AirbnbHeader() {
             <button
               type="button"
               onClick={() => setIsSearchOverlayOpen(true)}
-              className="md:hidden inline-flex items-center gap-2 border border-white/30 rounded-full px-3 py-2 hover:bg-muted/30 transition-colors"
+              className="md:hidden inline-flex items-center gap-1 sm:gap-2 border border-white/30 rounded-full px-2.5 sm:px-3 py-2 hover:bg-muted/30 transition-colors shrink-0"
               aria-label="Open search"
             >
               <Search className="w-4 h-4" />
-              <span className="text-sm font-medium">Search</span>
+              <span className="hidden sm:inline text-sm font-medium">Search</span>
               <SlidersHorizontal className="w-4 h-4 opacity-80" />
             </button>
 
