@@ -225,7 +225,7 @@ function CategoryNavBar() {
   return (
     <div className="sticky top-20 z-40 w-full bg-background/95 backdrop-blur-md border-b shadow-sm pt-4">
       <div className="container mx-auto max-w-7xl px-4">
-        <div className="flex items-center gap-8 overflow-x-auto no-scrollbar pb-4 px-2">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pb-4 px-2">
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -566,22 +566,6 @@ function FeaturedHotelsSection({
           <h3 className="text-2xl font-bold text-foreground">Featured Experiences</h3>
           <p className="text-muted-foreground text-sm">Curated packages for you</p>
         </div>
-        <div className="flex gap-2 hidden md:flex">
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full w-8 h-8 hover:scale-105 transition-transform"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full w-8 h-8 hover:scale-105 transition-transform"
-          >
-            <ChevronRightIcon className="w-4 h-4" />
-          </Button>
-        </div>
       </div>
 
       {featuredHotels.length === 0 ? (
@@ -589,15 +573,14 @@ function FeaturedHotelsSection({
           <p className="text-gray-500">No packages available at the moment.</p>
         </div>
       ) : (
-        /* Horizontal Scroll Container */
-        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {featuredHotels.map((hotel, index) => (
             <motion.div
               key={hotel.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 * index }}
-              className="min-w-[280px] md:min-w-[320px] snap-start"
+              className="w-full"
             >
               <Link to={`/packages/${hotel.slug || hotel.id}`} className="block group cursor-pointer space-y-3">
                 <div className="relative aspect-square overflow-hidden rounded-xl">
@@ -750,15 +733,14 @@ function FeaturedToursSection({
           <p className="text-gray-500">No tours available at the moment.</p>
         </div>
       ) : (
-        /* Horizontal Scroll Container */
-        <div className="flex gap-6 overflow-x-auto no-scrollbar pb-8 -mx-4 px-4 snap-x">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {featuredTours.map((tour, index) => (
           <motion.div
             key={tour.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 * index }}
-            className="min-w-[280px] md:min-w-[320px] snap-start"
+            className="w-full"
           >
             <Link to={`/tours/${tour.slug || tour.id}`} className="block group cursor-pointer space-y-3">
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
