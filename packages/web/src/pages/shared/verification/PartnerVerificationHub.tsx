@@ -17,6 +17,7 @@ export function PartnerVerificationHub() {
     const [isLoading, setIsLoading] = useState(true);
     const [verificationData, setVerificationData] = useState<any>({
         idCardUrl: '',
+        idBackUrl: '',
         selfieUrl: '',
         matchingScore: 0,
         businessDocs: {},

@@ -33,6 +33,7 @@ export interface TourOperatorOnboardingData {
     };
     verification?: {
         idCardUrl: string;
+        idBackUrl: string;
         selfieUrl: string;
         matchingScore: number;
         businessDocs: Record<string, string>;
@@ -63,6 +64,7 @@ export const tourOperatorService = {
             policies: data.policies,
             verification_documents: {
                 idCardUrl: data.verification?.idCardUrl,
+                idBackUrl: data.verification?.idBackUrl,
                 selfieUrl: data.verification?.selfieUrl,
                 matchingScore: data.verification?.matchingScore
             },
@@ -138,6 +140,7 @@ export const tourOperatorService = {
                 policies: profile.policies,
                 verification: profile.verification_documents ? {
                     idCardUrl: profile.verification_documents.idCardUrl || '',
+                    idBackUrl: profile.verification_documents.idBackUrl || '',
                     selfieUrl: profile.verification_documents.selfieUrl || '',
                     matchingScore: profile.verification_documents.matchingScore || 0,
                     businessDocs: profile.verification_urls || {}
