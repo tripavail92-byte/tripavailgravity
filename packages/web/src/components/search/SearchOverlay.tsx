@@ -1,9 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { 
-  Search, X, MapPin, Calendar, Star, Filter,
-  Clock, Mic, MicOff, DollarSign,
-  Building, History, ChevronDown, Globe
+import {
+  Search,
+  X,
+  MapPin,
+  Calendar,
+  Star,
+  Filter,
+  Clock,
+  Mic,
+  MicOff,
+  DollarSign,
+  Building,
+  History,
+  ChevronDown,
+  Globe,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -26,8 +37,8 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
       duration: '',
       priceRange: [0, 5000],
       minRating: 0,
-      experienceType: []
-    }
+      experienceType: [],
+    },
   )
 
   const [showFilters, setShowFilters] = useState(false)
@@ -38,9 +49,9 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
 
   // Mock data
   const recentSearches = [
-    { id: 1, query: "Paris Hotels", location: "Paris, France", icon: Building },
-    { id: 2, query: "Beach Tours", location: "Maldives", icon: Globe },
-    { id: 3, query: "City Break", location: "New York, USA", icon: Building }
+    { id: 1, query: 'Paris Hotels', location: 'Paris, France', icon: Building },
+    { id: 2, query: 'Beach Tours', location: 'Maldives', icon: Globe },
+    { id: 3, query: 'City Break', location: 'New York, USA', icon: Building },
   ]
 
   const quickFilterChips = [
@@ -49,37 +60,38 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
     { id: 'adventure', label: 'Adventure' },
     { id: 'luxury', label: 'Luxury' },
     { id: 'budget', label: 'Budget-Friendly' },
-    { id: 'romantic', label: 'Romantic' }
+    { id: 'romantic', label: 'Romantic' },
   ]
 
   // Voice search functionality
   const startVoiceSearch = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+      const SpeechRecognition =
+        (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
       recognitionRef.current = new SpeechRecognition()
-      
+
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = false
       recognitionRef.current.lang = 'en-US'
-      
+
       recognitionRef.current.onstart = () => {
         setIsListening(true)
       }
-      
+
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
-        setFilters(prev => ({ ...prev, query: transcript }))
+        setFilters((prev) => ({ ...prev, query: transcript }))
         setIsListening(false)
       }
-      
+
       recognitionRef.current.onerror = () => {
         setIsListening(false)
       }
-      
+
       recognitionRef.current.onend = () => {
         setIsListening(false)
       }
-      
+
       recognitionRef.current.start()
     } else {
       alert('Voice search is not supported in your browser')
@@ -101,31 +113,31 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
       recent.unshift({
         query: filters.query,
         location: filters.location,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
       localStorage.setItem('recentSearches', JSON.stringify(recent.slice(0, 10)))
     }
-    
+
     onSearch?.(filters)
     onClose()
   }
 
   // Handle quick filter selection
   const handleQuickFilterClick = (filterId: string) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       experienceType: prev.experienceType.includes(filterId)
-        ? prev.experienceType.filter(type => type !== filterId)
-        : [...prev.experienceType, filterId]
+        ? prev.experienceType.filter((type) => type !== filterId)
+        : [...prev.experienceType, filterId],
     }))
   }
 
   // Handle recent search click
-  const handleRecentSearchClick = (search: typeof recentSearches[0]) => {
-    setFilters(prev => ({
+  const handleRecentSearchClick = (search: (typeof recentSearches)[0]) => {
+    setFilters((prev) => ({
       ...prev,
       query: search.query,
-      location: search.location
+      location: search.location,
     }))
     handleSearch()
   }
@@ -190,7 +202,9 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                   >
                     <X className="w-5 h-5 text-foreground" />
                   </motion.button>
-                  <h1 className="text-lg md:text-xl font-bold text-foreground truncate">Search TripAvail</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-foreground truncate">
+                    Search TripAvail
+                  </h1>
                 </div>
                 <Button
                   variant="ghost"
@@ -214,18 +228,18 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                     <Input
                       placeholder="Search destinations, hotels, or experiences..."
                       value={filters.query}
-                      onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
+                      onChange={(e) => setFilters((prev) => ({ ...prev, query: e.target.value }))}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       className="pl-12 pr-12 py-4 glass-search rounded-xl text-base md:text-lg text-foreground placeholder:text-muted-foreground shadow-sm border-white/20 focus-visible:ring-0 focus-visible:ring-offset-0"
                       autoFocus
                     />
-                    
+
                     {/* Voice Search Button */}
                     <motion.button
                       onClick={isListening ? stopVoiceSearch : startVoiceSearch}
                       className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${
-                        isListening 
-                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' 
+                        isListening
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
                           : 'glass-chip hover:active'
                       }`}
                       whileTap={{ scale: 0.95 }}
@@ -288,8 +302,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                                     <IconComponent className="w-6 h-6 text-muted-foreground" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-foreground truncate">{search.query}</p>
-                                    <p className="text-muted-foreground truncate">{search.location}</p>
+                                    <p className="font-semibold text-foreground truncate">
+                                      {search.query}
+                                    </p>
+                                    <p className="text-muted-foreground truncate">
+                                      {search.location}
+                                    </p>
                                   </div>
                                 </motion.button>
                               )
@@ -310,10 +328,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                           className="text-primary"
                         >
                           {showQuickFilters ? 'Less' : 'More'}
-                          <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showQuickFilters ? 'rotate-180' : ''}`} />
+                          <ChevronDown
+                            className={`w-4 h-4 ml-1 transition-transform ${showQuickFilters ? 'rotate-180' : ''}`}
+                          />
                         </Button>
                       </div>
-                      
+
                       <div className="flex flex-wrap gap-3">
                         {quickFilterChips.slice(0, showQuickFilters ? undefined : 6).map((chip) => {
                           const isSelected = filters.experienceType.includes(chip.id)
@@ -349,7 +369,9 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                       <Filter className="w-5 h-5" />
                       Advanced Filters
                     </span>
-                    <ChevronDown className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`}
+                    />
                   </Button>
                 </div>
 
@@ -371,7 +393,9 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                         <Input
                           placeholder="Specific location or region"
                           value={filters.location}
-                          onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                          onChange={(e) =>
+                            setFilters((prev) => ({ ...prev, location: e.target.value }))
+                          }
                           className="glass-chip h-12 rounded-xl"
                         />
                       </div>
@@ -387,10 +411,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                             <Button
                               key={duration}
                               variant={filters.duration === duration ? 'default' : 'outline'}
-                              onClick={() => setFilters(prev => ({ 
-                                ...prev, 
-                                duration: prev.duration === duration ? '' : duration 
-                              }))}
+                              onClick={() =>
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  duration: prev.duration === duration ? '' : duration,
+                                }))
+                              }
                               className="justify-center h-12 rounded-xl glass-chip hover:active"
                             >
                               {duration}
@@ -408,7 +434,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                         <div className="px-2">
                           <Slider
                             value={filters.priceRange}
-                            onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
+                            onValueChange={(value) =>
+                              setFilters((prev) => ({
+                                ...prev,
+                                priceRange: value as [number, number],
+                              }))
+                            }
                             max={5000}
                             min={0}
                             step={50}
@@ -428,10 +459,12 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                             <Button
                               key={rating}
                               variant={filters.minRating >= rating ? 'default' : 'outline'}
-                              onClick={() => setFilters(prev => ({ 
-                                ...prev, 
-                                minRating: prev.minRating === rating ? 0 : rating 
-                              }))}
+                              onClick={() =>
+                                setFilters((prev) => ({
+                                  ...prev,
+                                  minRating: prev.minRating === rating ? 0 : rating,
+                                }))
+                              }
                               className="w-12 h-12 p-0 rounded-xl glass-chip hover:active"
                             >
                               {rating}★
@@ -442,7 +475,6 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                     </motion.div>
                   )}
                 </AnimatePresence>
-
               </div>
             </div>
 
@@ -475,7 +507,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                 </Button>
               </div>
             </div>
-        </motion.div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

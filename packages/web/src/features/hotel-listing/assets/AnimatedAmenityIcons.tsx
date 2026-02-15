@@ -1,16 +1,16 @@
-import { motion } from 'motion/react';
+import { motion } from 'motion/react'
 
 interface AmenityIconProps {
-  isSelected?: boolean;
-  isHovered?: boolean;
-  size?: number;
-  className?: string;
+  isSelected?: boolean
+  isHovered?: boolean
+  size?: number
+  className?: string
 }
 
 // Internet & Technology Icons
-export function WifiIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function WifiIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -20,9 +20,9 @@ export function WifiIcon({ isSelected, isHovered, size = 24, className = "" }: A
       className={className}
       animate={{
         scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
-        rotate: isSelected ? [0, -5, 5, 0] : 0
+        rotate: isSelected ? [0, -5, 5, 0] : 0,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M12 20h.01M8.5 16.5a7 7 0 0 1 7 0M5 13a11 11 0 0 1 14 0M2 10a15 15 0 0 1 20 0"
@@ -32,11 +32,11 @@ export function WifiIcon({ isSelected, isHovered, size = 24, className = "" }: A
         strokeLinejoin="round"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
-          pathLength: { duration: 0.8, ease: "easeInOut" },
-          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 }
+          pathLength: { duration: 0.8, ease: 'easeInOut' },
+          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -46,20 +46,25 @@ export function WifiIcon({ isSelected, isHovered, size = 24, className = "" }: A
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.3, 1] : 1,
-          opacity: isHovered ? [0.5, 1, 0.5] : 1
+          opacity: isHovered ? [0.5, 1, 0.5] : 1,
         }}
         transition={{
           scale: { duration: 0.6, repeat: isSelected ? Infinity : 0, repeatDelay: 1 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function BusinessCenterIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -69,9 +74,9 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
       className={className}
       animate={{
         scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
-        y: isSelected ? [0, -2, 0] : 0
+        y: isSelected ? [0, -2, 0] : 0,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="2"
@@ -85,16 +90,16 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
           strokeDasharray: isSelected ? [0, 100, 100] : [100, 100, 100],
-          fill: isSelected ? `${baseColor}15` : 'none'
+          fill: isSelected ? `${baseColor}15` : 'none',
         }}
-        transition={{ duration: 1.2, ease: "easeInOut" }}
+        transition={{ duration: 1.2, ease: 'easeInOut' }}
       />
       <motion.path
         d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"
         stroke={baseColor}
         strokeWidth="2"
         animate={{
-          pathLength: isSelected ? [0, 1] : 1
+          pathLength: isSelected ? [0, 1] : 1,
         }}
         transition={{ duration: 0.8, delay: 0.2 }}
       />
@@ -107,20 +112,25 @@ export function BusinessCenterIcon({ isSelected, isHovered, size = 24, className
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,
-          rotate: isSelected ? 360 : 0
+          rotate: isSelected ? 360 : 0,
         }}
         transition={{
           scale: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
-          rotate: { duration: 2, ease: "easeInOut" }
+          rotate: { duration: 2, ease: 'easeInOut' },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function MeetingRoomsIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -129,9 +139,9 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="3"
@@ -143,7 +153,7 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         fill={isSelected ? `${baseColor}10` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1 }}
       />
@@ -157,11 +167,11 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
         fill="none"
         animate={{
           scaleX: isHovered ? [1, 1.1, 1] : 1,
-          opacity: isSelected ? [0.3, 1, 0.3] : 1
+          opacity: isSelected ? [0.3, 1, 0.3] : 1,
         }}
         transition={{
           scaleX: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -189,12 +199,17 @@ export function MeetingRoomsIcon({ isSelected, isHovered, size = 24, className =
         transition={{ duration: 0.8, delay: 0.3 }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function HighSpeedInternetIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function HighSpeedInternetIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -203,20 +218,20 @@ export function HighSpeedInternetIcon({ isSelected, isHovered, size = 24, classN
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M13 2v6h3l-4 4-4-4h3V2h2Z"
         fill={baseColor}
         animate={{
           y: isSelected ? [0, -2, 0] : 0,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
           y: { duration: 1, repeat: isSelected ? Infinity : 0, repeatDelay: 0.5 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -226,11 +241,11 @@ export function HighSpeedInternetIcon({ isSelected, isHovered, size = 24, classN
         fill="none"
         animate={{
           strokeDasharray: isSelected ? [0, 50, 50] : [50, 50, 50],
-          rotate: isHovered ? 360 : 0
+          rotate: isHovered ? 360 : 0,
         }}
         transition={{
           strokeDasharray: { duration: 1.5 },
-          rotate: { duration: 3, repeat: isHovered ? Infinity : 0, ease: "linear" }
+          rotate: { duration: 3, repeat: isHovered ? Infinity : 0, ease: 'linear' },
         }}
       />
       <motion.circle
@@ -240,20 +255,25 @@ export function HighSpeedInternetIcon({ isSelected, isHovered, size = 24, classN
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.5, 1] : 1,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           scale: { duration: 0.8, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function ConferenceFacilitiesIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -262,9 +282,9 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="2"
@@ -276,7 +296,7 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
         strokeWidth="2"
         fill={isSelected ? `${baseColor}10` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.2 }}
       />
@@ -287,7 +307,7 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
         strokeLinecap="round"
         strokeLinejoin="round"
         animate={{
-          pathLength: isSelected ? [0, 1] : 1
+          pathLength: isSelected ? [0, 1] : 1,
         }}
         transition={{ duration: 0.8, delay: 0.3 }}
       />
@@ -302,11 +322,11 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
         fill="none"
         animate={{
           opacity: isHovered ? [0.3, 1, 0.3] : 1,
-          scale: isSelected ? [1, 1.05, 1] : 1
+          scale: isSelected ? [1, 1.05, 1] : 1,
         }}
         transition={{
           opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
-          scale: { duration: 2, repeat: isSelected ? Infinity : 0 }
+          scale: { duration: 2, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -334,13 +354,18 @@ export function ConferenceFacilitiesIcon({ isSelected, isHovered, size = 24, cla
         transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
       />
     </motion.svg>
-  );
+  )
 }
 
 // Recreation & Wellness Icons
-export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function SwimmingPoolIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -349,9 +374,9 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.ellipse
         cx="12"
@@ -362,7 +387,7 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -372,9 +397,13 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         strokeLinecap="round"
         animate={{
-          d: isHovered 
-            ? ["M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0", "M6 9c1.5-1 4.5-1 6 0s4.5 1 6 0", "M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0"]
-            : ["M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0"]
+          d: isHovered
+            ? [
+                'M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0',
+                'M6 9c1.5-1 4.5-1 6 0s4.5 1 6 0',
+                'M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0',
+              ]
+            : ['M6 8c1.5-2 4.5-2 6 0s4.5 2 6 0'],
         }}
         transition={{ duration: 2, repeat: isHovered ? Infinity : 0 }}
       />
@@ -384,14 +413,18 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         strokeLinecap="round"
         animate={{
-          d: isHovered 
-            ? ["M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0", "M6 13c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0", "M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0"]
-            : ["M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0"],
-          opacity: isSelected ? [0.5, 1, 0.5] : 1
+          d: isHovered
+            ? [
+                'M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0',
+                'M6 13c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0',
+                'M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0',
+              ]
+            : ['M6 12c1.5-1 4.5-1 6 0s4.5 1 6 0'],
+          opacity: isSelected ? [0.5, 1, 0.5] : 1,
         }}
         transition={{
           d: { duration: 2.5, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -400,19 +433,28 @@ export function SwimmingPoolIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         strokeLinecap="round"
         animate={{
-          d: isHovered 
-            ? ["M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0", "M6 17c1.5-0.2 4.5-0.2 6 0s4.5 0.2 6 0", "M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0"]
-            : ["M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0"]
+          d: isHovered
+            ? [
+                'M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0',
+                'M6 17c1.5-0.2 4.5-0.2 6 0s4.5 0.2 6 0',
+                'M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0',
+              ]
+            : ['M6 16c1.5-0.5 4.5-0.5 6 0s4.5 0.5 6 0'],
         }}
         transition={{ duration: 3, repeat: isHovered ? Infinity : 0 }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function FitnessCenterIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -421,9 +463,9 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="2"
@@ -434,11 +476,11 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
         fill={baseColor}
         animate={{
           scaleY: isHovered ? [1, 1.3, 1] : 1,
-          x: isSelected ? [2, 1, 2] : 2
+          x: isSelected ? [2, 1, 2] : 2,
         }}
         transition={{
           scaleY: { duration: 0.8, repeat: isHovered ? Infinity : 0 },
-          x: { duration: 1.2, repeat: isSelected ? Infinity : 0 }
+          x: { duration: 1.2, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.rect
@@ -450,11 +492,11 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
         fill={baseColor}
         animate={{
           scaleY: isHovered ? [1, 1.3, 1] : 1,
-          x: isSelected ? [18, 19, 18] : 18
+          x: isSelected ? [18, 19, 18] : 18,
         }}
         transition={{
           scaleY: { duration: 0.8, repeat: isHovered ? Infinity : 0, delay: 0.2 },
-          x: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.1 }
+          x: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.1 },
         }}
       />
       <motion.rect
@@ -466,11 +508,11 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
         fill={baseColor}
         animate={{
           scaleX: isSelected ? [1, 1.1, 1] : 1,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
           scaleX: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -482,11 +524,11 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.4, 1] : 1,
-          rotate: isSelected ? 360 : 0
+          rotate: isSelected ? 360 : 0,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          rotate: { duration: 2, ease: "easeInOut" }
+          rotate: { duration: 2, ease: 'easeInOut' },
         }}
       />
       <motion.circle
@@ -498,20 +540,20 @@ export function FitnessCenterIcon({ isSelected, isHovered, size = 24, className 
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.4, 1] : 1,
-          rotate: isSelected ? -360 : 0
+          rotate: isSelected ? -360 : 0,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0, delay: 0.2 },
-          rotate: { duration: 2, ease: "easeInOut", delay: 0.1 }
+          rotate: { duration: 2, ease: 'easeInOut', delay: 0.1 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function SpaIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -520,9 +562,9 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.circle
         cx="12"
@@ -533,11 +575,11 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
         fill={isSelected ? `${baseColor}20` : 'none'}
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,
-          strokeDasharray: isSelected ? [0, 30, 30] : [30, 30, 30]
+          strokeDasharray: isSelected ? [0, 30, 30] : [30, 30, 30],
         }}
         transition={{
           scale: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          strokeDasharray: { duration: 1.5 }
+          strokeDasharray: { duration: 1.5 },
         }}
       />
       <motion.path
@@ -547,11 +589,11 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
         fill="none"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          rotate: isHovered ? [0, 10, -10, 0] : 0
+          rotate: isHovered ? [0, 10, -10, 0] : 0,
         }}
         transition={{
           pathLength: { duration: 1.2 },
-          rotate: { duration: 3, repeat: isHovered ? Infinity : 0 }
+          rotate: { duration: 3, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -561,11 +603,11 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
         fill="none"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          rotate: isHovered ? [0, -10, 10, 0] : 0
+          rotate: isHovered ? [0, -10, 10, 0] : 0,
         }}
         transition={{
           pathLength: { duration: 1.2, delay: 0.3 },
-          rotate: { duration: 3, repeat: isHovered ? Infinity : 0, delay: 0.5 }
+          rotate: { duration: 3, repeat: isHovered ? Infinity : 0, delay: 0.5 },
         }}
       />
       <motion.circle
@@ -575,20 +617,20 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = "" }: Am
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.5, 1] : 1,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function SaunaIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -597,9 +639,9 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="3"
@@ -611,7 +653,7 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.2 }}
       />
@@ -622,11 +664,11 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.6, 1, 0.6]
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: Infinity }
+          opacity: { duration: 1.5, repeat: Infinity },
         }}
       />
       <motion.path
@@ -636,11 +678,11 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.3 },
-          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 }
+          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 },
         }}
       />
       <motion.path
@@ -650,11 +692,11 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.8, 1, 0.8]
+          opacity: [0.8, 1, 0.8],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.6 },
-          opacity: { duration: 1.5, repeat: Infinity, delay: 0.4 }
+          opacity: { duration: 1.5, repeat: Infinity, delay: 0.4 },
         }}
       />
       <motion.rect
@@ -666,20 +708,20 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = "" }: 
         fill={baseColor}
         animate={{
           opacity: isSelected ? [0.3, 0.7, 0.3] : 0.5,
-          scaleY: isHovered ? [1, 1.1, 1] : 1
+          scaleY: isHovered ? [1, 1.1, 1] : 1,
         }}
         transition={{
           opacity: { duration: 2, repeat: isSelected ? Infinity : 0 },
-          scaleY: { duration: 1.5, repeat: isHovered ? Infinity : 0 }
+          scaleY: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function HotTubIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -688,9 +730,9 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.ellipse
         cx="12"
@@ -701,7 +743,7 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
         strokeWidth="2"
         fill={isSelected ? `${baseColor}20` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 60] : [60, 60]
+          strokeDasharray: isSelected ? [0, 60] : [60, 60],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -711,14 +753,18 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
         strokeWidth="2"
         strokeLinecap="round"
         animate={{
-          d: isHovered 
-            ? ["M6 14c2-1 4-1 6 0s4 1 6 0", "M6 13c2-0.5 4-0.5 6 0s4 0.5 6 0", "M6 14c2-1 4-1 6 0s4 1 6 0"]
-            : ["M6 14c2-1 4-1 6 0s4 1 6 0"],
-          opacity: [0.5, 1, 0.5]
+          d: isHovered
+            ? [
+                'M6 14c2-1 4-1 6 0s4 1 6 0',
+                'M6 13c2-0.5 4-0.5 6 0s4 0.5 6 0',
+                'M6 14c2-1 4-1 6 0s4 1 6 0',
+              ]
+            : ['M6 14c2-1 4-1 6 0s4 1 6 0'],
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           d: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: Infinity }
+          opacity: { duration: 1.5, repeat: Infinity },
         }}
       />
       <motion.path
@@ -728,11 +774,11 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -2, 0] : 0,
-          opacity: [0.6, 1, 0.6]
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.2, repeat: Infinity }
+          opacity: { duration: 1.2, repeat: Infinity },
         }}
       />
       <motion.path
@@ -742,11 +788,11 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -2, 0] : 0,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.3 },
-          opacity: { duration: 1.2, repeat: Infinity, delay: 0.2 }
+          opacity: { duration: 1.2, repeat: Infinity, delay: 0.2 },
         }}
       />
       <motion.path
@@ -756,20 +802,25 @@ export function HotTubIcon({ isSelected, isHovered, size = 24, className = "" }:
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -2, 0] : 0,
-          opacity: [0.8, 1, 0.8]
+          opacity: [0.8, 1, 0.8],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.6 },
-          opacity: { duration: 1.2, repeat: Infinity, delay: 0.4 }
+          opacity: { duration: 1.2, repeat: Infinity, delay: 0.4 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function TennisCourtIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -778,9 +829,9 @@ export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = 
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="2"
@@ -792,7 +843,7 @@ export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = 
         strokeWidth="2"
         fill={isSelected ? `${baseColor}10` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -805,11 +856,11 @@ export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = 
         strokeWidth="2"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          opacity: isHovered ? [0.5, 1, 0.5] : 1
+          opacity: isHovered ? [0.5, 1, 0.5] : 1,
         }}
         transition={{
           pathLength: { duration: 0.8 },
-          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.ellipse
@@ -820,11 +871,11 @@ export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = 
         fill={baseColor}
         animate={{
           scaleX: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [12, 10, 12] : 12
+          y: isSelected ? [12, 10, 12] : 12,
         }}
         transition={{
           scaleX: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          y: { duration: 1.5, repeat: isSelected ? Infinity : 0 }
+          y: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -833,19 +884,24 @@ export function TennisCourtIcon({ isSelected, isHovered, size = 24, className = 
         strokeWidth="1"
         strokeLinecap="round"
         animate={{
-          opacity: isSelected ? [0.3, 1, 0.3] : 0.6
+          opacity: isSelected ? [0.3, 1, 0.3] : 0.6,
         }}
         transition={{
-          opacity: { duration: 2, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 2, repeat: isSelected ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function GolfCourseIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -854,9 +910,9 @@ export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M12 2v20"
@@ -865,11 +921,11 @@ export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "
         strokeLinecap="round"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          rotate: isHovered ? [0, 2, -2, 0] : 0
+          rotate: isHovered ? [0, 2, -2, 0] : 0,
         }}
         transition={{
           pathLength: { duration: 1 },
-          rotate: { duration: 2, repeat: isHovered ? Infinity : 0 }
+          rotate: { duration: 2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -877,11 +933,11 @@ export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.2, 1] : 1,
-          x: isHovered ? [0, 1, -1, 0] : 0
+          x: isHovered ? [0, 1, -1, 0] : 0,
         }}
         transition={{
           scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          x: { duration: 2, repeat: isHovered ? Infinity : 0 }
+          x: { duration: 2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -893,11 +949,11 @@ export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          strokeDasharray: isSelected ? [0, 20, 20] : [20, 20, 20]
+          strokeDasharray: isSelected ? [0, 20, 20] : [20, 20, 20],
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          strokeDasharray: { duration: 1.2 }
+          strokeDasharray: { duration: 1.2 },
         }}
       />
       <motion.circle
@@ -907,20 +963,25 @@ export function GolfCourseIcon({ isSelected, isHovered, size = 24, className = "
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.5, 1] : 1,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           scale: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function GameRoomIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -929,9 +990,9 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="2"
@@ -943,7 +1004,7 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 80] : [80, 80]
+          strokeDasharray: isSelected ? [0, 80] : [80, 80],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -956,11 +1017,11 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,
-          rotate: isSelected ? 360 : 0
+          rotate: isSelected ? 360 : 0,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          rotate: { duration: 2, ease: "easeInOut" }
+          rotate: { duration: 2, ease: 'easeInOut' },
         }}
       />
       <motion.rect
@@ -972,11 +1033,11 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         fill={baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [10, 9, 10] : 10
+          y: isSelected ? [10, 9, 10] : 10,
         }}
         transition={{
           scale: { duration: 0.8, repeat: isHovered ? Infinity : 0 },
-          y: { duration: 1.2, repeat: isSelected ? Infinity : 0 }
+          y: { duration: 1.2, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.rect
@@ -988,11 +1049,11 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         fill={baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [10, 9, 10] : 10
+          y: isSelected ? [10, 9, 10] : 10,
         }}
         transition={{
           scale: { duration: 0.8, repeat: isHovered ? Infinity : 0, delay: 0.2 },
-          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.1 }
+          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.1 },
         }}
       />
       <motion.rect
@@ -1004,11 +1065,11 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         fill={baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [13, 14, 13] : 13
+          y: isSelected ? [13, 14, 13] : 13,
         }}
         transition={{
           scale: { duration: 0.8, repeat: isHovered ? Infinity : 0, delay: 0.4 },
-          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.2 }
+          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.2 },
         }}
       />
       <motion.rect
@@ -1020,21 +1081,26 @@ export function GameRoomIcon({ isSelected, isHovered, size = 24, className = "" 
         fill={baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [13, 14, 13] : 13
+          y: isSelected ? [13, 14, 13] : 13,
         }}
         transition={{
           scale: { duration: 0.8, repeat: isHovered ? Infinity : 0, delay: 0.6 },
-          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.3 }
+          y: { duration: 1.2, repeat: isSelected ? Infinity : 0, delay: 0.3 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
 // Dining & Bar Icons
-export function RestaurantIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function RestaurantIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1043,20 +1109,20 @@ export function RestaurantIcon({ isSelected, isHovered, size = 24, className = "
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M3 2v7c0 1.1.9 2 2 2h2v11h2V11h2c1.1 0 2-.9 2-2V2H3Z"
         fill={baseColor}
         animate={{
           scaleY: isSelected ? [1, 1.1, 1] : 1,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
           scaleY: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -1064,34 +1130,39 @@ export function RestaurantIcon({ isSelected, isHovered, size = 24, className = "
         fill={baseColor}
         animate={{
           scaleY: isSelected ? [1, 1.1, 1] : 1,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
           scaleY: { duration: 1.5, repeat: isSelected ? Infinity : 0, delay: 0.2 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0, delay: 0.1 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0, delay: 0.1 },
         }}
       />
       <motion.circle
         cx="8"
         cy="6"
         r="1"
-        fill={isSelected ? '#ffffff' : (baseColor === '#ff5a5f' ? '#ffffff' : baseColor)}
+        fill={isSelected ? '#ffffff' : baseColor === '#ff5a5f' ? '#ffffff' : baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          opacity: isSelected ? [0.5, 1, 0.5] : 1
+          opacity: isSelected ? [0.5, 1, 0.5] : 1,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function BarLoungeIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1100,9 +1171,9 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M5 12V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v5M5 12l2 7h10l2-7M5 12h14"
@@ -1112,7 +1183,7 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinejoin="round"
         fill={isSelected ? `${baseColor}20` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1124,11 +1195,11 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         fill={baseColor}
         animate={{
           scaleX: isHovered ? [1, 1.2, 1] : 1,
-          opacity: [0.3, 0.8, 0.3]
+          opacity: [0.3, 0.8, 0.3],
         }}
         transition={{
           scaleX: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: Infinity }
+          opacity: { duration: 1.5, repeat: Infinity },
         }}
       />
       <motion.path
@@ -1139,11 +1210,11 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinejoin="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          rotate: isSelected ? [0, 2, -2, 0] : 0
+          rotate: isSelected ? [0, 2, -2, 0] : 0,
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          rotate: { duration: 3, repeat: isSelected ? Infinity : 0 }
+          rotate: { duration: 3, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -1153,11 +1224,11 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         fill={baseColor}
         animate={{
           y: isHovered ? [15, 13, 15] : 15,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.2, repeat: Infinity }
+          opacity: { duration: 1.2, repeat: Infinity },
         }}
       />
       <motion.circle
@@ -1167,11 +1238,11 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         fill={baseColor}
         animate={{
           y: isHovered ? [16, 14, 16] : 16,
-          opacity: [0.6, 1, 0.6]
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.2 },
-          opacity: { duration: 1.2, repeat: Infinity, delay: 0.1 }
+          opacity: { duration: 1.2, repeat: Infinity, delay: 0.1 },
         }}
       />
       <motion.circle
@@ -1181,23 +1252,28 @@ export function BarLoungeIcon({ isSelected, isHovered, size = 24, className = ""
         fill={baseColor}
         animate={{
           y: isHovered ? [15, 13, 15] : 15,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.4 },
-          opacity: { duration: 1.2, repeat: Infinity, delay: 0.2 }
+          opacity: { duration: 1.2, repeat: Infinity, delay: 0.2 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
 // Additional icons would continue here...
 // For brevity, I'll include a few more key ones
 
-export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function RoomServiceIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1206,9 +1282,9 @@ export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = 
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M12 2a6 6 0 0 0-6 6c0 1.887.454 3.665 1.257 5.234a.75.75 0 0 0 .65.378h8.186a.75.75 0 0 0 .65-.378A9.98 9.98 0 0 0 18 8a6 6 0 0 0-6-6Z"
@@ -1216,7 +1292,7 @@ export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = 
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 80] : [80, 80]
+          strokeDasharray: isSelected ? [0, 80] : [80, 80],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1228,11 +1304,11 @@ export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = 
         fill={baseColor}
         animate={{
           scaleX: isHovered ? [1, 1.2, 1] : 1,
-          opacity: isSelected ? [0.5, 1, 0.5] : 0.7
+          opacity: isSelected ? [0.5, 1, 0.5] : 0.7,
         }}
         transition={{
           scaleX: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.rect
@@ -1244,11 +1320,11 @@ export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = 
         fill={baseColor}
         animate={{
           scaleY: isSelected ? [1, 1.1, 1] : 1,
-          opacity: isHovered ? [0.7, 1, 0.7] : 1
+          opacity: isHovered ? [0.7, 1, 0.7] : 1,
         }}
         transition={{
           scaleY: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.2, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -1258,20 +1334,25 @@ export function RoomServiceIcon({ isSelected, isHovered, size = 24, className = 
         fill={baseColor}
         animate={{
           scale: isHovered ? [1, 1.4, 1] : 1,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function BreakfastIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function BreakfastIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1280,9 +1361,9 @@ export function BreakfastIcon({ isSelected, isHovered, size = 24, className = ""
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M2 12h20M7 12v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6"
@@ -1291,7 +1372,7 @@ export function BreakfastIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinecap="round"
         strokeLinejoin="round"
         animate={{
-          pathLength: isSelected ? [0, 1] : 1
+          pathLength: isSelected ? [0, 1] : 1,
         }}
         transition={{ duration: 1.2 }}
       />
@@ -1303,7 +1384,7 @@ export function BreakfastIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinejoin="round"
         fill={isSelected ? `${baseColor}20` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 60] : [60, 60]
+          strokeDasharray: isSelected ? [0, 60] : [60, 60],
         }}
         transition={{ duration: 1.5, delay: 0.3 }}
       />
@@ -1314,11 +1395,11 @@ export function BreakfastIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.6, 1, 0.6]
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: Infinity }
+          opacity: { duration: 1.5, repeat: Infinity },
         }}
       />
       <motion.path
@@ -1328,20 +1409,25 @@ export function BreakfastIcon({ isSelected, isHovered, size = 24, className = ""
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.3 },
-          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 }
+          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function CoffeeShopIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1350,9 +1436,9 @@ export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.path
         d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8Z"
@@ -1362,7 +1448,7 @@ export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "
         strokeLinejoin="round"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1373,11 +1459,11 @@ export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.6, 1, 0.6]
+          opacity: [0.6, 1, 0.6],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: Infinity }
+          opacity: { duration: 1.5, repeat: Infinity },
         }}
       />
       <motion.path
@@ -1387,11 +1473,11 @@ export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "
         strokeLinecap="round"
         animate={{
           y: isHovered ? [0, -1, 0] : 0,
-          opacity: [0.7, 1, 0.7]
+          opacity: [0.7, 1, 0.7],
         }}
         transition={{
           y: { duration: 2, repeat: isHovered ? Infinity : 0, delay: 0.3 },
-          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 }
+          opacity: { duration: 1.5, repeat: Infinity, delay: 0.2 },
         }}
       />
       <motion.ellipse
@@ -1402,20 +1488,25 @@ export function CoffeeShopIcon({ isSelected, isHovered, size = 24, className = "
         fill={baseColor}
         animate={{
           scaleY: isHovered ? [1, 1.2, 1] : 1,
-          opacity: isSelected ? [0.3, 0.7, 0.3] : 0.5
+          opacity: isSelected ? [0.3, 0.7, 0.3] : 0.5,
         }}
         transition={{
           scaleY: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function MiniBarIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1424,9 +1515,9 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="3"
@@ -1438,7 +1529,7 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         strokeWidth="2"
         fill={isSelected ? `${baseColor}10` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1451,11 +1542,11 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         fill={baseColor}
         animate={{
           scaleY: isHovered ? [1, 1.1, 1] : 1,
-          opacity: isSelected ? [0.5, 1, 0.5] : 0.7
+          opacity: isSelected ? [0.5, 1, 0.5] : 0.7,
         }}
         transition={{
           scaleY: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.rect
@@ -1467,11 +1558,11 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         fill={baseColor}
         animate={{
           scaleY: isHovered ? [1, 1.1, 1] : 1,
-          opacity: isSelected ? [0.6, 1, 0.6] : 0.8
+          opacity: isSelected ? [0.6, 1, 0.6] : 0.8,
         }}
         transition={{
           scaleY: { duration: 1.5, repeat: isHovered ? Infinity : 0, delay: 0.2 },
-          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0, delay: 0.1 }
+          opacity: { duration: 1.8, repeat: isSelected ? Infinity : 0, delay: 0.1 },
         }}
       />
       <motion.circle
@@ -1483,11 +1574,11 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.2, 1] : 1,
-          rotate: isSelected ? 360 : 0
+          rotate: isSelected ? 360 : 0,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          rotate: { duration: 2, ease: "easeInOut" }
+          rotate: { duration: 2, ease: 'easeInOut' },
         }}
       />
       <motion.circle
@@ -1497,11 +1588,11 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.5, 1] : 1,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
       <motion.rect
@@ -1513,21 +1604,26 @@ export function MiniBarIcon({ isSelected, isHovered, size = 24, className = "" }
         fill={baseColor}
         animate={{
           scaleX: isHovered ? [1, 1.05, 1] : 1,
-          opacity: isSelected ? [0.3, 1, 0.3] : 0.6
+          opacity: isSelected ? [0.3, 1, 0.3] : 0.6,
         }}
         transition={{
           scaleX: { duration: 2, repeat: isHovered ? Infinity : 0 },
-          opacity: { duration: 1.5, repeat: isSelected ? Infinity : 0 }
+          opacity: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
 // Transportation Icons
-export function ParkingIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function ParkingIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1536,9 +1632,9 @@ export function ParkingIcon({ isSelected, isHovered, size = 24, className = "" }
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="3"
@@ -1550,7 +1646,7 @@ export function ParkingIcon({ isSelected, isHovered, size = 24, className = "" }
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 100] : [100, 100]
+          strokeDasharray: isSelected ? [0, 100] : [100, 100],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1562,11 +1658,11 @@ export function ParkingIcon({ isSelected, isHovered, size = 24, className = "" }
         strokeLinejoin="round"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          strokeWidth: isHovered ? [2, 3, 2] : 2
+          strokeWidth: isHovered ? [2, 3, 2] : 2,
         }}
         transition={{
           pathLength: { duration: 1.2 },
-          strokeWidth: { duration: 1.5, repeat: isHovered ? Infinity : 0 }
+          strokeWidth: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -1576,20 +1672,25 @@ export function ParkingIcon({ isSelected, isHovered, size = 24, className = "" }
         fill={baseColor}
         animate={{
           scale: isSelected ? [1, 1.3, 1] : 1,
-          opacity: [0.5, 1, 0.5]
+          opacity: [0.5, 1, 0.5],
         }}
         transition={{
           scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
-          opacity: { duration: 2, repeat: Infinity }
+          opacity: { duration: 2, repeat: Infinity },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
-export function ValetParkingIcon({ isSelected, isHovered, size = 24, className = "" }: AmenityIconProps) {
-  const baseColor = '#1A1A1A';
-  
+export function ValetParkingIcon({
+  isSelected,
+  isHovered,
+  size = 24,
+  className = '',
+}: AmenityIconProps) {
+  const baseColor = '#1A1A1A'
+
   return (
     <motion.svg
       width={size}
@@ -1598,9 +1699,9 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
       fill="none"
       className={className}
       animate={{
-        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1
+        scale: isHovered ? 1.1 : isSelected ? 1.05 : 1,
       }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      transition={{ duration: 0.3, type: 'spring', stiffness: 200 }}
     >
       <motion.rect
         x="3"
@@ -1612,7 +1713,7 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         strokeWidth="2"
         fill={isSelected ? `${baseColor}15` : 'none'}
         animate={{
-          strokeDasharray: isSelected ? [0, 80] : [80, 80]
+          strokeDasharray: isSelected ? [0, 80] : [80, 80],
         }}
         transition={{ duration: 1.5 }}
       />
@@ -1625,11 +1726,11 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         fill="none"
         animate={{
           rotate: isHovered ? 360 : 0,
-          scale: isSelected ? [1, 1.2, 1] : 1
+          scale: isSelected ? [1, 1.2, 1] : 1,
         }}
         transition={{
-          rotate: { duration: 2, repeat: isHovered ? Infinity : 0, ease: "linear" },
-          scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 }
+          rotate: { duration: 2, repeat: isHovered ? Infinity : 0, ease: 'linear' },
+          scale: { duration: 1.5, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.circle
@@ -1641,11 +1742,11 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         fill="none"
         animate={{
           rotate: isHovered ? -360 : 0,
-          scale: isSelected ? [1, 1.2, 1] : 1
+          scale: isSelected ? [1, 1.2, 1] : 1,
         }}
         transition={{
-          rotate: { duration: 2, repeat: isHovered ? Infinity : 0, ease: "linear" },
-          scale: { duration: 1.5, repeat: isSelected ? Infinity : 0, delay: 0.2 }
+          rotate: { duration: 2, repeat: isHovered ? Infinity : 0, ease: 'linear' },
+          scale: { duration: 1.5, repeat: isSelected ? Infinity : 0, delay: 0.2 },
         }}
       />
       <motion.path
@@ -1655,7 +1756,7 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         strokeLinecap="round"
         strokeLinejoin="round"
         animate={{
-          pathLength: isSelected ? [0, 1] : 1
+          pathLength: isSelected ? [0, 1] : 1,
         }}
         transition={{ duration: 1.2, delay: 0.3 }}
       />
@@ -1668,11 +1769,11 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         fill="none"
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
-          y: isSelected ? [6, 4, 6] : 6
+          y: isSelected ? [6, 4, 6] : 6,
         }}
         transition={{
           scale: { duration: 1, repeat: isHovered ? Infinity : 0 },
-          y: { duration: 2, repeat: isSelected ? Infinity : 0 }
+          y: { duration: 2, repeat: isSelected ? Infinity : 0 },
         }}
       />
       <motion.path
@@ -1682,15 +1783,15 @@ export function ValetParkingIcon({ isSelected, isHovered, size = 24, className =
         strokeLinecap="round"
         animate={{
           pathLength: isSelected ? [0, 1] : 1,
-          opacity: isHovered ? [0.5, 1, 0.5] : 1
+          opacity: isHovered ? [0.5, 1, 0.5] : 1,
         }}
         transition={{
           pathLength: { duration: 0.8 },
-          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 }
+          opacity: { duration: 1.5, repeat: isHovered ? Infinity : 0 },
         }}
       />
     </motion.svg>
-  );
+  )
 }
 
 // We can continue adding more icons...
@@ -1703,34 +1804,34 @@ export const AMENITY_ICONS = {
   'business-center': BusinessCenterIcon,
   'meeting-rooms': MeetingRoomsIcon,
   'conference-facilities': ConferenceFacilitiesIcon,
-  
+
   // Recreation & Wellness
   'swimming-pool': SwimmingPoolIcon,
   'fitness-center': FitnessCenterIcon,
-  'spa': SpaIcon,
-  'sauna': SaunaIcon,
+  spa: SpaIcon,
+  sauna: SaunaIcon,
   'hot-tub': HotTubIcon,
   'tennis-court': TennisCourtIcon,
   'golf-course': GolfCourseIcon,
   'game-room': GameRoomIcon,
-  
+
   // Dining & Bar
-  'restaurant': RestaurantIcon,
+  restaurant: RestaurantIcon,
   'bar-lounge': BarLoungeIcon,
   'room-service': RoomServiceIcon,
-  'breakfast': BreakfastIcon,
+  breakfast: BreakfastIcon,
   'coffee-shop': CoffeeShopIcon,
-  'minibar': MiniBarIcon,
-  
+  minibar: MiniBarIcon,
+
   // Transportation
   'free-parking': ParkingIcon,
   'valet-parking': ValetParkingIcon,
-  
+
   // Default fallback icon
-  'default': WifiIcon
-};
+  default: WifiIcon,
+}
 
 // Helper function to get the right icon component
 export function getAmenityIcon(amenityId: string) {
-  return AMENITY_ICONS[amenityId as keyof typeof AMENITY_ICONS] || AMENITY_ICONS.default;
+  return AMENITY_ICONS[amenityId as keyof typeof AMENITY_ICONS] || AMENITY_ICONS.default
 }

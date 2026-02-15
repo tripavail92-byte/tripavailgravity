@@ -1,32 +1,34 @@
-import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Check, Search, X } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { getAmenityIcon } from '../../assets/AnimatedAmenityIcons';
-import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector';
-import type { StepData } from '../CompleteHotelListingFlow';
+import { useState, useRef } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { Check, Search, X } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { getAmenityIcon } from '../../assets/AnimatedAmenityIcons'
+import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector'
+import type { StepData } from '../CompleteHotelListingFlow'
 
 interface AmenitiesStepProps {
-  onComplete: (data: StepData) => void;
-  existingData?: StepData;
-  onUpdate?: (data: StepData) => void;
+  onComplete: (data: StepData) => void
+  existingData?: StepData
+  onUpdate?: (data: StepData) => void
 }
 
 interface AmenityItem {
-  id: string;
-  name: string;
-  category: string;
+  id: string
+  name: string
+  category: string
 }
 
 export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesStepProps) {
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(existingData?.amenities || []);
-  const [hoveredAmenity, setHoveredAmenity] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(
+    existingData?.amenities || [],
+  )
+  const [hoveredAmenity, setHoveredAmenity] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
 
   // References for auto-scroll functionality
-  const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
   const amenityCategories = {
     'Internet & Technology': [
@@ -34,7 +36,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'high-speed-internet', name: 'High-Speed Internet' },
       { id: 'business-center', name: 'Business Center' },
       { id: 'meeting-rooms', name: 'Meeting Rooms' },
-      { id: 'conference-facilities', name: 'Conference Facilities' }
+      { id: 'conference-facilities', name: 'Conference Facilities' },
     ],
     'Recreation & Wellness': [
       { id: 'pool', name: 'Swimming Pool' },
@@ -45,7 +47,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'tennis-court', name: 'Tennis Court' },
       { id: 'golf-course', name: 'Golf Course' },
       { id: 'pool_table', name: 'Pool Table' },
-      { id: 'piano', name: 'Piano' }
+      { id: 'piano', name: 'Piano' },
     ],
     'Outdoor & Views': [
       { id: 'patio', name: 'Patio' },
@@ -56,7 +58,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'mountain_view', name: 'Mountain View Suite' },
       { id: 'forest_view', name: 'Forest/Jungle View' },
       { id: 'lake_access', name: 'Lake Access' },
-      { id: 'beachfront', name: 'Beachfront Stay' }
+      { id: 'beachfront', name: 'Beachfront Stay' },
     ],
     'Dining & Bar': [
       { id: 'restaurant', name: 'Restaurant' },
@@ -64,7 +66,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'room-service', name: '24/7 Room Service' },
       { id: 'breakfast', name: 'Complimentary Breakfast' },
       { id: 'coffee-shop', name: 'Coffee Shop' },
-      { id: 'minibar', name: 'Mini Bar in Rooms' }
+      { id: 'minibar', name: 'Mini Bar in Rooms' },
     ],
     'Parking & Transportation': [
       { id: 'free_parking', name: 'Free Parking on Premises' },
@@ -72,7 +74,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'valet-parking', name: 'Valet Parking' },
       { id: 'airport-shuttle', name: 'Airport Shuttle' },
       { id: 'car-rental', name: 'Car Rental Service' },
-      { id: 'taxi-service', name: 'Taxi Service' }
+      { id: 'taxi-service', name: 'Taxi Service' },
     ],
     'Services & Convenience': [
       { id: 'concierge', name: 'Concierge Service' },
@@ -82,14 +84,14 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'dry-cleaning', name: 'Dry Cleaning' },
       { id: 'housekeeping', name: 'Daily Housekeeping' },
       { id: 'safe-deposit', name: 'Safe Deposit Box' },
-      { id: 'currency-exchange', name: 'Currency Exchange' }
+      { id: 'currency-exchange', name: 'Currency Exchange' },
     ],
     'Kitchen & Laundry': [
       { id: 'kitchen', name: 'Kitchen' },
       { id: 'kitchenette', name: 'Kitchenette' },
       { id: 'refrigerator', name: 'Refrigerator' },
       { id: 'washing_machine', name: 'Washing Machine' },
-      { id: 'dryer', name: 'Dryer' }
+      { id: 'dryer', name: 'Dryer' },
     ],
     'Room Features': [
       { id: 'air_conditioning', name: 'Air Conditioning' },
@@ -98,7 +100,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'balcony', name: 'Balcony/Terrace' },
       { id: 'city-view', name: 'City View' },
       { id: 'ocean-view', name: 'Ocean View' },
-      { id: 'indoor_bonfire', name: 'Indoor Bonfire Area' }
+      { id: 'indoor_bonfire', name: 'Indoor Bonfire Area' },
     ],
     'Family & Accessibility': [
       { id: 'family-rooms', name: 'Family Rooms' },
@@ -107,81 +109,81 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       { id: 'wheelchair-accessible', name: 'Wheelchair Accessible' },
       { id: 'elevator', name: 'Elevator' },
       { id: 'pet-friendly', name: 'Pet Friendly' },
-      { id: 'babysitting', name: 'Babysitting Service' }
+      { id: 'babysitting', name: 'Babysitting Service' },
     ],
-    'Entertainment': [
+    Entertainment: [
       { id: 'tv', name: 'TV' },
       { id: 'tv-cable', name: 'Cable/Satellite TV' },
       { id: 'entertainment-system', name: 'Entertainment System' },
       { id: 'library', name: 'Library' },
       { id: 'live-music', name: 'Live Music/Entertainment' },
-      { id: 'nightclub', name: 'Nightclub' }
-    ]
-  };
+      { id: 'nightclub', name: 'Nightclub' },
+    ],
+  }
 
   // Flatten all amenities for search
-  const allAmenities: AmenityItem[] = Object.entries(amenityCategories).flatMap(([category, items]) =>
-    items.map(item => ({ ...item, category }))
-  );
+  const allAmenities: AmenityItem[] = Object.entries(amenityCategories).flatMap(
+    ([category, items]) => items.map((item) => ({ ...item, category })),
+  )
 
   // Filter amenities based on search
   const filteredCategories = searchQuery
     ? {
-      'Search Results': allAmenities.filter(amenity =>
-        amenity.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-    : amenityCategories;
+        'Search Results': allAmenities.filter((amenity) =>
+          amenity.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        ),
+      }
+    : amenityCategories
 
   const toggleAmenity = (amenityId: string) => {
     const newAmenities = selectedAmenities.includes(amenityId)
-      ? selectedAmenities.filter(id => id !== amenityId)
-      : [...selectedAmenities, amenityId];
+      ? selectedAmenities.filter((id) => id !== amenityId)
+      : [...selectedAmenities, amenityId]
 
-    setSelectedAmenities(newAmenities);
+    setSelectedAmenities(newAmenities)
 
     if (onUpdate) {
-      onUpdate({ amenities: newAmenities });
+      onUpdate({ amenities: newAmenities })
     }
-  };
+  }
 
   const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-      const isCurrentlyExpanded = prev.includes(category);
+    setExpandedCategories((prev) => {
+      const isCurrentlyExpanded = prev.includes(category)
 
       // If clicking the currently open category, close it
       if (isCurrentlyExpanded) {
-        return [];
+        return []
       }
 
       // Otherwise, close all others and open this one (Exclusive Accordion)
       // Auto-scroll to the category after a short delay to let expansion animation start
       setTimeout(() => {
-        const element = categoryRefs.current[category];
+        const element = categoryRefs.current[category]
         if (element) {
           element.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
-            inline: 'nearest'
-          });
+            inline: 'nearest',
+          })
         }
-      }, 100);
+      }, 100)
 
-      return [category];
-    });
-  };
+      return [category]
+    })
+  }
 
   const handleContinue = () => {
-    onComplete({ amenities: selectedAmenities });
-  };
+    onComplete({ amenities: selectedAmenities })
+  }
 
   const clearSearch = () => {
-    setSearchQuery('');
-  };
+    setSearchQuery('')
+  }
 
   const getTotalCount = () => {
-    return Object.values(amenityCategories).reduce((total, items) => total + items.length, 0);
-  };
+    return Object.values(amenityCategories).reduce((total, items) => total + items.length, 0)
+  }
 
   return (
     <>
@@ -193,7 +195,10 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
           transition={{ delay: 0.1 }}
           className="relative"
         >
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
           <Input
             type="text"
             placeholder="Search amenities..."
@@ -216,9 +221,9 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
           <SmartAmenitiesSelector
             selectedAmenities={selectedAmenities}
             onSelectionChange={(amenities) => {
-              setSelectedAmenities(amenities);
+              setSelectedAmenities(amenities)
               if (onUpdate) {
-                onUpdate({ amenities });
+                onUpdate({ amenities })
               }
             }}
             expandedCategories={expandedCategories}
@@ -246,16 +251,16 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
         {/* Amenity Categories */}
         <div className="mt-8">
           {Object.entries(filteredCategories).map(([category, amenities], categoryIndex) => {
-            const isExpanded = expandedCategories.includes(category) || searchQuery;
-            const categoryAmenities = amenities as any[];
+            const isExpanded = expandedCategories.includes(category) || searchQuery
+            const categoryAmenities = amenities as any[]
 
             return (
               <motion.div
                 key={category}
-                ref={(el) => categoryRefs.current[category] = el}
+                ref={(el) => (categoryRefs.current[category] = el)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (categoryIndex * 0.05) + 0.5 }}
+                transition={{ delay: categoryIndex * 0.05 + 0.5 }}
                 className="mb-8"
               >
                 <Card className="overflow-hidden shadow-none border-gray-200 dark:border-gray-700 dark:bg-gray-800">
@@ -265,18 +270,34 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                       className="w-full px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors border-b border-gray-200"
                     >
                       <div className="flex items-center justify-between">
-                        <h3 className="text-[15px] font-medium text-black dark:text-white">{category}</h3>
+                        <h3 className="text-[15px] font-medium text-black dark:text-white">
+                          {category}
+                        </h3>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-500">
-                            {categoryAmenities.filter(amenity => selectedAmenities.includes(amenity.id)).length}/
-                            {categoryAmenities.length}
+                            {
+                              categoryAmenities.filter((amenity) =>
+                                selectedAmenities.includes(amenity.id),
+                              ).length
+                            }
+                            /{categoryAmenities.length}
                           </span>
                           <motion.div
                             animate={{ rotate: isExpanded ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            <svg
+                              className="w-5 h-5 text-gray-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
                             </svg>
                           </motion.div>
                         </div>
@@ -290,22 +311,41 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
                         <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
                           {categoryAmenities.map((amenity, amenityIndex) => {
-                            const isSelected = selectedAmenities.includes(amenity.id);
-                            const isHovered = hoveredAmenity === amenity.id;
-                            const IconComponent = getAmenityIcon(amenity.id);
+                            const isSelected = selectedAmenities.includes(amenity.id)
+                            const isHovered = hoveredAmenity === amenity.id
+                            const IconComponent = getAmenityIcon(amenity.id)
 
                             // Check if this amenity is in the quick select lists
                             const isQuickSelectItem = [
-                              'pool', 'hot_tub', 'patio', 'bbq_grill', 'outdoor_dining', 'fire_pit',
-                              'pool_table', 'indoor_bonfire', 'piano', 'gym', 'lake_access', 'beachfront',
-                              'mountain_view', 'scenic_balcony', 'forest_view', 'wifi', 'tv', 'kitchen',
-                              'washing_machine', 'free_parking', 'paid_parking', 'air_conditioning', 'dedicated_workspace'
-                            ].includes(amenity.id);
+                              'pool',
+                              'hot_tub',
+                              'patio',
+                              'bbq_grill',
+                              'outdoor_dining',
+                              'fire_pit',
+                              'pool_table',
+                              'indoor_bonfire',
+                              'piano',
+                              'gym',
+                              'lake_access',
+                              'beachfront',
+                              'mountain_view',
+                              'scenic_balcony',
+                              'forest_view',
+                              'wifi',
+                              'tv',
+                              'kitchen',
+                              'washing_machine',
+                              'free_parking',
+                              'paid_parking',
+                              'air_conditioning',
+                              'dedicated_workspace',
+                            ].includes(amenity.id)
 
                             return (
                               <motion.button
@@ -313,8 +353,11 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                 onClick={() => toggleAmenity(amenity.id)}
                                 onMouseEnter={() => setHoveredAmenity(amenity.id)}
                                 onMouseLeave={() => setHoveredAmenity(null)}
-                                className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${isSelected ? 'border-[1.5px] border-black' : 'border border-gray-300'
-                                  }`}
+                                className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${
+                                  isSelected
+                                    ? 'border-[1.5px] border-black'
+                                    : 'border border-gray-300'
+                                }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                               >
@@ -335,14 +378,17 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
 
                                   {/* Amenity Name - Centered */}
                                   <div className="text-center">
-                                    <h4 className={`text-[15px] leading-5 text-gray-900 ${isSelected ? 'font-medium' : 'font-normal'
-                                      }`}>
+                                    <h4
+                                      className={`text-[15px] leading-5 text-gray-900 ${
+                                        isSelected ? 'font-medium' : 'font-normal'
+                                      }`}
+                                    >
                                       {amenity.name}
                                     </h4>
                                   </div>
                                 </div>
                               </motion.button>
-                            );
+                            )
                           })}
                         </div>
                       </motion.div>
@@ -350,7 +396,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                   </AnimatePresence>
                 </Card>
               </motion.div>
-            );
+            )
           })}
         </div>
 
@@ -388,8 +434,8 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                     {selectedAmenities.length} amenities selected
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedAmenities.slice(0, 5).map(amenityId => {
-                      const amenity = allAmenities.find(a => a.id === amenityId);
+                    {selectedAmenities.slice(0, 5).map((amenityId) => {
+                      const amenity = allAmenities.find((a) => a.id === amenityId)
                       return amenity ? (
                         <span
                           key={amenityId}
@@ -397,12 +443,10 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                         >
                           {amenity.name}
                         </span>
-                      ) : null;
+                      ) : null
                     })}
                     {selectedAmenities.length > 5 && (
-                      <span
-                        className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700"
-                      >
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700">
                         +{selectedAmenities.length - 5} more
                       </span>
                     )}
@@ -414,5 +458,5 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
         )}
       </AnimatePresence>
     </>
-  );
+  )
 }

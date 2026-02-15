@@ -59,10 +59,7 @@ export default function LandingPage() {
               />
 
               {/* Featured Tours Section */}
-              <FeaturedToursSection
-                onNavigate={handleNavigate}
-                onTourSelect={handleTourSelect}
-              />
+              <FeaturedToursSection onNavigate={handleNavigate} onTourSelect={handleTourSelect} />
             </>
           )}
 
@@ -173,7 +170,9 @@ function AirbnbHeader() {
               }}
             >
               <div className="flex items-center gap-4 min-w-0">
-                <div className="text-sm font-semibold truncate">Search by destination or keyword</div>
+                <div className="text-sm font-semibold truncate">
+                  Search by destination or keyword
+                </div>
                 <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
                 <div className="text-sm text-muted-foreground hidden 2xl:block">Add dates</div>
                 <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
@@ -439,8 +438,9 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
               <motion.button
                 key={`indicator-${index}`}
                 onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/70'
-                  }`}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/70'
+                }`}
                 whileTap={{ scale: 0.9 }}
               />
             ))}
@@ -451,7 +451,7 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
   )
 }
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom'
 
 // ... (existing imports)
 
@@ -467,15 +467,16 @@ function FeaturedHotelsSection({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
     async function fetchPackages() {
-        // ... (existing fetch logic remains the same, just keeping it safe with isMounted if needed, 
-        // but for this replacement I will just keep the existing logic structure but wrapped slightly if I were rewriting it all. 
-        // For minimal diff, I will look at the map loop)
+      // ... (existing fetch logic remains the same, just keeping it safe with isMounted if needed,
+      // but for this replacement I will just keep the existing logic structure but wrapped slightly if I were rewriting it all.
+      // For minimal diff, I will look at the map loop)
       try {
         const { data, error } = await supabase
           .from('packages' as any)
-          .select(`
+          .select(
+            `
             id,
             slug,
             name,
@@ -488,7 +489,8 @@ function FeaturedHotelsSection({
               city,
               country
             )
-          `)
+          `,
+          )
           .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(10)
@@ -496,35 +498,49 @@ function FeaturedHotelsSection({
         if (error) throw error
 
         if (data && isMounted) {
-            // ... (mapping logic)
-             const mappedPackages = data.map((pkg: any) => {
-                // Calculate best price
-                let price = 0;
-                if (pkg.rooms_config) {
-                const prices = Object.values(pkg.rooms_config).map((r: any) => Number(r.price) || 0).filter(p => p > 0);
-                if (prices.length > 0) price = Math.min(...prices);
-                }
+          // ... (mapping logic)
+          const mappedPackages = data.map((pkg: any) => {
+            // Calculate best price
+            let price = 0
+            if (pkg.rooms_config) {
+              const prices = Object.values(pkg.rooms_config)
+                .map((r: any) => Number(r.price) || 0)
+                .filter((p) => p > 0)
+              if (prices.length > 0) price = Math.min(...prices)
+            }
 
-                // Get location string
-                const hotel = pkg.hotels;
-                const location = hotel ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '') : 'Multiple Locations';
+            // Get location string
+            const hotel = pkg.hotels
+            const location = hotel
+              ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '')
+              : 'Multiple Locations'
 
-                // Images
-                const images = pkg.media_urls && pkg.media_urls.length > 0 ? pkg.media_urls : (pkg.cover_image ? [pkg.cover_image] : []);
+            // Images
+            const images =
+              pkg.media_urls && pkg.media_urls.length > 0
+                ? pkg.media_urls
+                : pkg.cover_image
+                  ? [pkg.cover_image]
+                  : []
 
-                return {
-                id: pkg.id,
-                slug: pkg.slug,
-                title: pkg.name,
-                hotelName: hotel?.name || 'Partner Hotel',
-                location: location || 'Global',
-                packagePrice: price > 0 ? price : 'Contact',
-                rating: 5.0, // Benchmark
-                images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080'],
-                badge: 'New Arrival'
-                }
-            })
-            setFeaturedHotels(mappedPackages)
+            return {
+              id: pkg.id,
+              slug: pkg.slug,
+              title: pkg.name,
+              hotelName: hotel?.name || 'Partner Hotel',
+              location: location || 'Global',
+              packagePrice: price > 0 ? price : 'Contact',
+              rating: 5.0, // Benchmark
+              images:
+                images.length > 0
+                  ? images
+                  : [
+                      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080',
+                    ],
+              badge: 'New Arrival',
+            }
+          })
+          setFeaturedHotels(mappedPackages)
         }
       } catch (e) {
         console.error('Error fetching featured packages:', e)
@@ -533,8 +549,10 @@ function FeaturedHotelsSection({
       }
     }
 
-    fetchPackages();
-    return () => { isMounted = false };
+    fetchPackages()
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   if (loading) {
@@ -570,15 +588,14 @@ function FeaturedHotelsSection({
               transition={{ delay: 0.1 * index }}
               className="w-full"
             >
-              <Link to={`/packages/${hotel.slug || hotel.id}`} className="block group cursor-pointer space-y-3">
+              <Link
+                to={`/packages/${hotel.slug || hotel.id}`}
+                className="block group cursor-pointer space-y-3"
+              >
                 <div className="relative aspect-square overflow-hidden rounded-xl">
                   {/* Image Slider */}
                   <div className="w-full h-full hover:scale-105 transition-transform duration-500">
-                    <ImageSlider
-                      images={hotel.images}
-                      alt={hotel.title}
-                      autoSlideDelay={5000}
-                    />
+                    <ImageSlider images={hotel.images} alt={hotel.title} autoSlideDelay={5000} />
                   </div>
 
                   {/* Badge */}
@@ -591,7 +608,10 @@ function FeaturedHotelsSection({
                   )}
 
                   {/* Heart Icon */}
-                  <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart" onClick={(e) => e.preventDefault()}>
+                  <button
+                    className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart"
+                    onClick={(e) => e.preventDefault()}
+                  >
                     <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
                   </button>
                 </div>
@@ -611,9 +631,13 @@ function FeaturedHotelsSection({
                   <p className="text-muted-foreground text-sm">{hotel.location}</p>
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="font-bold text-base text-foreground">
-                      {typeof hotel.packagePrice === 'number' ? `$${hotel.packagePrice}` : hotel.packagePrice}
+                      {typeof hotel.packagePrice === 'number'
+                        ? `$${hotel.packagePrice}`
+                        : hotel.packagePrice}
                     </span>
-                    {typeof hotel.packagePrice === 'number' && <span className="text-sm font-normal text-muted-foreground">/ night</span>}
+                    {typeof hotel.packagePrice === 'number' && (
+                      <span className="text-sm font-normal text-muted-foreground">/ night</span>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -637,12 +661,14 @@ function FeaturedToursSection({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
     async function fetchTours() {
       try {
         const { data, error } = await supabase
           .from('tours' as any)
-          .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+          .select(
+            'id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at',
+          )
           .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(10)
@@ -650,32 +676,32 @@ function FeaturedToursSection({
         if (error) throw error
 
         if (data && isMounted) {
-            const mappedTours = (data || []).map((tour: any) => {
+          const mappedTours = (data || []).map((tour: any) => {
             const locationObj = tour.location || {}
             const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-                .replace(/^, /, '')
-                .replace(/, $/, '')
+              .replace(/^, /, '')
+              .replace(/, $/, '')
 
             const images = Array.isArray(tour.images) ? tour.images : []
 
             return {
-                id: tour.id,
-                slug: tour.slug,
-                title: tour.title,
-                location: location || 'Global',
-                tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
-                rating: Number(tour.rating) || 0,
-                images:
+              id: tour.id,
+              slug: tour.slug,
+              title: tour.title,
+              location: location || 'Global',
+              tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+              rating: Number(tour.rating) || 0,
+              images:
                 images.length > 0
-                    ? images
-                    : [
-                        'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+                  ? images
+                  : [
+                      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
                     ],
-                badge: tour.is_featured ? 'Featured' : tour.tour_type,
+              badge: tour.is_featured ? 'Featured' : tour.tour_type,
             }
-            })
+          })
 
-            setFeaturedTours(mappedTours)
+          setFeaturedTours(mappedTours)
         }
       } catch (e) {
         console.error('Error fetching featured tours:', e)
@@ -685,7 +711,9 @@ function FeaturedToursSection({
     }
 
     fetchTours()
-    return () => { isMounted = false };
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   if (loading) {
@@ -723,61 +751,67 @@ function FeaturedToursSection({
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {featuredTours.map((tour, index) => (
-          <motion.div
-            key={tour.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 * index }}
-            className="w-full"
-          >
-            <Link to={`/tours/${tour.slug || tour.id}`} className="block group cursor-pointer space-y-3">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
-                {/* Image Slider (Vertical aspect for "Poster" look) */}
-                <div className="w-full h-full hover:scale-105 transition-transform duration-500">
-                  <ImageSlider images={tour.images} alt={tour.title} autoSlideDelay={5000} />
-                </div>
-
-                {/* Badge */}
-                {tour.badge && (
-                  <div className="absolute top-3 left-3 glass-badge px-3 py-1.5 rounded-md z-10">
-                    <span className="text-xs font-bold text-black block leading-none">
-                      {tour.badge}
-                    </span>
+            <motion.div
+              key={tour.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 * index }}
+              className="w-full"
+            >
+              <Link
+                to={`/tours/${tour.slug || tour.id}`}
+                className="block group cursor-pointer space-y-3"
+              >
+                <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
+                  {/* Image Slider (Vertical aspect for "Poster" look) */}
+                  <div className="w-full h-full hover:scale-105 transition-transform duration-500">
+                    <ImageSlider images={tour.images} alt={tour.title} autoSlideDelay={5000} />
                   </div>
-                )}
 
-                {/* Heart Icon */}
-                <button className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart" onClick={(e) => e.preventDefault()}>
-                  <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
-                </button>
-              </div>
-
-              {/* Clean Content */}
-              <div className="space-y-1 px-1">
-                <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                  <span className="font-medium text-foreground">{tour.rating}</span>
-                  <Star className="w-3 h-3 fill-foreground text-foreground" />
-                  <span>·</span>
-                  <span>{tour.location}</span>
-                </div>
-                <h4 className="font-semibold text-base line-clamp-1 text-foreground">
-                  {tour.title}
-                </h4>
-                <div className="flex items-baseline gap-1">
-                  {typeof tour.tourPrice === 'number' ? (
-                    <>
-                      <span className="font-bold text-base text-foreground">
-                        From ${tour.tourPrice}
+                  {/* Badge */}
+                  {tour.badge && (
+                    <div className="absolute top-3 left-3 glass-badge px-3 py-1.5 rounded-md z-10">
+                      <span className="text-xs font-bold text-black block leading-none">
+                        {tour.badge}
                       </span>
-                      <span className="text-sm font-normal text-muted-foreground">/ person</span>
-                    </>
-                  ) : (
-                    <span className="font-bold text-base text-foreground">{tour.tourPrice}</span>
+                    </div>
                   )}
+
+                  {/* Heart Icon */}
+                  <button
+                    className="absolute top-3 right-3 p-2 hover:scale-110 transition-transform z-10 group/heart"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <Heart className="w-6 h-6 text-white drop-shadow-md stroke-[2px] fill-black/20 group-hover/heart:fill-primary group-hover/heart:stroke-primary transition-colors" />
+                  </button>
                 </div>
-              </div>
-            </Link>
-          </motion.div>
+
+                {/* Clean Content */}
+                <div className="space-y-1 px-1">
+                  <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                    <span className="font-medium text-foreground">{tour.rating}</span>
+                    <Star className="w-3 h-3 fill-foreground text-foreground" />
+                    <span>·</span>
+                    <span>{tour.location}</span>
+                  </div>
+                  <h4 className="font-semibold text-base line-clamp-1 text-foreground">
+                    {tour.title}
+                  </h4>
+                  <div className="flex items-baseline gap-1">
+                    {typeof tour.tourPrice === 'number' ? (
+                      <>
+                        <span className="font-bold text-base text-foreground">
+                          From ${tour.tourPrice}
+                        </span>
+                        <span className="text-sm font-normal text-muted-foreground">/ person</span>
+                      </>
+                    ) : (
+                      <span className="font-bold text-base text-foreground">{tour.tourPrice}</span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       )}

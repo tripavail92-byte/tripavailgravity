@@ -1,6 +1,5 @@
-
 export interface VectorProps {
-    className?: string;
-    isActive?: boolean;
-    size?: number;
+  className?: string
+  isActive?: boolean
+  size?: number
 }

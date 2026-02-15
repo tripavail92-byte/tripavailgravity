@@ -1,31 +1,31 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { AlertCircle, Check, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { AlertCircle, Check, Loader2 } from 'lucide-react'
 
-import { Button } from '@/components/ui/button';
-import { handlePackagePaymentSuccess } from '@/features/booking';
-import { getPackageById } from '@/features/package-creation/services/packageService';
-import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button'
+import { handlePackagePaymentSuccess } from '@/features/booking'
+import { getPackageById } from '@/features/package-creation/services/packageService'
+import { supabase } from '@/lib/supabase'
 
 export default function PackageBookingConfirmationPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  const paymentIntentId = searchParams.get('payment_intent') || null;
-  const bookingId = searchParams.get('booking_id');
+  const paymentIntentId = searchParams.get('payment_intent') || null
+  const bookingId = searchParams.get('booking_id')
 
-  const [status, setStatus] = useState<'confirming' | 'success' | 'error'>('confirming');
-  const [error, setError] = useState<string | null>(null);
-  const [booking, setBooking] = useState<any | null>(null);
-  const [pkg, setPkg] = useState<any | null>(null);
+  const [status, setStatus] = useState<'confirming' | 'success' | 'error'>('confirming')
+  const [error, setError] = useState<string | null>(null)
+  const [booking, setBooking] = useState<any | null>(null)
+  const [pkg, setPkg] = useState<any | null>(null)
 
   useEffect(() => {
     const run = async () => {
       if (!paymentIntentId || !bookingId) {
-        setStatus('error');
-        setError('Missing payment or booking ID');
-        return;
+        setStatus('error')
+        setError('Missing payment or booking ID')
+        return
       }
 
       try {
@@ -33,39 +33,39 @@ export default function PackageBookingConfirmationPage() {
         try {
           const { data, error: verifyError } = await supabase.functions.invoke(
             'stripe-verify-payment-intent',
-            { body: { booking_id: bookingId, payment_intent_id: paymentIntentId } }
-          );
+            { body: { booking_id: bookingId, payment_intent_id: paymentIntentId } },
+          )
 
           if (verifyError) {
-            throw verifyError;
+            throw verifyError
           }
 
           if (data && data.ok === false) {
-            throw new Error(data.error || 'Payment not verified');
+            throw new Error(data.error || 'Payment not verified')
           }
         } catch {
           // Ignore verification failures for now; confirmation below will still run.
         }
 
-        const result = await handlePackagePaymentSuccess(paymentIntentId, bookingId);
+        const result = await handlePackagePaymentSuccess(paymentIntentId, bookingId)
         if (!result.success || !result.booking) {
-          setStatus('error');
-          setError(result.error || 'Failed to confirm booking');
-          return;
+          setStatus('error')
+          setError(result.error || 'Failed to confirm booking')
+          return
         }
 
-        setBooking(result.booking);
-        const packageData = await getPackageById(result.booking.package_id);
-        setPkg(packageData);
-        setStatus('success');
+        setBooking(result.booking)
+        const packageData = await getPackageById(result.booking.package_id)
+        setPkg(packageData)
+        setStatus('success')
       } catch (err) {
-        setStatus('error');
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        setStatus('error')
+        setError(err instanceof Error ? err.message : 'Unknown error')
       }
-    };
+    }
 
-    run();
-  }, [paymentIntentId, bookingId]);
+    run()
+  }, [paymentIntentId, bookingId])
 
   if (status === 'confirming') {
     return (
@@ -76,7 +76,7 @@ export default function PackageBookingConfirmationPage() {
           <p className="text-gray-600 font-medium">Please wait while we finalize your payment...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (status === 'error') {
@@ -92,7 +92,9 @@ export default function PackageBookingConfirmationPage() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmation Failed</h2>
-            <p className="text-gray-600 font-medium">{error || 'An error occurred while confirming your booking'}</p>
+            <p className="text-gray-600 font-medium">
+              {error || 'An error occurred while confirming your booking'}
+            </p>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => navigate('/')} className="flex-1">
@@ -104,7 +106,7 @@ export default function PackageBookingConfirmationPage() {
           </div>
         </motion.div>
       </div>
-    );
+    )
   }
 
   return (
@@ -126,15 +128,21 @@ export default function PackageBookingConfirmationPage() {
           <div className="rounded-xl bg-gray-50 p-4 border border-gray-100 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-gray-600 font-medium">Package</span>
-              <span className="text-gray-900 font-bold text-right">{pkg?.name || booking?.package_id}</span>
+              <span className="text-gray-900 font-bold text-right">
+                {pkg?.name || booking?.package_id}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600 font-medium">Total</span>
-              <span className="text-gray-900 font-bold">${Number(booking?.total_price || 0).toLocaleString()}</span>
+              <span className="text-gray-900 font-bold">
+                ${Number(booking?.total_price || 0).toLocaleString()}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-600 font-medium">Booking ID</span>
-              <span className="text-gray-900 font-mono font-bold">{booking?.id?.slice(0, 8)?.toUpperCase()}</span>
+              <span className="text-gray-900 font-mono font-bold">
+                {booking?.id?.slice(0, 8)?.toUpperCase()}
+              </span>
             </div>
           </div>
 
@@ -144,5 +152,5 @@ export default function PackageBookingConfirmationPage() {
         </motion.div>
       </div>
     </div>
-  );
+  )
 }

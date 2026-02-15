@@ -1,7 +1,7 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useRef } from 'react';
-import { Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'motion/react'
+import { useState, useEffect, useRef } from 'react'
+import { Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   PoolIcon,
   HotTubIcon,
@@ -24,39 +24,39 @@ import {
   WashingMachineIcon,
   ParkingIcon,
   AirConditioningIcon,
-  DedicatedWorkspaceIcon
-} from '../../assets/PremiumAmenityIcons';
+  DedicatedWorkspaceIcon,
+} from '../../assets/PremiumAmenityIcons'
 
 // Hook to detect dark mode
 const useDarkModeDetect = () => {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
+      setIsDark(document.documentElement.classList.contains('dark'))
+    }
 
-    checkDarkMode();
+    checkDarkMode()
 
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
-    return () => observer.disconnect();
-  }, []);
+    return () => observer.disconnect()
+  }, [])
 
-  return isDark;
-};
+  return isDark
+}
 
 interface SmartAmenitiesSelectorProps {
-  selectedAmenities: string[];
-  onSelectionChange: (amenities: string[]) => void;
+  selectedAmenities: string[]
+  onSelectionChange: (amenities: string[]) => void
 }
 
 interface AmenityItem {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  category?: string; // Which detailed category it belongs to
+  id: string
+  name: string
+  icon: React.ComponentType<any>
+  category?: string // Which detailed category it belongs to
 }
 
 const STANDOUT_AMENITIES: AmenityItem[] = [
@@ -75,7 +75,7 @@ const STANDOUT_AMENITIES: AmenityItem[] = [
   { id: 'mountain_view', name: 'Mountain View', icon: MountainViewIcon },
   { id: 'scenic_balcony', name: 'Scenic Balcony', icon: ScenicBalconyIcon },
   { id: 'forest_view', name: 'Forest/Jungle View', icon: ForestViewIcon },
-];
+]
 
 const GUEST_ESSENTIALS: AmenityItem[] = [
   { id: 'wifi', name: 'WiFi', icon: WiFiIcon, category: 'internet_technology' },
@@ -84,14 +84,24 @@ const GUEST_ESSENTIALS: AmenityItem[] = [
   { id: 'washing_machine', name: 'Washing Machine', icon: WashingMachineIcon, category: 'laundry' },
   { id: 'free_parking', name: 'Free Parking', icon: ParkingIcon, category: 'parking' },
   { id: 'paid_parking', name: 'Paid Parking', icon: ParkingIcon, category: 'parking' },
-  { id: 'air_conditioning', name: 'Air Conditioning', icon: AirConditioningIcon, category: 'climate' },
-  { id: 'dedicated_workspace', name: 'Workspace', icon: DedicatedWorkspaceIcon, category: 'workspace' },
-];
+  {
+    id: 'air_conditioning',
+    name: 'Air Conditioning',
+    icon: AirConditioningIcon,
+    category: 'climate',
+  },
+  {
+    id: 'dedicated_workspace',
+    name: 'Workspace',
+    icon: DedicatedWorkspaceIcon,
+    category: 'workspace',
+  },
+]
 
 interface SmartAmenitiesSelectorPropsExtended extends SmartAmenitiesSelectorProps {
-  expandedCategories: string[];
-  onToggleCategory: (category: string) => void;
-  categoryRefs?: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>;
+  expandedCategories: string[]
+  onToggleCategory: (category: string) => void
+  categoryRefs?: React.MutableRefObject<{ [key: string]: HTMLDivElement | null }>
 }
 
 export default function SmartAmenitiesSelector({
@@ -99,33 +109,33 @@ export default function SmartAmenitiesSelector({
   onSelectionChange,
   expandedCategories,
   onToggleCategory,
-  categoryRefs
+  categoryRefs,
 }: SmartAmenitiesSelectorPropsExtended) {
-
   // Local refs if not provided from parent
-  const localRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const refs = categoryRefs || localRefs;
+  const localRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const refs = categoryRefs || localRefs
 
   const toggleAmenity = (amenityId: string) => {
-    const isSelected = selectedAmenities.includes(amenityId);
+    const isSelected = selectedAmenities.includes(amenityId)
 
     if (isSelected) {
-      onSelectionChange(selectedAmenities.filter(id => id !== amenityId));
+      onSelectionChange(selectedAmenities.filter((id) => id !== amenityId))
     } else {
-      onSelectionChange([...selectedAmenities, amenityId]);
+      onSelectionChange([...selectedAmenities, amenityId])
     }
-  };
+  }
 
   const AmenityCard = ({ amenity, isSelected }: { amenity: AmenityItem; isSelected: boolean }) => {
-    const Icon = amenity.icon;
+    const Icon = amenity.icon
 
     return (
       <motion.button
         onClick={() => toggleAmenity(amenity.id)}
-        className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg transition-all ${isSelected
+        className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg transition-all ${
+          isSelected
             ? 'border-[1.5px] border-black bg-white'
             : 'border border-gray-300 bg-white hover:border-gray-400'
-          }`}
+        }`}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -142,24 +152,27 @@ export default function SmartAmenitiesSelector({
 
           {/* Amenity Name - Centered */}
           <div className="text-center">
-            <h4 className={`text-[15px] leading-5 text-gray-900 ${isSelected ? 'font-medium' : 'font-normal'
-              }`}>
+            <h4
+              className={`text-[15px] leading-5 text-gray-900 ${
+                isSelected ? 'font-medium' : 'font-normal'
+              }`}
+            >
               {amenity.name}
             </h4>
           </div>
         </div>
       </motion.button>
-    );
-  };
+    )
+  }
 
-  const isStandoutExpanded = expandedCategories.includes('🌟 Standout Amenities');
-  const isEssentialsExpanded = expandedCategories.includes('⭐ Guest Essentials');
+  const isStandoutExpanded = expandedCategories.includes('🌟 Standout Amenities')
+  const isEssentialsExpanded = expandedCategories.includes('⭐ Guest Essentials')
 
   return (
     <div className="mt-8">
       {/* Standout Amenities Section - Collapsible Card */}
       <motion.div
-        ref={(el) => refs.current['🌟 Standout Amenities'] = el}
+        ref={(el) => (refs.current['🌟 Standout Amenities'] = el)}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -177,14 +190,28 @@ export default function SmartAmenitiesSelector({
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">
-                  {selectedAmenities.filter(id => STANDOUT_AMENITIES.find(a => a.id === id)).length}/{STANDOUT_AMENITIES.length}
+                  {
+                    selectedAmenities.filter((id) => STANDOUT_AMENITIES.find((a) => a.id === id))
+                      .length
+                  }
+                  /{STANDOUT_AMENITIES.length}
                 </span>
                 <motion.div
                   animate={{ rotate: isStandoutExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </motion.div>
               </div>
@@ -197,7 +224,7 @@ export default function SmartAmenitiesSelector({
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
                 <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
@@ -217,7 +244,7 @@ export default function SmartAmenitiesSelector({
 
       {/* Guest Essentials Section - Collapsible Card */}
       <motion.div
-        ref={(el) => refs.current['⭐ Guest Essentials'] = el}
+        ref={(el) => (refs.current['⭐ Guest Essentials'] = el)}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -235,14 +262,28 @@ export default function SmartAmenitiesSelector({
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-500">
-                  {selectedAmenities.filter(id => GUEST_ESSENTIALS.find(a => a.id === id)).length}/{GUEST_ESSENTIALS.length}
+                  {
+                    selectedAmenities.filter((id) => GUEST_ESSENTIALS.find((a) => a.id === id))
+                      .length
+                  }
+                  /{GUEST_ESSENTIALS.length}
                 </span>
                 <motion.div
                   animate={{ rotate: isEssentialsExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="w-5 h-5 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </motion.div>
               </div>
@@ -255,7 +296,7 @@ export default function SmartAmenitiesSelector({
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="overflow-hidden"
               >
                 <div className="grid grid-cols-2 gap-y-[18px] gap-x-3 p-5">
@@ -273,5 +314,5 @@ export default function SmartAmenitiesSelector({
         </div>
       </motion.div>
     </div>
-  );
+  )
 }

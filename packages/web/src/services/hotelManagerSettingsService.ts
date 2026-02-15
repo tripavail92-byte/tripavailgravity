@@ -1,6 +1,6 @@
 /**
  * Hotel Manager Settings Service
- * 
+ *
  * Handles all business settings for hotel managers
  */
 
@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 export interface HotelManagerSettings {
   manager_id: string
   property_id?: string
-  
+
   // Business Information
   business_name: string
   business_registration_number: string
@@ -18,35 +18,35 @@ export interface HotelManagerSettings {
   business_phone: string
   business_email: string
   website_url: string
-  
+
   // Pricing Settings
   base_price_per_night: number
   currency: string
   pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
-  
+
   // Payment Settings
   payment_method: string
   bank_account_number: string
   bank_routing_number: string
   stripe_account_id: string
   payment_verified: boolean
-  
+
   // Cancellation Policy
   cancellation_policy: 'strict' | 'moderate' | 'flexible'
   cancellation_days_before: number
-  
+
   // Notification Settings
   booking_notifications: boolean
   messaging_notifications: boolean
   review_notifications: boolean
   payment_notifications: boolean
-  
+
   // Analytics Settings
   track_analytics: boolean
-  
+
   // Security
   two_factor_enabled: boolean
-  
+
   updated_at: string
 }
 
@@ -86,25 +86,28 @@ class HotelManagerSettingsServiceClass {
           payment_notifications: true,
           track_analytics: true,
           two_factor_enabled: false,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         }
       }
 
-      return (data as unknown) as HotelManagerSettings
+      return data as unknown as HotelManagerSettings
     } catch (error) {
       console.error('Failed to fetch hotel settings:', error)
       throw error
     }
   }
 
-  async updateSettings(managerId: string, updates: Partial<HotelManagerSettings>): Promise<HotelManagerSettings> {
+  async updateSettings(
+    managerId: string,
+    updates: Partial<HotelManagerSettings>,
+  ): Promise<HotelManagerSettings> {
     try {
       const { data, error } = await supabase
         .from('hotel_manager_settings' as any)
         .upsert({
           manager_id: managerId,
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -112,7 +115,7 @@ class HotelManagerSettingsServiceClass {
       if (error) throw error
 
       toast.success('Hotel settings updated')
-      return (data as unknown) as HotelManagerSettings
+      return data as unknown as HotelManagerSettings
     } catch (error) {
       console.error('Failed to update hotel settings:', error)
       toast.error('Failed to update settings')
@@ -121,39 +124,51 @@ class HotelManagerSettingsServiceClass {
   }
 
   // Business information
-  async updateBusinessInfo(managerId: string, info: {
-    business_name: string
-    business_registration_number: string
-    tax_id: string
-    business_phone: string
-    business_email: string
-    website_url: string
-  }): Promise<void> {
+  async updateBusinessInfo(
+    managerId: string,
+    info: {
+      business_name: string
+      business_registration_number: string
+      tax_id: string
+      business_phone: string
+      business_email: string
+      website_url: string
+    },
+  ): Promise<void> {
     await this.updateSettings(managerId, info)
   }
 
   // Pricing
-  async updatePricing(managerId: string, pricing: {
-    base_price_per_night: number
-    pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
-  }): Promise<void> {
+  async updatePricing(
+    managerId: string,
+    pricing: {
+      base_price_per_night: number
+      pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
+    },
+  ): Promise<void> {
     await this.updateSettings(managerId, pricing)
   }
 
   // Payment
-  async updatePaymentMethod(managerId: string, payment: {
-    payment_method: string
-    bank_account_number: string
-    stripe_account_id: string
-  }): Promise<void> {
+  async updatePaymentMethod(
+    managerId: string,
+    payment: {
+      payment_method: string
+      bank_account_number: string
+      stripe_account_id: string
+    },
+  ): Promise<void> {
     await this.updateSettings(managerId, payment)
   }
 
   // Cancellation Policy
-  async updateCancellationPolicy(managerId: string, policy: {
-    cancellation_policy: 'strict' | 'moderate' | 'flexible'
-    cancellation_days_before: number
-  }): Promise<void> {
+  async updateCancellationPolicy(
+    managerId: string,
+    policy: {
+      cancellation_policy: 'strict' | 'moderate' | 'flexible'
+      cancellation_days_before: number
+    },
+  ): Promise<void> {
     await this.updateSettings(managerId, policy)
   }
 
@@ -193,7 +208,7 @@ class HotelManagerSettingsServiceClass {
       .from('hotel_listings' as any)
       .update({ suspended: true, suspended_at: new Date().toISOString() })
       .eq('manager_id', managerId)
-    
+
     toast.success('All listings suspended')
   }
 
@@ -202,7 +217,7 @@ class HotelManagerSettingsServiceClass {
       .from('hotel_listings' as any)
       .update({ suspended: false, suspended_at: null })
       .eq('manager_id', managerId)
-    
+
     toast.success('All listings resumed')
   }
 }

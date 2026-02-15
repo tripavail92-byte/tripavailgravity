@@ -45,41 +45,53 @@ export default function SearchPage() {
     }
   }, [searchParams])
 
-  const performSearch = useCallback(async (customFilters?: {
-    location?: string
-    guests?: number
-    minPrice?: number
-    maxPrice?: number
-    minRating?: number
-  }) => {
-    setIsLoading(true)
-    try {
-      const effective = customFilters || {
-        location: parsedCriteria.location,
-        guests: parsedCriteria.guests,
-        minPrice: parsedCriteria.minPrice ?? priceRange.min,
-        maxPrice: parsedCriteria.maxPrice ?? priceRange.max,
-        minRating: parsedCriteria.minRating,
+  const performSearch = useCallback(
+    async (customFilters?: {
+      location?: string
+      guests?: number
+      minPrice?: number
+      maxPrice?: number
+      minRating?: number
+    }) => {
+      setIsLoading(true)
+      try {
+        const effective = customFilters || {
+          location: parsedCriteria.location,
+          guests: parsedCriteria.guests,
+          minPrice: parsedCriteria.minPrice ?? priceRange.min,
+          maxPrice: parsedCriteria.maxPrice ?? priceRange.max,
+          minRating: parsedCriteria.minRating,
+        }
+
+        const results = await searchService.searchHotels({
+          location: effective.location,
+          guests: effective.guests,
+          minPrice: effective.minPrice,
+          maxPrice: effective.maxPrice,
+        })
+
+        const filteredByRating =
+          (effective.minRating || 0) > 0
+            ? results.filter((h) => (h.rating ?? 0) >= (effective.minRating || 0))
+            : results
+
+        setHotels(filteredByRating)
+      } catch (error) {
+        console.error('Search failed', error)
+      } finally {
+        setIsLoading(false)
       }
-
-      const results = await searchService.searchHotels({
-        location: effective.location,
-        guests: effective.guests,
-        minPrice: effective.minPrice,
-        maxPrice: effective.maxPrice,
-      })
-
-      const filteredByRating = (effective.minRating || 0) > 0
-        ? results.filter((h) => (h.rating ?? 0) >= (effective.minRating || 0))
-        : results
-
-      setHotels(filteredByRating)
-    } catch (error) {
-      console.error('Search failed', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [parsedCriteria.location, parsedCriteria.guests, parsedCriteria.minPrice, parsedCriteria.maxPrice, parsedCriteria.minRating, priceRange.min, priceRange.max])
+    },
+    [
+      parsedCriteria.location,
+      parsedCriteria.guests,
+      parsedCriteria.minPrice,
+      parsedCriteria.maxPrice,
+      parsedCriteria.minRating,
+      priceRange.min,
+      priceRange.max,
+    ],
+  )
 
   // Initial load & when params change
   useEffect(() => {
@@ -108,15 +120,15 @@ export default function SearchPage() {
     if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
 
     setSearchParams(params)
-    
+
     // Update price range state
     setPriceRange({
       min: filters.priceRange[0] !== 0 ? filters.priceRange[0] : undefined,
-      max: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined
+      max: filters.priceRange[1] !== 5000 ? filters.priceRange[1] : undefined,
     })
-    
+
     setIsSearchOverlayOpen(false)
-    
+
     // Trigger the actual search with the new filter values
     performSearch({
       location: filters.query || filters.location || undefined,
@@ -134,13 +146,13 @@ export default function SearchPage() {
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Desktop: Advanced Search Bar */}
           <div className="hidden md:block flex-1">
-            <TripAvailSearchBar 
+            <TripAvailSearchBar
               onSearch={handleAdvancedSearch}
               onSearchOverlayToggle={(isOpen) => setIsSearchOverlayOpen(isOpen)}
               className="p-0 shadow-none"
             />
           </div>
-          
+
           {/* Mobile: Search Button */}
           <button
             onClick={() => setIsSearchOverlayOpen(true)}

@@ -8,12 +8,17 @@ const glassButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'glass-button text-primary-foreground hover:opacity-90 hover:shadow-md hover:shadow-primary/20',
-        light: 'bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-white/20',
+        default:
+          'glass-button text-primary-foreground hover:opacity-90 hover:shadow-md hover:shadow-primary/20',
+        light:
+          'bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-white/20',
         dark: 'bg-black/20 backdrop-blur-md hover:bg-black/30 border border-white/20 hover:border-white/30 text-white hover:shadow-lg hover:shadow-black/20',
-        outline: 'bg-white/10 backdrop-blur-sm border border-white/30 hover:bg-white/20 hover:shadow-md',
-        ghost: 'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
-        floating: 'bg-white/90 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:-translate-y-1 border border-white/50 hover:scale-105',
+        outline:
+          'bg-white/10 backdrop-blur-sm border border-white/30 hover:bg-white/20 hover:shadow-md',
+        ghost:
+          'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
+        floating:
+          'bg-white/90 backdrop-blur-lg shadow-lg hover:shadow-2xl hover:-translate-y-1 border border-white/50 hover:scale-105',
       },
       size: {
         default: 'h-9 px-4 py-2',
@@ -27,12 +32,11 @@ const glassButtonVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 export interface GlassButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof glassButtonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof glassButtonVariants> {
   /**
    * Render as child component (for react-router Link, etc.)
    * @default false
@@ -53,14 +57,14 @@ const blurClasses: Record<string, string> = {
 
 /**
  * GlassButton - A glassmorphism button component
- * 
+ *
  * @example
  * ```tsx
  * <GlassButton variant="light" size="lg">
  *   Click Me
  * </GlassButton>
  * ```
- * 
+ *
  * @example Floating action button
  * ```tsx
  * <GlassButton variant="floating" size="icon">
@@ -72,7 +76,7 @@ const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
   ({ className, variant, size, blur, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
     const blurClass = blur ? blurClasses[blur] : ''
-    
+
     return (
       <Comp
         className={cn(glassButtonVariants({ variant, size, className }), blurClass)}
@@ -80,7 +84,7 @@ const GlassButton = React.forwardRef<HTMLButtonElement, GlassButtonProps>(
         {...props}
       />
     )
-  }
+  },
 )
 
 GlassButton.displayName = 'GlassButton'

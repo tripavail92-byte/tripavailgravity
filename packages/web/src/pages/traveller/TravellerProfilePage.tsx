@@ -1,6 +1,6 @@
 /**
  * Traveller Profile Page - LIVE VERSION
- * 
+ *
  * Full-featured profile management with:
  * - Real data integration via Supabase
  * - Edit mode for all profile fields
@@ -9,74 +9,78 @@
  * - Profile completion tracking
  */
 
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { 
-  Camera, Mail, Phone, MapPin, Map, Calendar, 
-  CreditCard, Wallet, Lock, ChevronRight, Check, Edit, Save, X, Loader2
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { GlassCard, GlassBadge } from '@/components/ui/glass';
-import { Button } from '@/components/ui/button';
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useState, useEffect } from 'react'
+import { motion } from 'motion/react'
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import toast from 'react-hot-toast';
-import { userProfileService, type UserProfile } from '@/services/userProfileService';
+  Camera,
+  Mail,
+  Phone,
+  MapPin,
+  Map,
+  Calendar,
+  CreditCard,
+  Wallet,
+  Lock,
+  ChevronRight,
+  Check,
+  Edit,
+  Save,
+  X,
+  Loader2,
+} from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { GlassCard, GlassBadge } from '@/components/ui/glass'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+import { format } from 'date-fns'
+import toast from 'react-hot-toast'
+import { userProfileService, type UserProfile } from '@/services/userProfileService'
 
 interface ContactInfoItem {
-  id: string;
-  icon: typeof Mail;
-  label: string;
-  value: string;
-  verified: boolean;
-  isCalendar?: boolean;
-  isRoseAccent?: boolean;
+  id: string
+  icon: typeof Mail
+  label: string
+  value: string
+  verified: boolean
+  isCalendar?: boolean
+  isRoseAccent?: boolean
 }
 
 interface EditingField {
-  [key: string]: string;
+  [key: string]: string
 }
 
 export default function TravellerProfilePage() {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editingData, setEditingData] = useState<EditingField>({});
-  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const { user } = useAuth()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editingData, setEditingData] = useState<EditingField>({})
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null)
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   // Verification modals
-  const [showEmailVerification, setShowEmailVerification] = useState(false);
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [phoneOTP, setPhoneOTP] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
+  const [phoneOTP, setPhoneOTP] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
 
   // Load profile on mount
   useEffect(() => {
     if (user) {
-      loadProfile();
+      loadProfile()
     }
-  }, [user]);
+  }, [user])
 
   const loadProfile = async () => {
     try {
-      setIsLoading(true);
-      const profileData = await userProfileService.getProfile();
-      setProfile(profileData);
-      
+      setIsLoading(true)
+      const profileData = await userProfileService.getProfile()
+      setProfile(profileData)
+
       // Initialize editing data
       setEditingData({
         first_name: profileData?.first_name || '',
@@ -85,18 +89,18 @@ export default function TravellerProfilePage() {
         bio: profileData?.bio || '',
         address: profileData?.address || '',
         city: profileData?.city || '',
-      });
+      })
 
       if (profileData?.date_of_birth) {
-        setDateOfBirth(new Date(profileData.date_of_birth));
+        setDateOfBirth(new Date(profileData.date_of_birth))
       }
     } catch (error) {
-      console.error('Failed to load profile:', error);
-      toast.error('Failed to load profile');
+      console.error('Failed to load profile:', error)
+      toast.error('Failed to load profile')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleEditToggle = () => {
     if (isEditing) {
@@ -108,22 +112,22 @@ export default function TravellerProfilePage() {
         bio: profile?.bio || '',
         address: profile?.address || '',
         city: profile?.city || '',
-      });
+      })
     }
-    setIsEditing(!isEditing);
-  };
+    setIsEditing(!isEditing)
+  }
 
   const handleFieldChange = (field: string, value: string) => {
-    setEditingData(prev => ({
+    setEditingData((prev) => ({
       ...prev,
-      [field]: value
-    }));
-  };
+      [field]: value,
+    }))
+  }
 
   const handleSaveProfile = async () => {
     try {
-      setIsSaving(true);
-      
+      setIsSaving(true)
+
       const updateData: any = {
         first_name: editingData.first_name,
         last_name: editingData.last_name,
@@ -131,85 +135,85 @@ export default function TravellerProfilePage() {
         bio: editingData.bio,
         address: editingData.address,
         city: editingData.city,
-      };
-
-      if (dateOfBirth) {
-        updateData.date_of_birth = dateOfBirth.toISOString();
       }
 
-      const updatedProfile = await userProfileService.updateProfile(updateData);
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      toast.success('Profile saved successfully!');
+      if (dateOfBirth) {
+        updateData.date_of_birth = dateOfBirth.toISOString()
+      }
+
+      const updatedProfile = await userProfileService.updateProfile(updateData)
+      setProfile(updatedProfile)
+      setIsEditing(false)
+      toast.success('Profile saved successfully!')
     } catch (error) {
-      console.error('Failed to save profile:', error);
-      toast.error('Failed to save profile');
+      console.error('Failed to save profile:', error)
+      toast.error('Failed to save profile')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleVerifyEmail = async () => {
     try {
-      setIsVerifying(true);
-      await userProfileService.sendEmailVerification();
-      setShowEmailVerification(false);
+      setIsVerifying(true)
+      await userProfileService.sendEmailVerification()
+      setShowEmailVerification(false)
     } catch (error) {
-      console.error('Failed to send verification email:', error);
+      console.error('Failed to send verification email:', error)
     } finally {
-      setIsVerifying(false);
+      setIsVerifying(false)
     }
-  };
+  }
 
   const handleVerifyPhone = async () => {
     try {
-      setIsVerifying(true);
-      await userProfileService.sendPhoneVerification(profile?.phone || '');
-      setShowPhoneVerification(true);
+      setIsVerifying(true)
+      await userProfileService.sendPhoneVerification(profile?.phone || '')
+      setShowPhoneVerification(true)
     } catch (error) {
-      console.error('Failed to send OTP:', error);
+      console.error('Failed to send OTP:', error)
     } finally {
-      setIsVerifying(false);
+      setIsVerifying(false)
     }
-  };
+  }
 
   const handleVerifyPhoneOTP = async () => {
     try {
-      setIsVerifying(true);
-      await userProfileService.verifyPhoneOTP(profile?.phone || '', phoneOTP);
-      
+      setIsVerifying(true)
+      await userProfileService.verifyPhoneOTP(profile?.phone || '', phoneOTP)
+
       // Reload profile to get updated verification status
-      await loadProfile();
-      setShowPhoneVerification(false);
-      setPhoneOTP('');
+      await loadProfile()
+      setShowPhoneVerification(false)
+      setPhoneOTP('')
     } catch (error) {
-      console.error('Failed to verify OTP:', error);
+      console.error('Failed to verify OTP:', error)
     } finally {
-      setIsVerifying(false);
+      setIsVerifying(false)
     }
-  };
+  }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const file = event.target.files?.[0]
+    if (!file) return
 
     try {
-      setIsLoading(true);
-      await userProfileService.uploadAvatar(file);
-      await loadProfile();
+      setIsLoading(true)
+      await userProfileService.uploadAvatar(file)
+      await loadProfile()
     } catch (error) {
-      console.error('Failed to upload avatar:', error);
+      console.error('Failed to upload avatar:', error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
   if (!profile) {
@@ -222,11 +226,11 @@ export default function TravellerProfilePage() {
           </Button>
         </GlassCard>
       </div>
-    );
+    )
   }
 
-  const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
-  const profileCompletion = userProfileService.calculateCompletion(profile);
+  const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+  const profileCompletion = userProfileService.calculateCompletion(profile)
 
   const contactInfo: ContactInfoItem[] = [
     {
@@ -234,28 +238,28 @@ export default function TravellerProfilePage() {
       icon: Mail,
       label: 'Email',
       value: profile.email,
-      verified: profile.email_verified || false
+      verified: profile.email_verified || false,
     },
     {
       id: 'phone',
       icon: Phone,
       label: 'Phone',
       value: profile.phone || 'Not added',
-      verified: profile.phone_verified || false
+      verified: profile.phone_verified || false,
     },
     {
       id: 'address',
       icon: MapPin,
       label: 'Address',
       value: profile.address || 'Not added',
-      verified: false
+      verified: false,
     },
     {
       id: 'location',
       icon: Map,
       label: 'City',
       value: profile.city || 'Not added',
-      verified: false
+      verified: false,
     },
     {
       id: 'dob',
@@ -264,9 +268,9 @@ export default function TravellerProfilePage() {
       value: dateOfBirth ? format(dateOfBirth, 'MMMM dd, yyyy') : 'Not added',
       verified: true,
       isCalendar: true,
-      isRoseAccent: true
-    }
-  ];
+      isRoseAccent: true,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
@@ -274,9 +278,9 @@ export default function TravellerProfilePage() {
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="gap-2"
             onClick={handleEditToggle}
             disabled={isSaving}
@@ -301,7 +305,8 @@ export default function TravellerProfilePage() {
         {isEditing && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-blue-700">
-              <strong>Editing mode:</strong> Make changes below and click Save to update your profile.
+              <strong>Editing mode:</strong> Make changes below and click Save to update your
+              profile.
             </p>
           </div>
         )}
@@ -331,9 +336,12 @@ export default function TravellerProfilePage() {
                   </div>
                 )}
               </div>
-              
+
               {isEditing && (
-                <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800">
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800"
+                >
                   <Camera className="w-4 h-4" />
                   <input
                     id="avatar-upload"
@@ -389,32 +397,27 @@ export default function TravellerProfilePage() {
                 </p>
               </>
             )}
-            
+
             {/* Member Since */}
             {!isEditing && (
               <p className="text-sm text-gray-500 mb-6">
-                {profile.created_at 
+                {profile.created_at
                   ? `Member since ${format(new Date(profile.created_at), 'MMM yyyy')}`
-                  : 'New member'
-                }
+                  : 'New member'}
               </p>
             )}
 
             {/* Profile Completion */}
             <div className="w-full">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Profile completion
-                </span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {profileCompletion}%
-                </span>
+                <span className="text-sm font-medium text-gray-700">Profile completion</span>
+                <span className="text-sm font-semibold text-gray-900">{profileCompletion}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <motion.div 
+                <motion.div
                   className="h-2 rounded-full"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)'
+                  style={{
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
                   }}
                   initial={{ width: 0 }}
                   animate={{ width: `${profileCompletion}%` }}
@@ -457,9 +460,7 @@ export default function TravellerProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              About Me
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">About Me</h3>
             <p className="text-gray-600 leading-relaxed">
               {profile.bio || 'Add a bio to help other travelers know more about you'}
             </p>
@@ -476,13 +477,11 @@ export default function TravellerProfilePage() {
           transition={{ delay: 0.2 }}
         >
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Contact Info
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">Contact Info</h3>
           </div>
-          
+
           <div className="divide-y divide-gray-100">
-            {contactInfo.map((item) => (
+            {contactInfo.map((item) =>
               item.isCalendar ? (
                 <Popover key={item.id} open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
@@ -492,28 +491,37 @@ export default function TravellerProfilePage() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            item.isRoseAccent 
-                              ? 'bg-rose-50' 
-                              : 'bg-gray-100'
-                          }`}>
-                            <item.icon size={20} className={
-                              item.isRoseAccent 
-                                ? 'text-rose-600' 
-                                : 'text-gray-700'
-                            } />
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              item.isRoseAccent ? 'bg-rose-50' : 'bg-gray-100'
+                            }`}
+                          >
+                            <item.icon
+                              size={20}
+                              className={item.isRoseAccent ? 'text-rose-600' : 'text-gray-700'}
+                            />
                           </div>
                           <div>
                             <div className="text-sm text-gray-500">{item.label}</div>
-                            <div className={isEditing ? "text-sm text-blue-600 font-medium" : "font-medium text-gray-900"}>
+                            <div
+                              className={
+                                isEditing
+                                  ? 'text-sm text-blue-600 font-medium'
+                                  : 'font-medium text-gray-900'
+                              }
+                            >
                               {item.value}
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-3">
                           {item.verified && (
-                            <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
+                            <GlassBadge
+                              variant="info"
+                              size="sm"
+                              icon={<Check className="w-3 h-3" />}
+                            >
                               Verified
                             </GlassBadge>
                           )}
@@ -522,20 +530,18 @@ export default function TravellerProfilePage() {
                       </div>
                     </motion.div>
                   </PopoverTrigger>
-                  
+
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
                       mode="single"
                       selected={dateOfBirth || undefined}
                       onSelect={(date) => {
                         if (date) {
-                          setDateOfBirth(date);
-                          setIsCalendarOpen(false);
+                          setDateOfBirth(date)
+                          setIsCalendarOpen(false)
                         }
                       }}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
+                      disabled={(date) => date > new Date() || date < new Date('1900-01-01')}
                       initialFocus
                     />
                   </PopoverContent>
@@ -557,20 +563,20 @@ export default function TravellerProfilePage() {
                         <div className="font-medium text-gray-900">{item.value}</div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
                       {item.verified ? (
                         <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
                           Verified
                         </GlassBadge>
                       ) : (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           className="text-xs h-7"
                           onClick={(e) => {
-                            e.stopPropagation();
-                            setShowEmailVerification(true);
+                            e.stopPropagation()
+                            setShowEmailVerification(true)
                           }}
                         >
                           Verify
@@ -606,7 +612,7 @@ export default function TravellerProfilePage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {!isEditing && (
                       <div className="flex items-center gap-3">
                         {item.verified ? (
@@ -614,8 +620,8 @@ export default function TravellerProfilePage() {
                             Verified
                           </GlassBadge>
                         ) : profile.phone ? (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
                             className="text-xs h-7"
                             onClick={() => handleVerifyPhone()}
@@ -669,12 +675,12 @@ export default function TravellerProfilePage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
                   </div>
                 </motion.div>
-              )
-            ))}
+              ),
+            )}
           </div>
         </GlassCard>
 
@@ -688,11 +694,9 @@ export default function TravellerProfilePage() {
           transition={{ delay: 0.3 }}
         >
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Payment Methods
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">Payment Methods</h3>
           </div>
-          
+
           <div className="divide-y divide-gray-100">
             <motion.div
               className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
@@ -705,9 +709,7 @@ export default function TravellerProfilePage() {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Mobile Wallets</div>
-                    <div className="text-sm text-gray-500">
-                      EasyPaisa, JazzCash
-                    </div>
+                    <div className="text-sm text-gray-500">EasyPaisa, JazzCash</div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -725,9 +727,7 @@ export default function TravellerProfilePage() {
                   </div>
                   <div>
                     <div className="font-medium text-gray-900">Credit & Debit Cards</div>
-                    <div className="text-sm text-gray-500">
-                      Visa, Mastercard
-                    </div>
+                    <div className="text-sm text-gray-500">Visa, Mastercard</div>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -746,11 +746,9 @@ export default function TravellerProfilePage() {
           transition={{ delay: 0.4 }}
         >
           <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Account Security
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">Account Security</h3>
           </div>
-          
+
           <motion.div
             className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
             whileHover={{ x: 4 }}
@@ -777,10 +775,8 @@ export default function TravellerProfilePage() {
       <Dialog open={showEmailVerification} onOpenChange={setShowEmailVerification}>
         <DialogContent>
           <DialogTitle>Verify Your Email</DialogTitle>
-          <DialogDescription>
-            We'll send a verification link to {profile?.email}
-          </DialogDescription>
-          
+          <DialogDescription>We'll send a verification link to {profile?.email}</DialogDescription>
+
           <div className="flex gap-3 mt-6">
             <Button
               variant="outline"
@@ -814,7 +810,7 @@ export default function TravellerProfilePage() {
           <DialogDescription>
             Enter the OTP (One-Time Password) sent to {profile?.phone}
           </DialogDescription>
-          
+
           <input
             type="text"
             placeholder="Enter 6-digit OTP"
@@ -823,7 +819,7 @@ export default function TravellerProfilePage() {
             maxLength={6}
             className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mt-4"
           />
-          
+
           <div className="flex gap-3 mt-6">
             <Button
               variant="outline"
@@ -850,5 +846,5 @@ export default function TravellerProfilePage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

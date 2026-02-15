@@ -1,94 +1,97 @@
 /**
  * Account Settings Page - LIVE VERSION
- * 
+ *
  * Comprehensive control center for account management, security, and privacy
  * Features: Live settings sync, notification toggles, privacy controls, theme management
  */
 
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { 
-  Shield, Bell, Eye, Settings, Moon, Sun, Globe,
-  HelpCircle, ChevronRight, Loader2
-} from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { GlassCard } from '@/components/ui/glass';
-import { Button } from '@/components/ui/button';
-import { accountSettingsService, type AccountSettings } from '@/services/accountSettingsService';
-import toast from 'react-hot-toast';
+import { useState, useEffect } from 'react'
+import { motion } from 'motion/react'
+import {
+  Shield,
+  Bell,
+  Eye,
+  Settings,
+  Moon,
+  Sun,
+  Globe,
+  HelpCircle,
+  ChevronRight,
+  Loader2,
+} from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import { GlassCard } from '@/components/ui/glass'
+import { Button } from '@/components/ui/button'
+import { accountSettingsService, type AccountSettings } from '@/services/accountSettingsService'
+import toast from 'react-hot-toast'
 
 export default function AccountSettingsPage() {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<AccountSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'privacy' | 'preferences' | 'security'>('overview');
-  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth()
+  const [settings, setSettings] = useState<AccountSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'notifications' | 'privacy' | 'preferences' | 'security'
+  >('overview')
+  const [isSaving, setIsSaving] = useState(false)
 
   // Load settings on mount
   useEffect(() => {
     if (user?.id) {
-      loadSettings();
+      loadSettings()
     }
-  }, [user?.id]);
+  }, [user?.id])
 
   const loadSettings = async () => {
     try {
-      setIsLoading(true);
-      const data = await accountSettingsService.getSettings(user!.id);
-      setSettings(data);
+      setIsLoading(true)
+      const data = await accountSettingsService.getSettings(user!.id)
+      setSettings(data)
     } catch (error) {
-      console.error('Failed to load settings:', error);
-      toast.error('Failed to load settings');
+      console.error('Failed to load settings:', error)
+      toast.error('Failed to load settings')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  const handleToggle = async (
-    key: keyof AccountSettings,
-    value: boolean | string
-  ) => {
-    if (!user?.id || !settings) return;
+  const handleToggle = async (key: keyof AccountSettings, value: boolean | string) => {
+    if (!user?.id || !settings) return
 
     try {
-      setIsSaving(true);
+      setIsSaving(true)
       const updated = await accountSettingsService.updateSettings(user.id, {
-        [key]: value
-      });
-      setSettings(updated);
+        [key]: value,
+      })
+      setSettings(updated)
     } catch (error) {
-      console.error('Failed to update setting:', error);
-      loadSettings(); // Reload to get correct value
+      console.error('Failed to update setting:', error)
+      loadSettings() // Reload to get correct value
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   if (isLoading || !settings) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
   const notificationCount = [
     settings.email_notifications_enabled,
     settings.booking_reminders,
     settings.push_notifications_enabled,
-  ].filter(Boolean).length;
+  ].filter(Boolean).length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">
-            Account Settings
-          </h1>
-          <p className="text-sm text-gray-600">
-            Manage your account security and preferences
-          </p>
+          <h1 className="text-xl font-semibold text-gray-900 mb-1">Account Settings</h1>
+          <p className="text-sm text-gray-600">Manage your account security and preferences</p>
         </div>
       </div>
 
@@ -99,8 +102,8 @@ export default function AccountSettingsPage() {
             { id: 'overview', label: 'Overview' },
             { id: 'notifications', label: 'Notifications' },
             { id: 'privacy', label: 'Privacy' },
-            { id: 'preferences', label: 'Preferences' }
-          ].map(tab => (
+            { id: 'preferences', label: 'Preferences' },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -150,9 +153,7 @@ export default function AccountSettingsPage() {
                   <Bell className="w-5 h-5 text-orange-500" />
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">
-                  {notificationCount} active
-                </p>
+                <p className="text-sm text-gray-600 mb-3">{notificationCount} active</p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -170,9 +171,7 @@ export default function AccountSettingsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-6">
-                All Settings
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-6">All Settings</h2>
               <div className="space-y-3">
                 <SettingItem
                   icon={Bell}
@@ -205,9 +204,7 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Email Notifications
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h2>
               <div className="space-y-4">
                 <ToggleSetting
                   label="All Email Notifications"
@@ -238,9 +235,7 @@ export default function AccountSettingsPage() {
             </GlassCard>
 
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Other Notifications
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Other Notifications</h2>
               <div className="space-y-4">
                 <ToggleSetting
                   label="Push Notifications"
@@ -269,9 +264,7 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Privacy Settings
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Privacy Settings</h2>
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-gray-900 block mb-2">
@@ -324,14 +317,10 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                App Preferences
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">App Preferences</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">
-                    Theme
-                  </label>
+                  <label className="text-sm font-medium text-gray-900 block mb-2">Theme</label>
                   <div className="flex gap-3">
                     {['light', 'dark', 'auto'].map((theme) => (
                       <button
@@ -353,9 +342,7 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">
-                    Language
-                  </label>
+                  <label className="text-sm font-medium text-gray-900 block mb-2">Language</label>
                   <select
                     value={settings.language}
                     onChange={(e) => handleToggle('language', e.target.value)}
@@ -370,9 +357,7 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">
-                    Currency
-                  </label>
+                  <label className="text-sm font-medium text-gray-900 block mb-2">Currency</label>
                   <select
                     value={settings.currency}
                     onChange={(e) => handleToggle('currency', e.target.value)}
@@ -403,9 +388,7 @@ export default function AccountSettingsPage() {
                 <HelpCircle size={24} className="text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Need Help?
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Help?</h3>
                 <p className="text-sm text-gray-600 mb-4 leading-relaxed">
                   Our support team is here to help you with any account or settings questions.
                 </p>
@@ -440,7 +423,7 @@ export default function AccountSettingsPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Helper component: Toggle Setting
@@ -449,13 +432,13 @@ function ToggleSetting({
   description,
   enabled,
   onChange,
-  disabled = false
+  disabled = false,
 }: {
-  label: string;
-  description: string;
-  enabled: boolean;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
+  label: string
+  description: string
+  enabled: boolean
+  onChange: (value: boolean) => void
+  disabled?: boolean
 }) {
   return (
     <div className="flex items-start justify-between p-4 bg-gray-50/50 rounded-lg">
@@ -477,7 +460,7 @@ function ToggleSetting({
         />
       </button>
     </div>
-  );
+  )
 }
 
 // Helper component: Setting Item
@@ -485,12 +468,12 @@ function SettingItem({
   icon: Icon,
   title,
   description,
-  onClick
+  onClick,
 }: {
-  icon: typeof Bell;
-  title: string;
-  description: string;
-  onClick: () => void;
+  icon: typeof Bell
+  title: string
+  description: string
+  onClick: () => void
 }) {
   return (
     <button
@@ -508,5 +491,5 @@ function SettingItem({
       </div>
       <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
     </button>
-  );
+  )
 }

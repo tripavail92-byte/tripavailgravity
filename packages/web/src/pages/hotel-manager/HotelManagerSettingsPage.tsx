@@ -1,44 +1,52 @@
 /**
  * Hotel Manager Settings Page - LIVE VERSION
- * 
+ *
  * Business account settings for hotel properties, payments, and policies
  * Real-time data persistence via hotelManagerSettingsService
  */
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { hotelManagerSettingsService } from '@/services/hotelManagerSettingsService';
-import { 
-  DollarSign, Building, CreditCard, Bell, BarChart3, 
-  Shield, Clock, ChevronRight, AlertTriangle, Loader
-} from 'lucide-react';
-import { GlassCard, GlassBadge } from '@/components/ui/glass';
-import { Button } from '@/components/ui/button';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { hotelManagerSettingsService } from '@/services/hotelManagerSettingsService'
+import {
+  DollarSign,
+  Building,
+  CreditCard,
+  Bell,
+  BarChart3,
+  Shield,
+  Clock,
+  ChevronRight,
+  AlertTriangle,
+  Loader,
+} from 'lucide-react'
+import { GlassCard, GlassBadge } from '@/components/ui/glass'
+import { Button } from '@/components/ui/button'
+import toast from 'react-hot-toast'
 
 interface HotelManagerSettings {
-  business_name?: string;
-  base_price_per_night?: number;
-  currency?: string;
-  cancellation_policy?: string;
-  booking_notifications?: boolean;
-  messaging_notifications?: boolean;
-  review_notifications?: boolean;
-  payment_notifications?: boolean;
-  track_analytics?: boolean;
-  two_factor_enabled?: boolean;
-  [key: string]: any;
+  business_name?: string
+  base_price_per_night?: number
+  currency?: string
+  cancellation_policy?: string
+  booking_notifications?: boolean
+  messaging_notifications?: boolean
+  review_notifications?: boolean
+  payment_notifications?: boolean
+  track_analytics?: boolean
+  two_factor_enabled?: boolean
+  [key: string]: any
 }
 
 interface SettingsCategory {
-  id: string;
-  title: string;
-  description: string;
-  icon: typeof DollarSign;
-  hasWarning: boolean;
-  badge: string | null;
-  badgeVariant: 'primary' | 'info' | 'light' | 'warning';
-  screen: string;
+  id: string
+  title: string
+  description: string
+  icon: typeof DollarSign
+  hasWarning: boolean
+  badge: string | null
+  badgeVariant: 'primary' | 'info' | 'light' | 'warning'
+  screen: string
 }
 
 const settingsCategories: SettingsCategory[] = [
@@ -50,7 +58,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'pricing-settings'
+    screen: 'pricing-settings',
   },
   {
     id: 'business',
@@ -60,7 +68,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'business-info'
+    screen: 'business-info',
   },
   {
     id: 'payment',
@@ -70,7 +78,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: true, // Bank details might not be complete
     badge: null,
     badgeVariant: 'primary',
-    screen: 'payment-settings'
+    screen: 'payment-settings',
   },
   {
     id: 'cancellation',
@@ -80,7 +88,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: 'Flexible',
     badgeVariant: 'info',
-    screen: 'cancellation-policy'
+    screen: 'cancellation-policy',
   },
   {
     id: 'notifications',
@@ -90,7 +98,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: '8 Active',
     badgeVariant: 'primary',
-    screen: 'notifications-settings'
+    screen: 'notifications-settings',
   },
   {
     id: 'analytics',
@@ -100,7 +108,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'light',
-    screen: 'analytics'
+    screen: 'analytics',
   },
   {
     id: 'security',
@@ -110,95 +118,95 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'security-settings'
-  }
-];
+    screen: 'security-settings',
+  },
+]
 
 export default function HotelManagerSettingsPage() {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<HotelManagerSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth()
+  const [settings, setSettings] = useState<HotelManagerSettings | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (user?.id) {
-      loadSettings();
+      loadSettings()
     }
-  }, [user?.id]);
+  }, [user?.id])
 
   const loadSettings = async () => {
     try {
-      setIsLoading(true);
-      const data = await hotelManagerSettingsService.getSettings(user!.id);
-      setSettings(data);
+      setIsLoading(true)
+      const data = await hotelManagerSettingsService.getSettings(user!.id)
+      setSettings(data)
     } catch (error) {
-      console.error('Failed to load settings:', error);
-      toast.error('Failed to load settings');
+      console.error('Failed to load settings:', error)
+      toast.error('Failed to load settings')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleToggle = async (key: string, value: boolean) => {
-    if (!settings) return;
+    if (!settings) return
 
     try {
-      setIsSaving(true);
+      setIsSaving(true)
       const updated = await hotelManagerSettingsService.updateSettings(user!.id, {
-        [key]: value
-      });
-      setSettings(updated);
-      toast.success(`${key.replace(/_/g, ' ')} ${value ? 'enabled' : 'disabled'}`);
+        [key]: value,
+      })
+      setSettings(updated)
+      toast.success(`${key.replace(/_/g, ' ')} ${value ? 'enabled' : 'disabled'}`)
     } catch (error) {
-      console.error('Failed to update setting:', error);
-      toast.error('Failed to update setting');
+      console.error('Failed to update setting:', error)
+      toast.error('Failed to update setting')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleSuspendListings = async () => {
     try {
-      setIsSaving(true);
-      await hotelManagerSettingsService.suspendListings(user!.id);
-      toast.success('Listings suspended');
-      await loadSettings();
+      setIsSaving(true)
+      await hotelManagerSettingsService.suspendListings(user!.id)
+      toast.success('Listings suspended')
+      await loadSettings()
     } catch (error) {
-      console.error('Failed to suspend listings:', error);
-      toast.error('Failed to suspend listings');
+      console.error('Failed to suspend listings:', error)
+      toast.error('Failed to suspend listings')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleResumeListings = async () => {
     try {
-      setIsSaving(true);
-      await hotelManagerSettingsService.resumeListings(user!.id);
-      toast.success('Listings resumed');
-      await loadSettings();
+      setIsSaving(true)
+      await hotelManagerSettingsService.resumeListings(user!.id)
+      toast.success('Listings resumed')
+      await loadSettings()
     } catch (error) {
-      console.error('Failed to resume listings:', error);
-      toast.error('Failed to resume listings');
+      console.error('Failed to resume listings:', error)
+      toast.error('Failed to resume listings')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader className="w-6 h-6 animate-spin text-purple-600" />
       </div>
-    );
+    )
   }
 
   const notificationBadgeCount = [
     settings?.booking_notifications,
     settings?.messaging_notifications,
     settings?.review_notifications,
-    settings?.payment_notifications
-  ].filter(Boolean).length;
+    settings?.payment_notifications,
+  ].filter(Boolean).length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
@@ -286,7 +294,9 @@ export default function HotelManagerSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">Cancellation Policy</p>
-                  <p className="text-sm text-gray-600">{settings?.cancellation_policy || 'Flexible'}</p>
+                  <p className="text-sm text-gray-600">
+                    {settings?.cancellation_policy || 'Flexible'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -330,9 +340,7 @@ export default function HotelManagerSettingsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {category.title}
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{category.title}</h3>
                         {category.hasWarning && (
                           <AlertTriangle size={16} className="text-purple-600 flex-shrink-0" />
                         )}
@@ -370,18 +378,12 @@ export default function HotelManagerSettingsPage() {
               <ChevronRight size={24} className="text-blue-600" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Partner Support
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Partner Support</h3>
               <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                Our partnership team is available 24/7 to help you maximize your hotel's potential on TripAvail.
+                Our partnership team is available 24/7 to help you maximize your hotel's potential
+                on TripAvail.
               </p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full sm:w-auto"
-                disabled={isSaving}
-              >
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" disabled={isSaving}>
                 Get Help
               </Button>
             </div>
@@ -390,21 +392,21 @@ export default function HotelManagerSettingsPage() {
 
         {/* Account Actions */}
         <div className="pt-4 space-y-3">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-center text-gray-600 hover:text-gray-900"
             disabled={isSaving}
           >
             Partner Agreement
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-center text-gray-600 hover:text-gray-900"
             disabled={isSaving}
           >
             Commission Terms
           </Button>
-          <Button 
+          <Button
             variant="outline"
             className="w-full justify-center text-red-600 border-red-200 hover:bg-red-50"
             disabled={isSaving}
@@ -421,16 +423,16 @@ export default function HotelManagerSettingsPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // Helper component
 interface ToggleSetting {
-  label: string;
-  description: string;
-  enabled: boolean;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
+  label: string
+  description: string
+  enabled: boolean
+  onChange: (value: boolean) => void
+  disabled?: boolean
 }
 
 function ToggleSetting({ label, description, enabled, onChange, disabled }: ToggleSetting) {
@@ -454,5 +456,5 @@ function ToggleSetting({ label, description, enabled, onChange, disabled }: Togg
         />
       </button>
     </div>
-  );
+  )
 }

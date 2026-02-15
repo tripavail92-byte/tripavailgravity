@@ -5,4 +5,4 @@ export const COMPANY = {
   websiteUrl: 'https://tripavail.com',
   // Update this with your real registered business address before going live.
   mailingAddress: 'TripAvail, Inc. — Address on file',
-} as const;
+} as const

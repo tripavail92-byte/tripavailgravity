@@ -2,7 +2,16 @@ import * as React from 'react'
 import { motion, type HTMLMotionProps } from 'motion/react'
 import { cn } from '@/lib/utils'
 
-export type GlassVariant = 'light' | 'dark' | 'card' | 'nav' | 'nav-bottom' | 'button' | 'overlay' | 'badge' | 'performance'
+export type GlassVariant =
+  | 'light'
+  | 'dark'
+  | 'card'
+  | 'nav'
+  | 'nav-bottom'
+  | 'button'
+  | 'overlay'
+  | 'badge'
+  | 'performance'
 
 export interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
@@ -71,14 +80,14 @@ const blurClasses: Record<string, string> = {
 
 /**
  * GlassCard - A reusable glassmorphism component
- * 
+ *
  * @example
  * ```tsx
  * <GlassCard variant="card" className="p-6 rounded-2xl">
  *   <h2>Premium Content</h2>
  * </GlassCard>
  * ```
- * 
+ *
  * @example Custom blur
  * ```tsx
  * <GlassCard variant="light" blur="xl" className="rounded-lg p-4">
@@ -87,16 +96,35 @@ const blurClasses: Record<string, string> = {
  * ```
  */
 export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ className, variant = 'light', blur, asSection, asArticle, asMotion, interactive, children, initial, animate, transition, exit, whileHover, whileTap, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = 'light',
+      blur,
+      asSection,
+      asArticle,
+      asMotion,
+      interactive,
+      children,
+      initial,
+      animate,
+      transition,
+      exit,
+      whileHover,
+      whileTap,
+      ...props
+    },
+    ref,
+  ) => {
     const glassClass = variantClasses[variant]
     const blurClass = blur ? blurClasses[blur] : ''
-    
+
     const classes = cn(
       glassClass,
       blurClass,
       'transition-all duration-300',
       interactive && 'hover:shadow-lg hover:shadow-primary/10 hover:scale-[1.01] cursor-pointer',
-      className
+      className,
     )
 
     // Motion version
@@ -120,17 +148,13 @@ export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
 
     // Semantic HTML version
     const Component = asSection ? 'section' : asArticle ? 'article' : 'div'
-    
+
     return (
-      <Component
-        ref={ref as any}
-        className={classes}
-        {...props}
-      >
+      <Component ref={ref as any} className={classes} {...props}>
         {children}
       </Component>
     )
-  }
+  },
 )
 
 GlassCard.displayName = 'GlassCard'
@@ -139,24 +163,22 @@ GlassCard.displayName = 'GlassCard'
  * GlassContent - Wrapper for content inside glass cards
  * Adds subtle padding and ensures good readability
  */
-export const GlassContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
-))
+export const GlassContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
+  ),
+)
 
 GlassContent.displayName = 'GlassContent'
 
 /**
  * GlassHeader - Header section for glass cards
  */
-export const GlassHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
-))
+export const GlassHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
+  ),
+)
 
 GlassHeader.displayName = 'GlassHeader'
 
@@ -191,11 +213,10 @@ GlassDescription.displayName = 'GlassDescription'
 /**
  * GlassFooter - Footer section for glass cards
  */
-export const GlassFooter = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
-))
+export const GlassFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
+  ),
+)
 
 GlassFooter.displayName = 'GlassFooter'

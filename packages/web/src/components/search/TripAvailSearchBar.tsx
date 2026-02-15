@@ -1,10 +1,22 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { 
-  Search, MapPin, Calendar, DollarSign, Star, Filter, 
-  X, Users, Clock, Sparkles,
-  History, TrendingUp,
-  Mic, MicOff, Mountain, Heart
+import {
+  Search,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Star,
+  Filter,
+  X,
+  Users,
+  Clock,
+  Sparkles,
+  History,
+  TrendingUp,
+  Mic,
+  MicOff,
+  Mountain,
+  Heart,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +40,11 @@ interface TripAvailSearchBarProps {
   onSearchOverlayToggle?: (isOpen: boolean, filters?: SearchFilters) => void
 }
 
-export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayToggle }: TripAvailSearchBarProps) {
+export function TripAvailSearchBar({
+  onSearch,
+  className = '',
+  onSearchOverlayToggle,
+}: TripAvailSearchBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [isListening, setIsListening] = useState(false)
@@ -41,7 +57,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     duration: '',
     priceRange: [0, 5000],
     minRating: 0,
-    experienceType: []
+    experienceType: [],
   })
 
   const searchRef = useRef<HTMLDivElement>(null)
@@ -51,7 +67,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
   const recentSearches = [
     { query: 'Bali beach resorts', category: 'hotels', timestamp: '2 hours ago' },
     { query: 'Paris city tour', category: 'tours', timestamp: '1 day ago' },
-    { query: 'Tokyo food experience', category: 'experiences', timestamp: '3 days ago' }
+    { query: 'Tokyo food experience', category: 'experiences', timestamp: '3 days ago' },
   ]
 
   // Trending destinations with popularity indicators
@@ -59,14 +75,14 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     { name: 'Bali, Indonesia', trend: '+25%', bookings: '2.3k', icon: '🏝️', popularity: 95 },
     { name: 'Paris, France', trend: '+18%', bookings: '1.8k', icon: '🗼', popularity: 88 },
     { name: 'Tokyo, Japan', trend: '+32%', bookings: '1.5k', icon: '🗾', popularity: 92 },
-    { name: 'Dubai, UAE', trend: '+15%', bookings: '1.2k', icon: '🏙️', popularity: 85 }
+    { name: 'Dubai, UAE', trend: '+15%', bookings: '1.2k', icon: '🏙️', popularity: 85 },
   ]
 
   // Smart suggestions based on user behavior
   const smartSuggestions = [
     { query: 'Beach resorts under $200', reason: 'Based on your budget preference' },
     { query: 'Weekend getaways near you', reason: 'Perfect for short trips' },
-    { query: 'Romantic destinations', reason: 'Popular with similar travelers' }
+    { query: 'Romantic destinations', reason: 'Popular with similar travelers' },
   ]
 
   // Quick filter chips
@@ -76,7 +92,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     { id: 'adventure', label: 'Adventure', icon: Mountain, color: 'bg-orange-500' },
     { id: 'luxury', label: 'Luxury', icon: Star, color: 'bg-purple-500' },
     { id: 'family', label: 'Family Friendly', icon: Users, color: 'bg-pink-500' },
-    { id: 'romantic', label: 'Romantic', icon: Heart, color: 'bg-red-500' }
+    { id: 'romantic', label: 'Romantic', icon: Heart, color: 'bg-red-500' },
   ]
 
   // Duration options
@@ -85,7 +101,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     { value: '1-3', label: '1-3 Days' },
     { value: '4-7', label: '4-7 Days' },
     { value: '8-14', label: '1-2 Weeks' },
-    { value: '15+', label: '2+ Weeks' }
+    { value: '15+', label: '2+ Weeks' },
   ]
 
   // Experience types
@@ -95,7 +111,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     { id: 'nature', label: 'Nature', icon: '🌿' },
     { id: 'food', label: 'Food & Wine', icon: '🍷' },
     { id: 'wellness', label: 'Wellness', icon: '🧘' },
-    { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦' }
+    { id: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦' },
   ]
 
   // Rating options
@@ -104,37 +120,38 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
     { value: 3, label: '3+ Stars' },
     { value: 4, label: '4+ Stars' },
     { value: 4.5, label: '4.5+ Stars' },
-    { value: 5, label: '5 Stars Only' }
+    { value: 5, label: '5 Stars Only' },
   ]
 
   // Voice search functionality
   const startVoiceSearch = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+      const SpeechRecognition =
+        (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
       recognitionRef.current = new SpeechRecognition()
-      
+
       recognitionRef.current.continuous = false
       recognitionRef.current.interimResults = false
       recognitionRef.current.lang = 'en-US'
-      
+
       recognitionRef.current.onstart = () => {
         setIsListening(true)
       }
-      
+
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
-        setFilters(prev => ({ ...prev, query: transcript }))
+        setFilters((prev) => ({ ...prev, query: transcript }))
         setIsListening(false)
       }
-      
+
       recognitionRef.current.onerror = () => {
         setIsListening(false)
       }
-      
+
       recognitionRef.current.onend = () => {
         setIsListening(false)
       }
-      
+
       recognitionRef.current.start()
     } else {
       alert('Voice search is not supported in your browser')
@@ -156,11 +173,11 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
       recent.unshift({
         query: filters.query,
         category: filters.category,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
       localStorage.setItem('recentSearches', JSON.stringify(recent.slice(0, 10)))
     }
-    
+
     onSearch(filters)
     setIsExpanded(false)
     setShowFilters(false)
@@ -170,7 +187,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
   // Handle quick filter click
   const handleQuickFilterClick = (filterId: string) => {
     let updatedFilters = { ...filters }
-    
+
     switch (filterId) {
       case 'budget':
         updatedFilters.priceRange = [0, 100]
@@ -192,18 +209,18 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
         updatedFilters.experienceType = ['wellness']
         break
     }
-    
+
     setFilters(updatedFilters)
     onSearch(updatedFilters)
   }
 
   // Handle experience type toggle
   const handleExperienceTypeToggle = (typeId: string) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       experienceType: prev.experienceType.includes(typeId)
-        ? prev.experienceType.filter(id => id !== typeId)
-        : [...prev.experienceType, typeId]
+        ? prev.experienceType.filter((id) => id !== typeId)
+        : [...prev.experienceType, typeId],
     }))
   }
 
@@ -216,7 +233,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
       duration: '',
       priceRange: [0, 5000],
       minRating: 0,
-      experienceType: []
+      experienceType: [],
     })
   }
 
@@ -268,7 +285,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
             <Input
               placeholder="Search destinations, hotels, or experiences..."
               value={filters.query}
-              onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
+              onChange={(e) => setFilters((prev) => ({ ...prev, query: e.target.value }))}
               onFocus={() => {
                 setIsExpanded(true)
                 onSearchOverlayToggle?.(true, filters)
@@ -280,8 +297,8 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
               <motion.button
                 onClick={isListening ? stopVoiceSearch : startVoiceSearch}
                 className={`p-2 rounded-lg transition-colors ${
-                  isListening 
-                    ? 'bg-red-500/20 backdrop-blur-sm text-red-600 dark:text-red-400' 
+                  isListening
+                    ? 'bg-red-500/20 backdrop-blur-sm text-red-600 dark:text-red-400'
                     : 'glass-chip'
                 }`}
                 whileTap={{ scale: 0.95 }}
@@ -337,7 +354,9 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
               className="mt-3 overflow-hidden"
             >
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Quick filters:</span>
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Quick filters:
+                </span>
                 {quickFilters.map((filter) => (
                   <motion.button
                     key={filter.id}
@@ -356,155 +375,171 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
           )}
         </AnimatePresence>
 
-      {/* Recent Searches Dropdown */}
-      <AnimatePresence>
-        {showRecentSearches && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50"
-          >
-            <Card className="p-4 shadow-modern border-0 glass-card">
-              <div className="space-y-4">
-                {/* Recent Searches */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <History className="w-4 h-4 text-gray-400" />
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Recent Searches</h4>
-                  </div>
-                  <div className="space-y-1">
-                    {recentSearches.slice(0, 4).map((search, index) => (
-                      <motion.button
-                        key={index}
-                        onClick={() => {
-                          setFilters(prev => ({ ...prev, query: search.query }))
-                          setIsExpanded(false)
-                        }}
-                        className="w-full flex items-center justify-between p-2 text-left glass-suggestion rounded-lg"
-                        whileHover={{ x: 4 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">{search.query}</span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                              {search.category}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-400">{search.timestamp}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Smart Suggestions */}
-                <div className="space-y-3 border-t border-white/10 dark:border-gray-700 pt-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Smart Suggestions</h4>
-                  </div>
-                  <div className="space-y-1">
-                    {smartSuggestions.slice(0, 3).map((suggestion, index) => (
-                      <motion.button
-                        key={index}
-                        onClick={() => {
-                          setFilters(prev => ({ ...prev, query: suggestion.query }))
-                          handleSearch()
-                        }}
-                        className="w-full flex items-start gap-3 p-2 text-left glass-suggestion rounded-lg"
-                        whileHover={{ x: 4 }}
-                      >
-                        <Sparkles className="w-4 h-4 text-primary mt-0.5" />
-                        <div>
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{suggestion.query}</span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{suggestion.reason}</p>
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Trending Destinations */}
-      <AnimatePresence>
-        {isExpanded && filters.query && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50"
-          >
-            <Card className="p-4 shadow-modern border-0 glass-card">
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-primary" />
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trending Destinations</h4>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {trendingDestinations
-                      .filter(dest => dest.name.toLowerCase().includes(filters.query.toLowerCase()))
-                      .slice(0, 4)
-                      .map((destination) => (
+        {/* Recent Searches Dropdown */}
+        <AnimatePresence>
+          {showRecentSearches && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 z-50"
+            >
+              <Card className="p-4 shadow-modern border-0 glass-card">
+                <div className="space-y-4">
+                  {/* Recent Searches */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <History className="w-4 h-4 text-gray-400" />
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Recent Searches
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      {recentSearches.slice(0, 4).map((search, index) => (
                         <motion.button
-                          key={destination.name}
+                          key={index}
                           onClick={() => {
-                            setFilters(prev => ({ ...prev, query: destination.name }))
-                            handleSearch()
+                            setFilters((prev) => ({ ...prev, query: search.query }))
+                            setIsExpanded(false)
                           }}
-                          className="flex items-center justify-between p-3 text-left glass-suggestion rounded-lg"
-                          whileHover={{ scale: 1.02 }}
+                          className="w-full flex items-center justify-between p-2 text-left glass-suggestion rounded-lg"
+                          whileHover={{ x: 4 }}
                         >
                           <div className="flex items-center gap-3">
-                            <span className="text-lg">{destination.icon}</span>
+                            <Clock className="w-4 h-4 text-gray-400" />
                             <div>
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {destination.name}
+                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                                {search.query}
                               </span>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs px-2 py-0">
-                                  {destination.trend}
-                                </Badge>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {destination.bookings} bookings
-                                </span>
-                              </div>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                {search.category}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                            <span className="text-xs font-medium text-primary">Hot</span>
+                          <span className="text-xs text-gray-400">{search.timestamp}</span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Smart Suggestions */}
+                  <div className="space-y-3 border-t border-white/10 dark:border-gray-700 pt-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Smart Suggestions
+                      </h4>
+                    </div>
+                    <div className="space-y-1">
+                      {smartSuggestions.slice(0, 3).map((suggestion, index) => (
+                        <motion.button
+                          key={index}
+                          onClick={() => {
+                            setFilters((prev) => ({ ...prev, query: suggestion.query }))
+                            handleSearch()
+                          }}
+                          className="w-full flex items-start gap-3 p-2 text-left glass-suggestion rounded-lg"
+                          whileHover={{ x: 4 }}
+                        >
+                          <Sparkles className="w-4 h-4 text-primary mt-0.5" />
+                          <div>
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              {suggestion.query}
+                            </span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {suggestion.reason}
+                            </p>
                           </div>
                         </motion.button>
                       ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Advanced Filters Panel */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50"
-          >
-            <Card className="p-6 shadow-modern border-0 glass-card">
+        {/* Trending Destinations */}
+        <AnimatePresence>
+          {isExpanded && filters.query && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 z-50"
+            >
+              <Card className="p-4 shadow-modern border-0 glass-card">
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-primary" />
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Trending Destinations
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {trendingDestinations
+                        .filter((dest) =>
+                          dest.name.toLowerCase().includes(filters.query.toLowerCase()),
+                        )
+                        .slice(0, 4)
+                        .map((destination) => (
+                          <motion.button
+                            key={destination.name}
+                            onClick={() => {
+                              setFilters((prev) => ({ ...prev, query: destination.name }))
+                              handleSearch()
+                            }}
+                            className="flex items-center justify-between p-3 text-left glass-suggestion rounded-lg"
+                            whileHover={{ scale: 1.02 }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{destination.icon}</span>
+                              <div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {destination.name}
+                                </span>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs px-2 py-0">
+                                    {destination.trend}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {destination.bookings} bookings
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                              <span className="text-xs font-medium text-primary">Hot</span>
+                            </div>
+                          </motion.button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Advanced Filters Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-full left-0 right-0 mt-2 z-50"
+            >
+              <Card className="p-6 shadow-modern border-0 glass-card">
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">Filters</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">
+                      Filters
+                    </h3>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -514,11 +549,7 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                       >
                         Clear all
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowFilters(false)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)}>
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
@@ -534,7 +565,9 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                       <Input
                         placeholder="Any location"
                         value={filters.location}
-                        onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, location: e.target.value }))
+                        }
                         className="glass-chip"
                       />
                     </div>
@@ -547,7 +580,9 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                       </label>
                       <select
                         value={filters.duration}
-                        onChange={(e) => setFilters(prev => ({ ...prev, duration: e.target.value }))}
+                        onChange={(e) =>
+                          setFilters((prev) => ({ ...prev, duration: e.target.value }))
+                        }
                         className="w-full p-2 rounded-lg glass-chip text-gray-900 dark:text-foreground"
                       >
                         {durationOptions.map((option) => (
@@ -567,7 +602,12 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                       <div className="px-3">
                         <Slider
                           value={filters.priceRange}
-                          onValueChange={(value) => setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))}
+                          onValueChange={(value) =>
+                            setFilters((prev) => ({
+                              ...prev,
+                              priceRange: value as [number, number],
+                            }))
+                          }
                           max={5000}
                           min={0}
                           step={50}
@@ -590,10 +630,16 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                         {ratingOptions.map((option) => (
                           <Button
                             key={option.value}
-                            variant={filters.minRating === option.value ? "default" : "outline"}
+                            variant={filters.minRating === option.value ? 'default' : 'outline'}
                             size="sm"
-                            onClick={() => setFilters(prev => ({ ...prev, minRating: option.value }))}
-                            className={filters.minRating === option.value ? "bg-primary hover:bg-primary/90" : "glass-chip"}
+                            onClick={() =>
+                              setFilters((prev) => ({ ...prev, minRating: option.value }))
+                            }
+                            className={
+                              filters.minRating === option.value
+                                ? 'bg-primary hover:bg-primary/90'
+                                : 'glass-chip'
+                            }
                           >
                             {option.label}
                           </Button>
@@ -611,13 +657,15 @@ export function TripAvailSearchBar({ onSearch, className = '', onSearchOverlayTo
                         {experienceTypes.map((type) => (
                           <Button
                             key={type.id}
-                            variant={filters.experienceType.includes(type.id) ? "default" : "outline"}
+                            variant={
+                              filters.experienceType.includes(type.id) ? 'default' : 'outline'
+                            }
                             size="sm"
                             onClick={() => handleExperienceTypeToggle(type.id)}
                             className={`${
-                              filters.experienceType.includes(type.id) 
-                                ? "bg-primary hover:bg-primary/90" 
-                                : "glass-chip"
+                              filters.experienceType.includes(type.id)
+                                ? 'bg-primary hover:bg-primary/90'
+                                : 'glass-chip'
                             }`}
                           >
                             <span className="mr-1">{type.icon}</span>

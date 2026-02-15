@@ -45,9 +45,24 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
     { label: 'Legal & Policies', icon: ShieldCheck, href: '/legal' },
   ],
   tour_operator: [
-    { label: 'Create New Tour Packages', icon: Plus, href: '/operator/tours/new', subtext: 'Design a new tour experience' },
-    { label: 'Tour Operator Setup', icon: MapPin, href: '/operator/setup', subtext: 'Complete your profile' },
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/operator/dashboard', subtext: '5 live • 2 draft' },
+    {
+      label: 'Create New Tour Packages',
+      icon: Plus,
+      href: '/operator/tours/new',
+      subtext: 'Design a new tour experience',
+    },
+    {
+      label: 'Tour Operator Setup',
+      icon: MapPin,
+      href: '/operator/setup',
+      subtext: 'Complete your profile',
+    },
+    {
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      href: '/operator/dashboard',
+      subtext: '5 live • 2 draft',
+    },
     { label: 'Calendar', icon: Calendar, href: '/operator/calendar' },
     { label: 'Bookings', icon: BookCheck, href: '/operator/bookings' },
     { label: 'Verification', icon: ShieldCheck, href: '/operator/verification' },

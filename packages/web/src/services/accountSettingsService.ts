@@ -1,6 +1,6 @@
 /**
  * Account Settings Service
- * 
+ *
  * Handles all account-related settings for travellers
  */
 
@@ -11,25 +11,25 @@ export interface AccountSettings {
   user_id: string
   // Security Settings
   two_factor_enabled: boolean
-  
+
   // Notification Preferences
   email_notifications_enabled: boolean
   booking_reminders: boolean
   marketing_emails: boolean
   push_notifications_enabled: boolean
   sms_notifications_enabled: boolean
-  
+
   // Privacy Settings
   profile_visibility: 'public' | 'private' | 'friends_only'
   show_activity: boolean
   allow_messages_from_anyone: boolean
   share_location_with_hosts: boolean
-  
+
   // App Preferences
   theme: 'light' | 'dark' | 'auto'
   language: string
   currency: string
-  
+
   updated_at: string
 }
 
@@ -69,25 +69,28 @@ class AccountSettingsServiceClass {
           theme: 'auto',
           language: 'en',
           currency: 'USD',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         }
       }
 
-      return (data as unknown) as AccountSettings
+      return data as unknown as AccountSettings
     } catch (error) {
       console.error('Failed to fetch settings:', error)
       throw error
     }
   }
 
-  async updateSettings(userId: string, updates: Partial<AccountSettings>): Promise<AccountSettings> {
+  async updateSettings(
+    userId: string,
+    updates: Partial<AccountSettings>,
+  ): Promise<AccountSettings> {
     try {
       const { data, error } = await supabase
         .from('account_settings' as any)
         .upsert({
           user_id: userId,
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -95,7 +98,7 @@ class AccountSettingsServiceClass {
       if (error) throw error
 
       toast.success('Settings updated successfully')
-      return (data as unknown) as AccountSettings
+      return data as unknown as AccountSettings
     } catch (error) {
       console.error('Failed to update settings:', error)
       toast.error('Failed to update settings')
@@ -106,56 +109,59 @@ class AccountSettingsServiceClass {
   // Toggle individual settings
   async toggleEmailNotifications(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      email_notifications_enabled: enabled
+      email_notifications_enabled: enabled,
     })
   }
 
   async toggleBookingReminders(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      booking_reminders: enabled
+      booking_reminders: enabled,
     })
   }
 
   async toggleMarketingEmails(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      marketing_emails: enabled
+      marketing_emails: enabled,
     })
   }
 
   async togglePushNotifications(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      push_notifications_enabled: enabled
+      push_notifications_enabled: enabled,
     })
   }
 
   async toggleSmsNotifications(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      sms_notifications_enabled: enabled
+      sms_notifications_enabled: enabled,
     })
   }
 
   // Privacy settings
-  async setProfileVisibility(userId: string, visibility: 'public' | 'private' | 'friends_only'): Promise<void> {
+  async setProfileVisibility(
+    userId: string,
+    visibility: 'public' | 'private' | 'friends_only',
+  ): Promise<void> {
     await this.updateSettings(userId, {
-      profile_visibility: visibility
+      profile_visibility: visibility,
     })
   }
 
   async toggleShowActivity(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      show_activity: enabled
+      show_activity: enabled,
     })
   }
 
   async toggleAllowMessagesFromAnyone(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      allow_messages_from_anyone: enabled
+      allow_messages_from_anyone: enabled,
     })
   }
 
   async toggleShareLocationWithHosts(userId: string, enabled: boolean): Promise<void> {
     await this.updateSettings(userId, {
-      share_location_with_hosts: enabled
+      share_location_with_hosts: enabled,
     })
   }
 
@@ -189,7 +195,7 @@ class AccountSettingsServiceClass {
   async changePassword(_oldPassword: string, newPassword: string): Promise<void> {
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       })
 
       if (error) throw error

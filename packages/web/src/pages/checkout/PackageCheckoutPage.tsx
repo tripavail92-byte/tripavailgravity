@@ -1,82 +1,82 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react';
-import { format } from 'date-fns';
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react'
+import { format } from 'date-fns'
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass';
-import { getPackageById } from '@/features/package-creation/services/packageService';
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass'
+import { getPackageById } from '@/features/package-creation/services/packageService'
 import {
   createPackageBookingWithValidation,
   packageBookingService,
   type PackageBooking,
-} from '@/features/booking';
-import { useAuth } from '@/hooks/useAuth';
-import { getStripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
+} from '@/features/booking'
+import { useAuth } from '@/hooks/useAuth'
+import { getStripe } from '@/lib/stripe'
+import { supabase } from '@/lib/supabase'
 
 interface CountdownTimer {
-  minutes: number;
-  seconds: number;
+  minutes: number
+  seconds: number
 }
 
 interface CheckoutState {
-  checkIn: string;
-  checkOut: string;
-  guestCount: number;
+  checkIn: string
+  checkOut: string
+  guestCount: number
   pricing?: {
-    total_price: number;
-    price_per_night: number;
-    number_of_nights: number;
-  };
+    total_price: number
+    price_per_night: number
+    number_of_nights: number
+  }
 }
 
 export default function PackageCheckoutPage() {
-  const { id } = useParams<{ id: string }>();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const state = location.state as CheckoutState | undefined;
+  const state = location.state as CheckoutState | undefined
 
-  const [packageData, setPackageData] = useState<any | null>(null);
-  const [pricing, setPricing] = useState<CheckoutState['pricing'] | null>(state?.pricing || null);
-  const [pendingBooking, setPendingBooking] = useState<PackageBooking | null>(null);
-  const [countdown, setCountdown] = useState<CountdownTimer>({ minutes: 10, seconds: 0 });
-  const [loading, setLoading] = useState(true);
-  const [processingBooking, setProcessingBooking] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false);
-  const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null);
-  const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false);
+  const [packageData, setPackageData] = useState<any | null>(null)
+  const [pricing, setPricing] = useState<CheckoutState['pricing'] | null>(state?.pricing || null)
+  const [pendingBooking, setPendingBooking] = useState<PackageBooking | null>(null)
+  const [countdown, setCountdown] = useState<CountdownTimer>({ minutes: 10, seconds: 0 })
+  const [loading, setLoading] = useState(true)
+  const [processingBooking, setProcessingBooking] = useState(false)
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
+  const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null)
+  const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false)
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) return
 
     const fetchPackage = async () => {
       try {
-        const pkg = await getPackageById(id);
-        setPackageData(pkg);
+        const pkg = await getPackageById(id)
+        setPackageData(pkg)
       } catch (error) {
-        console.error('Error fetching package:', error);
-        setPackageData(null);
+        console.error('Error fetching package:', error)
+        setPackageData(null)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchPackage();
-  }, [id]);
+    fetchPackage()
+  }, [id])
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname));
+      navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate])
 
   useEffect(() => {
     const loadPricing = async () => {
@@ -85,69 +85,70 @@ export default function PackageCheckoutPage() {
         typeof pricing.number_of_nights === 'number' &&
         pricing.number_of_nights > 0 &&
         typeof pricing.total_price === 'number' &&
-        pricing.total_price > 0;
+        pricing.total_price > 0
 
-      if (!id || !packageData?.id || !state?.checkIn || !state?.checkOut || hasValidPricing) return;
+      if (!id || !packageData?.id || !state?.checkIn || !state?.checkOut || hasValidPricing) return
 
       try {
         // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
         const calculated = await packageBookingService.calculatePrice(
           packageData.id,
           state.checkIn,
-          state.checkOut
-        );
-        setPricing(calculated);
+          state.checkOut,
+        )
+        setPricing(calculated)
       } catch (error) {
-        console.error('Error calculating price:', error);
+        console.error('Error calculating price:', error)
       }
-    };
+    }
 
-    loadPricing();
-  }, [id, packageData?.id, state?.checkIn, state?.checkOut, pricing]);
+    loadPricing()
+  }, [id, packageData?.id, state?.checkIn, state?.checkOut, pricing])
 
   useEffect(() => {
-    if (!pendingBooking?.expires_at) return;
+    if (!pendingBooking?.expires_at) return
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const expiresAt = new Date(pendingBooking.expires_at!);
-      const diff = expiresAt.getTime() - now.getTime();
+      const now = new Date()
+      const expiresAt = new Date(pendingBooking.expires_at!)
+      const diff = expiresAt.getTime() - now.getTime()
 
       if (diff <= 0) {
-        clearInterval(interval);
-        setPendingBooking(null);
-        setCountdown({ minutes: 0, seconds: 0 });
-        setBookingError('Your booking hold has expired. Please try again.');
-        return;
+        clearInterval(interval)
+        setPendingBooking(null)
+        setCountdown({ minutes: 0, seconds: 0 })
+        setBookingError('Your booking hold has expired. Please try again.')
+        return
       }
 
-      const minutes = Math.floor(diff / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      setCountdown({ minutes, seconds });
-    }, 1000);
+      const minutes = Math.floor(diff / 60000)
+      const seconds = Math.floor((diff % 60000) / 1000)
+      setCountdown({ minutes, seconds })
+    }, 1000)
 
-    return () => clearInterval(interval);
-  }, [pendingBooking?.expires_at]);
+    return () => clearInterval(interval)
+  }, [pendingBooking?.expires_at])
 
   useEffect(() => {
     const createPaymentIntent = async () => {
-      if (!pendingBooking?.id || clientSecret || creatingPaymentIntent || paymentIntentAttempted) return;
+      if (!pendingBooking?.id || clientSecret || creatingPaymentIntent || paymentIntentAttempted)
+        return
 
-      setCreatingPaymentIntent(true);
-      setBookingError(null);
-      setPaymentIntentAttempted(true);
+      setCreatingPaymentIntent(true)
+      setBookingError(null)
+      setPaymentIntentAttempted(true)
 
       try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        let accessToken = sessionData?.session?.access_token;
+        const { data: sessionData } = await supabase.auth.getSession()
+        let accessToken = sessionData?.session?.access_token
 
         if (!accessToken) {
-          const { data: refreshed } = await supabase.auth.refreshSession();
-          accessToken = refreshed?.session?.access_token;
+          const { data: refreshed } = await supabase.auth.refreshSession()
+          accessToken = refreshed?.session?.access_token
         }
 
         if (!accessToken) {
-          throw new Error('Session expired. Please sign in again.');
+          throw new Error('Session expired. Please sign in again.')
         }
 
         const { data, error } = await supabase.functions.invoke('stripe-create-payment-intent', {
@@ -155,52 +156,55 @@ export default function PackageCheckoutPage() {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-        });
+        })
 
         if (error) {
           if ((error as any)?.status === 401) {
-            throw new Error('Session expired. Please sign in again.');
+            throw new Error('Session expired. Please sign in again.')
           }
-          throw error;
+          throw error
         }
 
         if (!data?.ok) {
-          throw new Error(data?.error || 'Failed to start payment');
+          throw new Error(data?.error || 'Failed to start payment')
         }
 
         if (!data?.client_secret) {
-          throw new Error('No client secret returned');
+          throw new Error('No client secret returned')
         }
 
-        setClientSecret(String(data.client_secret));
+        setClientSecret(String(data.client_secret))
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to start payment';
-        setBookingError(message);
-        if (message.toLowerCase().includes('sign in again') || message.toLowerCase().includes('not authenticated')) {
-          navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname));
+        const message = err instanceof Error ? err.message : 'Failed to start payment'
+        setBookingError(message)
+        if (
+          message.toLowerCase().includes('sign in again') ||
+          message.toLowerCase().includes('not authenticated')
+        ) {
+          navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
         }
       } finally {
-        setCreatingPaymentIntent(false);
+        setCreatingPaymentIntent(false)
       }
-    };
+    }
 
-    createPaymentIntent();
-  }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, paymentIntentAttempted, navigate]);
+    createPaymentIntent()
+  }, [pendingBooking?.id, clientSecret, creatingPaymentIntent, paymentIntentAttempted, navigate])
 
   useEffect(() => {
     if (pendingBooking?.id) {
-      setPaymentIntentAttempted(false);
+      setPaymentIntentAttempted(false)
     }
-  }, [pendingBooking?.id]);
+  }, [pendingBooking?.id])
 
   const handleCreatePendingBooking = async () => {
     if (!id || !user?.id || !state?.checkIn || !state?.checkOut || !state?.guestCount) {
-      setBookingError('Missing booking details. Please try again.');
-      return;
+      setBookingError('Missing booking details. Please try again.')
+      return
     }
 
-    setProcessingBooking(true);
-    setBookingError(null);
+    setProcessingBooking(true)
+    setBookingError(null)
 
     try {
       // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
@@ -210,71 +214,76 @@ export default function PackageCheckoutPage() {
         check_in_date: state.checkIn,
         check_out_date: state.checkOut,
         guest_count: state.guestCount,
-      });
+      })
 
-      setPendingBooking(result.booking as PackageBooking);
-      setClientSecret(null);
+      setPendingBooking(result.booking as PackageBooking)
+      setClientSecret(null)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create booking hold';
-      setBookingError(message);
-      console.error('Package booking creation error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to create booking hold'
+      setBookingError(message)
+      console.error('Package booking creation error:', error)
     } finally {
-      setProcessingBooking(false);
+      setProcessingBooking(false)
     }
-  };
+  }
 
-  const stripePromise = getStripe();
+  const stripePromise = getStripe()
 
   useEffect(() => {
-    let cancelled = false;
+    let cancelled = false
     stripePromise
-      .then(stripe => {
-        if (!cancelled) setStripeAvailable(!!stripe);
+      .then((stripe) => {
+        if (!cancelled) setStripeAvailable(!!stripe)
       })
       .catch(() => {
-        if (!cancelled) setStripeAvailable(false);
-      });
+        if (!cancelled) setStripeAvailable(false)
+      })
 
     return () => {
-      cancelled = true;
-    };
-  }, [stripePromise]);
+      cancelled = true
+    }
+  }, [stripePromise])
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
       </div>
-    );
+    )
   }
 
   if (!packageData || !state?.checkIn || !state?.checkOut) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Package not found</h1>
-        <Button onClick={() => navigate(-1)} variant="default" className="rounded-2xl px-8 h-12 font-bold mt-8">
+        <Button
+          onClick={() => navigate(-1)}
+          variant="default"
+          className="rounded-2xl px-8 h-12 font-bold mt-8"
+        >
           Back
         </Button>
       </div>
-    );
+    )
   }
 
-  const checkInDate = format(new Date(state.checkIn), 'MMM d, yyyy');
-  const checkOutDate = format(new Date(state.checkOut), 'MMM d, yyyy');
-  const nights = pricing?.number_of_nights || 0;
+  const checkInDate = format(new Date(state.checkIn), 'MMM d, yyyy')
+  const checkOutDate = format(new Date(state.checkOut), 'MMM d, yyyy')
+  const nights = pricing?.number_of_nights || 0
 
-  const minNights = Number(packageData?.minimum_nights ?? 1);
-  const maxNights = Number(packageData?.maximum_nights ?? 30);
+  const minNights = Number(packageData?.minimum_nights ?? 1)
+  const maxNights = Number(packageData?.maximum_nights ?? 30)
   const computedNights = Math.round(
-    (new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const stayNights = nights || computedNights;
-  const isStayLengthValid = stayNights > 0 && stayNights >= minNights && stayNights <= maxNights;
+    (new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) /
+      (1000 * 60 * 60 * 24),
+  )
+  const stayNights = nights || computedNights
+  const isStayLengthValid = stayNights > 0 && stayNights >= minNights && stayNights <= maxNights
   const stayLengthMessage = !isStayLengthValid
     ? stayNights < minNights
       ? `Minimum ${minNights} nights required`
       : `Maximum ${maxNights} nights allowed`
-    : `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`;
+    : `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
@@ -302,31 +311,31 @@ export default function PackageCheckoutPage() {
               className="rounded-2xl shadow-modern"
             >
               <GlassContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <Badge variant="secondary" className="mb-2 capitalize">
-                    {packageData.package_type?.replace('-', ' ') || 'Package'}
-                  </Badge>
-                  <h2 className="text-2xl font-bold text-gray-900">{packageData.name}</h2>
-                </div>
-                {pendingBooking && (
-                  <div className="flex items-center gap-2 text-sm text-orange-600">
-                    <Clock className="w-4 h-4" />
-                    {countdown.minutes}:{countdown.seconds.toString().padStart(2, '0')}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <Badge variant="secondary" className="mb-2 capitalize">
+                      {packageData.package_type?.replace('-', ' ') || 'Package'}
+                    </Badge>
+                    <h2 className="text-2xl font-bold text-gray-900">{packageData.name}</h2>
                   </div>
-                )}
-              </div>
+                  {pendingBooking && (
+                    <div className="flex items-center gap-2 text-sm text-orange-600">
+                      <Clock className="w-4 h-4" />
+                      {countdown.minutes}:{countdown.seconds.toString().padStart(2, '0')}
+                    </div>
+                  )}
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  {checkInDate} → {checkOutDate}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    {checkInDate} → {checkOutDate}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    {state.guestCount} guest{state.guestCount > 1 ? 's' : ''}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
-                  {state.guestCount} guest{state.guestCount > 1 ? 's' : ''}
-                </div>
-              </div>
               </GlassContent>
             </GlassCard>
 
@@ -337,14 +346,17 @@ export default function PackageCheckoutPage() {
             >
               <h3 className="text-lg font-bold text-gray-900 mb-3">Next Steps</h3>
               <p className="text-gray-600 text-sm">
-                We hold your booking for 10 minutes while you complete payment. If the timer expires,
-                you will need to start over.
+                We hold your booking for 10 minutes while you complete payment. If the timer
+                expires, you will need to start over.
               </p>
-                <p className={
-                  'mt-3 text-xs ' + (isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium')
-                }>
-                  {stayLengthMessage}
-                </p>
+              <p
+                className={
+                  'mt-3 text-xs ' +
+                  (isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium')
+                }
+              >
+                {stayLengthMessage}
+              </p>
             </motion.div>
 
             {bookingError && (
@@ -360,122 +372,124 @@ export default function PackageCheckoutPage() {
                 <GlassTitle>Price Summary</GlassTitle>
               </GlassHeader>
               <GlassContent className="p-6 pt-4">
-              <div className="space-y-3 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span>${pricing?.price_per_night || 0} × {nights} night{nights !== 1 ? 's' : ''}</span>
-                  <span>${pricing?.total_price || 0}</span>
+                <div className="space-y-3 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>
+                      ${pricing?.price_per_night || 0} × {nights} night{nights !== 1 ? 's' : ''}
+                    </span>
+                    <span>${pricing?.total_price || 0}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
+                    <span>Total</span>
+                    <span>${pricing?.total_price || 0}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
-                  <span>Total</span>
-                  <span>${pricing?.total_price || 0}</span>
-                </div>
-              </div>
 
-              {!pendingBooking ? (
-                <>
-                  <Button
-                    className="w-full h-12 mt-6 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
-                    onClick={handleCreatePendingBooking}
-                    disabled={processingBooking || !isStayLengthValid}
-                  >
-                    {processingBooking ? 'Starting checkout...' : 'Continue to Payment'}
-                  </Button>
+                {!pendingBooking ? (
+                  <>
+                    <Button
+                      className="w-full h-12 mt-6 text-base font-semibold bg-primary hover:bg-primary/90 text-white"
+                      onClick={handleCreatePendingBooking}
+                      disabled={processingBooking || !isStayLengthValid}
+                    >
+                      {processingBooking ? 'Starting checkout...' : 'Continue to Payment'}
+                    </Button>
 
-                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                    <Shield className="w-4 h-4 text-emerald-500" />
-                    Secure checkout. You’ll enter card details next.
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                    <div className="text-sm font-semibold text-gray-900 mb-3">Payment</div>
+                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                      <Shield className="w-4 h-4 text-emerald-500" />
+                      Secure checkout. You’ll enter card details next.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                      <div className="text-sm font-semibold text-gray-900 mb-3">Payment</div>
 
-                    {stripeAvailable === false ? (
-                      <div className="text-sm text-red-600">
-                        Payments are not configured.
-                      </div>
-                    ) : !clientSecret ? (
-                      <div className="text-sm text-gray-600">
-                        {creatingPaymentIntent ? 'Preparing secure payment...' : 'Preparing secure payment...'}
-                      </div>
-                    ) : (
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <PackagePaymentForm
-                          bookingId={pendingBooking.id}
-                          total={Number(pricing?.total_price || 0)}
-                        />
-                      </Elements>
-                    )}
-                  </div>
+                      {stripeAvailable === false ? (
+                        <div className="text-sm text-red-600">Payments are not configured.</div>
+                      ) : !clientSecret ? (
+                        <div className="text-sm text-gray-600">
+                          {creatingPaymentIntent
+                            ? 'Preparing secure payment...'
+                            : 'Preparing secure payment...'}
+                        </div>
+                      ) : (
+                        <Elements stripe={stripePromise} options={{ clientSecret }}>
+                          <PackagePaymentForm
+                            bookingId={pendingBooking.id}
+                            total={Number(pricing?.total_price || 0)}
+                          />
+                        </Elements>
+                      )}
+                    </div>
 
-                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-                    <Shield className="w-4 h-4 text-emerald-500" />
-                    Your reservation expires when the timer ends.
-                  </div>
-                </>
-              )}
+                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                      <Shield className="w-4 h-4 text-emerald-500" />
+                      Your reservation expires when the timer ends.
+                    </div>
+                  </>
+                )}
               </GlassContent>
             </GlassCard>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function PackagePaymentForm(props: { bookingId: string; total: number }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const navigate = useNavigate();
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [paymentReady, setPaymentReady] = useState(false);
+  const stripe = useStripe()
+  const elements = useElements()
+  const navigate = useNavigate()
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [paymentReady, setPaymentReady] = useState(false)
 
   const handlePay = async () => {
-    if (!stripe || !elements) return;
-    const paymentElement = elements.getElement(PaymentElement);
+    if (!stripe || !elements) return
+    const paymentElement = elements.getElement(PaymentElement)
     if (!paymentElement) {
-      setError('Payment form is still loading. Please wait a moment and try again.');
-      return;
+      setError('Payment form is still loading. Please wait a moment and try again.')
+      return
     }
-    setSubmitting(true);
-    setError(null);
+    setSubmitting(true)
+    setError(null)
 
     try {
       const returnUrl =
         window.location.origin +
-        `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`;
+        `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`
 
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: { return_url: returnUrl },
         redirect: 'if_required',
-      });
+      })
 
       if (result.error) {
-        throw new Error(result.error.message || 'Payment failed');
+        throw new Error(result.error.message || 'Payment failed')
       }
 
-      const paymentIntentId = result.paymentIntent?.id;
+      const paymentIntentId = result.paymentIntent?.id
       if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
         navigate(
-          `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`
-        );
+          `/booking/package/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`,
+        )
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Payment failed');
+      setError(err instanceof Error ? err.message : 'Payment failed')
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-4">
       <PaymentElement
         onReady={() => setPaymentReady(true)}
         onChange={() => {
-          if (error) setError(null);
+          if (error) setError(null)
         }}
       />
 
@@ -493,5 +507,5 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
         {submitting ? 'Processing...' : `Pay $${Number(props.total || 0).toLocaleString()}`}
       </Button>
     </div>
-  );
+  )
 }

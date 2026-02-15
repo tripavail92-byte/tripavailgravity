@@ -7,7 +7,7 @@ function makeJwt(payload: Record<string, unknown>): string {
     const json = JSON.stringify(obj)
     const bytes = new TextEncoder().encode(json)
     let binary = ''
-    bytes.forEach(b => (binary += String.fromCharCode(b)))
+    bytes.forEach((b) => (binary += String.fromCharCode(b)))
     // btoa produces base64; convert to base64url
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
   }
@@ -36,7 +36,10 @@ describe('jwtDiagnostics', () => {
   it('detects expired token', () => {
     vi.setSystemTime(new Date('2026-02-11T00:00:00Z'))
     const nowSeconds = Math.floor(Date.now() / 1000)
-    const token = makeJwt({ exp: nowSeconds - 1, iss: 'https://zkhppxjeaizpyinfpecj.supabase.co/auth/v1' })
+    const token = makeJwt({
+      exp: nowSeconds - 1,
+      iss: 'https://zkhppxjeaizpyinfpecj.supabase.co/auth/v1',
+    })
     const result = diagnoseSupabaseJwt(token, 'https://zkhppxjeaizpyinfpecj.supabase.co')
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.reason).toBe('expired')
@@ -51,7 +54,10 @@ describe('jwtDiagnostics', () => {
   })
 
   it('treats correct issuer as valid', () => {
-    const token = makeJwt({ iss: 'https://zkhppxjeaizpyinfpecj.supabase.co/auth/v1', exp: 9999999999 })
+    const token = makeJwt({
+      iss: 'https://zkhppxjeaizpyinfpecj.supabase.co/auth/v1',
+      exp: 9999999999,
+    })
     const result = diagnoseSupabaseJwt(token, 'https://zkhppxjeaizpyinfpecj.supabase.co')
     expect(result).toEqual({ ok: true, reason: 'valid' })
   })

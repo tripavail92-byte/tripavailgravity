@@ -8,16 +8,24 @@ const glassBadgeVariants = cva(
     variants: {
       variant: {
         default: 'glass-badge text-foreground hover:shadow-sm',
-        light: 'bg-white/90 backdrop-blur-md border border-white/30 text-gray-900 shadow-sm hover:shadow-md hover:bg-white',
+        light:
+          'bg-white/90 backdrop-blur-md border border-white/30 text-gray-900 shadow-sm hover:shadow-md hover:bg-white',
         dark: 'bg-black/70 backdrop-blur-md border border-white/20 text-white hover:bg-black/80 hover:shadow-md hover:shadow-black/30',
-        primary: 'bg-primary/80 backdrop-blur-md text-primary-foreground border border-primary/40 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/30',
-        secondary: 'bg-secondary/80 backdrop-blur-md text-secondary-foreground border border-secondary/40 hover:bg-secondary/90 hover:shadow-md',
-        success: 'bg-green-500/80 backdrop-blur-md text-white border border-green-400/40 hover:bg-green-500/90 hover:shadow-md hover:shadow-green-500/30 animate-pulse-subtle',
-        warning: 'bg-yellow-500/80 backdrop-blur-md text-white border border-yellow-400/40 hover:bg-yellow-500/90 hover:shadow-md hover:shadow-yellow-500/30 animate-pulse-subtle',
-        error: 'bg-red-500/80 backdrop-blur-md text-white border border-red-400/40 hover:bg-red-500/90 hover:shadow-md hover:shadow-red-500/30 animate-pulse-subtle',
+        primary:
+          'bg-primary/80 backdrop-blur-md text-primary-foreground border border-primary/40 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/30',
+        secondary:
+          'bg-secondary/80 backdrop-blur-md text-secondary-foreground border border-secondary/40 hover:bg-secondary/90 hover:shadow-md',
+        success:
+          'bg-green-500/80 backdrop-blur-md text-white border border-green-400/40 hover:bg-green-500/90 hover:shadow-md hover:shadow-green-500/30 animate-pulse-subtle',
+        warning:
+          'bg-yellow-500/80 backdrop-blur-md text-white border border-yellow-400/40 hover:bg-yellow-500/90 hover:shadow-md hover:shadow-yellow-500/30 animate-pulse-subtle',
+        error:
+          'bg-red-500/80 backdrop-blur-md text-white border border-red-400/40 hover:bg-red-500/90 hover:shadow-md hover:shadow-red-500/30 animate-pulse-subtle',
         info: 'bg-blue-500/80 backdrop-blur-md text-white border border-blue-400/40 hover:bg-blue-500/90 hover:shadow-md hover:shadow-blue-500/30',
-        outline: 'bg-white/20 backdrop-blur-sm border border-white/40 text-foreground hover:bg-white/30 hover:shadow-sm',
-        ghost: 'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
+        outline:
+          'bg-white/20 backdrop-blur-sm border border-white/40 text-foreground hover:bg-white/30 hover:shadow-sm',
+        ghost:
+          'bg-transparent backdrop-blur-none hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
       },
       size: {
         default: 'px-2.5 py-0.5 text-xs',
@@ -30,12 +38,11 @@ const glassBadgeVariants = cva(
       variant: 'default',
       size: 'default',
     },
-  }
+  },
 )
 
 export interface GlassBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof glassBadgeVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof glassBadgeVariants> {
   /**
    * Custom blur intensity
    */
@@ -55,21 +62,21 @@ const blurClasses: Record<string, string> = {
 
 /**
  * GlassBadge - A glassmorphism badge component for labels, tags, and status indicators
- * 
+ *
  * @example
  * ```tsx
  * <GlassBadge variant="light">
  *   Featured
  * </GlassBadge>
  * ```
- * 
+ *
  * @example With icon
  * ```tsx
  * <GlassBadge variant="success" icon={<Check className="w-3 h-3" />}>
  *   Verified
  * </GlassBadge>
  * ```
- * 
+ *
  * @example Status badge
  * ```tsx
  * <GlassBadge variant="warning" size="sm">
@@ -79,12 +86,9 @@ const blurClasses: Record<string, string> = {
  */
 function GlassBadge({ className, variant, size, blur, icon, children, ...props }: GlassBadgeProps) {
   const blurClass = blur ? blurClasses[blur] : ''
-  
+
   return (
-    <div
-      className={cn(glassBadgeVariants({ variant, size }), blurClass, className)}
-      {...props}
-    >
+    <div className={cn(glassBadgeVariants({ variant, size }), blurClass, className)} {...props}>
       {icon && <span className="mr-1 inline-flex items-center">{icon}</span>}
       {children}
     </div>

@@ -1,1 +1,1 @@
-export { supabase } from '@tripavail/shared/core/client';
+export { supabase } from '@tripavail/shared/core/client'

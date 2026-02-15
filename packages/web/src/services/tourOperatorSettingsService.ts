@@ -1,6 +1,6 @@
 /**
  * Tour Operator Settings Service
- * 
+ *
  * Handles all business settings for tour operators
  */
 
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 
 export interface TourOperatorSettings {
   operator_id: string
-  
+
   // Business Information
   business_name: string
   business_registration_number: string
@@ -17,49 +17,48 @@ export interface TourOperatorSettings {
   business_phone: string
   business_email: string
   website_url: string
-  
+
   // Tour Pricing
   base_tour_price: number
   currency: string
   pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
-  
+
   // Payment Settings
   payment_method: string
   bank_account_number: string
   stripe_account_id: string
   payment_verified: boolean
-  
+
   // Cancellation & Refund Policy
   cancellation_policy: 'strict' | 'moderate' | 'flexible'
   cancellation_days_before: number
   refund_percentage: number
-  
+
   // Notification Settings
   booking_notifications: boolean
   tour_reminders: boolean
   messaging_notifications: boolean
   review_notifications: boolean
   payment_notifications: boolean
-  
+
   // Tour Management
   pause_bookings: boolean
   max_group_size: number
-  
+
   // Analytics Settings
   track_analytics: boolean
   track_bookings: boolean
-  
+
   // Security
   two_factor_enabled: boolean
-  
+
   updated_at: string
 }
 
 class TourOperatorSettingsServiceClass {
   async getSettings(operatorId: string): Promise<TourOperatorSettings> {
     try {
-      const { data, error } = await (supabase
-        .from('tour_operator_settings' as any) as any)
+      const { data, error } = await (supabase.from('tour_operator_settings' as any) as any)
         .select('*')
         .eq('operator_id', operatorId)
         .maybeSingle()
@@ -95,25 +94,27 @@ class TourOperatorSettingsServiceClass {
           track_analytics: true,
           track_bookings: true,
           two_factor_enabled: false,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         }
       }
 
-      return (data as unknown) as TourOperatorSettings
+      return data as unknown as TourOperatorSettings
     } catch (error) {
       console.error('Failed to fetch tour operator settings:', error)
       throw error
     }
   }
 
-  async updateSettings(operatorId: string, updates: Partial<TourOperatorSettings>): Promise<TourOperatorSettings> {
+  async updateSettings(
+    operatorId: string,
+    updates: Partial<TourOperatorSettings>,
+  ): Promise<TourOperatorSettings> {
     try {
-      const { data, error } = await (supabase
-        .from('tour_operator_settings' as any) as any)
+      const { data, error } = await (supabase.from('tour_operator_settings' as any) as any)
         .upsert({
           operator_id: operatorId,
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -121,7 +122,7 @@ class TourOperatorSettingsServiceClass {
       if (error) throw error
 
       toast.success('Tour operator settings updated')
-      return (data as unknown) as TourOperatorSettings
+      return data as unknown as TourOperatorSettings
     } catch (error) {
       console.error('Failed to update tour operator settings:', error)
       toast.error('Failed to update settings')
@@ -130,40 +131,52 @@ class TourOperatorSettingsServiceClass {
   }
 
   // Business information
-  async updateBusinessInfo(operatorId: string, info: {
-    business_name: string
-    business_registration_number: string
-    tax_id: string
-    business_phone: string
-    business_email: string
-    website_url: string
-  }): Promise<void> {
+  async updateBusinessInfo(
+    operatorId: string,
+    info: {
+      business_name: string
+      business_registration_number: string
+      tax_id: string
+      business_phone: string
+      business_email: string
+      website_url: string
+    },
+  ): Promise<void> {
     await this.updateSettings(operatorId, info)
   }
 
   // Tour Pricing
-  async updateTourPricing(operatorId: string, pricing: {
-    base_tour_price: number
-    pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
-  }): Promise<void> {
+  async updateTourPricing(
+    operatorId: string,
+    pricing: {
+      base_tour_price: number
+      pricing_strategy: 'fixed' | 'dynamic' | 'seasonal'
+    },
+  ): Promise<void> {
     await this.updateSettings(operatorId, pricing)
   }
 
   // Payment
-  async updatePaymentMethod(operatorId: string, payment: {
-    payment_method: string
-    bank_account_number: string
-    stripe_account_id: string
-  }): Promise<void> {
+  async updatePaymentMethod(
+    operatorId: string,
+    payment: {
+      payment_method: string
+      bank_account_number: string
+      stripe_account_id: string
+    },
+  ): Promise<void> {
     await this.updateSettings(operatorId, payment)
   }
 
   // Cancellation & Refund Policy
-  async updateCancellationPolicy(operatorId: string, policy: {
-    cancellation_policy: 'strict' | 'moderate' | 'flexible'
-    cancellation_days_before: number
-    refund_percentage: number
-  }): Promise<void> {
+  async updateCancellationPolicy(
+    operatorId: string,
+    policy: {
+      cancellation_policy: 'strict' | 'moderate' | 'flexible'
+      cancellation_days_before: number
+      refund_percentage: number
+    },
+  ): Promise<void> {
     await this.updateSettings(operatorId, policy)
   }
 

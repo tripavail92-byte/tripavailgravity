@@ -1,11 +1,14 @@
 import { AlignJustify, Backpack, Heart, LogIn, LogOut, MapPin, Pencil } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+
+import { AnimatedIcon } from '@/components/ui/AnimatedIcon'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 import {
   Sheet,
   SheetContent,
@@ -20,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth'
 export function RoleBasedDrawer() {
   const { user, activeRole, signOut, initialized, switchRole } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
 
   const handleNavigation = (path: string) => {
@@ -62,17 +66,25 @@ export function RoleBasedDrawer() {
             </Avatar>
           </button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[85vw] max-w-[350px] sm:w-[350px] glass-card border-l-0 sm:border-l p-0">
+        <SheetContent
+          side="right"
+          className="w-[85vw] max-w-[350px] sm:w-[350px] glass-card border-l-0 sm:border-l p-0"
+        >
           <ScrollArea className="h-full">
             <div className="p-6">
               <SheetHeader className="text-left mb-8">
                 <SheetTitle className="text-2xl font-black bg-primary-gradient bg-clip-text text-transparent italic leading-tight">
                   TRIPAVAIL
                 </SheetTitle>
-                <SheetDescription className="text-sm font-medium">Sign in to manage your trips and preferences.</SheetDescription>
+                <SheetDescription className="text-sm font-medium">
+                  Sign in to manage your trips and preferences.
+                </SheetDescription>
               </SheetHeader>
               <div className="flex flex-col gap-4">
-                <Button onClick={handleLogin} className="w-full h-12 rounded-xl bg-primary-gradient text-white font-bold shadow-lg shadow-primary/20">
+                <Button
+                  onClick={handleLogin}
+                  className="w-full h-12 rounded-xl bg-primary-gradient text-white font-bold shadow-lg shadow-primary/20"
+                >
                   <LogIn className="mr-2 h-5 w-5" /> Log In / Sign Up
                 </Button>
                 <div className="relative my-4">
@@ -80,7 +92,9 @@ export function RoleBasedDrawer() {
                     <span className="w-full border-t border-white/10" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-transparent px-2 text-muted-foreground font-semibold">Or continue as</span>
+                    <span className="bg-transparent px-2 text-muted-foreground font-semibold">
+                      Or continue as
+                    </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -118,10 +132,14 @@ export function RoleBasedDrawer() {
   // Helper to format role label
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'hotel_manager': return 'Hotel Manager'
-      case 'tour_operator': return 'Tour Operator'
-      case 'traveller': return 'Traveler'
-      default: return 'User'
+      case 'hotel_manager':
+        return 'Hotel Manager'
+      case 'tour_operator':
+        return 'Tour Operator'
+      case 'traveller':
+        return 'Traveler'
+      default:
+        return 'User'
     }
   }
 
@@ -141,7 +159,7 @@ export function RoleBasedDrawer() {
 
       <SheetContent
         side="right"
-        className="w-[85vw] max-w-[350px] sm:w-[350px] p-0 flex flex-col h-full bg-transparent border-l-0 sm:border-l glass-card overflow-hidden"
+        className="w-[85vw] max-w-[350px] sm:w-[350px] p-0 flex flex-col h-full bg-transparent border-l-0 sm:border-l glass-card overflow-hidden bg-[radial-gradient(at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent"
       >
         {/* Header Profile Section */}
         <div className="p-6 pb-4 bg-white/5">
@@ -157,7 +175,7 @@ export function RoleBasedDrawer() {
               </Avatar>
               <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 border-2 border-white rounded-full shadow-lg" />
             </div>
-            
+
             <div className="flex-1 min-w-0 pt-0.5">
               <div className="flex items-center gap-2 mb-0.5">
                 <h3 className="font-black text-xl truncate text-foreground tracking-tight">
@@ -167,9 +185,7 @@ export function RoleBasedDrawer() {
                   <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground truncate mb-2">
-                {user.email}
-              </p>
+              <p className="text-xs text-muted-foreground truncate mb-2">{user.email}</p>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-bold uppercase tracking-wider text-primary">
                 <MapPin className="w-3 h-3" />
                 <span>{getRoleLabel(activeRole?.role_type || 'traveller')}</span>
@@ -184,11 +200,11 @@ export function RoleBasedDrawer() {
               <span className="text-primary">40%</span>
             </div>
             <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 className="h-full bg-primary-gradient rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: '40%' }}
-                transition={{ duration: 1, ease: "easeOut" }}
+                transition={{ duration: 1, ease: 'easeOut' }}
               />
             </div>
           </div>
@@ -196,25 +212,40 @@ export function RoleBasedDrawer() {
 
         {/* Scrollable Navigation Items */}
         <ScrollArea className="flex-1 px-4 py-2">
-          <nav className="flex flex-col gap-1.5">
-            {navItems.map((item) => (
-              <Button
-                key={item.href}
-                variant="ghost"
-                className="justify-start items-center gap-4 h-auto py-3.5 px-4 rounded-2xl hover:bg-white/10 text-foreground group transition-all border border-transparent hover:border-white/10"
-                onClick={() => handleNavigation(item.href)}
-              >
-                <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <item.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors stroke-[2px]" />
-                </div>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[15px] font-bold text-foreground group-hover:text-primary transition-colors leading-none">{item.label}</span>
-                  {item.subtext && (
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-70 group-hover:opacity-100">{item.subtext}</span>
+          <nav className="flex flex-col gap-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.href
+              return (
+                <Button
+                  key={item.href}
+                  variant={isActive ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'justify-start items-center gap-4 h-auto py-4 px-4 rounded-xl transition-all group relative overflow-hidden',
+                    isActive
+                      ? 'bg-primary/10 text-primary font-bold border-r-4 border-primary'
+                      : 'hover:bg-white/5 text-muted-foreground hover:text-foreground',
                   )}
-                </div>
-              </Button>
-            ))}
+                  onClick={() => handleNavigation(item.href)}
+                >
+                  <AnimatedIcon
+                    icon={item.icon}
+                    className={cn(
+                      'mr-2 transition-colors',
+                      isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
+                    )}
+                    isActive={isActive}
+                  />
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="text-[15px] leading-none">{item.label}</span>
+                    {item.subtext && (
+                      <span className="text-[10px] font-medium uppercase tracking-wider opacity-70">
+                        {item.subtext}
+                      </span>
+                    )}
+                  </div>
+                </Button>
+              )
+            })}
           </nav>
         </ScrollArea>
 
@@ -229,7 +260,9 @@ export function RoleBasedDrawer() {
                   navigate('/partner/onboarding')
                 }}
               >
-                <span className="font-black text-base uppercase tracking-widest">Become a Partner</span>
+                <span className="font-black text-base uppercase tracking-widest">
+                  Become a Partner
+                </span>
                 <span className="text-[10px] font-bold opacity-80 uppercase tracking-tighter">
                   Join TripAvail and grow your business
                 </span>

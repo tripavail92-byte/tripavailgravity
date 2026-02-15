@@ -1,6 +1,6 @@
 /**
  * User Profile Service
- * 
+ *
  * Handles all user profile operations including fetching, updating,
  * and managing verification for email/phone
  */
@@ -44,8 +44,10 @@ class UserProfileService {
    */
   async getProfile(): Promise<UserProfile | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         throw new Error('No authenticated user')
       }
@@ -53,8 +55,7 @@ class UserProfileService {
       // NOTE: Avoid `.single()`/`.maybeSingle()` here.
       // PostgREST returns HTTP 406 when 0 rows match object-returning queries,
       // which shows up as noisy browser console errors even if handled.
-      const { data: profiles, error } = await (supabase
-        .from('profiles' as any) as any)
+      const { data: profiles, error } = await (supabase.from('profiles' as any) as any)
         .select('*')
         .eq('id', user.id)
         .limit(1)
@@ -67,7 +68,7 @@ class UserProfileService {
       return {
         id: user.id,
         email: user.email || '',
-        ...((profile || {}) as any)
+        ...((profile || {}) as any),
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
@@ -80,23 +81,27 @@ class UserProfileService {
    */
   async updateProfile(data: UpdateProfileData): Promise<UserProfile> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         throw new Error('No authenticated user')
       }
 
       // Update in profiles table
-      const { data: updatedRows, error } = await (supabase
-        .from('profiles' as any) as any)
-        .upsert({
-          id: user.id,
-          ...data,
-          email: user.email || '',
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
-        })
+      const { data: updatedRows, error } = await (supabase.from('profiles' as any) as any)
+        .upsert(
+          {
+            id: user.id,
+            ...data,
+            email: user.email || '',
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'id',
+          },
+        )
         .select()
 
       if (error) throw error
@@ -104,11 +109,11 @@ class UserProfileService {
       const updated = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows
 
       toast.success('Profile updated successfully')
-      
+
       return {
         id: user.id,
         email: user.email || '',
-        ...(((updated ?? { ...data }) as unknown) as any)
+        ...((updated ?? { ...data }) as unknown as any),
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -122,8 +127,10 @@ class UserProfileService {
    */
   async sendEmailVerification(): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         throw new Error('No authenticated user')
       }
@@ -131,7 +138,7 @@ class UserProfileService {
       // Resend verification email
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: user.email || ''
+        email: user.email || '',
       })
 
       if (error) throw error
@@ -151,7 +158,7 @@ class UserProfileService {
     try {
       // Verify phone with custom function or Twilio API
       const { error } = await supabase.functions.invoke('send-phone-otp', {
-        body: { phone }
+        body: { phone },
       })
 
       if (error) throw error
@@ -169,25 +176,26 @@ class UserProfileService {
    */
   async verifyPhoneOTP(phone: string, otp: string): Promise<void> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         throw new Error('No authenticated user')
       }
 
       // Verify OTP via custom function
       const { error } = await supabase.functions.invoke('verify-phone-otp', {
-        body: { phone, otp }
+        body: { phone, otp },
       })
 
       if (error) throw error
 
       // Mark phone as verified in profile
-      await (supabase
-        .from('profiles' as any) as any)
-        .update({ 
+      await (supabase.from('profiles' as any) as any)
+        .update({
           phone_verified: true,
-          phone: phone
+          phone: phone,
         })
         .eq('id', user.id)
 
@@ -204,8 +212,10 @@ class UserProfileService {
    */
   async uploadAvatar(file: File): Promise<string> {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
       if (!user) {
         throw new Error('No authenticated user')
       }
@@ -223,9 +233,7 @@ class UserProfileService {
       if (uploadError) throw uploadError
 
       // Get public URL
-      const { data } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(filePath)
+      const { data } = supabase.storage.from('user-avatars').getPublicUrl(filePath)
 
       // Update profile with new avatar
       await this.updateProfile({ avatar_url: data.publicUrl })
@@ -253,12 +261,12 @@ class UserProfileService {
       profile.avatar_url,
     ]
     const weights = [15, 15, 15, 15, 10, 10, 10, 10]
-    
+
     let total = 0
     fields.forEach((field, idx) => {
       if (field) total += weights[idx]
     })
-    
+
     return total
   }
 }

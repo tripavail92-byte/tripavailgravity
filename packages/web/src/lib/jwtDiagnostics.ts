@@ -10,7 +10,7 @@ function base64UrlToUtf8(input: string): string {
 
   // atob expects standard base64
   const binary = atob(padded)
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0))
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
   return new TextDecoder().decode(bytes)
 }
 
@@ -46,7 +46,10 @@ function hostFromSupabaseUrl(supabaseUrl: string): string | null {
  * Diagnoses a Supabase Auth JWT (access_token) for the most common causes of
  * Edge Function auth failures like `{ code: 401, message: "Invalid JWT" }`.
  */
-export function diagnoseSupabaseJwt(token: string | null | undefined, supabaseUrl: string): SupabaseJwtDiagnosis {
+export function diagnoseSupabaseJwt(
+  token: string | null | undefined,
+  supabaseUrl: string,
+): SupabaseJwtDiagnosis {
   if (!token) return { ok: false, reason: 'missing-token' }
 
   const payload = decodeJwtPayload(token)

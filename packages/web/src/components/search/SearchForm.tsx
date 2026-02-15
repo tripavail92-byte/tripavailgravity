@@ -30,7 +30,13 @@ const POPULAR_LOCATIONS = [
   'New York, USA',
 ]
 
-export function SearchForm({ className, variant = 'full' }: { className?: string; variant?: 'full' | 'compact' }) {
+export function SearchForm({
+  className,
+  variant = 'full',
+}: {
+  className?: string
+  variant?: 'full' | 'compact'
+}) {
   const navigate = useNavigate()
 
   // State
@@ -62,7 +68,7 @@ export function SearchForm({ className, variant = 'full' }: { className?: string
     if (filters.priceRange[1] !== 5000) params.set('maxPrice', filters.priceRange[1].toString())
     if (filters.minRating > 0) params.set('minRating', filters.minRating.toString())
     if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
-    
+
     navigate(`/search?${params.toString()}`)
     setIsSearchOverlayOpen(false)
   }
