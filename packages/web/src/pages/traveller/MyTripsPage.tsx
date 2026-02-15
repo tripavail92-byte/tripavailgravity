@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Calendar, MapPin, Clock, BadgeCheck, Loader2, ChevronRight, Luggage } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { bookingService } from '@/features/booking/services/bookingService'
+import { format } from 'date-fns'
+import { BadgeCheck, Calendar, ChevronRight, Clock, Loader2, Luggage, MapPin } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
-import { Badge } from '@/components/ui/badge'
-import toast from 'react-hot-toast'
-import { format } from 'date-fns'
+import { bookingService } from '@/features/booking/services/bookingService'
+import { useAuth } from '@/hooks/useAuth'
 
 type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed'
 

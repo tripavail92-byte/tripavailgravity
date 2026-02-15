@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
-import { Search, Briefcase, Mountain, Palmtree, Tent, Waves } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { TourCard } from '@/components/traveller/TourCard'
-import { PackageCard } from '@/components/traveller/PackageCard'
-import { supabase } from '@/lib/supabase'
-import { tourService, Tour } from '@/features/tour-operator/services/tourService'
-import { Badge } from '@/components/ui/badge'
-import { GlassCard } from '@/components/ui/glass'
+import { Briefcase, Mountain, Palmtree, Search, Tent, Waves } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+
+import { PackageCard } from '@/components/traveller/PackageCard'
+import { TourCard } from '@/components/traveller/TourCard'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
+import { Tour, tourService } from '@/features/tour-operator/services/tourService'
+import { supabase } from '@/lib/supabase'
 
 export default function Homepage() {
   const [packages, setPackages] = useState<any[]>([])

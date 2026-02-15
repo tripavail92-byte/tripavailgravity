@@ -1,19 +1,20 @@
-import { useState } from 'react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
-  FileText,
-  Upload,
-  Check,
-  Loader2,
-  Briefcase,
-  FileCheck,
-  ScrollText,
   ArrowRight,
+  Briefcase,
+  Check,
+  FileCheck,
+  FileText,
+  Loader2,
+  ScrollText,
+  Upload,
 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 
 interface BusinessDocsSubFlowProps {

@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
-import {
-  Luggage,
-  Heart,
-  User,
-  Settings,
-  ChevronRight,
-  Calendar,
-  MapPin,
-  BadgeCheck,
-  Compass,
-  ArrowRight,
-} from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { bookingService } from '@/features/booking/services/bookingService'
-import { wishlistService } from '@/lib/wishlistService'
-import { tourService } from '@/features/tour-operator/services/tourService'
-import { getPackagesByIds } from '@/features/package-creation/services/packageService'
-import { GlassCard } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
+import {
+  ArrowRight,
+  BadgeCheck,
+  Calendar,
+  ChevronRight,
+  Compass,
+  Heart,
+  Luggage,
+  MapPin,
+  Settings,
+  User,
+} from 'lucide-react'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+
+import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
+import { bookingService } from '@/features/booking/services/bookingService'
+import { getPackagesByIds } from '@/features/package-creation/services/packageService'
+import { tourService } from '@/features/tour-operator/services/tourService'
+import { useAuth } from '@/hooks/useAuth'
+import { wishlistService } from '@/lib/wishlistService'
 
 export default function TravelerDashboardPage() {
   const { user } = useAuth()

@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
+
 import { VectorProps } from './types'
 
 // Business Elite - Group of Well-Dressed People in Meeting

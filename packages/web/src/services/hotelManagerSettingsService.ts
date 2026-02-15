@@ -4,8 +4,9 @@
  * Handles all business settings for hotel managers
  */
 
-import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+
+import { supabase } from '@/lib/supabase'
 
 export interface HotelManagerSettings {
   manager_id: string

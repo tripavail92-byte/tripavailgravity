@@ -1,11 +1,13 @@
+import { Camera, Car, Check, Clock, Map, Plus, Shield, Utensils, X } from 'lucide-react'
 import { useState } from 'react'
-import { Check, Plus, X, Utensils, Car, Map, Camera, Shield, Clock } from 'lucide-react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { StepData } from '../../types'
 import { cn } from '@/lib/utils'
+
+import { StepData } from '../../types'
 
 interface InclusionsStepProps {
   onComplete: (data: StepData) => void

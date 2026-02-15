@@ -1,7 +1,8 @@
-import { GlassCard } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import { Calendar, MessageCircle, User, CheckCircle, Clock } from 'lucide-react'
+import { Calendar, CheckCircle, Clock, MessageCircle, User } from 'lucide-react'
 import { motion } from 'motion/react'
+
+import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
 
 interface BookingCardProps {
   id: string

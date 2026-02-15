@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
-import { DashboardHeader } from '@/features/hotel-manager/dashboard/components/DashboardHeader'
+
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { DashboardHeader } from '@/features/hotel-manager/dashboard/components/DashboardHeader'
 
 export default function DashboardLayout() {
   return (

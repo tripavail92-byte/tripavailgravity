@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
 import { Calendar, Plus, Trash2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tour } from '@/features/tour-operator/services/tourService'
 

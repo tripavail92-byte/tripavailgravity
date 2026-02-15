@@ -8,20 +8,20 @@
 // Glass Card Components
 export {
   GlassCard,
+  type GlassCardProps,
   GlassContent,
-  GlassHeader,
-  GlassTitle,
   GlassDescription,
   GlassFooter,
-  type GlassCardProps,
+  GlassHeader,
+  GlassTitle,
   type GlassVariant,
 } from './glass-card'
 
 // Glass Button Component
-export { GlassButton, glassButtonVariants, type GlassButtonProps } from './glass-button'
+export { GlassButton, type GlassButtonProps, glassButtonVariants } from './glass-button'
 
 // Glass Badge Component
-export { GlassBadge, glassBadgeVariants, type GlassBadgeProps } from './glass-badge'
+export { GlassBadge, type GlassBadgeProps, glassBadgeVariants } from './glass-badge'
 
 /**
  * Quick Start

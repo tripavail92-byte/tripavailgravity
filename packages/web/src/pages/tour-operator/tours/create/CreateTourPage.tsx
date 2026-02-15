@@ -1,17 +1,19 @@
+import { Loader2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'motion/react'
+
 import { Tour, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
+
 import { TourBasicsStep } from './components/TourBasicsStep'
-import { TourMediaStep } from './components/TourMediaStep'
-import { TourItineraryStep } from './components/TourItineraryStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
+import { TourItineraryStep } from './components/TourItineraryStep'
+import { TourMediaStep } from './components/TourMediaStep'
 import { TourPricingStep } from './components/TourPricingStep'
-import { TourSchedulingStep } from './components/TourSchedulingStep'
 import { TourReviewStep } from './components/TourReviewStep'
-import { Loader2 } from 'lucide-react'
+import { TourSchedulingStep } from './components/TourSchedulingStep'
 
 const STEPS = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },

@@ -1,15 +1,16 @@
-import { Calendar, Heart, Users, Briefcase, Mountain, Utensils, Crown, Flower } from 'lucide-react'
+import { Briefcase, Calendar, Crown, Flower, Heart, Mountain, Users, Utensils } from 'lucide-react'
+
 import { PackageType } from '../types'
 import {
-  WeekendGetawayVector,
-  RomanticEscapeVector,
-  FamilyAdventureVector,
-  BusinessEliteVector,
   AdventurePackageVector,
+  BusinessEliteVector,
   CulinaryJourneyVector,
-  WellnessRetreatVector,
-  LuxuryExperienceVector,
   CustomPackageVector,
+  FamilyAdventureVector,
+  LuxuryExperienceVector,
+  RomanticEscapeVector,
+  WeekendGetawayVector,
+  WellnessRetreatVector,
 } from './vectors'
 
 export const PACKAGE_TYPE_CONFIG = {

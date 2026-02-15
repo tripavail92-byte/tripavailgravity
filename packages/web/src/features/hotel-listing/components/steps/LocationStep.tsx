@@ -1,11 +1,13 @@
+import { Check, Edit3, MapPin, Navigation } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { MapPin, Navigation, Edit3, Check } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { LocationPicker } from '../ui/LocationPicker'
+
 import type { StepData } from '../CompleteHotelListingFlow'
+import { LocationPicker } from '../ui/LocationPicker'
 
 interface LocationData {
   address: string

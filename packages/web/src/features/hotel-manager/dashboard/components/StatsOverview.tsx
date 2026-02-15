@@ -1,7 +1,9 @@
+import { Calendar, DollarSign, MapPin, Star, TrendingUp, Users } from 'lucide-react'
 import { motion } from 'motion/react'
-import { DollarSign, Calendar, TrendingUp, Star, Users, MapPin } from 'lucide-react'
-import { StatCard } from './StatCard'
+
 import { useAuth } from '@/hooks/useAuth'
+
+import { StatCard } from './StatCard'
 
 export function StatsOverview() {
   const { activeRole } = useAuth()

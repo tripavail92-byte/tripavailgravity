@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
 import { Heart, Loader2, Trash2 } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+
+import { PackageCard } from '@/components/traveller/PackageCard'
+import { TourCard } from '@/components/traveller/TourCard'
+import { Button } from '@/components/ui/button'
+import { getPackagesByIds } from '@/features/package-creation/services/packageService'
+import { tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { wishlistService } from '@/lib/wishlistService'
-import { tourService } from '@/features/tour-operator/services/tourService'
-import { getPackagesByIds } from '@/features/package-creation/services/packageService'
-import { TourCard } from '@/components/traveller/TourCard'
-import { PackageCard } from '@/components/traveller/PackageCard'
-import { Button } from '@/components/ui/button'
-import toast from 'react-hot-toast'
 
 export default function WishlistPage() {
   const { user } = useAuth()

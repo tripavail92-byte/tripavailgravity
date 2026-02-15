@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import { X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
+
 import { Button } from '@/components/ui/button'
 import {
   PropertyTypeIcon,
@@ -20,23 +21,25 @@ import {
 //   ModernReviewIcon
 // } from '../assets/modern/ModernStepIcons';
 import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors'
+
 import { AirbnbBottomNav } from './ui/AirbnbBottomNav'
 
 // Placeholder steps for Phase 3+
 const PlaceholderStep = () => <div>Step content coming soon</div>
 
 // Step Components
-import { PropertyTypeStep } from './steps/PropertyTypeStep'
-import { PropertyDetailsStep } from './steps/PropertyDetailsStep'
-import { LocationStep } from './steps/LocationStep'
-import { AmenitiesStep } from './steps/AmenitiesStep'
-import { RoomsStep } from './steps/RoomsStep'
-import { PoliciesStep } from './steps/PoliciesStep'
-import { PhotosStep } from './steps/PhotosStep'
-import { ServicesStep } from './steps/ServicesStep'
-import { ReviewStep } from './steps/ReviewStep'
-import { hotelService } from '../services/hotelService'
 import { useAuth } from '@/hooks/useAuth'
+
+import { hotelService } from '../services/hotelService'
+import { AmenitiesStep } from './steps/AmenitiesStep'
+import { LocationStep } from './steps/LocationStep'
+import { PhotosStep } from './steps/PhotosStep'
+import { PoliciesStep } from './steps/PoliciesStep'
+import { PropertyDetailsStep } from './steps/PropertyDetailsStep'
+import { PropertyTypeStep } from './steps/PropertyTypeStep'
+import { ReviewStep } from './steps/ReviewStep'
+import { RoomsStep } from './steps/RoomsStep'
+import { ServicesStep } from './steps/ServicesStep'
 
 interface Step {
   id: number

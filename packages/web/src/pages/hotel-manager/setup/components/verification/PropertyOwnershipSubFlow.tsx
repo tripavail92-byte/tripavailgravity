@@ -1,21 +1,22 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
-  Home,
-  FileText,
-  Upload,
+  ArrowRight,
   Camera,
   Check,
-  Loader2,
-  ArrowRight,
-  MapPin,
+  FileText,
+  Home,
   Lightbulb,
+  Loader2,
+  MapPin,
+  Upload,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
+import { toast } from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 
 interface PropertyOwnershipSubFlowProps {
   onComplete: (data: {

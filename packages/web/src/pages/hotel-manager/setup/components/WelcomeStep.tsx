@@ -1,6 +1,7 @@
+import { ArrowRight, BadgePercent, Building2, ShieldCheck, Sparkles } from 'lucide-react'
 import { motion } from 'motion/react'
+
 import { Button } from '@/components/ui/button'
-import { Building2, Sparkles, ShieldCheck, BadgePercent, ArrowRight } from 'lucide-react'
 
 interface StepProps {
   onNext: () => void

@@ -18,8 +18,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { TripAvailSearchBar, type SearchFilters } from './TripAvailSearchBar'
+
 import { SearchOverlay } from './SearchOverlay'
+import { type SearchFilters, TripAvailSearchBar } from './TripAvailSearchBar'
 
 const POPULAR_LOCATIONS = [
   'Maldives',

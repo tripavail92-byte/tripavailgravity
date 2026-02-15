@@ -1,10 +1,12 @@
+import { Bed, DollarSign, Edit3, Plus, Ruler, Trash2, Users } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { Plus, Edit3, Trash2, Users, Bed, DollarSign, Ruler } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { motion, AnimatePresence } from 'motion/react'
-import { RoomWizardModal } from './RoomWizardModal'
+
 import type { StepData } from '../CompleteHotelListingFlow'
+import { RoomWizardModal } from './RoomWizardModal'
 
 export interface BedConfig {
   type: 'king' | 'queen' | 'double' | 'twin' | 'single' | 'sofaBed'

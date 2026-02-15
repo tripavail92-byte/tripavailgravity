@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react'
-import { Upload, X, Image as ImageIcon, Star, Video, PlayCircle } from 'lucide-react'
+import { Image as ImageIcon, PlayCircle, Star, Upload, Video, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { motion, AnimatePresence } from 'motion/react'
-import { StepData } from '../../types'
 import { cn } from '@/lib/utils'
+
+import { StepData } from '../../types'
 
 export interface MediaItem {
   id: string
@@ -54,7 +56,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
   const [showValidation, setShowValidation] = useState(false)
 
   // Update parent state on changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   const updateParent = (items: MediaItem[]) => {
     // Extract just the URLs/base64 strings for the parent state
     // This ensures ReviewStep and packageService receive what they expect (string[])
@@ -179,7 +181,6 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
       e.preventDefault()
       setIsDragging(false)
       handleFiles(e.dataTransfer.files)
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [mediaItems],
   )

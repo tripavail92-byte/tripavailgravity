@@ -1,11 +1,13 @@
+import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { X, Check, ChevronRight, ChevronLeft } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { motion, AnimatePresence } from 'motion/react'
-import { RoomType, BedConfig } from './RoomsStep'
+
+import { BedConfig, RoomType } from './RoomsStep'
 
 interface RoomWizardModalProps {
   isOpen: boolean

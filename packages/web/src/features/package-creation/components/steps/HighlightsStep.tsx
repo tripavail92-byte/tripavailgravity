@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { Percent, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+
+import { getIconForHighlight } from '@/components/icons/packages/AnimatedHighlightIcons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
 import {
   Dialog,
   DialogContent,
@@ -13,10 +14,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Plus, Trash2, Sparkles, Percent } from 'lucide-react'
-import { getIconForHighlight } from '@/components/icons/packages/AnimatedHighlightIcons'
-import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
+import { cn } from '@/lib/utils'
+
 import { StepData } from '../../types'
 
 // Helper to determine if a highlight should be visually prominent

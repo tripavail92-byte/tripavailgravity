@@ -1,8 +1,9 @@
+import { CheckCircle2, Clock, FileText, Search, ShieldCheck } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useAuth } from '@/hooks/useAuth'
-import { Clock, Search, FileText, ShieldCheck, CheckCircle2 } from 'lucide-react'
+
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
+import { useAuth } from '@/hooks/useAuth'
 
 import { PartnerVerificationHub } from './verification/PartnerVerificationHub'
 

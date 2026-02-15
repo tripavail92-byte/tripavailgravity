@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { CreditCard, Plus, Trash2, Smartphone, ShieldCheck, Info, Loader2 } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { CreditCard, Info, Loader2, Plus, ShieldCheck, Smartphone, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
 import {
   paymentMethodService,
   type UserPaymentMethod,
 } from '@/features/traveller/services/paymentMethodService'
-import { GlassCard } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import toast from 'react-hot-toast'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function PaymentMethodsPage() {
   const {} = useAuth()

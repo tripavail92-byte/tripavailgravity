@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
+
 import { VectorProps } from './types'
 
 // Weekend Getaway - Jeep with Luggage and Family on Road Trip

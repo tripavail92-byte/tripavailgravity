@@ -1,20 +1,21 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav'
-import {
-  hotelManagerService,
-  HotelManagerOnboardingData,
-} from '@/features/hotel-manager/services/hotelManagerService'
-import { useAuth } from '@/hooks/useAuth'
+import { Loader2, Save } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { Save, Loader2 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { Button } from '@/components/ui/button'
 import { GlassProgress } from '@/components/ui/glass/GlassProgress'
+import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav'
+import {
+  HotelManagerOnboardingData,
+  hotelManagerService,
+} from '@/features/hotel-manager/services/hotelManagerService'
+import { useAuth } from '@/hooks/useAuth'
 
-import { WelcomeStep } from './components/WelcomeStep'
 import { BankDetailsStep } from './components/BankDetailsStep'
 import { CompletionStep } from './components/CompletionStep'
+import { WelcomeStep } from './components/WelcomeStep'
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },

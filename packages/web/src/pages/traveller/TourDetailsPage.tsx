@@ -1,29 +1,30 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
 import {
-  MapPin,
-  Clock,
-  Star,
-  Check,
-  X,
+  AlertCircle,
   ArrowLeft,
-  Share2,
+  Calendar,
+  Camera,
+  Check,
+  Clock,
   Heart,
   Info,
-  ShieldCheck,
-  Map,
-  Camera,
   Loader2,
-  Calendar,
+  Map,
+  MapPin,
+  Share2,
+  ShieldCheck,
+  Star,
   Users,
-  AlertCircle,
+  X,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { GlassBadge } from '@/components/ui/glass'
-import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService'
 import { tourBookingService } from '@/features/booking'
+import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 
 export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>()

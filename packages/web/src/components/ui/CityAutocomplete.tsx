@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
 import { useMap } from '@vis.gl/react-google-maps'
-import { motion, AnimatePresence } from 'motion/react'
-import { MapPin, Loader2, LocateFixed } from 'lucide-react'
+import { Loader2, LocateFixed, MapPin } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast'
+
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { toast } from 'react-hot-toast'
 
 interface CityAutocompleteProps {
   value: string

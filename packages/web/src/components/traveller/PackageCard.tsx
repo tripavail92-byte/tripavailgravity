@@ -1,5 +1,6 @@
+import { Clock, MapPin, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { MapPin, Star, Clock } from 'lucide-react'
+
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { GlassBadge } from '@/components/ui/glass'

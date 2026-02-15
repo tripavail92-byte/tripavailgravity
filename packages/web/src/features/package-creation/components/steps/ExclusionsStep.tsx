@@ -1,11 +1,13 @@
+import { AlertCircle, Camera, Plane, Plus, ShoppingBag, Utensils, X, XCircle } from 'lucide-react'
 import { useState } from 'react'
-import { X, Plus, XCircle, Plane, Utensils, Camera, ShoppingBag, AlertCircle } from 'lucide-react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { StepData } from '../../types'
 import { cn } from '@/lib/utils'
+
+import { StepData } from '../../types'
 
 interface ExclusionsStepProps {
   onComplete: (data: StepData) => void

@@ -5,24 +5,25 @@
  * Real-time data persistence via hotelManagerSettingsService
  */
 
+import {
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  Building,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  DollarSign,
+  Loader,
+  Shield,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { GlassBadge, GlassCard } from '@/components/ui/glass'
 import { useAuth } from '@/hooks/useAuth'
 import { hotelManagerSettingsService } from '@/services/hotelManagerSettingsService'
-import {
-  DollarSign,
-  Building,
-  CreditCard,
-  Bell,
-  BarChart3,
-  Shield,
-  Clock,
-  ChevronRight,
-  AlertTriangle,
-  Loader,
-} from 'lucide-react'
-import { GlassCard, GlassBadge } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import toast from 'react-hot-toast'
 
 interface HotelManagerSettings {
   business_name?: string

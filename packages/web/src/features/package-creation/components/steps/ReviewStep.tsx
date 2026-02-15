@@ -1,20 +1,22 @@
 import {
+  Calendar,
   Check,
   Edit2,
-  Package,
+  FileText,
   Image,
   Lightbulb,
+  Loader2,
+  Package,
   PlusCircle,
   XCircle,
-  Calendar,
-  FileText,
-  Loader2,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+
 import { Badge } from '@/components/ui/badge'
-import { PackageData } from '../../types'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+
+import { PackageData } from '../../types'
 
 interface ReviewStepProps {
   packageData: PackageData

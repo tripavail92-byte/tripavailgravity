@@ -1,21 +1,23 @@
-import { Info, Check } from 'lucide-react'
+import { APIProvider } from '@vis.gl/react-google-maps'
+import { Check, Info } from 'lucide-react'
 import { motion } from 'motion/react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
-import { APIProvider } from '@vis.gl/react-google-maps'
 import { Tour } from '@/features/tour-operator/services/tourService'
+
 import {
   AdventureIcon,
-  CulturalIcon,
-  NatureIcon,
-  CityIcon,
-  FoodIcon,
   BeachIcon,
+  CityIcon,
+  CulturalIcon,
+  FoodIcon,
   HistoricalIcon,
+  NatureIcon,
   ReligiousIcon,
 } from './CategoryIcons'
 

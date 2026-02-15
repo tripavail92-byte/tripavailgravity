@@ -1,6 +1,7 @@
-import { GlassCard } from '@/components/ui/glass'
+import { Calendar, Download } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
-import { Download, Calendar } from 'lucide-react'
+import { GlassCard } from '@/components/ui/glass'
 
 export function EarningsChart() {
   return (

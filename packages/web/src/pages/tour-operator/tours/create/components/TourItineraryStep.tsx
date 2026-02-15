@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Plus, MapPin, Clock, Camera, Utensils, X } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { Camera, Clock, MapPin, Plus, Utensils, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface TourItineraryStepProps {

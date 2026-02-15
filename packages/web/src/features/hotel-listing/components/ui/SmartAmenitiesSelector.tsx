@@ -1,30 +1,32 @@
-import { motion, AnimatePresence } from 'motion/react'
-import { useState, useEffect, useRef } from 'react'
 import { Check } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
+
 import {
-  PoolIcon,
-  HotTubIcon,
-  BBQGrillIcon,
-  FirePitIcon,
-  PoolTableIcon,
-  PianoIcon,
-  GymIcon,
-  BeachfrontIcon,
-  MountainViewIcon,
-  LakeAccessIcon,
-  PatioIcon,
-  OutdoorDiningIcon,
-  IndoorBonfireIcon,
-  ScenicBalconyIcon,
-  ForestViewIcon,
-  WiFiIcon,
-  TVIcon,
-  KitchenIcon,
-  WashingMachineIcon,
-  ParkingIcon,
   AirConditioningIcon,
+  BBQGrillIcon,
+  BeachfrontIcon,
   DedicatedWorkspaceIcon,
+  FirePitIcon,
+  ForestViewIcon,
+  GymIcon,
+  HotTubIcon,
+  IndoorBonfireIcon,
+  KitchenIcon,
+  LakeAccessIcon,
+  MountainViewIcon,
+  OutdoorDiningIcon,
+  ParkingIcon,
+  PatioIcon,
+  PianoIcon,
+  PoolIcon,
+  PoolTableIcon,
+  ScenicBalconyIcon,
+  TVIcon,
+  WashingMachineIcon,
+  WiFiIcon,
 } from '../../assets/PremiumAmenityIcons'
 
 // Hook to detect dark mode

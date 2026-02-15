@@ -1,24 +1,26 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import {
-  Search,
-  X,
-  MapPin,
+  Building,
   Calendar,
-  Star,
-  Filter,
+  ChevronDown,
   Clock,
+  DollarSign,
+  Filter,
+  Globe,
+  History,
+  MapPin,
   Mic,
   MicOff,
-  DollarSign,
-  Building,
-  History,
-  ChevronDown,
-  Globe,
+  Search,
+  Star,
+  X,
 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+
 import type { SearchFilters } from './TripAvailSearchBar'
 
 interface SearchOverlayProps {

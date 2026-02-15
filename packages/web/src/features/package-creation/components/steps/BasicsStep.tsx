@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import {
-  Building2,
-  Sparkles,
-  ChevronRight,
   AlertCircle,
+  Building2,
   CheckCircle2,
+  ChevronRight,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
-import { StepData, PackageType } from '../../types'
+
+import { PackageType, StepData } from '../../types'
 
 interface BasicsStepProps {
   onComplete: (data: StepData) => void

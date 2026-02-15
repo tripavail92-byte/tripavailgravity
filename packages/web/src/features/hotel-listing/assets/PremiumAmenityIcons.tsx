@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface AmenityIconProps {
   size?: number

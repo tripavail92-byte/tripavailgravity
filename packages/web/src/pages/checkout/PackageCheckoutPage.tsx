@@ -1,19 +1,19 @@
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { format } from 'date-fns'
+import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react'
-import { format } from 'date-fns'
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass'
-import { getPackageById } from '@/features/package-creation/services/packageService'
+import { Button } from '@/components/ui/button'
+import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
 import {
   createPackageBookingWithValidation,
-  packageBookingService,
   type PackageBooking,
+  packageBookingService,
 } from '@/features/booking'
+import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useAuth } from '@/hooks/useAuth'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'

@@ -12,7 +12,6 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { supabase } from '@/lib/supabase'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
@@ -21,6 +20,7 @@ import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
+import { supabase } from '@/lib/supabase'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')

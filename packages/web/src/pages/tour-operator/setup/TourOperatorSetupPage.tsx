@@ -1,23 +1,25 @@
-import { useState, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { Loader2, Save } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { WelcomeStep } from './components/WelcomeStep'
-import { PersonalInfoStep } from './components/PersonalInfoStep'
-import { ProfilePictureStep } from './components/ProfilePictureStep'
-import { BusinessInfoStep } from './components/BusinessInfoStep'
-import { ServicesStep } from './components/ServicesStep'
-import { CoverageAreaStep } from './components/CoverageAreaStep'
-import { PoliciesStep } from './components/PoliciesStep'
-import { CompletionStep } from './components/CompletionStep'
+
+import { Button } from '@/components/ui/button'
 import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav'
 import {
-  tourOperatorService,
   TourOperatorOnboardingData,
+  tourOperatorService,
 } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
-import { Save, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+
+import { BusinessInfoStep } from './components/BusinessInfoStep'
+import { CompletionStep } from './components/CompletionStep'
+import { CoverageAreaStep } from './components/CoverageAreaStep'
+import { PersonalInfoStep } from './components/PersonalInfoStep'
+import { PoliciesStep } from './components/PoliciesStep'
+import { ProfilePictureStep } from './components/ProfilePictureStep'
+import { ServicesStep } from './components/ServicesStep'
+import { WelcomeStep } from './components/WelcomeStep'
 
 const STEPS = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },

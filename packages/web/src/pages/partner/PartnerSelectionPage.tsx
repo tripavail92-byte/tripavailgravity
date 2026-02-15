@@ -1,5 +1,5 @@
-import { motion } from 'motion/react'
 import { ArrowRight, Star, TrendingUp, Users } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 

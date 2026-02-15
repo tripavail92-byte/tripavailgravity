@@ -1,6 +1,8 @@
 import { Activity, Minus, Plus } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -9,7 +11,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface TourDetailsStepProps {

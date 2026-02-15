@@ -1,25 +1,26 @@
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import {
-  Search,
-  MapPin,
   Calendar,
-  DollarSign,
-  Star,
-  Filter,
-  X,
-  Users,
   Clock,
-  Sparkles,
+  DollarSign,
+  Filter,
+  Heart,
   History,
-  TrendingUp,
+  MapPin,
   Mic,
   MicOff,
   Mountain,
-  Heart,
+  Search,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  X,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
@@ -186,7 +187,7 @@ export function TripAvailSearchBar({
 
   // Handle quick filter click
   const handleQuickFilterClick = (filterId: string) => {
-    let updatedFilters = { ...filters }
+    const updatedFilters = { ...filters }
 
     switch (filterId) {
       case 'budget':

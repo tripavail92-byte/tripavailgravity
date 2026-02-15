@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react'
+import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tour, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 
 interface TourMediaStepProps {

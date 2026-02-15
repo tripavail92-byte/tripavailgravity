@@ -1,7 +1,8 @@
+import { ArrowRight, CheckCircle2, PartyPopper, ShieldCheck } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Button } from '@/components/ui/button'
-import { CheckCircle2, PartyPopper, ArrowRight, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+import { Button } from '@/components/ui/button'
 
 export function CompletionStep() {
   const navigate = useNavigate()

@@ -1,10 +1,12 @@
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { PropertyDescriptionAI } from '../ui/PropertyDescriptionAI'
+
 import type { StepData } from '../CompleteHotelListingFlow'
+import { PropertyDescriptionAI } from '../ui/PropertyDescriptionAI'
 
 interface PropertyDetailsStepProps {
   onComplete: (data: StepData) => void

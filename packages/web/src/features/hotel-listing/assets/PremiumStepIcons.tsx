@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react'
-import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 
 interface IconProps {
   size?: number

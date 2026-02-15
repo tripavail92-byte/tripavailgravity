@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+
 import { decodeJwtPayload, diagnoseSupabaseJwt } from './jwtDiagnostics'
 
 function makeJwt(payload: Record<string, unknown>): string {

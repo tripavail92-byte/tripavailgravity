@@ -1,20 +1,22 @@
-import { useState } from 'react'
 import {
-  Coffee,
-  Wifi,
-  Car,
-  Waves,
-  Dumbbell,
-  Utensils,
   Accessibility,
-  Plane,
   BatteryCharging,
-  Sparkles,
+  Car,
+  Coffee,
   ConciergeBell,
+  Dumbbell,
+  Plane,
+  Sparkles,
+  Utensils,
+  Waves,
+  Wifi,
 } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useState } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { motion } from 'motion/react'
+
 import type { StepData } from '../CompleteHotelListingFlow'
 
 export interface ServicesData {

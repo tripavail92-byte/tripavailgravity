@@ -4,8 +4,9 @@
  * Handles all account-related settings for travellers
  */
 
-import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+
+import { supabase } from '@/lib/supabase'
 
 export interface AccountSettings {
   user_id: string

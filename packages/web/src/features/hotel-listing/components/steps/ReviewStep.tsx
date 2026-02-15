@@ -1,8 +1,10 @@
+import { Building, Check, Edit3, MapPin, Star } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useState } from 'react'
-import { Check, Edit3, MapPin, Building, Star } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { motion } from 'motion/react'
+
 import { HotelData } from '../CompleteHotelListingFlow'
 
 interface ReviewStepProps {

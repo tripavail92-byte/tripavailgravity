@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react'
-import { Upload, X, Image as ImageIcon, Star } from 'lucide-react'
+import { Image as ImageIcon, Star, Upload, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useCallback, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { motion, AnimatePresence } from 'motion/react'
+
 import type { StepData } from '../CompleteHotelListingFlow'
 
 export interface Photo {

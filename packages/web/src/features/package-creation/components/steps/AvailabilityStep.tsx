@@ -1,11 +1,13 @@
-import { useState } from 'react'
 import { Calendar, Clock, Info } from 'lucide-react'
+import { useState } from 'react'
+
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { StepData } from '../../types'
 import { cn } from '@/lib/utils'
+
+import { StepData } from '../../types'
 
 interface AvailabilityStepProps {
   onComplete: (data: StepData) => void

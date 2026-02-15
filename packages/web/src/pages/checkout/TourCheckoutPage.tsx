@@ -1,23 +1,23 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'motion/react'
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import {
-  ArrowLeft,
-  Clock,
-  MapPin,
   AlertCircle,
-  Loader2,
+  ArrowLeft,
   Check,
   ChevronRight,
-  Shield,
+  Clock,
+  Loader2,
   Lock,
+  MapPin,
+  Shield,
 } from 'lucide-react'
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { GlassCard, GlassHeader, GlassTitle, GlassContent } from '@/components/ui/glass'
-import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService'
-import { tourBookingService, TourBooking, createBookingWithValidation } from '@/features/booking'
+import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
+import { createBookingWithValidation, TourBooking, tourBookingService } from '@/features/booking'
+import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'

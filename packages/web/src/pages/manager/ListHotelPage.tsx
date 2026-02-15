@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { Button } from '@/components/ui/button'
-import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors'
 import {
-  PropertyTypeIcon,
-  LocationIcon,
   AmenitiesIcon,
+  LocationIcon,
   PhotosIcon,
   PricingIcon,
+  PropertyTypeIcon,
 } from '@/features/hotel-listing/assets/HotelListingIcons'
+import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors'
 import CompleteHotelListingFlow from '@/features/hotel-listing/components/CompleteHotelListingFlow'
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { useAuth } from '@/hooks/useAuth'
-import toast from 'react-hot-toast'
 
 export default function ListHotelPage() {
   const [isStarted, setIsStarted] = useState(false)

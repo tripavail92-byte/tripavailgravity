@@ -1,45 +1,44 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'motion/react'
-import {
-  Loader2,
-  ArrowLeft,
-  Share2,
-  Heart,
-  MapPin,
-  Star,
-  Check,
-  X,
-  Calendar as CalendarIcon,
-  Users,
-  ChevronDown,
-  Sparkles,
-  Shield,
-  Clock,
-  AlertCircle,
-} from 'lucide-react'
 import { format } from 'date-fns'
+import {
+  AlertCircle,
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  Check,
+  ChevronDown,
+  Clock,
+  Heart,
+  Loader2,
+  MapPin,
+  Share2,
+  Shield,
+  Sparkles,
+  Star,
+  Users,
+  X,
+} from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
+import { useNavigate, useParams } from 'react-router-dom'
 
+import { SiteFooter } from '@/components/layout/SiteFooter'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { getPackageById } from '@/features/package-creation/services/packageService'
-import { supabase } from '@/lib/supabase'
-import { packageBookingService } from '@/features/booking'
 import {
-  GlassCard,
-  GlassHeader,
-  GlassTitle,
-  GlassDescription,
-  GlassContent,
   GlassBadge,
   GlassButton,
+  GlassCard,
+  GlassContent,
+  GlassDescription,
+  GlassHeader,
+  GlassTitle,
 } from '@/components/ui/glass'
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { packageBookingService } from '@/features/booking'
 import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons'
+import { getPackageById } from '@/features/package-creation/services/packageService'
+import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 
 // Helper to normalize amenity strings to kebab-case for centralized icon lookup
 const normalizeAmenityId = (amenityStr: string): string => {

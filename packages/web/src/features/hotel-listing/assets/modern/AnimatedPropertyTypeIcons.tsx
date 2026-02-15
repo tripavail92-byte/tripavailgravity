@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
+
 import { PremiumPropertyVector } from '@/features/hotel-listing/assets/PremiumPropertyVectors'
 
 interface PropertyTypeIconProps {

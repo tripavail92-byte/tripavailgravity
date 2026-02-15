@@ -1,6 +1,7 @@
+import { Check, Copy, RefreshCw, Sparkles, Wand2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Sparkles, Wand2, RefreshCw, Check, Copy } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 

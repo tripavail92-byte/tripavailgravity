@@ -1,26 +1,28 @@
-import { useState, useEffect } from 'react'
 import {
-  DollarSign,
-  Plus,
-  Check,
-  Bed,
-  Users,
-  Ruler,
-  Loader2,
   AlertCircle,
+  Bed,
+  Check,
+  DollarSign,
+  Loader2,
+  Plus,
+  Ruler,
   TrendingDown,
   TrendingUp,
+  Users,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useEffect, useState } from 'react'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RoomWizardModal } from '../../../hotel-listing/components/steps/RoomWizardModal'
-import { RoomType } from '../../../hotel-listing/components/steps/RoomsStep'
-import { StepData } from '../../types'
-import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
+
+import { RoomType } from '../../../hotel-listing/components/steps/RoomsStep'
+import { RoomWizardModal } from '../../../hotel-listing/components/steps/RoomWizardModal'
+import { StepData } from '../../types'
 
 interface PricingStepProps {
   onComplete: (data: StepData) => void

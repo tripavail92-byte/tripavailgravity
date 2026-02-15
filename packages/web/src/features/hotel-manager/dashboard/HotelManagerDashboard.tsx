@@ -1,9 +1,10 @@
 import { motion } from 'motion/react'
-import { StatsOverview } from './components/StatsOverview'
+
+import { DraftListingsAlert } from './components/DraftListingsAlert'
 import { EarningsChart } from './components/EarningsChart'
 import { ListingsGrid } from './components/ListingsGrid'
 import { RecentBookings } from './components/RecentBookings'
-import { DraftListingsAlert } from './components/DraftListingsAlert'
+import { StatsOverview } from './components/StatsOverview'
 
 export function HotelManagerDashboard() {
   return (

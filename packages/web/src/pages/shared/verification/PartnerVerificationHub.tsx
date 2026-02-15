@@ -1,23 +1,25 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { IdentitySubFlow } from './IdentitySubFlow'
-import { BusinessDocsSubFlow } from '../../tour-operator/setup/components/verification/BusinessDocsSubFlow'
-import { PropertyOwnershipSubFlow } from '../../hotel-manager/setup/components/verification/PropertyOwnershipSubFlow'
-import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
-import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
-import { useAuth } from '@/hooks/useAuth'
 import {
-  Loader2,
   CheckCircle2,
-  ShieldCheck,
   Clock,
-  History,
   FileText,
+  History,
+  Loader2,
+  ShieldCheck,
   UserCheck,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
+import { useAuth } from '@/hooks/useAuth'
+
 import { supabase } from '../../../../../shared/src/core/client'
+import { PropertyOwnershipSubFlow } from '../../hotel-manager/setup/components/verification/PropertyOwnershipSubFlow'
+import { BusinessDocsSubFlow } from '../../tour-operator/setup/components/verification/BusinessDocsSubFlow'
+import { IdentitySubFlow } from './IdentitySubFlow'
 
 export function PartnerVerificationHub() {
   const { user, activeRole } = useAuth()

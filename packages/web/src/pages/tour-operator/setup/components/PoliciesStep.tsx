@@ -1,28 +1,29 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
-  Shield,
-  FileText,
+  AlertCircle,
+  CalendarDays,
   Check,
   ChevronDown,
   ClipboardCheck,
+  FileText,
   FileUp,
-  AlertCircle,
-  Trash2,
-  CalendarDays,
   HeartPulse,
-  ShieldAlert,
-  Wallet,
   Loader2,
+  Shield,
+  ShieldAlert,
+  Trash2,
+  Wallet,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
+import { toast } from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
+import { cn } from '@/lib/utils'
 
 interface StepProps {
   onNext: () => void

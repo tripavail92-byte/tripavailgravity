@@ -1,8 +1,10 @@
-import { useState, ChangeEvent } from 'react'
+import { Building, Loader2, Upload } from 'lucide-react'
+import { ChangeEvent, useState } from 'react'
+import { toast } from 'react-hot-toast'
+
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -10,10 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Building, Upload, Loader2 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 
 interface StepProps {
   onNext: () => void

@@ -1,13 +1,14 @@
 import {
-  Plus,
-  CheckCircle,
-  Info,
-  DollarSign,
-  Calendar,
-  MapPin,
-  Users,
   Activity,
+  Calendar,
+  CheckCircle,
+  DollarSign,
+  Info,
+  MapPin,
+  Plus,
+  Users,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tour } from '@/features/tour-operator/services/tourService'

@@ -1,23 +1,23 @@
-import { motion } from 'motion/react'
-import React from 'react'
 import {
-  Wifi,
-  Coffee,
-  Utensils,
-  Car,
-  Users,
   Briefcase,
-  MapPin,
   Camera,
-  Wine,
-  Ticket,
-  Music,
-  Tv,
-  Smartphone,
+  Car,
+  Coffee,
   CreditCard,
   Gift,
   Key,
+  MapPin,
+  Music,
+  Smartphone,
+  Ticket,
+  Tv,
+  Users,
+  Utensils,
+  Wifi,
+  Wine,
 } from 'lucide-react'
+import { motion } from 'motion/react'
+import React from 'react'
 
 interface AnimatedIconProps {
   className?: string
@@ -54,7 +54,6 @@ const waveVariants = {
   },
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const ClockIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -111,7 +110,6 @@ export const ClockIcon = ({
   </motion.svg>
 )
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CocktailIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -265,7 +263,6 @@ export const CocktailIcon = ({
   </motion.svg>
 )
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CoffeeIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -356,7 +353,6 @@ export const CoffeeIcon = ({
   </motion.svg>
 )
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const WifiIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -458,7 +454,7 @@ export const WifiIcon = ({
 )
 
 // Fitness Icon - Girl on Treadmill
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export const DumbbellIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -674,7 +670,7 @@ export const DumbbellIcon = ({
 )
 
 // Room Upgrade Icon - Economy to Premium Transformation
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export const UpgradeIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -848,7 +844,7 @@ export const UpgradeIcon = ({
 )
 
 // Pool Icon - Splash Animation
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export const PoolIcon = ({
   className = 'w-12 h-12',
   animate = true,
@@ -940,7 +936,6 @@ export const PoolIcon = ({
   </motion.svg>
 )
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const HourglassIcon = ({
   className = 'w-12 h-12',
   animate = true,

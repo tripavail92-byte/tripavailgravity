@@ -1,4 +1,5 @@
-import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react'
+import { LucideIcon, TrendingDown, TrendingUp } from 'lucide-react'
+
 import { GlassCard } from '@/components/ui/glass'
 
 interface StatCardProps {

@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { motion } from 'motion/react'
-import { Card } from '@/components/ui/card'
-import { Globe, Check } from 'lucide-react'
-import { Label } from '@/components/ui/label'
-import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { APIProvider } from '@vis.gl/react-google-maps'
+import { Check, Globe } from 'lucide-react'
+import { motion } from 'motion/react'
+import { useState } from 'react'
+
+import { Card } from '@/components/ui/card'
+import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
+import { Label } from '@/components/ui/label'
 
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || ''
 

@@ -1,7 +1,7 @@
+import { AlertCircle, Check, Loader2 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'motion/react'
-import { AlertCircle, Check, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { handlePackagePaymentSuccess } from '@/features/booking'

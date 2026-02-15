@@ -1,25 +1,26 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
-  ShieldCheck,
-  ArrowRight,
-  Check,
-  Loader2,
   AlertCircle,
-  CreditCard,
+  ArrowRight,
   Camera,
-  UserCheck,
+  Check,
+  CreditCard,
   FileText,
+  Loader2,
+  ShieldCheck,
+  UserCheck,
 } from 'lucide-react'
-import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
+import { toast } from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
+import { KYCSelfieVector } from '@/features/verification/assets/KYCSelfieVector'
 import { aiVerificationService } from '@/features/verification/services/aiVerificationService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
-import { KYCSelfieVector } from '@/features/verification/assets/KYCSelfieVector'
 
 interface IdentitySubFlowProps {
   onComplete: (data: {

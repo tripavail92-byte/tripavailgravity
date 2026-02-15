@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { Camera, Check, Heart, Map, Mountain, PartyPopper, Plane, Plus, X } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Plane, Map, Mountain, Camera, PartyPopper, Heart, Plus, Check, X } from 'lucide-react'
+import { useState } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 

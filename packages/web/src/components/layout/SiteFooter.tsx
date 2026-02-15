@@ -1,5 +1,6 @@
 import { Globe } from 'lucide-react'
 import { Link } from 'react-router-dom'
+
 import { COMPANY } from '@/config/company'
 
 export function SiteFooter() {

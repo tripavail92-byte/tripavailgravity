@@ -1,8 +1,9 @@
+import { Clock, Edit2, ExternalLink, MapPin, Star, Trash2, Users } from 'lucide-react'
 import { motion } from 'motion/react'
-import { MapPin, Clock, Star, Users, ExternalLink, Edit2, Trash2 } from 'lucide-react'
-import { Tour } from '@/features/tour-operator/services/tourService'
-import { Button } from '@/components/ui/button'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface ActiveToursGridProps {
   tours: Tour[]

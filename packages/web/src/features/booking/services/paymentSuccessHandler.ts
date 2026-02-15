@@ -12,10 +12,10 @@
  */
 
 import {
-  packageBookingService,
-  tourBookingService,
   type PackageBooking,
+  packageBookingService,
   type TourBooking,
+  tourBookingService,
   validateBookingBeforePayment,
   validatePackageBookingBeforePayment,
 } from '@/features/booking'

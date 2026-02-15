@@ -5,24 +5,25 @@
  * Real-time data persistence via tourOperatorSettingsService
  */
 
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
-import { tourOperatorSettingsService } from '@/services/tourOperatorSettingsService'
 import {
-  Compass,
-  Building,
-  CreditCard,
+  AlertTriangle,
   Bell,
-  TrendingUp,
-  Shield,
+  Building,
   Calendar,
   ChevronRight,
-  AlertTriangle,
+  Compass,
+  CreditCard,
   Loader,
+  Shield,
+  TrendingUp,
 } from 'lucide-react'
-import { GlassCard, GlassBadge } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { GlassBadge, GlassCard } from '@/components/ui/glass'
+import { useAuth } from '@/hooks/useAuth'
+import { tourOperatorSettingsService } from '@/services/tourOperatorSettingsService'
 
 interface TourOperatorSettings {
   business_name?: string

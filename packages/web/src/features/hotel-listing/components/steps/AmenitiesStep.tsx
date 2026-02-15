@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import { Check, Search, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useRef, useState } from 'react'
+
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+
 import { getAmenityIcon } from '../../assets/AnimatedAmenityIcons'
-import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector'
 import type { StepData } from '../CompleteHotelListingFlow'
+import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector'
 
 interface AmenitiesStepProps {
   onComplete: (data: StepData) => void

@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
+import { Loader2, MapPin, Package, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Plus, Package, MapPin, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { StatsOverview } from '../../hotel-manager/dashboard/components/StatsOverview'
-import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'
-import { tourService, Tour } from '../services/tourService'
-import { useAuth } from '@/hooks/useAuth'
-import { DraftsAlert } from './components/DraftsAlert'
-import { ActiveToursGrid } from './components/ActiveToursGrid'
-import { Button } from '@/components/ui/button'
+
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/useAuth'
+
+import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'
+import { StatsOverview } from '../../hotel-manager/dashboard/components/StatsOverview'
+import { Tour, tourService } from '../services/tourService'
+import { ActiveToursGrid } from './components/ActiveToursGrid'
+import { DraftsAlert } from './components/DraftsAlert'
 
 export function TourOperatorDashboard() {
   const { user } = useAuth()

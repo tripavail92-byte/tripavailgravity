@@ -1,6 +1,7 @@
 import { Bell, Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
+import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
 
 export function DashboardHeader() {

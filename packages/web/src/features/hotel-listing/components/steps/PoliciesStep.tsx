@@ -1,9 +1,11 @@
+import { Clock, Home, Shield, UserCheck } from 'lucide-react'
 import { useState } from 'react'
-import { Clock, Shield, Home, UserCheck } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+
 import type { StepData } from '../CompleteHotelListingFlow'
 
 export interface PoliciesData {

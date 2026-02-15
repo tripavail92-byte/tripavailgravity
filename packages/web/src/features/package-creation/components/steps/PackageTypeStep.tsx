@@ -1,8 +1,10 @@
-import { motion } from 'motion/react'
 import { Check } from 'lucide-react'
+import { motion } from 'motion/react'
+
 import { cn } from '@/lib/utils'
-import { PackageType, StepData } from '../../types'
+
 import { PACKAGE_TYPE_CONFIG } from '../../assets/PackageTypeIcons'
+import { PackageType, StepData } from '../../types'
 
 interface PackageTypeStepProps {
   onComplete: (data: StepData) => void

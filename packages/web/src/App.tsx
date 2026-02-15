@@ -1,17 +1,17 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import TestKYC from './pages/TestKYC'
 import { Toaster } from 'react-hot-toast'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
-import { useAuth } from '@/hooks/useAuth'
-import { RoleGuard } from '@/components/auth/RoleGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
-
+import { RoleGuard } from '@/components/auth/RoleGuard'
+import { useAuth } from '@/hooks/useAuth'
 // Eager load critical components
 import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
 import LoginPage from '@/pages/auth/LoginPage'
 import LandingPage from '@/pages/LandingPage'
+
+import TestKYC from './pages/TestKYC'
 
 // Lazy load all other pages
 const PartnerSelectionPage = lazy(() => import('@/pages/partner/PartnerSelectionPage'))

@@ -1,11 +1,12 @@
-import { useState, ChangeEvent } from 'react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Camera, Upload, Trash2, Loader2, Info } from 'lucide-react'
+import { Camera, Info, Loader2, Trash2, Upload } from 'lucide-react'
+import { ChangeEvent, useState } from 'react'
+import { toast } from 'react-hot-toast'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 
 interface StepProps {
   onNext: () => void

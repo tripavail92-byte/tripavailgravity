@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
+import { Outlet } from 'react-router-dom'
+
 import { SiteFooter } from '@/components/layout/SiteFooter'
 
 export default function TravellerLayout() {

@@ -1,8 +1,9 @@
+import { DollarSign, Info, Percent, Plus, Trash2, Users } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
-import { DollarSign, Users, Percent, Info, Plus, Trash2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -11,8 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface TourPricingStepProps {

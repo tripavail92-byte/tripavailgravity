@@ -1,17 +1,17 @@
-import Homepage from './Homepage'
-import TravellerProfilePage from './TravellerProfilePage'
 import AccountSettingsPage from './AccountSettingsPage'
-import WishlistPage from './WishlistPage'
+import Homepage from './Homepage'
 import MyTripsPage from './MyTripsPage'
-import TravelerDashboardPage from './TravelerDashboardPage'
 import PaymentMethodsPage from './PaymentMethodsPage'
+import TravelerDashboardPage from './TravelerDashboardPage'
+import TravellerProfilePage from './TravellerProfilePage'
+import WishlistPage from './WishlistPage'
 
 export {
-  Homepage,
-  TravellerProfilePage,
   AccountSettingsPage,
-  WishlistPage,
+  Homepage,
   MyTripsPage,
-  TravelerDashboardPage,
   PaymentMethodsPage,
+  TravelerDashboardPage,
+  TravellerProfilePage,
+  WishlistPage,
 }

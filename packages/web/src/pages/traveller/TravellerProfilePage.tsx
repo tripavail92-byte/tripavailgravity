@@ -9,34 +9,35 @@
  * - Profile completion tracking
  */
 
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
-import {
-  Camera,
-  Mail,
-  Phone,
-  MapPin,
-  Map,
-  Calendar,
-  CreditCard,
-  Wallet,
-  Lock,
-  ChevronRight,
-  Check,
-  Edit,
-  Save,
-  X,
-  Loader2,
-} from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { GlassCard, GlassBadge } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { format } from 'date-fns'
+import {
+  Calendar,
+  Camera,
+  Check,
+  ChevronRight,
+  CreditCard,
+  Edit,
+  Loader2,
+  Lock,
+  Mail,
+  Map,
+  MapPin,
+  Phone,
+  Save,
+  Wallet,
+  X,
+} from 'lucide-react'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { userProfileService, type UserProfile } from '@/services/userProfileService'
+
+import { Button } from '@/components/ui/button'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { GlassBadge, GlassCard } from '@/components/ui/glass'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useAuth } from '@/hooks/useAuth'
+import { type UserProfile, userProfileService } from '@/services/userProfileService'
 
 interface ContactInfoItem {
   id: string

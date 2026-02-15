@@ -1,8 +1,9 @@
-import { ReactNode, useEffect } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
-import { toast } from 'react-hot-toast'
 import { RoleType } from '@tripavail/shared/roles/types'
+import { ReactNode, useEffect } from 'react'
+import { toast } from 'react-hot-toast'
+import { Navigate, useLocation } from 'react-router-dom'
+
+import { useAuth } from '@/hooks/useAuth'
 
 interface RoleGuardProps {
   children: ReactNode

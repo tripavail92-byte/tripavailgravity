@@ -1,7 +1,8 @@
+import { ArrowRight, LayoutDashboard, Map, ShieldCheck, Trophy } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Card } from '@/components/ui/card'
-import { Trophy, LayoutDashboard, Map, ArrowRight, ShieldCheck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+
+import { Card } from '@/components/ui/card'
 
 export function CompletionStep() {
   const navigate = useNavigate()

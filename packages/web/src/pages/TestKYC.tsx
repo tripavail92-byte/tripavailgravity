@@ -1,8 +1,9 @@
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
-import { aiVerificationService } from '@/features/verification/services/aiVerificationService'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { aiVerificationService } from '@/features/verification/services/aiVerificationService'
 
 export default function TestKYC() {
   const [loading, setLoading] = useState(false)

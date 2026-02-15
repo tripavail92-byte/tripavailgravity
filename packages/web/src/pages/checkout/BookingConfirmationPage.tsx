@@ -5,14 +5,15 @@
  * Shows booking details, booking ID, confirmation number, and next steps
  */
 
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { AlertCircle, Calendar, Check, Download, Loader2 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Check, Loader2, Download, Calendar, AlertCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { handlePaymentSuccess } from '@/features/booking'
-import { tourService, Tour, TourSchedule } from '@/features/tour-operator/services/tourService'
+import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 
 export default function BookingConfirmationPage() {
   const navigate = useNavigate()

@@ -1,5 +1,6 @@
-import { motion } from 'motion/react'
 import { AlertCircle, ArrowRight, Clock } from 'lucide-react'
+import { motion } from 'motion/react'
+
 import { Button } from '@/components/ui/button'
 import { Tour } from '@/features/tour-operator/services/tourService'
 

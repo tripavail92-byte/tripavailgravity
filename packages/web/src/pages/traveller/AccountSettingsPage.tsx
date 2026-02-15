@@ -5,25 +5,26 @@
  * Features: Live settings sync, notification toggles, privacy controls, theme management
  */
 
-import { useState, useEffect } from 'react'
-import { motion } from 'motion/react'
 import {
-  Shield,
   Bell,
+  ChevronRight,
   Eye,
-  Settings,
-  Moon,
-  Sun,
   Globe,
   HelpCircle,
-  ChevronRight,
   Loader2,
+  Moon,
+  Settings,
+  Shield,
+  Sun,
 } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
-import { GlassCard } from '@/components/ui/glass'
-import { Button } from '@/components/ui/button'
-import { accountSettingsService, type AccountSettings } from '@/services/accountSettingsService'
+import { motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+
+import { Button } from '@/components/ui/button'
+import { GlassCard } from '@/components/ui/glass'
+import { useAuth } from '@/hooks/useAuth'
+import { type AccountSettings, accountSettingsService } from '@/services/accountSettingsService'
 
 export default function AccountSettingsPage() {
   const { user } = useAuth()

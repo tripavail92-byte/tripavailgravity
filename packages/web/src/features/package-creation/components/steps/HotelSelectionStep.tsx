@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
-import { Building2, MapPin, Check, Loader2, AlertCircle, Plus } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { StepData } from '../../types'
-import { cn } from '@/lib/utils'
 import { supabase } from '@tripavail/shared/core/client'
+import { AlertCircle, Building2, Check, Loader2, MapPin, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+import { StepData } from '../../types'
 
 interface HotelSelectionStepProps {
   onComplete: (data: StepData) => void

@@ -1,6 +1,7 @@
+import { ArrowRight, Clock, MapPin, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
-import { MapPin, Clock, Star, Users, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+
 import { Badge } from '@/components/ui/badge'
 import { GlassBadge } from '@/components/ui/glass'
 

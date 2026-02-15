@@ -21,7 +21,8 @@ const config: Config = {
     extend: {
       backgroundImage: {
         'primary-gradient': 'var(--primary-gradient)',
-        'glass-gradient-light': 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+        'glass-gradient-light':
+          'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
         'glass-gradient-dark': 'linear-gradient(135deg, rgba(0,0,0,0.2), rgba(0,0,0,0.1))',
       },
       backdropBlur: {
