@@ -7,6 +7,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+import { ScrollArea } from '@/components/ui/scroll-area'
+
 export function DrawerMenu() {
   const { user, activeRole, signOut } = useAuth()
   const navigate = useNavigate()
@@ -161,18 +163,18 @@ export function DrawerMenu() {
           <Menu className="h-6 w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 border-r-0 sm:border-r glass-card">
+      <SheetContent side="left" className="w-[85vw] sm:w-[350px] p-0 border-r-0 sm:border-r glass-card overflow-hidden">
         <SheetHeader className="p-6 pb-0">
           <SheetTitle className="text-2xl font-black bg-primary-gradient bg-clip-text text-transparent italic">
             TRIPAVAIL
           </SheetTitle>
         </SheetHeader>
         <div className="py-6 flex flex-col h-full">
-          <div className="flex-1 px-4">
+          <ScrollArea className="flex-1 px-4">
             {activeRole?.role_type === 'traveller' && renderTravellerMenu()}
             {activeRole?.role_type === 'hotel_manager' && renderHotelManagerMenu()}
             {activeRole?.role_type === 'tour_operator' && renderTourOperatorMenu()}
-          </div>
+          </ScrollArea>
 
           <div className="p-6 border-t border-white/20 mt-auto bg-white/5">
             <div className="flex items-center gap-3 mb-6">
