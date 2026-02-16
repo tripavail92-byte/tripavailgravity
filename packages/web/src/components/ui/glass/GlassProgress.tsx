@@ -14,7 +14,7 @@ export function GlassProgress({ currentStep, totalSteps, className }: GlassProgr
   return (
     <div
       className={cn(
-        'w-full h-2 bg-gray-100/50 backdrop-blur-sm rounded-full overflow-hidden border border-white/20 shadow-inner',
+        'w-full h-2 bg-surface-raised/50 backdrop-blur-sm rounded-full overflow-hidden border border-border-subtle/20 shadow-inner',
         className,
       )}
     >

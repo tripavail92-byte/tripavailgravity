@@ -10,19 +10,19 @@ const glassBadgeVariants = cva(
       variant: {
         default: 'glass-badge text-foreground hover:shadow-sm',
         light:
-          'bg-white/90 backdrop-blur-md border border-white/30 text-gray-900 shadow-sm hover:shadow-md hover:bg-white',
+          'bg-surface-card/90 backdrop-blur-md border border-border-subtle/30 text-default shadow-sm hover:shadow-md hover:bg-surface-card',
         dark: 'bg-black/70 backdrop-blur-md border border-white/20 text-white hover:bg-black/80 hover:shadow-md hover:shadow-black/30',
         primary:
           'bg-primary/80 backdrop-blur-md text-primary-foreground border border-primary/40 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/30',
         secondary:
           'bg-secondary/80 backdrop-blur-md text-secondary-foreground border border-secondary/40 hover:bg-secondary/90 hover:shadow-md',
         success:
-          'bg-green-500/80 backdrop-blur-md text-white border border-green-400/40 hover:bg-green-500/90 hover:shadow-md hover:shadow-green-500/30 animate-pulse-subtle',
+          'bg-status-success/80 backdrop-blur-md text-white border border-status-success/40 hover:bg-status-success/90 hover:shadow-md hover:shadow-status-success/30 animate-pulse-subtle',
         warning:
-          'bg-yellow-500/80 backdrop-blur-md text-white border border-yellow-400/40 hover:bg-yellow-500/90 hover:shadow-md hover:shadow-yellow-500/30 animate-pulse-subtle',
+          'bg-status-warning/80 backdrop-blur-md text-white border border-status-warning/40 hover:bg-status-warning/90 hover:shadow-md hover:shadow-status-warning/30 animate-pulse-subtle',
         error:
-          'bg-red-500/80 backdrop-blur-md text-white border border-red-400/40 hover:bg-red-500/90 hover:shadow-md hover:shadow-red-500/30 animate-pulse-subtle',
-        info: 'bg-blue-500/80 backdrop-blur-md text-white border border-blue-400/40 hover:bg-blue-500/90 hover:shadow-md hover:shadow-blue-500/30',
+          'bg-status-error/80 backdrop-blur-md text-white border border-status-error/40 hover:bg-status-error/90 hover:shadow-md hover:shadow-status-error/30 animate-pulse-subtle',
+        info: 'bg-status-info/80 backdrop-blur-md text-white border border-status-info/40 hover:bg-status-info/90 hover:shadow-md hover:shadow-status-info/30',
         outline:
           'bg-white/20 backdrop-blur-sm border border-white/40 text-foreground hover:bg-white/30 hover:shadow-sm',
         ghost:
