@@ -19,12 +19,19 @@ export class RoleService {
      * Get the currently active role for a user
      */
     async getActiveRole(userId: string): Promise<UserRole | null> {
-        const { data, error } = await supabase
+        // Add timeout to prevent hanging queries
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Query timeout')), 5000)
+        );
+
+        const queryPromise = supabase
             .from('user_roles')
             .select('*')
             .eq('user_id', userId)
             .eq('is_active', true)
             .single();
+
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
         if (error && error.code !== 'PGRST116') throw error; // Ignore not found
         return data as UserRole | null;

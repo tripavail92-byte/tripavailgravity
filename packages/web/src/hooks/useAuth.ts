@@ -59,9 +59,17 @@ export const useAuth = create<AuthState>((set, get) => ({
   signIn: async (email, password) => {
     set({ isLoading: true })
     try {
-      await authService.signIn(email, password)
+      // Add 10 second timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Authentication timeout - please check your connection')), 10000)
+      )
+      
+      const signInPromise = authService.signIn(email, password)
+      
+      await Promise.race([signInPromise, timeoutPromise])
       // State updated by onAuthStateChange listener
     } catch (error) {
+      console.error('[useAuth] Sign in error:', error)
       set({ isLoading: false })
       throw error
     }
