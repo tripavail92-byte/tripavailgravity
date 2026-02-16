@@ -222,15 +222,15 @@ export function DrawerMenu() {
 
   return (
     <div className="relative md:hidden">
-      {/* Menu Button - Dark Style */}
+      {/* Menu Button - Themed Style */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         transition={spring}
         onClick={() => setIsDrawerOpen(true)}
-        className="fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-black/80 backdrop-blur-md flex items-center justify-center shadow-lg shadow-black/20 border border-white/10"
+        className="fixed top-4 left-4 z-40 w-10 h-10 rounded-full bg-background/80 backdrop-blur-md flex items-center justify-center shadow-lg border border-border/50 text-foreground"
       >
-        <Menu className="text-white" size={20} />
+        <Menu size={20} />
       </motion.button>
 
       {/* Drawer Overlay */}
@@ -241,7 +241,7 @@ export function DrawerMenu() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 pointer-events-auto"
             onClick={() => setIsDrawerOpen(false)}
           />
         )}
@@ -255,48 +255,49 @@ export function DrawerMenu() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={spring}
-            className="fixed left-4 top-4 bottom-4 w-[85vw] max-w-[320px] z-50"
+            className="fixed left-4 top-4 bottom-4 w-[85vw] max-w-[320px] z-50 pointer-events-auto"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={spring}
-              className="h-full rounded-[32px] bg-gradient-to-b from-gray-900 to-black border border-white/10 shadow-2xl overflow-hidden flex flex-col"
+              className="h-full rounded-[32px] bg-white dark:bg-black border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col"
             >
               <div
                 className="flex-1 overflow-y-auto no-scrollbar"
                 style={{
                   scrollbarWidth: 'thin',
-                  scrollbarColor: 'rgba(255,255,255,0.1) transparent',
+                  scrollbarColor: 'var(--border) transparent',
                 }}
               >
-                {/* Header - Compact */}
-                <div className="relative p-6 pb-2">
-                  {/* Close Button - Top Right */}
+                {/* Header - Horizontal Compact Layout */}
+                <div className="relative p-5 pb-0">
+                  {/* Close Button - Absolute Top Right */}
                   <div className="absolute top-5 right-5 z-20">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setIsDrawerOpen(false)}
-                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors text-foreground dark:text-white"
                     >
-                      <X className="text-white" size={16} />
+                      <X size={16} />
                     </motion.button>
                   </div>
 
-                  {/* Profile Avatar - Compact Card Style */}
-                  <div className="flex flex-col items-center mt-6">
+                  {/* Profile Layout - Horizontal (Avatar Left, Info Right) */}
+                  <div className="flex items-center gap-4 mt-2">
+                    {/* Avatar */}
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={spring}
                       className={cn(
-                        'w-20 h-20 rounded-[24px] flex items-center justify-center shadow-lg mb-3 bg-gradient-to-br p-[2px]',
+                        'w-14 h-14 rounded-[18px] flex-shrink-0 flex items-center justify-center shadow-lg bg-gradient-to-br p-[2px]',
                         roleGradient,
                       )}
                     >
-                      <div className="w-full h-full rounded-[22px] overflow-hidden bg-black">
+                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background dark:bg-black">
                         {user?.user_metadata?.avatar_url ? (
                           <img
                             src={user.user_metadata.avatar_url}
@@ -304,50 +305,65 @@ export function DrawerMenu() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-white/5">
-                            <UserCircle className="text-white/40" size={40} strokeWidth={1.5} />
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <UserCircle
+                              className="text-muted-foreground"
+                              size={28}
+                              strokeWidth={1.5}
+                            />
                           </div>
                         )}
                       </div>
                     </motion.div>
 
-                    <h2 className="text-white text-lg font-bold mb-0.5 truncate max-w-full px-4">
-                      {user?.user_metadata?.full_name || 'User'}
-                    </h2>
-                    <p className="text-white/50 text-xs truncate max-w-full px-4 mb-3">
-                      {user?.email}
-                    </p>
+                    {/* Info */}
+                    <div className="flex flex-col min-w-0 pr-8">
+                      <h2 className="text-foreground dark:text-white text-base font-bold truncate">
+                        {user?.user_metadata?.full_name || 'User'}
+                      </h2>
+                      <p className="text-muted-foreground text-[10px] truncate mb-1.5">
+                        {user?.email}
+                      </p>
 
-                    <div
-                      className={cn(
-                        'px-2.5 py-1 rounded-full bg-white/10 border border-white/10 shadow-sm flex items-center gap-1.5',
-                      )}
-                    >
-                      <Crown size={10} className="text-amber-400" fill="currentColor" />
-                      <span className="text-white/90 font-bold text-[10px] uppercase tracking-wider">
-                        {roleLabel}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={cn(
+                            'px-2 py-0.5 rounded-full bg-muted/50 dark:bg-white/10 border border-border dark:border-white/10 shadow-sm flex items-center gap-1 flex-shrink-0',
+                          )}
+                        >
+                          <Crown
+                            size={9}
+                            className="text-amber-500 dark:text-amber-400"
+                            fill="currentColor"
+                          />
+                          <span className="text-foreground/80 dark:text-white/90 font-bold text-[9px] uppercase tracking-wider">
+                            {roleLabel}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Progress Bar - Compact */}
-                <div className="px-5 py-4">
+                {/* Progress Bar - Compact & Less Intrusive */}
+                <div className="px-5 py-5">
                   <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-white/40 font-bold uppercase tracking-wider">
+                    <div className="flex justify-between items-center text-[9px]">
+                      <span className="text-muted-foreground font-bold uppercase tracking-wider">
                         Profile Score
                       </span>
                       <span
                         className={cn(
                           'font-bold',
-                          activeRole.role_type === 'traveller' ? 'text-amber-400' : 'text-blue-400',
+                          activeRole.role_type === 'traveller'
+                            ? 'text-amber-500 dark:text-amber-400'
+                            : 'text-blue-500 dark:text-blue-400',
                         )}
                       >
                         40%
                       </span>
                     </div>
-                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-muted dark:bg-white/10 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: '40%' }}
@@ -359,12 +375,12 @@ export function DrawerMenu() {
                 </div>
 
                 {/* Menu Items - Compact & Colorful Squares */}
-                <div className="px-4 pb-6">
-                  <h3 className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3 pl-2">
+                <div className="px-4 pb-4">
+                  <h3 className="text-muted-foreground/70 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
                     Menu
                   </h3>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {menuItems.map((item) => {
                       const isActive = location.pathname === item.path
                       const animation = getIconAnimation(item.label, isActive)
@@ -379,15 +395,15 @@ export function DrawerMenu() {
                         >
                           <div
                             className={cn(
-                              'flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all',
+                              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all', // Reduced py
                               isActive
-                                ? 'bg-white/10 border border-white/10'
-                                : 'hover:bg-white/5 border border-transparent',
+                                ? 'bg-muted/80 dark:bg-white/10 border border-border/50 dark:border-white/10'
+                                : 'hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent',
                             )}
                           >
-                            {/* Colorful Icon Container */}
+                            {/* Colorful Icon Container - Slightly Smaller */}
                             <div
-                              className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-lg`}
+                              className={`w-9 h-9 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-lg`}
                             >
                               <motion.div
                                 variants={{
@@ -398,7 +414,11 @@ export function DrawerMenu() {
                                 whileHover="hover"
                                 transition={animation.transition}
                               >
-                                <item.icon size={20} className="text-white" strokeWidth={2} />
+                                <item.icon
+                                  size={18} // Smaller icon
+                                  className="text-white"
+                                  strokeWidth={2}
+                                />
                               </motion.div>
                             </div>
 
@@ -407,15 +427,15 @@ export function DrawerMenu() {
                               className={cn(
                                 'text-sm font-medium flex-1 text-left transition-colors',
                                 isActive
-                                  ? 'text-white font-bold'
-                                  : 'text-white/70 group-hover:text-white',
+                                  ? 'text-foreground dark:text-white font-bold'
+                                  : 'text-muted-foreground dark:text-white/70 group-hover:text-foreground dark:group-hover:text-white',
                               )}
                             >
                               {item.label}
                             </span>
 
                             {/* Arrow */}
-                            <span className="text-white/20 text-lg group-hover:text-white/40 transition-colors">
+                            <span className="text-muted-foreground/40 dark:text-white/20 text-base group-hover:text-foreground/60 dark:group-hover:text-white/40 transition-colors">
                               ›
                             </span>
                           </div>
@@ -428,20 +448,20 @@ export function DrawerMenu() {
                   <motion.button
                     whileHover={{ x: 4 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full mt-2 group"
+                    className="w-full mt-1.5 group"
                   >
-                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-white/5 border border-transparent transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center flex-shrink-0 border border-white/5">
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent transition-all">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0 border border-border/50 dark:border-white/5">
                         <motion.div whileHover={{ scale: 1.1, rotate: 10 }}>
-                          <HelpCircle className="text-white/80" size={20} />
+                          <HelpCircle className="text-gray-600 dark:text-white/80" size={18} />
                         </motion.div>
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-white/70 text-sm font-medium group-hover:text-white transition-colors">
+                        <p className="text-muted-foreground dark:text-white/70 text-sm font-medium group-hover:text-foreground dark:group-hover:text-white transition-colors">
                           Help & Support
                         </p>
                       </div>
-                      <span className="text-white/20 text-lg group-hover:text-white/40 transition-colors">
+                      <span className="text-muted-foreground/40 dark:text-white/20 text-base group-hover:text-foreground/60 dark:group-hover:text-white/40 transition-colors">
                         ›
                       </span>
                     </div>
@@ -453,21 +473,21 @@ export function DrawerMenu() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleNavigation('/partner/onboarding')}
-                      className="w-full mt-5"
+                      className="w-full mt-4"
                     >
-                      <div className="relative rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 p-3 overflow-hidden shadow-lg shadow-indigo-500/20 border border-white/10">
+                      <div className="relative rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2.5 overflow-hidden shadow-lg shadow-indigo-500/20 border border-white/10">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                         <div className="relative flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                            <Briefcase className="text-white" size={18} />
+                          <div className="w-8 h-8 rounded-md bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Briefcase className="text-white" size={16} />
                           </div>
                           <div className="flex-1 text-left">
                             <p className="text-white text-xs font-bold uppercase tracking-wide">
                               Become a Partner
                             </p>
-                            <p className="text-white/60 text-[10px]">Grow with TripAvail</p>
+                            <p className="text-white/60 text-[9px]">Grow with TripAvail</p>
                           </div>
-                          <span className="text-white/80 text-lg">›</span>
+                          <span className="text-white/80 text-base">›</span>
                         </div>
                       </div>
                     </motion.button>
@@ -478,17 +498,21 @@ export function DrawerMenu() {
               </div>
 
               {/* Footer / Sign Out */}
-              <div className="p-4 pt-0 border-t border-white/10 bg-black/40 backdrop-blur-md">
+              <div className="p-4 pt-0 border-t border-border/50 dark:border-white/10 bg-background/50 dark:bg-black/40 backdrop-blur-md">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleLogout}
                   className="w-full mt-4"
                 >
-                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 p-3 transition-colors">
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 p-2.5 transition-colors">
                     <div className="flex items-center justify-center gap-2">
-                      <LogOut className="text-red-400" size={16} strokeWidth={2.5} />
-                      <span className="text-red-400 text-xs font-bold uppercase tracking-wider">
+                      <LogOut
+                        className="text-red-500 dark:text-red-400"
+                        size={16}
+                        strokeWidth={2.5}
+                      />
+                      <span className="text-red-500 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
                         Sign Out
                       </span>
                     </div>
