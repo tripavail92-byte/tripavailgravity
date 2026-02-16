@@ -110,7 +110,7 @@ export function SearchForm({
                 variant="outline"
                 role="combobox"
                 aria-expanded={openLocation}
-                className="w-full justify-between h-12 text-left font-normal border-gray-200 hover:border-primary hover:bg-red-50/10"
+                className="w-full justify-between h-12 text-left font-normal border-border-default hover:border-primary hover:bg-primary/5"
               >
                 {location || 'Search destinations'}
                 <MapPin className="ml-2 h-4 w-4 shrink-0 opacity-50 text-primary" />
@@ -151,7 +151,7 @@ export function SearchForm({
                 id="date"
                 variant={'outline'}
                 className={cn(
-                  'w-full justify-start text-left font-normal h-12 border-gray-200 hover:border-primary hover:bg-red-50/10',
+                  'w-full justify-start text-left font-normal h-12 border-border-default hover:border-primary hover:bg-primary/5',
                   !date && 'text-muted-foreground',
                 )}
               >
@@ -193,7 +193,7 @@ export function SearchForm({
               max={16}
               value={guests}
               onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-              className="h-12 border-gray-200 hover:border-primary focus:border-primary"
+              className="h-12 border-border-default hover:border-primary focus:border-primary"
             />
             <Users className="absolute right-3 top-3.5 h-4 w-4 text-primary opacity-50" />
           </div>

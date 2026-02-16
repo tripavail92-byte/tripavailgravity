@@ -241,7 +241,7 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                       onClick={isListening ? stopVoiceSearch : startVoiceSearch}
                       className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors ${
                         isListening
-                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                          ? 'bg-status-error/20 backdrop-blur-sm text-status-error'
                           : 'glass-chip hover:active'
                       }`}
                       whileTap={{ scale: 0.95 }}
@@ -259,9 +259,9 @@ export function SearchOverlay({ isOpen, onClose, onSearch, initialFilters }: Sea
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4"
+                        className="bg-status-error-subtle/20 border border-status-error/30 rounded-xl p-4"
                       >
-                        <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                        <div className="flex items-center gap-3 text-status-error">
                           <motion.div
                             animate={{ scale: [1, 1.2, 1] }}
                             transition={{ repeat: Infinity, duration: 1 }}
