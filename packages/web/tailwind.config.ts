@@ -1,6 +1,8 @@
 import type { Config } from 'tailwindcss'
 import tailwindcssAnimate from 'tailwindcss-animate'
 
+import { radiusTokens, shadowTokens, spacingTokens, typographyTokens } from './src/theme/tokens'
+
 const config: Config = {
   darkMode: ['class'],
   content: [
@@ -19,6 +21,23 @@ const config: Config = {
       },
     },
     extend: {
+      // Use centralized spacing tokens
+      spacing: spacingTokens.space,
+
+      // Use centralized typography tokens
+      fontFamily: typographyTokens.fontFamily,
+      fontSize: typographyTokens.fontSize,
+      fontWeight: typographyTokens.fontWeight,
+      letterSpacing: typographyTokens.letterSpacing,
+      lineHeight: typographyTokens.lineHeight,
+
+      // Use centralized shadow tokens
+      boxShadow: shadowTokens.boxShadow,
+      dropShadow: shadowTokens.dropShadow,
+
+      // Use centralized radius tokens
+      borderRadius: radiusTokens.borderRadius,
+
       backgroundImage: {
         'primary-gradient': 'var(--primary-gradient)',
         'glass-gradient-light':
@@ -29,6 +48,7 @@ const config: Config = {
         xs: '2px',
         '4xl': '80px',
       },
+      // Colors use CSS variables for dynamic theming
       colors: {
         glass: {
           light: 'rgba(255, 255, 255, 0.1)',
@@ -86,11 +106,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
         },
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
         'accordion-down': {
