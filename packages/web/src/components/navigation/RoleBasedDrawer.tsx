@@ -178,7 +178,7 @@ export function RoleBasedDrawer() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={spring}
-              className="h-full rounded-[32px] bg-white dark:bg-black border border-white/20 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col"
+              className="h-full rounded-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col"
             >
               <div
                 className="flex-1 overflow-y-auto no-scrollbar"
