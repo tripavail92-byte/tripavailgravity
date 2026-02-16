@@ -221,7 +221,7 @@ export default function TravellerProfilePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
         <GlassCard variant="light" className="p-8 rounded-2xl text-center">
-          <p className="text-gray-600 mb-4">Failed to load profile</p>
+          <p className="text-muted-foreground mb-4">Failed to load profile</p>
           <Button onClick={loadProfile} variant="outline">
             Try Again
           </Button>
@@ -276,9 +276,9 @@ export default function TravellerProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
+          <h1 className="text-xl font-semibold text-foreground">Profile</h1>
           <Button
             variant="ghost"
             size="sm"
@@ -304,8 +304,8 @@ export default function TravellerProfilePage() {
       {/* Content */}
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         {isEditing && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-blue-700">
+          <div className="bg-accent/10 border border-accent rounded-lg p-4 mb-4">
+            <p className="text-sm text-accent-foreground">
               <strong>Editing mode:</strong> Make changes below and click Save to update your
               profile.
             </p>
@@ -322,7 +322,7 @@ export default function TravellerProfilePage() {
           <div className="flex flex-col items-center text-center">
             {/* Avatar */}
             <div className="relative mb-4">
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-background shadow-lg bg-muted">
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -341,7 +341,7 @@ export default function TravellerProfilePage() {
               {isEditing && (
                 <label
                   htmlFor="avatar-upload"
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-gray-800"
+                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-foreground text-background rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-foreground/90"
                 >
                   <Camera className="w-4 h-4" />
                   <input
@@ -364,20 +364,20 @@ export default function TravellerProfilePage() {
                     placeholder="First name"
                     value={editingData.first_name || ''}
                     onChange={(e) => handleFieldChange('first_name', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-4 py-2 border border-input rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   <input
                     type="text"
                     placeholder="Last name"
                     value={editingData.last_name || ''}
                     onChange={(e) => handleFieldChange('last_name', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-4 py-2 border border-input rounded-lg text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               </>
             ) : (
               <>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
                   {fullName || 'Add your name'}
                 </h2>
               </>
@@ -389,11 +389,11 @@ export default function TravellerProfilePage() {
                 value={editingData.bio || ''}
                 onChange={(e) => handleFieldChange('bio', e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mb-6"
+                className="w-full px-4 py-2 border border-input rounded-lg text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-6"
               />
             ) : (
               <>
-                <p className="text-gray-600 mb-1 max-w-sm leading-relaxed">
+                <p className="text-muted-foreground mb-1 max-w-sm leading-relaxed">
                   {profile.bio || 'No bio added yet'}
                 </p>
               </>
@@ -401,7 +401,7 @@ export default function TravellerProfilePage() {
 
             {/* Member Since */}
             {!isEditing && (
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm text-muted-foreground mb-6">
                 {profile.created_at
                   ? `Member since ${format(new Date(profile.created_at), 'MMM yyyy')}`
                   : 'New member'}
@@ -411,10 +411,10 @@ export default function TravellerProfilePage() {
             {/* Profile Completion */}
             <div className="w-full">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Profile completion</span>
-                <span className="text-sm font-semibold text-gray-900">{profileCompletion}%</span>
+                <span className="text-sm font-medium text-foreground">Profile completion</span>
+                <span className="text-sm font-semibold text-foreground">{profileCompletion}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                 <motion.div
                   className="h-2 rounded-full"
                   style={{
@@ -461,8 +461,8 @@ export default function TravellerProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">About Me</h3>
-            <p className="text-gray-600 leading-relaxed">
+            <h3 className="text-lg font-semibold text-foreground mb-4">About Me</h3>
+            <p className="text-muted-foreground leading-relaxed">
               {profile.bio || 'Add a bio to help other travelers know more about you'}
             </p>
           </GlassCard>
@@ -477,11 +477,11 @@ export default function TravellerProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Contact Info</h3>
+          <div className="p-6 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Contact Info</h3>
           </div>
 
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             {contactInfo.map((item) =>
               item.isCalendar ? (
                 <Popover key={item.id} open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
