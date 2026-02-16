@@ -136,6 +136,41 @@ export const colorTokens = {
       dark: '212.7 26.8% 83.9%',
     },
   },
+  // ============================================
+  // CATEGORIES (Brand Taxonomy)
+  // ============================================
+  categories: {
+    budget: {
+      DEFAULT: '142 71% 45%',     // Green (money-saving)
+      light: '142 71% 95%',
+      dark: '142 71% 20%',
+    },
+    adventure: {
+      DEFAULT: '25 95% 53%',      // Orange (energetic)
+      light: '25 95% 95%',
+      dark: '25 95% 25%',
+    },
+    luxury: {
+      DEFAULT: '274 70% 60%',     // Purple (premium)
+      light: '274 70% 95%',
+      dark: '274 70% 25%',
+    },
+    romantic: {
+      DEFAULT: '350 100% 60%',    // Rose (love)
+      light: '350 100% 95%',
+      dark: '350 100% 25%',
+    },
+    family: {
+      DEFAULT: '328 86% 70%',     // Pink (warm)
+      light: '328 86% 95%',
+      dark: '328 86% 30%',
+    },
+    weekend: {
+      DEFAULT: '221 83% 53%',     // Blue (relaxed)
+      light: '221 83% 95%',
+      dark: '221 83% 25%',
+    },
+  },
 } as const
 
 export type ColorTokens = typeof colorTokens

@@ -106,6 +106,39 @@ const config: Config = {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
         },
+        // Category colors (brand taxonomy)
+        category: {
+          budget: {
+            DEFAULT: 'hsl(var(--category-budget))',
+            light: 'hsl(var(--category-budget-light))',
+            dark: 'hsl(var(--category-budget-dark))',
+          },
+          adventure: {
+            DEFAULT: 'hsl(var(--category-adventure))',
+            light: 'hsl(var(--category-adventure-light))',
+            dark: 'hsl(var(--category-adventure-dark))',
+          },
+          luxury: {
+            DEFAULT: 'hsl(var(--category-luxury))',
+            light: 'hsl(var(--category-luxury-light))',
+            dark: 'hsl(var(--category-luxury-dark))',
+          },
+          romantic: {
+            DEFAULT: 'hsl(var(--category-romantic))',
+            light: 'hsl(var(--category-romantic-light))',
+            dark: 'hsl(var(--category-romantic-dark))',
+          },
+          family: {
+            DEFAULT: 'hsl(var(--category-family))',
+            light: 'hsl(var(--category-family-light))',
+            dark: 'hsl(var(--category-family-dark))',
+          },
+          weekend: {
+            DEFAULT: 'hsl(var(--category-weekend))',
+            light: 'hsl(var(--category-weekend-light))',
+            dark: 'hsl(var(--category-weekend-dark))',
+          },
+        },
       },
       keyframes: {
         'accordion-down': {

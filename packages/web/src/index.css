@@ -174,6 +174,41 @@
     --text-link-hover: 4 98% 61%;
     --primary-gradient: linear-gradient(135deg, hsl(4 98% 66%) 0%, hsl(4 98% 76%) 100%);
   }
+
+  /* ============================================ */
+  /* CATEGORY TOKENS (Brand Taxonomy)            */
+  /* ============================================ */
+  :root {
+    /* Budget */
+    --category-budget: 142 71% 45%;
+    --category-budget-light: 142 71% 95%;
+    --category-budget-dark: 142 71% 20%;
+
+    /* Adventure */
+    --category-adventure: 25 95% 53%;
+    --category-adventure-light: 25 95% 95%;
+    --category-adventure-dark: 25 95% 25%;
+
+    /* Luxury */
+    --category-luxury: 274 70% 60%;
+    --category-luxury-light: 274 70% 95%;
+    --category-luxury-dark: 274 70% 25%;
+
+    /* Romantic */
+    --category-romantic: 350 100% 60%;
+    --category-romantic-light: 350 100% 95%;
+    --category-romantic-dark: 350 100% 25%;
+
+    /* Family */
+    --category-family: 328 86% 70%;
+    --category-family-light: 328 86% 95%;
+    --category-family-dark: 328 86% 30%;
+
+    /* Weekend */
+    --category-weekend: 221 83% 53%;
+    --category-weekend-light: 221 83% 95%;
+    --category-weekend-dark: 221 83% 25%;
+  }
 }
 
 @layer base {
