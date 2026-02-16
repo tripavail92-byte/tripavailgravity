@@ -5,14 +5,15 @@ import ReactDOM from 'react-dom/client'
 
 import App from './App.tsx'
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary'
-import { ThemeProvider } from './components/theme-provider'
+import { ThemeProvider } from './theme/ThemeContext'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <GlobalErrorBoundary>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ThemeProvider defaultMode="system" storageKey="tripavail-theme-mode">
         <App />
       </ThemeProvider>
     </GlobalErrorBoundary>
   </React.StrictMode>,
 )
+

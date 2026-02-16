@@ -3,109 +3,176 @@
 @tailwind utilities;
 
 @layer base {
+
+  /* ============================================ */
+  /* LIGHT MODE - Default Theme                  */
+  /* ============================================ */
   :root {
+    /* Surface/Background Tokens */
+    --surface-default: 0 0% 100%;
+    --surface-raised: 0 0% 98%;
+    --surface-card: 0 0% 100%;
+    --surface-popover: 0 0% 100%;
+    --surface-input: 0 0% 96%;
+    --surface-overlay: 0 0% 0% / 0.5;
+    --surface-hover: 0 0% 96%;
+
+    /* Text Tokens */
+    --text-default: 222.2 84% 4.9%;
+    --text-muted: 215.4 16.3% 46.9%;
+    --text-subtle: 215 20.2% 65.1%;
+    --text-disabled: 214.3 31.8% 91.4%;
+    --text-inverse: 0 0% 100%;
+
+    /* Border Tokens */
+    --border-default: 214.3 31.8% 91.4%;
+    --border-subtle: 214.3 31.8% 85%;
+    --border-strong: 214.3 31.8% 91.4%;
+    --border-focus: 222.2 84% 4.9%;
+    --border-hover: 214.3 31.8% 80%;
+
+    /* Status Tokens */
+    --status-success: 142 71% 45%;
+    --status-success-subtle: 142 76% 36%;
+    --status-warning: 38 92% 50%;
+    --status-warning-subtle: 38 92% 40%;
+    --status-error: 0 84.2% 60.2%;
+    --status-error-subtle: 0 84.2% 50.2%;
+    --status-info: 199 89% 48%;
+    --status-info-subtle: 199 89% 38%;
+
+    /* Legacy Compatibility (Shadcn/UI) */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 274 70% 60%;
-    /* #9D4EDD (Hotel Manager Purple) */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-
     --radius: 0.5rem;
+
+    /* Semantic Colors (for color utilities) */
+    --success: 142 71% 45%;
+    --success-foreground: 138 76% 97%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+    --error: 0 72% 51%;
+    --error-foreground: 0 86% 97%;
+    --info: 221 83% 53%;
+    --info-foreground: 221 91% 91%;
+
+    /* Role defaults (will be overridden by data-role) */
+    --primary: 350.5 100% 60%;
+    /* Traveller rose by default */
+    --primary-foreground: 0 0% 100%;
+    --interactive-primary: 350.5 100% 60%;
+    --interactive-primary-hover: 350.5 100% 55%;
+    --interactive-primary-active: 350.5 100% 50%;
+    --text-link: 350.5 100% 60%;
+    --text-link-hover: 350.5 100% 55%;
   }
 
+  /* ============================================ */
+  /* DARK MODE - Premium Slate Theme             */
+  /* ============================================ */
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Surface/Background Tokens */
+    --surface-default: 222.2 47.4% 11.2%;
+    --surface-raised: 217.2 32.6% 17.5%;
+    --surface-card: 222.2 47.4% 11.2%;
+    --surface-popover: 222.2 47.4% 11.2%;
+    --surface-input: 215.4 16.3% 25%;
+    --surface-overlay: 0 0% 0% / 0.8;
+    --surface-hover: 217.2 32.6% 20%;
+
+    /* Text Tokens */
+    --text-default: 210 40% 98%;
+    --text-muted: 215 20.2% 65.1%;
+    --text-subtle: 215.4 16.3% 46.9%;
+    --text-disabled: 217.2 32.6% 30%;
+    --text-inverse: 222.2 84% 4.9%;
+
+    /* Border Tokens */
+    --border-default: 217.2 32.6% 20%;
+    --border-subtle: 217.2 32.6% 25%;
+    --border-strong: 217.2 32.6% 20%;
+    --border-focus: 212.7 26.8% 83.9%;
+    --border-hover: 217.2 32.6% 30%;
+
+    /* Status Tokens */
+    --status-success: 142 71% 45%;
+    --status-success-subtle: 142 71% 55%;
+    --status-warning: 38 92% 50%;
+    --status-warning-subtle: 38 92% 60%;
+    --status-error: 0 84.2% 60.2%;
+    --status-error-subtle: 0 84.2% 70.2%;
+    --status-info: 199 89% 48%;
+    --status-info-subtle: 199 89% 58%;
+
+    /* Legacy Compatibility (Shadcn/UI) */
+    --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 47.4% 11.2%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    --popover: 222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 20%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
 
-  /* TripAvail Role-Based Themes */
-  :root[data-role='hotel_manager'] {
-    --primary: 274 70% 60%;
-    /* #9D4EDD */
-    --primary-foreground: 0 0% 100%;
-    --primary-gradient: linear-gradient(135deg, #9d4edd 0%, #00d4ff 100%);
-  }
+  /* ============================================ */
+  /* ROLE-BASED THEMES                           */
+  /* ============================================ */
 
+  /* Traveller Theme (Rose) */
   :root[data-role='traveller'] {
     --primary: 350.5 100% 60%;
-    /* #FF385C */
     --primary-foreground: 0 0% 100%;
-    --primary-gradient: linear-gradient(135deg, #ff385c 0%, #ff6b9d 100%);
+    --interactive-primary: 350.5 100% 60%;
+    --interactive-primary-hover: 350.5 100% 55%;
+    --interactive-primary-active: 350.5 100% 50%;
+    --text-link: 350.5 100% 60%;
+    --text-link-hover: 350.5 100% 55%;
+    --primary-gradient: linear-gradient(135deg, hsl(350.5 100% 60%) 0%, hsl(350.5 100% 70%) 100%);
   }
 
+  /* Hotel Manager Theme (Purple) */
+  :root[data-role='hotel_manager'] {
+    --primary: 274 70% 60%;
+    --primary-foreground: 0 0% 100%;
+    --interactive-primary: 274 70% 60%;
+    --interactive-primary-hover: 274 70% 55%;
+    --interactive-primary-active: 274 70% 50%;
+    --text-link: 274 70% 60%;
+    --text-link-hover: 274 70% 55%;
+    --primary-gradient: linear-gradient(135deg, hsl(274 70% 60%) 0%, hsl(186 100% 50%) 100%);
+  }
+
+  /* Tour Operator Theme (Coral) */
   :root[data-role='tour_operator'] {
     --primary: 4 98% 66%;
-    /* #FD5E53 (Bright Coral) */
     --primary-foreground: 0 0% 100%;
-    --primary-gradient: linear-gradient(135deg, #fd5e53 0%, #ff8a71 100%);
-    /* Real gradient for background-image compatibility */
-  }
-
-  /* Semantic Colors - Consistent across all roles */
-  :root {
-    /* Success (Green) */
-    --success: 142 71% 45%;
-    --success-foreground: 138 76% 97%;
-
-    /* Warning (Amber) */
-    --warning: 38 92% 50%;
-    --warning-foreground: 48 96% 89%;
-
-    /* Error (Red) */
-    --error: 0 72% 51%;
-    --error-foreground: 0 86% 97%;
-
-    /* Info (Blue) */
-    --info: 221 83% 53%;
-    --info-foreground: 221 91% 91%;
+    --interactive-primary: 4 98% 66%;
+    --interactive-primary-hover: 4 98% 61%;
+    --interactive-primary-active: 4 98% 56%;
+    --text-link: 4 98% 66%;
+    --text-link-hover: 4 98% 61%;
+    --primary-gradient: linear-gradient(135deg, hsl(4 98% 66%) 0%, hsl(4 98% 76%) 100%);
   }
 }
 
@@ -132,6 +199,7 @@
 
 /* TripAvail Design System - Extracted from extracted_tripavail */
 @layer utilities {
+
   /* Rose Primary Gradient */
   .gradient-rose-primary {
     background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%) !important;
@@ -336,6 +404,7 @@
 
   /* Glass Animation Utilities */
   @keyframes pulse-subtle {
+
     0%,
     100% {
       opacity: 1;
@@ -352,6 +421,7 @@
 
   /* Mobile-Optimized Glass (Less blur for performance) */
   @media (max-width: 768px) {
+
     .glass,
     .glass-card,
     .glass-nav {
