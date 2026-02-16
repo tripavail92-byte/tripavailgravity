@@ -27,28 +27,39 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
+    console.log('[LoginPage] Auth state changed:', { user: !!user, activeRole: activeRole?.role_type })
+    
     if (user && activeRole) {
       const redirectTo = searchParams.get('redirect')
       
       if (redirectTo) {
+        console.log('[LoginPage] Redirecting to:', redirectTo)
         navigate(redirectTo)
       } else {
         // Role-based default routing
         switch (activeRole.role_type) {
           case 'hotel_manager':
+            console.log('[LoginPage] Navigating to hotel manager dashboard')
             navigate('/manager/dashboard')
             break
           case 'tour_operator':
+            console.log('[LoginPage] Navigating to tour operator dashboard')
             navigate('/operator/dashboard')
             break
           case 'traveller':
           default:
+            console.log('[LoginPage] Navigating to homepage')
             navigate('/')
             break
         }
       }
+    } else if (user && !activeRole && !isLoading) {
+      // User logged in but no active role yet - this shouldn't happen often
+      // but if it does, send them to homepage as fallback
+      console.log('[LoginPage] User authenticated but no active role, redirecting to homepage')
+      navigate('/')
     }
-  }, [user, activeRole, navigate, searchParams])
+  }, [user, activeRole, navigate, searchParams, isLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
