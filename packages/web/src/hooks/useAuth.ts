@@ -51,8 +51,14 @@ export const useAuth = create<AuthState>((set, get) => ({
         }
       })
     } catch (error) {
-      console.error('Auth initialization failed:', error)
-      set({ isLoading: false, initialized: true })
+      // Ignore AbortErrors - they're expected in React Strict Mode
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('[useAuth] Initialization aborted (expected in dev mode)')
+        set({ isLoading: false, initialized: true })
+      } else {
+        console.error('Auth initialization failed:', error)
+        set({ isLoading: false, initialized: true })
+      }
     }
   },
 
