@@ -88,12 +88,12 @@ export function TripAvailSearchBar({
 
   // Quick filter chips
   const quickFilters = [
-    { id: 'budget', label: 'Budget Friendly', icon: DollarSign, color: 'bg-green-500' },
-    { id: 'weekend', label: 'Weekend Trips', icon: Calendar, color: 'bg-blue-500' },
-    { id: 'adventure', label: 'Adventure', icon: Mountain, color: 'bg-orange-500' },
-    { id: 'luxury', label: 'Luxury', icon: Star, color: 'bg-purple-500' },
-    { id: 'family', label: 'Family Friendly', icon: Users, color: 'bg-pink-500' },
-    { id: 'romantic', label: 'Romantic', icon: Heart, color: 'bg-red-500' },
+    { id: 'budget', label: 'Budget Friendly', icon: DollarSign, color: 'bg-category-budget' },
+    { id: 'weekend', label: 'Weekend Trips', icon: Calendar, color: 'bg-category-weekend' },
+    { id: 'adventure', label: 'Adventure', icon: Mountain, color: 'bg-category-adventure' },
+    { id: 'luxury', label: 'Luxury', icon: Star, color: 'bg-category-luxury' },
+    { id: 'family', label: 'Family Friendly', icon: Users, color: 'bg-category-family' },
+    { id: 'romantic', label: 'Romantic', icon: Heart, color: 'bg-category-romantic' },
   ]
 
   // Duration options
@@ -299,7 +299,7 @@ export function TripAvailSearchBar({
                 onClick={isListening ? stopVoiceSearch : startVoiceSearch}
                 className={`p-2 rounded-lg transition-colors ${
                   isListening
-                    ? 'bg-red-500/20 backdrop-blur-sm text-red-600 dark:text-red-400'
+                    ? 'bg-status-error/20 backdrop-blur-sm text-status-error'
                     : 'glass-chip'
                 }`}
                 whileTap={{ scale: 0.95 }}
@@ -502,7 +502,7 @@ export function TripAvailSearchBar({
                                   {destination.name}
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs px-2 py-0">
+                                  <Badge className="bg-status-success-subtle/20 text-status-success text-xs px-2 py-0">
                                     {destination.trend}
                                   </Badge>
                                   <span className="text-xs text-gray-500 dark:text-gray-400">

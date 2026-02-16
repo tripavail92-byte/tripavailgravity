@@ -120,7 +120,7 @@ export function CityAutocomplete({
     <div className={cn('relative w-full', className)}>
       <div className="relative group">
         <MapPin
-          className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-300 group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110"
+          className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-muted group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110"
           aria-hidden="true"
         />
         <Input
@@ -131,7 +131,7 @@ export function CityAutocomplete({
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder={placeholder}
-          className="pl-14 pr-14 rounded-2xl border-gray-100 py-8 text-lg shadow-sm focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all placeholder:text-gray-300 font-medium w-full"
+          className="pl-14 pr-14 rounded-2xl border-border-default py-8 text-lg shadow-sm focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all placeholder:text-muted font-medium w-full"
         />
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {isSearching ? (
@@ -140,7 +140,7 @@ export function CityAutocomplete({
             <button
               type="button"
               onClick={detectLocation}
-              className="p-2 hover:bg-primary/10 rounded-xl text-gray-400 hover:text-primary transition-all active:scale-95"
+              className="p-2 hover:bg-primary/10 rounded-xl text-subtle hover:text-primary transition-all active:scale-95"
               title="Detect current location"
             >
               <LocateFixed className="w-5 h-5" />
@@ -156,22 +156,22 @@ export function CityAutocomplete({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute left-0 right-0 top-full mt-3 bg-white border border-gray-100 rounded-[28px] shadow-2xl z-50 overflow-hidden ring-1 ring-black/[0.05]"
+            className="absolute left-0 right-0 top-full mt-3 bg-surface-card border border-border-subtle rounded-[28px] shadow-2xl z-50 overflow-hidden ring-1 ring-black/[0.05]"
           >
             {predictions.map((prediction) => (
               <button
                 key={prediction.place_id}
                 onClick={() => handlePredictionClick(prediction)}
-                className="w-full px-6 py-5 text-left hover:bg-primary/[0.03] flex items-center gap-4 transition-colors group border-b border-gray-50 last:border-b-0"
+                className="w-full px-6 py-5 text-left hover:bg-primary/[0.03] flex items-center gap-4 transition-colors group border-b border-border-subtle/50 last:border-b-0"
               >
-                <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                  <MapPin className="w-5 h-5 text-gray-400 group-hover:text-primary" />
+                <div className="w-10 h-10 bg-surface-raised rounded-xl flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                  <MapPin className="w-5 h-5 text-subtle group-hover:text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-gray-900 truncate tracking-tight">
+                  <p className="font-extrabold text-default truncate tracking-tight">
                     {prediction.structured_formatting.main_text}
                   </p>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-widest truncate">
+                  <p className="text-xs text-subtle font-bold uppercase tracking-widest truncate">
                     {prediction.structured_formatting.secondary_text}
                   </p>
                 </div>
