@@ -22,16 +22,33 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const { signIn, signUp, signInWithGoogle, devLogin, isLoading, user } = useAuth()
+  const { signIn, signUp, signInWithGoogle, devLogin, isLoading, user, activeRole } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
-    if (user) {
-      const redirectTo = searchParams.get('redirect') || '/dashboard'
-      navigate(redirectTo)
+    if (user && activeRole) {
+      const redirectTo = searchParams.get('redirect')
+      
+      if (redirectTo) {
+        navigate(redirectTo)
+      } else {
+        // Role-based default routing
+        switch (activeRole.role_type) {
+          case 'hotel_manager':
+            navigate('/manager/dashboard')
+            break
+          case 'tour_operator':
+            navigate('/operator/dashboard')
+            break
+          case 'traveller':
+          default:
+            navigate('/')
+            break
+        }
+      }
     }
-  }, [user, navigate, searchParams])
+  }, [user, activeRole, navigate, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

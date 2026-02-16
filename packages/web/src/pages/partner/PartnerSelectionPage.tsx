@@ -14,7 +14,7 @@ export default function PartnerSelectionPage() {
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const partnerOptions = [
+  const allPartnerOptions = [
     {
       id: 'hotel_manager',
       title: 'Hotel Manager',
@@ -30,6 +30,19 @@ export default function PartnerSelectionPage() {
       stats: '15K+ operators active',
     },
   ]
+
+  // Filter out already-selected partner roles
+  const availablePartnerOptions = allPartnerOptions.filter((option) => {
+    if (!activeRole) return true
+    // If user already has a partner role, hide all partner options
+    if (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator') {
+      return false
+    }
+    return true
+  })
+
+  const hasPartnerRole =
+    activeRole && (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator')
 
   const handleSelectPartner = async (mode: 'hotel_manager' | 'tour_operator') => {
     // If not logged in, redirect to auth with selected role
@@ -86,56 +99,75 @@ export default function PartnerSelectionPage() {
         </div>
 
         {/* Partner Options - Clean Design */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {partnerOptions.map((option, index) => (
-            <motion.div
-              key={option.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + index * 0.1 }}
+        {hasPartnerRole ? (
+          <div className="text-center p-12 bg-white rounded-2xl border border-gray-200">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              You're Already a Partner!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              You have selected <span className="font-bold text-primary">{activeRole?.role_type.replace('_', ' ')}</span> as your partner role.
+              <br />
+              Partner role selection is permanent and cannot be changed.
+            </p>
+            <button
+              onClick={() => navigate(activeRole?.role_type === 'hotel_manager' ? '/manager/dashboard' : '/operator/dashboard')}
+              className="px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium"
             >
-              <Card
-                className="p-8 bg-white border border-gray-200 rounded-2xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
-                onMouseEnter={() => setHoveredOption(option.id)}
-                onMouseLeave={() => setHoveredOption(null)}
-                onClick={() => handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')}
+              Go to Dashboard
+            </button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {availablePartnerOptions.map((option, index) => (
+              <motion.div
+                key={option.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + index * 0.1 }}
               >
-                {/* Clean Modern Icon */}
-                <motion.div
-                  className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                <Card
+                  className="p-8 bg-white border border-gray-200 rounded-2xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                  onMouseEnter={() => setHoveredOption(option.id)}
+                  onMouseLeave={() => setHoveredOption(null)}
+                  onClick={() => handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')}
                 >
-                  <option.icon size={64} isSelected={hoveredOption === option.id} />
-                </motion.div>
-
-                {/* Title and Description */}
-                <div className="text-center mb-4">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{option.title}</h3>
-                  <p className="text-gray-600">{option.description}</p>
-                </div>
-
-                {/* Stats */}
-                <div className="text-center mb-6">
-                  <p className="text-primary text-sm font-medium">{option.stats}</p>
-                </div>
-
-                {/* Get Started Button */}
-                <div className="flex justify-center">
-                  <motion.button
-                    className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={isLoading || (!!activeRole && activeRole.role_type !== 'traveller')}
+                  {/* Clean Modern Icon */}
+                  <motion.div
+                    className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
-                    <span>Get Started</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </motion.button>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                    <option.icon size={64} isSelected={hoveredOption === option.id} />
+                  </motion.div>
+
+                  {/* Title and Description */}
+                  <div className="text-center mb-4">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{option.title}</h3>
+                    <p className="text-gray-600">{option.description}</p>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="text-center mb-6">
+                    <p className="text-primary text-sm font-medium">{option.stats}</p>
+                  </div>
+
+                  {/* Get Started Button */}
+                  <div className="flex justify-center">
+                    <motion.button
+                      className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      disabled={isLoading || (!!activeRole && activeRole.role_type !== 'traveller')}
+                    >
+                      <span>Get Started</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Why Partner with TripAvail */}
         <motion.div
