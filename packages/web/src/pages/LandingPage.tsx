@@ -261,7 +261,7 @@ function MixedHomepageRow({
             {[0, 1, 2, 3].map((i) => (
               <Card
                 key={i}
-                className="rounded-2xl border border-border/60 overflow-hidden min-w-[280px] flex-shrink-0"
+                className="rounded-2xl border border-border/60 overflow-hidden flex-shrink-0 w-[280px] sm:w-[320px]"
               >
                 <div className="aspect-[4/5]">
                   <Skeleton className="w-full h-full" />
@@ -284,7 +284,10 @@ function MixedHomepageRow({
         ) : merged.length > 0 ? (
           <HorizontalPreviewSlider>
             {merged.map((experience) => (
-              <div key={`${experience.type}-${experience.id}`} className="min-w-[280px] flex-shrink-0">
+              <div
+                key={`${experience.type}-${experience.id}`}
+                className="flex-shrink-0 w-[280px] sm:w-[320px]"
+              >
                 <UnifiedExperienceCard experience={experience} />
               </div>
             ))}
