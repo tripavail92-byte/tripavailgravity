@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { fetchReports } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 
 type ReportRow = {
@@ -82,15 +83,8 @@ export default function AdminReportsPage() {
       setErrorMessage(null)
 
       try {
-        const { data, error } = await (supabase.from('reports' as any) as any)
-          .select(
-            'id, reporter_id, target_entity_type, target_entity_id, report_reason, details, status, status_reason, created_at',
-          )
-          .order('created_at', { ascending: false })
-          .limit(50)
-
-        if (error) throw error
-        if (!isCancelled) setRows((data || []) as ReportRow[])
+        const data = await fetchReports(50)
+        if (!isCancelled) setRows(data as ReportRow[])
       } catch (err: any) {
         console.error('Error loading reports:', err)
         if (!isCancelled) setErrorMessage(err?.message || 'Failed to load reports')
@@ -110,15 +104,8 @@ export default function AdminReportsPage() {
     setErrorMessage(null)
 
     try {
-      const { data, error } = await (supabase.from('reports' as any) as any)
-        .select(
-          'id, reporter_id, target_entity_type, target_entity_id, report_reason, details, status, status_reason, created_at',
-        )
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (error) throw error
-      setRows((data || []) as ReportRow[])
+      const data = await fetchReports(50)
+      setRows(data as ReportRow[])
     } catch (err: any) {
       console.error('Error reloading reports:', err)
       setErrorMessage(err?.message || 'Failed to load reports')

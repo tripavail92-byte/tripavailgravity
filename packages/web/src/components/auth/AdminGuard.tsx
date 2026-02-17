@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useAdminRole } from '@/queries/adminQueries'
 import { supabase } from '@/lib/supabase'
 
 type AdminGuardState =
@@ -20,41 +21,31 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   const [state, setState] = useState<AdminGuardState>({ status: 'checking' })
 
+  // ✅ Enterprise: Use query hook instead of manual useEffect
+  const { data: adminUser, isLoading, error } = useAdminRole(user?.id, {
+    enabled: initialized && !!user,
+  })
+
   useEffect(() => {
-    let isCancelled = false
+    if (!initialized) return
 
-    const run = async () => {
-      if (!initialized) return
-
-      if (!user) {
-        if (!isCancelled) setState({ status: 'denied' })
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('role')
-        .eq('id', user.id)
-        .limit(1)
-
-      if (isCancelled) return
-
-      const role = Array.isArray(data) ? data[0]?.role : undefined
-
-      if (error || !role) {
-        setState({ status: 'denied' })
-        return
-      }
-
-      setState({ status: 'allowed', role })
+    if (!user) {
+      setState({ status: 'denied' })
+      return
     }
 
-    run()
-
-    return () => {
-      isCancelled = true
+    if (isLoading) {
+      setState({ status: 'checking' })
+      return
     }
-  }, [initialized, user])
+
+    if (error || !adminUser || !adminUser.role) {
+      setState({ status: 'denied' })
+      return
+    }
+
+    setState({ status: 'allowed', role: adminUser.role as any })
+  }, [initialized, user, adminUser, isLoading, error])
 
   useEffect(() => {
     if (state.status !== 'allowed' || !user) return

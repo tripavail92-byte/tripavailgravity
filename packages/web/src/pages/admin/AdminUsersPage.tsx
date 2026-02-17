@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAdminUsers, useUpdateUserStatus } from '@/queries/adminQueries'
 import { supabase } from '@/lib/supabase'
 
 type ProfileRow = {
@@ -37,8 +38,10 @@ type AccountStatus = 'active' | 'suspended' | 'deleted'
 const MIN_REASON_LEN = 12
 
 export default function AdminUsersPage() {
-  const [rows, setRows] = useState<ProfileRow[]>([])
-  const [loading, setLoading] = useState(true)
+  // ✅ Enterprise: Use query hook instead of manual useEffect
+  const { data: rows = [], isLoading: loading, error, refetch } = useAdminUsers()
+  const updateUserStatus = useUpdateUserStatus()
+  
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [nextStatusById, setNextStatusById] = useState<Record<string, AccountStatus>>({})
@@ -61,52 +64,12 @@ export default function AdminUsersPage() {
     }
   ).rpc
 
+  // ✅ Set error from query
   useEffect(() => {
-    let isCancelled = false
-
-    const load = async () => {
-      setLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const { data, error } = await (supabase.from('profiles' as any) as any)
-          .select('id, email, first_name, last_name, account_status, created_at')
-          .order('created_at', { ascending: false })
-          .limit(50)
-
-        if (error) throw error
-        if (!isCancelled) setRows((data || []) as ProfileRow[])
-      } catch (err: any) {
-        console.error('Error loading users:', err)
-        if (!isCancelled) setErrorMessage(err?.message || 'Failed to load users')
-      } finally {
-        if (!isCancelled) setLoading(false)
-      }
+    if (error) {
+      setErrorMessage(error.message || 'Failed to load users')
     }
-
-    load()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [])
-
-  const reloadUsers = async () => {
-    setErrorMessage(null)
-
-    try {
-      const { data, error } = await (supabase.from('profiles' as any) as any)
-        .select('id, email, first_name, last_name, account_status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (error) throw error
-      setRows((data || []) as ProfileRow[])
-    } catch (err: any) {
-      console.error('Error reloading users:', err)
-      setErrorMessage(err?.message || 'Failed to load users')
-    }
-  }
+  }, [error])
 
   const statusOptions = useMemo(() => {
     return [
@@ -168,7 +131,7 @@ export default function AdminUsersPage() {
 
       toast.success('User status updated — see Audit Logs')
       window.dispatchEvent(new CustomEvent('tripavail:admin_action'))
-      await reloadUsers()
+      await refetch()
       setReasonById((prev) => ({ ...prev, [row.id]: '' }))
     } catch (err: any) {
       console.error('Error updating user status:', err)

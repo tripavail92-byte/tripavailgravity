@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { fetchHotelManagers, fetchTourOperators, fetchProfileById } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 
 type ProfileIdentity = {
@@ -83,23 +84,13 @@ export default function AdminPartnersPage() {
       setErrorMessage(null)
 
       try {
-        const [{ data: hmData, error: hmError }, { data: opData, error: opError }] =
-          await Promise.all([
-            (supabase.from('hotel_manager_profiles' as any) as any)
-              .select('user_id, business_name, account_status, created_at')
-              .order('created_at', { ascending: false })
-              .limit(50),
-            (supabase.from('tour_operator_profiles' as any) as any)
-              .select('user_id, company_name, account_status, created_at')
-              .order('created_at', { ascending: false })
-              .limit(50),
-          ])
+        const [hmData, opData] = await Promise.all([
+          fetchHotelManagers(50),
+          fetchTourOperators(50),
+        ])
 
-        if (hmError) throw hmError
-        if (opError) throw opError
-
-        const hmRows = (hmData || []) as HotelManagerRow[]
-        const opRows = (opData || []) as TourOperatorRow[]
+        const hmRows = hmData as HotelManagerRow[]
+        const opRows = opData as TourOperatorRow[]
 
         const partnerIds = Array.from(
           new Set([
@@ -110,13 +101,9 @@ export default function AdminPartnersPage() {
 
         let usersMap: Record<string, ProfileIdentity> = {}
         if (partnerIds.length) {
-          const { data: userRows, error: usersError } = await (supabase.from('profiles' as any) as any)
-            .select('id, email, first_name, last_name')
-            .in('id', partnerIds)
-
-          if (usersError) throw usersError
+          const userRows = await Promise.all(partnerIds.map(id => fetchProfileById(id)))
           usersMap = Object.fromEntries(
-            ((userRows || []) as ProfileIdentity[]).map((u) => [u.id, u]),
+            userRows.map((u) => [u.id, u]),
           )
         }
 
@@ -144,23 +131,13 @@ export default function AdminPartnersPage() {
     setErrorMessage(null)
 
     try {
-      const [{ data: hmData, error: hmError }, { data: opData, error: opError }] =
-        await Promise.all([
-          (supabase.from('hotel_manager_profiles' as any) as any)
-            .select('user_id, business_name, account_status, created_at')
-            .order('created_at', { ascending: false })
-            .limit(50),
-          (supabase.from('tour_operator_profiles' as any) as any)
-            .select('user_id, company_name, account_status, created_at')
-            .order('created_at', { ascending: false })
-            .limit(50),
-        ])
+      const [hmData, opData] = await Promise.all([
+        fetchHotelManagers(50),
+        fetchTourOperators(50),
+      ])
 
-      if (hmError) throw hmError
-      if (opError) throw opError
-
-      const hmRows = (hmData || []) as HotelManagerRow[]
-      const opRows = (opData || []) as TourOperatorRow[]
+      const hmRows = hmData as HotelManagerRow[]
+      const opRows = opData as TourOperatorRow[]
 
       const partnerIds = Array.from(
         new Set([
@@ -171,12 +148,8 @@ export default function AdminPartnersPage() {
 
       let usersMap: Record<string, ProfileIdentity> = {}
       if (partnerIds.length) {
-        const { data: userRows, error: usersError } = await (supabase.from('profiles' as any) as any)
-          .select('id, email, first_name, last_name')
-          .in('id', partnerIds)
-
-        if (usersError) throw usersError
-        usersMap = Object.fromEntries(((userRows || []) as ProfileIdentity[]).map((u) => [u.id, u]))
+        const userRows = await Promise.all(partnerIds.map(id => fetchProfileById(id)))
+        usersMap = Object.fromEntries(userRows.map((u) => [u.id, u]))
       }
 
       setHotelManagers(hmRows)

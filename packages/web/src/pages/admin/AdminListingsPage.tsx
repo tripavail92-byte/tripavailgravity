@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { fetchPackagesForModeration, fetchToursForModeration } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 
 type PackageRow = {
@@ -79,24 +80,14 @@ export default function AdminListingsPage() {
       setErrorMessage(null)
 
       try {
-        const [{ data: pkgData, error: pkgError }, { data: tourData, error: tourError }] =
-          await Promise.all([
-            (supabase.from('packages' as any) as any)
-              .select('id, name, package_type, is_published, status, created_at')
-              .order('created_at', { ascending: false })
-              .limit(50),
-            (supabase.from('tours' as any) as any)
-              .select('id, title, tour_type, is_active, status, created_at')
-              .order('created_at', { ascending: false })
-              .limit(50),
-          ])
-
-        if (pkgError) throw pkgError
-        if (tourError) throw tourError
+        const [pkgData, tourData] = await Promise.all([
+          fetchPackagesForModeration(50),
+          fetchToursForModeration(50),
+        ])
 
         if (!isCancelled) {
-          setPackages((pkgData || []) as PackageRow[])
-          setTours((tourData || []) as TourRow[])
+          setPackages(pkgData as PackageRow[])
+          setTours(tourData as TourRow[])
         }
       } catch (err: any) {
         console.error('Error loading listings:', err)
@@ -117,23 +108,13 @@ export default function AdminListingsPage() {
     setErrorMessage(null)
 
     try {
-      const [{ data: pkgData, error: pkgError }, { data: tourData, error: tourError }] =
-        await Promise.all([
-          (supabase.from('packages' as any) as any)
-            .select('id, name, package_type, is_published, status, created_at')
-            .order('created_at', { ascending: false })
-            .limit(50),
-          (supabase.from('tours' as any) as any)
-            .select('id, title, tour_type, is_active, status, created_at')
-            .order('created_at', { ascending: false })
-            .limit(50),
-        ])
+      const [pkgData, tourData] = await Promise.all([
+        fetchPackagesForModeration(50),
+        fetchToursForModeration(50),
+      ])
 
-      if (pkgError) throw pkgError
-      if (tourError) throw tourError
-
-      setPackages((pkgData || []) as PackageRow[])
-      setTours((tourData || []) as TourRow[])
+      setPackages(pkgData as PackageRow[])
+      setTours(tourData as TourRow[])
     } catch (err: any) {
       console.error('Error reloading listings:', err)
       setErrorMessage(err?.message || 'Failed to load listings')

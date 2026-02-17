@@ -36,8 +36,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { packageBookingService } from '@/features/booking'
 import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons'
+import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
-import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 // Helper to normalize amenity strings to kebab-case for centralized icon lookup
@@ -117,15 +117,7 @@ export default function PackageDetailsPage() {
 
         // Fetch Hotel Details & Amenities
         if (pkg.hotel_id) {
-          const { data: hotel, error: hError } = await supabase
-            .from('hotels')
-            .select('name, amenities')
-            .eq('id', pkg.hotel_id)
-            .maybeSingle()
-
-          if (hError) {
-            console.warn('PackageDetailsPage: Hotel fetch warning', hError)
-          }
+          const hotel = await hotelService.getHotelById(pkg.hotel_id, 'name, amenities')
 
           if (hotel) {
             if (hotel.amenities) {
@@ -139,14 +131,7 @@ export default function PackageDetailsPage() {
         const roomConfig = pkg.room_configuration as any
         const roomIds = roomConfig?.rooms?.map((r: any) => r.room_id) || []
         if (roomIds.length > 0) {
-          const { data: rooms, error: rError } = await supabase
-            .from('rooms')
-            .select('name, description, amenities')
-            .in('id', roomIds)
-
-          if (rError) {
-            console.warn('PackageDetailsPage: Room fetch warning', rError)
-          }
+          const rooms = await hotelService.getRoomsByIds(roomIds, 'name, description, amenities')
 
           if (rooms) {
             setRoomData(rooms)

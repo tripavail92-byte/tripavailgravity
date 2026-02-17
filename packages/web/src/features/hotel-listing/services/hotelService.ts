@@ -256,4 +256,43 @@ export const hotelService = {
       return { success: false, error, listings: [] }
     }
   },
+
+  /**
+   * Fetch hotel by ID with optional fields
+   * Used by PackageDetailsPage to get hotel amenities
+   */
+  async getHotelById(hotelId: string, selectFields = 'name, amenities') {
+    const { data, error } = await supabase
+      .from('hotels')
+      .select(selectFields)
+      .eq('id', hotelId)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('[hotelService] Error fetching hotel:', error)
+      throw error
+    }
+
+    return data
+  },
+
+  /**
+   * Fetch rooms by IDs
+   * Used by PackageDetailsPage to get room amenities
+   */
+  async getRoomsByIds(roomIds: string[], selectFields = 'name, description, amenities') {
+    if (!roomIds || roomIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('rooms')
+      .select(selectFields)
+      .in('id', roomIds)
+
+    if (error) {
+      console.warn('[hotelService] Error fetching rooms:', error)
+      throw error
+    }
+
+    return data || []
+  },
 }

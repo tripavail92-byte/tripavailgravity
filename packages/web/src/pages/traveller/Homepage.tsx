@@ -1,46 +1,20 @@
 import { Briefcase, Mountain, Palmtree, Search, Tent, Waves } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
-import { Tour, tourService } from '@/features/tour-operator/services/tourService'
-import { supabase } from '@/lib/supabase'
+import { useFeaturedPackages } from '@/queries/packageQueries'
+import { useFeaturedTours } from '@/queries/tourQueries'
 
 export default function Homepage() {
-  const [packages, setPackages] = useState<any[]>([])
-  const [tours, setTours] = useState<Tour[]>([])
-  const [loading, setLoading] = useState(true)
+  // ✅ Enterprise: Query hooks instead of manual useEffect
+  const { data: packages = [], isLoading: packagesLoading, error: packagesError } = useFeaturedPackages()
+  const { data: tours = [], isLoading: toursLoading, error: toursError } = useFeaturedTours()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [{ data: pkgData, error: pkgError }, featuredTours] = await Promise.all([
-          supabase
-            .from('packages' as any)
-            .select('*')
-            .eq('is_published', true)
-            .eq('status', 'live')
-            .order('created_at', { ascending: false })
-            .limit(6) as any,
-          tourService.fetchFeaturedTours(),
-        ])
-
-        if (pkgError) throw pkgError
-        setPackages(pkgData || [])
-        setTours(featuredTours || [])
-      } catch (err) {
-        console.error('Error fetching data:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const loading = packagesLoading || toursLoading
 
   const categories = [
     { name: 'Adventure', icon: Mountain },
@@ -145,17 +119,13 @@ export default function Homepage() {
                 key={pkg.id}
                 id={pkg.id}
                 slug={pkg.slug}
-                image={
-                  pkg.cover_image ||
-                  pkg.media_urls?.[0] ||
-                  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop'
-                }
-                title={pkg.name}
-                location="Multiple Locations"
+                image={pkg.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop'}
+                title={pkg.title}
+                location={pkg.location}
                 duration={3}
-                rating={4.8}
-                price={599}
-                type={pkg.package_type}
+                rating={pkg.rating}
+                price={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : 599}
+                type={pkg.badge}
               />
             ))}
           </div>
@@ -198,18 +168,15 @@ export default function Homepage() {
                   key={tour.id}
                   id={tour.id}
                   slug={tour.slug}
-                  image={
-                    tour.images?.[0] ||
-                    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'
-                  }
+                  image={tour.images?.[0] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'}
                   title={tour.title}
-                  location={`${tour.location.city}, ${tour.location.country}`}
-                  duration={tour.duration}
+                  location={tour.location}
+                  duration={5}
                   rating={tour.rating}
-                  price={tour.price}
-                  currency={tour.currency}
-                  type={tour.tour_type}
-                  isFeatured={tour.is_featured}
+                  price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                  currency="USD"
+                  type={tour.badge}
+                  isFeatured={tour.badge === 'Featured'}
                 />
               ))}
             </div>

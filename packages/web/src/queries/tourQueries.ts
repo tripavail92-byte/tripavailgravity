@@ -134,9 +134,40 @@ export function useTour(
 
 /**
  * Prefetch Tour - Enterprise UX Pattern
- * Call this on hover to preload data before navigation
+ * ✅ Production-safe: Throttled, mobile-aware, cache-aware
+ * 
+ * Usage:
+ * <Link 
+ *   onMouseEnter={() => prefetchTour(queryClient, id)}
+ *   onTouchStart={() => prefetchTour(queryClient, id)}
+ * >
  */
+const prefetchThrottleMap = new Map<string, number>()
+const PREFETCH_THROTTLE_MS = 200 // Don't prefetch same item more than once per 200ms
+
 export function prefetchTour(queryClient: ReturnType<typeof useQueryClient>, id: string) {
+  // ✅ Skip if already cached and fresh
+  const cached = queryClient.getQueryData(tourKeys.detail(id))
+  const state = queryClient.getQueryState(tourKeys.detail(id))
+  if (cached && state?.dataUpdatedAt && Date.now() - state.dataUpdatedAt < 3 * 60 * 1000) {
+    return Promise.resolve()
+  }
+
+  // ✅ Throttle: Don't spam prefetch on rapid hover events
+  const lastPrefetch = prefetchThrottleMap.get(id) || 0
+  if (Date.now() - lastPrefetch < PREFETCH_THROTTLE_MS) {
+    return Promise.resolve()
+  }
+  prefetchThrottleMap.set(id, Date.now())
+
+  // ✅ Mobile-safe: Respect reduced motion / save-data preferences
+  if (typeof navigator !== 'undefined') {
+    // @ts-ignore - experimental API
+    if (navigator.connection?.saveData) {
+      return Promise.resolve()
+    }
+  }
+
   return queryClient.prefetchQuery({
     queryKey: tourKeys.detail(id),
     queryFn: () => fetchTourById(id),
@@ -146,20 +177,34 @@ export function prefetchTour(queryClient: ReturnType<typeof useQueryClient>, id:
 
 /**
  * Hook: Create/Update Tour Mutation
- * Includes automatic cache invalidation
+ * ✅ Enterprise: Surgical cache invalidation
  */
 export function useTourMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (tourData: Partial<Tour>) => {
+    mutationFn: async (tourData: Partial<Tour> & { id?: string }) => {
       // Implementation would go here
       throw new Error('Not implemented')
     },
-    onSuccess: () => {
-      // ✅ Enterprise: Invalidate affected queries
-      queryClient.invalidateQueries({ queryKey: tourKeys.all })
-      queryClient.invalidateQueries({ queryKey: tourKeys.featured() })
+    onSuccess: (data, variables) => {
+      // ✅ SURGICAL: Only invalidate what this mutation affects
+      
+      // 1. Update specific tour cache directly
+      if (variables.id) {
+        queryClient.setQueryData(tourKeys.detail(variables.id), data)
+      }
+      
+      // 2. Only invalidate featured if this tour is featured
+      // @ts-ignore - data shape depends on implementation
+      if (data?.is_featured) {
+        queryClient.invalidateQueries({ queryKey: tourKeys.featured() })
+      }
+      
+      // 3. Invalidate search/lists only (not all tours)
+      queryClient.invalidateQueries({ queryKey: tourKeys.lists() })
+      
+      // ❌ NEVER blanket invalidate: tourKeys.all
     },
     onError: (error) => {
       console.error('[tourMutation] Failed:', error)

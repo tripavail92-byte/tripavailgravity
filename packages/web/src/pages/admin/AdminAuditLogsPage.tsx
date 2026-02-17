@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { supabase } from '@/lib/supabase'
+import { useAuditLogs } from '@/queries/adminQueries'
 
 type AdminActionLog = {
   id: string
@@ -21,44 +21,26 @@ function shortId(value: string) {
 }
 
 export default function AdminAuditLogsPage() {
-  const [logs, setLogs] = useState<AdminActionLog[]>([])
-  const [loading, setLoading] = useState(true)
+  // ✅ Enterprise: Use query hook instead of manual useEffect
+  const { data: logs = [], isLoading: loading, error, refetch: reload } = useAuditLogs()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const reload = useCallback(async () => {
-    setLoading(true)
-    setErrorMessage(null)
-
-    try {
-      const { data, error } = await (supabase.from('admin_action_logs' as any) as any)
-        .select('id, admin_id, entity_type, entity_id, action_type, reason, created_at')
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (error) throw error
-      setLogs((data || []) as AdminActionLog[])
-    } catch (err: any) {
-      console.error('Error loading audit logs:', err)
-      setErrorMessage(err?.message || 'Failed to load audit logs')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
+  
+  // ✅ Set error from query
   useEffect(() => {
-    let isCancelled = false
+    if (error) {
+      setErrorMessage(error.message || 'Failed to load audit logs')
+    }
+  }, [error])
 
-    reload()
-
+  // ✅ Listen for admin actions to refetch logs
+  useEffect(() => {
     const onAdminAction = () => {
-      if (isCancelled) return
       reload()
     }
 
     window.addEventListener('tripavail:admin_action', onAdminAction)
 
     return () => {
-      isCancelled = true
       window.removeEventListener('tripavail:admin_action', onAdminAction)
     }
   }, [reload])
