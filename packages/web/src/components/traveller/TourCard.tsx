@@ -58,11 +58,11 @@ export function TourCard({
               </Badge>
             )}
             <GlassBadge
-              variant="light"
+              variant="outline"
               size="sm"
-              className="text-foreground border-none px-3 py-1 font-bold text-[10px] uppercase tracking-wider"
+              className="glass-id-badge glass-id-badge-tour rounded-full px-3 py-1 text-white font-medium"
             >
-              {type}
+              Tour Package
             </GlassBadge>
           </div>
 

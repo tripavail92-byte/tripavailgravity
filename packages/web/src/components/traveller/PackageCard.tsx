@@ -82,11 +82,21 @@ export function PackageCard({
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
 
           <div className="absolute top-3 left-3">
-            {badge ? (
-              <GlassBadge variant="light" size="default" className="font-medium">
-                {badge}
+            <div className="flex flex-col gap-2">
+              <GlassBadge
+                variant="outline"
+                size="sm"
+                className="glass-id-badge glass-id-badge-hotel rounded-full px-3 py-1 text-white font-medium"
+              >
+                Hotel Package
               </GlassBadge>
-            ) : null}
+
+              {badge ? (
+                <GlassBadge variant="light" size="default" className="font-medium">
+                  {badge}
+                </GlassBadge>
+              ) : null}
+            </div>
           </div>
 
           {/* Key details on image to save space */}
