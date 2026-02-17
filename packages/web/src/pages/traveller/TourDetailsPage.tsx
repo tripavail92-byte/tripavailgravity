@@ -210,7 +210,11 @@ export default function TourDetailsPage() {
                 className="w-full h-full object-cover cursor-pointer"
               />
               <div className="absolute bottom-4 right-4">
-                <GlassButton variant="secondary" size="sm" className="gap-2">
+                  <GlassButton
+                    variant="light"
+                    size="sm"
+                    className="gap-2 bg-background/70 hover:bg-background/80"
+                  >
                   <Camera size={16} />
                   Show all photos
                 </GlassButton>
@@ -454,17 +458,19 @@ export default function TourDetailsPage() {
                     )}
                   </div>
 
-                  <GlassButton
-                    onClick={handleBookNow}
-                    disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
-                    className="w-full h-14 rounded-2xl font-black text-lg"
-                  >
-                    {!schedule
-                      ? 'No Dates Available'
-                      : schedule && availableSlots === 0
-                        ? 'Sold Out'
-                        : 'Continue to Booking'}
-                  </GlassButton>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      onClick={handleBookNow}
+                      disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
+                      className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
+                    >
+                      {!schedule
+                        ? 'No Dates Available'
+                        : schedule && availableSlots === 0
+                          ? 'Sold Out'
+                          : 'Continue to Booking'}
+                    </Button>
+                  </motion.div>
 
                   <p className="text-center text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest">
                     Free cancellation up to 48h before
