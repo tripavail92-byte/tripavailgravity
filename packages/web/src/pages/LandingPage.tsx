@@ -517,7 +517,12 @@ function FeaturedHotelsSection({
           .order('created_at', { ascending: false })
           .limit(10)
 
-        if (error) throw error
+        console.log('[FeaturedHotelsSection] Query result:', { data, error, dataLength: data?.length })
+        
+        if (error) {
+          console.error('[FeaturedHotelsSection] Database error:', error)
+          throw error
+        }
 
         console.log('[FeaturedHotelsSection] Fetched packages:', data)
 
@@ -568,7 +573,15 @@ function FeaturedHotelsSection({
           setFeaturedHotels(mappedPackages)
         }
       } catch (e) {
+        // Ignore abort errors - component unmounted before fetch completed
+        if (e instanceof Error && e.name === 'AbortError') {
+          console.log('[FeaturedHotelsSection] Fetch aborted (component unmounted)')
+          return
+        }
         console.error('Error fetching featured packages:', e)
+        if (e instanceof Error) {
+          console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -698,7 +711,12 @@ function FeaturedToursSection({
           .order('created_at', { ascending: false })
           .limit(10)
 
-        if (error) throw error
+        console.log('[FeaturedToursSection] Query result:', { data, error, dataLength: data?.length })
+        
+        if (error) {
+          console.error('[FeaturedToursSection] Database error:', error)
+          throw error
+        }
 
         console.log('[FeaturedToursSection] Fetched tours:', data)
 
@@ -732,7 +750,15 @@ function FeaturedToursSection({
           setFeaturedTours(mappedTours)
         }
       } catch (e) {
+        // Ignore abort errors - component unmounted before fetch completed
+        if (e instanceof Error && e.name === 'AbortError') {
+          console.log('[FeaturedToursSection] Fetch aborted (component unmounted)')
+          return
+        }
         console.error('Error fetching featured tours:', e)
+        if (e instanceof Error) {
+          console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
