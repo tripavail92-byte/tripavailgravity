@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { lazy, Suspense, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
@@ -264,6 +265,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      {/* React Query Devtools - Development Only */}
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </BrowserRouter>
     </QueryClientProvider>
   )

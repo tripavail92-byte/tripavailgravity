@@ -3,12 +3,19 @@ import { QueryClient } from '@tanstack/react-query'
 /**
  * Enterprise-grade Query Client configuration
  * Following best practices from Airbnb/Stripe architecture
+ * 
+ * StaleTime Strategy by Data Sensitivity:
+ * - Landing featured packages: 5-10 minutes (low change rate)
+ * - Package/Tour details: 2-5 minutes (moderate change rate)
+ * - Booking availability: 0-30 seconds (real-time critical)
+ * - Admin dashboards: 30-60 seconds (moderate freshness needed)
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Stale time: How long before data is considered stale
-      staleTime: 5 * 60 * 1000, // 5 minutes default
+      // Default stale time: 2 minutes (conservative default)
+      // Individual queries override this based on sensitivity
+      staleTime: 2 * 60 * 1000,
       
       // Cache time: How long unused data stays in cache
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)

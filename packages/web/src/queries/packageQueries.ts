@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Database } from '@/types/database.types'
 import { supabase } from '@/lib/supabase'
 
@@ -109,6 +109,7 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
 /**
  * Hook: Use Featured Packages Query
  * Enterprise pattern with proper caching and refetch configuration
+ * StaleTime: 8 minutes - featured packages don't change frequently
  */
 export function useFeaturedPackages(
   options?: Omit<UseQueryOptions<MappedPackage[], Error>, 'queryKey' | 'queryFn'>,
@@ -116,8 +117,8 @@ export function useFeaturedPackages(
   return useQuery({
     queryKey: packageKeys.featured(),
     queryFn: fetchFeaturedPackages,
-    staleTime: 5 * 60 * 1000, // 5 minutes - packages don't change frequently
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    staleTime: 8 * 60 * 1000, // 8 minutes - featured content is stable
+    gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
     refetchOnMount: true, // Always refetch on component mount for fresh data
     refetchOnWindowFocus: false, // Don't refetch on tab focus (reduce API calls)
     ...options,
@@ -161,5 +162,44 @@ export function usePackage(
     gcTime: 10 * 60 * 1000,
     enabled: !!id, // Only run if ID exists
     ...options,
+  })
+}
+
+/**
+ * Prefetch Package - Enterprise UX Pattern
+ * Call this on hover to preload data before navigation
+ * 
+ * Usage:
+ * <Link onMouseEnter={() => prefetchPackage(queryClient, id)}>
+ */
+export function prefetchPackage(queryClient: ReturnType<typeof useQueryClient>, id: string) {
+  return queryClient.prefetchQuery({
+    queryKey: packageKeys.detail(id),
+    queryFn: () => fetchPackageById(id),
+    staleTime: 3 * 60 * 1000,
+  })
+}
+
+/**
+ * Hook: Create/Update Package Mutation
+ * Includes automatic cache invalidation
+ */
+export function usePackageMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (packageData: Partial<Package>) => {
+      // Implementation would go here
+      // For now, placeholder
+      throw new Error('Not implemented')
+    },
+    onSuccess: () => {
+      // ✅ Enterprise: Invalidate affected queries
+      queryClient.invalidateQueries({ queryKey: packageKeys.all })
+      queryClient.invalidateQueries({ queryKey: packageKeys.featured() })
+    },
+    onError: (error) => {
+      console.error('[packageMutation] Failed:', error)
+    },
   })
 }

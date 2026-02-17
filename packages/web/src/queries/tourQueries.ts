@@ -1,4 +1,4 @@
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Database } from '@/types/database.types'
 import { supabase } from '@/lib/supabase'
 
@@ -76,6 +76,7 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
 /**
  * Hook: Use Featured Tours Query
  * Enterprise pattern with proper caching
+ * StaleTime: 8 minutes - featured tours are relatively stable
  */
 export function useFeaturedTours(
   options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
@@ -83,8 +84,8 @@ export function useFeaturedTours(
   return useQuery({
     queryKey: tourKeys.featured(),
     queryFn: fetchFeaturedTours,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,
+    staleTime: 8 * 60 * 1000, // 8 minutes
+    gcTime: 15 * 60 * 1000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
     ...options,
@@ -128,5 +129,40 @@ export function useTour(
     gcTime: 10 * 60 * 1000,
     enabled: !!id,
     ...options,
+  })
+}
+
+/**
+ * Prefetch Tour - Enterprise UX Pattern
+ * Call this on hover to preload data before navigation
+ */
+export function prefetchTour(queryClient: ReturnType<typeof useQueryClient>, id: string) {
+  return queryClient.prefetchQuery({
+    queryKey: tourKeys.detail(id),
+    queryFn: () => fetchTourById(id),
+    staleTime: 3 * 60 * 1000,
+  })
+}
+
+/**
+ * Hook: Create/Update Tour Mutation
+ * Includes automatic cache invalidation
+ */
+export function useTourMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (tourData: Partial<Tour>) => {
+      // Implementation would go here
+      throw new Error('Not implemented')
+    },
+    onSuccess: () => {
+      // ✅ Enterprise: Invalidate affected queries
+      queryClient.invalidateQueries({ queryKey: tourKeys.all })
+      queryClient.invalidateQueries({ queryKey: tourKeys.featured() })
+    },
+    onError: (error) => {
+      console.error('[tourMutation] Failed:', error)
+    },
   })
 }

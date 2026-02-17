@@ -16,13 +16,15 @@ import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
+import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { useAuth } from '@/hooks/useAuth'
-import { useFeaturedPackages } from '@/queries/packageQueries'
-import { useFeaturedTours } from '@/queries/tourQueries'
+import { useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
+import { useFeaturedTours, prefetchTour } from '@/queries/tourQueries'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
@@ -56,14 +58,18 @@ export default function LandingPage() {
               {/* Modern Trending Destinations Slider */}
               <ModernTrendingSlider onNavigate={handleNavigate} />
 
-              {/* Featured Hotels Section */}
-              <FeaturedHotelsSection
-                onNavigate={handleNavigate}
-                onPackageSelect={handlePackageSelect}
-              />
+              {/* Featured Hotels Section - Wrapped in Error Boundary */}
+              <QueryErrorBoundaryWrapper>
+                <FeaturedHotelsSection
+                  onNavigate={handleNavigate}
+                  onPackageSelect={handlePackageSelect}
+                />
+              </QueryErrorBoundaryWrapper>
 
-              {/* Featured Tours Section */}
-              <FeaturedToursSection onNavigate={handleNavigate} onTourSelect={handleTourSelect} />
+              {/* Featured Tours Section - Wrapped in Error Boundary */}
+              <QueryErrorBoundaryWrapper>
+                <FeaturedToursSection onNavigate={handleNavigate} onTourSelect={handleTourSelect} />
+              </QueryErrorBoundaryWrapper>
             </>
           )}
 
@@ -488,6 +494,7 @@ function FeaturedHotelsSection({
 }) {
   // ✅ Enterprise: Replace manual useEffect with useQuery
   const { data: featuredHotels = [], isLoading, error } = useFeaturedPackages()
+  const queryClient = useQueryClient()
 
   if (isLoading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
@@ -534,6 +541,7 @@ function FeaturedHotelsSection({
               <Link
                 to={`/packages/${hotel.slug || hotel.id}`}
                 className="block group cursor-pointer space-y-3"
+                onMouseEnter={() => prefetchPackage(queryClient, hotel.slug || hotel.id)}
               >
                 <div className="relative aspect-square overflow-hidden rounded-xl">
                   {/* Image Slider */}
@@ -602,6 +610,7 @@ function FeaturedToursSection({
 }) {
   // ✅ Enterprise: Replace manual useEffect with useQuery
   const { data: featuredTours = [], isLoading, error } = useFeaturedTours()
+  const queryClient = useQueryClient()
 
   if (isLoading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
@@ -657,6 +666,7 @@ function FeaturedToursSection({
               <Link
                 to={`/tours/${tour.slug || tour.id}`}
                 className="block group cursor-pointer space-y-3"
+                onMouseEnter={() => prefetchTour(queryClient, tour.slug || tour.id)}
               >
                 <div className="relative aspect-[4/5] overflow-hidden rounded-xl">
                   {/* Image Slider (Vertical aspect for "Poster" look) */}
