@@ -488,6 +488,8 @@ function FeaturedHotelsSection({
   const [featuredHotels, setFeaturedHotels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  console.log('[FeaturedHotelsSection] Render - loading:', loading, 'hotels:', featuredHotels.length)
+
   useEffect(() => {
     const abortController = new AbortController()
     
@@ -578,6 +580,8 @@ function FeaturedHotelsSection({
         // Ignore abort errors - component unmounted before fetch completed
         if (e instanceof Error && e.name === 'AbortError') {
           console.log('[FeaturedHotelsSection] Fetch aborted (component unmounted)')
+          // Still set loading to false even on abort
+          setLoading(false)
           return
         }
         console.error('Error fetching featured packages:', e)
@@ -585,6 +589,7 @@ function FeaturedHotelsSection({
           console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
         }
       } finally {
+        console.log('[FeaturedHotelsSection] Setting loading to false')
         setLoading(false)
       }
     }
@@ -700,6 +705,8 @@ function FeaturedToursSection({
   const [featuredTours, setFeaturedTours] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  console.log('[FeaturedToursSection] Render - loading:', loading, 'tours:', featuredTours.length)
+
   useEffect(() => {
     const abortController = new AbortController()
     
@@ -757,6 +764,8 @@ function FeaturedToursSection({
         // Ignore abort errors - component unmounted before fetch completed
         if (e instanceof Error && e.name === 'AbortError') {
           console.log('[FeaturedToursSection] Fetch aborted (component unmounted)')
+          // Still set loading to false even on abort
+          setLoading(false)
           return
         }
         console.error('Error fetching featured tours:', e)
@@ -764,6 +773,7 @@ function FeaturedToursSection({
           console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
         }
       } finally {
+        console.log('[FeaturedToursSection] Setting loading to false')
         setLoading(false)
       }
     }
