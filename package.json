@@ -5,7 +5,7 @@
   "scripts": {
     "start": "serve -s packages/web/dist -l ${PORT:-4173}",
     "dev": "turbo run dev",
-    "build": "turbo run build",
+    "build": "turbo run build --force",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test"
