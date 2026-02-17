@@ -17,6 +17,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
+import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
@@ -34,19 +35,12 @@ import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakista
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState('home')
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
   const isAuthenticated = Boolean(user && activeRole)
 
   const handlePackageSelect = (packageId: string) => {
     navigate(`/packages/${packageId}`)
-  }
-
-  const handleNavigate = (screen: string) => {
-    if (screen === 'home') setActiveTab('home')
-    if (screen === 'hotels') setActiveTab('hotels')
-    if (screen === 'tours') setActiveTab('tours')
   }
 
   const handleTourSelect = (tourId: string) => {
@@ -60,138 +54,91 @@ export default function LandingPage() {
 
       <div className="container mx-auto max-w-7xl px-4 pt-24 pb-6">
         <div className="space-y-10 pb-20">
-          {activeTab === 'home' && (
-            <>
-              {/* Conversion Hero */}
-              <section className="pt-2">
-                <div className="max-w-3xl">
-                  <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-                    Premium travel packages, curated for real moments.
-                  </h1>
-                  <p className="mt-4 text-lg text-muted-foreground">
-                    Book boutique stays, romantic escapes, and family getaways with transparent pricing and instant confirmation.
-                  </p>
-                  <div className="mt-6">
-                    <Button
-                      onClick={() => navigate('/explore')}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
-                    >
-                      Explore Packages
-                    </Button>
-                  </div>
-                </div>
-              </section>
-
-              {/* Trust Strip */}
-              <section className="-mt-2">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <Card className="border border-border/60 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                        <ShieldCheck className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="text-sm font-semibold">Verified partners</div>
-                    </div>
-                  </Card>
-                  <Card className="border border-border/60 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                        <Zap className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="text-sm font-semibold">Instant confirmation</div>
-                    </div>
-                  </Card>
-                  <Card className="border border-border/60 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                        <CheckCircle2 className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="text-sm font-semibold">Secure checkout</div>
-                    </div>
-                  </Card>
-                  <Card className="border border-border/60 rounded-2xl p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                        <Star className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="text-sm font-semibold">Top-rated stays</div>
-                    </div>
-                  </Card>
-                </div>
-              </section>
-
-              {/* Curated Rows (real Supabase data) */}
-              <div className="space-y-12">
-                <MixedHomepageRow kind="new" title="New Arrivals" />
-                <MixedHomepageRow kind="top-rated" title="Top Rated" />
-                <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
-                <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
-                <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
-
-                <CuratedToursRow
-                  category="adventure-trips"
-                  title="Adventure Trips"
-                  subtitle="Curated from live listings"
-                />
-                <CuratedToursRow
-                  category="hiking-trips"
-                  title="Hiking Trips"
-                  subtitle="Curated from live listings"
-                />
+          {/* Conversion Hero */}
+          <section className="pt-2">
+            <div className="max-w-3xl">
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+                Premium travel packages, curated for real moments.
+              </h1>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Book boutique stays, romantic escapes, and family getaways with transparent pricing and instant confirmation.
+              </p>
+              <div className="mt-6">
+                <Button
+                  onClick={() => navigate('/explore')}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
+                >
+                  Explore Packages
+                </Button>
               </div>
-
-              <QueryErrorBoundaryWrapper>
-                <PakistanNorthernToursRow />
-              </QueryErrorBoundaryWrapper>
-            </>
-          )}
-
-          {activeTab === 'hotels' && (
-            <div className="py-20 text-center">
-              <h2 className="text-2xl font-bold">Hotels Section</h2>
-              <p className="text-muted-foreground">Coming Soon: HotelPackagesDisplay</p>
-              <Button onClick={() => setActiveTab('home')} className="mt-4">
-                Back to Home
-              </Button>
             </div>
-          )}
+          </section>
 
-          {activeTab === 'tours' && (
-            <div className="py-20 text-center">
-              <h2 className="text-2xl font-bold">Tours Section</h2>
-              <p className="text-muted-foreground">Coming Soon: FeaturedToursSection</p>
-              <Button onClick={() => setActiveTab('home')} className="mt-4">
-                Back to Home
-              </Button>
+          {/* Trust Strip */}
+          <section className="-mt-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="border border-border/60 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-foreground" />
+                  </div>
+                  <div className="text-sm font-semibold">Verified partners</div>
+                </div>
+              </Card>
+              <Card className="border border-border/60 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-foreground" />
+                  </div>
+                  <div className="text-sm font-semibold">Instant confirmation</div>
+                </div>
+              </Card>
+              <Card className="border border-border/60 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-foreground" />
+                  </div>
+                  <div className="text-sm font-semibold">Secure checkout</div>
+                </div>
+              </Card>
+              <Card className="border border-border/60 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                    <Star className="w-5 h-5 text-foreground" />
+                  </div>
+                  <div className="text-sm font-semibold">Top-rated stays</div>
+                </div>
+              </Card>
             </div>
-          )}
+          </section>
+
+          {/* Curated Rows (real Supabase data) */}
+          <div className="space-y-12">
+            <MixedHomepageRow kind="new" title="New Arrivals" />
+            <MixedHomepageRow kind="top-rated" title="Top Rated" />
+            <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
+            <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
+            <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
+
+            <CuratedToursRow
+              category="adventure-trips"
+              title="Adventure Trips"
+              subtitle="Curated from live listings"
+            />
+            <CuratedToursRow
+              category="hiking-trips"
+              title="Hiking Trips"
+              subtitle="Curated from live listings"
+            />
+          </div>
+
+          <QueryErrorBoundaryWrapper>
+            <PakistanNorthernToursRow />
+          </QueryErrorBoundaryWrapper>
         </div>
       </div>
 
-      {/* Bottom Navigation Placeholder */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 glass-nav-bottom flex items-center justify-around px-6 z-50">
-        <button
-          onClick={() => setActiveTab('home')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-primary' : 'text-muted-foreground'}`}
-        >
-          <div className="w-6 h-6 rounded-full flex items-center justify-center">🏠</div>
-          <span className="text-[10px] font-medium">Home</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('hotels')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'hotels' ? 'text-primary' : 'text-muted-foreground'}`}
-        >
-          <div className="w-6 h-6 rounded-full flex items-center justify-center">🏨</div>
-          <span className="text-[10px] font-medium">Hotels</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('tours')}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'tours' ? 'text-primary' : 'text-muted-foreground'}`}
-        >
-          <div className="w-6 h-6 rounded-full flex items-center justify-center">🏔️</div>
-          <span className="text-[10px] font-medium">Tours</span>
-        </button>
-      </div>
+      <BottomTabsNav />
     </div>
   )
 }

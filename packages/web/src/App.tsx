@@ -42,6 +42,8 @@ const PackageBookingConfirmationPage = lazy(
 const PackageDetailsPage = lazy(() => import('@/pages/traveller/PackageDetailsPage'))
 const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutPage'))
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
+const HotelsPage = lazy(() => import('@/pages/traveller/HotelsPage'))
+const ToursPage = lazy(() => import('@/pages/traveller/ToursPage'))
 const PackageCategoryPage = lazy(() => import('@/pages/traveller/PackageCategoryPage'))
 const TourCategoryPage = lazy(() => import('@/pages/traveller/TourCategoryPage'))
 const TourCollectionPage = lazy(() => import('@/pages/traveller/TourCollectionPage'))
@@ -122,6 +124,8 @@ function App() {
           {/* Traveller Routes (Teal Theme) */}
           <Route element={<TravellerLayout />}>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/hotels" element={<HotelsPage />} />
+            <Route path="/tours" element={<ToursPage />} />
             <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
             <Route path="/payment-methods" element={<PaymentMethodsPage />} />
             <Route path="/explore" element={<Homepage />} />
