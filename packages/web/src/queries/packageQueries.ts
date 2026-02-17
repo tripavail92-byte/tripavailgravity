@@ -30,6 +30,7 @@ export const packageKeys = {
   curated: () => [...packageKeys.all, 'curated'] as const,
   curatedList: (kind: CuratedPackageKind) => [...packageKeys.curated(), kind] as const,
   homepageMerge: (take: number) => [...packageKeys.all, 'homepage_merge', take] as const,
+  homepageMix: (take: number) => [...packageKeys.all, 'homepage_mix', take] as const,
 }
 
 export type CuratedPackageKind =
@@ -59,6 +60,8 @@ export interface MappedPackage {
   totalOriginal?: number
   totalDiscounted?: number
 }
+
+export type HomepageMixPackage = MappedPackage & { created_at: string }
 
 type DiscountOffer = {
   name?: string
@@ -245,6 +248,65 @@ export function useHomepageMergePackages(
   return useQuery({
     queryKey: packageKeys.homepageMerge(take),
     queryFn: () => fetchHomepageMergePackages(take),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
+}
+
+async function fetchHomepageMixPackages(take: number): Promise<HomepageMixPackage[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      slug,
+      name,
+      cover_image,
+      media_urls,
+      rooms_config,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      created_at,
+      updated_at,
+      hotels (
+        name,
+        city,
+        country,
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('created_at', { ascending: false })
+    .limit(take)
+
+  if (error) {
+    console.error('[packageQueries] Error fetching homepage mix packages:', error)
+    throw error
+  }
+
+  const rows = (data || []) as any[]
+  return rows.map((pkg) => {
+    const mapped = mapPackageRowToMappedPackage(pkg, 'Hotel Stay')
+    return {
+      ...mapped,
+      created_at: pkg.created_at ?? pkg.updated_at ?? '1970-01-01T00:00:00.000Z',
+    }
+  })
+}
+
+export function useHomepageMixPackages(
+  take: number,
+  options?: Omit<UseQueryOptions<HomepageMixPackage[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: packageKeys.homepageMix(take),
+    queryFn: () => fetchHomepageMixPackages(take),
     staleTime: 6 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,

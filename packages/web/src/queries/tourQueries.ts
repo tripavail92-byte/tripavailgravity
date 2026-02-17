@@ -28,6 +28,7 @@ export const tourKeys = {
   category: (category: string) => [...tourKeys.curated(), 'category', category] as const,
   pakistanNorthern: () => [...tourKeys.curated(), 'pakistan_northern'] as const,
   homepageMerge: (take: number) => [...tourKeys.all, 'homepage_merge', take] as const,
+  homepageMix: (take: number) => [...tourKeys.all, 'homepage_mix', take] as const,
 }
 
 export type TourCategoryKind = 'adventure-trips' | 'hiking-trips'
@@ -50,6 +51,20 @@ export interface MappedTour {
   tourPrice: number | 'Contact'
   rating: number
   images: string[]
+  badge: string
+}
+
+export interface HomepageMixTour {
+  id: string
+  slug: string | null
+  title: string
+  location: string
+  tourPrice: number | 'Contact'
+  rating: number
+  reviewCount?: number
+  images: string[]
+  created_at: string
+  isFeatured: boolean
   badge: string
 }
 
@@ -99,6 +114,69 @@ export function useHomepageMergeTours(
   return useQuery({
     queryKey: tourKeys.homepageMerge(take),
     queryFn: () => fetchHomepageMergeTours(take),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
+}
+
+async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,slug,title,location,price,rating,review_count,is_featured,images,created_at,updated_at')
+    .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('created_at', { ascending: false })
+    .limit(take)
+
+  if (error) {
+    console.error('[tourQueries] Error fetching homepage mix tours:', error)
+    throw error
+  }
+
+  if (!data) return []
+
+  return (data as any[]).map((tour: any) => {
+    const locationObj = tour.location || {}
+    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
+      .replace(/^, /, '')
+      .replace(/, $/, '')
+      .trim()
+
+    const images = Array.isArray(tour.images)
+      ? tour.images
+      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+
+    const price = Number(tour.price)
+    const rating = typeof tour.rating === 'number' ? tour.rating : Number(tour.rating) || 0
+    const reviewCount = typeof tour.review_count === 'number' ? tour.review_count : Number(tour.review_count) || 0
+    const isFeatured = Boolean(tour.is_featured)
+
+    return {
+      id: tour.id,
+      slug: tour.slug,
+      title: tour.title || 'Unnamed Tour',
+      location: location || 'Global',
+      tourPrice: Number.isFinite(price) && price > 0 ? price : 'Contact',
+      rating,
+      reviewCount,
+      images,
+      created_at: tour.created_at ?? tour.updated_at ?? '1970-01-01T00:00:00.000Z',
+      isFeatured,
+      badge: 'Tour Experience',
+    }
+  })
+}
+
+export function useHomepageMixTours(
+  take: number,
+  options?: Omit<UseQueryOptions<HomepageMixTour[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: tourKeys.homepageMix(take),
+    queryFn: () => fetchHomepageMixTours(take),
     staleTime: 6 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,

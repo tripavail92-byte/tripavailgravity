@@ -5,13 +5,11 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
-import { UnifiedExperienceCard } from '@/components/home/UnifiedExperienceCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
-import { useFeaturedPackages, useHomepageMergePackages } from '@/queries/packageQueries'
-import { useFeaturedTours, useHomepageMergeTours } from '@/queries/tourQueries'
-import type { UnifiedExperience } from '@/types/experience'
+import { useFeaturedPackages, useHomepageMixPackages } from '@/queries/packageQueries'
+import { useFeaturedTours, useHomepageMixTours } from '@/queries/tourQueries'
 
 export default function Homepage() {
   const [searchParams] = useSearchParams()
@@ -19,11 +17,11 @@ export default function Homepage() {
 
   const showMergedList = filter === 'new' || filter === 'top-rated'
 
-  const { data: mergeHotels = [], isLoading: mergeHotelsLoading, isError: mergeHotelsError } = useHomepageMergePackages(
+  const { data: mergeHotels = [], isLoading: mergeHotelsLoading, isError: mergeHotelsError } = useHomepageMixPackages(
     showMergedList ? 96 : 1,
     { enabled: showMergedList },
   )
-  const { data: mergeTours = [], isLoading: mergeToursLoading, isError: mergeToursError } = useHomepageMergeTours(
+  const { data: mergeTours = [], isLoading: mergeToursLoading, isError: mergeToursError } = useHomepageMixTours(
     showMergedList ? 96 : 1,
     { enabled: showMergedList },
   )
@@ -35,8 +33,25 @@ export default function Homepage() {
   const loading = packagesLoading || toursLoading
 
   const mergedList = useMemo(() => {
-    if (!showMergedList) return [] as UnifiedExperience[]
-    const combined = [...mergeHotels, ...mergeTours]
+    if (!showMergedList) return [] as Array<{ type: 'hotel' | 'tour'; id: string; rating: number | null; created_at: string; payload: any }>
+
+    const combined = [
+      ...mergeHotels.map((pkg: any) => ({
+        type: 'hotel' as const,
+        id: pkg.id,
+        rating: typeof pkg.rating === 'number' ? pkg.rating : null,
+        created_at: pkg.created_at,
+        payload: pkg,
+      })),
+      ...mergeTours.map((tour: any) => ({
+        type: 'tour' as const,
+        id: tour.id,
+        rating: typeof tour.rating === 'number' ? tour.rating : null,
+        created_at: tour.created_at,
+        payload: tour,
+      })),
+    ]
+
     if (filter === 'new') {
       return combined
         .slice()
@@ -46,8 +61,8 @@ export default function Homepage() {
     return combined
       .slice()
       .sort((a, b) => {
-        const ar = typeof a.rating === 'number' ? a.rating : null
-        const br = typeof b.rating === 'number' ? b.rating : null
+        const ar = a.rating
+        const br = b.rating
         if (ar == null && br == null) return 0
         if (ar == null) return 1
         if (br == null) return -1
@@ -85,12 +100,44 @@ export default function Homepage() {
             </div>
           ) : mergedList.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mergedList.map((experience) => (
-                <UnifiedExperienceCard
-                  key={`${experience.type}-${experience.id}`}
-                  experience={experience}
-                />
-              ))}
+              {mergedList.map((item) =>
+                item.type === 'hotel' ? (
+                  <PackageCard
+                    key={`hotel-${item.id}`}
+                    id={item.payload.id}
+                    slug={item.payload.slug ?? undefined}
+                    images={item.payload.images}
+                    title={item.payload.title}
+                    subtitle={item.payload.hotelName}
+                    location={item.payload.location}
+                    durationDays={item.payload.durationDays ?? 3}
+                    rating={item.payload.rating}
+                    reviewCount={item.payload.reviewCount}
+                    priceFrom={typeof item.payload.packagePrice === 'number' ? item.payload.packagePrice : null}
+                    totalOriginal={item.payload.totalOriginal}
+                    totalDiscounted={item.payload.totalDiscounted}
+                    badge={'Hotel Stay'}
+                  />
+                ) : (
+                  <TourCard
+                    key={`tour-${item.id}`}
+                    id={item.payload.id}
+                    slug={item.payload.slug ?? undefined}
+                    image={
+                      item.payload.images?.[0] ||
+                      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'
+                    }
+                    title={item.payload.title}
+                    location={item.payload.location}
+                    duration={'Multi-day'}
+                    rating={item.payload.rating}
+                    price={typeof item.payload.tourPrice === 'number' ? item.payload.tourPrice : 0}
+                    currency="USD"
+                    type={'Tour Experience'}
+                    isFeatured={Boolean(item.payload.isFeatured)}
+                  />
+                ),
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">

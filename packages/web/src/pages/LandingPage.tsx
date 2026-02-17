@@ -22,7 +22,6 @@ import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
-import { UnifiedExperienceCard } from '@/components/home/UnifiedExperienceCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -30,10 +29,9 @@ import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
-import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage, useHomepageMergePackages } from '@/queries/packageQueries'
-import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour, useHomepageMergeTours } from '@/queries/tourQueries'
+import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage, useHomepageMixPackages } from '@/queries/packageQueries'
+import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour, useHomepageMixTours } from '@/queries/tourQueries'
 import { useQueryClient } from '@tanstack/react-query'
-import type { UnifiedExperience } from '@/types/experience'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
@@ -198,28 +196,9 @@ export default function LandingPage() {
   )
 }
 
-function sortByCreatedAtDesc(items: UnifiedExperience[]) {
-  return items
-    .slice()
-    .sort((a, b) => {
-      const at = Date.parse(a.created_at)
-      const bt = Date.parse(b.created_at)
-      return (Number.isFinite(bt) ? bt : 0) - (Number.isFinite(at) ? at : 0)
-    })
-}
-
-function sortByRatingDescNullsLast(items: UnifiedExperience[]) {
-  return items
-    .slice()
-    .sort((a, b) => {
-      const ar = typeof a.rating === 'number' ? a.rating : null
-      const br = typeof b.rating === 'number' ? b.rating : null
-      if (ar == null && br == null) return 0
-      if (ar == null) return 1
-      if (br == null) return -1
-      return br - ar
-    })
-}
+type MixedRowItem =
+  | { type: 'hotel'; id: string; created_at: string; rating: number | null; pkg: any }
+  | { type: 'tour'; id: string; created_at: string; rating: number | null; tour: any }
 
 function MixedHomepageRow({
   kind,
@@ -228,16 +207,48 @@ function MixedHomepageRow({
   kind: 'new' | 'top-rated'
   title: string
 }) {
-  const { data: hotelPackages = [], isLoading: hotelsLoading, isError: hotelsError } = useHomepageMergePackages(48)
-  const { data: tours = [], isLoading: toursLoading, isError: toursError } = useHomepageMergeTours(48)
+  const { data: hotelPackages = [], isLoading: hotelsLoading, isError: hotelsError } = useHomepageMixPackages(48)
+  const { data: tours = [], isLoading: toursLoading, isError: toursError } = useHomepageMixTours(48)
 
   const isLoading = hotelsLoading || toursLoading
   const isError = hotelsError || toursError
 
   const merged = useMemo(() => {
-    const combined = [...hotelPackages, ...tours]
-    if (kind === 'new') return sortByCreatedAtDesc(combined).slice(0, 8)
-    return sortByRatingDescNullsLast(combined).slice(0, 8)
+    const combined: MixedRowItem[] = [
+      ...hotelPackages.map((pkg: any) => ({
+        type: 'hotel' as const,
+        id: pkg.id,
+        created_at: pkg.created_at,
+        rating: typeof pkg.rating === 'number' ? pkg.rating : null,
+        pkg,
+      })),
+      ...tours.map((tour: any) => ({
+        type: 'tour' as const,
+        id: tour.id,
+        created_at: tour.created_at,
+        rating: typeof tour.rating === 'number' ? tour.rating : null,
+        tour,
+      })),
+    ]
+
+    if (kind === 'new') {
+      return combined
+        .slice()
+        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+        .slice(0, 8)
+    }
+
+    return combined
+      .slice()
+      .sort((a, b) => {
+        const ar = a.rating
+        const br = b.rating
+        if (ar == null && br == null) return 0
+        if (ar == null) return 1
+        if (br == null) return -1
+        return br - ar
+      })
+      .slice(0, 8)
   }, [hotelPackages, tours, kind])
 
   const viewAllHref = kind === 'new' ? '/explore?filter=new' : '/explore?filter=top-rated'
@@ -283,12 +294,45 @@ function MixedHomepageRow({
           </Card>
         ) : merged.length > 0 ? (
           <HorizontalPreviewSlider>
-            {merged.map((experience) => (
+            {merged.map((item) => (
               <div
-                key={`${experience.type}-${experience.id}`}
+                key={`${item.type}-${item.id}`}
                 className="flex-shrink-0 w-[280px] sm:w-[320px]"
               >
-                <UnifiedExperienceCard experience={experience} />
+                {item.type === 'hotel' ? (
+                  <PackageCard
+                    id={item.pkg.id}
+                    slug={item.pkg.slug ?? undefined}
+                    images={item.pkg.images}
+                    title={item.pkg.title}
+                    subtitle={item.pkg.hotelName}
+                    location={item.pkg.location}
+                    durationDays={item.pkg.durationDays ?? 3}
+                    rating={item.pkg.rating}
+                    reviewCount={item.pkg.reviewCount}
+                    priceFrom={typeof item.pkg.packagePrice === 'number' ? item.pkg.packagePrice : null}
+                    totalOriginal={item.pkg.totalOriginal}
+                    totalDiscounted={item.pkg.totalDiscounted}
+                    badge={'Hotel Stay'}
+                  />
+                ) : (
+                  <TourCard
+                    id={item.tour.id}
+                    slug={item.tour.slug ?? undefined}
+                    image={
+                      item.tour.images?.[0] ||
+                      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
+                    }
+                    title={item.tour.title}
+                    location={item.tour.location}
+                    duration={'Multi-day'}
+                    rating={item.tour.rating}
+                    price={typeof item.tour.tourPrice === 'number' ? item.tour.tourPrice : 0}
+                    currency="USD"
+                    type={'Tour Experience'}
+                    isFeatured={Boolean(item.tour.isFeatured)}
+                  />
+                )}
               </div>
             ))}
           </HorizontalPreviewSlider>
