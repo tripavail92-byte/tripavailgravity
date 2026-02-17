@@ -8,13 +8,14 @@
  */
 
 import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query'
-import { packageBookingService, tourBookingService } from '@/features/booking'
-import type { Database } from '@/types/database.types'
+import {
+  type PackageBooking,
+  packageBookingService,
+  type TourBooking,
+  tourBookingService,
+} from '@/features/booking'
 import { availabilityKeys } from './availabilityQueries'
 import { bookingKeys } from './bookingQueries'
-
-type PackageBooking = Database['public']['Tables']['package_bookings']['Row']
-type TourBooking = Database['public']['Tables']['tour_bookings']['Row']
 
 /**
  * Package Booking Mutations
@@ -109,10 +110,13 @@ export function useConfirmPackageBooking(
  */
 
 interface CreateTourBookingParams {
+  tour_id: string
   schedule_id: string
   traveler_id: string
-  tour_date: string
-  guest_count: number
+  pax_count: number
+  total_price: number
+  tour_date?: string
+  metadata?: any
 }
 
 interface ConfirmTourBookingParams {
@@ -133,13 +137,22 @@ export function useCreateTourBooking(
   
   return useMutation({
     mutationFn: async (params: CreateTourBookingParams) => {
-      return await tourBookingService.createPendingBooking(params)
+      return await tourBookingService.createPendingBooking({
+        tour_id: params.tour_id,
+        schedule_id: params.schedule_id,
+        traveler_id: params.traveler_id,
+        pax_count: params.pax_count,
+        total_price: params.total_price,
+        metadata: params.metadata,
+      })
     },
     onSuccess: (_data, variables) => {
       // Invalidate tour slot availability for this schedule + date
-      queryClient.invalidateQueries({
-        queryKey: availabilityKeys.tourAvailability(variables.schedule_id, variables.tour_date)
-      })
+      if (variables.tour_date) {
+        queryClient.invalidateQueries({
+          queryKey: availabilityKeys.tourAvailability(variables.schedule_id, variables.tour_date)
+        })
+      }
       
       // Invalidate available slots query
       queryClient.invalidateQueries({
