@@ -164,7 +164,7 @@ function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
   }
 }
 
-async function fetchCuratedPackages(kind: CuratedPackageKind): Promise<MappedPackage[]> {
+async function fetchCuratedPackages(kind: CuratedPackageKind, take: number = 8): Promise<MappedPackage[]> {
   let query = supabase
     .from('packages')
     .select(
@@ -205,7 +205,8 @@ async function fetchCuratedPackages(kind: CuratedPackageKind): Promise<MappedPac
 
   // Ordering
   // Note: We can’t reliably order by joined hotel rating at DB-level; we sort client-side for top rated.
-  query = query.order('created_at', { ascending: false }).limit(24)
+  const dbLimit = Math.max(24, take)
+  query = query.order('created_at', { ascending: false }).limit(dbLimit)
 
   const { data, error } = await query
 
@@ -230,11 +231,11 @@ async function fetchCuratedPackages(kind: CuratedPackageKind): Promise<MappedPac
     return mapped
       .slice()
       .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-      .slice(0, 8)
+      .slice(0, take)
   }
 
-  if (kind === 'new_arrivals') return mapped.slice(0, 8)
-  return mapped.slice(0, 8)
+  if (kind === 'new_arrivals') return mapped.slice(0, take)
+  return mapped.slice(0, take)
 }
 
 export function useCuratedPackages(
@@ -243,7 +244,21 @@ export function useCuratedPackages(
 ) {
   return useQuery({
     queryKey: packageKeys.curatedList(kind),
-    queryFn: () => fetchCuratedPackages(kind),
+    queryFn: () => fetchCuratedPackages(kind, 8),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
+}
+
+export function useCuratedPackagesFull(
+  kind: CuratedPackageKind,
+  options?: Omit<UseQueryOptions<MappedPackage[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: [...packageKeys.curatedList(kind), 'full'] as const,
+    queryFn: () => fetchCuratedPackages(kind, 48),
     staleTime: 6 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,

@@ -12,8 +12,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
@@ -21,6 +21,7 @@ import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
+import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,7 @@ import { GlassCard } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
-import { useFeaturedTours, usePakistanNorthernTours, prefetchTour } from '@/queries/tourQueries'
+import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour } from '@/queries/tourQueries'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function LandingPage() {
@@ -126,6 +127,17 @@ export default function LandingPage() {
                 <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
                 <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
                 <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
+
+                <CuratedToursRow
+                  category="adventure-trips"
+                  title="Adventure Trips"
+                  subtitle="Curated from live listings"
+                />
+                <CuratedToursRow
+                  category="hiking-trips"
+                  title="Hiking Trips"
+                  subtitle="Curated from live listings"
+                />
               </div>
 
               <QueryErrorBoundaryWrapper>
@@ -192,67 +204,157 @@ function CuratedPackagesRow({
   title: string
 }) {
   const { data = [], isLoading, isError } = useCuratedPackages(kind)
+  const viewAllHref = useMemo(() => `/explore/hotel-packages/${kind}`, [kind])
 
   return (
     <section>
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
           <p className="text-muted-foreground mt-1">Curated from live listings</p>
         </div>
+
+        <Button asChild variant="link" className="px-0">
+          <Link to={viewAllHref}>View All</Link>
+        </Button>
       </div>
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[0, 1, 2, 3].map((i) => (
-              <Card key={i} className="rounded-2xl border border-border/60 overflow-hidden">
-                <div className="aspect-video">
-                  <Skeleton className="w-full h-full" />
-                </div>
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-7 w-24 rounded-full" />
-                    <Skeleton className="h-7 w-28 rounded-full" />
+          <HorizontalPreviewSlider>
+              {[0, 1, 2, 3].map((i) => (
+                <Card
+                  key={i}
+                  className="rounded-2xl border border-border/60 overflow-hidden shrink-0 w-[280px] sm:w-[320px]"
+                >
+                  <div className="aspect-[4/5]">
+                    <Skeleton className="w-full h-full" />
                   </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <Skeleton className="h-8 w-24" />
-                    <Skeleton className="h-9 w-24 rounded-md" />
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-7 w-24 rounded-full" />
+                      <Skeleton className="h-7 w-28 rounded-full" />
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-9 w-24 rounded-md" />
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+          </HorizontalPreviewSlider>
         ) : isError ? (
           <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
             Unable to load packages right now.
           </Card>
         ) : data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.map((pkg) => (
-              <PackageCard
-                key={pkg.id}
-                id={pkg.id}
-                slug={pkg.slug ?? undefined}
-                images={pkg.images}
-                title={pkg.title}
-                subtitle={pkg.hotelName}
-                location={pkg.location}
-                durationDays={pkg.durationDays}
-                rating={pkg.rating}
-                reviewCount={pkg.reviewCount}
-                priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
-                totalOriginal={pkg.totalOriginal}
-                totalDiscounted={pkg.totalDiscounted}
-                badge={pkg.badge}
-              />
-            ))}
-          </div>
+          <HorizontalPreviewSlider>
+              {data.map((pkg) => (
+                <div key={pkg.id} className="shrink-0 w-[280px] sm:w-[320px]">
+                  <PackageCard
+                    id={pkg.id}
+                    slug={pkg.slug ?? undefined}
+                    images={pkg.images}
+                    title={pkg.title}
+                    subtitle={pkg.hotelName}
+                    location={pkg.location}
+                    durationDays={pkg.durationDays}
+                    rating={pkg.rating}
+                    reviewCount={pkg.reviewCount}
+                    priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+                    totalOriginal={pkg.totalOriginal}
+                    totalDiscounted={pkg.totalDiscounted}
+                    badge={pkg.badge}
+                  />
+                </div>
+              ))}
+          </HorizontalPreviewSlider>
         ) : (
           <Card className="rounded-2xl border border-border/60 p-6">
             <div className="text-sm text-muted-foreground">No packages available yet.</div>
+          </Card>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function CuratedToursRow({
+  category,
+  title,
+  subtitle,
+}: {
+  category: TourCategoryKind
+  title: string
+  subtitle: string
+}) {
+  const { data = [], isLoading, isError } = useToursByCategory(category)
+  const viewAllHref = useMemo(() => `/explore/tours/categories/${category}`, [category])
+
+  return (
+    <section>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
+          <p className="text-muted-foreground mt-1">{subtitle}</p>
+        </div>
+
+        <Button asChild variant="link" className="px-0">
+          <Link to={viewAllHref}>View All</Link>
+        </Button>
+      </div>
+
+      <div className="mt-6">
+        {isLoading ? (
+          <HorizontalPreviewSlider>
+            {[0, 1, 2, 3].map((i) => (
+              <Card
+                key={i}
+                className="rounded-3xl border border-border/60 overflow-hidden shrink-0 w-[260px] sm:w-[280px]"
+              >
+                <div className="aspect-[4/5]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </Card>
+            ))}
+          </HorizontalPreviewSlider>
+        ) : isError ? (
+          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            Unable to load tours right now.
+          </Card>
+        ) : data.length > 0 ? (
+          <HorizontalPreviewSlider>
+            {data.slice(0, 8).map((tour) => (
+              <div key={tour.id} className="shrink-0 w-[260px] sm:w-[280px]">
+                <TourCard
+                  id={tour.id}
+                  slug={tour.slug ?? undefined}
+                  image={
+                    tour.images?.[0] ||
+                    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
+                  }
+                  title={tour.title}
+                  location={tour.location}
+                  duration={'Multi-day'}
+                  rating={tour.rating}
+                  price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                  currency="USD"
+                  type={tour.badge}
+                  isFeatured={tour.badge === 'Featured'}
+                />
+              </div>
+            ))}
+          </HorizontalPreviewSlider>
+        ) : (
+          <Card className="rounded-2xl border border-border/60 p-6">
+            <div className="text-sm text-muted-foreground">No tours available yet.</div>
           </Card>
         )}
       </div>
@@ -265,7 +367,7 @@ function PakistanNorthernToursRow() {
 
   return (
     <section>
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Northern Pakistan Tours
@@ -274,47 +376,58 @@ function PakistanNorthernToursRow() {
             Hunza, Skardu, Fairy Meadows, Naran, Swat
           </p>
         </div>
+
+        <Button asChild variant="link" className="px-0">
+          <Link to="/explore/tours/collections/pakistan-northern">View All</Link>
+        </Button>
       </div>
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[0, 1, 2, 3].map((i) => (
-              <Card key={i} className="rounded-3xl border border-border/60 overflow-hidden">
-                <div className="aspect-[4/5]">
-                  <Skeleton className="w-full h-full" />
-                </div>
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-6 w-1/2" />
-                </div>
-              </Card>
-            ))}
-          </div>
+          <HorizontalPreviewSlider>
+              {[0, 1, 2, 3].map((i) => (
+                <Card
+                  key={i}
+                  className="rounded-3xl border border-border/60 overflow-hidden shrink-0 w-[260px] sm:w-[280px]"
+                >
+                  <div className="aspect-[4/5]">
+                    <Skeleton className="w-full h-full" />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-6 w-1/2" />
+                  </div>
+                </Card>
+              ))}
+          </HorizontalPreviewSlider>
         ) : isError ? (
           <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
             Unable to load tours right now.
           </Card>
         ) : data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data.slice(0, 8).map((tour) => (
-              <TourCard
-                key={tour.id}
-                id={tour.id}
-                slug={tour.slug ?? undefined}
-                image={tour.images?.[0] || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'}
-                title={tour.title}
-                location={tour.location}
-                duration={'Multi-day'}
-                rating={tour.rating}
-                price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                currency="USD"
-                type={tour.badge}
-                isFeatured={tour.badge === 'Featured'}
-              />
-            ))}
-          </div>
+          <HorizontalPreviewSlider>
+              {data.slice(0, 8).map((tour) => (
+                <div key={tour.id} className="shrink-0 w-[260px] sm:w-[280px]">
+                  <TourCard
+                    id={tour.id}
+                    slug={tour.slug ?? undefined}
+                    image={
+                      tour.images?.[0] ||
+                      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
+                    }
+                    title={tour.title}
+                    location={tour.location}
+                    duration={'Multi-day'}
+                    rating={tour.rating}
+                    price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                    currency="USD"
+                    type={tour.badge}
+                    isFeatured={tour.badge === 'Featured'}
+                  />
+                </div>
+              ))}
+          </HorizontalPreviewSlider>
         ) : (
           <Card className="rounded-2xl border border-border/60 p-6">
             <div className="text-sm text-muted-foreground">No tours available yet.</div>
@@ -681,10 +794,6 @@ function ModernTrendingSlider({ onNavigate }: { onNavigate: (screen: string) => 
     </motion.div>
   )
 }
-
-import { Link } from 'react-router-dom'
-
-// ... (existing imports)
 
 // Featured Hotels Section - Enterprise Pattern with TanStack Query
 function FeaturedHotelsSection({

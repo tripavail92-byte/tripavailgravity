@@ -42,6 +42,9 @@ const PackageBookingConfirmationPage = lazy(
 const PackageDetailsPage = lazy(() => import('@/pages/traveller/PackageDetailsPage'))
 const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutPage'))
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
+const PackageCategoryPage = lazy(() => import('@/pages/traveller/PackageCategoryPage'))
+const TourCategoryPage = lazy(() => import('@/pages/traveller/TourCategoryPage'))
+const TourCollectionPage = lazy(() => import('@/pages/traveller/TourCollectionPage'))
 const TravellerProfilePage = lazy(() => import('@/pages/traveller/TravellerProfilePage'))
 const AccountSettingsPage = lazy(() => import('@/pages/traveller/AccountSettingsPage'))
 const WishlistPage = lazy(() => import('@/pages/traveller/WishlistPage'))
@@ -122,6 +125,17 @@ function App() {
             <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
             <Route path="/payment-methods" element={<PaymentMethodsPage />} />
             <Route path="/explore" element={<Homepage />} />
+            {/* Hotel Packages Categories */}
+            <Route path="/explore/hotel-packages/:kind" element={<PackageCategoryPage />} />
+            {/* Back-compat: old path, still shows hotel packages */}
+            <Route path="/explore/packages/:kind" element={<PackageCategoryPage />} />
+
+            {/* Tours Categories */}
+            <Route path="/explore/tours/categories/:category" element={<TourCategoryPage />} />
+            {/* Tours Collections (region/collection pages) */}
+            <Route path="/explore/tours/collections/:collection" element={<TourCollectionPage />} />
+            {/* Back-compat: old path treated as a collection */}
+            <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
             <Route path="/packages/:id" element={<PackageDetailsPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/hotel/:id" element={<HotelDetailsPage />} />
