@@ -59,7 +59,7 @@ export function PackageCard({
         )}
       >
         {/* Image Container */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+        <div className="relative aspect-[4/5] overflow-hidden">
           {Array.isArray(images) && images.length > 1 ? (
             <ImageSlider
               images={images}
@@ -91,16 +91,12 @@ export function PackageCard({
 
           {/* Key details on image to save space */}
           <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-white font-bold text-base leading-snug line-clamp-2 drop-shadow-sm">
+            <div className="min-w-0 rounded-xl bg-black/35 backdrop-blur-sm px-3 py-2 border border-white/10">
+              <div className="text-white font-bold text-base leading-snug line-clamp-2">
                 {title}
               </div>
-              {subtitle ? (
-                <div className="text-white/85 text-sm line-clamp-1 drop-shadow-sm">{subtitle}</div>
-              ) : null}
-              {location ? (
-                <div className="text-white/75 text-xs line-clamp-1 drop-shadow-sm">{location}</div>
-              ) : null}
+              {subtitle ? <div className="text-white/85 text-sm line-clamp-1">{subtitle}</div> : null}
+              {location ? <div className="text-white/75 text-xs line-clamp-1">{location}</div> : null}
             </div>
 
             {typeof rating === 'number' && rating > 0 ? (
