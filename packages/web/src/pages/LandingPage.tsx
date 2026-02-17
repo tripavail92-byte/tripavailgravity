@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ImageSlider } from '@/components/ImageSlider'
