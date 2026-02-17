@@ -1,12 +1,4 @@
-import {
-  AlignJustify,
-  Backpack,
-  Briefcase,
-  LogIn,
-  LogOut,
-  MapPin,
-  X,
-} from 'lucide-react'
+import { AlignJustify, LogOut, MapPin, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -34,10 +26,6 @@ export function RoleBasedDrawer() {
     navigate('/')
   }
 
-  const handleLogin = () => {
-    setIsOpen(false)
-    navigate('/auth')
-  }
 
   // iOS-style elastic spring animation configuration
   const spring = {
@@ -67,7 +55,7 @@ export function RoleBasedDrawer() {
       case 'tour_operator':
         return 'from-emerald-500 to-teal-600'
       case 'traveller':
-        return 'from-amber-400 to-orange-500'
+        return 'from-primary to-primary/80'
       default:
         return 'from-gray-500 to-slate-600'
     }
@@ -136,9 +124,11 @@ export function RoleBasedDrawer() {
     )
   }
 
-  const roleLabel = getRoleLabel(activeRole?.role_type || '')
-  const roleGradient = getRoleBadgeGradient(activeRole?.role_type || '')
-  const navItems = activeRole ? ROLE_NAVIGATION[activeRole.role_type] || [] : []
+  if (!user || !activeRole) return null
+
+  const roleLabel = getRoleLabel(activeRole.role_type)
+  const roleGradient = getRoleBadgeGradient(activeRole.role_type)
+  const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
 
   return (
     <>
@@ -150,7 +140,7 @@ export function RoleBasedDrawer() {
         <Avatar className="h-7 w-7 border border-border">
           <AvatarImage src={user?.user_metadata?.avatar_url} alt="Traveler" />
           <AvatarFallback aria-label="Traveler" className="bg-muted text-muted-foreground">
-            {user?.email ? user.email.charAt(0).toUpperCase() : <Backpack className="h-4 w-4" />}
+            {user?.email ? user.email.charAt(0).toUpperCase() : <MapPin className="h-4 w-4" />}
           </AvatarFallback>
         </Avatar>
       </button>
@@ -205,69 +195,7 @@ export function RoleBasedDrawer() {
                   </motion.button>
                 </div>
 
-                {/* Guest View - Themed */}
-                {!user || !activeRole ? (
-                  <div className="p-6 pt-20 h-full flex flex-col">
-                    <div className="text-left mb-8">
-                      <h2 className="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent italic leading-tight mb-2">
-                        TRIPAVAIL
-                      </h2>
-                      <p className="text-muted-foreground dark:text-white/60 text-sm font-medium">
-                        Sign in to manage your trips and preferences.
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      <Button
-                        onClick={handleLogin}
-                        className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all border-0"
-                      >
-                        <LogIn className="mr-2 h-5 w-5" /> Log In / Sign Up
-                      </Button>
-
-                      <div className="relative my-4">
-                        <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background/80 px-2 text-muted-foreground font-semibold backdrop-blur-sm">
-                            Or continue as
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button
-                          variant="outline"
-                        className="h-20 rounded-2xl border-border bg-muted/20 flex flex-col gap-2 hover:bg-muted/50 hover:border-primary/20 transition-all font-bold text-xs text-foreground"
-                        onClick={() => {
-                          setIsOpen(false)
-                          navigate('/partner/onboarding')
-                        }}
-                      >
-                        <span className="p-2 rounded-full bg-info/10 text-info">
-                            <Briefcase size={16} />
-                          </span>
-                          Partner
-                        </Button>
-                        <Button
-                          variant="outline"
-                        className="h-20 rounded-2xl border-border bg-muted/20 flex flex-col gap-2 hover:bg-muted/50 hover:border-success/20 transition-all font-bold text-xs text-foreground"
-                        onClick={() => {
-                          setIsOpen(false)
-                          navigate('/partner/onboarding')
-                        }}
-                      >
-                        <span className="p-2 rounded-full bg-success/10 text-success">
-                            <Backpack size={16} />
-                          </span>
-                          Operator
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
+                <>
                     {/* Logged In View - Themed & Horizontal Profile */}
                     <div className="p-5 pb-0">
                       
@@ -454,8 +382,7 @@ export function RoleBasedDrawer() {
                         </Button>
                       </div>
                     </div>
-                  </>
-                )}
+                </>
               </div>
             </motion.div>
           </motion.div>

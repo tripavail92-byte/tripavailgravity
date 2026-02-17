@@ -27,6 +27,12 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
+    const mode = searchParams.get('mode')
+    if (mode === 'signup') setIsLogin(false)
+    if (mode === 'login') setIsLogin(true)
+  }, [searchParams])
+
+  useEffect(() => {
     console.log('[LoginPage] Auth state changed:', { user: !!user, activeRole: activeRole?.role_type })
     
     if (user && activeRole) {

@@ -65,7 +65,7 @@ export function DrawerMenu() {
       case 'tour_operator':
         return 'from-emerald-500 to-teal-600'
       case 'traveller':
-        return 'from-amber-400 to-orange-500'
+        return 'from-primary to-primary/80'
       default:
         return 'from-gray-500 to-slate-600'
     }

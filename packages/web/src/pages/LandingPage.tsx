@@ -20,11 +20,14 @@ import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
+import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
   const navigate = useNavigate()
+  const { user, activeRole } = useAuth()
+  const isAuthenticated = Boolean(user && activeRole)
 
   const handlePackageSelect = (packageId: string) => {
     navigate(`/packages/${packageId}`)
@@ -46,6 +49,44 @@ export default function LandingPage() {
       <AirbnbHeader />
 
       <div className="container mx-auto max-w-7xl px-4 pt-24 pb-6">
+        {!isAuthenticated && (
+          <div className="mb-8">
+            <GlassCard
+              variant="light"
+              className="rounded-3xl border border-white/40 bg-white/70 backdrop-blur-xl shadow-md"
+            >
+              <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">
+                    New to TripAvail
+                  </p>
+                  <h2 className="mt-2 text-2xl md:text-3xl font-black text-foreground">
+                    Create your account to save trips and wishlist destinations.
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Sign up in seconds and start planning with personalized recommendations.
+                  </p>
+                </div>
+                <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+                  <Button
+                    className="h-11 rounded-full px-6 text-primary-foreground"
+                    onClick={() => navigate('/auth?mode=signup')}
+                  >
+                    Sign Up
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-full px-6"
+                    onClick={() => navigate('/auth?mode=login')}
+                  >
+                    Log In
+                  </Button>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
+        )}
+
         <div className="space-y-10 pb-20">
           {activeTab === 'home' && (
             <>
@@ -117,6 +158,8 @@ export default function LandingPage() {
 function AirbnbHeader() {
   const navigate = useNavigate()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+  const { user, activeRole } = useAuth()
+  const isAuthenticated = Boolean(user && activeRole)
 
   const handleSearch = (_filters: SearchFilters) => {
     const params = new URLSearchParams()
@@ -229,8 +272,25 @@ function AirbnbHeader() {
               <SlidersHorizontal className="w-4 h-4 opacity-80" />
             </button>
 
-            {/* Role-Based Drawer Menu */}
-            <RoleBasedDrawer />
+            {!isAuthenticated ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="h-9 rounded-full px-4"
+                  onClick={() => navigate('/auth?mode=login')}
+                >
+                  Log In
+                </Button>
+                <Button
+                  className="h-9 rounded-full px-4 text-primary-foreground"
+                  onClick={() => navigate('/auth?mode=signup')}
+                >
+                  Sign Up
+                </Button>
+              </div>
+            ) : (
+              <RoleBasedDrawer />
+            )}
           </div>
         </div>
       </header>
