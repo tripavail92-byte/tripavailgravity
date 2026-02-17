@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { handlePackagePaymentSuccess } from '@/features/booking'
+import { handlePackagePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { supabase } from '@/lib/supabase'
 
