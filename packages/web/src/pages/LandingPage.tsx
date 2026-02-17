@@ -199,7 +199,7 @@ function CuratedPackagesRow({
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[0, 1, 2, 3].map((i) => (
               <Card key={i} className="rounded-2xl border border-border/60 overflow-hidden">
                 <div className="aspect-video">
@@ -225,7 +225,7 @@ function CuratedPackagesRow({
             Unable to load packages right now.
           </Card>
         ) : data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.map((pkg) => (
               <PackageCard
                 key={pkg.id}
