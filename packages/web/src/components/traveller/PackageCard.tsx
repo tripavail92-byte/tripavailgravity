@@ -1,6 +1,7 @@
 import { Clock, DollarSign, Star, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { ImageSlider } from '@/components/ImageSlider'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { GlassBadge } from '@/components/ui/glass'
@@ -58,8 +59,15 @@ export function PackageCard({
         )}
       >
         {/* Image Container */}
-        <div className="relative aspect-video overflow-hidden">
-          {primaryImage ? (
+        <div className="relative aspect-[4/3] overflow-hidden">
+          {Array.isArray(images) && images.length > 1 ? (
+            <ImageSlider
+              images={images}
+              alt={title}
+              autoSlideDelay={3500}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+            />
+          ) : primaryImage ? (
             <img
               src={primaryImage}
               alt={title}
@@ -71,7 +79,7 @@ export function PackageCard({
           )}
 
           {/* Bottom gradient overlay */}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
 
           <div className="absolute top-3 left-3">
             {badge ? (
@@ -81,13 +89,32 @@ export function PackageCard({
             ) : null}
           </div>
 
-          {Array.isArray(images) && images.length > 1 ? (
-            <div className="absolute bottom-3 right-3">
-              <GlassBadge variant="dark" size="sm" className="font-medium">
-                1/{images.length}
-              </GlassBadge>
+          {/* Key details on image to save space */}
+          <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-white font-bold text-base leading-snug line-clamp-2 drop-shadow-sm">
+                {title}
+              </div>
+              {subtitle ? (
+                <div className="text-white/85 text-sm line-clamp-1 drop-shadow-sm">{subtitle}</div>
+              ) : null}
+              {location ? (
+                <div className="text-white/75 text-xs line-clamp-1 drop-shadow-sm">{location}</div>
+              ) : null}
             </div>
-          ) : null}
+
+            {typeof rating === 'number' && rating > 0 ? (
+              <GlassBadge variant="dark" size="sm" className="font-medium shrink-0">
+                <span className="inline-flex items-center gap-1">
+                  <Star size={12} className="fill-white text-white" />
+                  {rating.toFixed(1)}
+                  {typeof reviewCount === 'number' && reviewCount > 0 ? (
+                    <span className="text-white/80">({reviewCount})</span>
+                  ) : null}
+                </span>
+              </GlassBadge>
+            ) : null}
+          </div>
 
           <div className="absolute top-3 right-3">
             <button className="p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-white hover:text-red-500 transition-colors">
@@ -109,27 +136,6 @@ export function PackageCard({
 
         {/* Content */}
         <div className="p-4 space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="min-w-0 pr-3">
-              <h3 className="font-bold text-lg leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                {title}
-              </h3>
-              {subtitle ? (
-                <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{subtitle}</p>
-              ) : null}
-            </div>
-
-            {typeof rating === 'number' && rating > 0 ? (
-              <div className="flex items-center gap-1 text-sm font-medium shrink-0">
-                <Star size={14} className="fill-foreground text-foreground" />
-                <span>{rating.toFixed(1)}</span>
-                {typeof reviewCount === 'number' && reviewCount > 0 ? (
-                  <span className="text-muted-foreground">({reviewCount})</span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
           {/* Quick info chips */}
           <div className="flex flex-wrap items-center gap-2">
             {typeof durationDays === 'number' && durationDays > 0 ? (
@@ -153,8 +159,6 @@ export function PackageCard({
               </Badge>
             ) : null}
           </div>
-
-          {location ? <div className="text-sm text-muted-foreground">{location}</div> : null}
 
           <div className="pt-3 flex items-center justify-between border-t border-border/60">
             <div className="flex flex-col">
