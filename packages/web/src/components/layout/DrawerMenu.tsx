@@ -52,9 +52,8 @@ export function DrawerMenu() {
       case 'tour_operator':
         return 'Tour Operator'
       case 'traveller':
-        return 'Traveler'
       default:
-        return 'User'
+        return 'Traveler'
     }
   }
 
@@ -322,7 +321,7 @@ export function DrawerMenu() {
                     {/* Info */}
                     <div className="flex flex-col min-w-0 pr-8">
                       <h2 className="text-foreground text-base font-bold truncate">
-                        {user?.user_metadata?.full_name || 'User'}
+                        {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler'}
                       </h2>
                       <p className="text-muted-foreground text-[10px] truncate mb-1.5">
                         {user?.email}

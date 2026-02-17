@@ -42,9 +42,8 @@ export function RoleBasedDrawer() {
       case 'tour_operator':
         return 'Tour Operator'
       case 'traveller':
-        return 'Traveler'
       default:
-        return 'User'
+        return 'Traveler'
     }
   }
 
@@ -226,7 +225,7 @@ export function RoleBasedDrawer() {
 
                         <div className="flex flex-col min-w-0 pr-8">
                             <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5">
-                              {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
+                              {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Traveler'}
                             </h3>
                             <p className="text-[10px] text-muted-foreground truncate mb-1.5">{user.email}</p>
 
