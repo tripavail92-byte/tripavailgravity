@@ -144,8 +144,8 @@ export default function TourDetailsPage() {
 
       {/* Hero Image Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] md:h-[500px]">
-          <div className="md:col-span-2 rounded-3xl overflow-hidden shadow-xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:h-[500px]">
+          <div className="md:col-span-2 rounded-3xl overflow-hidden shadow-xl aspect-[16/10] md:aspect-auto">
             <img
               src={
                 tour.images?.[0] ||
@@ -197,8 +197,10 @@ export default function TourDetailsPage() {
                   Verified Operator
                 </GlassBadge>
               </div>
-              <h1 className="text-4xl font-black text-foreground leading-tight">{tour.title}</h1>
-              <div className="flex flex-wrap items-center gap-6 text-muted-foreground font-medium">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight break-words">
+                {tour.title}
+              </h1>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-muted-foreground font-medium">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
                   <span>
@@ -218,7 +220,8 @@ export default function TourDetailsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-border/50">
+            <div className="border-b border-border/50 overflow-x-auto">
+              <div className="flex min-w-max">
               {[
                 { id: 'overview', label: 'Overview', icon: Info },
                 { id: 'itinerary', label: 'Itinerary', icon: Map },
@@ -227,7 +230,7 @@ export default function TourDetailsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 ${
+                  className={`flex items-center gap-2 px-4 sm:px-6 py-4 font-bold text-sm whitespace-nowrap shrink-0 transition-all border-b-2 ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-muted-foreground/70 hover:text-foreground'
@@ -237,6 +240,7 @@ export default function TourDetailsPage() {
                   {tab.label}
                 </button>
               ))}
+              </div>
             </div>
 
             {/* Tab Content */}
