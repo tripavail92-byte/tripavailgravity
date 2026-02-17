@@ -214,41 +214,67 @@ function MixedHomepageRow({
   const isError = hotelsError || toursError
 
   const merged = useMemo(() => {
-    const combined: MixedRowItem[] = [
-      ...hotelPackages.map((pkg: any) => ({
-        type: 'hotel' as const,
-        id: pkg.id,
-        created_at: pkg.created_at,
-        rating: typeof pkg.rating === 'number' ? pkg.rating : null,
-        pkg,
-      })),
-      ...tours.map((tour: any) => ({
-        type: 'tour' as const,
-        id: tour.id,
-        created_at: tour.created_at,
-        rating: typeof tour.rating === 'number' ? tour.rating : null,
-        tour,
-      })),
-    ]
+    const hotelItems: MixedRowItem[] = hotelPackages.map((pkg: any) => ({
+      type: 'hotel' as const,
+      id: pkg.id,
+      created_at: pkg.created_at,
+      rating: typeof pkg.rating === 'number' ? pkg.rating : null,
+      pkg,
+    }))
+
+    const tourItems: MixedRowItem[] = tours.map((tour: any) => ({
+      type: 'tour' as const,
+      id: tour.id,
+      created_at: tour.created_at,
+      rating: typeof tour.rating === 'number' ? tour.rating : null,
+      tour,
+    }))
+
+    const compareRatingDesc = (a: MixedRowItem, b: MixedRowItem) => {
+      const ar = a.rating
+      const br = b.rating
+      if (ar == null && br == null) return 0
+      if (ar == null) return 1
+      if (br == null) return -1
+      return br - ar
+    }
 
     if (kind === 'new') {
+      const combined: MixedRowItem[] = [...hotelItems, ...tourItems]
       return combined
         .slice()
         .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
         .slice(0, 8)
     }
 
-    return combined
-      .slice()
-      .sort((a, b) => {
-        const ar = a.rating
-        const br = b.rating
-        if (ar == null && br == null) return 0
-        if (ar == null) return 1
-        if (br == null) return -1
-        return br - ar
-      })
-      .slice(0, 8)
+    // Top Rated: keep it mixed by taking up to 4 of each type (when available),
+    // then fill remaining slots by rating.
+    const total = 8
+    const perTypeTarget = 4
+    const sortedHotels = hotelItems.slice().sort(compareRatingDesc)
+    const sortedTours = tourItems.slice().sort(compareRatingDesc)
+
+    const pickedHotels = sortedHotels.slice(0, perTypeTarget)
+    const pickedTours = sortedTours.slice(0, perTypeTarget)
+
+    const interleaved: MixedRowItem[] = []
+    const maxLen = Math.max(pickedHotels.length, pickedTours.length)
+    for (let i = 0; i < maxLen; i++) {
+      if (pickedHotels[i]) interleaved.push(pickedHotels[i])
+      if (interleaved.length >= total) break
+      if (pickedTours[i]) interleaved.push(pickedTours[i])
+      if (interleaved.length >= total) break
+    }
+
+    if (interleaved.length < total) {
+      const remaining = [...sortedHotels.slice(pickedHotels.length), ...sortedTours.slice(pickedTours.length)]
+        .slice()
+        .sort(compareRatingDesc)
+
+      interleaved.push(...remaining.slice(0, total - interleaved.length))
+    }
+
+    return interleaved.slice(0, total)
   }, [hotelPackages, tours, kind])
 
   const viewAllHref = kind === 'new' ? '/explore?filter=new' : '/explore?filter=top-rated'
