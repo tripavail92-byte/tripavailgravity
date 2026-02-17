@@ -1,0 +1,22 @@
+:{$PORT}
+
+root * /app/dist
+encode gzip
+
+# Ensure browsers revalidate HTML so new deployments are picked up quickly
+header /index.html Cache-Control "no-cache"
+
+# Allow long-term caching for hashed build assets
+header /assets/* Cache-Control "public, max-age=31536000, immutable"
+
+# Serve real files under /assets; do NOT fallback to index.html
+@assets path /assets/*
+handle @assets {
+  file_server
+}
+
+# SPA fallback for application routes
+handle {
+  try_files {path} /index.html
+  file_server
+}
