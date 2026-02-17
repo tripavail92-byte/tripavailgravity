@@ -489,7 +489,8 @@ function FeaturedHotelsSection({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true
+    const abortController = new AbortController()
+    
     async function fetchPackages() {
       // ... (existing fetch logic remains the same, just keeping it safe with isMounted if needed,
       // but for this replacement I will just keep the existing logic structure but wrapped slightly if I were rewriting it all.
@@ -516,6 +517,7 @@ function FeaturedHotelsSection({
           .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(10)
+          .abortSignal(abortController.signal)
 
         console.log('[FeaturedHotelsSection] Query result:', { data, error, dataLength: data?.length })
         
@@ -526,7 +528,7 @@ function FeaturedHotelsSection({
 
         console.log('[FeaturedHotelsSection] Fetched packages:', data)
 
-        if (data && isMounted) {
+        if (data) {
           // ... (mapping logic)
           const mappedPackages = data.map((pkg: any) => {
             // Calculate best price
@@ -583,13 +585,13 @@ function FeaturedHotelsSection({
           console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
         }
       } finally {
-        if (isMounted) setLoading(false)
+        setLoading(false)
       }
     }
 
     fetchPackages()
     return () => {
-      isMounted = false
+      abortController.abort()
     }
   }, [])
 
@@ -699,7 +701,8 @@ function FeaturedToursSection({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let isMounted = true
+    const abortController = new AbortController()
+    
     async function fetchTours() {
       try {
         const { data, error } = await supabase
@@ -710,6 +713,7 @@ function FeaturedToursSection({
           .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(10)
+          .abortSignal(abortController.signal)
 
         console.log('[FeaturedToursSection] Query result:', { data, error, dataLength: data?.length })
         
@@ -720,7 +724,7 @@ function FeaturedToursSection({
 
         console.log('[FeaturedToursSection] Fetched tours:', data)
 
-        if (data && isMounted) {
+        if (data) {
           const mappedTours = (data || []).map((tour: any) => {
             const locationObj = tour.location || {}
             const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
@@ -760,13 +764,13 @@ function FeaturedToursSection({
           console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
         }
       } finally {
-        if (isMounted) setLoading(false)
+        setLoading(false)
       }
     }
 
     fetchTours()
     return () => {
-      isMounted = false
+      abortController.abort()
     }
   }, [])
 
