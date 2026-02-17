@@ -351,7 +351,66 @@ useEffect(() => {
 
 ---
 
-## 📋 Checklist: Before Production Deploy
+## � Booking Mutations: Availability Cache Invalidation
+
+**Rule: Booking operations MUST invalidate availability cache to prevent stale data**
+
+**❌ WRONG: No cache invalidation**
+```typescript
+// Service call without mutation hook
+const booking = await packageBookingService.confirmBooking(bookingId)
+// ❌ Other users still see stale "available" status for 15 seconds
+```
+
+**✅ CORRECT: Mutation with surgical invalidation**
+```typescript
+// packages/web/src/queries/bookingMutations.ts
+export function useConfirmPackageBooking() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ bookingId }: ConfirmBookingParams) => {
+      return await packageBookingService.confirmBooking(bookingId)
+    },
+    onSuccess: (_data, variables) => {
+      // CRITICAL: Invalidate availability for this package + dates
+      queryClient.invalidateQueries({
+        queryKey: availabilityKeys.packageAvailability(
+          variables.packageId,
+          variables.checkIn,
+          variables.checkOut
+        )
+      })
+    }
+  })
+}
+```
+
+**Marketplace-Grade Pattern: Optimistic Updates**
+```typescript
+export function useOptimisticPackageBooking() {
+  return useMutation({
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: availabilityKeys.packageAvailability(...) })
+      queryClient.setQueryData(availabilityKeys.packageAvailability(...), false)
+      return { previousValue }
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(availabilityKeys.packageAvailability(...), context.previousValue)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: availabilityKeys.packageAvailability(...) })
+    }
+  })
+}
+```
+
+**Already Implemented:**
+- `packages/web/src/queries/bookingMutations.ts` - Booking mutations with cache invalidation
+
+---
+
+## �📋 Checklist: Before Production Deploy
 
 - [ ] No direct `supabase` imports in components/pages
 - [ ] All query keys include filter/pagination parameters

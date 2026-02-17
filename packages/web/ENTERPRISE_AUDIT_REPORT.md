@@ -184,6 +184,20 @@ export function usePackageAvailability(
 
 ---
 
+## 🔬 Deep Validation (CTO Calibration)
+
+See [DEEP_ENTERPRISE_VALIDATION.md](./DEEP_ENTERPRISE_VALIDATION.md) for ruthless failure-behavior audit:
+
+1. ⚠️ **Availability Cache Invalidation** - Gap identified, mutation hooks created
+2. ✅ **Date Object Serialization** - Verified safe (ISO strings only)
+3. ⚠️ **Error Normalization** - Current approach functional, AppError pattern recommended
+4. ✅ **Backend Atomicity** - Verified enterprise-grade with `FOR UPDATE` locks
+5. ❌ **Operational Observability** - Not implemented (Phase 2 requirement)
+
+**Created:** `packages/web/src/queries/bookingMutations.ts` - Mutation hooks with surgical cache invalidation
+
+---
+
 ## 🎯 Post-Audit Action Items
 
 ### Implemented (This Session)
