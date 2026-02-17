@@ -184,11 +184,11 @@ export default function TourDetailsPage() {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 pt-2">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column: Details */}
           <div className="lg:col-span-2 space-y-10">
-            <div className="space-y-4">
+            <div className="space-y-5 isolate">
               <div className="flex flex-wrap gap-2">
                 <GlassBadge variant="primary" size="default" className="font-bold">
                   {tour.tour_type}
@@ -200,27 +200,27 @@ export default function TourDetailsPage() {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight break-words">
                 {tour.title}
               </h1>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-muted-foreground font-medium">
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-muted-foreground font-medium">
+                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <MapPin className="w-5 h-5 text-primary" />
-                  <span>
+                  <span className="truncate sm:whitespace-normal">
                     {tour.location.city}, {tour.location.country}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <Clock className="w-5 h-5 text-primary" />
                   <span>{tour.duration}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <Star className="w-5 h-5 text-warning fill-current" />
                   <span className="text-foreground font-bold">{tour.rating}</span>
-                  <span className="text-sm font-medium">({tour.review_count} reviews)</span>
+                  <span className="text-sm font-medium truncate">({tour.review_count} reviews)</span>
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-border/50 overflow-x-auto">
+            <div className="mt-1 border-b border-border/50 overflow-x-auto">
               <div className="flex min-w-max">
               {[
                 { id: 'overview', label: 'Overview', icon: Info },
