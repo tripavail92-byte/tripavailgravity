@@ -91,8 +91,8 @@ export default function BookingConfirmationPage() {
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-900">Confirming Your Booking</h2>
-          <p className="text-gray-600 font-medium">Please wait while we process your payment...</p>
+          <h2 className="text-2xl font-bold text-foreground">Confirming Your Booking</h2>
+          <p className="text-muted-foreground font-medium">Please wait while we process your payment...</p>
         </div>
       </div>
     )
@@ -101,7 +101,7 @@ export default function BookingConfirmationPage() {
   // Error state
   if (confirmationStatus === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-destructive/10 to-destructive/20 flex items-center justify-center p-4">
         <GlassCard
           asMotion
           initial={{ opacity: 0, scale: 0.9 }}
@@ -109,17 +109,17 @@ export default function BookingConfirmationPage() {
           variant="card"
           className="max-w-md w-full rounded-2xl p-8 text-center space-y-6"
         >
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto">
-            <AlertCircle className="w-8 h-8 text-red-600" />
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmation Failed</h2>
-            <p className="text-gray-600 font-medium">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Booking Confirmation Failed</h2>
+            <p className="text-muted-foreground font-medium">
               {error || 'An error occurred while confirming your booking'}
             </p>
           </div>
-          <div className="space-y-3 pt-4 border-t border-gray-100">
-            <p className="text-sm text-gray-600">Please contact support if this issue persists.</p>
+          <div className="space-y-3 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">Please contact support if this issue persists.</p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => navigate('/')} className="flex-1">
                 Back to Home
@@ -139,20 +139,20 @@ export default function BookingConfirmationPage() {
 
   // Success state
   return (
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 min-h-screen pb-20">
+    <div className="bg-gradient-to-br from-success/5 to-success/10 min-h-screen pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-background border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-8 text-center">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring' }}
-            className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+            className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4"
           >
-            <Check className="w-10 h-10 text-green-600" />
+            <Check className="w-10 h-10 text-success" />
           </motion.div>
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Booking Confirmed!</h1>
-          <p className="text-lg text-gray-600 font-medium">
+          <h1 className="text-4xl font-black text-foreground mb-2">Booking Confirmed!</h1>
+          <p className="text-lg text-muted-foreground font-medium">
             Your tour is booked. Get ready for an amazing adventure!
           </p>
         </div>
@@ -170,7 +170,7 @@ export default function BookingConfirmationPage() {
         >
           {/* Confirmation Number */}
           <div className="text-center p-6 bg-primary/5 rounded-xl border border-primary/20">
-            <p className="text-sm text-gray-600 font-medium uppercase tracking-widest mb-2">
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest mb-2">
               Confirmation Number
             </p>
             <p className="text-2xl font-black text-primary font-mono break-all">
@@ -181,23 +181,23 @@ export default function BookingConfirmationPage() {
           {/* Tour Details */}
           {tour && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900">Tour Details</h3>
-              <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+              <h3 className="text-xl font-bold text-foreground">Tour Details</h3>
+              <div className="space-y-3 p-4 bg-muted/50 rounded-xl">
                 <div className="flex items-start justify-between">
-                  <span className="text-gray-600 font-medium">Tour Name</span>
-                  <span className="text-gray-900 font-bold text-right max-w-xs">{tour.title}</span>
+                  <span className="text-muted-foreground font-medium">Tour Name</span>
+                  <span className="text-foreground font-bold text-right max-w-xs">{tour.title}</span>
                 </div>
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 font-medium">Location</span>
-                  <span className="text-gray-900 font-bold">
+                  <span className="text-muted-foreground font-medium">Location</span>
+                  <span className="text-foreground font-bold">
                     {tour.location.city}, {tour.location.country}
                   </span>
                 </div>
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 font-medium">Duration</span>
-                  <span className="text-gray-900 font-bold">{tour.duration}</span>
+                  <span className="text-muted-foreground font-medium">Duration</span>
+                  <span className="text-foreground font-bold">{tour.duration}</span>
                 </div>
               </div>
             </div>
@@ -206,27 +206,27 @@ export default function BookingConfirmationPage() {
           {/* Schedule Info */}
           {schedule && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900">Departure Details</h3>
-              <div className="space-y-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <h3 className="text-xl font-bold text-foreground">Departure Details</h3>
+              <div className="space-y-3 p-4 bg-info/10 rounded-xl border border-info/20">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <Calendar className="w-5 h-5 text-info" />
                   <div>
-                    <p className="text-xs text-blue-600 font-bold uppercase tracking-widest">
+                    <p className="text-xs text-info font-bold uppercase tracking-widest">
                       Departure
                     </p>
-                    <p className="text-gray-900 font-bold">
+                    <p className="text-foreground font-bold">
                       {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
                     </p>
                   </div>
                 </div>
-                <div className="h-px bg-blue-200" />
+                <div className="h-px bg-info/20" />
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                  <Calendar className="w-5 h-5 text-info" />
                   <div>
-                    <p className="text-xs text-blue-600 font-bold uppercase tracking-widest">
+                    <p className="text-xs text-info font-bold uppercase tracking-widest">
                       Return
                     </p>
-                    <p className="text-gray-900 font-bold">{formatDate(schedule.end_time)}</p>
+                    <p className="text-foreground font-bold">{formatDate(schedule.end_time)}</p>
                   </div>
                 </div>
               </div>
@@ -236,15 +236,15 @@ export default function BookingConfirmationPage() {
           {/* Booking Summary */}
           {confirmedBooking && (
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-900">Booking Summary</h3>
-              <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+              <h3 className="text-xl font-bold text-foreground">Booking Summary</h3>
+              <div className="space-y-3 p-4 bg-muted/50 rounded-xl">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 font-medium">Number of Guests</span>
-                  <span className="text-gray-900 font-bold">{confirmedBooking.pax_count}</span>
+                  <span className="text-muted-foreground font-medium">Number of Guests</span>
+                  <span className="text-foreground font-bold">{confirmedBooking.pax_count}</span>
                 </div>
-                <div className="h-px bg-gray-200" />
+                <div className="h-px bg-border" />
                 <div className="flex items-center justify-between text-lg">
-                  <span className="text-gray-900 font-bold">Total Paid</span>
+                  <span className="text-foreground font-bold">Total Paid</span>
                   <span className="font-black text-primary">
                     {tour?.currency} {confirmedBooking.total_price.toFixed(2)}
                   </span>
@@ -254,12 +254,12 @@ export default function BookingConfirmationPage() {
           )}
 
           {/* Next Steps */}
-          <div className="space-y-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-            <h4 className="font-bold text-gray-900 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
+          <div className="space-y-4 p-4 bg-warning/10 rounded-xl border border-warning/20">
+            <h4 className="font-bold text-foreground flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-warning" />
               What's Next?
             </h4>
-            <ul className="space-y-2 text-sm text-gray-700 font-medium">
+            <ul className="space-y-2 text-sm text-foreground font-medium">
               <li>✓ Check your email for booking confirmation and tour details</li>
               <li>✓ Save your confirmation number for check-in</li>
               <li>✓ Review the tour itinerary and packing list</li>
@@ -268,10 +268,10 @@ export default function BookingConfirmationPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-col gap-3 pt-4 border-t border-border">
             <Button
               onClick={() => navigate('/')}
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold"
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
             >
               Back to Home
             </Button>
@@ -295,7 +295,7 @@ export default function BookingConfirmationPage() {
           variant="light"
           className="mt-8 text-center rounded-2xl p-6"
         >
-          <p className="text-gray-600 font-medium mb-2">Need help?</p>
+          <p className="text-muted-foreground font-medium mb-2">Need help?</p>
           <a href="mailto:support@tripavail.com" className="text-primary font-bold hover:underline">
             Contact our support team
           </a>

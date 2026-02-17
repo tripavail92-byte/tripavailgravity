@@ -492,6 +492,7 @@ function FeaturedHotelsSection({
           `,
           )
           .eq('is_published', true)
+          .eq('status', 'live')
           .order('created_at', { ascending: false })
           .limit(10)
 
@@ -670,6 +671,7 @@ function FeaturedToursSection({
             'id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at',
           )
           .eq('is_published', true)
+          .eq('status', 'live')
           .order('created_at', { ascending: false })
           .limit(10)
 

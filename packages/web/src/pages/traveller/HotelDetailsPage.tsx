@@ -62,7 +62,7 @@ export default function HotelDetailsPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header / Nav */}
-      <header className="fixed top-16 left-0 right-0 h-16 bg-white z-40 border-b flex items-center justify-between px-4 lg:px-20">
+      <header className="fixed top-16 left-0 right-0 h-16 bg-background z-40 border-b border-border/50 flex items-center justify-between px-4 lg:px-20">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
           <ChevronLeft className="w-5 h-5" />
         </Button>

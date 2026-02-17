@@ -105,8 +105,8 @@ export default function TourDetailsPage() {
   if (!tour) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
-        <p className="text-gray-500 mb-8 text-center max-w-md">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Tour not found</h1>
+        <p className="text-muted-foreground mb-8 text-center max-w-md">
           The tour you're looking for might have been removed or is no longer available.
         </p>
         <Button
@@ -121,21 +121,21 @@ export default function TourDetailsPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen pb-20">
+    <div className="bg-background min-h-screen pb-20">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+      <div className="sticky top-0 z-50 bg-background border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-muted/60 rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button className="p-2 hover:bg-muted/60 rounded-full transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
-            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <button className="p-2 hover:bg-muted/60 rounded-full transition-colors">
               <Heart className="w-5 h-5" />
             </button>
           </div>
@@ -197,8 +197,8 @@ export default function TourDetailsPage() {
                   Verified Operator
                 </GlassBadge>
               </div>
-              <h1 className="text-4xl font-black text-gray-900 leading-tight">{tour.title}</h1>
-              <div className="flex flex-wrap items-center gap-6 text-gray-500 font-medium">
+              <h1 className="text-4xl font-black text-foreground leading-tight">{tour.title}</h1>
+              <div className="flex flex-wrap items-center gap-6 text-muted-foreground font-medium">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
                   <span>
@@ -210,15 +210,15 @@ export default function TourDetailsPage() {
                   <span>{tour.duration}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-amber-500 fill-current" />
-                  <span className="text-gray-900 font-bold">{tour.rating}</span>
+                  <Star className="w-5 h-5 text-warning fill-current" />
+                  <span className="text-foreground font-bold">{tour.rating}</span>
                   <span className="text-sm font-medium">({tour.review_count} reviews)</span>
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-100">
+            <div className="flex border-b border-border/50">
               {[
                 { id: 'overview', label: 'Overview', icon: Info },
                 { id: 'itinerary', label: 'Itinerary', icon: Map },
@@ -230,7 +230,7 @@ export default function TourDetailsPage() {
                   className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                      : 'border-transparent text-muted-foreground/70 hover:text-foreground'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -248,45 +248,50 @@ export default function TourDetailsPage() {
                   className="space-y-10"
                 >
                   <div className="space-y-4">
-                    <h3 className="text-2xl font-bold text-gray-900">Experience Highlights</h3>
+                    <h3 className="text-2xl font-bold text-foreground">Experience Highlights</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {tour.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-3 bg-gray-50 p-4 rounded-2xl">
+                        <div key={i} className="flex items-start gap-3 bg-muted/50 p-4 rounded-2xl">
                           <div className="bg-primary/10 p-2 rounded-xl">
                             <Check className="w-4 h-4 text-primary" />
                           </div>
-                          <span className="text-gray-700 font-medium">{h}</span>
+                          <span className="text-foreground/90 font-medium">{h}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="prose prose-gray max-w-none">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4">Description</h3>
-                    <p className="text-gray-600 leading-relaxed font-medium">{tour.description}</p>
+                  <div className="max-w-none space-y-4">
+                    <h3 className="text-2xl font-bold text-foreground">Description</h3>
+                    <p className="text-muted-foreground leading-relaxed font-medium">
+                      {tour.description}
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-border/50">
                     <div className="space-y-4">
-                      <h4 className="text-lg font-bold text-gray-900">What's Included</h4>
+                      <h4 className="text-lg font-bold text-foreground">What's Included</h4>
                       <ul className="space-y-3">
                         {tour.inclusions.map((inc, i) => (
-                          <li key={i} className="flex items-center gap-3 text-gray-600 font-medium">
-                            <Check className="w-4 h-4 text-green-500" />
+                          <li
+                            key={i}
+                            className="flex items-center gap-3 text-muted-foreground font-medium"
+                          >
+                            <Check className="w-4 h-4 text-success" />
                             {inc}
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div className="space-y-4">
-                      <h4 className="text-lg font-bold text-gray-900">Exclusions</h4>
+                      <h4 className="text-lg font-bold text-foreground">Exclusions</h4>
                       <ul className="space-y-3">
                         {tour.exclusions.map((exc, i) => (
                           <li
                             key={i}
-                            className="flex items-center gap-3 text-gray-400 font-medium line-through"
+                            className="flex items-center gap-3 text-muted-foreground/70 font-medium line-through"
                           >
-                            <X className="w-4 h-4 text-red-500" />
+                            <X className="w-4 h-4 text-error" />
                             {exc}
                           </li>
                         ))}
@@ -305,15 +310,15 @@ export default function TourDetailsPage() {
                   {tour.itinerary?.map((day: any, idx: number) => (
                     <div
                       key={idx}
-                      className="relative pl-10 pb-8 last:pb-0 border-l-2 border-gray-100 last:border-transparent"
+                      className="relative pl-10 pb-8 last:pb-0 border-l-2 border-border/50 last:border-transparent"
                     >
-                      <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-white" />
+                      <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-lg font-bold text-gray-900">
+                          <h4 className="text-lg font-bold text-foreground">
                             Day {day.day}: {day.title}
                           </h4>
-                          <Badge variant="outline" className="border-gray-200 text-gray-500">
+                          <Badge variant="outline" className="border-border text-muted-foreground">
                             {day.activities?.length || 0} Activities
                           </Badge>
                         </div>
@@ -321,15 +326,15 @@ export default function TourDetailsPage() {
                           {day.activities?.map((act: any, ai: number) => (
                             <div
                               key={ai}
-                              className="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                              className="bg-background border border-border/50 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
                             >
                               <div className="flex items-start gap-4">
                                 <div className="bg-primary/5 p-3 rounded-xl text-primary font-bold text-xs">
                                   {act.time}
                                 </div>
                                 <div className="flex-1 space-y-1">
-                                  <p className="font-bold text-gray-900">{act.activity}</p>
-                                  <p className="text-sm text-gray-500 font-medium">
+                                  <p className="font-bold text-foreground">{act.activity}</p>
+                                  <p className="text-sm text-muted-foreground font-medium">
                                     {act.description}
                                   </p>
                                 </div>
@@ -348,17 +353,17 @@ export default function TourDetailsPage() {
           {/* Right Column: Booking Card */}
           <div className="lg:col-span-1">
             <div className="sticky top-20 z-30 space-y-6">
-              <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-lg shadow-gray-200/30 space-y-6">
+              <div className="bg-background border border-border/50 rounded-[2.5rem] p-8 shadow-lg space-y-6">
                 <div className="flex items-baseline justify-between">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <p className="text-xs font-bold text-muted-foreground/70 uppercase tracking-widest">
                       Price per person
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-gray-900">
+                      <span className="text-3xl font-black text-foreground">
                         {tour.currency} {tour.price}
                       </span>
-                      <span className="text-sm font-medium text-gray-500">all inclusive</span>
+                      <span className="text-sm font-medium text-muted-foreground">all inclusive</span>
                     </div>
                   </div>
                   <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-black">
@@ -368,46 +373,46 @@ export default function TourDetailsPage() {
 
                 <div className="space-y-4">
                   {/* Schedule Information */}
-                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 space-y-3">
+                  <div className="p-4 bg-info/10 rounded-2xl border border-info/20 space-y-3">
                     {schedule ? (
                       <>
                         <div className="flex items-start gap-3">
-                          <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <Calendar className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
+                            <p className="text-xs font-bold text-info uppercase tracking-widest mb-1">
                               Departure Date
                             </p>
-                            <p className="text-gray-900 font-bold text-sm">
+                            <p className="text-foreground font-bold text-sm">
                               {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
                             </p>
-                            <p className="text-xs text-gray-600 font-medium mt-1">
+                            <p className="text-xs text-muted-foreground font-medium mt-1">
                               Returns: {formatDate(schedule.end_time)}
                             </p>
                           </div>
                         </div>
-                        <div className="h-px bg-blue-200" />
+                        <div className="h-px bg-info/20" />
                         <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2 text-blue-600 font-bold uppercase text-[10px] tracking-wider">
+                          <span className="flex items-center gap-2 text-info font-bold uppercase text-[10px] tracking-wider">
                             <Users className="w-4 h-4" />
                             Seats Available
                           </span>
-                          <span className="text-gray-900 font-black text-lg">
+                          <span className="text-foreground font-black text-lg">
                             {availableSlots !== null ? availableSlots : '—'}
                           </span>
                         </div>
                         {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
-                          <div className="flex items-center gap-2 p-2 bg-orange-50 rounded-lg border border-orange-200">
-                            <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                            <p className="text-xs text-orange-800 font-medium">
+                          <div className="flex items-center gap-2 p-2 bg-warning/10 rounded-lg border border-warning/20">
+                            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
+                            <p className="text-xs text-warning font-medium">
                               Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!
                             </p>
                           </div>
                         )}
                       </>
                     ) : (
-                      <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <AlertCircle className="w-5 h-5 text-yellow-600" />
-                        <p className="text-sm text-yellow-800 font-medium">
+                      <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                        <AlertCircle className="w-5 h-5 text-warning" />
+                        <p className="text-sm text-warning font-medium">
                           No departure dates available
                         </p>
                       </div>
@@ -417,7 +422,7 @@ export default function TourDetailsPage() {
                   <Button
                     onClick={handleBookNow}
                     disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
-                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {!schedule
                       ? 'No Dates Available'
@@ -426,23 +431,23 @@ export default function TourDetailsPage() {
                         : 'Continue to Booking'}
                   </Button>
 
-                  <p className="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                  <p className="text-center text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest">
                     Free cancellation up to 48h before
                   </p>
                 </div>
 
-                <div className="pt-6 border-t border-gray-100 space-y-4">
-                  <h5 className="text-sm font-bold text-gray-900">Why choose this tour?</h5>
+                <div className="pt-6 border-t border-border/50 space-y-4">
+                  <h5 className="text-sm font-bold text-foreground">Why choose this tour?</h5>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs font-medium text-gray-600">
-                      <div className="w-6 h-6 bg-green-50 rounded-full flex items-center justify-center">
-                        <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                      <div className="w-6 h-6 bg-success/10 rounded-full flex items-center justify-center">
+                        <ShieldCheck className="w-3.5 h-3.5 text-success" />
                       </div>
                       Secure booking with instant confirmation
                     </div>
-                    <div className="flex items-center gap-3 text-xs font-medium text-gray-600">
-                      <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
-                        <Info className="w-3.5 h-3.5 text-blue-600" />
+                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                      <div className="w-6 h-6 bg-info/10 rounded-full flex items-center justify-center">
+                        <Info className="w-3.5 h-3.5 text-info" />
                       </div>
                       Small group guarantee (max {tour.max_participants})
                     </div>
@@ -451,12 +456,12 @@ export default function TourDetailsPage() {
               </div>
 
               {/* Operator Info */}
-              <div className="bg-gray-900 rounded-[2rem] p-6 text-white flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center font-bold text-xl">
+              <div className="bg-foreground rounded-[2rem] p-6 text-background flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-background/20 flex items-center justify-center font-bold text-xl">
                   {tour.operator_id?.slice(0, 1).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">
+                  <p className="text-[10px] font-bold text-background/50 uppercase tracking-widest">
                     Hosted by
                   </p>
                   <h6 className="font-bold truncate">Premium Tour Operator</h6>
@@ -464,7 +469,7 @@ export default function TourDetailsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-primary font-bold hover:bg-white/10 p-0 h-auto"
+                  className="text-primary font-bold hover:bg-background/10 p-0 h-auto"
                 >
                   Contact
                 </Button>

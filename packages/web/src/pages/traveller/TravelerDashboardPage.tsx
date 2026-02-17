@@ -78,19 +78,19 @@ export default function TravelerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-20">
+    <div className="min-h-screen bg-muted/50 pb-20">
       {/* Hero Welcome */}
-      <div className="bg-white border-b border-gray-100 pt-12 pb-20 px-4">
+      <div className="bg-background border-b border-border/50 pt-12 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">
+            <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">
               Welcome back,{' '}
               <span className="text-primary">
                 {user?.user_metadata?.full_name?.split(' ')[0] || 'Traveler'}
               </span>
               !
             </h1>
-            <p className="text-gray-500 font-medium">
+            <p className="text-muted-foreground font-medium">
               Ready for your next adventure? Here's what's happening.
             </p>
           </motion.div>
@@ -109,10 +109,10 @@ export default function TravelerDashboardPage() {
             >
               <GlassCard
                 variant="card"
-                className="p-0 overflow-hidden rounded-3xl border-none shadow-xl shadow-gray-200/50"
+                className="p-0 overflow-hidden rounded-3xl border-none shadow-xl"
               >
-                <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <div className="p-6 border-b border-border/40 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                     <Luggage className="w-5 h-5 text-primary" />
                     Next Adventure
                   </h2>
@@ -142,13 +142,13 @@ export default function TravelerDashboardPage() {
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-black text-gray-900 mb-2">
+                      <h3 className="text-xl font-black text-foreground mb-2">
                         {(nextTrip.tours || nextTrip.packages)?.title ||
                           (nextTrip.tours || nextTrip.packages)?.name}
                       </h3>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-500 font-medium">
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground font-medium">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <Calendar className="w-4 h-4 text-muted-foreground/70" />
                           {format(
                             new Date(
                               nextTrip.booking_date ||
@@ -159,7 +159,7 @@ export default function TravelerDashboardPage() {
                           )}
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <MapPin className="w-4 h-4 text-muted-foreground/70" />
                           {(nextTrip.tours || nextTrip.packages)?.location?.city ||
                             (nextTrip.tours || nextTrip.packages)?.location ||
                             'TBA'}
@@ -177,10 +177,10 @@ export default function TravelerDashboardPage() {
                   </div>
                 ) : (
                   <div className="p-10 text-center">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Compass className="w-8 h-8 text-gray-300" />
+                    <div className="w-16 h-16 bg-muted/60 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Compass className="w-8 h-8 text-muted-foreground/40" />
                     </div>
-                    <p className="text-gray-500 font-medium mb-6">No upcoming trips booked yet.</p>
+                    <p className="text-muted-foreground font-medium mb-6">No upcoming trips booked yet.</p>
                     <Button asChild className="rounded-full px-8">
                       <Link to="/explore">Explore Experiences</Link>
                     </Button>
@@ -197,11 +197,11 @@ export default function TravelerDashboardPage() {
             >
               <GlassCard
                 variant="card"
-                className="p-0 overflow-hidden rounded-3xl border-none shadow-xl shadow-gray-200/50"
+                className="p-0 overflow-hidden rounded-3xl border-none shadow-xl"
               >
-                <div className="p-6 border-b border-gray-50 flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-red-500" />
+                <div className="p-6 border-b border-border/40 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-primary" />
                     Recently Saved
                   </h2>
                   <Link
@@ -222,7 +222,7 @@ export default function TravelerDashboardPage() {
                               ? `/tours/${item.slug || item.id}`
                               : `/packages/${item.slug || item.id}`
                           }
-                          className="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group"
+                          className="flex items-center gap-4 p-3 rounded-2xl hover:bg-muted/50 transition-colors group"
                         >
                           <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
                             <img
@@ -236,23 +236,23 @@ export default function TravelerDashboardPage() {
                             />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-gray-900 truncate mb-1">
+                            <h4 className="text-sm font-bold text-foreground truncate mb-1">
                               {item.title || item.name}
                             </h4>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               {typeof item.location === 'string'
                                 ? item.location
                                 : item.location?.city || 'Globe'}
                             </p>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </Link>
                       ))}
                     </div>
                   ) : (
                     <div className="py-6 text-center">
-                      <p className="text-gray-400 text-sm italic">Nothing saved yet</p>
+                      <p className="text-muted-foreground/70 text-sm italic">Nothing saved yet</p>
                     </div>
                   )}
                 </div>
@@ -270,16 +270,16 @@ export default function TravelerDashboardPage() {
             >
               <GlassCard
                 variant="card"
-                className="p-6 rounded-3xl border-none shadow-xl shadow-gray-200/50 bg-primary/5"
+                className="p-6 rounded-3xl border-none shadow-xl bg-primary/5"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                  <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center shadow-sm">
                     <User className="w-6 h-6 text-primary" />
                   </div>
                   <BadgeCheck className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-gray-900 text-lg mb-1">Profile Completion</h3>
-                <p className="text-sm text-gray-500 mb-6 font-medium">
+                <h3 className="font-bold text-foreground text-lg mb-1">Profile Completion</h3>
+                <p className="text-sm text-muted-foreground mb-6 font-medium">
                   Complete your profile to unlock all features.
                 </p>
 
@@ -288,7 +288,7 @@ export default function TravelerDashboardPage() {
                     <span>Current Progress</span>
                     <span>40%</span>
                   </div>
-                  <div className="h-2 w-full bg-white rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-background rounded-full overflow-hidden">
                     <div className="h-full bg-primary w-[40%] rounded-full" />
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export default function TravelerDashboardPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="w-full rounded-2xl h-12 font-bold bg-white border-none shadow-sm hover:shadow-md transition-all"
+                  className="w-full rounded-2xl h-12 font-bold bg-background border-none shadow-sm hover:shadow-md transition-all"
                 >
                   <Link to="/profile">Complete Profile</Link>
                 </Button>
@@ -309,7 +309,7 @@ export default function TravelerDashboardPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">
+              <h3 className="text-xs font-black text-muted-foreground/70 uppercase tracking-widest mb-4 ml-2">
                 Quick Navigation
               </h3>
               <div className="space-y-3">
@@ -317,19 +317,19 @@ export default function TravelerDashboardPage() {
                   to="/trips"
                   icon={Luggage}
                   label="My Bookings"
-                  color="bg-emerald-50 text-emerald-600"
+                  color="bg-success/10 text-success"
                 />
                 <QuickLink
                   to="/wishlist"
                   icon={Heart}
                   label="Wishlist"
-                  color="bg-rose-50 text-rose-600"
+                  color="bg-primary/10 text-primary"
                 />
                 <QuickLink
                   to="/settings"
                   icon={Settings}
                   label="Settings"
-                  color="bg-blue-50 text-blue-600"
+                  color="bg-info/10 text-info"
                 />
               </div>
             </motion.div>
@@ -355,7 +355,7 @@ function QuickLink({
     <Link to={to}>
       <GlassCard
         variant="light"
-        className="p-4 rounded-2xl border-none shadow-sm hover:shadow-md hover:bg-white transition-all flex items-center justify-between group"
+        className="p-4 rounded-2xl border-none shadow-sm hover:shadow-md hover:bg-card transition-all flex items-center justify-between group"
       >
         <div className="flex items-center gap-3">
           <div
@@ -363,9 +363,9 @@ function QuickLink({
           >
             <Icon className="w-5 h-5" />
           </div>
-          <span className="font-bold text-gray-700 group-hover:text-gray-900">{label}</span>
+          <span className="font-bold text-foreground/80 group-hover:text-foreground">{label}</span>
         </div>
-        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+        <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />
       </GlassCard>
     </Link>
   )

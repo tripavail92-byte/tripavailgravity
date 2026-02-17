@@ -16,7 +16,7 @@ export function CompletionStep() {
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
           className="mb-8"
         >
-          <div className="w-32 h-32 bg-primary rounded-[40px] flex items-center justify-center text-white shadow-2xl shadow-primary/40 rotate-12 transition-transform hover:rotate-0 duration-500">
+          <div className="w-32 h-32 bg-primary rounded-[40px] flex items-center justify-center text-primary-foreground shadow-2xl shadow-primary/40 rotate-12 transition-transform hover:rotate-0 duration-500">
             <Trophy className="w-16 h-16" aria-hidden="true" />
           </div>
         </motion.div>
@@ -27,10 +27,10 @@ export function CompletionStep() {
           transition={{ delay: 0.3 }}
           className="space-y-4"
         >
-          <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">
+          <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">
             You're All Set!
           </h2>
-          <p className="text-xl text-gray-500 max-w-md mx-auto leading-relaxed font-medium">
+          <p className="text-xl text-muted-foreground max-w-md mx-auto leading-relaxed font-medium">
             Your operator profile is now complete. Our team will review your verification documents
             shortly.
           </p>
@@ -42,12 +42,12 @@ export function CompletionStep() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                  <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-gray-900">Verify Identity</p>
-                    <p className="text-xs text-gray-500">Enable bookings with biometric matching</p>
+                    <p className="font-bold text-foreground">Verify Identity</p>
+                    <p className="text-xs text-muted-foreground">Enable bookings with biometric matching</p>
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 text-primary transform group-hover:translate-x-1 transition-all" />
@@ -55,45 +55,45 @@ export function CompletionStep() {
             </Card>
 
             <Card
-              className="p-6 border-gray-100 shadow-sm rounded-3xl hover:border-primary/20 transition-all cursor-pointer group bg-white ring-1 ring-black/[0.02]"
+              className="p-6 border-border/50 shadow-sm rounded-3xl hover:border-primary/20 transition-all cursor-pointer group bg-background ring-1 ring-border/[0.02]"
               onClick={() => navigate('/operator/dashboard')}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                     <LayoutDashboard className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-gray-900">Go to Dashboard</p>
-                    <p className="text-xs text-gray-500">Manage your tours and bookings</p>
+                    <p className="font-bold text-foreground">Go to Dashboard</p>
+                    <p className="text-xs text-muted-foreground">Manage your tours and bookings</p>
                   </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
               </div>
             </Card>
 
             <Card
-              className="p-6 border-gray-100 shadow-sm rounded-3xl hover:border-primary/20 transition-all cursor-pointer group bg-white ring-1 ring-black/[0.02]"
+              className="p-6 border-border/50 shadow-sm rounded-3xl hover:border-primary/20 transition-all cursor-pointer group bg-background ring-1 ring-border/[0.02]"
               onClick={() => navigate('/operator/tours/new')}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                     <Map className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-gray-900">Create Your First Tour</p>
-                    <p className="text-xs text-gray-500">Launch a new adventure package</p>
+                    <p className="font-bold text-foreground">Create Your First Tour</p>
+                    <p className="text-xs text-muted-foreground">Launch a new adventure package</p>
                   </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary transform group-hover:translate-x-1 transition-all" />
               </div>
             </Card>
           </div>
         </motion.div>
       </Card>
 
-      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] pt-8">
+      <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-[0.2em] pt-8">
         Powered by TripAvail Partner Network
       </p>
     </div>

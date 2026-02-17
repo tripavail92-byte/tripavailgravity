@@ -29,19 +29,19 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+        <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
           Personal Information
         </h3>
-        <p className="text-lg text-gray-500 leading-relaxed font-medium">
+        <p className="text-lg text-muted-foreground leading-relaxed font-medium">
           Let's start with your basic contact information.
         </p>
       </div>
 
-      <Card className="p-8 space-y-6 border-gray-100 shadow-sm rounded-[32px] bg-white ring-1 ring-black/[0.02]">
+      <Card className="p-8 space-y-6 border-border/50 shadow-sm rounded-[32px] bg-background ring-1 ring-border/40">
         <div className="space-y-3">
           <Label
             htmlFor="operatorName"
-            className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Tour Operator Name *
           </Label>
@@ -50,14 +50,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.operatorName}
             onChange={(e) => handleChange('operatorName', e.target.value)}
             placeholder="e.g. Peak Adventures Ltd"
-            className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
+            className="rounded-2xl border-border/60 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-muted-foreground/40"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="email"
-            className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Work Email Address *
           </Label>
@@ -67,14 +67,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="hello@adventure.com"
-            className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
+            className="rounded-2xl border-border/60 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-muted-foreground/40"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="phone"
-            className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Phone Number *
           </Label>
@@ -84,14 +84,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
             placeholder="+92 XXX XXXXXXX"
-            className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
+            className="rounded-2xl border-border/60 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-muted-foreground/40"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="contactPerson"
-            className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Primary Contact Person
           </Label>
@@ -100,16 +100,16 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.contactPerson}
             onChange={(e) => handleChange('contactPerson', e.target.value)}
             placeholder="Name of the person managing the account"
-            className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-gray-300"
+            className="rounded-2xl border-border/60 py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base placeholder:text-muted-foreground/40"
           />
         </div>
       </Card>
 
-      <div className="bg-amber-50/50 border border-amber-100 rounded-[28px] p-6 flex gap-4 transition-colors hover:bg-amber-50">
-        <div className="w-10 h-10 bg-white rounded-xl shadow-sm border border-amber-100 flex items-center justify-center flex-shrink-0">
-          <span className="text-amber-600 text-xl font-black italic">!</span>
+      <div className="bg-warning/10 border border-warning/20 rounded-[28px] p-6 flex gap-4 transition-colors hover:bg-warning/20">
+        <div className="w-10 h-10 bg-background rounded-xl shadow-sm border border-warning/20 flex items-center justify-center flex-shrink-0">
+          <span className="text-warning text-xl font-black italic">!</span>
         </div>
-        <p className="text-sm text-amber-900 leading-relaxed font-medium">
+        <p className="text-sm text-warning leading-relaxed font-medium">
           Make sure your email and phone number are correct. We'll use these for important booking
           notifications and account verification.
         </p>

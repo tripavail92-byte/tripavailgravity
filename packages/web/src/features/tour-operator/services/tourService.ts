@@ -129,6 +129,7 @@ export const tourService = {
       .from('tours')
       .select('*')
       .eq(queryColumn, identifier)
+      .eq('status', 'live')
       .single()
 
     if (error) {
@@ -157,7 +158,7 @@ export const tourService = {
 
   async getToursByIds(ids: string[]) {
     if (!ids.length) return []
-    const { data, error } = await supabase.from('tours').select('*').in('id', ids)
+    const { data, error } = await supabase.from('tours').select('*').in('id', ids).eq('status', 'live')
 
     if (error) {
       console.error('Error fetching tours by IDs:', error)
@@ -255,6 +256,7 @@ export const tourService = {
       .from('tours')
       .select('*')
       .eq('is_published', true)
+      .eq('status', 'live')
       .order('created_at', { ascending: false })
       .limit(8)
 

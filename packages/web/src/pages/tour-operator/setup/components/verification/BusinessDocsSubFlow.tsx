@@ -71,10 +71,10 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
         <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6">
           <Briefcase className="w-8 h-8" />
         </div>
-        <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">
+        <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
           Business Credentials
         </h4>
-        <p className="text-gray-500 mt-2 font-medium">
+        <p className="text-muted-foreground mt-2 font-medium">
           Please provide your official registration documents to verify your business status.
         </p>
       </div>
@@ -84,8 +84,8 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
           <Card
             key={doc.id}
             className={cn(
-              'p-6 rounded-[32px] border-gray-100 transition-all',
-              urls[doc.id] ? 'bg-primary/[0.03] border-primary/20' : 'bg-white',
+              'p-6 rounded-[32px] border-border/50 transition-all',
+              urls[doc.id] ? 'bg-primary/[0.03] border-primary/20' : 'bg-background',
             )}
           >
             <div className="flex items-center justify-between">
@@ -93,14 +93,16 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
                 <div
                   className={cn(
                     'w-12 h-12 rounded-2xl flex items-center justify-center',
-                    urls[doc.id] ? 'bg-primary text-white' : 'bg-gray-50 text-gray-400',
+                    urls[doc.id]
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/60 text-muted-foreground/70',
                   )}
                 >
                   <doc.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="font-extrabold text-gray-900 text-base">{doc.title}</p>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+                  <p className="font-extrabold text-foreground text-base">{doc.title}</p>
+                  <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest leading-none mt-1">
                     {doc.desc}
                   </p>
                 </div>
@@ -115,7 +117,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
                   disabled={!!isUploading}
                 />
                 {urls[doc.id] ? (
-                  <div className="bg-white text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/10 flex items-center gap-2">
+                  <div className="bg-background text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-primary/10 flex items-center gap-2">
                     <Check className="w-4 h-4" />
                     Complete
                   </div>
@@ -124,7 +126,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
                     asChild
                     variant="outline"
                     size="sm"
-                    className="rounded-xl border-gray-200 hover:border-primary font-black uppercase tracking-widest h-10 px-6"
+                    className="rounded-xl border-border/60 hover:border-primary font-black uppercase tracking-widest h-10 px-6"
                   >
                     <label htmlFor={`doc-${doc.id}`} className="cursor-pointer">
                       {isUploading === doc.id ? (
@@ -144,7 +146,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
 
       <div className="mt-12 flex justify-center">
         <Button
-          className="rounded-2xl h-14 bg-primary-gradient text-white px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 min-w-[300px]"
+          className="rounded-2xl h-14 bg-primary-gradient text-primary-foreground px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20 min-w-[300px]"
           disabled={!isAllComplete}
           onClick={() => onComplete(urls)}
         >

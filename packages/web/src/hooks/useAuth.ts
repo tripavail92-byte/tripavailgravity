@@ -1,5 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import { authService } from '@tripavail/shared/auth/service'
+import { supabase } from '@/lib/supabase'
 import { roleService } from '@tripavail/shared/roles/service'
 import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
@@ -33,8 +34,21 @@ export const useAuth = create<AuthState>((set, get) => ({
       const session = await authService.getSession()
 
       if (session?.user) {
-        // Fetch active role
-        const activeRole = await roleService.getActiveRole(session.user.id)
+        // Admin override: admin accounts should land in Admin UI, not traveller.
+        const { data: adminRole, error: adminRoleError } = await supabase.rpc('get_admin_role', {
+          p_user_id: session.user.id,
+        })
+
+        const activeRole: UserRole | null = !adminRoleError && adminRole
+          ? {
+              id: session.user.id,
+              user_id: session.user.id,
+              role_type: 'admin',
+              is_active: true,
+              profile_completion: 100,
+              verification_status: 'approved',
+            }
+          : await roleService.getActiveRole(session.user.id)
 
         set({ user: session.user, activeRole, isLoading: false, initialized: true })
       } else {
@@ -44,7 +58,20 @@ export const useAuth = create<AuthState>((set, get) => ({
       // Listen for changes
       authService.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const activeRole = await roleService.getActiveRole(session.user.id)
+          const { data: adminRole, error: adminRoleError } = await supabase.rpc('get_admin_role', {
+            p_user_id: session.user.id,
+          })
+
+          const activeRole: UserRole | null = !adminRoleError && adminRole
+            ? {
+                id: session.user.id,
+                user_id: session.user.id,
+                role_type: 'admin',
+                is_active: true,
+                profile_completion: 100,
+                verification_status: 'approved',
+              }
+            : await roleService.getActiveRole(session.user.id)
           set({ user: session.user, activeRole, isLoading: false })
         } else if (event === 'SIGNED_OUT') {
           set({ user: null, activeRole: null, isLoading: false })
@@ -84,7 +111,9 @@ export const useAuth = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     set({ isLoading: true })
     try {
-      const redirectTo = `${window.location.origin}/auth/callback`
+      const appBaseUrl = (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || window.location.origin
+      const normalizedBaseUrl = appBaseUrl.replace(/\/+$/, '')
+      const redirectTo = `${normalizedBaseUrl}/auth/callback`
       await authService.signInWithGoogle(redirectTo)
     } catch (error) {
       set({ isLoading: false })

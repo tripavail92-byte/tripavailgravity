@@ -1141,7 +1141,7 @@ export function RestaurantIcon({
         cx="8"
         cy="6"
         r="1"
-        fill={isSelected ? '#ffffff' : baseColor === '#ff5a5f' ? '#ffffff' : baseColor}
+        fill={isSelected ? '#ffffff' : String(baseColor) === '#ff5a5f' ? '#ffffff' : baseColor}
         animate={{
           scale: isHovered ? [1, 1.3, 1] : 1,
           opacity: isSelected ? [0.5, 1, 0.5] : 1,

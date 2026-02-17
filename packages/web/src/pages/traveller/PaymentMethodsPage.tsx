@@ -104,7 +104,11 @@ export default function PaymentMethodsPage() {
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-6">
             <div
-              className={`p-3 rounded-xl ${method.method_type === 'card' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}
+              className={`p-3 rounded-xl ${
+                method.method_type === 'card'
+                  ? 'bg-info/10 text-info'
+                  : 'bg-success/10 text-success'
+              }`}
             >
               {method.method_type === 'card' ? (
                 <CreditCard className="w-6 h-6" />
@@ -119,19 +123,19 @@ export default function PaymentMethodsPage() {
             )}
           </div>
 
-          <h3 className="text-lg font-bold text-gray-900 mb-1">{method.label}</h3>
-          <p className="text-sm text-gray-500 font-medium tracking-wider">
+          <h3 className="text-lg font-bold text-foreground mb-1">{method.label}</h3>
+          <p className="text-sm text-muted-foreground font-medium tracking-wider">
             {method.method_type === 'card'
               ? `•••• •••• •••• ${method.last_four}`
               : method.phone_number?.replace(/(\d{4})(\d{3})(\d{4})/, '$1-***-$3')}
           </p>
         </div>
 
-        <div className="relative z-10 mt-8 flex items-center justify-between border-t border-gray-50 pt-4">
+        <div className="relative z-10 mt-8 flex items-center justify-between border-t border-border/40 pt-4">
           {!method.is_default ? (
             <button
               onClick={() => handleSetDefault(method.id)}
-              className="text-xs font-bold text-gray-400 hover:text-primary transition-colors uppercase tracking-widest"
+              className="text-xs font-bold text-muted-foreground/70 hover:text-primary transition-colors uppercase tracking-widest"
             >
               Set Default
             </button>
@@ -141,7 +145,7 @@ export default function PaymentMethodsPage() {
 
           <button
             onClick={() => handleDelete(method.id)}
-            className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+            className="p-2 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -151,9 +155,9 @@ export default function PaymentMethodsPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50/30 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 pt-12 pb-20 px-4">
+      <div className="bg-background border-b border-border/50 pt-12 pb-20 px-4">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="flex items-center gap-3 mb-4">
@@ -164,15 +168,15 @@ export default function PaymentMethodsPage() {
                 Secure Payments
               </span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">Payment Methods</h1>
-            <p className="text-gray-500 font-medium">
+            <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">Payment Methods</h1>
+            <p className="text-muted-foreground font-medium">
               Manage your credit cards and mobile wallets for a faster checkout.
             </p>
           </motion.div>
 
           <Button
             onClick={() => setIsAddingCard(true)}
-            className="rounded-2xl h-14 px-8 bg-primary hover:bg-primary/90 text-white font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
+            className="rounded-2xl h-14 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
           >
             <Plus className="w-5 h-5 mr-2" /> Add New Method
           </Button>
@@ -185,7 +189,7 @@ export default function PaymentMethodsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-48 rounded-3xl bg-white/50 animate-pulse border border-gray-100"
+                className="h-48 rounded-3xl bg-card/50 animate-pulse border border-border/50"
               />
             ))}
           </div>
@@ -198,13 +202,13 @@ export default function PaymentMethodsPage() {
         ) : (
           <GlassCard
             variant="light"
-            className="p-20 text-center rounded-[3rem] border-dashed border-2 border-gray-200 bg-transparent"
+            className="p-20 text-center rounded-[3rem] border-dashed border-2 border-border bg-transparent"
           >
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CreditCard className="w-10 h-10 text-gray-300" />
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+              <CreditCard className="w-10 h-10 text-muted-foreground/40" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">No payment methods saved</h2>
-            <p className="text-gray-500 max-w-sm mx-auto mb-8 font-medium">
+            <h2 className="text-xl font-bold text-foreground mb-2">No payment methods saved</h2>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium">
               Add a card or mobile wallet to enjoy seamless bookings on TripAvail.
             </p>
             <Button
@@ -218,11 +222,11 @@ export default function PaymentMethodsPage() {
         )}
 
         {/* Info Card */}
-        <div className="mt-12 p-6 rounded-3xl bg-blue-50/50 border border-blue-100 flex gap-4">
-          <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
+        <div className="mt-12 p-6 rounded-3xl bg-info/10 border border-info/20 flex gap-4">
+          <Info className="w-5 h-5 text-info flex-shrink-0 mt-1" />
           <div>
-            <h4 className="text-sm font-bold text-blue-900 mb-1">Your security is our priority</h4>
-            <p className="text-xs text-blue-700/80 font-medium leading-relaxed">
+            <h4 className="text-sm font-bold text-foreground mb-1">Your security is our priority</h4>
+            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
               TripAvail uses Stripe for international credit card processing. We never store your
               full card details on our servers. Mobile wallet transactions are secured via dedicated
               provider APIs.
@@ -246,29 +250,37 @@ export default function PaymentMethodsPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-background rounded-[2.5rem] shadow-2xl overflow-hidden"
             >
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-black text-gray-900">Add Payment Method</h2>
+              <div className="p-8 border-b border-border/50 flex justify-between items-center">
+                <h2 className="text-xl font-black text-foreground">Add Payment Method</h2>
                 <button
                   onClick={() => setIsAddingCard(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-muted-foreground/70 hover:text-foreground"
                 >
                   <Plus className="w-6 h-6 rotate-45" />
                 </button>
               </div>
 
               <div className="p-8">
-                <div className="flex bg-gray-50 p-1.5 rounded-2xl mb-8">
+                <div className="flex bg-muted/60 p-1.5 rounded-2xl mb-8">
                   <button
                     onClick={() => setActiveTab('card')}
-                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'card' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                      activeTab === 'card'
+                        ? 'bg-background text-primary shadow-sm'
+                        : 'text-muted-foreground/70 hover:text-foreground'
+                    }`}
                   >
                     Credit Card
                   </button>
                   <button
                     onClick={() => setActiveTab('wallet')}
-                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'wallet' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                      activeTab === 'wallet'
+                        ? 'bg-background text-primary shadow-sm'
+                        : 'text-muted-foreground/70 hover:text-foreground'
+                    }`}
                   >
                     Mobile Wallet
                   </button>
@@ -276,9 +288,9 @@ export default function PaymentMethodsPage() {
 
                 {activeTab === 'card' ? (
                   <div className="space-y-6">
-                    <div className="p-8 rounded-3xl bg-gray-50 border border-gray-100 text-center">
-                      <CreditCard className="w-10 h-10 text-gray-300 mx-auto mb-4" />
-                      <p className="text-sm text-gray-500 font-medium mb-6">
+                    <div className="p-8 rounded-3xl bg-muted/60 border border-border/50 text-center">
+                      <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground font-medium mb-6">
                         Secure Stripe integration will appear here for card entry.
                       </p>
                       <Button
@@ -314,35 +326,43 @@ export default function PaymentMethodsPage() {
                       <button
                         type="button"
                         onClick={() => setWalletType('easypaisa')}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${walletType === 'easypaisa' ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${
+                          walletType === 'easypaisa'
+                            ? 'border-success bg-success/10'
+                            : 'border-border/50 hover:border-border'
+                        }`}
                       >
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                          <Badge className="bg-emerald-500 text-white border-none p-1">EP</Badge>
+                        <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center shadow-sm">
+                          <Badge className="bg-success text-success-foreground border-none p-1">EP</Badge>
                         </div>
-                        <span className="text-xs font-bold text-gray-700">EasyPaisa</span>
+                        <span className="text-xs font-bold text-foreground/80">EasyPaisa</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setWalletType('jazzcash')}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${walletType === 'jazzcash' ? 'border-amber-500 bg-amber-50/50' : 'border-gray-100 hover:border-gray-200'}`}
+                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${
+                          walletType === 'jazzcash'
+                            ? 'border-warning bg-warning/10'
+                            : 'border-border/50 hover:border-border'
+                        }`}
                       >
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                          <Badge className="bg-amber-500 text-white border-none p-1">JC</Badge>
+                        <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center shadow-sm">
+                          <Badge className="bg-warning text-warning-foreground border-none p-1">JC</Badge>
                         </div>
-                        <span className="text-xs font-bold text-gray-700">JazzCash</span>
+                        <span className="text-xs font-bold text-foreground/80">JazzCash</span>
                       </button>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700 ml-1">Wallet Number</label>
+                      <label className="text-sm font-bold text-foreground/80 ml-1">Wallet Number</label>
                       <div className="relative">
-                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/70" />
                         <input
                           type="tel"
                           placeholder="03xx-xxxxxxx"
                           value={phoneNumber}
                           onChange={(e) => setPhoneNumber(e.target.value)}
-                          className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-4 font-bold text-gray-900 placeholder:text-gray-300 focus:ring-2 ring-primary/20"
+                          className="w-full bg-muted/60 border-none rounded-2xl h-14 pl-12 pr-4 font-bold text-foreground placeholder:text-muted-foreground/40 focus:ring-2 ring-primary/20"
                         />
                       </div>
                     </div>
@@ -350,7 +370,7 @@ export default function PaymentMethodsPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full rounded-2xl h-14 bg-primary text-white font-black text-lg shadow-xl shadow-primary/20"
+                      className="w-full rounded-2xl h-14 bg-primary text-primary-foreground font-black text-lg shadow-xl shadow-primary/20"
                     >
                       {isSubmitting ? <Loader2 className="animate-spin" /> : 'Confirm Account'}
                     </Button>

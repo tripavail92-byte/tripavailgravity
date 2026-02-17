@@ -38,18 +38,18 @@ export function BankDetailsStep({ onUpdate, data }: StepProps) {
         >
           <CreditCard className="w-12 h-12" />
         </motion.div>
-        <h3 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter uppercase italic">
+        <h3 className="text-4xl font-black text-foreground mb-3 tracking-tighter uppercase italic">
           Payout Setup
         </h3>
-        <p className="text-xl text-gray-500 max-w-md mx-auto leading-relaxed font-medium">
+        <p className="text-xl text-muted-foreground max-w-md mx-auto leading-relaxed font-medium">
           Securely receive your payments from guests.
         </p>
       </div>
 
-      <Card className="p-8 space-y-6 border-gray-100 shadow-sm rounded-[32px] bg-white ring-1 ring-black/[0.02]">
+      <Card className="p-8 space-y-6 border-border shadow-sm rounded-[32px] bg-background ring-1 ring-black/[0.02]">
         <div className="grid grid-cols-1 gap-6">
           <div className="space-y-3">
-            <Label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1 flex items-center gap-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
               <Landmark className="w-3.5 h-3.5" />
               Bank Name
             </Label>
@@ -57,43 +57,43 @@ export function BankDetailsStep({ onUpdate, data }: StepProps) {
               value={formData.bankName}
               onChange={(e) => handleInputChange('bankName', e.target.value)}
               placeholder="e.g. HBL, Bank Alfalah, etc."
-              className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20"
+              className="rounded-2xl border-input py-7 focus-visible:ring-primary/20"
             />
           </div>
 
           <div className="space-y-3">
-            <Label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Account Holder Name
             </Label>
             <Input
               value={formData.accountHolder}
               onChange={(e) => handleInputChange('accountHolder', e.target.value)}
               placeholder="Exact name as on bank statement"
-              className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20"
+              className="rounded-2xl border-input py-7 focus-visible:ring-primary/20"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Account / IBAN
               </Label>
               <Input
                 value={formData.accountNumber}
                 onChange={(e) => handleInputChange('accountNumber', e.target.value)}
                 placeholder="PK00 XXXX XXXX..."
-                className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20"
+                className="rounded-2xl border-input py-7 focus-visible:ring-primary/20"
               />
             </div>
             <div className="space-y-3">
-              <Label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">
+              <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Swift / Routing
               </Label>
               <Input
                 value={formData.routingNumber}
                 onChange={(e) => handleInputChange('routingNumber', e.target.value)}
                 placeholder="8-11 characters"
-                className="rounded-2xl border-gray-200 py-7 focus-visible:ring-primary/20"
+                className="rounded-2xl border-input py-7 focus-visible:ring-primary/20"
               />
             </div>
           </div>
@@ -108,13 +108,13 @@ export function BankDetailsStep({ onUpdate, data }: StepProps) {
         </div>
       </Card>
 
-      <div className="p-6 bg-gray-50 border border-gray-100 rounded-[28px] flex gap-5">
-        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
-          <Info className="w-5 h-5 text-gray-400" />
+      <div className="p-6 bg-muted border border-border rounded-[28px] flex gap-5">
+        <div className="w-12 h-12 bg-background rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
+          <Info className="w-5 h-5 text-muted-foreground" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-bold text-gray-900">International Payouts</p>
-          <p className="text-xs text-gray-500 font-medium leading-relaxed">
+          <p className="text-sm font-bold text-foreground">International Payouts</p>
+          <p className="text-xs text-muted-foreground font-medium leading-relaxed">
             TripAvail supports payouts in over 40 currencies. Conversion fees may apply based on
             your bank's policy.
           </p>

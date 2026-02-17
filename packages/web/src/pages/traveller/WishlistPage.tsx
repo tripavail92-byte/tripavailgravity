@@ -76,37 +76,37 @@ export default function WishlistPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-        <p className="text-gray-500 font-medium">Fetching your favorites...</p>
+        <p className="text-muted-foreground font-medium">Fetching your favorites...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-20">
+    <div className="min-h-screen bg-muted/50 pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+      <div className="bg-background border-b border-border/50 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-              <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+            <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
+              <Heart className="w-6 h-6 text-primary fill-primary" />
               My Wishlist
             </h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+            <p className="text-xs font-bold text-muted-foreground/70 uppercase tracking-widest mt-0.5">
               {items.length} SAVED ITEMS
             </p>
           </div>
 
-          <div className="flex bg-gray-100 p-1 rounded-xl">
+          <div className="flex bg-muted p-1 rounded-xl">
             {(['all', 'tour', 'package'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                   filter === t
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-background text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {t}s
@@ -123,11 +123,11 @@ export default function WishlistPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-              <Heart className="w-10 h-10 text-gray-300" />
+            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+              <Heart className="w-10 h-10 text-muted-foreground/40" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your wishlist is empty</h2>
-            <p className="text-gray-500 max-w-sm mb-8">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Your wishlist is empty</h2>
+            <p className="text-muted-foreground max-w-sm mb-8">
               Save your favorite tours and packages while you browse to keep them all in one place.
             </p>
             <Button asChild className="rounded-full px-8">
@@ -140,7 +140,7 @@ export default function WishlistPage() {
               <div key={item.id} className="relative group">
                 <button
                   onClick={() => handleRemove(item.id, item.type)}
-                  className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 backdrop-blur-sm text-gray-400 hover:text-red-500 shadow-sm transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+                  className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/90 backdrop-blur-sm text-muted-foreground/70 hover:text-primary shadow-sm transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
                   title="Remove from wishlist"
                 >
                   <Trash2 className="w-4 h-4" />

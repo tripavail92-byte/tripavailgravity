@@ -41,6 +41,10 @@ export class RoleService {
      * Switch the active role for a user (Secure RPC)
      */
     async switchRole(userId: string, newRole: RoleType): Promise<SwitchRoleResponse> {
+        if (newRole === 'admin') {
+            throw new Error("Cannot switch to 'admin' role via user roles")
+        }
+
         const { data, error } = await supabase.rpc('switch_user_role', {
             p_user_id: userId,
             p_role_type: newRole,

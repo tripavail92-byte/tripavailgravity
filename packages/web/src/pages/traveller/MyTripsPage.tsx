@@ -52,51 +52,51 @@ export default function MyTripsPage() {
   const getStatusColor = (status: BookingStatus) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+        return 'bg-success/10 text-success border-success/20'
       case 'pending':
-        return 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+        return 'bg-warning/10 text-warning border-warning/20'
       case 'cancelled':
-        return 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+        return 'bg-destructive/10 text-destructive border-destructive/20'
       case 'completed':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+        return 'bg-info/10 text-info border-info/20'
       default:
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+        return 'bg-muted/50 text-muted-foreground border-border/50'
     }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-        <p className="text-gray-500 font-medium">Preparing your itinerary...</p>
+        <p className="text-muted-foreground font-medium">Preparing your itinerary...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-20">
+      <div className="bg-background border-b border-border/50 sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
               <Luggage className="w-6 h-6 text-primary" />
               My Trips
             </h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+            <p className="text-xs font-bold text-muted-foreground/70 uppercase tracking-widest mt-0.5">
               {bookings.length} TOTAL BOOKINGS
             </p>
           </div>
 
-          <div className="flex bg-gray-100 p-1 rounded-xl">
+          <div className="flex bg-muted p-1 rounded-xl">
             {(['upcoming', 'past'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                   activeTab === tab
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-background text-primary shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab}
@@ -114,13 +114,13 @@ export default function MyTripsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl border border-dashed border-gray-200 p-12 text-center"
+              className="bg-background rounded-3xl border border-dashed border-border p-12 text-center"
             >
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Calendar className="w-8 h-8 text-gray-300" />
+              <div className="w-20 h-20 bg-muted/60 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-8 h-8 text-muted-foreground/40" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} trips found</h2>
-              <p className="text-gray-500 max-w-xs mx-auto mb-8">
+              <h2 className="text-xl font-bold text-foreground mb-2">No {activeTab} trips found</h2>
+              <p className="text-muted-foreground max-w-xs mx-auto mb-8">
                 {activeTab === 'upcoming'
                   ? "Looks like you haven't booked any adventures yet. Time to start planning!"
                   : "You don't have any past trips in your history."}
@@ -178,38 +178,38 @@ export default function MyTripsPage() {
                                 <MapPin className="w-3 h-3" />
                                 {details?.location?.city || details?.location || 'Unknown'}
                               </div>
-                              <div className="text-xs font-bold text-gray-400 tabular-nums">
+                              <div className="text-xs font-bold text-muted-foreground/70 tabular-nums">
                                 ID: #{trip.id.slice(0, 8).toUpperCase()}
                               </div>
                             </div>
 
-                            <h3 className="text-xl font-black text-gray-900 mb-4 group-hover:text-primary transition-colors">
+                            <h3 className="text-xl font-black text-foreground mb-4 group-hover:text-primary transition-colors">
                               {details?.title || details?.name}
                             </h3>
 
                             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center">
-                                  <Calendar className="w-4 h-4 text-gray-400" />
+                                <div className="w-9 h-9 bg-muted/60 rounded-xl flex items-center justify-center">
+                                  <Calendar className="w-4 h-4 text-muted-foreground/70" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">
+                                  <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider leading-none mb-1">
                                     Date
                                   </p>
-                                  <p className="text-sm font-bold text-gray-900 leading-none">
+                                  <p className="text-sm font-bold text-foreground leading-none">
                                     {date ? format(new Date(date), 'MMM dd, yyyy') : 'No date'}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center">
-                                  <Clock className="w-4 h-4 text-gray-400" />
+                                <div className="w-9 h-9 bg-muted/60 rounded-xl flex items-center justify-center">
+                                  <Clock className="w-4 h-4 text-muted-foreground/70" />
                                 </div>
                                 <div>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">
+                                  <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider leading-none mb-1">
                                     Duration
                                   </p>
-                                  <p className="text-sm font-bold text-gray-900 leading-none">
+                                  <p className="text-sm font-bold text-foreground leading-none">
                                     {details?.duration ||
                                       (details?.package_type
                                         ? details.package_type.replace('-', ' ')
@@ -220,12 +220,12 @@ export default function MyTripsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
+                          <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between">
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">
+                              <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest leading-none mb-1">
                                 Total Paid
                               </span>
-                              <span className="text-lg font-black text-gray-900 leading-none">
+                              <span className="text-lg font-black text-foreground leading-none">
                                 ${trip.total_price?.toLocaleString()}
                               </span>
                             </div>
@@ -246,12 +246,12 @@ export default function MyTripsPage() {
 
         {/* Info Card */}
         <div className="mt-12 bg-primary/5 rounded-3xl p-8 border border-primary/10 flex items-start gap-4">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
             <BadgeCheck className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-gray-900 mb-1">Safe and Secure Bookings</h4>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <h4 className="text-lg font-bold text-foreground mb-1">Safe and Secure Bookings</h4>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               All your bookings are protected by our satisfaction guarantee. You can manage your
               cancellations and refunds directly from the trip details page if you need to make
               changes.

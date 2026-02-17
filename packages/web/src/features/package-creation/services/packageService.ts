@@ -199,6 +199,7 @@ export async function getPackageById(identifier: string) {
     .from('packages')
     .select('*')
     .eq(queryColumn, identifier)
+    .eq('status', 'live')
     .single()
 
   if (error) throw error
@@ -210,7 +211,7 @@ export async function getPackageById(identifier: string) {
  */
 export async function getPackagesByIds(ids: string[]) {
   if (!ids.length) return []
-  const { data, error } = await supabase.from('packages').select('*').in('id', ids)
+  const { data, error } = await supabase.from('packages').select('*').in('id', ids).eq('status', 'live')
 
   if (error) {
     console.error('Error fetching packages by IDs:', error)

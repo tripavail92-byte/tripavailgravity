@@ -81,20 +81,23 @@ export function DrawerMenu() {
       case 'Dashboard':
         return {
           ...base,
-          hover: { rotate: 360, transition: { duration: 0.6, ease: 'easeInOut' } },
+          hover: {
+            rotate: 360,
+            transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] as const },
+          },
         }
       case 'My Trips':
       case 'My Tours':
       case 'My Properties':
         return {
           ...base,
-          hover: { x: 3, y: -3, transition: { type: 'spring', stiffness: 300 } },
+          hover: { x: 3, y: -3, transition: { type: 'spring' as const, stiffness: 300 } },
         }
       case 'Profile':
       case 'My Profile':
         return {
           ...base,
-          hover: { scale: 1.2, transition: { type: 'spring', stiffness: 400 } },
+          hover: { scale: 1.2, transition: { type: 'spring' as const, stiffness: 400 } },
         }
       case 'Wishlist':
         return {
@@ -241,7 +244,7 @@ export function DrawerMenu() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 pointer-events-auto"
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 pointer-events-auto"
             onClick={() => setIsDrawerOpen(false)}
           />
         )}
@@ -279,7 +282,7 @@ export function DrawerMenu() {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setIsDrawerOpen(false)}
-                      className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors text-foreground dark:text-white"
+                      className="w-8 h-8 rounded-full bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center transition-colors text-foreground"
                     >
                       <X size={16} />
                     </motion.button>
@@ -297,7 +300,7 @@ export function DrawerMenu() {
                         roleGradient,
                       )}
                     >
-                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background dark:bg-black">
+                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
                         {user?.user_metadata?.avatar_url ? (
                           <img
                             src={user.user_metadata.avatar_url}
@@ -318,7 +321,7 @@ export function DrawerMenu() {
 
                     {/* Info */}
                     <div className="flex flex-col min-w-0 pr-8">
-                      <h2 className="text-foreground dark:text-white text-base font-bold truncate">
+                      <h2 className="text-foreground text-base font-bold truncate">
                         {user?.user_metadata?.full_name || 'User'}
                       </h2>
                       <p className="text-muted-foreground text-[10px] truncate mb-1.5">
@@ -328,15 +331,15 @@ export function DrawerMenu() {
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            'px-2 py-0.5 rounded-full bg-muted/50 dark:bg-white/10 border border-border dark:border-white/10 shadow-sm flex items-center gap-1 flex-shrink-0',
+                            'px-2 py-0.5 rounded-full bg-muted/50 border border-border shadow-sm flex items-center gap-1 flex-shrink-0',
                           )}
                         >
                           <Crown
                             size={9}
-                            className="text-amber-500 dark:text-amber-400"
+                            className="text-warning"
                             fill="currentColor"
                           />
-                          <span className="text-foreground/80 dark:text-white/90 font-bold text-[9px] uppercase tracking-wider">
+                          <span className="text-foreground/80 font-bold text-[9px] uppercase tracking-wider">
                             {roleLabel}
                           </span>
                         </div>
@@ -355,15 +358,15 @@ export function DrawerMenu() {
                       <span
                         className={cn(
                           'font-bold',
-                          activeRole.role_type === 'traveller'
-                            ? 'text-amber-500 dark:text-amber-400'
-                            : 'text-blue-500 dark:text-blue-400',
+                          activeRole?.role_type === 'traveller'
+                            ? 'text-warning'
+                            : 'text-primary',
                         )}
                       >
                         40%
                       </span>
                     </div>
-                    <div className="h-1 w-full bg-muted dark:bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: '40%' }}
@@ -376,7 +379,7 @@ export function DrawerMenu() {
 
                 {/* Menu Items - Compact & Colorful Squares */}
                 <div className="px-4 pb-4">
-                  <h3 className="text-muted-foreground/70 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
+                  <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
                     Menu
                   </h3>
 
@@ -397,8 +400,8 @@ export function DrawerMenu() {
                             className={cn(
                               'flex items-center gap-3 px-3 py-2 rounded-xl transition-all', // Reduced py
                               isActive
-                                ? 'bg-muted/80 dark:bg-white/10 border border-border/50 dark:border-white/10'
-                                : 'hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent',
+                                ? 'bg-muted/80 border border-border/50'
+                                : 'hover:bg-muted/50 border border-transparent',
                             )}
                           >
                             {/* Colorful Icon Container - Slightly Smaller */}
@@ -412,11 +415,10 @@ export function DrawerMenu() {
                                 }}
                                 initial="initial"
                                 whileHover="hover"
-                                transition={animation.transition}
                               >
                                 <item.icon
                                   size={18} // Smaller icon
-                                  className="text-white"
+                                  className="text-primary-foreground"
                                   strokeWidth={2}
                                 />
                               </motion.div>
@@ -427,15 +429,15 @@ export function DrawerMenu() {
                               className={cn(
                                 'text-sm font-medium flex-1 text-left transition-colors',
                                 isActive
-                                  ? 'text-foreground dark:text-white font-bold'
-                                  : 'text-muted-foreground dark:text-white/70 group-hover:text-foreground dark:group-hover:text-white',
+                                  ? 'text-foreground font-bold'
+                                  : 'text-muted-foreground group-hover:text-foreground',
                               )}
                             >
                               {item.label}
                             </span>
 
                             {/* Arrow */}
-                            <span className="text-muted-foreground/40 dark:text-white/20 text-base group-hover:text-foreground/60 dark:group-hover:text-white/40 transition-colors">
+                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
                               ›
                             </span>
                           </div>
@@ -450,18 +452,18 @@ export function DrawerMenu() {
                     whileTap={{ scale: 0.98 }}
                     className="w-full mt-1.5 group"
                   >
-                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent transition-all">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center flex-shrink-0 border border-border/50 dark:border-white/5">
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted/50 border border-transparent transition-all">
+                      <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border/50">
                         <motion.div whileHover={{ scale: 1.1, rotate: 10 }}>
-                          <HelpCircle className="text-gray-600 dark:text-white/80" size={18} />
+                          <HelpCircle className="text-muted-foreground" size={18} />
                         </motion.div>
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-muted-foreground dark:text-white/70 text-sm font-medium group-hover:text-foreground dark:group-hover:text-white transition-colors">
+                        <p className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">
                           Help & Support
                         </p>
                       </div>
-                      <span className="text-muted-foreground/40 dark:text-white/20 text-base group-hover:text-foreground/60 dark:group-hover:text-white/40 transition-colors">
+                      <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
                         ›
                       </span>
                     </div>
@@ -475,19 +477,19 @@ export function DrawerMenu() {
                       onClick={() => handleNavigation('/partner/onboarding')}
                       className="w-full mt-4"
                     >
-                      <div className="relative rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2.5 overflow-hidden shadow-lg shadow-indigo-500/20 border border-white/10">
+                      <div className="relative rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2.5 overflow-hidden shadow-lg shadow-primary/20 border border-primary/10">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                         <div className="relative flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-md bg-white/20 flex items-center justify-center flex-shrink-0">
-                            <Briefcase className="text-white" size={16} />
+                          <div className="w-8 h-8 rounded-md bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+                            <Briefcase className="text-primary-foreground" size={16} />
                           </div>
                           <div className="flex-1 text-left">
-                            <p className="text-white text-xs font-bold uppercase tracking-wide">
+                            <p className="text-primary-foreground text-xs font-bold uppercase tracking-wide">
                               Become a Partner
                             </p>
-                            <p className="text-white/60 text-[9px]">Grow with TripAvail</p>
+                            <p className="text-primary-foreground/60 text-[9px]">Grow with TripAvail</p>
                           </div>
-                          <span className="text-white/80 text-base">›</span>
+                          <span className="text-primary-foreground/80 text-base">›</span>
                         </div>
                       </div>
                     </motion.button>
@@ -498,21 +500,21 @@ export function DrawerMenu() {
               </div>
 
               {/* Footer / Sign Out */}
-              <div className="p-4 pt-0 border-t border-border/50 dark:border-white/10 bg-background/50 dark:bg-black/40 backdrop-blur-md">
+              <div className="p-4 pt-0 border-t border-border/50 bg-background/50 backdrop-blur-md">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleLogout}
                   className="w-full mt-4"
                 >
-                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 p-2.5 transition-colors">
+                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 p-2.5 transition-colors">
                     <div className="flex items-center justify-center gap-2">
                       <LogOut
-                        className="text-red-500 dark:text-red-400"
+                        className="text-destructive"
                         size={16}
                         strokeWidth={2.5}
                       />
-                      <span className="text-red-500 dark:text-red-400 text-[10px] font-bold uppercase tracking-wider">
+                      <span className="text-destructive text-[10px] font-bold uppercase tracking-wider">
                         Sign Out
                       </span>
                     </div>

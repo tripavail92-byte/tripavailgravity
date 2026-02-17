@@ -3,9 +3,11 @@ import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
+import { AdminGuard } from '@/components/auth/AdminGuard'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { useAuth } from '@/hooks/useAuth'
 // Eager load critical components
+import AdminLayout from '@/layouts/AdminLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
 import LoginPage from '@/pages/auth/LoginPage'
@@ -51,6 +53,16 @@ const TourOperatorSettingsPage = lazy(
 )
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
 
+// Admin (Phase 2 skeleton)
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'))
+const AdminPartnersPage = lazy(() => import('@/pages/admin/AdminPartnersPage'))
+const AdminListingsPage = lazy(() => import('@/pages/admin/AdminListingsPage'))
+const AdminBookingsPage = lazy(() => import('@/pages/admin/AdminBookingsPage'))
+const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
+const AdminAuditLogsPage = lazy(() => import('@/pages/admin/AdminAuditLogsPage'))
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
+
 // Legal (public)
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
@@ -74,7 +86,10 @@ function App() {
   // Apply role-based theme
   useEffect(() => {
     if (activeRole?.role_type) {
-      document.documentElement.setAttribute('data-role', activeRole.role_type)
+      document.documentElement.setAttribute(
+        'data-role',
+        activeRole.role_type === 'admin' ? 'traveller' : activeRole.role_type,
+      )
     } else {
       // Default to traveller if no role or not logged in
       document.documentElement.setAttribute('data-role', 'traveller')
@@ -199,6 +214,26 @@ function App() {
             />
 
             <Route path="/dashboard" element={<DashboardRedirect />} />
+          </Route>
+
+          {/* Admin Routes (Phase 2 skeleton) */}
+          <Route
+            path="/admin"
+            element={
+              <AdminGuard>
+                <AdminLayout />
+              </AdminGuard>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="partners" element={<AdminPartnersPage />} />
+            <Route path="listings" element={<AdminListingsPage />} />
+            <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
           {/* Full Screen Flows */}

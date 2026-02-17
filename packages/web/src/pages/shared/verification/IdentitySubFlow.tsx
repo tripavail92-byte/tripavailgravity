@@ -144,17 +144,17 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4">
                 <CreditCard className="w-8 h-8" />
               </div>
-              <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">
+              <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
                 Step 1: Government ID
               </h4>
-              <p className="text-gray-500 mt-1 font-medium">Upload both sides of your ID card.</p>
+              <p className="text-muted-foreground mt-1 font-medium">Upload both sides of your ID card.</p>
             </div>
 
             {/* ID FRONT */}
             <Card
               className={cn(
                 'p-6 border-2 border-dashed transition-all',
-                idCardUrl ? 'bg-green-50/50 border-green-200' : 'bg-gray-50 border-gray-200',
+                idCardUrl ? 'bg-success/10 border-success/20' : 'bg-muted border-border',
               )}
             >
               <div className="flex items-center justify-between">
@@ -162,14 +162,14 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <div
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idCardUrl ? 'bg-green-100 text-green-600' : 'bg-white text-gray-400',
+                      idCardUrl ? 'bg-success/20 text-success' : 'bg-background text-muted-foreground',
                     )}
                   >
                     {idCardUrl ? <Check className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
                   </div>
                   <div className="text-left">
-                    <h5 className="font-bold text-gray-900 uppercase text-sm">ID Card Front</h5>
-                    <p className="text-xs text-gray-500 font-medium">Photo page with your face</p>
+                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front</h5>
+                    <p className="text-xs text-muted-foreground font-medium">Photo page with your face</p>
                   </div>
                 </div>
                 <div>
@@ -186,7 +186,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                     variant={idCardUrl ? 'outline' : 'default'}
                     className={cn(
                       'rounded-xl',
-                      idCardUrl && 'border-green-200 text-green-700 hover:bg-green-100',
+                      idCardUrl && 'border-success/20 text-success hover:bg-success/10',
                     )}
                   >
                     <label htmlFor="id-front-upload" className="cursor-pointer">
@@ -207,7 +207,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             <Card
               className={cn(
                 'p-6 border-2 border-dashed transition-all',
-                idBackUrl ? 'bg-green-50/50 border-green-200' : 'bg-gray-50 border-gray-200',
+                idBackUrl ? 'bg-success/10 border-success/20' : 'bg-muted border-border',
               )}
             >
               <div className="flex items-center justify-between">
@@ -215,14 +215,14 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <div
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idBackUrl ? 'bg-green-100 text-green-600' : 'bg-white text-gray-400',
+                      idBackUrl ? 'bg-success/20 text-success' : 'bg-background text-muted-foreground',
                     )}
                   >
                     {idBackUrl ? <Check className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                   </div>
                   <div className="text-left">
-                    <h5 className="font-bold text-gray-900 uppercase text-sm">ID Card Back</h5>
-                    <p className="text-xs text-gray-500 font-medium">Rear side with details</p>
+                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back</h5>
+                    <p className="text-xs text-muted-foreground font-medium">Rear side with details</p>
                   </div>
                 </div>
                 <div>
@@ -239,7 +239,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                     variant={idBackUrl ? 'outline' : 'default'}
                     className={cn(
                       'rounded-xl',
-                      idBackUrl && 'border-green-200 text-green-700 hover:bg-green-100',
+                      idBackUrl && 'border-success/20 text-success hover:bg-success/10',
                     )}
                   >
                     <label htmlFor="id-back-upload" className="cursor-pointer">
@@ -280,32 +280,32 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <div className="flex justify-center mb-6">
                 <KYCSelfieVector size={200} className="filter drop-shadow-xl" />
               </div>
-              <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">
+              <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
                 Step 2: Selfie with ID
               </h4>
-              <p className="text-gray-500 mt-2 font-medium px-4">
+              <p className="text-muted-foreground mt-2 font-medium px-4">
                 Hold your ID card next to your face. Both must be clearly visible.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-green-50 rounded-2xl flex flex-col items-center text-center space-y-2">
-                <UserCheck className="w-5 h-5 text-green-600" />
-                <p className="text-[10px] font-black uppercase text-green-700 tracking-widest">
+              <div className="p-3 bg-success/10 rounded-2xl flex flex-col items-center text-center space-y-2">
+                <UserCheck className="w-5 h-5 text-success" />
+                <p className="text-[10px] font-black uppercase text-success tracking-widest">
                   Face Visible
                 </p>
               </div>
-              <div className="p-3 bg-green-50 rounded-2xl flex flex-col items-center text-center space-y-2">
-                <CreditCard className="w-5 h-5 text-green-600" />
-                <p className="text-[10px] font-black uppercase text-green-700 tracking-widest">
+              <div className="p-3 bg-success/10 rounded-2xl flex flex-col items-center text-center space-y-2">
+                <CreditCard className="w-5 h-5 text-success" />
+                <p className="text-[10px] font-black uppercase text-success tracking-widest">
                   ID Visible
                 </p>
               </div>
             </div>
 
-            <Card className="p-8 border-2 border-dashed border-gray-100 flex flex-col items-center justify-center bg-gray-50/50 rounded-[32px]">
-              <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-4">
-                <Camera className="w-8 h-8 text-gray-400" />
+            <Card className="p-8 border-2 border-dashed border-border flex flex-col items-center justify-center bg-muted/50 rounded-[32px]">
+              <div className="w-16 h-16 bg-background rounded-2xl shadow-sm flex items-center justify-center mb-4">
+                <Camera className="w-8 h-8 text-muted-foreground" />
               </div>
               <input
                 type="file"
@@ -318,7 +318,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               />
               <Button
                 asChild
-                className="rounded-2xl px-8 h-12 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                className="rounded-2xl px-8 h-12 bg-primary-gradient text-primary-foreground font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
               >
                 <label htmlFor="selfie-upload" className="cursor-pointer">
                   {isUploadingSelfie ? (
@@ -332,7 +332,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             </Card>
             <button
               onClick={() => setSubStep('id_upload')}
-              className="w-full text-center text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-primary"
+              className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary"
             >
               ← Go Back
             </button>
@@ -353,10 +353,10 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             >
               <ShieldCheck className="w-10 h-10" />
             </motion.div>
-            <h4 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">
+            <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
               Verifying Identity
             </h4>
-            <p className="text-gray-500 mt-2 font-medium">AI is analyzing your biometric data...</p>
+            <p className="text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data...</p>
           </motion.div>
         )}
 
@@ -371,14 +371,14 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               className={cn(
                 'p-10 rounded-[32px] text-center border-2',
                 verificationResult?.match
-                  ? 'bg-green-50/50 border-green-100'
-                  : 'bg-red-50/50 border-red-100',
+                  ? 'bg-success/10 border-success/20'
+                  : 'bg-destructive/10 border-destructive/20',
               )}
             >
               <div
                 className={cn(
                   'w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl',
-                  verificationResult?.match ? 'bg-green-500 text-white' : 'bg-red-500 text-white',
+                  verificationResult?.match ? 'bg-success text-primary-foreground' : 'bg-destructive text-primary-foreground',
                 )}
               >
                 {verificationResult?.match ? (
@@ -388,11 +388,11 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 )}
               </div>
 
-              <h4 className="text-3xl font-black text-gray-900 tracking-tight italic uppercase">
+              <h4 className="text-3xl font-black text-foreground tracking-tight italic uppercase">
                 {verificationResult?.match ? 'Identity Matched' : 'Verification Failed'}
               </h4>
 
-              <p className="text-gray-500 mt-4 font-medium px-4">
+              <p className="text-muted-foreground mt-4 font-medium px-4">
                 {verificationResult?.reason ||
                   (verificationResult?.match
                     ? `AI confirmed identity with a confidence score of ${verificationResult.score}%.`
@@ -401,7 +401,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
 
               {verificationResult?.match ? (
                 <Button
-                  className="mt-10 rounded-2xl h-14 bg-primary-gradient text-white px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                  className="mt-10 rounded-2xl h-14 bg-primary-gradient text-primary-foreground px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
                   onClick={() =>
                     onComplete({
                       idCardUrl,
@@ -417,7 +417,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 </Button>
               ) : (
                 <Button
-                  className="mt-10 rounded-2xl h-14 bg-gray-900 px-12 font-black uppercase tracking-widest"
+                  className="mt-10 rounded-2xl h-14 bg-foreground px-12 font-black uppercase tracking-widest text-background"
                   onClick={() => setSubStep('id_upload')}
                 >
                   Try Again

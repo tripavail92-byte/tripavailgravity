@@ -27,7 +27,7 @@ interface LocationStepProps {
 
 export function LocationStep({ onComplete, existingData, onUpdate }: LocationStepProps) {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(
-    existingData?.locationData || null,
+    (existingData?.locationData as LocationData | null) || null,
   )
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [additionalDetails, setAdditionalDetails] = useState({

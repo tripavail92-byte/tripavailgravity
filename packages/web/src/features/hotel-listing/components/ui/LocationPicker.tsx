@@ -109,7 +109,7 @@ function PlacesAutocomplete({
     <div className="relative">
       <div className="relative">
         <Search
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground"
           size={20}
         />
         <Input
@@ -121,11 +121,11 @@ function PlacesAutocomplete({
             setShowSuggestions(true)
           }}
           onFocus={() => setShowSuggestions(true)}
-          className="pl-12 pr-10 py-6 text-base bg-white border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow"
+          className="pl-12 pr-10 py-6 text-base bg-background border border-border rounded-full shadow-sm hover:shadow-md transition-shadow"
         />
         {isSearching && (
           <Loader2
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 animate-spin"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground animate-spin"
             size={20}
           />
         )}
@@ -138,23 +138,23 @@ function PlacesAutocomplete({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-10 max-h-80 overflow-y-auto"
+            className="absolute left-0 right-0 top-full mt-2 bg-background border border-border rounded-2xl shadow-xl z-10 max-h-80 overflow-y-auto"
           >
             {predictions.map((prediction) => (
               <button
                 key={prediction.place_id}
                 onClick={() => handlePredictionClick(prediction.place_id)}
-                className="w-full px-5 py-4 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl transition-colors"
+                className="w-full px-5 py-4 text-left hover:bg-muted border-b border-border last:border-b-0 first:rounded-t-2xl last:rounded-b-2xl transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MapPin size={18} className="text-gray-600" />
+                  <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center flex-shrink-0">
+                    <MapPin size={18} className="text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
+                    <p className="font-medium text-foreground truncate">
                       {prediction.structured_formatting.main_text}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {prediction.structured_formatting.secondary_text}
                     </p>
                   </div>
@@ -341,20 +341,20 @@ function LocationPickerContent({
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col\">
       {/* Minimal Header - Airbnb Style */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-background border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="icon" onClick={onClose} className="p-2 -ml-2 rounded-full">
-            <X size={24} className="text-gray-700" />
+            <X size={24} className="text-foreground" />
           </Button>
-          <h1 className="text-lg font-semibold text-gray-900">Confirm your address</h1>
+          <h1 className="text-lg font-semibold text-foreground">Confirm your address</h1>
           <div className="w-10" /> {/* Spacer for center alignment */}
         </div>
       </div>
 
       {/* Search Bar with Current Location */}
-      <div className="bg-white px-6 py-4 border-b border-gray-100">
+      <div className="bg-background px-6 py-4 border-b border-border">
         <div className="max-w-2xl mx-auto flex gap-3">
           <div className="flex-1">
             <PlacesAutocomplete
@@ -370,7 +370,7 @@ function LocationPickerContent({
             className="w-12 h-12 rounded-full"
             title="Use current location"
           >
-            <LocateFixed size={20} className="text-gray-700" />
+            <LocateFixed size={20} className="text-foreground" />
           </Button>
         </div>
       </div>
@@ -384,7 +384,7 @@ function LocationPickerContent({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-white border-b border-gray-200 px-6 py-4 shadow-md"
+            className="bg-background border-b border-border px-6 py-4 shadow-md"
           >
             <div className="max-w-2xl mx-auto">
               <div className="flex items-center gap-4 mb-3">
@@ -392,17 +392,17 @@ function LocationPickerContent({
                   <Check size={20} className="text-success" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">
+                  <h3 className="font-semibold text-foreground truncate">
                     {selectedLocation.address}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {selectedLocation.city}, {selectedLocation.country}
                   </p>
                 </div>
               </div>
               <Button
                 onClick={handleConfirmLocation}
-                className="w-full h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                className="w-full h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
               >
                 <Check size={20} className="mr-2" />
                 Confirm Location
@@ -413,7 +413,7 @@ function LocationPickerContent({
       </AnimatePresence>
 
       {/* Map Container - Full Height */}
-      <div className="flex-1 relative bg-gray-100">
+      <div className="flex-1 relative bg-muted">
         <Map
           defaultCenter={initialCenter}
           defaultZoom={12}
@@ -437,11 +437,11 @@ function LocationPickerContent({
               >
                 {/* Airbnb-style pin */}
                 <div className="relative">
-                  <div className="w-12 h-12 bg-[#FF385C] rounded-full border-4 border-white shadow-xl flex items-center justify-center cursor-grab active:cursor-grabbing">
-                    <MapPin size={24} className="text-white" fill="white" />
+                  <div className="w-12 h-12 bg-[#FF385C] rounded-full border-4 border-background shadow-xl flex items-center justify-center cursor-grab active:cursor-grabbing">
+                    <MapPin size={24} className="text-primary-foreground" fill="currentColor" />
                   </div>
                   {/* Pin shadow */}
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-black/20 rounded-full blur-sm" />
+                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-foreground/20 rounded-full blur-sm" />
                 </div>
               </motion.div>
             </AdvancedMarker>
@@ -453,9 +453,9 @@ function LocationPickerContent({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-lg"
+            className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-background px-6 py-3 rounded-full shadow-lg"
           >
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-foreground">
               Click on the map to pin your location
             </p>
           </motion.div>
@@ -470,24 +470,24 @@ function LocationPickerContent({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="bg-white border-t border-gray-200 shadow-2xl"
+            className="bg-background border-t border-border shadow-2xl"
           >
             <div className="px-6 py-6">
               <div className="max-w-4xl mx-auto">
                 {/* Location Info */}
                 <div className="mb-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
                       <MapPin size={24} className="text-[#FF385C]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                      <h3 className="font-semibold text-foreground text-lg mb-1">
                         {selectedLocation.address}
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         {selectedLocation.city}, {selectedLocation.country}
                       </p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-muted-foreground/70 mt-1">
                         📍 {selectedLocation.coordinates.lat.toFixed(5)},{' '}
                         {selectedLocation.coordinates.lng.toFixed(5)}
                       </p>
@@ -496,8 +496,8 @@ function LocationPickerContent({
                 </div>
 
                 {/* Confirmation Note */}
-                <div className="bg-info-foreground border border-info/20 rounded-xl px-4 py-3 mb-4">
-                  <p className="text-sm text-blue-900">
+                <div className="bg-info/10 border border-info/20 rounded-xl px-4 py-3 mb-4">
+                  <p className="text-sm text-foreground">
                     <span className="font-medium">Tip:</span> You can drag the pin to adjust your
                     exact location
                   </p>
@@ -508,13 +508,13 @@ function LocationPickerContent({
                   <Button
                     variant="outline"
                     onClick={onClose}
-                    className="flex-1 h-12 rounded-xl border-2 font-medium hover:bg-gray-50"
+                    className="flex-1 h-12 rounded-xl border-2 font-medium hover:bg-muted"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleConfirmLocation}
-                    className="flex-1 h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                    className="flex-1 h-12 bg-gradient-to-r from-[#E61E4D] to-[#FF385C] hover:from-[#D90B40] hover:to-[#E61E4D] text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
                   >
                     <Check size={20} className="mr-2" />
                     Confirm Location
@@ -532,10 +532,10 @@ function LocationPickerContent({
 export function LocationPicker(props: LocationPickerProps) {
   if (!GOOGLE_MAPS_API_KEY) {
     return (
-      <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
         <div className="text-center p-8">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Google Maps API Key Missing</h2>
-          <p className="text-gray-600">Please add VITE_GOOGLE_MAPS_API_KEY to your .env file</p>
+          <h2 className="text-xl font-semibold text-destructive mb-2">Google Maps API Key Missing</h2>
+          <p className="text-muted-foreground">Please add VITE_GOOGLE_MAPS_API_KEY to your .env file</p>
         </div>
       </div>
     )

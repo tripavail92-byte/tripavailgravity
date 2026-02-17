@@ -41,14 +41,25 @@ interface Activity {
   duration: string
 }
 
+type ActivityTone = 'primary' | 'warning' | 'info' | 'success' | 'destructive' | 'muted'
+
 const ACTIVITY_TYPES = [
-  { id: 'sightseeing', label: 'Sightseeing', icon: Camera, color: 'var(--primary)' },
-  { id: 'meal', label: 'Meal', icon: Utensils, color: '#f59e0b' }, // amber-500
-  { id: 'transport', label: 'Transport', icon: MapPin, color: '#3b82f6' }, // blue-500
-  { id: 'accommodation', label: 'Accommodation', icon: Clock, color: '#a855f7' }, // purple-500
-  { id: 'activity', label: 'Activity', icon: Plus, color: '#ef4444' }, // red-500
-  { id: 'free-time', label: 'Free Time', icon: Clock, color: '#10b981' }, // emerald-500
+  { id: 'sightseeing', label: 'Sightseeing', icon: Camera, tone: 'primary' as ActivityTone },
+  { id: 'meal', label: 'Meal', icon: Utensils, tone: 'warning' as ActivityTone },
+  { id: 'transport', label: 'Transport', icon: MapPin, tone: 'info' as ActivityTone },
+  { id: 'accommodation', label: 'Accommodation', icon: Clock, tone: 'success' as ActivityTone },
+  { id: 'activity', label: 'Activity', icon: Plus, tone: 'destructive' as ActivityTone },
+  { id: 'free-time', label: 'Free Time', icon: Clock, tone: 'muted' as ActivityTone },
 ]
+
+const ACTIVITY_TONE_STYLES: Record<ActivityTone, { bg: string; text: string }> = {
+  primary: { bg: 'bg-primary/10', text: 'text-primary' },
+  warning: { bg: 'bg-warning/10', text: 'text-warning' },
+  info: { bg: 'bg-info/10', text: 'text-info' },
+  success: { bg: 'bg-success/10', text: 'text-success' },
+  destructive: { bg: 'bg-destructive/10', text: 'text-destructive' },
+  muted: { bg: 'bg-muted', text: 'text-muted-foreground' },
+}
 
 const SUGGESTED_ACTIVITIES = {
   sightseeing: [
@@ -195,26 +206,28 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* Header */}
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
+      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-none shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <MapPin className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+            <MapPin className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Itinerary</h2>
-            <p className="text-white/90 text-sm font-medium">Plan your day-by-day tour schedule</p>
+            <p className="text-primary-foreground/90 text-sm font-medium">
+              Plan your day-by-day tour schedule
+            </p>
           </div>
         </div>
       </Card>
 
       {/* Day Tabs */}
-      <Card className="p-4 bg-white border-gray-100 shadow-sm">
+      <Card className="p-4 bg-background border-border shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900">Itinerary Days</h3>
+          <h3 className="font-bold text-foreground">Itinerary Days</h3>
           <Button
             size="sm"
             onClick={addDay}
-            className="bg-primary hover:bg-primary/90 text-white border-none shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground border-none shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Day
@@ -228,8 +241,8 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               onClick={() => setSelectedDay(index)}
               className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 ${
                 selectedDay === index
-                  ? 'border-primary bg-primary text-white shadow-md shadow-primary/20'
-                  : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-primary/50 hover:bg-primary/5'
+                  ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                  : 'border-border bg-muted text-muted-foreground hover:border-primary/50 hover:bg-primary/5'
               }`}
             >
               Day {day.day}
@@ -239,21 +252,21 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
 
         {/* Day Details */}
         {currentDay && (
-          <div className="space-y-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+          <div className="space-y-4 bg-muted/50 p-4 rounded-2xl border border-border">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Day Title
                 </label>
                 <Input
                   value={currentDay.title}
                   onChange={(e) => updateDay(currentDay.id, 'title', e.target.value)}
                   placeholder={`Day ${currentDay.day} - Enter title`}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Day Description
                 </label>
                 <Textarea
@@ -261,7 +274,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                   onChange={(e) => updateDay(currentDay.id, 'description', e.target.value)}
                   placeholder="Describe what happens on this day..."
                   rows={2}
-                  className="bg-white resize-none"
+                  className="bg-background resize-none"
                 />
               </div>
             </div>
@@ -272,7 +285,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                   variant="outline"
                   size="sm"
                   onClick={() => removeDay(currentDay.id)}
-                  className="text-destructive border-red-100 hover:bg-red-50 hover:border-red-200"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30"
                 >
                   <X className="w-4 h-4 mr-1" />
                   Remove Day
@@ -284,15 +297,15 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       </Card>
 
       {/* Activities */}
-      <Card className="p-4 bg-white border-gray-100 shadow-sm">
+      <Card className="p-4 bg-background border-border shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900">
+          <h3 className="font-bold text-foreground">
             Activities - <span className="text-primary">Day {currentDay?.day}</span>
           </h3>
           <Button
             size="sm"
             onClick={() => setShowAddActivity(true)}
-            className="bg-primary hover:bg-primary/90 text-white shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Activity
@@ -302,12 +315,12 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
         {/* Activities List */}
         <div className="space-y-3">
           {currentDay?.activities.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-8 h-8 text-gray-300" />
+            <div className="text-center py-12 bg-muted rounded-2xl border-2 border-dashed border-border">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="text-gray-900 font-medium">No activities added yet</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-foreground font-medium">No activities added yet</p>
+              <p className="text-sm text-muted-foreground">
                 Click "Add Activity" to start planning Day {currentDay?.day}
               </p>
             </div>
@@ -315,20 +328,20 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
             currentDay?.activities.map((activity) => {
               const typeInfo = getActivityTypeInfo(activity.type)
               const TypeIcon = typeInfo.icon
+              const toneStyles = ACTIVITY_TONE_STYLES[typeInfo.tone]
 
               return (
                 <motion.div
                   key={activity.id}
-                  className="flex items-start gap-4 p-4 border border-gray-100 rounded-xl bg-white hover:border-primary/30 hover:shadow-md transition-all group"
+                  className="flex items-start gap-4 p-4 border border-border rounded-xl bg-background hover:border-primary/30 hover:shadow-md transition-all group"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div className="flex-shrink-0 mt-1">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                      style={{ backgroundColor: `${typeInfo.color}15` }}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${toneStyles.bg}`}
                     >
-                      <TypeIcon className="w-5 h-5" style={{ color: typeInfo.color }} />
+                      <TypeIcon className={`w-5 h-5 ${toneStyles.text}`} />
                     </div>
                   </div>
 
@@ -336,32 +349,28 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-sm">
+                          <span className="font-bold text-foreground bg-muted px-2 py-0.5 rounded text-sm">
                             {activity.time}
                           </span>
                           <Badge
                             variant="secondary"
-                            className="text-[10px] font-bold uppercase tracking-wider border-none"
-                            style={{
-                              backgroundColor: `${typeInfo.color}15`,
-                              color: typeInfo.color,
-                            }}
+                            className={`text-[10px] font-bold uppercase tracking-wider border-none ${toneStyles.bg} ${toneStyles.text}`}
                           >
                             {typeInfo.label}
                           </Badge>
-                          <span className="text-xs font-semibold text-gray-400">
+                          <span className="text-xs font-semibold text-muted-foreground">
                             {' '}
                             • {activity.duration}
                           </span>
                         </div>
-                        <h4 className="font-bold text-gray-900 text-lg">{activity.title}</h4>
+                        <h4 className="font-bold text-foreground text-lg">{activity.title}</h4>
                         {activity.description && (
-                          <p className="text-sm text-gray-600 leading-relaxed">
+                          <p className="text-sm text-muted-foreground leading-relaxed">
                             {activity.description}
                           </p>
                         )}
                         {activity.location && (
-                          <div className="flex items-center gap-1.5 mt-2 text-gray-500 bg-gray-50 inline-flex px-2 py-1 rounded-lg">
+                          <div className="flex items-center gap-1.5 mt-2 text-muted-foreground bg-muted inline-flex px-2 py-1 rounded-lg">
                             <MapPin className="w-3 h-3" />
                             <span className="text-xs font-medium">{activity.location}</span>
                           </div>
@@ -371,7 +380,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                         size="sm"
                         variant="ghost"
                         onClick={() => removeActivity(activity.id)}
-                        className="text-gray-300 hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-5 h-5" />
                       </Button>
@@ -393,16 +402,16 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddActivity(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
             />
             <motion.div
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg z-10 overflow-hidden"
+              className="bg-background rounded-2xl shadow-2xl w-full max-w-lg z-10 overflow-hidden"
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-900">Add New Activity</h3>
+              <div className="p-6 border-b border-border flex justify-between items-center">
+                <h3 className="text-lg font-bold text-foreground">Add New Activity</h3>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -416,7 +425,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               <div className="p-6 space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Time
                     </label>
                     <Input
@@ -429,7 +438,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Duration
                     </label>
                     <Select
@@ -456,7 +465,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Activity Type
                   </label>
                   <Select
@@ -471,10 +480,11 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                     <SelectContent>
                       {ACTIVITY_TYPES.map((type) => {
                         const Icon = type.icon
+                        const typeToneStyles = ACTIVITY_TONE_STYLES[type.tone]
                         return (
                           <SelectItem key={type.id} value={type.id}>
                             <div className="flex items-center gap-2">
-                              <Icon className="w-4 h-4" style={{ color: type.color }} />
+                              <Icon className={`w-4 h-4 ${typeToneStyles.text}`} />
                               <span>{type.label}</span>
                             </div>
                           </SelectItem>
@@ -485,7 +495,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Activity Title
                   </label>
                   <Input
@@ -503,7 +513,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                         <button
                           key={suggestion}
                           onClick={() => setNewActivity((prev) => ({ ...prev, title: suggestion }))}
-                          className="text-[10px] font-bold bg-gray-50 text-gray-600 hover:bg-primary/10 hover:text-primary px-2.5 py-1 rounded-full transition-colors border border-gray-100"
+                          className="text-[10px] font-bold bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary px-2.5 py-1 rounded-full transition-colors border border-border"
                         >
                           + {suggestion}
                         </button>
@@ -512,7 +522,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Location (Optional)
                   </label>
                   <Input
@@ -525,7 +535,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Description (Optional)
                   </label>
                   <Textarea
@@ -539,7 +549,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
               </div>
 
-              <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-3">
+              <div className="p-6 border-t border-border bg-muted flex gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setShowAddActivity(false)}
@@ -550,7 +560,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 <Button
                   onClick={addActivity}
                   disabled={!newActivity.title || !newActivity.time}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   Add Activity
                 </Button>
@@ -561,14 +571,14 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       </AnimatePresence>
 
       {/* Navigation Footer */}
-      <div className="flex justify-between pt-6 border-t border-gray-100">
-        <Button variant="outline" onClick={onBack} size="lg" className="px-8 border-gray-200">
+      <div className="flex justify-between pt-6 border-t border-border">
+        <Button variant="outline" onClick={onBack} size="lg" className="px-8 border-input">
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold"
+          className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
           disabled={itinerary.length === 0}
         >
           Next Step

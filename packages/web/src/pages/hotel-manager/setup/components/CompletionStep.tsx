@@ -24,17 +24,17 @@ export function CompletionStep() {
             rotate: [0, 10, -10, 0],
           }}
           transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute -top-4 -right-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center"
+          className="absolute -top-4 -right-4 w-12 h-12 bg-background rounded-full shadow-lg flex items-center justify-center"
         >
           <PartyPopper className="w-6 h-6 text-yellow-500" />
         </motion.div>
       </motion.div>
 
       <div className="text-center space-y-4">
-        <h3 className="text-5xl font-black text-gray-900 tracking-tighter uppercase italic">
+        <h3 className="text-5xl font-black text-foreground tracking-tighter uppercase italic">
           Success!
         </h3>
-        <p className="text-xl text-gray-500 max-w-sm mx-auto font-medium leading-relaxed">
+        <p className="text-xl text-muted-foreground max-w-sm mx-auto font-medium leading-relaxed">
           Your partner application has been submitted for review.
         </p>
       </div>
@@ -56,16 +56,16 @@ export function CompletionStep() {
         </div>
 
         <div
-          className="p-6 bg-gray-50 border border-gray-100 rounded-[32px] flex flex-col gap-3 cursor-pointer hover:bg-gray-100 transition-all group"
+          className="p-6 bg-muted border border-border rounded-[32px] flex flex-col gap-3 cursor-pointer hover:bg-muted/80 transition-all group"
           onClick={() => navigate('/manager/dashboard')}
         >
-          <div className="w-10 h-10 bg-white text-gray-400 rounded-xl flex items-center justify-center border border-gray-100 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
+          <div className="w-10 h-10 bg-background text-muted-foreground rounded-xl flex items-center justify-center border border-border group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
             <ArrowRight className="w-5 h-5" />
           </div>
-          <p className="font-black text-xs uppercase tracking-widest text-gray-400 italic">
+          <p className="font-black text-xs uppercase tracking-widest text-muted-foreground italic">
             Dashboard
           </p>
-          <p className="text-sm text-gray-500 font-medium">
+          <p className="text-sm text-muted-foreground font-medium">
             Head to your control center and start managing listings.
           </p>
         </div>

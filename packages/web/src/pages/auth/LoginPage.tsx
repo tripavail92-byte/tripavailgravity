@@ -38,6 +38,10 @@ export default function LoginPage() {
       } else {
         // Role-based default routing
         switch (activeRole.role_type) {
+          case 'admin':
+            console.log('[LoginPage] Navigating to admin dashboard')
+            navigate('/admin/dashboard')
+            break
           case 'hotel_manager':
             console.log('[LoginPage] Navigating to hotel manager dashboard')
             navigate('/manager/dashboard')

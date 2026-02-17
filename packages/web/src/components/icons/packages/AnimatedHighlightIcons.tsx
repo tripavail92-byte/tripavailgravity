@@ -34,7 +34,7 @@ const steamVariants = {
     transition: {
       duration: 2,
       repeat: Infinity,
-      ease: 'easeOut',
+      ease: [0, 0, 0.2, 1] as const,
     },
   },
 }
@@ -49,7 +49,7 @@ const waveVariants = {
     transition: {
       duration: 2,
       repeat: Infinity,
-      ease: 'easeInOut',
+      ease: [0.4, 0, 0.2, 1] as const,
     },
   },
 }

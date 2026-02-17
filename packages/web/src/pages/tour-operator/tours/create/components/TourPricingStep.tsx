@@ -94,14 +94,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
+      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-none shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Pricing</h2>
-            <p className="text-white/80 text-sm">
+            <p className="text-primary-foreground/80 text-sm">
               Set competitive pricing and booking policies for your tour.
             </p>
           </div>
@@ -109,15 +109,15 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </Card>
 
       {/* Base Pricing */}
-      <Card className="p-6 border-gray-200">
+      <Card className="p-6 border-border">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <DollarSign className="w-5 h-5 text-primary" /> Base Pricing
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Base Price Per Person *</label>
+            <label className="text-sm font-medium text-foreground">Base Price Per Person *</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
                 {data.currency || '$'}
               </span>
               <Input
@@ -130,7 +130,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Currency</label>
+            <label className="text-sm font-medium text-foreground">Currency</label>
             <Select
               value={data.currency || 'USD'}
               onValueChange={(v) => handleInputChange('currency', v)}
@@ -151,13 +151,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </Card>
 
       {/* Group Discounts */}
-      <Card className="p-6 border-gray-200">
+      <Card className="p-6 border-border">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" /> Group Discounts
             </h3>
-            <p className="text-sm text-gray-500">Offer lower rates for larger groups</p>
+            <p className="text-sm text-muted-foreground">Offer lower rates for larger groups</p>
           </div>
           <Switch
             checked={data.group_discounts}
@@ -174,7 +174,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               className="overflow-hidden space-y-4"
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-600">Pricing Tiers</span>
+                <span className="text-sm font-medium text-muted-foreground">Pricing Tiers</span>
                 <Button
                   size="sm"
                   variant="outline"
@@ -188,10 +188,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               {pricingTiers.map((tier) => (
                 <div
                   key={tier.id}
-                  className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 items-end"
+                  className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 bg-muted rounded-lg border border-border items-end"
                 >
                   <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400">
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground">
                       Tier Name
                     </label>
                     <Input
@@ -201,7 +201,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400">
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground">
                       Min/Max Pax
                     </label>
                     <div className="flex items-center gap-1">
@@ -213,7 +213,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                         }
                         className="h-9 text-sm px-2"
                       />
-                      <span className="text-gray-300">-</span>
+                      <span className="text-muted">-</span>
                       <Input
                         type="number"
                         value={tier.maxPeople}
@@ -225,7 +225,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-gray-400">Price</label>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Price</label>
                     <Input
                       type="number"
                       value={tier.pricePerPerson}
@@ -240,7 +240,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       variant="ghost"
                       size="icon"
                       onClick={() => removePricingTier(tier.id)}
-                      className="text-gray-400 hover:text-destructive h-9 w-9"
+                      className="text-muted-foreground hover:text-destructive h-9 w-9"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -253,13 +253,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </Card>
 
       {/* Seasonal Pricing */}
-      <Card className="p-6 border-gray-200">
+      <Card className="p-6 border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <Percent className="w-5 h-5 text-primary" /> Seasonal Pricing
             </h3>
-            <p className="text-sm text-gray-500">Adjust multipliers for peak/off seasons</p>
+            <p className="text-sm text-muted-foreground">Adjust multipliers for peak/off seasons</p>
           </div>
           <Switch
             checked={data.seasonal_pricing}
@@ -276,7 +276,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               className="overflow-hidden grid grid-cols-2 gap-4 mt-4"
             >
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Peak Multiplier</label>
+                <label className="text-sm font-medium text-foreground">Peak Multiplier</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -285,10 +285,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     handleInputChange('peak_season_multiplier', parseFloat(e.target.value))
                   }
                 />
-                <p className="text-[10px] text-gray-400">e.g. 1.2 = 20% increase</p>
+                <p className="text-[10px] text-muted-foreground">e.g. 1.2 = 20% increase</p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Off-Season Multiplier</label>
+                <label className="text-sm font-medium text-foreground">Off-Season Multiplier</label>
                 <Input
                   type="number"
                   step="0.1"
@@ -297,7 +297,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     handleInputChange('off_season_multiplier', parseFloat(e.target.value))
                   }
                 />
-                <p className="text-[10px] text-gray-400">e.g. 0.8 = 20% decrease</p>
+                <p className="text-[10px] text-muted-foreground">e.g. 0.8 = 20% decrease</p>
               </div>
             </motion.div>
           )}
@@ -305,7 +305,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </Card>
 
       {/* Booking Terms */}
-      <Card className="p-6 border-gray-200">
+      <Card className="p-6 border-border">
         <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
           <Info className="w-5 h-5 text-primary" /> Booking Terms
         </h3>
@@ -313,8 +313,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium text-gray-700">Require Deposit</label>
-              <p className="text-xs text-gray-500">Require partial payment upfront</p>
+              <label className="font-medium text-foreground">Require Deposit</label>
+              <p className="text-xs text-muted-foreground">Require partial payment upfront</p>
             </div>
             <Switch
               checked={data.deposit_required}
@@ -330,7 +330,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden space-y-2"
               >
-                <label className="text-sm font-medium text-gray-700">Deposit Percentage</label>
+                <label className="text-sm font-medium text-foreground">Deposit Percentage</label>
                 <Select
                   value={String(data.deposit_percentage || 25)}
                   onValueChange={(v) => handleInputChange('deposit_percentage', parseInt(v))}
@@ -351,7 +351,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
           <Separator />
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Cancellation Policy</label>
+            <label className="text-sm font-medium text-foreground">Cancellation Policy</label>
             <Select
               value={data.cancellation_policy || 'flexible'}
               onValueChange={(v: any) => handleInputChange('cancellation_policy', v)}
@@ -374,7 +374,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
 
       {/* Inclusions & Exclusions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6 border-gray-200">
+        <Card className="p-6 border-border">
           <h3 className="text-sm font-bold text-success-dark mb-4 uppercase tracking-wider">
             What's Included
           </h3>
@@ -385,7 +385,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                     (data.inclusions || []).includes(item)
                       ? 'bg-success border-success'
-                      : 'border-gray-300 bg-white group-hover:border-success/50'
+                      : 'border-input bg-background group-hover:border-success/50'
                   }`}
                 >
                   <input
@@ -395,16 +395,16 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleInclude(item)}
                   />
                   {(data.inclusions || []).includes(item) && (
-                    <Plus className="w-3 h-3 text-white" />
+                    <Plus className="w-3 h-3 text-success-foreground" />
                   )}
                 </div>
-                <span className="text-sm text-gray-700">{item}</span>
+                <span className="text-sm text-foreground">{item}</span>
               </label>
             ))}
           </div>
         </Card>
 
-        <Card className="p-6 border-gray-200">
+        <Card className="p-6 border-border/60">
           <h3 className="text-sm font-bold text-error-dark mb-4 uppercase tracking-wider">
             What's Excluded
           </h3>
@@ -415,7 +415,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                     (data.exclusions || []).includes(item)
                       ? 'bg-error border-error'
-                      : 'border-gray-300 bg-white group-hover:border-error/50'
+                      : 'border-input bg-background group-hover:border-error/50'
                   }`}
                 >
                   <input
@@ -425,10 +425,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleExclude(item)}
                   />
                   {(data.exclusions || []).includes(item) && (
-                    <Trash2 className="w-4 h-4 text-white" />
+                    <Trash2 className="w-4 h-4 text-error-foreground" />
                   )}
                 </div>
-                <span className="text-sm text-gray-700">{item}</span>
+                <span className="text-sm text-foreground">{item}</span>
               </label>
             ))}
           </div>
@@ -436,11 +436,11 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-6 border-t border-border">
         <Button variant="outline" onClick={onBack} className="px-8">
           Back
         </Button>
-        <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-white px-8">
+        <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
           Next Step
         </Button>
       </div>

@@ -24,6 +24,7 @@ export interface NavItem {
 }
 
 export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
+  admin: [],
   traveller: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { label: 'My Profile', icon: UserCircle, href: '/profile' },

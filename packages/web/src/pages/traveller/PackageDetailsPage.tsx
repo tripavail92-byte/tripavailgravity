@@ -248,7 +248,7 @@ export default function PackageDetailsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-gray-500">Loading package details...</p>
+        <p className="text-muted-foreground">Loading package details...</p>
       </div>
     )
   }
@@ -257,11 +257,11 @@ export default function PackageDetailsPage() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-red-600 mb-2">Error Loading Package</h1>
-        <div className="bg-red-50 p-4 rounded-lg border border-red-200 max-w-md w-full overflow-auto">
-          <p className="font-mono text-sm text-red-800">{String(error)}</p>
+        <h1 className="text-2xl font-bold text-destructive mb-2">Error Loading Package</h1>
+        <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 max-w-md w-full overflow-auto">
+          <p className="font-mono text-sm text-destructive">{String(error)}</p>
           {/* Show more details if available */}
-          <pre className="text-xs text-red-600 mt-2 whitespace-pre-wrap">
+          <pre className="text-xs text-destructive mt-2 whitespace-pre-wrap">
             {JSON.stringify(error, null, 2)}
           </pre>
         </div>
@@ -275,8 +275,8 @@ export default function PackageDetailsPage() {
   if (error || !packageData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Package Not Found</h1>
-        <p className="text-gray-600 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Package Not Found</h1>
+        <p className="text-muted-foreground mb-6">
           {error || "The package you're looking for doesn't exist or has been removed."}
         </p>
         <Button onClick={() => navigate('/')}>Return Home</Button>
@@ -370,15 +370,19 @@ export default function PackageDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header / Nav */}
-      <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-white/20">
+      <GlassCard
+        variant="nav"
+        blur="md"
+        className="sticky top-0 z-40 border-b border-border/40"
+      >
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(-1)}
-            className="gap-2 hover:bg-white/20"
+            className="gap-2 hover:bg-muted/40"
           >
             <ArrowLeft size={16} />
             Back
@@ -388,7 +392,7 @@ export default function PackageDetailsPage() {
               <Share2 size={18} />
             </GlassButton>
             <GlassButton variant="ghost" size="icon" className="rounded-full">
-              <Heart size={18} className="text-red-500" />
+              <Heart size={18} className="text-primary" />
             </GlassButton>
           </div>
         </div>
@@ -400,9 +404,9 @@ export default function PackageDetailsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[300px] md:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl shadow-gray-200/50"
+          className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[300px] md:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl"
         >
-          <div className="md:col-span-2 h-full bg-gray-100 relative group overflow-hidden">
+          <div className="md:col-span-2 h-full bg-muted/60 relative group overflow-hidden">
             {allImages[0] ? (
               <motion.img
                 whileHover={{ scale: 1.05 }}
@@ -412,12 +416,14 @@ export default function PackageDetailsPage() {
                 className="w-full h-full object-cover cursor-pointer"
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
+              <div className="flex items-center justify-center h-full text-muted-foreground/60">
+                No Image
+              </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
           </div>
           <div className="hidden md:grid grid-rows-2 gap-3 h-full">
-            <div className="bg-gray-100 h-full relative overflow-hidden group">
+            <div className="bg-muted/60 h-full relative overflow-hidden group">
               {allImages[1] && (
                 <motion.img
                   whileHover={{ scale: 1.1 }}
@@ -427,7 +433,7 @@ export default function PackageDetailsPage() {
                 />
               )}
             </div>
-            <div className="bg-gray-100 h-full relative overflow-hidden group">
+            <div className="bg-muted/60 h-full relative overflow-hidden group">
               {allImages[2] && (
                 <motion.img
                   whileHover={{ scale: 1.1 }}
@@ -439,7 +445,7 @@ export default function PackageDetailsPage() {
             </div>
           </div>
           <div className="hidden md:grid grid-rows-2 gap-3 h-full">
-            <div className="bg-gray-100 h-full relative overflow-hidden group">
+            <div className="bg-muted/60 h-full relative overflow-hidden group">
               {allImages[3] && (
                 <motion.img
                   whileHover={{ scale: 1.1 }}
@@ -449,7 +455,7 @@ export default function PackageDetailsPage() {
                 />
               )}
             </div>
-            <div className="bg-gray-100 h-full relative overflow-hidden group">
+            <div className="bg-muted/60 h-full relative overflow-hidden group">
               {allImages[4] && (
                 <motion.img
                   whileHover={{ scale: 1.1 }}
@@ -489,27 +495,27 @@ export default function PackageDetailsPage() {
                       Top Choice
                     </GlassBadge>
                   </div>
-                  <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight leading-tight">
+                  <h1 className="text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tight leading-tight">
                     {name}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 font-medium">
+                  <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-yellow-100 rounded-full">
-                        <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                      <div className="p-1.5 bg-warning/10 rounded-full">
+                        <Star size={16} className="text-warning fill-current" />
                       </div>
-                      <span className="font-bold text-gray-900">New Experience</span>
+                      <span className="font-bold text-foreground">New Experience</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-blue-100 rounded-full">
-                        <MapPin size={16} className="text-blue-500" />
+                      <div className="p-1.5 bg-info/10 rounded-full">
+                        <MapPin size={16} className="text-info" />
                       </div>
-                      <span className="font-bold text-gray-900">Premium Destination</span>
+                      <span className="font-bold text-foreground">Premium Destination</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-green-100 rounded-full">
-                        <Shield size={16} className="text-green-500" />
+                      <div className="p-1.5 bg-success/10 rounded-full">
+                        <Shield size={16} className="text-success" />
                       </div>
-                      <span className="font-bold text-gray-900">Secure Booking</span>
+                      <span className="font-bold text-foreground">Secure Booking</span>
                     </div>
                   </div>
                 </div>
@@ -519,13 +525,13 @@ export default function PackageDetailsPage() {
             {/* Description */}
             <GlassCard
               variant="card"
-              className="rounded-3xl border-none shadow-xl shadow-gray-100/50"
+              className="rounded-3xl border-none shadow-xl"
             >
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
               </GlassHeader>
               <GlassContent>
-                <p className="text-gray-600 leading-relaxed text-lg whitespace-pre-line">
+                <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
                   {description ||
                     'Experience the ultimate getaway with our curated premium package designed for discerning travelers.'}
                 </p>
@@ -535,20 +541,20 @@ export default function PackageDetailsPage() {
             {/* Accommodation Details (Room) */}
             {roomData && roomData.length > 0 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-gray-900 px-2">Accommodation</h2>
+                <h2 className="text-2xl font-bold text-foreground px-2">Accommodation</h2>
                 {roomData.map((room: any, idx: number) => (
                   <GlassCard
                     key={idx}
                     variant="card"
-                    className="rounded-3xl border-none shadow-xl shadow-gray-100/50 overflow-hidden"
+                    className="rounded-3xl border-none shadow-xl overflow-hidden"
                   >
-                    <GlassHeader className="bg-gray-50/50 border-b border-gray-100 mb-6">
+                    <GlassHeader className="bg-muted/40 border-b border-border/50 mb-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <GlassTitle className="text-xl font-bold text-primary">
                             {room.name}
                           </GlassTitle>
-                          <GlassDescription className="font-medium text-gray-500 flex items-center gap-1 mt-1">
+                          <GlassDescription className="font-medium text-muted-foreground flex items-center gap-1 mt-1">
                             <MapPin size={14} /> {hotel?.name || 'Partner Hotel'}
                           </GlassDescription>
                         </div>
@@ -557,7 +563,7 @@ export default function PackageDetailsPage() {
                     </GlassHeader>
                     <GlassContent>
                       {room.description && (
-                        <p className="text-gray-600 mb-8 leading-relaxed italic border-l-4 border-primary/20 pl-4">
+                        <p className="text-muted-foreground mb-8 leading-relaxed italic border-l-4 border-primary/20 pl-4">
                           "{room.description}"
                         </p>
                       )}
@@ -565,7 +571,7 @@ export default function PackageDetailsPage() {
                       {/* Room Specific Amenities */}
                       {room.amenities && room.amenities.length > 0 && (
                         <div className="space-y-4">
-                          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
                             <div className="w-1 h-4 bg-primary rounded-full" />
                             Room Excellence
                           </h4>
@@ -576,12 +582,12 @@ export default function PackageDetailsPage() {
                                 <motion.div
                                   key={i}
                                   whileHover={{ y: -5 }}
-                                  className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-100 hover:border-primary/20 hover:shadow-lg transition-all group"
+                                  className="flex flex-col items-center justify-center p-4 bg-background rounded-2xl border border-border/60 hover:border-primary/20 hover:shadow-lg transition-all group"
                                 >
                                   <div className="mb-3 text-primary">
                                     <Icon size={32} isHovered={true} />
                                   </div>
-                                  <span className="text-xs font-bold text-gray-900 text-center uppercase tracking-tight">
+                                  <span className="text-xs font-bold text-foreground text-center uppercase tracking-tight">
                                     {label}
                                   </span>
                                 </motion.div>
@@ -604,7 +610,7 @@ export default function PackageDetailsPage() {
                 {packageData.free_inclusions?.length > 0 && (
                   <GlassCard
                     variant="card"
-                    className="rounded-3xl border-none shadow-xl shadow-gray-100/50"
+                    className="rounded-3xl border-none shadow-xl"
                   >
                     <GlassHeader>
                       <GlassTitle className="text-xl font-bold flex items-center gap-2">
@@ -618,12 +624,12 @@ export default function PackageDetailsPage() {
                           <motion.div
                             key={idx}
                             whileHover={{ x: 5 }}
-                            className="flex items-center gap-3 p-4 bg-green-50/30 border border-green-100/50 rounded-2xl"
+                            className="flex items-center gap-3 p-4 bg-success/10 border border-success/20 rounded-2xl"
                           >
-                            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 shrink-0 shadow-sm">
+                            <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success shrink-0 shadow-sm">
                               <Check size={14} strokeWidth={3} />
                             </div>
-                            <span className="font-bold text-gray-900 text-sm">{item.name}</span>
+                            <span className="font-bold text-foreground text-sm">{item.name}</span>
                           </motion.div>
                         ))}
                       </div>
@@ -635,11 +641,11 @@ export default function PackageDetailsPage() {
                 {packageData.discount_offers?.length > 0 && (
                   <GlassCard
                     variant="card"
-                    className="rounded-3xl border-none shadow-xl shadow-gray-100/50"
+                    className="rounded-3xl border-none shadow-xl"
                   >
                     <GlassHeader>
                       <GlassTitle className="text-xl font-bold flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xs">
+                        <div className="w-6 h-6 rounded-full bg-warning/10 text-warning flex items-center justify-center font-black text-xs">
                           %
                         </div>
                         Limited Offers
@@ -651,14 +657,14 @@ export default function PackageDetailsPage() {
                           <motion.div
                             key={idx}
                             whileHover={{ scale: 1.02 }}
-                            className="flex items-center justify-between p-4 bg-white border border-orange-100 rounded-2xl shadow-sm group hover:border-orange-200 transition-all"
+                            className="flex items-center justify-between p-4 bg-background border border-warning/20 rounded-2xl shadow-sm group hover:border-warning/30 transition-all"
                           >
                             <div>
-                              <div className="font-bold text-gray-900 group-hover:text-primary transition-colors text-sm">
+                              <div className="font-bold text-foreground group-hover:text-primary transition-colors text-sm">
                                 {offer.name}
                               </div>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="line-through text-gray-400 text-xs">
+                                <span className="line-through text-muted-foreground/70 text-xs">
                                   ${offer.originalPrice}
                                 </span>
                                 <span className="font-black text-success text-sm">
@@ -681,7 +687,7 @@ export default function PackageDetailsPage() {
             {/* Highlights & Aggregated Amenities */}
             {aggregatedAmenities.length > 0 && (
               <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-gray-900 px-2 flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-foreground px-2 flex items-center gap-2">
                   Amenities & Experience
                   <GlassBadge variant="outline" size="sm" className="font-medium ml-2">
                     Verified
@@ -694,12 +700,12 @@ export default function PackageDetailsPage() {
                       <motion.div
                         key={idx}
                         whileHover={{ y: -8, scale: 1.05 }}
-                        className="flex flex-col items-center justify-center p-4 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group"
+                        className="flex flex-col items-center justify-center p-4 bg-background border border-border/60 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group"
                       >
                         <div className="mb-3 text-primary">
                           <Icon size={48} isHovered={true} />
                         </div>
-                        <span className="text-[10px] font-black text-gray-900 text-center uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-foreground text-center uppercase tracking-widest">
                           {label}
                         </span>
                       </motion.div>
@@ -709,14 +715,14 @@ export default function PackageDetailsPage() {
               </div>
             )}
 
-            <div className="h-px bg-gray-200" />
+            <div className="h-px bg-border/60" />
 
             {/* Inclusions / Exclusions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <GlassCard variant="card" className="rounded-3xl border-none bg-green-50/20">
+              <GlassCard variant="card" className="rounded-3xl border-none bg-success/10">
                 <GlassHeader>
-                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-green-700">
-                    <Check className="text-green-500" size={24} strokeWidth={3} />
+                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-success">
+                    <Check className="text-success" size={24} strokeWidth={3} />
                     What's Included
                   </GlassTitle>
                 </GlassHeader>
@@ -724,22 +730,22 @@ export default function PackageDetailsPage() {
                   {inclusions && inclusions.length > 0 ? (
                     <ul className="space-y-4">
                       {inclusions.map((item: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 text-gray-700 font-medium">
-                          <div className="mt-1 w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                        <li key={idx} className="flex items-start gap-3 text-foreground font-medium">
+                          <div className="mt-1 w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                           <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-400 italic">No inclusions listed</p>
+                    <p className="text-muted-foreground/70 italic">No inclusions listed</p>
                   )}
                 </GlassContent>
               </GlassCard>
 
-              <GlassCard variant="card" className="rounded-3xl border-none bg-red-50/20">
+              <GlassCard variant="card" className="rounded-3xl border-none bg-destructive/10">
                 <GlassHeader>
-                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-red-700">
-                    <X className="text-red-500" size={24} strokeWidth={3} />
+                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-destructive">
+                    <X className="text-destructive" size={24} strokeWidth={3} />
                     What's Excluded
                   </GlassTitle>
                 </GlassHeader>
@@ -749,15 +755,15 @@ export default function PackageDetailsPage() {
                       {exclusions.map((item: string, idx: number) => (
                         <li
                           key={idx}
-                          className="flex items-start gap-3 text-gray-700 font-medium font-mono text-xs"
+                          className="flex items-start gap-3 text-foreground font-medium font-mono text-xs"
                         >
-                          <div className="mt-1.5 w-1 h-3 bg-red-500/30 rounded-full shrink-0" />
+                          <div className="mt-1.5 w-1 h-3 bg-destructive/30 rounded-full shrink-0" />
                           <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-gray-400 italic">No exclusions listed</p>
+                    <p className="text-muted-foreground/70 italic">No exclusions listed</p>
                   )}
                 </GlassContent>
               </GlassCard>
@@ -766,21 +772,21 @@ export default function PackageDetailsPage() {
             {/* Policies */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
               {cancellation_policy && (
-                <div className="p-6 rounded-3xl bg-gray-100/50 border border-gray-200/50">
-                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">
+                <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">
                     Cancellation Policy
                   </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed whitespace-pre-line font-medium">
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
                     {cancellation_policy}
                   </p>
                 </div>
               )}
               {payment_terms && (
-                <div className="p-6 rounded-3xl bg-gray-100/50 border border-gray-200/50">
-                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4">
+                <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">
                     Payment Terms
                   </h3>
-                  <p className="text-gray-500 text-sm leading-relaxed whitespace-pre-line font-medium">
+                  <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
                     {payment_terms}
                   </p>
                 </div>
@@ -797,32 +803,32 @@ export default function PackageDetailsPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
 
               <div className="flex items-end gap-2 mb-8 relative">
-                <span className="text-4xl font-black text-gray-900 tracking-tight">
+                <span className="text-4xl font-black text-foreground tracking-tight">
                   {displayBasePrice > 0
                     ? `$${displayBasePrice.toLocaleString()}`
                     : 'Price on request'}
                 </span>
                 {displayBasePrice > 0 && (
-                  <span className="text-gray-500 font-bold mb-1.5 tracking-wide">/ night</span>
+                  <span className="text-muted-foreground font-bold mb-1.5 tracking-wide">/ night</span>
                 )}
               </div>
 
               <div className="space-y-6 mb-8 relative">
-                <div className="bg-gray-50/50 rounded-3xl border border-gray-100 overflow-hidden">
+                <div className="bg-muted/40 rounded-3xl border border-border/60 overflow-hidden">
                   {/* Date Picker Trigger */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <div className="grid grid-cols-2 border-b border-gray-100 cursor-pointer hover:bg-white/50 transition-all duration-300">
-                        <div className="p-4 border-r border-gray-100">
+                      <div className="grid grid-cols-2 border-b border-border/50 cursor-pointer hover:bg-muted/40 transition-all duration-300">
+                        <div className="p-4 border-r border-border/50">
                           <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">
                             Check-in
                           </label>
                           <div className="flex items-center gap-2">
-                            <CalendarIcon size={14} className="text-gray-400" />
+                            <CalendarIcon size={14} className="text-muted-foreground/70" />
                             <span
                               className={cn(
                                 'font-bold text-sm',
-                                !dateRange?.from && 'text-gray-400 italic',
+                                !dateRange?.from && 'text-muted-foreground/70 italic',
                               )}
                             >
                               {dateRange?.from
@@ -836,11 +842,11 @@ export default function PackageDetailsPage() {
                             Check-out
                           </label>
                           <div className="flex items-center gap-2">
-                            <CalendarIcon size={14} className="text-gray-400" />
+                            <CalendarIcon size={14} className="text-muted-foreground/70" />
                             <span
                               className={cn(
                                 'font-bold text-sm',
-                                !dateRange?.to && 'text-gray-400 italic',
+                                !dateRange?.to && 'text-muted-foreground/70 italic',
                               )}
                             >
                               {dateRange?.to ? format(dateRange.to, 'MMM d, yyyy') : 'Select Date'}
@@ -866,16 +872,16 @@ export default function PackageDetailsPage() {
                     </PopoverContent>
                   </Popover>
 
-                  <div className="px-4 py-3 border-b border-gray-100 bg-white/30 backdrop-blur-sm">
+                  <div className="px-4 py-3 border-b border-border/50 bg-background/30 backdrop-blur-sm">
                     <div className="flex items-center gap-2">
                       <Clock
                         size={14}
-                        className={isStayLengthValid ? 'text-primary' : 'text-red-500'}
+                        className={isStayLengthValid ? 'text-primary' : 'text-destructive'}
                       />
                       <p
                         className={cn(
                           'text-[10px] font-black uppercase tracking-widest',
-                          isStayLengthValid ? 'text-gray-500' : 'text-red-500',
+                          isStayLengthValid ? 'text-muted-foreground' : 'text-destructive',
                         )}
                       >
                         {stayLengthMessage}
@@ -886,14 +892,14 @@ export default function PackageDetailsPage() {
                   {/* Guest Selector */}
                   <Popover open={isGuestOpen} onOpenChange={setIsGuestOpen}>
                     <PopoverTrigger asChild>
-                      <div className="p-4 cursor-pointer hover:bg-white/50 transition-all duration-300 flex items-center justify-between">
+                      <div className="p-4 cursor-pointer hover:bg-muted/40 transition-all duration-300 flex items-center justify-between">
                         <div>
                           <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">
                             Travelers
                           </label>
                           <div className="flex items-center gap-2">
-                            <Users size={14} className="text-gray-400" />
-                            <span className="font-bold text-sm text-gray-900">
+                            <Users size={14} className="text-muted-foreground/70" />
+                            <span className="font-bold text-sm text-foreground">
                               {guests} traveler{guests > 1 ? 's' : ''}
                             </span>
                           </div>
@@ -907,16 +913,16 @@ export default function PackageDetailsPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-black text-gray-900 text-sm uppercase tracking-wider">
+                          <div className="font-black text-foreground text-sm uppercase tracking-wider">
                             Travelers
                           </div>
-                          <div className="text-[10px] text-gray-400 font-bold">Ages 13+</div>
+                          <div className="text-[10px] text-muted-foreground/70 font-bold">Ages 13+</div>
                         </div>
                         <div className="flex items-center gap-4">
                           <GlassButton
                             variant="ghost"
                             size="icon"
-                            className="h-10 w-10 rounded-2xl bg-gray-50 hover:bg-gray-100"
+                            className="h-10 w-10 rounded-2xl bg-muted/60 hover:bg-muted"
                             onClick={() => setGuests(Math.max(1, guests - 1))}
                             disabled={guests <= 1}
                           >
@@ -926,7 +932,7 @@ export default function PackageDetailsPage() {
                           <GlassButton
                             variant="ghost"
                             size="icon"
-                            className="h-10 w-10 rounded-2xl bg-gray-50 hover:bg-gray-100"
+                            className="h-10 w-10 rounded-2xl bg-muted/60 hover:bg-muted"
                             onClick={() => setGuests(Math.min(maxGuests, guests + 1))}
                             disabled={guests >= maxGuests}
                           >
@@ -934,7 +940,7 @@ export default function PackageDetailsPage() {
                           </GlassButton>
                         </div>
                       </div>
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest">
                         <span>Capacity Limit</span>
                         <span className="text-primary">{maxGuests} Max</span>
                       </div>
@@ -944,7 +950,7 @@ export default function PackageDetailsPage() {
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
-                    className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
+                    className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
                     onClick={handleRequestToBook}
                     disabled={
                       isCheckingAvailability ||
@@ -967,9 +973,9 @@ export default function PackageDetailsPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="rounded-2xl bg-red-50 p-4 border border-red-100"
+                      className="rounded-2xl bg-destructive/10 p-4 border border-destructive/20"
                     >
-                      <p className="text-xs font-bold text-red-600 flex items-center gap-2">
+                      <p className="text-xs font-bold text-destructive flex items-center gap-2">
                         <AlertCircle size={14} />
                         {availabilityError}
                       </p>
@@ -981,16 +987,16 @@ export default function PackageDetailsPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="pt-6 border-t border-gray-100 space-y-4"
+                    className="pt-6 border-t border-border/50 space-y-4"
                   >
-                    <div className="flex justify-between items-center text-gray-500 font-bold text-xs uppercase tracking-wider">
+                    <div className="flex justify-between items-center text-muted-foreground font-bold text-xs uppercase tracking-wider">
                       <span>
                         ${displayBasePrice.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
                       </span>
-                      <span className="text-gray-900">${totalPrice.toLocaleString()}</span>
+                      <span className="text-foreground">${totalPrice.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
-                      <span className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                    <div className="flex justify-between items-center bg-muted/40 p-4 rounded-2xl">
+                      <span className="text-sm font-black text-foreground uppercase tracking-widest">
                         Total Cost
                       </span>
                       <span className="text-2xl font-black text-primary">
@@ -1002,13 +1008,13 @@ export default function PackageDetailsPage() {
               </div>
 
               <div className="flex flex-col items-center gap-4 relative">
-                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">
+                <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full border border-success/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="text-[10px] font-black text-success uppercase tracking-widest">
                     Free Cancellation
                   </span>
                 </div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight text-center">
+                <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-tight text-center">
                   Trusted by 10,000+ happy travelers this year
                 </p>
               </div>

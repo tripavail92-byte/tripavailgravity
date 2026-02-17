@@ -80,7 +80,7 @@ export interface HotelData {
     maxGuests: number
     beds: any // BedConfig[] from RoomsStep
     size: number
-    amenities: string[]
+    amenities?: string[]
     pricing: {
       basePrice: number
       currency: string
@@ -144,7 +144,17 @@ export interface HotelData {
 }
 
 // Shared type for step component props - allows partial updates
-export type StepData = Partial<HotelData>
+export type StepData = Partial<HotelData> & {
+  // LocationStep uses these additional fields during selection
+  locationData?: unknown
+  coordinates?: { lat: number; lng: number }
+
+  // Extra address hints captured in LocationStep
+  buildingName?: string
+  floor?: string
+  landmark?: string
+  instructions?: string
+}
 
 interface CompleteHotelListingFlowProps {
   onComplete?: (data: Partial<HotelData>) => void
@@ -217,7 +227,7 @@ export default function CompleteHotelListingFlow({
   const [completedSteps, setCompletedSteps] = useState<number[]>(
     calculateCompletedSteps(initialData),
   )
-  const [hotelData, setHotelData] = useState<Partial<HotelData>>(
+  const [hotelData, setHotelData] = useState<StepData>(
     initialData || {
       propertyType: initialPropertyType || '',
       amenities: [],
@@ -360,7 +370,7 @@ export default function CompleteHotelListingFlow({
     }
     // Exit to dashboard if handler provided, otherwise go back
     if (onSaveAndExit) {
-      onSaveAndExit()
+      onSaveAndExit(hotelData)
     } else {
       onBack()
     }
@@ -385,14 +395,9 @@ export default function CompleteHotelListingFlow({
       const result = await hotelService.publishListing(hotelData, user.id)
       console.log('📡 hotelService response:', result)
 
-      if (result.success) {
-        console.log('✅ Published successfully!', result.hotelId)
-        alert(`Success! Hotel published with ID: ${result.hotelId}`)
-        if (onComplete) onComplete(hotelData)
-      } else {
-        console.error('❌ Failed to publish:', result.error)
-        alert(`Failed to publish: ${JSON.stringify(result.error)}`)
-      }
+      console.log('✅ Published successfully!', result.hotelId)
+      alert(`Success! Hotel published with ID: ${result.hotelId}`)
+      if (onComplete) onComplete(hotelData)
     } catch (error) {
       console.error('❌ Publish error:', error)
       alert(`Error publishing hotel: ${error instanceof Error ? error.message : 'Unknown error'}`)

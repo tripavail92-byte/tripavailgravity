@@ -62,7 +62,9 @@ export function ThemeProvider({
 
   // User role (defaults to traveller for anonymous)
   const role: UserRole = useMemo(() => {
-    return (activeRole?.role_type as UserRole) || 'traveller'
+    if (!activeRole?.role_type) return 'traveller'
+    if (activeRole.role_type === 'admin') return 'traveller'
+    return activeRole.role_type as UserRole
   }, [activeRole])
 
   // Update resolved mode when system preference changes

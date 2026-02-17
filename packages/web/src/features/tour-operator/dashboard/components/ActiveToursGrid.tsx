@@ -23,19 +23,19 @@ export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveTours
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden group"
+          className="bg-background rounded-2xl border border-border shadow-sm hover:shadow-md transition-all overflow-hidden group"
         >
           {/* Image Placeholder/Preview */}
-          <div className="aspect-[16/9] bg-gray-100 relative">
+          <div className="aspect-[16/9] bg-muted relative">
             {tour.images && tour.images.length > 0 ? (
               <img src={tour.images[0]} alt={tour.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <MapPin className="w-12 h-12 text-gray-200" />
+                <MapPin className="w-12 h-12 text-muted-foreground/30" />
               </div>
             )}
             <div className="absolute top-4 right-4 flex gap-2">
-              <Badge className="bg-white/90 backdrop-blur-sm text-gray-900 border-none">
+              <Badge className="bg-background/90 backdrop-blur-sm text-foreground border-none">
                 {tour.tour_type}
               </Badge>
               {tour.is_featured && (
@@ -47,10 +47,10 @@ export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveTours
           <div className="p-5 space-y-4">
             <div className="flex justify-between items-start gap-4">
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
+                <h3 className="text-lg font-bold text-foreground truncate group-hover:text-primary transition-colors">
                   {tour.title}
                 </h3>
-                <div className="flex items-center gap-1.5 text-gray-500 mt-1">
+                <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
                   <MapPin className="w-3.5 h-3.5" />
                   <span className="text-xs font-medium truncate">
                     {tour.location.city}, {tour.location.country}
@@ -77,7 +77,7 @@ export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveTours
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs font-medium text-gray-500">
+            <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 {tour.duration}
@@ -94,9 +94,9 @@ export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveTours
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+            <div className="pt-4 border-t border-border flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Starts from
                 </p>
                 <p className="text-lg font-bold text-primary">

@@ -136,44 +136,44 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         className="w-full max-w-3xl"
       >
-        <Card className="bg-white shadow-2xl">
+        <Card className="bg-background shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 {editingRoom ? 'Edit Room Type' : 'Add Room Type'}
               </h2>
-              <p className="text-sm text-gray-600 mt-1">Step {currentStep} of 4</p>
+              <p className="text-sm text-muted-foreground mt-1">Step {currentStep} of 4</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-muted-foreground" />
             </button>
           </div>
 
           {/* Progress Bar */}
-          <div className="px-6 py-4 bg-gray-50">
+          <div className="px-6 py-4 bg-muted">
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex-1">
                   <div
                     className={`h-2 rounded-full transition-colors ${
-                      step <= currentStep ? 'bg-blue-600' : 'bg-gray-200'
+                      step <= currentStep ? 'bg-info' : 'bg-muted'
                     }`}
                   />
                 </div>
               ))}
             </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-600">
+            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
               <span>Room Type</span>
               <span>Details</span>
               <span>Beds</span>
@@ -209,12 +209,12 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                         className={`p-4 border-2 rounded-xl transition-all ${
                           roomData.type === type.value
                             ? 'border-primary bg-primary/5'
-                            : 'border-gray-200 hover:border-gray-300'
+                            : 'border-border hover:border-border/60'
                         }`}
                       >
                         <div className="text-3xl mb-2">{type.icon}</div>
-                        <div className="font-semibold text-gray-900">{type.label}</div>
-                        <div className="text-xs text-gray-600 mt-1">{type.priceRange}</div>
+                        <div className="font-semibold text-foreground">{type.label}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{type.priceRange}</div>
                         {roomData.type === type.value && (
                           <div className="mt-2">
                             <Check size={20} className="text-primary mx-auto" />
@@ -237,7 +237,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                   <h3 className="text-lg font-semibold mb-4">Room Details</h3>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Room Name *
                     </label>
                     <Input
@@ -248,7 +248,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Description
                     </label>
                     <Textarea
@@ -261,7 +261,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Number of Rooms *
                       </label>
                       <Input
@@ -274,7 +274,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Max Guests *
                       </label>
                       <Input
@@ -287,7 +287,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Size (m²) *
                       </label>
                       <Input
@@ -320,12 +320,12 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       return (
                         <div key={bed.value} className="border rounded-lg p-4">
                           <div className="text-2xl mb-2">{bed.icon}</div>
-                          <div className="font-medium text-gray-900">{bed.label}</div>
-                          <div className="text-xs text-gray-600">{bed.width}cm wide</div>
+                          <div className="font-medium text-foreground">{bed.label}</div>
+                          <div className="text-xs text-muted-foreground">{bed.width}cm wide</div>
                           <div className="flex items-center gap-2 mt-3">
                             <button
                               onClick={() => removeBed(bed.value)}
-                              className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded"
+                              className="w-8 h-8 flex items-center justify-center bg-muted hover:bg-muted/80 rounded"
                               disabled={quantity === 0}
                             >
                               -
@@ -333,7 +333,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                             <span className="w-8 text-center font-semibold">{quantity}</span>
                             <button
                               onClick={() => addBed(bed.value)}
-                              className="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded"
+                              className="w-8 h-8 flex items-center justify-center bg-info hover:bg-info/90 text-primary-foreground rounded"
                             >
                               +
                             </button>
@@ -344,8 +344,8 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                   </div>
 
                   {roomData.beds && roomData.beds.length > 0 && (
-                    <div className="bg-info-foreground border border-info/20 rounded-lg p-4">
-                      <p className="text-sm text-blue-900">
+                    <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+                      <p className="text-sm text-foreground">
                         <strong>Selected:</strong>{' '}
                         {roomData.beds
                           .map(
@@ -370,7 +370,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                   <h3 className="text-lg font-semibold mb-4">Pricing</h3>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-foreground mb-2">
                       Base Price per Night *
                     </label>
                     <div className="flex gap-4">
@@ -402,7 +402,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                             },
                           })
                         }
-                        className="px-4 py-2 border border-gray-300 rounded-lg"
+                        className="px-4 py-2 border border-border rounded-lg"
                       >
                         <option value="USD">USD</option>
                         <option value="EUR">EUR</option>
@@ -413,9 +413,9 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                   </div>
 
                   {roomData.pricing && roomData.pricing.basePrice > 0 && (
-                    <div className="bg-success-foreground border border-success/20 rounded-lg p-6">
-                      <h4 className="font-semibold text-green-900 mb-3">Summary</h4>
-                      <div className="space-y-2 text-sm text-green-800">
+                    <div className="bg-success/10 border border-success/20 rounded-lg p-6">
+                      <h4 className="font-semibold text-foreground mb-3">Summary</h4>
+                      <div className="space-y-2 text-sm text-success">
                         <p>
                           <strong>{roomData.name}</strong> ({roomData.count} room
                           {roomData.count! > 1 ? 's' : ''})
@@ -431,7 +431,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                             )
                             .join(', ')}
                         </p>
-                        <p className="text-lg font-bold text-green-900 mt-3">
+                        <p className="text-lg font-bold text-foreground mt-3">
                           {roomData.pricing.basePrice} {roomData.pricing.currency}/night
                         </p>
                       </div>
@@ -443,7 +443,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+          <div className="flex items-center justify-between p-6 border-t bg-muted">
             <Button onClick={handleBack} variant="outline" disabled={currentStep === 1}>
               <ChevronLeft size={20} className="mr-1" />
               Back
@@ -452,7 +452,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
             <Button
               onClick={handleNext}
               disabled={!isStepValid()}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-info hover:bg-info/90 text-primary-foreground"
             >
               {currentStep === 4 ? (
                 <>

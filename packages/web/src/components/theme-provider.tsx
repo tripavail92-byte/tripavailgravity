@@ -59,7 +59,7 @@ export function ThemeProvider({
 
     // Apply role if user is logged in
     if (activeRole?.role_type) {
-      root.setAttribute('data-role', activeRole.role_type)
+      root.setAttribute('data-role', activeRole.role_type === 'admin' ? 'traveller' : activeRole.role_type)
     } else {
       // Default to traveller theme for anonymous users
       root.setAttribute('data-role', 'traveller')

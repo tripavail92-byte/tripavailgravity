@@ -16,13 +16,21 @@ export interface PackageData {
   packageType?: PackageType
   hotelName?: string
   hotelId?: string // Link to source hotel
+  hotelAddress?: string
   name?: string
   description?: string
   durationDays?: number
 
+  // Availability
+  availabilityType?: 'year-round' | 'specific-dates'
+  minStay?: number
+  maxStay?: number
+  blackoutDates?: string[]
+
   // Room Configuration
   roomIds?: string[] // IDs of selected rooms
   selectedRooms?: Record<string, any> // Full configuration of selected rooms (prices, etc.)
+  priceRange?: { min: number; max: number; currency: string } | null
 
   // Media (Flat structure preferred)
   photos?: string[]
@@ -41,7 +49,9 @@ export interface PackageData {
 
   // Policies
   cancellationPolicy?: string
+  customCancellationPolicy?: string
   paymentTerms?: string
+  termsAndConditions?: string
 
   // Pricing & Booking Rules
   maxGuests?: number
@@ -65,27 +75,5 @@ export interface PackageData {
   // We will expand this as we implement more steps
 }
 
-export interface StepData {
-  packageType?: PackageType
-  hotelName?: string
-  name?: string
-  description?: string
-  durationDays?: number
-  media?: {
-    photos: any[]
-    video?: string
-  }
-
-  // Highlights (Inclusions & Discounts)
-  freeInclusions?: Array<{
-    name: string
-    icon?: string
-  }>
-  discountOffers?: Array<{
-    name: string
-    originalPrice: number
-    discount: number
-    icon?: string
-  }>
-  // We will expand this as we implement more steps
-}
+// Step components emit partial updates that merge into PackageData.
+export type StepData = Partial<PackageData>

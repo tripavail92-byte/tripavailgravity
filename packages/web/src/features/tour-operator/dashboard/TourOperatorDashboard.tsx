@@ -1,4 +1,4 @@
-import { Loader2, MapPin, Package, Plus } from 'lucide-react'
+import { Loader2, Package, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -59,7 +59,7 @@ export function TourOperatorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-muted/50">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -70,11 +70,11 @@ export function TourOperatorDashboard() {
           {/* Welcome Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 Welcome back, Partner!{' '}
                 <span className="animate-wave inline-block origin-bottom-right">🎒</span>
               </h1>
-              <p className="text-gray-600 font-medium">
+              <p className="text-muted-foreground font-medium">
                 Manage your tour packages and track your business performance
               </p>
             </div>
@@ -98,7 +98,7 @@ export function TourOperatorDashboard() {
             {/* Left Column - Tour Packages (2/3 width) */}
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <Package className="w-6 h-6 text-primary" />
                   Active Tour Packages
                   {publishedTours.length > 0 && (
@@ -115,9 +115,9 @@ export function TourOperatorDashboard() {
               </div>
 
               {loading ? (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-20 flex flex-col items-center justify-center gap-4">
+                <div className="bg-background rounded-3xl border border-border shadow-sm p-20 flex flex-col items-center justify-center gap-4">
                   <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                  <p className="text-gray-500 font-medium">Loading your tours...</p>
+                  <p className="text-muted-foreground font-medium">Loading your tours...</p>
                 </div>
               ) : publishedTours.length > 0 ? (
                 <ActiveToursGrid
@@ -127,12 +127,12 @@ export function TourOperatorDashboard() {
                   onView={handleViewTour}
                 />
               ) : (
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center">
+                <div className="bg-background rounded-3xl border border-border shadow-sm p-12 text-center">
                   <div className="bg-primary/5 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 group-hover:rotate-6 transition-transform">
                     <span className="text-4xl">🗓️</span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">No active tours yet</h3>
-                  <p className="text-gray-500 max-w-sm mx-auto mb-8 font-medium">
+                  <h3 className="text-xl font-bold text-foreground mb-2">No active tours yet</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium">
                     Start by creating your first tour package to reach travellers worldwide.
                   </p>
                   <Button
@@ -147,7 +147,7 @@ export function TourOperatorDashboard() {
             </div>
 
             {/* Right Column - Recent Activity (1/3 width) */}
-            <div className="lg:col-span-1 border-l border-gray-100 lg:pl-8">
+            <div className="lg:col-span-1 border-l border-border lg:pl-8">
               <RecentBookings />
             </div>
           </div>

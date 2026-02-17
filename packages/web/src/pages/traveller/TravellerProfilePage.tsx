@@ -487,28 +487,28 @@ export default function TravellerProfilePage() {
                 <Popover key={item.id} open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <motion.div
-                      className={`p-6 ${isEditing ? 'cursor-text' : 'hover:bg-gray-50/50'} transition-colors`}
+                      className={`p-6 ${isEditing ? 'cursor-text' : 'hover:bg-muted/40'} transition-colors`}
                       whileHover={!isEditing ? { x: 4 } : {}}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              item.isRoseAccent ? 'bg-rose-50' : 'bg-gray-100'
+                              item.isRoseAccent ? 'bg-primary/10' : 'bg-muted'
                             }`}
                           >
                             <item.icon
                               size={20}
-                              className={item.isRoseAccent ? 'text-rose-600' : 'text-gray-700'}
+                              className={item.isRoseAccent ? 'text-primary' : 'text-foreground/80'}
                             />
                           </div>
                           <div>
-                            <div className="text-sm text-gray-500">{item.label}</div>
+                            <div className="text-sm text-muted-foreground">{item.label}</div>
                             <div
                               className={
                                 isEditing
-                                  ? 'text-sm text-blue-600 font-medium'
-                                  : 'font-medium text-gray-900'
+                                  ? 'text-sm text-primary font-medium'
+                                  : 'font-medium text-foreground'
                               }
                             >
                               {item.value}
@@ -526,7 +526,7 @@ export default function TravellerProfilePage() {
                               Verified
                             </GlassBadge>
                           )}
-                          {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
+                          {!isEditing && <ChevronRight className="w-4 h-4 text-muted-foreground/70" />}
                         </div>
                       </div>
                     </motion.div>
@@ -550,18 +550,18 @@ export default function TravellerProfilePage() {
               ) : item.id === 'email' ? (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors cursor-pointer`}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors cursor-pointer`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                   onClick={() => !profile.email_verified && setShowEmailVerification(true)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <item.icon size={20} className="text-gray-700" />
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                        <item.icon size={20} className="text-foreground/80" />
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">{item.label}</div>
-                        <div className="font-medium text-gray-900">{item.value}</div>
+                        <div className="text-sm text-muted-foreground">{item.label}</div>
+                        <div className="font-medium text-foreground">{item.value}</div>
                       </div>
                     </div>
 
@@ -583,33 +583,33 @@ export default function TravellerProfilePage() {
                           Verify
                         </Button>
                       )}
-                      {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
+                      {!isEditing && <ChevronRight className="w-4 h-4 text-muted-foreground/70" />}
                     </div>
                   </div>
                 </motion.div>
               ) : item.id === 'phone' ? (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors`}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <item.icon size={20} className="text-gray-700" />
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                        <item.icon size={20} className="text-foreground/80" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm text-gray-500">{item.label}</div>
+                        <div className="text-sm text-muted-foreground">{item.label}</div>
                         {isEditing ? (
                           <input
                             type="tel"
                             placeholder="Enter phone number"
                             value={editingData.phone || ''}
                             onChange={(e) => handleFieldChange('phone', e.target.value)}
-                            className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                            className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                           />
                         ) : (
-                          <div className="font-medium text-gray-900">{item.value}</div>
+                          <div className="font-medium text-foreground">{item.value}</div>
                         )}
                       </div>
                     </div>
@@ -631,9 +631,9 @@ export default function TravellerProfilePage() {
                             {isVerifying ? 'Sending...' : 'Verify'}
                           </Button>
                         ) : (
-                          <span className="text-xs text-gray-400">Not added</span>
+                          <span className="text-xs text-muted-foreground/70">Not added</span>
                         )}
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
                       </div>
                     )}
                   </div>
@@ -641,16 +641,16 @@ export default function TravellerProfilePage() {
               ) : (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-gray-50/50'} transition-colors`}
+                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <item.icon size={20} className="text-gray-700" />
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                        <item.icon size={20} className="text-foreground/80" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm text-gray-500">{item.label}</div>
+                        <div className="text-sm text-muted-foreground">{item.label}</div>
                         {isEditing ? (
                           item.id === 'address' ? (
                             <input
@@ -658,7 +658,7 @@ export default function TravellerProfilePage() {
                               placeholder="Enter address"
                               value={editingData.address || ''}
                               onChange={(e) => handleFieldChange('address', e.target.value)}
-                              className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                             />
                           ) : item.id === 'location' ? (
                             <input
@@ -666,18 +666,18 @@ export default function TravellerProfilePage() {
                               placeholder="Enter city"
                               value={editingData.city || ''}
                               onChange={(e) => handleFieldChange('city', e.target.value)}
-                              className="w-full px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                             />
                           ) : (
-                            <div className="font-medium text-gray-900">{item.value}</div>
+                            <div className="font-medium text-foreground">{item.value}</div>
                           )
                         ) : (
-                          <div className="font-medium text-gray-900">{item.value}</div>
+                          <div className="font-medium text-foreground">{item.value}</div>
                         )}
                       </div>
                     </div>
 
-                    {!isEditing && <ChevronRight className="w-4 h-4 text-gray-400" />}
+                    {!isEditing && <ChevronRight className="w-4 h-4 text-muted-foreground/70" />}
                   </div>
                 </motion.div>
               ),
@@ -694,13 +694,13 @@ export default function TravellerProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Payment Methods</h3>
+          <div className="p-6 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Payment Methods</h3>
           </div>
 
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-border">
             <motion.div
-              className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
+              className="p-6 hover:bg-muted/40 transition-colors cursor-pointer"
               whileHover={{ x: 4 }}
             >
               <div className="flex items-center justify-between">
@@ -709,29 +709,29 @@ export default function TravellerProfilePage() {
                     <Wallet size={20} className="text-primary" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">Mobile Wallets</div>
-                    <div className="text-sm text-gray-500">EasyPaisa, JazzCash</div>
+                    <div className="font-medium text-foreground">Mobile Wallets</div>
+                    <div className="text-sm text-muted-foreground">EasyPaisa, JazzCash</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
               </div>
             </motion.div>
 
             <motion.div
-              className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
+              className="p-6 hover:bg-muted/40 transition-colors cursor-pointer"
               whileHover={{ x: 4 }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-                    <CreditCard size={20} className="text-blue-600" />
+                  <div className="w-10 h-10 bg-info/10 rounded-full flex items-center justify-center">
+                    <CreditCard size={20} className="text-info" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900">Credit & Debit Cards</div>
-                    <div className="text-sm text-gray-500">Visa, Mastercard</div>
+                    <div className="font-medium text-foreground">Credit & Debit Cards</div>
+                    <div className="text-sm text-muted-foreground">Visa, Mastercard</div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
               </div>
             </motion.div>
           </div>
@@ -746,27 +746,27 @@ export default function TravellerProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Account Security</h3>
+          <div className="p-6 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Account Security</h3>
           </div>
 
           <motion.div
-            className="p-6 hover:bg-gray-50/50 transition-colors cursor-pointer"
+            className="p-6 hover:bg-muted/40 transition-colors cursor-pointer"
             whileHover={{ x: 4 }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
-                  <Lock size={20} className="text-green-600" />
+                <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
+                  <Lock size={20} className="text-success" />
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">Change Password</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="font-medium text-foreground">Change Password</div>
+                  <div className="text-sm text-muted-foreground">
                     Update your password to keep your account secure
                   </div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
             </div>
           </motion.div>
         </GlassCard>
@@ -818,7 +818,7 @@ export default function TravellerProfilePage() {
             value={phoneOTP}
             onChange={(e) => setPhoneOTP(e.target.value.replace(/\D/g, '').slice(0, 6))}
             maxLength={6}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mt-4"
+            className="w-full px-4 py-3 border border-border/60 bg-background rounded-lg text-center text-2xl tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/50 mt-4"
           />
 
           <div className="flex gap-3 mt-6">

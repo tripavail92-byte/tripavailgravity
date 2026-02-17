@@ -130,10 +130,10 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-12">
       <div>
-        <h3 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+        <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
           Terms & Policies
         </h3>
-        <p className="text-lg text-gray-500 leading-relaxed font-medium">
+        <p className="text-lg text-muted-foreground leading-relaxed font-medium">
           Define how you operate and ensure a safe experience for travelers.
         </p>
       </div>
@@ -144,7 +144,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <Shield className="w-5 h-5" />
           </div>
-          <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs italic">
+          <h4 className="font-black text-foreground uppercase tracking-widest text-xs italic">
             Platform Agreement
           </h4>
         </div>
@@ -152,27 +152,27 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
           {PLATFORM_TERMS.map((term) => (
             <Card
               key={term.id}
-              className="border-gray-100 rounded-[28px] overflow-hidden bg-white shadow-sm ring-1 ring-black/[0.02] transition-all hover:shadow-md"
+              className="border-border/50 rounded-[28px] overflow-hidden bg-background shadow-sm ring-1 ring-border/40 transition-all hover:shadow-md"
             >
               <button
                 onClick={() => setExpanded(expanded === term.id ? null : term.id)}
-                className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors group"
+                className="w-full flex items-center justify-between p-6 hover:bg-muted/40 transition-colors group"
                 aria-expanded={expanded === term.id}
               >
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                  <div className="w-12 h-12 bg-primary/5 text-primary rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="font-extrabold text-gray-900 tracking-tight">{term.title}</p>
-                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    <p className="font-extrabold text-foreground tracking-tight">{term.title}</p>
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
                       {term.desc}
                     </p>
                   </div>
                 </div>
                 <ChevronDown
                   className={cn(
-                    'w-6 h-6 text-gray-300 transition-transform duration-300 group-hover:text-primary',
+                    'w-6 h-6 text-muted-foreground/40 transition-transform duration-300 group-hover:text-primary',
                     expanded === term.id && 'rotate-180 text-primary',
                   )}
                 />
@@ -183,9 +183,9 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden border-t border-gray-50"
+                    className="overflow-hidden border-t border-border/50"
                   >
-                    <div className="p-8 text-sm text-gray-600 space-y-4 leading-relaxed bg-gray-50/30 font-medium">
+                    <div className="p-8 text-sm text-muted-foreground space-y-4 leading-relaxed bg-muted/30 font-medium">
                       <p>
                         By using the TripAvail platform, you agree to provide accurate information
                         and maintain professional standards of service. You are responsible for the
@@ -199,7 +199,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                         ].map((item, i) => (
                           <li key={i} className="flex gap-3 items-start">
                             <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                            <span className="text-xs text-gray-500">{item}</span>
+                            <span className="text-xs text-muted-foreground">{item}</span>
                           </li>
                         ))}
                       </ul>
@@ -214,34 +214,34 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
         <Card
           onClick={toggleAccepted}
           className={cn(
-            'p-6 cursor-pointer border-2 transition-all rounded-[32px] mt-6 flex items-center gap-5 group shadow-sm ring-1 ring-black/[0.02]',
+            'p-6 cursor-pointer border-2 transition-all rounded-[32px] mt-6 flex items-center gap-5 group shadow-sm ring-1 ring-border/40',
             accepted
               ? 'border-primary bg-primary/[0.03] shadow-lg shadow-primary/5'
-              : 'border-gray-50 bg-white hover:border-gray-200',
+              : 'border-border/40 bg-background hover:border-border',
           )}
         >
           <div
             className={cn(
               'w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all duration-300',
               accepted
-                ? 'bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/30'
-                : 'border-gray-200 text-transparent group-hover:border-primary/30',
+                ? 'bg-primary border-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30'
+                : 'border-border/60 text-transparent group-hover:border-primary/30',
             )}
           >
             <Check className="w-5 h-5 stroke-[3]" />
           </div>
           <div>
-            <p className="font-extrabold text-gray-900 tracking-tight">
+            <p className="font-extrabold text-foreground tracking-tight">
               I accept the Platform Terms
             </p>
-            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-none mt-1">
+            <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest leading-none mt-1">
               I have read and agree to all platform operating policies.
             </p>
           </div>
         </Card>
       </section>
 
-      <hr className="border-gray-100" />
+      <hr className="border-border/60" />
 
       {/* Operator Policies Section */}
       <section className="space-y-8">
@@ -250,11 +250,11 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
               <ClipboardCheck className="w-5 h-5" />
             </div>
-            <h4 className="font-black text-gray-900 uppercase tracking-widest text-xs italic">
+            <h4 className="font-black text-foreground uppercase tracking-widest text-xs italic">
               Your Operation Policies
             </h4>
           </div>
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl w-fit">
+          <div className="flex bg-muted/60 p-1.5 rounded-2xl w-fit">
             <button
               onClick={() => {
                 setPolicyMode('templates')
@@ -263,8 +263,8 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
               className={cn(
                 'px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 uppercase tracking-widest',
                 policyMode === 'templates'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-gray-400 hover:text-gray-600',
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground/70 hover:text-foreground',
               )}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -278,8 +278,8 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
               className={cn(
                 'px-6 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 uppercase tracking-widest',
                 policyMode === 'upload'
-                  ? 'bg-white text-primary shadow-sm'
-                  : 'text-gray-400 hover:text-gray-600',
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground/70 hover:text-foreground',
               )}
             >
               <FileUp className="w-3.5 h-3.5" />
@@ -298,10 +298,10 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                       <policy.icon className="w-6 h-6" />
                     </div>
                     <div>
-                      <Label className="text-lg font-extrabold text-gray-900 tracking-tight">
+                      <Label className="text-lg font-extrabold text-foreground tracking-tight">
                         {policy.title}
                       </Label>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none mt-1">
+                      <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest leading-none mt-1">
                         Required Information
                       </p>
                     </div>
@@ -323,12 +323,12 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                     placeholder={`Describe your ${policy.title.toLowerCase()}...`}
                     value={customPolicies[policy.id] || ''}
                     onChange={(e) => handlePolicyChange(policy.id, e.target.value)}
-                    className="min-h-[160px] rounded-[32px] border-gray-100 focus:border-primary/30 focus:ring-primary/10 transition-all resize-none text-base p-6 bg-white shadow-sm ring-1 ring-black/[0.01] font-medium leading-relaxed"
+                    className="min-h-[160px] rounded-[32px] border-border/60 focus:border-primary/30 focus:ring-primary/10 transition-all resize-none text-base p-6 bg-background shadow-sm ring-1 ring-border/30 font-medium leading-relaxed"
                   />
                   {customPolicies[policy.id] && (
                     <button
                       onClick={() => handlePolicyChange(policy.id, '')}
-                      className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur shadow-lg rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-500 border border-red-50"
+                      className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur shadow-lg rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive border border-destructive/20"
                       aria-label="Clear policy"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -340,14 +340,14 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="p-16 border-2 border-dashed border-gray-100 rounded-[48px] bg-gray-50/30 flex flex-col items-center justify-center text-center group hover:border-primary/20 hover:bg-primary/[0.01] transition-all duration-500">
-              <div className="w-20 h-20 bg-white rounded-[32px] shadow-xl border border-gray-50 flex items-center justify-center text-gray-300 group-hover:text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 mb-6">
+            <div className="p-16 border-2 border-dashed border-border/60 rounded-[48px] bg-muted/30 flex flex-col items-center justify-center text-center group hover:border-primary/20 hover:bg-primary/[0.01] transition-all duration-500">
+              <div className="w-20 h-20 bg-background rounded-[32px] shadow-xl border border-border/40 flex items-center justify-center text-muted-foreground/40 group-hover:text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 mb-6">
                 <FileUp className="w-10 h-10" />
               </div>
-              <h5 className="text-xl font-black text-gray-900 mb-2 uppercase italic tracking-tighter">
+              <h5 className="text-xl font-black text-foreground mb-2 uppercase italic tracking-tighter">
                 Upload Policy Documents
               </h5>
-              <p className="text-sm text-gray-500 max-w-[280px] leading-relaxed mb-8 font-medium">
+              <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed mb-8 font-medium">
                 Upload your PDF or Word documents containing all your tour policies for our
                 compliance team to review.
               </p>
@@ -361,7 +361,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                 <Card
                   key={id}
                   className={cn(
-                    'p-6 border-gray-100 shadow-sm rounded-3xl flex items-center justify-between transition-all hover:shadow-lg hover:shadow-black/5 ring-1 ring-black/[0.01]',
+                    'p-6 border-border/60 shadow-sm rounded-3xl flex items-center justify-between transition-all hover:shadow-lg ring-1 ring-border/30',
                     uploads[id] && 'bg-primary/[0.02] border-primary/20',
                   )}
                 >
@@ -370,14 +370,14 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                       className={cn(
                         'w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300',
                         uploads[id]
-                          ? 'bg-primary text-white rotate-6'
-                          : 'bg-gray-100 text-gray-300 group-hover:text-gray-400',
+                          ? 'bg-primary text-primary-foreground rotate-6'
+                          : 'bg-muted text-muted-foreground/40 group-hover:text-muted-foreground/70',
                       )}
                     >
                       <FileText className="w-7 h-7" />
                     </div>
                     <div className="text-left">
-                      <p className="font-extrabold text-gray-900 tracking-tight">
+                      <p className="font-extrabold text-foreground tracking-tight">
                         {id
                           .split('_')
                           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -386,7 +386,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                       <p
                         className={cn(
                           'text-[10px] uppercase tracking-widest font-black mt-1',
-                          uploads[id] ? 'text-primary' : 'text-gray-400',
+                          uploads[id] ? 'text-primary' : 'text-muted-foreground/70',
                         )}
                       >
                         {uploads[id] ? 'Verified' : 'Required'}
@@ -425,7 +425,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                       </Button>
                     </div>
                   ) : (
-                    <div className="bg-primary text-white rounded-xl p-2 shadow-lg shadow-primary/20">
+                    <div className="bg-primary text-primary-foreground rounded-xl p-2 shadow-lg shadow-primary/20">
                       <Check className="w-5 h-5 stroke-[3]" />
                     </div>
                   )}
@@ -437,16 +437,16 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
       </section>
 
       {/* Helper Alert */}
-      <div className="bg-amber-50 border border-amber-100 rounded-[32px] p-8 flex gap-6 group transition-all hover:bg-amber-100/50">
-        <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-amber-100 transition-transform group-hover:scale-110">
-          <Shield className="w-7 h-7 text-amber-600" />
+      <div className="bg-warning/10 border border-warning/20 rounded-[32px] p-8 flex gap-6 group transition-all hover:bg-warning/20">
+        <div className="w-14 h-14 bg-background rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm border border-warning/20 transition-transform group-hover:scale-110">
+          <Shield className="w-7 h-7 text-warning" />
         </div>
         <div className="space-y-2">
-          <p className="font-black text-amber-900 uppercase tracking-widest text-xs italic flex items-center gap-2">
+          <p className="font-black text-warning uppercase tracking-widest text-xs italic flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             Platform Compliance
           </p>
-          <p className="text-sm text-amber-800/90 leading-relaxed font-medium">
+          <p className="text-sm text-warning/90 leading-relaxed font-medium">
             TripAvail reserves the right to audit your tour operations to ensure safety standards
             and insurance requirements are met. Your listed prices must match your publicly
             advertised rates.

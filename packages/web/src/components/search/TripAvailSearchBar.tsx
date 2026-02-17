@@ -282,7 +282,7 @@ export function TripAvailSearchBar({
         {/* Search Input with Glass Effect */}
         <div className="relative glass-search rounded-xl p-4 shadow-modern">
           <div className="flex items-center gap-3">
-            <Search className="w-5 h-5 text-gray-400" />
+            <Search className="w-5 h-5 text-muted-foreground" />
             <Input
               placeholder="Search destinations, hotels, or experiences..."
               value={filters.query}
@@ -291,7 +291,7 @@ export function TripAvailSearchBar({
                 setIsExpanded(true)
                 onSearchOverlayToggle?.(true, filters)
               }}
-              className="border-0 bg-transparent text-gray-900 dark:text-foreground placeholder:text-gray-500 focus:ring-0 p-0"
+              className="border-0 bg-transparent text-foreground placeholder:text-muted-foreground focus:ring-0 p-0"
             />
             <div className="flex items-center gap-2">
               {/* Voice Search Button */}
@@ -326,7 +326,7 @@ export function TripAvailSearchBar({
                 <Filter className="w-4 h-4" />
                 {activeFiltersCount > 0 && (
                   <motion.div
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center"
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 400 }}
@@ -337,7 +337,7 @@ export function TripAvailSearchBar({
               </Button>
               <Button
                 onClick={handleSearch}
-                className="bg-gradient-to-r from-[#FF385C] to-[#FF6B9D] hover:opacity-90 text-white px-6"
+                className="bg-gradient-to-r from-[#FF385C] to-[#FF6B9D] hover:opacity-90 text-primary-foreground px-6"
               >
                 Search
               </Button>
@@ -355,7 +355,7 @@ export function TripAvailSearchBar({
               className="mt-3 overflow-hidden"
             >
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                <span className="text-xs font-medium text-muted-foreground">
                   Quick filters:
                 </span>
                 {quickFilters.map((filter) => (
@@ -390,8 +390,8 @@ export function TripAvailSearchBar({
                   {/* Recent Searches */}
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
-                      <History className="w-4 h-4 text-gray-400" />
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <History className="w-4 h-4 text-muted-foreground" />
+                      <h4 className="text-sm font-semibold text-foreground">
                         Recent Searches
                       </h4>
                     </div>
@@ -407,27 +407,27 @@ export function TripAvailSearchBar({
                           whileHover={{ x: 4 }}
                         >
                           <div className="flex items-center gap-3">
-                            <Clock className="w-4 h-4 text-gray-400" />
+                            <Clock className="w-4 h-4 text-muted-foreground" />
                             <div>
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                              <span className="text-sm text-foreground">
                                 {search.query}
                               </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                              <span className="text-xs text-muted-foreground ml-2">
                                 {search.category}
                               </span>
                             </div>
                           </div>
-                          <span className="text-xs text-gray-400">{search.timestamp}</span>
+                          <span className="text-xs text-muted-foreground">{search.timestamp}</span>
                         </motion.button>
                       ))}
                     </div>
                   </div>
 
                   {/* Smart Suggestions */}
-                  <div className="space-y-3 border-t border-white/10 dark:border-gray-700 pt-3">
+                  <div className="space-y-3 border-t border-border pt-3">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <h4 className="text-sm font-semibold text-foreground">
                         Smart Suggestions
                       </h4>
                     </div>
@@ -444,10 +444,10 @@ export function TripAvailSearchBar({
                         >
                           <Sparkles className="w-4 h-4 text-primary mt-0.5" />
                           <div>
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="text-sm text-foreground">
                               {suggestion.query}
                             </span>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-muted-foreground">
                               {suggestion.reason}
                             </p>
                           </div>
@@ -475,7 +475,7 @@ export function TripAvailSearchBar({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-primary" />
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <h4 className="text-sm font-semibold text-foreground">
                         Trending Destinations
                       </h4>
                     </div>
@@ -498,14 +498,14 @@ export function TripAvailSearchBar({
                             <div className="flex items-center gap-3">
                               <span className="text-lg">{destination.icon}</span>
                               <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <span className="text-sm font-medium text-foreground">
                                   {destination.name}
                                 </span>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge className="bg-status-success-subtle/20 text-status-success text-xs px-2 py-0">
                                     {destination.trend}
                                   </Badge>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  <span className="text-xs text-muted-foreground">
                                     {destination.bookings} bookings
                                   </span>
                                 </div>
@@ -538,7 +538,7 @@ export function TripAvailSearchBar({
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground">
+                    <h3 className="text-lg font-semibold text-foreground">
                       Filters
                     </h3>
                     <div className="flex items-center gap-2">
@@ -546,7 +546,7 @@ export function TripAvailSearchBar({
                         variant="ghost"
                         size="sm"
                         onClick={clearFilters}
-                        className="text-gray-500 hover:text-primary"
+                        className="text-muted-foreground hover:text-primary"
                       >
                         Clear all
                       </Button>
@@ -559,7 +559,7 @@ export function TripAvailSearchBar({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Location Filter */}
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <MapPin className="w-4 h-4" />
                         Location
                       </label>
@@ -575,7 +575,7 @@ export function TripAvailSearchBar({
 
                     {/* Duration Filter */}
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Calendar className="w-4 h-4" />
                         Duration
                       </label>
@@ -584,7 +584,7 @@ export function TripAvailSearchBar({
                         onChange={(e) =>
                           setFilters((prev) => ({ ...prev, duration: e.target.value }))
                         }
-                        className="w-full p-2 rounded-lg glass-chip text-gray-900 dark:text-foreground"
+                        className="w-full p-2 rounded-lg glass-chip text-foreground"
                       >
                         {durationOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -596,7 +596,7 @@ export function TripAvailSearchBar({
 
                     {/* Price Range */}
                     <div className="space-y-3 md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <DollarSign className="w-4 h-4" />
                         Price Range
                       </label>
@@ -614,7 +614,7 @@ export function TripAvailSearchBar({
                           step={50}
                           className="w-full"
                         />
-                        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        <div className="flex justify-between text-sm text-muted-foreground mt-2">
                           <span>${filters.priceRange[0]}</span>
                           <span>${filters.priceRange[1]}+</span>
                         </div>
@@ -623,7 +623,7 @@ export function TripAvailSearchBar({
 
                     {/* Rating Filter */}
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Star className="w-4 h-4" />
                         Minimum Rating
                       </label>
@@ -650,7 +650,7 @@ export function TripAvailSearchBar({
 
                     {/* Experience Types */}
                     <div className="space-y-3">
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Sparkles className="w-4 h-4" />
                         Experience Type
                       </label>
@@ -678,13 +678,13 @@ export function TripAvailSearchBar({
                   </div>
 
                   {/* Apply Filters Button */}
-                  <div className="flex justify-between items-center pt-4 border-t border-white/10 dark:border-gray-700">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="flex justify-between items-center pt-4 border-t border-border">
+                    <span className="text-sm text-muted-foreground">
                       {activeFiltersCount} filter{activeFiltersCount !== 1 ? 's' : ''} applied
                     </span>
                     <Button
                       onClick={handleSearch}
-                      className="bg-gradient-to-r from-[#FF385C] to-[#FF6B9D] hover:opacity-90 text-white px-8"
+                      className="bg-gradient-to-r from-[#FF385C] to-[#FF6B9D] hover:opacity-90 text-primary-foreground px-8"
                     >
                       Apply Filters
                     </Button>

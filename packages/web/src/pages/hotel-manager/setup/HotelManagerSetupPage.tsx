@@ -98,7 +98,7 @@ export default function HotelManagerSetupPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
@@ -107,15 +107,15 @@ export default function HotelManagerSetupPage() {
   const CurrentStepComponent = STEPS[currentStep].component as any
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-5">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-6 py-5">
         <div className="max-w-content mx-auto flex items-center justify-between">
           <div className="flex flex-col gap-1 flex-1 max-w-xs">
             <div className="flex items-center gap-2">
-              <h1 className="font-black text-gray-900 tracking-tighter text-xl uppercase italic">
+              <h1 className="font-black text-foreground tracking-tighter text-xl uppercase italic">
                 Hotel Setup
               </h1>
-              <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
+              <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-lg border border-border">
                 STEP {currentStep + 1}
               </span>
             </div>
@@ -130,7 +130,7 @@ export default function HotelManagerSetupPage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-2xl border-gray-200 hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5"
+              className="rounded-2xl border-input hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5"
               onClick={handleSaveAndExit}
               disabled={isSaving}
             >

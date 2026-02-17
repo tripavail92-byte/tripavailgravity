@@ -197,7 +197,7 @@ export default function HotelManagerSettingsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader className="w-6 h-6 animate-spin text-purple-600" />
+        <Loader className="w-6 h-6 animate-spin text-primary" />
       </div>
     )
   }
@@ -212,12 +212,12 @@ export default function HotelManagerSettingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">
+          <h1 className="text-xl font-semibold text-foreground mb-1">
             Hotel Settings{settings?.business_name && ` - ${settings.business_name}`}
           </h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Manage your property listings, payments, and business preferences
           </p>
         </div>
@@ -228,21 +228,21 @@ export default function HotelManagerSettingsPage() {
         {/* Quick Settings Overview */}
         <div className="grid grid-cols-2 gap-3">
           <GlassCard variant="light" className="rounded-xl p-4">
-            <div className="text-xs text-gray-600 mb-1">Base Price</div>
-            <div className="text-lg font-semibold text-gray-900">
+            <div className="text-xs text-muted-foreground mb-1">Base Price</div>
+            <div className="text-lg font-semibold text-foreground">
               {settings?.currency} {settings?.base_price_per_night?.toFixed(2) || '0.00'}/night
             </div>
           </GlassCard>
           <GlassCard variant="light" className="rounded-xl p-4">
-            <div className="text-xs text-gray-600 mb-1">Notifications Active</div>
-            <div className="text-lg font-semibold text-gray-900">{notificationBadgeCount}</div>
+            <div className="text-xs text-muted-foreground mb-1">Notifications Active</div>
+            <div className="text-lg font-semibold text-foreground">{notificationBadgeCount}</div>
           </GlassCard>
         </div>
 
         {/* Notification Toggles */}
         <GlassCard variant="card" className="rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Bell size={20} className="text-purple-600" />
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Bell size={20} className="text-primary" />
             Notification Preferences
           </h2>
           <div className="space-y-3">
@@ -279,8 +279,8 @@ export default function HotelManagerSettingsPage() {
 
         {/* Analytics & Policies */}
         <GlassCard variant="card" className="rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BarChart3 size={20} className="text-purple-600" />
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 size={20} className="text-primary" />
             Analytics & Policies
           </h2>
           <div className="space-y-3">
@@ -291,11 +291,11 @@ export default function HotelManagerSettingsPage() {
               onChange={(value) => handleToggle('track_analytics', value)}
               disabled={isSaving}
             />
-            <div className="pt-3 border-t border-gray-200">
+            <div className="pt-3 border-t border-border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">Cancellation Policy</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-medium text-foreground">Cancellation Policy</p>
+                  <p className="text-sm text-muted-foreground">
                     {settings?.cancellation_policy || 'Flexible'}
                   </p>
                 </div>
@@ -306,8 +306,8 @@ export default function HotelManagerSettingsPage() {
 
         {/* Security */}
         <GlassCard variant="card" className="rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Shield size={20} className="text-purple-600" />
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Shield size={20} className="text-primary" />
             Security
           </h2>
           <ToggleSetting
@@ -321,7 +321,7 @@ export default function HotelManagerSettingsPage() {
 
         {/* Category Cards */}
         <div className="pt-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Settings Sections</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-3">Settings Sections</h2>
           {settingsCategories.map((category, index) => (
             <GlassCard
               key={category.id}
@@ -336,14 +336,14 @@ export default function HotelManagerSettingsPage() {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <category.icon size={24} className="text-purple-600" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <category.icon size={24} className="text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{category.title}</h3>
+                        <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
                         {category.hasWarning && (
-                          <AlertTriangle size={16} className="text-purple-600 flex-shrink-0" />
+                          <AlertTriangle size={16} className="text-primary flex-shrink-0" />
                         )}
                       </div>
                     </div>
@@ -354,10 +354,10 @@ export default function HotelManagerSettingsPage() {
                         {category.badge}
                       </GlassBadge>
                     )}
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed pl-16">
+                <p className="text-sm text-muted-foreground leading-relaxed pl-16">
                   {category.description}
                 </p>
               </div>
@@ -375,12 +375,12 @@ export default function HotelManagerSettingsPage() {
           transition={{ delay: 0.7 }}
         >
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-              <ChevronRight size={24} className="text-blue-600" />
+            <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <ChevronRight size={24} className="text-accent" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Partner Support</h3>
-              <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Partner Support</h3>
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                 Our partnership team is available 24/7 to help you maximize your hotel's potential
                 on TripAvail.
               </p>
@@ -395,28 +395,28 @@ export default function HotelManagerSettingsPage() {
         <div className="pt-4 space-y-3">
           <Button
             variant="ghost"
-            className="w-full justify-center text-gray-600 hover:text-gray-900"
+            className="w-full justify-center text-muted-foreground hover:text-foreground"
             disabled={isSaving}
           >
             Partner Agreement
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-center text-gray-600 hover:text-gray-900"
+            className="w-full justify-center text-muted-foreground hover:text-foreground"
             disabled={isSaving}
           >
             Commission Terms
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-center text-red-600 border-red-200 hover:bg-red-50"
+            className="w-full justify-center text-destructive border-destructive/20 hover:bg-destructive/10"
             disabled={isSaving}
             onClick={handleSuspendListings}
           >
             Suspend Listings
           </Button>
           {isSaving && (
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader className="w-4 h-4 animate-spin" />
               Saving...
             </div>
@@ -438,20 +438,20 @@ interface ToggleSetting {
 
 function ToggleSetting({ label, description, enabled, onChange, disabled }: ToggleSetting) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+    <div className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors">
       <div>
-        <p className="font-medium text-gray-900">{label}</p>
-        <p className="text-sm text-gray-600">{description}</p>
+        <p className="font-medium text-foreground">{label}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <button
         onClick={() => onChange(!enabled)}
         disabled={disabled}
         className={`relative w-11 h-6 rounded-full transition-colors ${
-          enabled ? 'bg-purple-600' : 'bg-gray-300'
+          enabled ? 'bg-primary' : 'bg-muted-foreground/30'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div
-          className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+          className={`absolute top-1 w-4 h-4 rounded-full bg-background transition-transform ${
             enabled ? 'right-1' : 'left-1'
           }`}
         />

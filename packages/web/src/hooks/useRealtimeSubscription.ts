@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*'
 
-interface UseRealtimeOptions<T> {
+interface UseRealtimeOptions<T extends Record<string, any>> {
   table: string
   event?: RealtimeEvent
   schema?: string

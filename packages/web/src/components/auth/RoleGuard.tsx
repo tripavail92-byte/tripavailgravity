@@ -18,7 +18,9 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
   useEffect(() => {
     if (initialized && user && activeRole && !allowedRoles.includes(activeRole.role_type)) {
       const roleLabel =
-        activeRole.role_type === 'hotel_manager'
+        activeRole.role_type === 'admin'
+          ? 'Admin'
+          : activeRole.role_type === 'hotel_manager'
           ? 'Hotel Manager'
           : activeRole.role_type === 'tour_operator'
             ? 'Tour Operator'
@@ -50,7 +52,9 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
 
     // Default redirection logic based on their actual role
     const defaultDashboard =
-      activeRole?.role_type === 'hotel_manager'
+      activeRole?.role_type === 'admin'
+        ? '/admin/dashboard'
+        : activeRole?.role_type === 'hotel_manager'
         ? '/manager/dashboard'
         : activeRole?.role_type === 'tour_operator'
           ? '/operator/dashboard'

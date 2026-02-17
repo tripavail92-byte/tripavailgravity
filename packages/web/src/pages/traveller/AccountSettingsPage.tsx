@@ -89,15 +89,17 @@ export default function AccountSettingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-3xl mx-auto px-4 py-6">
-          <h1 className="text-xl font-semibold text-gray-900 mb-1">Account Settings</h1>
-          <p className="text-sm text-gray-600">Manage your account security and preferences</p>
+          <h1 className="text-xl font-semibold text-foreground mb-1">Account Settings</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your account security and preferences
+          </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-16 z-10 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4">
+      <div className="sticky top-16 z-10 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4">
         <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto py-3">
           {[
             { id: 'overview', label: 'Overview' },
@@ -110,8 +112,8 @@ export default function AccountSettingsPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-4 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition ${
                 activeTab === tab.id
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted'
               }`}
             >
               {tab.label}
@@ -134,9 +136,9 @@ export default function AccountSettingsPage() {
               <GlassCard variant="card" className="p-4 rounded-2xl">
                 <div className="flex items-center gap-3 mb-2">
                   <Shield className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-gray-900">Security</h3>
+                  <h3 className="font-semibold text-foreground">Security</h3>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   {settings.two_factor_enabled ? '✓ 2FA Enabled' : '⚠ 2FA Disabled'}
                 </p>
                 <Button
@@ -151,10 +153,10 @@ export default function AccountSettingsPage() {
 
               <GlassCard variant="card" className="p-4 rounded-2xl">
                 <div className="flex items-center gap-3 mb-2">
-                  <Bell className="w-5 h-5 text-orange-500" />
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
+                  <Bell className="w-5 h-5 text-warning" />
+                  <h3 className="font-semibold text-foreground">Notifications</h3>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{notificationCount} active</p>
+                <p className="text-sm text-muted-foreground mb-3">{notificationCount} active</p>
                 <Button
                   size="sm"
                   variant="outline"
@@ -172,7 +174,7 @@ export default function AccountSettingsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-6">All Settings</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4 mt-6">All Settings</h2>
               <div className="space-y-3">
                 <SettingItem
                   icon={Bell}
@@ -205,7 +207,7 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Notifications</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Email Notifications</h2>
               <div className="space-y-4">
                 <ToggleSetting
                   label="All Email Notifications"
@@ -236,7 +238,7 @@ export default function AccountSettingsPage() {
             </GlassCard>
 
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Other Notifications</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Other Notifications</h2>
               <div className="space-y-4">
                 <ToggleSetting
                   label="Push Notifications"
@@ -265,16 +267,16 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Privacy Settings</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Privacy Settings</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">
+                  <label className="text-sm font-medium text-foreground block mb-2">
                     Profile Visibility
                   </label>
                   <select
                     value={settings.profile_visibility}
                     onChange={(e) => handleToggle('profile_visibility', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-4 py-2 border border-border/60 bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="public">Public - Anyone can see your profile</option>
                     <option value="friends_only">Friends Only - Only your friends can see</option>
@@ -318,10 +320,10 @@ export default function AccountSettingsPage() {
             className="space-y-4"
           >
             <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">App Preferences</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">App Preferences</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">Theme</label>
+                  <label className="text-sm font-medium text-foreground block mb-2">Theme</label>
                   <div className="flex gap-3">
                     {['light', 'dark', 'auto'].map((theme) => (
                       <button
@@ -330,7 +332,7 @@ export default function AccountSettingsPage() {
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
                           settings.theme === theme
                             ? 'border-primary bg-primary/5'
-                            : 'border-gray-200 hover:border-gray-300'
+                            : 'border-border/60 hover:border-border'
                         }`}
                       >
                         {theme === 'light' && <Sun className="w-4 h-4" />}
@@ -343,11 +345,11 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">Language</label>
+                  <label className="text-sm font-medium text-foreground block mb-2">Language</label>
                   <select
                     value={settings.language}
                     onChange={(e) => handleToggle('language', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-4 py-2 border border-border/60 bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="en">English</option>
                     <option value="es">Spanish</option>
@@ -358,11 +360,11 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-900 block mb-2">Currency</label>
+                  <label className="text-sm font-medium text-foreground block mb-2">Currency</label>
                   <select
                     value={settings.currency}
                     onChange={(e) => handleToggle('currency', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-4 py-2 border border-border/60 bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -385,12 +387,12 @@ export default function AccountSettingsPage() {
         >
           <GlassCard variant="light" className="rounded-2xl p-6">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
-                <HelpCircle size={24} className="text-blue-600" />
+              <div className="w-12 h-12 bg-info/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <HelpCircle size={24} className="text-info" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Need Help?</h3>
-                <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Need Help?</h3>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   Our support team is here to help you with any account or settings questions.
                 </p>
                 <Button variant="outline" size="sm" className="w-full sm:w-auto">
@@ -402,22 +404,22 @@ export default function AccountSettingsPage() {
         </motion.div>
 
         {/* Account Actions */}
-        <div className="pt-8 space-y-3 border-t border-gray-200 mt-8">
+        <div className="pt-8 space-y-3 border-t border-border/50 mt-8">
           <Button
             variant="ghost"
-            className="w-full justify-center text-gray-600 hover:text-gray-900"
+            className="w-full justify-center text-muted-foreground hover:text-foreground"
           >
             Terms of Service
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-center text-gray-600 hover:text-gray-900"
+            className="w-full justify-center text-muted-foreground hover:text-foreground"
           >
             Privacy Policy
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="w-full justify-center text-destructive hover:text-destructive hover:bg-destructive/10"
           >
             Delete Account
           </Button>
@@ -442,20 +444,20 @@ function ToggleSetting({
   disabled?: boolean
 }) {
   return (
-    <div className="flex items-start justify-between p-4 bg-gray-50/50 rounded-lg">
+    <div className="flex items-start justify-between p-4 bg-muted/40 rounded-lg">
       <div>
-        <h3 className="font-medium text-gray-900">{label}</h3>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
+        <h3 className="font-medium text-foreground">{label}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{description}</p>
       </div>
       <button
         onClick={() => onChange(!enabled)}
         disabled={disabled}
         className={`ml-4 flex-shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition ${
-          enabled ? 'bg-primary' : 'bg-gray-300'
+          enabled ? 'bg-primary' : 'bg-muted-foreground/30'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span
-          className={`inline-block h-4 w-4 transform bg-white rounded-full transition ${
+          className={`inline-block h-4 w-4 transform bg-background rounded-full transition ${
             enabled ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
@@ -479,18 +481,18 @@ function SettingItem({
   return (
     <button
       onClick={onClick}
-      className="w-full p-4 bg-white rounded-lg hover:bg-gray-50 transition border border-gray-200 flex items-start justify-between group"
+      className="w-full p-4 bg-background rounded-lg hover:bg-muted/40 transition border border-border/60 flex items-start justify-between group"
     >
       <div className="flex items-start gap-3 text-left">
         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition">
           <Icon className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-medium text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600 mt-1">{description}</p>
+          <h3 className="font-medium text-foreground">{title}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
       </div>
-      <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+      <ChevronRight className="w-5 h-5 text-muted-foreground/70 flex-shrink-0 mt-1" />
     </button>
   )
 }

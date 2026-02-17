@@ -72,16 +72,16 @@ export function ReviewStep({
             </div>
           )}
           <div className="flex gap-4 text-sm">
-            {packageData.duration && (
+            {packageData.durationDays && (
               <div>
                 <span className="text-gray-500">Duration:</span>
-                <span className="ml-1 font-medium">{packageData.duration} days</span>
+                <span className="ml-1 font-medium">{packageData.durationDays} days</span>
               </div>
             )}
-            {packageData.groupSize && (
+            {packageData.maxGuests && (
               <div>
-                <span className="text-gray-500">Group Size:</span>
-                <span className="ml-1 font-medium">{packageData.groupSize} people</span>
+                <span className="text-gray-500">Max Guests:</span>
+                <span className="ml-1 font-medium">{packageData.maxGuests} people</span>
               </div>
             )}
           </div>

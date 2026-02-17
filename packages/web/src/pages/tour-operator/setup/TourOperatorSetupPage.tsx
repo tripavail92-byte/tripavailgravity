@@ -124,10 +124,10 @@ export default function TourOperatorSetupPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-          <p className="text-gray-500 font-medium tracking-tight">Loading your profile...</p>
+          <p className="text-muted-foreground font-medium tracking-tight">Loading your profile...</p>
         </div>
       </div>
     )
@@ -136,15 +136,15 @@ export default function TourOperatorSetupPage() {
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Top Bar for Save & Exit */}
-      <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-5">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-6 py-5">
         <div className="max-w-content mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm border border-primary/20">
               T
             </div>
-            <h1 className="font-black text-gray-900 tracking-tighter text-xl uppercase italic">
+            <h1 className="font-black text-foreground tracking-tighter text-xl uppercase italic">
               Operator Setup
             </h1>
           </div>
@@ -153,7 +153,7 @@ export default function TourOperatorSetupPage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-2xl border-gray-200 hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5 transition-all hover:scale-105 active:scale-95"
+              className="rounded-2xl border-input hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5 transition-all hover:scale-105 active:scale-95"
               onClick={handleSaveAndExit}
               disabled={isSaving}
             >

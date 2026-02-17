@@ -453,9 +453,10 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
       {/* Room Wizard Modal */}
       {showWizard && (
         <RoomWizardModal
+          isOpen={showWizard}
           onClose={() => setShowWizard(false)}
           onSave={handleAddNewRoom}
-          existingRoom={null}
+          editingRoom={null}
         />
       )}
 

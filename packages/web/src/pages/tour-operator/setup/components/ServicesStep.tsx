@@ -51,8 +51,8 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-10">
       <div>
-        <h3 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Tour Services</h3>
-        <p className="text-lg text-gray-500 leading-relaxed font-medium">
+        <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">Tour Services</h3>
+        <p className="text-lg text-muted-foreground leading-relaxed font-medium">
           What types of tours do you specialize in? Select all that apply.
         </p>
       </div>
@@ -68,31 +68,31 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
               className={`p-8 rounded-[32px] border-2 text-left transition-all relative group flex flex-col items-center text-center space-y-4 ${
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-xl shadow-primary/5'
-                  : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-lg hover:shadow-black/5'
+                  : 'border-border/60 bg-background hover:border-border hover:shadow-lg'
               }`}
               aria-pressed={isSelected}
             >
               <div
                 className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                   isSelected
-                    ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30'
-                    : 'bg-gray-50 text-gray-400 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-105'
+                    ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30'
+                    : 'bg-muted/60 text-muted-foreground/70 group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-105'
                 }`}
               >
                 <s.icon className={`${isSelected ? 'w-8 h-8' : 'w-7 h-7'}`} aria-hidden="true" />
               </div>
               <div className="space-y-1">
                 <p
-                  className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-gray-900'}`}
+                  className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
                 >
                   {s.name}
                 </p>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-none">
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest leading-none">
                   {s.desc}
                 </p>
               </div>
               {isSelected && (
-                <div className="absolute top-4 right-4 bg-primary text-white rounded-xl p-1.5 shadow-lg border-2 border-white">
+                <div className="absolute top-4 right-4 bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-background">
                   <Check className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -101,13 +101,13 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
         })}
       </div>
 
-      <div className="space-y-6 pt-10 border-t border-gray-100">
+      <div className="space-y-6 pt-10 border-t border-border/50">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h4 className="text-xl font-extrabold text-gray-900 tracking-tight">
+            <h4 className="text-xl font-extrabold text-foreground tracking-tight">
               Custom Categories
             </h4>
-            <p className="text-sm text-gray-500 font-medium">
+            <p className="text-sm text-muted-foreground font-medium">
               Add any other niche specialties you offer.
             </p>
           </div>
@@ -127,13 +127,13 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 bg-gray-50 p-4 rounded-3xl border border-gray-100"
+            className="flex gap-3 bg-muted/40 p-4 rounded-3xl border border-border/50"
           >
             <Input
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
               placeholder="e.g. Desert Safari, Food Tour..."
-              className="rounded-2xl border-gray-200 h-14 bg-white text-base focus-visible:ring-primary/20"
+              className="rounded-2xl border-border/60 h-14 bg-background text-base focus-visible:ring-primary/20"
               autoFocus
             />
             <Button onClick={addCustom} className="rounded-2xl px-8 h-14 font-bold">
@@ -142,7 +142,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
             <Button
               variant="ghost"
               onClick={() => setIsAdding(false)}
-              className="rounded-2xl h-14 font-bold text-gray-500"
+              className="rounded-2xl h-14 font-bold text-muted-foreground"
             >
               Cancel
             </Button>
@@ -153,12 +153,12 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
           {custom.map((c) => (
             <span
               key={c}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary rounded-2xl text-sm font-bold border-2 border-primary/10 shadow-sm transition-all hover:border-primary/30"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-background text-primary rounded-2xl text-sm font-bold border-2 border-primary/10 shadow-sm transition-all hover:border-primary/30"
             >
               {c}
               <button
                 onClick={() => removeCustom(c)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-50 hover:text-red-500 transition-colors"
+                className="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
                 aria-label={`Remove ${c}`}
               >
                 <X className="w-4 h-4" />

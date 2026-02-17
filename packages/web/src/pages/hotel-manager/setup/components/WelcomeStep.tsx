@@ -21,17 +21,17 @@ export function WelcomeStep({ onNext }: StepProps) {
         <motion.div
           animate={{ y: [0, -5, 0], scale: [1, 1.1, 1] }}
           transition={{ repeat: Infinity, duration: 3 }}
-          className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center"
+          className="absolute -top-2 -right-2 w-8 h-8 bg-background rounded-full shadow-lg flex items-center justify-center"
         >
           <Sparkles className="w-4 h-4 text-primary" />
         </motion.div>
       </div>
 
       <div className="text-center space-y-4">
-        <h3 className="text-5xl font-black text-gray-900 tracking-tighter uppercase italic leading-[0.9]">
+        <h3 className="text-5xl font-black text-foreground tracking-tighter uppercase italic leading-[0.9]">
           Become a <br /> TripAvail <br /> <span className="text-primary italic">Partner</span>
         </h3>
-        <p className="text-xl text-gray-500 max-w-sm mx-auto font-medium leading-relaxed mt-6">
+        <p className="text-xl text-muted-foreground max-w-sm mx-auto font-medium leading-relaxed mt-6">
           Join thousands of property owners delivering premium travel experiences.
         </p>
       </div>
@@ -54,14 +54,14 @@ export function WelcomeStep({ onNext }: StepProps) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 + i * 0.1 }}
-            className="p-6 bg-gray-50/50 border border-gray-100 rounded-[32px] flex items-center gap-5"
+            className="p-6 bg-muted/50 border border-border rounded-[32px] flex items-center gap-5"
           >
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 flex-shrink-0">
+            <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center shadow-sm border border-border flex-shrink-0">
               <item.icon className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="font-bold text-gray-900">{item.title}</p>
-              <p className="text-sm text-gray-500 font-medium">{item.text}</p>
+              <p className="font-bold text-foreground">{item.title}</p>
+              <p className="text-sm text-muted-foreground font-medium">{item.text}</p>
             </div>
           </motion.div>
         ))}

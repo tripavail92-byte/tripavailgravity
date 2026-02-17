@@ -1,4 +1,6 @@
-export type RoleType = 'traveller' | 'hotel_manager' | 'tour_operator';
+// NOTE: 'admin' is not stored in `user_roles` (it lives in `admin_users`),
+// but the web app treats it as a first-class active role for routing.
+export type RoleType = 'traveller' | 'hotel_manager' | 'tour_operator' | 'admin';
 
 export interface UserRole {
     id: string;

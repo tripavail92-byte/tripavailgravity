@@ -44,7 +44,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
     <div className="space-y-6">
       <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+          <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -60,11 +60,11 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         {schedules.map((schedule) => (
           <Card
             key={schedule.id}
-            className="p-6 border-gray-100 shadow-sm rounded-2xl hover:border-primary/20 transition-colors"
+            className="p-6 border-border shadow-sm rounded-2xl hover:border-primary/20 transition-colors"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
               <div className="md:col-span-4 space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   Departure Date
                 </label>
                 <Input
@@ -75,7 +75,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                 />
               </div>
               <div className="md:col-span-4 space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   Start Time
                 </label>
                 <Input
@@ -86,7 +86,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                 />
               </div>
               <div className="md:col-span-3 space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   Capacity
                 </label>
                 <Input
@@ -103,7 +103,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                   variant="ghost"
                   size="icon"
                   onClick={() => removeSchedule(schedule.id)}
-                  className="text-gray-400 hover:text-error hover:bg-error/5 h-11 w-11"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-11 w-11"
                 >
                   <Trash2 size={20} />
                 </Button>
@@ -113,10 +113,10 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         ))}
 
         {schedules.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">
-            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-gray-900 font-bold">No dates scheduled</h3>
-            <p className="text-sm text-gray-500">
+          <div className="text-center py-12 bg-muted rounded-2xl border-2 border-dashed border-border">
+            <Calendar className="w-12 h-12 text-muted mx-auto mb-3" />
+            <h3 className="text-foreground font-bold">No dates scheduled</h3>
+            <p className="text-sm text-muted-foreground">
               Add departure dates to let travelers book your tour.
             </p>
           </div>
@@ -125,14 +125,14 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         <Button
           onClick={addSchedule}
           variant="outline"
-          className="w-full h-14 border-dashed border-2 border-gray-200 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
+          className="w-full h-14 border-dashed border-2 border-input hover:border-primary hover:bg-primary/5 hover:text-primary transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
         >
           <Plus className="w-5 h-5" />
           Add Departure Date
         </Button>
       </div>
 
-      <div className="flex items-center justify-between pt-6 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-6 border-t border-border">
         <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none">
           Back
         </Button>

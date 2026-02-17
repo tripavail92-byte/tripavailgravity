@@ -20,7 +20,9 @@ export function DashboardRedirect() {
   // Determine default dashboard based on role
   let defaultDashboard = '/dashboard/overview'
 
-  if (activeRole?.role_type === 'hotel_manager') {
+  if (activeRole?.role_type === 'admin') {
+    defaultDashboard = '/admin/dashboard'
+  } else if (activeRole?.role_type === 'hotel_manager') {
     defaultDashboard =
       activeRole.verification_status === 'incomplete' ? '/manager/setup' : '/manager/dashboard'
   } else if (activeRole?.role_type === 'tour_operator') {

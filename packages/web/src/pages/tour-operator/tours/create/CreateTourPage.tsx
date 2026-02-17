@@ -83,14 +83,14 @@ export default function CreateTourPage() {
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+      <div className="bg-background border-b border-border px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">Create New Tour</h1>
-          <div className="text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-foreground">Create New Tour</h1>
+          <div className="text-sm text-muted-foreground">
             Step {currentStep + 1} of {STEPS.length}:{' '}
-            <span className="font-medium text-gray-900">{STEPS[currentStep].title}</span>
+            <span className="font-medium text-foreground">{STEPS[currentStep].title}</span>
           </div>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function CreateTourPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-8"
+            className="bg-background rounded-lg shadow-sm border border-border p-8"
           >
             <CurrentStepComponent
               data={tourData}
@@ -119,10 +119,10 @@ export default function CreateTourPage() {
 
       {/* Simple Overlay Loader */}
       {isSaving && (
-        <div className="fixed inset-0 bg-white/50 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="flex flex-col items-center">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <span className="mt-2 font-medium text-gray-700">Publishing...</span>
+            <span className="mt-2 font-medium text-muted-foreground">Publishing...</span>
           </div>
         </div>
       )}

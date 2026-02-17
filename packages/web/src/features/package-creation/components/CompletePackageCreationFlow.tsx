@@ -101,7 +101,7 @@ export function CompletePackageCreationFlow() {
     }
   }
 
-  const CurrentStepComponent = STEPS[currentStep - 1].component
+  const CurrentStepComponent = STEPS[currentStep - 1].component as any
   const isReviewStep = currentStep === STEPS.length
 
   return (
@@ -142,6 +142,7 @@ export function CompletePackageCreationFlow() {
                 existingData={packageData}
                 onComplete={handleStepComplete}
                 onUpdate={handleStepUpdate}
+                onBack={handleBack}
               />
             ) : (
               <CurrentStepComponent

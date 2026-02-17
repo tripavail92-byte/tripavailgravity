@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types/database';
 
 // Dual environment support: Vite (import.meta.env) and Node.js (process.env)
 function getEnvVar(key: string): string {
@@ -22,6 +21,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Create a proper client if env vars exist, otherwise create a mock client
 export const supabase = (supabaseUrl && supabaseAnonKey)
-    ? createClient<Database>(supabaseUrl, supabaseAnonKey)
-    : createClient<Database>('https://placeholder.supabase.co', 'placeholder-key');
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : createClient('https://placeholder.supabase.co', 'placeholder-key');
 

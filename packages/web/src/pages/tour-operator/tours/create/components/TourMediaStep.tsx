@@ -66,7 +66,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
     <div className="space-y-6">
       <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+          <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <ImageIcon className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -81,10 +81,10 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
       <div
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all bg-gray-50/50 hover:bg-white',
+          'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all bg-muted/50 hover:bg-background',
           isDragActive
             ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-            : 'border-gray-200 hover:border-primary/40',
+            : 'border-input hover:border-primary/40',
         )}
       >
         <input {...getInputProps()} />
@@ -97,15 +97,15 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
             )}
           </div>
           <div>
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-foreground">
               {isUploading ? 'Uploading High-Quality Media...' : 'Drop your tour photos here'}
             </p>
-            <p className="text-sm text-gray-500 mt-2 font-medium">
+            <p className="text-sm text-muted-foreground mt-2 font-medium">
               Support for PNG, JPG and WebP (max. 10MB each)
             </p>
           </div>
           {!isUploading && (
-            <Button variant="outline" className="mt-2 font-bold border-gray-200">
+            <Button variant="outline" className="mt-2 font-bold border-input">
               Select Files
             </Button>
           )}
@@ -118,7 +118,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
           {images.map((url, index) => (
             <div
               key={index}
-              className="relative group aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
+              className="relative group aspect-square rounded-2xl overflow-hidden border border-border shadow-sm"
             >
               <img
                 src={url}
@@ -141,20 +141,20 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
       )}
 
       {images.length === 0 && !isUploading && (
-        <div className="text-center py-10 bg-gray-50/30 rounded-2xl border border-gray-100">
-          <ImageIcon size={48} className="text-gray-200 mx-auto mb-4" />
-          <p className="text-gray-400 font-medium">
+        <div className="text-center py-10 bg-muted/30 rounded-2xl border border-border">
+          <ImageIcon size={48} className="text-muted mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium">
             No images uploaded yet. High-quality visuals increase bookings!
           </p>
         </div>
       )}
 
-      <div className="flex justify-between pt-6 border-t border-gray-100">
+      <div className="flex justify-between pt-6 border-t border-border">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 border-gray-200 flex-1 sm:flex-none"
+          className="px-8 border-input flex-1 sm:flex-none"
         >
           Back
         </Button>

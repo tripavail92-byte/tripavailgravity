@@ -140,7 +140,7 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background flex flex-col">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Top Bar with Compact Search - Glass Effect */}
       <div className="glass-nav border-b sticky top-16 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">

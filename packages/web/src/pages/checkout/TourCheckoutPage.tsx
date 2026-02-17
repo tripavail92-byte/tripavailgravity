@@ -280,7 +280,7 @@ export default function TourCheckoutPage() {
   if (!tour || !schedule) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Tour not found</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Tour not found</h1>
         <Button
           onClick={() => navigate(-1)}
           variant="default"
@@ -308,17 +308,17 @@ export default function TourCheckoutPage() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
+    <div className="bg-muted/30 min-h-screen pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+      <div className="sticky top-0 z-50 bg-background border-b border-border/50">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-muted rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Complete Your Booking</h1>
+          <h1 className="text-lg font-bold text-foreground">Complete Your Booking</h1>
           <div className="w-10" />
         </div>
       </div>
@@ -342,8 +342,8 @@ export default function TourCheckoutPage() {
               <GlassContent className="p-6 pt-4">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{tour.title}</h3>
-                    <div className="flex flex-wrap gap-6 text-sm text-gray-600 font-medium">
+                    <h3 className="text-xl font-bold text-foreground mb-2">{tour.title}</h3>
+                    <div className="flex flex-wrap gap-6 text-sm text-muted-foreground font-medium">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-primary" />
                         {tour.location.city}, {tour.location.country}
@@ -356,14 +356,14 @@ export default function TourCheckoutPage() {
                   </div>
 
                   {/* Schedule Info */}
-                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-2">
+                  <div className="p-4 bg-info/10 rounded-xl border border-info/20">
+                    <p className="text-xs font-bold text-info uppercase tracking-widest mb-2">
                       Your Departure
                     </p>
-                    <p className="text-gray-900 font-bold">
+                    <p className="text-foreground font-bold">
                       {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Returns: {formatDate(schedule.end_time)}
                     </p>
                   </div>
@@ -377,43 +377,43 @@ export default function TourCheckoutPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+                className="bg-background rounded-2xl p-6 border border-border/50 shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Select Number of Guests</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Select Number of Guests</h2>
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600 font-medium">
+                  <p className="text-sm text-muted-foreground font-medium">
                     Available seats:{' '}
-                    <span className="text-gray-900 font-bold">{availableSlots}</span>
+                    <span className="text-foreground font-bold">{availableSlots}</span>
                   </p>
 
                   {/* Guest Counter */}
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-4 p-4 bg-muted/40 rounded-xl">
                     <button
                       onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
                       disabled={guestCount <= 1}
-                      className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       −
                     </button>
                     <div className="flex-1 text-center">
-                      <p className="text-3xl font-black text-gray-900">{guestCount}</p>
-                      <p className="text-xs text-gray-500 font-medium">
+                      <p className="text-3xl font-black text-foreground">{guestCount}</p>
+                      <p className="text-xs text-muted-foreground font-medium">
                         {guestCount === 1 ? 'Guest' : 'Guests'}
                       </p>
                     </div>
                     <button
                       onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
                       disabled={guestCount >= maxGuests}
-                      className="w-10 h-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center font-bold text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       +
                     </button>
                   </div>
 
                   {availableSlots !== null && availableSlots < 5 && availableSlots > 0 && (
-                    <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                      <p className="text-sm text-orange-800 font-medium">
+                    <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                      <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
+                      <p className="text-sm text-warning font-medium">
                         Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left
                       </p>
                     </div>
@@ -437,15 +437,15 @@ export default function TourCheckoutPage() {
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Clock className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Booking Hold Active</h3>
-                      <p className="text-gray-600 font-medium">
+                      <h3 className="text-2xl font-bold text-foreground mb-2">Booking Hold Active</h3>
+                      <p className="text-muted-foreground font-medium">
                         Your seats are reserved for 10 minutes
                       </p>
                     </div>
 
                     {/* Countdown Timer */}
                     <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 text-center">
-                      <p className="text-sm text-gray-600 font-medium mb-2">Time Remaining</p>
+                      <p className="text-sm text-muted-foreground font-medium mb-2">Time Remaining</p>
                       <div className="text-5xl font-black text-primary">
                         {String(countdown.minutes).padStart(2, '0')}:
                         {String(countdown.seconds).padStart(2, '0')}
@@ -453,20 +453,20 @@ export default function TourCheckoutPage() {
                     </div>
 
                     {/* Booking Details */}
-                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl">
+                    <div className="space-y-3 p-4 bg-muted/40 rounded-xl">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 font-medium">Booking ID</span>
-                        <span className="font-mono text-sm font-bold text-gray-900">
+                        <span className="text-muted-foreground font-medium">Booking ID</span>
+                        <span className="font-mono text-sm font-bold text-foreground">
                           {pendingBooking.id.slice(0, 8).toUpperCase()}...
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600 font-medium">Guests</span>
-                        <span className="font-bold text-gray-900">{pendingBooking.pax_count}</span>
+                        <span className="text-muted-foreground font-medium">Guests</span>
+                        <span className="font-bold text-foreground">{pendingBooking.pax_count}</span>
                       </div>
-                      <div className="h-px bg-gray-200" />
+                      <div className="h-px bg-border/60" />
                       <div className="flex items-center justify-between text-lg">
-                        <span className="text-gray-900 font-bold">Total Price</span>
+                        <span className="text-foreground font-bold">Total Price</span>
                         <span className="font-black text-primary">
                           {tour.currency} {totalPrice.toFixed(2)}
                         </span>
@@ -476,22 +476,22 @@ export default function TourCheckoutPage() {
                     {/* Stripe Payment Form */}
                     <div className="space-y-4">
                       {stripeAvailable === false ? (
-                        <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-center">
-                          <p className="text-sm text-red-800 font-medium">
+                        <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/20 text-center">
+                          <p className="text-sm text-destructive font-medium">
                             Payments are not configured.
                           </p>
                         </div>
                       ) : !clientSecret ? (
-                        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
+                        <div className="p-4 bg-info/10 rounded-xl border border-info/20 text-center">
                           <Loader2 className="w-5 h-5 animate-spin text-primary inline-block mr-2" />
-                          <p className="text-sm text-blue-900 font-medium inline">
+                          <p className="text-sm text-info font-medium inline">
                             {creatingPaymentIntent
                               ? 'Preparing secure payment...'
                               : 'Loading payment form...'}
                           </p>
                         </div>
                       ) : (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <div className="p-4 bg-muted/40 rounded-xl border border-border/60">
                           <Elements stripe={stripePromise} options={{ clientSecret }}>
                             <TourPaymentForm
                               bookingId={pendingBooking.id}
@@ -512,10 +512,10 @@ export default function TourCheckoutPage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3"
+                className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3"
               >
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <p className="text-sm text-red-800 font-medium">{bookingError}</p>
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+                <p className="text-sm text-destructive font-medium">{bookingError}</p>
               </motion.div>
             )}
           </div>
@@ -530,17 +530,17 @@ export default function TourCheckoutPage() {
                 <GlassContent className="p-6 pt-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 font-medium">
+                      <span className="text-muted-foreground font-medium">
                         {tour.currency} {tour.price} × {guestCount}{' '}
                         {guestCount === 1 ? 'Guest' : 'Guests'}
                       </span>
-                      <span className="text-gray-900 font-bold">
+                      <span className="text-foreground font-bold">
                         {tour.currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
-                    <div className="h-px bg-gray-200" />
+                    <div className="h-px bg-border/60" />
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-900 font-bold">Total</span>
+                      <span className="text-foreground font-bold">Total</span>
                       <span className="text-2xl font-black text-primary">
                         {tour.currency} {totalPrice.toFixed(2)}
                       </span>
@@ -554,7 +554,7 @@ export default function TourCheckoutPage() {
                         processingBooking ||
                         (availableSlots !== null && guestCount > availableSlots)
                       }
-                      className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold mt-6"
+                      className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold mt-6"
                     >
                       {processingBooking ? (
                         <>
@@ -576,23 +576,25 @@ export default function TourCheckoutPage() {
               <GlassCard variant="card" className="rounded-2xl">
                 <GlassContent className="p-6 space-y-3">
                   <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-green-600" />
-                    <span className="text-sm text-gray-600 font-medium">Secure Payment</span>
+                    <Shield className="w-5 h-5 text-success" />
+                    <span className="text-sm text-muted-foreground font-medium">Secure Payment</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Lock className="w-5 h-5 text-green-600" />
-                    <span className="text-sm text-gray-600 font-medium">Data Protected</span>
+                    <Lock className="w-5 h-5 text-success" />
+                    <span className="text-sm text-muted-foreground font-medium">Data Protected</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-green-600" />
-                    <span className="text-sm text-gray-600 font-medium">Instant Confirmation</span>
+                    <Check className="w-5 h-5 text-success" />
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Instant Confirmation
+                    </span>
                   </div>
                 </GlassContent>
               </GlassCard>
 
               {/* Policy Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                <p className="text-xs text-blue-900 font-medium leading-relaxed">
+              <div className="bg-info/10 border border-info/20 rounded-2xl p-4">
+                <p className="text-xs text-info font-medium leading-relaxed">
                   <span className="font-bold">Free cancellation</span> up to 48 hours before
                   departure. Your booking hold will expire in 10 minutes.
                 </p>
@@ -661,10 +663,10 @@ function TourPaymentForm(props: { bookingId: string; total: number; currency: st
       />
 
       {!paymentReady && !error && (
-        <div className="text-xs text-gray-500">Loading secure payment form...</div>
+        <div className="text-xs text-muted-foreground">Loading secure payment form...</div>
       )}
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && <div className="text-sm text-destructive">{error}</div>}
 
       <Button
         className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-lg shadow-xl shadow-primary/25"
