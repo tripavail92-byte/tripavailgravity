@@ -137,6 +137,7 @@ function App() {
             {/* Back-compat: old path treated as a collection */}
             <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
             <Route path="/packages/:id" element={<PackageDetailsPage />} />
+            <Route path="/stays/:id" element={<PackageDetailsPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/hotel/:id" element={<HotelDetailsPage />} />
             <Route path="/tours/:id" element={<TourDetailsPage />} />

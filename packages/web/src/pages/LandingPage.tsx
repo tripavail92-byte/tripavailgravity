@@ -22,6 +22,7 @@ import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
+import { UnifiedExperienceCard } from '@/components/home/UnifiedExperienceCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -29,9 +30,10 @@ import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
-import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
-import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour } from '@/queries/tourQueries'
+import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage, useHomepageMergePackages } from '@/queries/packageQueries'
+import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour, useHomepageMergeTours } from '@/queries/tourQueries'
 import { useQueryClient } from '@tanstack/react-query'
+import type { UnifiedExperience } from '@/types/experience'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
@@ -122,8 +124,8 @@ export default function LandingPage() {
 
               {/* Curated Rows (real Supabase data) */}
               <div className="space-y-12">
-                <CuratedPackagesRow kind="new_arrivals" title="New Arrivals" />
-                <CuratedPackagesRow kind="top_rated" title="Top Rated" />
+                <MixedHomepageRow kind="new" title="New Arrivals" />
+                <MixedHomepageRow kind="top-rated" title="Top Rated" />
                 <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
                 <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
                 <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
@@ -193,6 +195,107 @@ export default function LandingPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+function sortByCreatedAtDesc(items: UnifiedExperience[]) {
+  return items
+    .slice()
+    .sort((a, b) => {
+      const at = Date.parse(a.created_at)
+      const bt = Date.parse(b.created_at)
+      return (Number.isFinite(bt) ? bt : 0) - (Number.isFinite(at) ? at : 0)
+    })
+}
+
+function sortByRatingDescNullsLast(items: UnifiedExperience[]) {
+  return items
+    .slice()
+    .sort((a, b) => {
+      const ar = typeof a.rating === 'number' ? a.rating : null
+      const br = typeof b.rating === 'number' ? b.rating : null
+      if (ar == null && br == null) return 0
+      if (ar == null) return 1
+      if (br == null) return -1
+      return br - ar
+    })
+}
+
+function MixedHomepageRow({
+  kind,
+  title,
+}: {
+  kind: 'new' | 'top-rated'
+  title: string
+}) {
+  const { data: hotelPackages = [], isLoading: hotelsLoading, isError: hotelsError } = useHomepageMergePackages(48)
+  const { data: tours = [], isLoading: toursLoading, isError: toursError } = useHomepageMergeTours(48)
+
+  const isLoading = hotelsLoading || toursLoading
+  const isError = hotelsError || toursError
+
+  const merged = useMemo(() => {
+    const combined = [...hotelPackages, ...tours]
+    if (kind === 'new') return sortByCreatedAtDesc(combined).slice(0, 8)
+    return sortByRatingDescNullsLast(combined).slice(0, 8)
+  }, [hotelPackages, tours, kind])
+
+  const viewAllHref = kind === 'new' ? '/explore?filter=new' : '/explore?filter=top-rated'
+
+  return (
+    <section>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
+          <p className="text-muted-foreground mt-1">Curated from live listings</p>
+        </div>
+
+        <Button asChild variant="link" className="px-0">
+          <Link to={viewAllHref}>View All</Link>
+        </Button>
+      </div>
+
+      <div className="mt-6">
+        {isLoading ? (
+          <HorizontalPreviewSlider>
+            {[0, 1, 2, 3].map((i) => (
+              <Card
+                key={i}
+                className="rounded-2xl border border-border/60 overflow-hidden min-w-[280px] flex-shrink-0"
+              >
+                <div className="aspect-[4/5]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex items-center justify-between pt-2">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-9 w-24 rounded-md" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </HorizontalPreviewSlider>
+        ) : isError ? (
+          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            Unable to load experiences right now.
+          </Card>
+        ) : merged.length > 0 ? (
+          <HorizontalPreviewSlider>
+            {merged.map((experience) => (
+              <div key={`${experience.type}-${experience.id}`} className="min-w-[280px] flex-shrink-0">
+                <UnifiedExperienceCard experience={experience} />
+              </div>
+            ))}
+          </HorizontalPreviewSlider>
+        ) : (
+          <Card className="rounded-2xl border border-border/60 p-6">
+            <div className="text-sm text-muted-foreground">No experiences available yet.</div>
+          </Card>
+        )}
+      </div>
+    </section>
   )
 }
 

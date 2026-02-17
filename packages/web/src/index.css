@@ -235,6 +235,16 @@
 /* TripAvail Design System - Extracted from extracted_tripavail */
 @layer utilities {
 
+  /* Unified experience type badges (homepage mixed rows)
+     Uses existing category tokens (no new colors). */
+  .bg-hotel-primary {
+    background-color: hsl(var(--category-luxury));
+  }
+
+  .bg-tour-primary {
+    background-color: hsl(var(--category-adventure));
+  }
+
   /* Rose Primary Gradient */
   .gradient-rose-primary {
     background: linear-gradient(135deg, #e11d48 0%, #fb7185 100%) !important;

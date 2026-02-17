@@ -1,20 +1,106 @@
 import { Briefcase, Mountain, Palmtree, Search, Tent, Waves } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
+import { UnifiedExperienceCard } from '@/components/home/UnifiedExperienceCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
-import { useFeaturedPackages } from '@/queries/packageQueries'
-import { useFeaturedTours } from '@/queries/tourQueries'
+import { useFeaturedPackages, useHomepageMergePackages } from '@/queries/packageQueries'
+import { useFeaturedTours, useHomepageMergeTours } from '@/queries/tourQueries'
+import type { UnifiedExperience } from '@/types/experience'
 
 export default function Homepage() {
+  const [searchParams] = useSearchParams()
+  const filter = searchParams.get('filter')
+
+  const showMergedList = filter === 'new' || filter === 'top-rated'
+
+  const { data: mergeHotels = [], isLoading: mergeHotelsLoading, isError: mergeHotelsError } = useHomepageMergePackages(
+    showMergedList ? 96 : 1,
+    { enabled: showMergedList },
+  )
+  const { data: mergeTours = [], isLoading: mergeToursLoading, isError: mergeToursError } = useHomepageMergeTours(
+    showMergedList ? 96 : 1,
+    { enabled: showMergedList },
+  )
+
   // ✅ Enterprise: Query hooks instead of manual useEffect
   const { data: packages = [], isLoading: packagesLoading, error: packagesError } = useFeaturedPackages()
   const { data: tours = [], isLoading: toursLoading, error: toursError } = useFeaturedTours()
 
   const loading = packagesLoading || toursLoading
+
+  const mergedList = useMemo(() => {
+    if (!showMergedList) return [] as UnifiedExperience[]
+    const combined = [...mergeHotels, ...mergeTours]
+    if (filter === 'new') {
+      return combined
+        .slice()
+        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+    }
+
+    return combined
+      .slice()
+      .sort((a, b) => {
+        const ar = typeof a.rating === 'number' ? a.rating : null
+        const br = typeof b.rating === 'number' ? b.rating : null
+        if (ar == null && br == null) return 0
+        if (ar == null) return 1
+        if (br == null) return -1
+        return br - ar
+      })
+  }, [showMergedList, filter, mergeHotels, mergeTours])
+
+  if (showMergedList) {
+    const title = filter === 'new' ? 'New Arrivals' : 'Top Rated'
+    const isMergedLoading = mergeHotelsLoading || mergeToursLoading
+    const isMergedError = mergeHotelsError || mergeToursError
+
+    return (
+      <div className="bg-background">
+        <main className="max-w-7xl mx-auto px-4 py-10">
+          <div className="flex items-end justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">{title}</h1>
+              <p className="text-muted-foreground font-medium">Hotel stays and tour experiences</p>
+            </div>
+            <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
+              <Link to="/explore">Back to Explore</Link>
+            </Button>
+          </div>
+
+          {isMergedLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="aspect-[4/5] bg-muted/60 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          ) : isMergedError ? (
+            <div className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+              Unable to load experiences right now.
+            </div>
+          ) : mergedList.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mergedList.map((experience) => (
+                <UnifiedExperienceCard
+                  key={`${experience.type}-${experience.id}`}
+                  experience={experience}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+              No experiences available yet.
+            </div>
+          )}
+        </main>
+      </div>
+    )
+  }
 
   const categories = [
     { name: 'Adventure', icon: Mountain },

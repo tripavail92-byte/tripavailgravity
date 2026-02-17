@@ -16,7 +16,7 @@ export function HorizontalPreviewSlider({ children, className }: HorizontalPrevi
     const el = scrollerRef.current
     if (!el) return
 
-    const amount = Math.max(280, Math.round(el.clientWidth * 0.9))
+    const amount = Math.max(280, el.clientWidth)
     el.scrollBy({
       left: direction === 'left' ? -amount : amount,
       behavior: 'smooth',
@@ -48,7 +48,7 @@ export function HorizontalPreviewSlider({ children, className }: HorizontalPrevi
 
       <div
         ref={scrollerRef}
-        className="flex gap-6 overflow-x-auto pb-2 scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex overflow-x-auto gap-4 pb-2 scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>

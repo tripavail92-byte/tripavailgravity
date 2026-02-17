@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Database } from '@/types/database.types'
+import type { UnifiedExperience } from '@/types/experience'
 import { supabase } from '@/lib/supabase'
 
 type Tour = Database['public']['Tables']['tours']['Row']
@@ -26,6 +27,7 @@ export const tourKeys = {
   curated: () => [...tourKeys.all, 'curated'] as const,
   category: (category: string) => [...tourKeys.curated(), 'category', category] as const,
   pakistanNorthern: () => [...tourKeys.curated(), 'pakistan_northern'] as const,
+  homepageMerge: (take: number) => [...tourKeys.all, 'homepage_merge', take] as const,
 }
 
 export type TourCategoryKind = 'adventure-trips' | 'hiking-trips'
@@ -49,6 +51,58 @@ export interface MappedTour {
   rating: number
   images: string[]
   badge: string
+}
+
+function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
+  const images = Array.isArray(tour.images)
+    ? tour.images
+    : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+
+  const price = Number(tour.price)
+  const rating = typeof tour.rating === 'number' ? tour.rating : tour.rating != null ? Number(tour.rating) : null
+
+  return {
+    id: tour.id,
+    title: tour.title || 'Unnamed Tour',
+    price: Number.isFinite(price) && price > 0 ? price : null,
+    images,
+    rating: Number.isFinite(rating as number) ? (rating as number) : null,
+    reviewCount: null,
+    created_at: tour.created_at,
+    type: 'tour',
+  }
+}
+
+async function fetchHomepageMergeTours(take: number): Promise<UnifiedExperience[]> {
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,title,price,rating,images,created_at')
+    .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('created_at', { ascending: false })
+    .limit(take)
+
+  if (error) {
+    console.error('[tourQueries] Error fetching homepage merge tours:', error)
+    throw error
+  }
+
+  return ((data || []) as any[]).map(mapTourRowToUnifiedExperience)
+}
+
+export function useHomepageMergeTours(
+  take: number,
+  options?: Omit<UseQueryOptions<UnifiedExperience[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: tourKeys.homepageMerge(take),
+    queryFn: () => fetchHomepageMergeTours(take),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
 }
 
 /**

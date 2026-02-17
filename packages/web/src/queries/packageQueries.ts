@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Database } from '@/types/database.types'
+import type { UnifiedExperience } from '@/types/experience'
 import { supabase } from '@/lib/supabase'
 
 type Package = Database['public']['Tables']['packages']['Row']
@@ -28,6 +29,7 @@ export const packageKeys = {
   featured: () => [...packageKeys.all, 'featured'] as const,
   curated: () => [...packageKeys.all, 'curated'] as const,
   curatedList: (kind: CuratedPackageKind) => [...packageKeys.curated(), kind] as const,
+  homepageMerge: (take: number) => [...packageKeys.all, 'homepage_merge', take] as const,
 }
 
 export type CuratedPackageKind =
@@ -162,6 +164,96 @@ function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
     totalOriginal: totalOriginal ?? undefined,
     totalDiscounted: totalDiscounted ?? undefined,
   }
+}
+
+function mapPackageRowToUnifiedExperience(pkg: any): UnifiedExperience {
+  const hotel = pkg?.hotels
+
+  const images =
+    pkg.media_urls && Array.isArray(pkg.media_urls) && pkg.media_urls.length > 0
+      ? pkg.media_urls
+      : pkg.cover_image
+        ? [pkg.cover_image]
+        : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080']
+
+  const basePrice = safeNumber(pkg.base_price_per_night)
+
+  const derivedPriceFromRoomsConfig = (() => {
+    if (!pkg.rooms_config || typeof pkg.rooms_config !== 'object') return null
+    const prices = Object.values(pkg.rooms_config as Record<string, any>)
+      .map((r: any) => safeNumber(r?.price) ?? 0)
+      .filter((p) => p > 0)
+    return prices.length ? Math.min(...prices) : null
+  })()
+
+  const price = basePrice ?? derivedPriceFromRoomsConfig
+  const { totalOriginal, totalDiscounted } = computePriceTotals(price, pkg.discount_offers)
+
+  const hotelRating = safeNumber(hotel?.rating)
+  const rawPackageRating = safeNumber(pkg.rating)
+  const rating = rawPackageRating ?? hotelRating
+
+  const reviewCount = safeNumber(pkg.review_count) ?? safeNumber(hotel?.review_count)
+
+  return {
+    id: pkg.id,
+    title: pkg.name || 'Unnamed Package',
+    price: typeof totalDiscounted === 'number' ? totalDiscounted : price,
+    originalPrice: typeof totalOriginal === 'number' ? totalOriginal : undefined,
+    images,
+    rating,
+    reviewCount,
+    created_at: pkg.created_at,
+    type: 'hotel',
+  }
+}
+
+async function fetchHomepageMergePackages(take: number): Promise<UnifiedExperience[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      name,
+      cover_image,
+      media_urls,
+      rooms_config,
+      base_price_per_night,
+      discount_offers,
+      rating,
+      review_count,
+      created_at,
+      hotels (
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('created_at', { ascending: false })
+    .limit(take)
+
+  if (error) {
+    console.error('[packageQueries] Error fetching homepage merge packages:', error)
+    throw error
+  }
+
+  return ((data || []) as any[]).map(mapPackageRowToUnifiedExperience)
+}
+
+export function useHomepageMergePackages(
+  take: number,
+  options?: Omit<UseQueryOptions<UnifiedExperience[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: packageKeys.homepageMerge(take),
+    queryFn: () => fetchHomepageMergePackages(take),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
 }
 
 async function fetchCuratedPackages(kind: CuratedPackageKind, take: number = 8): Promise<MappedPackage[]> {
