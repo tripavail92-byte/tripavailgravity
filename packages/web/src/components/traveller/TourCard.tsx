@@ -55,14 +55,6 @@ export function TourCard({
             <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
 
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              <GlassBadge
-                variant="outline"
-                size="sm"
-                className="glass-id-badge glass-id-badge-tour rounded-full px-3 py-1 text-white font-medium"
-              >
-                Tour Package
-              </GlassBadge>
-
               {isFeatured ? (
                 <Badge className="bg-primary/80 text-primary-foreground border border-primary/40 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
                   Featured

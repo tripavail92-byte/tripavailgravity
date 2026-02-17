@@ -79,11 +79,6 @@
     --text-link: 350.5 100% 60%;
     --text-link-hover: 350.5 100% 55%;
 
-    /* Role color anchors (for cross-type UI elements) */
-    --role-hotel-manager-1: 274 70% 60%;
-    --role-hotel-manager-2: 186 100% 50%;
-    --role-tour-operator-1: 4 98% 66%;
-    --role-tour-operator-2: 4 98% 76%;
   }
 
   /* ============================================ */
@@ -240,32 +235,6 @@
 
 /* TripAvail Design System - Extracted from extracted_tripavail */
 @layer utilities {
-
-  /* Premium glass ID badge (type identification on cards) */
-  .glass-id-badge {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-  }
-
-  .glass-id-badge-hotel {
-    /* Hotel Manager gradient tint (existing role colors) */
-    background: linear-gradient(
-      135deg,
-      hsl(var(--role-hotel-manager-1) / 0.26) 0%,
-      hsl(var(--role-hotel-manager-2) / 0.18) 100%
-    );
-  }
-
-  .glass-id-badge-tour {
-    /* Tour Operator tint (existing role colors) */
-    background: linear-gradient(
-      135deg,
-      hsl(var(--role-tour-operator-1) / 0.24) 0%,
-      hsl(var(--role-tour-operator-2) / 0.16) 100%
-    );
-  }
 
   /* Unified experience type badges (homepage mixed rows)
      Uses existing category tokens (no new colors). */
