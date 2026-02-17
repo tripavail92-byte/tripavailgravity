@@ -1,16 +1,16 @@
 import {
   AlertCircle,
-  ArrowLeft,
   Calendar,
   Camera,
   Check,
+  ChevronLeft,
   Clock,
   Heart,
   Info,
   Loader2,
   Map,
   MapPin,
-  Share2,
+  Share,
   ShieldCheck,
   Star,
   Users,
@@ -20,9 +20,10 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { GlassBadge } from '@/components/ui/glass'
+import { Card } from '@/components/ui/card'
 import { tourBookingService } from '@/features/booking'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 
@@ -33,7 +34,6 @@ export default function TourDetailsPage() {
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'itinerary' | 'policies'>('overview')
 
   useEffect(() => {
     const fetchTourDetails = async () => {
@@ -120,202 +120,200 @@ export default function TourDetailsPage() {
     )
   }
 
+  const tourImages = [
+    tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
+    tour.images?.[1] || 'https://images.unsplash.com/photo-1512100356956-c122ecc598a8?w=800',
+    tour.images?.[2] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800',
+    tour.images?.[3] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800',
+    tour.images?.[4] || 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800',
+  ]
+
   return (
-    <div className="bg-background min-h-screen pb-20">
-      {/* Top Navigation */}
-      <div className="sticky top-0 z-50 bg-background border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-muted/60 rounded-full transition-colors"
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header / Nav (match Hotel details layout) */}
+      <header className="fixed top-16 left-0 right-0 h-16 bg-background z-40 border-b border-border/50 flex items-center justify-between px-4 lg:px-20">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full">
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Share className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Heart className="w-4 h-4" />
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto max-w-6xl pt-36 px-4 lg:px-6">
+        {/* Title Section */}
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge variant="secondary" className="font-semibold">
+              {tour.tour_type}
+            </Badge>
+            <Badge variant="outline" className="font-semibold">
+              Verified Operator
+            </Badge>
+          </div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-2xl md:text-3xl font-bold mb-2 break-words"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-muted/60 rounded-full transition-colors">
-              <Share2 className="w-5 h-5" />
-            </button>
-            <button className="p-2 hover:bg-muted/60 rounded-full transition-colors">
-              <Heart className="w-5 h-5" />
-            </button>
+            {tour.title}
+          </motion.h1>
+
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-primary text-primary" />
+              <span className="font-medium text-foreground">{tour.rating}</span>
+              <span className="underline cursor-pointer">{tour.review_count} reviews</span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              <span className="underline cursor-pointer">
+                {tour.location.city}, {tour.location.country}
+              </span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{tour.duration}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Hero Image Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] md:h-[500px]">
-          <div className="md:col-span-2 rounded-3xl overflow-hidden shadow-xl">
-            <img
-              src={
-                tour.images?.[0] ||
-                'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200'
-              }
+        {/* Image Gallery Grid (Airbnb Style) */}
+        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-2 h-[300px] md:h-[450px] rounded-2xl overflow-hidden mb-10 relative group">
+          <div className="col-span-2 row-span-2 relative cursor-pointer">
+            <ImageWithFallback
+              src={tourImages[0]}
               alt={tour.title}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
           </div>
-          <div className="hidden md:flex flex-col gap-4">
-            <div className="flex-1 rounded-3xl overflow-hidden shadow-lg">
-              <img
-                src={
-                  tour.images?.[1] ||
-                  'https://images.unsplash.com/photo-1512100356956-c122ecc598a8?w=800'
-                }
-                alt="Tour detail 1"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-1 rounded-3xl overflow-hidden shadow-lg relative cursor-pointer group">
-              <img
-                src={
-                  tour.images?.[2] ||
-                  'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800'
-                }
-                alt="Tour detail 2"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 glass-overlay flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-8 h-8 text-white mb-2" />
-              </div>
-            </div>
+
+          <div className="hidden md:block relative cursor-pointer">
+            <ImageWithFallback
+              src={tourImages[1]}
+              alt="Tour photo 2"
+              className="w-full h-full object-cover hover:brightness-95 transition-all"
+            />
+          </div>
+          <div className="hidden md:block relative cursor-pointer rounded-tr-2xl">
+            <ImageWithFallback
+              src={tourImages[2]}
+              alt="Tour photo 3"
+              className="w-full h-full object-cover hover:brightness-95 transition-all"
+            />
+          </div>
+          <div className="hidden md:block relative cursor-pointer">
+            <ImageWithFallback
+              src={tourImages[3]}
+              alt="Tour photo 4"
+              className="w-full h-full object-cover hover:brightness-95 transition-all"
+            />
+          </div>
+          <div className="hidden md:block relative cursor-pointer rounded-br-2xl">
+            <ImageWithFallback
+              src={tourImages[4]}
+              alt="Tour photo 5"
+              className="w-full h-full object-cover hover:brightness-95 transition-all"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="absolute bottom-4 right-4 shadow-md opacity-90 hover:opacity-100"
+            >
+              <span className="flex items-center gap-2">
+                <Camera className="w-4 h-4" />
+                Show all photos
+              </span>
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4">
+        {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column: Details */}
-          <div className="lg:col-span-2 space-y-10">
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <GlassBadge variant="primary" size="default" className="font-bold">
-                  {tour.tour_type}
-                </GlassBadge>
-                <GlassBadge variant="success" size="default" className="font-bold">
-                  Verified Operator
-                </GlassBadge>
+          <div className="lg:col-span-2 space-y-8">
+            {/* Operator Info (hotel-style host row) */}
+            <div className="flex items-center justify-between border-b pb-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-1">Hosted by Premium Tour Operator</h2>
+                <p className="text-muted-foreground text-sm">Verified Operator • Small groups</p>
               </div>
-              <h1 className="text-4xl font-black text-foreground leading-tight">{tour.title}</h1>
-              <div className="flex flex-wrap items-center gap-6 text-muted-foreground font-medium">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  <span>
-                    {tour.location.city}, {tour.location.country}
-                  </span>
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center font-bold">
+                {(tour.operator_id?.slice(0, 1) || 'T').toUpperCase()}
+              </div>
+            </div>
+
+            {/* Highlights */}
+            <div className="border-b pb-6">
+              <h3 className="text-xl font-semibold mb-4">Experience highlights</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {tour.highlights.map((h, i) => (
+                  <div key={i} className="flex items-start gap-3 text-foreground/80">
+                    <Check className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <span className="leading-relaxed">{h}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="border-b pb-6">
+              <h3 className="text-xl font-semibold mb-3">Description</h3>
+              <p className="text-foreground/80 leading-relaxed">{tour.description}</p>
+              <Button variant="link" className="px-0 mt-2 font-semibold underline">
+                Show more
+              </Button>
+            </div>
+
+            {/* Inclusions / Exclusions */}
+            <div className="border-b pb-6">
+              <h3 className="text-xl font-semibold mb-4">What&apos;s included</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  {tour.inclusions.map((inc, i) => (
+                    <div key={i} className="flex items-center gap-3 text-foreground/80">
+                      <Check className="w-5 h-5 text-muted-foreground" />
+                      <span>{inc}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <span>{tour.duration}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-warning fill-current" />
-                  <span className="text-foreground font-bold">{tour.rating}</span>
-                  <span className="text-sm font-medium">({tour.review_count} reviews)</span>
+                <div className="space-y-3">
+                  <h4 className="text-base font-semibold">Exclusions</h4>
+                  {tour.exclusions.map((exc, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 text-muted-foreground line-through"
+                    >
+                      <X className="w-5 h-5" />
+                      <span>{exc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-border/50">
-              {[
-                { id: 'overview', label: 'Overview', icon: Info },
-                { id: 'itinerary', label: 'Itinerary', icon: Map },
-                { id: 'policies', label: 'Policies', icon: ShieldCheck },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 ${
-                    activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground/70 hover:text-foreground'
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            <div className="py-6 min-h-[400px]">
-              {activeTab === 'overview' && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-10"
-                >
-                  <div className="space-y-4">
-                    <h3 className="text-2xl font-bold text-foreground">Experience Highlights</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {tour.highlights.map((h, i) => (
-                        <div key={i} className="flex items-start gap-3 bg-muted/50 p-4 rounded-2xl">
-                          <div className="bg-primary/10 p-2 rounded-xl">
-                            <Check className="w-4 h-4 text-primary" />
-                          </div>
-                          <span className="text-foreground/90 font-medium">{h}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="max-w-none space-y-4">
-                    <h3 className="text-2xl font-bold text-foreground">Description</h3>
-                    <p className="text-muted-foreground leading-relaxed font-medium">
-                      {tour.description}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-border/50">
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-bold text-foreground">What's Included</h4>
-                      <ul className="space-y-3">
-                        {tour.inclusions.map((inc, i) => (
-                          <li
-                            key={i}
-                            className="flex items-center gap-3 text-muted-foreground font-medium"
-                          >
-                            <Check className="w-4 h-4 text-success" />
-                            {inc}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-bold text-foreground">Exclusions</h4>
-                      <ul className="space-y-3">
-                        {tour.exclusions.map((exc, i) => (
-                          <li
-                            key={i}
-                            className="flex items-center gap-3 text-muted-foreground/70 font-medium line-through"
-                          >
-                            <X className="w-4 h-4 text-error" />
-                            {exc}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'itinerary' && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="space-y-8"
-                >
-                  {tour.itinerary?.map((day: any, idx: number) => (
+            {/* Itinerary */}
+            {tour.itinerary?.length ? (
+              <div className="border-b pb-6">
+                <h3 className="text-xl font-semibold mb-4">Itinerary</h3>
+                <div className="space-y-8">
+                  {tour.itinerary.map((day: any, idx: number) => (
                     <div
                       key={idx}
                       className="relative pl-10 pb-8 last:pb-0 border-l-2 border-border/50 last:border-transparent"
                     >
                       <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-lg font-bold text-foreground">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <h4 className="text-lg font-semibold text-foreground">
                             Day {day.day}: {day.title}
                           </h4>
                           <Badge variant="outline" className="border-border text-muted-foreground">
@@ -326,17 +324,15 @@ export default function TourDetailsPage() {
                           {day.activities?.map((act: any, ai: number) => (
                             <div
                               key={ai}
-                              className="bg-background border border-border/50 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+                              className="bg-background border border-border/50 p-4 rounded-2xl shadow-sm"
                             >
                               <div className="flex items-start gap-4">
-                                <div className="bg-primary/5 p-3 rounded-xl text-primary font-bold text-xs">
+                                <div className="bg-muted/40 p-3 rounded-xl text-foreground font-semibold text-xs">
                                   {act.time}
                                 </div>
-                                <div className="flex-1 space-y-1">
-                                  <p className="font-bold text-foreground">{act.activity}</p>
-                                  <p className="text-sm text-muted-foreground font-medium">
-                                    {act.description}
-                                  </p>
+                                <div className="flex-1 space-y-1 min-w-0">
+                                  <p className="font-semibold text-foreground">{act.activity}</p>
+                                  <p className="text-sm text-muted-foreground">{act.description}</p>
                                 </div>
                               </div>
                             </div>
@@ -345,139 +341,106 @@ export default function TourDetailsPage() {
                       </div>
                     </div>
                   ))}
-                </motion.div>
-              )}
-            </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          {/* Right Column: Booking Card */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-20 z-30 space-y-6">
-              <div className="bg-background border border-border/50 rounded-[2.5rem] p-8 shadow-lg space-y-6">
-                <div className="flex items-baseline justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-muted-foreground/70 uppercase tracking-widest">
-                      Price per person
-                    </p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-foreground">
-                        {tour.currency} {tour.price}
-                      </span>
-                      <span className="text-sm font-medium text-muted-foreground">all inclusive</span>
-                    </div>
-                  </div>
-                  <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-black">
-                    BEST VALUE
-                  </div>
+          {/* Right Column: Booking Card (Sticky) */}
+          <div className="relative">
+            <Card className="sticky top-20 z-30 p-6 shadow-lg border-border/50">
+              <div className="flex justify-between items-end mb-6 gap-4">
+                <div>
+                  <span className="text-2xl font-bold">
+                    {tour.currency} {tour.price}
+                  </span>
+                  <span className="text-muted-foreground"> / person</span>
                 </div>
-
-                <div className="space-y-4">
-                  {/* Schedule Information */}
-                  <div className="p-4 bg-info/10 rounded-2xl border border-info/20 space-y-3">
-                    {schedule ? (
-                      <>
-                        <div className="flex items-start gap-3">
-                          <Calendar className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-info uppercase tracking-widest mb-1">
-                              Departure Date
-                            </p>
-                            <p className="text-foreground font-bold text-sm">
-                              {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
-                            </p>
-                            <p className="text-xs text-muted-foreground font-medium mt-1">
-                              Returns: {formatDate(schedule.end_time)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-px bg-info/20" />
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2 text-info font-bold uppercase text-[10px] tracking-wider">
-                            <Users className="w-4 h-4" />
-                            Seats Available
-                          </span>
-                          <span className="text-foreground font-black text-lg">
-                            {availableSlots !== null ? availableSlots : '—'}
-                          </span>
-                        </div>
-                        {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
-                          <div className="flex items-center gap-2 p-2 bg-warning/10 rounded-lg border border-warning/20">
-                            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                            <p className="text-xs text-warning font-medium">
-                              Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
-                        <AlertCircle className="w-5 h-5 text-warning" />
-                        <p className="text-sm text-warning font-medium">
-                          No departure dates available
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={handleBookNow}
-                    disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
-                    className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {!schedule
-                      ? 'No Dates Available'
-                      : schedule && availableSlots === 0
-                        ? 'Sold Out'
-                        : 'Continue to Booking'}
-                  </Button>
-
-                  <p className="text-center text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest">
-                    Free cancellation up to 48h before
-                  </p>
-                </div>
-
-                <div className="pt-6 border-t border-border/50 space-y-4">
-                  <h5 className="text-sm font-bold text-foreground">Why choose this tour?</h5>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                      <div className="w-6 h-6 bg-success/10 rounded-full flex items-center justify-center">
-                        <ShieldCheck className="w-3.5 h-3.5 text-success" />
-                      </div>
-                      Secure booking with instant confirmation
-                    </div>
-                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                      <div className="w-6 h-6 bg-info/10 rounded-full flex items-center justify-center">
-                        <Info className="w-3.5 h-3.5 text-info" />
-                      </div>
-                      Small group guarantee (max {tour.max_participants})
-                    </div>
-                  </div>
+                <div className="flex items-center gap-1 text-sm">
+                  <Star className="w-3 h-3 fill-primary text-primary" />
+                  <span className="font-semibold">{tour.rating}</span>
+                  <span className="text-muted-foreground">({tour.review_count})</span>
                 </div>
               </div>
 
-              {/* Operator Info */}
-              <div className="bg-foreground rounded-[2rem] p-6 text-background flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-background/20 flex items-center justify-center font-bold text-xl">
-                  {tour.operator_id?.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-background/50 uppercase tracking-widest">
-                    Hosted by
-                  </p>
-                  <h6 className="font-bold truncate">Premium Tour Operator</h6>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary font-bold hover:bg-background/10 p-0 h-auto"
-                >
-                  Contact
-                </Button>
+              {/* Schedule */}
+              <div className="border rounded-xl mb-4 overflow-hidden">
+                {schedule ? (
+                  <>
+                    <div className="p-3 border-b hover:bg-muted/50">
+                      <div className="text-[10px] uppercase font-bold text-muted-foreground">
+                        Departure
+                      </div>
+                      <div className="text-sm flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-foreground">
+                          {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Returns: {formatDate(schedule.end_time)}
+                      </div>
+                    </div>
+                    <div className="p-3 hover:bg-muted/50">
+                      <div className="text-[10px] uppercase font-bold text-muted-foreground">
+                        Seats available
+                      </div>
+                      <div className="text-sm flex justify-between items-center">
+                        <span className="text-foreground font-medium">Availability</span>
+                        <span className="font-semibold text-foreground">
+                          {availableSlots !== null ? availableSlots : '—'}
+                        </span>
+                      </div>
+                      {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <AlertCircle className="w-4 h-4" />
+                          <span>
+                            Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>No departure dates available</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+
+              <Button
+                onClick={handleBookNow}
+                disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
+                className="w-full bg-primary hover:bg-primary/90 text-lg py-6 mb-4"
+              >
+                {!schedule
+                  ? 'No Dates Available'
+                  : schedule && availableSlots === 0
+                    ? 'Sold Out'
+                    : 'Continue to Booking'}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground mb-4">
+                Free cancellation up to 48h before
+              </div>
+
+              <div className="pt-4 border-t border-border/50 space-y-3 text-sm">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Secure booking with instant confirmation</span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>Small group guarantee (max {tour.max_participants})</span>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
