@@ -52,6 +52,23 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
     return false
   }
 
+  // ❌ DON'T RETRY: Supabase PGRST error codes (client errors)
+  if (code && typeof code === 'string') {
+    // PGRST116: Not found (single row expected, zero returned)
+    // PGRST204: No content
+    // PGRST301: Moved permanently
+    if (code.startsWith('PGRST1') || code.startsWith('PGRST2') || code.startsWith('PGRST3')) {
+      return false
+    }
+    // PostgreSQL error codes that shouldn't retry
+    // 23505: Unique violation
+    // 42501: Insufficient privilege
+    // 22P02: Invalid text representation
+    if (code === '23505' || code === '42501' || code.startsWith('22')) {
+      return false
+    }
+  }
+
   // ✅ RETRY: Network errors, timeouts, server errors (5xx)
   if (
     !status || // Network error

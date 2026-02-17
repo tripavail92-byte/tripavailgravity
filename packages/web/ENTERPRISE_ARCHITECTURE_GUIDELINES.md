@@ -53,39 +53,89 @@ Supabase Client (@/lib/supabase.ts)
 
 Query keys MUST include all parameters that affect the query result.
 
+**❌ Object Identity Trap (CRITICAL BUG):**
 ```typescript
-// ❌ BAD: Missing filter inputs
-const key = packageKeys.list()
+// BAD: Object gets new identity every render → refetch loop
+const key = packageKeys.list({ city, guests, page })
 
-// ✅ GOOD: All filters encoded in key
-const key = packageKeys.list({ 
-  city: 'Dubai', 
-  dates: '2024-03-01',
-  guests: 2,
-  sort: 'price_asc',
-  page: 1 
-})
+// Every render: new object → React Query sees new key → refetches
 ```
 
-**Why:** Cache must differentiate between different filter combinations. Otherwise:
-- User filters by "Dubai" → caches as `list()`
-- User filters by "Paris" → gets Dubai results from cache
-
-**Already Implemented:**
+**✅ CORRECT: Serialize Primitives**
 ```typescript
 // packages/web/src/queries/packageQueries.ts
 export const packageKeys = {
-  list: (filters: Record<string, any>) => [...packageKeys.lists(), filters] as const,
+  list: (filters?: { city?: string; guests?: number; page?: number }) => 
+    [
+      ...packageKeys.lists(), 
+      filters?.city ?? '', 
+      filters?.guests ?? 0, 
+      filters?.page ?? 1
+    ] as const,
 }
-```
 
-**TODO:** Update all `useQuery` calls to pass filters:
-```typescript
+// Usage - no object identity issues
 const { data } = useQuery({
-  queryKey: packageKeys.list({ city, dates, guests, sort, page }),
-  queryFn: () => fetchPackages({ city, dates, guests, sort, page })
+  queryKey: packageKeys.list({ city, guests, page }), // ✅ Serialized to primitives
+  queryFn: () => fetchPackages({ city, guests, page })
 })
 ```
+
+**Why Primitive Serialization:**
+- Query key: `['packages', 'list', 'Dubai', 2, 1]` 
+- Same inputs = same array = same reference = no refetch
+- Object inputs = new reference every render = refetch loop
+
+**Already Implemented:**
+- `packages/web/src/queries/packageQueries.ts` - Serializes `city`, `dates`, `guests`, `sort`, `page`
+- `packages/web/src/queries/tourQueries.ts` - Serializes `location`, `dates`, `guests`, `tourType`, `page`
+- `packages/web/src/queries/availabilityQueries.ts` - Availability scoped by schedule + dates
+
+---
+
+## 🎯 Availability Queries: Schedule-Scoped & Inventory-Critical
+
+**Rule: Availability must be scoped to prevent cache bleed**
+
+**❌ WRONG: Global availability cache**
+```typescript
+// BAD: No schedule scoping
+queryKey: ['availability']
+
+// Risk: User checks Schedule A, cache stores availability
+// User navigates to Schedule B, gets stale Schedule A data
+// Books unavailable slot → transaction conflict
+```
+
+**✅ CORRECT: Schedule-scoped availability**
+```typescript
+// packages/web/src/queries/availabilityQueries.ts
+export const availabilityKeys = {
+  packageAvailability: (packageId: string, checkIn: string, checkOut: string) =>
+    ['availability', 'package', packageId, checkIn, checkOut] as const,
+  
+  tourSlots: (scheduleId: string) =>
+    ['availability', 'tour-slots', scheduleId] as const,
+}
+
+// Usage
+const { data: isAvailable } = usePackageAvailability(packageId, checkIn, checkOut)
+const { data: slotsAvailable } = useTourAvailableSlots(scheduleId)
+```
+
+**StaleTime: 15-20 seconds** (inventory is real-time critical)
+
+**Production Strategy:**
+1. **Query Cache:** 15-20 second staleTime for instant UX
+2. **Realtime Subscriptions:** Listen to `booking_holds` table for inventory changes
+3. **Backend Transaction:** DB uses `select ... for update` row locks
+4. **Optimistic UI:** Show "Confirming..." state during booking
+5. **Conflict Handling:** Gracefully handle 409 errors, refresh availability
+
+**Already Implemented:**
+- `packages/web/src/queries/availabilityQueries.ts` - Schedule-scoped query hooks
+- 15-20 second staleTime for inventory freshness
+- Prefetch utilities for availability pre-loading
 
 ---
 

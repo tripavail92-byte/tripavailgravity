@@ -8,11 +8,21 @@ type Hotel = Database['public']['Tables']['hotels']['Row']
 /**
  * Query Keys - Following TanStack Query best practices
  * Hierarchical structure for precise cache invalidation
+ * 
+ * ✅ Enterprise: Keys serialize primitives to avoid object identity trap
  */
 export const packageKeys = {
   all: ['packages'] as const,
   lists: () => [...packageKeys.all, 'list'] as const,
-  list: (filters: Record<string, any>) => [...packageKeys.lists(), filters] as const,
+  list: (filters?: { city?: string; dates?: string; guests?: number; sort?: string; page?: number }) => 
+    [
+      ...packageKeys.lists(), 
+      filters?.city ?? '', 
+      filters?.dates ?? '', 
+      filters?.guests ?? 0, 
+      filters?.sort ?? '', 
+      filters?.page ?? 1
+    ] as const,
   details: () => [...packageKeys.all, 'detail'] as const,
   detail: (id: string) => [...packageKeys.details(), id] as const,
   featured: () => [...packageKeys.all, 'featured'] as const,

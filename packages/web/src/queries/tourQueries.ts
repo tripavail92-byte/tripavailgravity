@@ -6,11 +6,20 @@ type Tour = Database['public']['Tables']['tours']['Row']
 
 /**
  * Query Keys - Following TanStack Query best practices
+ * ✅ Enterprise: Keys serialize primitives to avoid object identity trap
  */
 export const tourKeys = {
   all: ['tours'] as const,
   lists: () => [...tourKeys.all, 'list'] as const,
-  list: (filters: Record<string, any>) => [...tourKeys.lists(), filters] as const,
+  list: (filters?: { location?: string; dates?: string; guests?: number; tourType?: string; page?: number }) => 
+    [
+      ...tourKeys.lists(), 
+      filters?.location ?? '', 
+      filters?.dates ?? '', 
+      filters?.guests ?? 0, 
+      filters?.tourType ?? '', 
+      filters?.page ?? 1
+    ] as const,
   details: () => [...tourKeys.all, 'detail'] as const,
   detail: (id: string) => [...tourKeys.details(), id] as const,
   featured: () => [...tourKeys.all, 'featured'] as const,
