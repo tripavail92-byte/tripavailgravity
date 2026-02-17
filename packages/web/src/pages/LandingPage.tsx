@@ -22,13 +22,14 @@ import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { PackageCard } from '@/components/traveller/PackageCard'
+import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
 import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
-import { useFeaturedTours, prefetchTour } from '@/queries/tourQueries'
+import { useFeaturedTours, usePakistanNorthernTours, prefetchTour } from '@/queries/tourQueries'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function LandingPage() {
@@ -126,6 +127,10 @@ export default function LandingPage() {
                 <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
                 <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
               </div>
+
+              <QueryErrorBoundaryWrapper>
+                <PakistanNorthernToursRow />
+              </QueryErrorBoundaryWrapper>
             </>
           )}
 
@@ -248,6 +253,71 @@ function CuratedPackagesRow({
         ) : (
           <Card className="rounded-2xl border border-border/60 p-6">
             <div className="text-sm text-muted-foreground">No packages available yet.</div>
+          </Card>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function PakistanNorthernToursRow() {
+  const { data = [], isLoading, isError } = usePakistanNorthernTours()
+
+  return (
+    <section>
+      <div className="flex items-end justify-between">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            Northern Pakistan Tours
+          </h2>
+          <p className="text-muted-foreground mt-1">
+            Hunza, Skardu, Fairy Meadows, Naran, Swat
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[0, 1, 2, 3].map((i) => (
+              <Card key={i} className="rounded-3xl border border-border/60 overflow-hidden">
+                <div className="aspect-[4/5]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : isError ? (
+          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            Unable to load tours right now.
+          </Card>
+        ) : data.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {data.slice(0, 8).map((tour) => (
+              <TourCard
+                key={tour.id}
+                id={tour.id}
+                slug={tour.slug ?? undefined}
+                image={tour.images?.[0] || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'}
+                title={tour.title}
+                location={tour.location}
+                duration={'Multi-day'}
+                rating={tour.rating}
+                price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                currency="USD"
+                type={tour.badge}
+                isFeatured={tour.badge === 'Featured'}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card className="rounded-2xl border border-border/60 p-6">
+            <div className="text-sm text-muted-foreground">No tours available yet.</div>
           </Card>
         )}
       </div>

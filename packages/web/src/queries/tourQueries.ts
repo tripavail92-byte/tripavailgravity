@@ -23,6 +23,8 @@ export const tourKeys = {
   details: () => [...tourKeys.all, 'detail'] as const,
   detail: (id: string) => [...tourKeys.details(), id] as const,
   featured: () => [...tourKeys.all, 'featured'] as const,
+  curated: () => [...tourKeys.all, 'curated'] as const,
+  pakistanNorthern: () => [...tourKeys.curated(), 'pakistan_northern'] as const,
 }
 
 /**
@@ -47,6 +49,8 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
     .from('tours')
     .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
     .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
     .order('created_at', { ascending: false })
     .limit(10)
 
@@ -82,6 +86,50 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
   })
 }
 
+async function fetchPakistanNorthernTours(): Promise<MappedTour[]> {
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+    .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    // PostgREST JSON path filter
+    .eq('location->>country', 'Pakistan')
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(12)
+
+  if (error) {
+    console.error('[tourQueries] Error fetching Pakistan northern tours:', error)
+    throw error
+  }
+
+  if (!data) return []
+
+  return data.map((tour: any) => {
+    const locationObj = tour.location || {}
+    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
+      .replace(/^, /, '')
+      .replace(/, $/, '')
+      .trim()
+
+    const images = Array.isArray(tour.images)
+      ? tour.images
+      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+
+    return {
+      id: tour.id,
+      slug: tour.slug,
+      title: tour.title || 'Unnamed Tour',
+      location: location || 'Pakistan',
+      tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+      rating: Number(tour.rating) || 0,
+      images,
+      badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
+    }
+  })
+}
+
 /**
  * Hook: Use Featured Tours Query
  * Enterprise pattern with proper caching
@@ -94,6 +142,20 @@ export function useFeaturedTours(
     queryKey: tourKeys.featured(),
     queryFn: fetchFeaturedTours,
     staleTime: 8 * 60 * 1000, // 8 minutes
+    gcTime: 15 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
+}
+
+export function usePakistanNorthernTours(
+  options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: tourKeys.pakistanNorthern(),
+    queryFn: fetchPakistanNorthernTours,
+    staleTime: 8 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
