@@ -488,58 +488,35 @@ function AirbnbHeader() {
           <div className="hidden md:flex justify-center min-w-0">
             <GlassCard
               variant="light"
-              className="flex w-full max-w-2xl 2xl:max-w-3xl min-w-0 items-center justify-between border border-white/30 rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer py-2.5 pl-4 lg:pl-6 pr-2"
-              onClick={() => setIsSearchOverlayOpen(true)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') setIsSearchOverlayOpen(true)
-              }}
+              className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl w-full flex flex-row items-center gap-2 border border-white/30"
             >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="text-sm font-semibold truncate">
-                  Search by destination or keyword
-                </div>
-                <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
-                <div className="text-sm text-muted-foreground hidden 2xl:block">Add dates</div>
-                <div className="hidden 2xl:block h-6 w-px bg-gray-300" />
-                <div className="text-sm text-muted-foreground font-normal hidden 2xl:block truncate">
-                  Add travelers
-                </div>
-              </div>
+              <button
+                type="button"
+                className="flex-1 w-full px-6 flex items-center gap-3 border-r border-border/50 py-3 min-w-0"
+                onClick={() => setIsSearchOverlayOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setIsSearchOverlayOpen(true)
+                }}
+                aria-label="Open search"
+              >
+                <Search className="w-5 h-5 text-primary" />
+                <input
+                  type="text"
+                  readOnly
+                  value=""
+                  placeholder="Where to next?"
+                  className="w-full bg-transparent border-none outline-none font-bold text-foreground placeholder:text-muted-foreground"
+                  onFocus={() => setIsSearchOverlayOpen(true)}
+                />
+              </button>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  className="hidden 2xl:flex items-center gap-2 rounded-full px-3 py-2 hover:bg-muted/40 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setIsSearchOverlayOpen(true)
-                  }}
-                  aria-label="Open search filters"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="text-sm font-medium">Filters</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="hidden lg:flex 2xl:hidden items-center justify-center rounded-full p-2 hover:bg-muted/40 transition-colors"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setIsSearchOverlayOpen(true)
-                  }}
-                  aria-label="Open filters"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                </button>
-
-                <div className="bg-primary rounded-full p-2 text-primary-foreground">
-                  <Search className="w-3 h-3 stroke-[3px]" />
-                </div>
-              </div>
+              <Button
+                type="button"
+                onClick={() => setIsSearchOverlayOpen(true)}
+                className="px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
+              >
+                Explore Now
+              </Button>
             </GlassCard>
           </div>
 

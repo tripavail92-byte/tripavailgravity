@@ -66,6 +66,21 @@ export function TourCard({
             </GlassBadge>
           </div>
 
+          {/* Title overlay (always visible) */}
+          <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+            <div className="min-w-0 rounded-xl bg-black/35 backdrop-blur-sm px-3 py-2 border border-white/10">
+              <div className="text-white font-bold text-base leading-snug line-clamp-2">{title}</div>
+              <div className="text-white/75 text-xs line-clamp-1">{location}</div>
+            </div>
+
+            {rating > 0 ? (
+              <div className="shrink-0 rounded-full bg-black/35 backdrop-blur-sm px-3 py-1 border border-white/10 text-white text-xs font-bold inline-flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 fill-white text-white" />
+                <span>{rating}</span>
+              </div>
+            ) : null}
+          </div>
+
           <div className="absolute bottom-4 left-4 right-4 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 opacity-0 group-hover:opacity-100">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-widest text-white/80">
@@ -77,23 +92,6 @@ export function TourCard({
         </div>
 
         <div className="space-y-2 px-1">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5 text-primary" />
-              <span className="truncate">{location}</span>
-            </div>
-            {rating > 0 && (
-              <div className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full border border-border/60">
-                <Star className="w-3 h-3 text-primary fill-current" />
-                <span className="text-xs font-bold text-foreground">{rating}</span>
-              </div>
-            )}
-          </div>
-
-          <h3 className="font-bold text-foreground text-lg group-hover:text-primary transition-colors line-clamp-1 leading-tight">
-            {title}
-          </h3>
-
           <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground">
             <div className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
