@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ImageSlider } from '@/components/ImageSlider'
@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
+import { useFeaturedPackages } from '@/queries/packageQueries'
+import { useFeaturedTours } from '@/queries/tourQueries'
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState('home')
@@ -477,7 +478,7 @@ import { Link } from 'react-router-dom'
 
 // ... (existing imports)
 
-// Featured Hotels Section (Horizontal Scroll Style)
+// Featured Hotels Section - Enterprise Pattern with TanStack Query
 function FeaturedHotelsSection({
   onNavigate: _onNavigate,
   onPackageSelect: _onPackageSelect,
@@ -485,124 +486,20 @@ function FeaturedHotelsSection({
   onNavigate: (screen: string) => void
   onPackageSelect: (packageId: string) => void
 }) {
-  const [featuredHotels, setFeaturedHotels] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const location = useLocation()
+  // ✅ Enterprise: Replace manual useEffect with useQuery
+  const { data: featuredHotels = [], isLoading, error } = useFeaturedPackages()
 
-  console.log('[FeaturedHotelsSection] Render - loading:', loading, 'hotels:', featuredHotels.length)
-
-  useEffect(() => {
-    const abortController = new AbortController()
-    
-    async function fetchPackages() {
-      // ... (existing fetch logic remains the same, just keeping it safe with isMounted if needed,
-      // but for this replacement I will just keep the existing logic structure but wrapped slightly if I were rewriting it all.
-      // For minimal diff, I will look at the map loop)
-      try {
-        const { data, error } = await supabase
-          .from('packages' as any)
-          .select(
-            `
-            id,
-            slug,
-            name,
-            cover_image,
-            media_urls,
-            rooms_config,
-            package_type,
-            hotels (
-              name,
-              city,
-              country
-            )
-          `,
-          )
-          .eq('is_published', true)
-          .order('created_at', { ascending: false })
-          .limit(10)
-          .abortSignal(abortController.signal)
-
-        console.log('[FeaturedHotelsSection] Query result:', { data, error, dataLength: data?.length })
-        
-        if (error) {
-          console.error('[FeaturedHotelsSection] Database error:', error)
-          throw error
-        }
-
-        console.log('[FeaturedHotelsSection] Fetched packages:', data)
-
-        if (data) {
-          // ... (mapping logic)
-          const mappedPackages = data.map((pkg: any) => {
-            // Calculate best price
-            let price = 0
-            if (pkg.rooms_config) {
-              const prices = Object.values(pkg.rooms_config)
-                .map((r: any) => Number(r.price) || 0)
-                .filter((p) => p > 0)
-              if (prices.length > 0) price = Math.min(...prices)
-            }
-
-            // Get location string
-            const hotel = pkg.hotels
-            const location = hotel
-              ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '')
-              : 'Multiple Locations'
-
-            // Images
-            const images =
-              pkg.media_urls && pkg.media_urls.length > 0
-                ? pkg.media_urls
-                : pkg.cover_image
-                  ? [pkg.cover_image]
-                  : []
-
-            return {
-              id: pkg.id,
-              slug: pkg.slug,
-              title: pkg.name,
-              hotelName: hotel?.name || 'Partner Hotel',
-              location: location || 'Global',
-              packagePrice: price > 0 ? price : 'Contact',
-              rating: 5.0, // Benchmark
-              images:
-                images.length > 0
-                  ? images
-                  : [
-                      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080',
-                    ],
-              badge: 'New Arrival',
-            }
-          })
-          console.log('[FeaturedHotelsSection] Mapped packages:', mappedPackages)
-          setFeaturedHotels(mappedPackages)
-        }
-      } catch (e) {
-        // Ignore abort errors - component unmounted before fetch completed
-        if (e instanceof Error && e.name === 'AbortError') {
-          console.log('[FeaturedHotelsSection] Fetch aborted (component unmounted)')
-          // Still set loading to false even on abort
-          setLoading(false)
-          return
-        }
-        console.error('Error fetching featured packages:', e)
-        if (e instanceof Error) {
-          console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
-        }
-      } finally {
-        console.log('[FeaturedHotelsSection] Setting loading to false')
-        setLoading(false)
-      }
-    }
-
-    fetchPackages()
-    return () => {
-      abortController.abort()
-    }
-  }, [location.pathname]) // Re-fetch when pathname changes
-
-  if (loading) {
+  if (isLoading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-red-500">Failed to load packages</p>
+        <p className="text-sm text-gray-500">{error.message}</p>
+      </div>
+    )
   }
 
   return (
@@ -695,7 +592,7 @@ function FeaturedHotelsSection({
   )
 }
 
-// Featured Tours Section
+// Featured Tours Section - Enterprise Pattern with TanStack Query
 function FeaturedToursSection({
   onNavigate,
   onTourSelect: _onTourSelect,
@@ -703,91 +600,20 @@ function FeaturedToursSection({
   onNavigate: (screen: string) => void
   onTourSelect: (tourId: string) => void
 }) {
-  const [featuredTours, setFeaturedTours] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const location = useLocation()
+  // ✅ Enterprise: Replace manual useEffect with useQuery
+  const { data: featuredTours = [], isLoading, error } = useFeaturedTours()
 
-  console.log('[FeaturedToursSection] Render - loading:', loading, 'tours:', featuredTours.length)
-
-  useEffect(() => {
-    const abortController = new AbortController()
-    
-    async function fetchTours() {
-      try {
-        const { data, error } = await supabase
-          .from('tours' as any)
-          .select(
-            'id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at',
-          )
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(10)
-          .abortSignal(abortController.signal)
-
-        console.log('[FeaturedToursSection] Query result:', { data, error, dataLength: data?.length })
-        
-        if (error) {
-          console.error('[FeaturedToursSection] Database error:', error)
-          throw error
-        }
-
-        console.log('[FeaturedToursSection] Fetched tours:', data)
-
-        if (data) {
-          const mappedTours = (data || []).map((tour: any) => {
-            const locationObj = tour.location || {}
-            const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-              .replace(/^, /, '')
-              .replace(/, $/, '')
-
-            const images = Array.isArray(tour.images) ? tour.images : []
-
-            return {
-              id: tour.id,
-              slug: tour.slug,
-              title: tour.title,
-              location: location || 'Global',
-              tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
-              rating: Number(tour.rating) || 0,
-              images:
-                images.length > 0
-                  ? images
-                  : [
-                      'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
-                    ],
-              badge: tour.is_featured ? 'Featured' : tour.tour_type,
-            }
-          })
-
-          console.log('[FeaturedToursSection] Mapped tours:', mappedTours)
-          setFeaturedTours(mappedTours)
-        }
-      } catch (e) {
-        // Ignore abort errors - component unmounted before fetch completed
-        if (e instanceof Error && e.name === 'AbortError') {
-          console.log('[FeaturedToursSection] Fetch aborted (component unmounted)')
-          // Still set loading to false even on abort
-          setLoading(false)
-          return
-        }
-        console.error('Error fetching featured tours:', e)
-        if (e instanceof Error) {
-          console.error('Error details - Name:', e.name, 'Message:', e.message, 'Stack:', e.stack)
-        }
-      } finally {
-        console.log('[FeaturedToursSection] Setting loading to false')
-        setLoading(false)
-      }
-    }
-
-    fetchTours()
-    return () => {
-      abortController.abort()
-    }
-  }, [location.pathname]) // Re-fetch when pathname changes
-
-  if (loading) {
+  if (isLoading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-red-500">Failed to load tours</p>
+        <p className="text-sm text-gray-500">{error.message}</p>
+      </div>
+    )
   }
 
   return (

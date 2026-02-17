@@ -1,3 +1,4 @@
+import { QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
@@ -6,6 +7,7 @@ import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { AdminGuard } from '@/components/auth/AdminGuard'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { useAuth } from '@/hooks/useAuth'
+import { queryClient } from '@/lib/queryClient'
 // Eager load critical components
 import AdminLayout from '@/layouts/AdminLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
@@ -105,10 +107,11 @@ function App() {
   }
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Toaster position="top-center" />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Toaster position="top-center" />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           <Route path="/auth" element={<LoginPage />} />
           <Route path="/test-kyc" element={<TestKYC />} />
 
@@ -262,6 +265,7 @@ function App() {
         </Routes>
       </Suspense>
     </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 
