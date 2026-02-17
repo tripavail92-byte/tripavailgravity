@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
@@ -487,6 +487,7 @@ function FeaturedHotelsSection({
 }) {
   const [featuredHotels, setFeaturedHotels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const location = useLocation()
 
   console.log('[FeaturedHotelsSection] Render - loading:', loading, 'hotels:', featuredHotels.length)
 
@@ -598,7 +599,7 @@ function FeaturedHotelsSection({
     return () => {
       abortController.abort()
     }
-  }, [])
+  }, [location.pathname]) // Re-fetch when pathname changes
 
   if (loading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
@@ -704,6 +705,7 @@ function FeaturedToursSection({
 }) {
   const [featuredTours, setFeaturedTours] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const location = useLocation()
 
   console.log('[FeaturedToursSection] Render - loading:', loading, 'tours:', featuredTours.length)
 
@@ -782,7 +784,7 @@ function FeaturedToursSection({
     return () => {
       abortController.abort()
     }
-  }, [])
+  }, [location.pathname]) // Re-fetch when pathname changes
 
   if (loading) {
     return <div className="py-12 text-center text-gray-500">Loading experiences...</div>
