@@ -118,14 +118,24 @@ export default function Homepage() {
               <PackageCard
                 key={pkg.id}
                 id={pkg.id}
-                slug={pkg.slug}
-                image={pkg.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop'}
+                slug={pkg.slug ?? undefined}
+                images={
+                  pkg.images?.length
+                    ? pkg.images
+                    : [
+                        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop',
+                      ]
+                }
                 title={pkg.title}
+                subtitle={pkg.hotelName}
                 location={pkg.location}
-                duration={3}
+                durationDays={pkg.durationDays ?? 3}
                 rating={pkg.rating}
-                price={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : 599}
-                type={pkg.badge}
+                reviewCount={pkg.reviewCount}
+                priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+                totalOriginal={pkg.totalOriginal}
+                totalDiscounted={pkg.totalDiscounted}
+                badge={pkg.badge}
               />
             ))}
           </div>
@@ -167,11 +177,11 @@ export default function Homepage() {
                 <TourCard
                   key={tour.id}
                   id={tour.id}
-                  slug={tour.slug}
+                  slug={tour.slug ?? undefined}
                   image={tour.images?.[0] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'}
                   title={tour.title}
                   location={tour.location}
-                  duration={5}
+                  duration={'5 days'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency="USD"

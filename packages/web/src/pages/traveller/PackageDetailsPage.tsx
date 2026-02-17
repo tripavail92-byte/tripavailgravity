@@ -119,9 +119,10 @@ export default function PackageDetailsPage() {
         if (pkg.hotel_id) {
           const hotel = await hotelService.getHotelById(pkg.hotel_id, 'name, amenities')
 
-          if (hotel) {
-            if (hotel.amenities) {
-              ;(hotel.amenities as string[]).forEach((a) => amenitiesSet.add(a))
+          if (hotel && typeof hotel === 'object' && 'amenities' in hotel) {
+            const hotelAmenities = (hotel as any).amenities
+            if (Array.isArray(hotelAmenities)) {
+              ;(hotelAmenities as string[]).forEach((a) => amenitiesSet.add(a))
             }
             setPackageData((prev: any) => ({ ...prev, hotel }))
           }
@@ -136,8 +137,11 @@ export default function PackageDetailsPage() {
           if (rooms) {
             setRoomData(rooms)
             rooms.forEach((room) => {
-              if (room.amenities && Array.isArray(room.amenities)) {
-                ;(room.amenities as string[]).forEach((a) => amenitiesSet.add(a))
+              if (room && typeof room === 'object' && 'amenities' in room) {
+                const roomAmenities = (room as any).amenities
+                if (Array.isArray(roomAmenities)) {
+                  ;(roomAmenities as string[]).forEach((a) => amenitiesSet.add(a))
+                }
               }
             })
           }

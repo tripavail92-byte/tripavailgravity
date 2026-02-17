@@ -26,7 +26,16 @@ export const packageKeys = {
   details: () => [...packageKeys.all, 'detail'] as const,
   detail: (id: string) => [...packageKeys.details(), id] as const,
   featured: () => [...packageKeys.all, 'featured'] as const,
+  curated: () => [...packageKeys.all, 'curated'] as const,
+  curatedList: (kind: CuratedPackageKind) => [...packageKeys.curated(), kind] as const,
 }
+
+export type CuratedPackageKind =
+  | 'new_arrivals'
+  | 'top_rated'
+  | 'best_for_couples'
+  | 'family_friendly'
+  | 'weekend_getaways'
 
 /**
  * Mapped Package type for UI consumption
@@ -39,8 +48,207 @@ export interface MappedPackage {
   location: string
   packagePrice: number | 'Contact'
   rating: number
+  reviewCount?: number
   images: string[]
   badge: string
+
+  // For premium price display (optional)
+  durationDays?: number
+  totalOriginal?: number
+  totalDiscounted?: number
+}
+
+type DiscountOffer = {
+  name?: string
+  originalPrice?: number
+  original_price?: number
+  discount?: number
+  discount_percent?: number
+}
+
+function safeNumber(value: unknown): number | null {
+  const num = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(num) ? num : null
+}
+
+function extractDiscountOffers(raw: unknown): DiscountOffer[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as DiscountOffer[]
+  return []
+}
+
+function computePriceTotals(basePrice: number | null, discountOffersRaw: unknown) {
+  const discountOffers = extractDiscountOffers(discountOffersRaw)
+  const base = basePrice ?? 0
+
+  const addonOriginal = discountOffers.reduce((acc, offer) => {
+    const original = safeNumber(offer.originalPrice ?? offer.original_price) ?? 0
+    return acc + original
+  }, 0)
+
+  const addonDiscounted = discountOffers.reduce((acc, offer) => {
+    const original = safeNumber(offer.originalPrice ?? offer.original_price) ?? 0
+    const discountPercent = safeNumber(offer.discount ?? offer.discount_percent) ?? 0
+    const discounted = original * (1 - discountPercent / 100)
+    return acc + discounted
+  }, 0)
+
+  const totalOriginal = base + addonOriginal
+  const totalDiscounted = base + addonDiscounted
+
+  if (totalOriginal <= 0 || totalDiscounted <= 0) {
+    return { totalOriginal: null, totalDiscounted: null }
+  }
+
+  if (totalDiscounted >= totalOriginal) {
+    return { totalOriginal: null, totalDiscounted: null }
+  }
+
+  return { totalOriginal, totalDiscounted }
+}
+
+function inferDurationDays(minimumNights: unknown): number | undefined {
+  const nights = safeNumber(minimumNights)
+  if (!nights || nights <= 0) return undefined
+  // Simple traveler-friendly display: nights + 1 ≈ days
+  return Math.max(1, Math.round(nights) + 1)
+}
+
+function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
+  const hotel = pkg?.hotels
+  const location =
+    hotel && (hotel.city || hotel.country)
+      ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '')
+      : ''
+
+  const images =
+    pkg.media_urls && Array.isArray(pkg.media_urls) && pkg.media_urls.length > 0
+      ? pkg.media_urls
+      : pkg.cover_image
+        ? [pkg.cover_image]
+        : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080']
+
+  const basePrice = safeNumber(pkg.base_price_per_night)
+
+  const derivedPriceFromRoomsConfig = (() => {
+    if (!pkg.rooms_config || typeof pkg.rooms_config !== 'object') return null
+    const prices = Object.values(pkg.rooms_config as Record<string, any>)
+      .map((r: any) => safeNumber(r?.price) ?? 0)
+      .filter((p) => p > 0)
+    return prices.length ? Math.min(...prices) : null
+  })()
+
+  const price = basePrice ?? derivedPriceFromRoomsConfig
+
+  const { totalOriginal, totalDiscounted } = computePriceTotals(price, pkg.discount_offers)
+  const durationDays = inferDurationDays(pkg.minimum_nights)
+
+  const hotelRating = safeNumber(hotel?.rating)
+  const rating = safeNumber(pkg.rating) ?? hotelRating ?? 0
+  const reviewCount = safeNumber(pkg.review_count) ?? safeNumber(hotel?.review_count) ?? undefined
+
+  return {
+    id: pkg.id,
+    slug: pkg.slug,
+    title: pkg.name || 'Unnamed Package',
+    hotelName: hotel?.name || 'Partner Hotel',
+    location,
+    packagePrice: price ?? 'Contact',
+    rating: rating || 0,
+    reviewCount,
+    images,
+    badge,
+    durationDays,
+    totalOriginal: totalOriginal ?? undefined,
+    totalDiscounted: totalDiscounted ?? undefined,
+  }
+}
+
+async function fetchCuratedPackages(kind: CuratedPackageKind): Promise<MappedPackage[]> {
+  let query = supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      slug,
+      name,
+      cover_image,
+      media_urls,
+      rooms_config,
+      package_type,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      hotels (
+        name,
+        city,
+        country,
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('is_published', true)
+    .eq('status', 'live')
+
+  // Filters
+  if (kind === 'best_for_couples') {
+    query = query.eq('package_type', 'romantic')
+  }
+  if (kind === 'family_friendly') {
+    query = query.eq('package_type', 'family')
+  }
+  if (kind === 'weekend_getaways') {
+    // Weekend: short stay OR explicitly typed
+    query = query.or('package_type.eq.weekend,minimum_nights.lte.2')
+  }
+
+  // Ordering
+  // Note: We can’t reliably order by joined hotel rating at DB-level; we sort client-side for top rated.
+  query = query.order('created_at', { ascending: false }).limit(24)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[packageQueries] Error fetching curated packages:', { kind, error })
+    throw error
+  }
+
+  const rows = (data || []) as any[]
+
+  const badgeByKind: Record<CuratedPackageKind, string> = {
+    new_arrivals: 'New Arrival',
+    top_rated: 'Top Rated',
+    best_for_couples: 'Best for Couples',
+    family_friendly: 'Family Friendly',
+    weekend_getaways: 'Weekend Getaway',
+  }
+
+  const mapped = rows.map((pkg) => mapPackageRowToMappedPackage(pkg, badgeByKind[kind]))
+
+  if (kind === 'top_rated') {
+    return mapped
+      .slice()
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 8)
+  }
+
+  if (kind === 'new_arrivals') return mapped.slice(0, 8)
+  return mapped.slice(0, 8)
+}
+
+export function useCuratedPackages(
+  kind: CuratedPackageKind,
+  options?: Omit<UseQueryOptions<MappedPackage[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: packageKeys.curatedList(kind),
+    queryFn: () => fetchCuratedPackages(kind),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
+  })
 }
 
 /**

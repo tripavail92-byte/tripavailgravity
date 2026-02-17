@@ -1,12 +1,15 @@
 import {
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
   Flame,
   Heart,
+  ShieldCheck,
   Search,
   SlidersHorizontal,
   Star,
   TrendingUp,
+  Zap,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -18,11 +21,13 @@ import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
+import { PackageCard } from '@/components/traveller/PackageCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
-import { useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
+import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage } from '@/queries/packageQueries'
 import { useFeaturedTours, prefetchTour } from '@/queries/tourQueries'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -55,21 +60,72 @@ export default function LandingPage() {
         <div className="space-y-10 pb-20">
           {activeTab === 'home' && (
             <>
-              {/* Modern Trending Destinations Slider */}
-              <ModernTrendingSlider onNavigate={handleNavigate} />
+              {/* Conversion Hero */}
+              <section className="pt-2">
+                <div className="max-w-3xl">
+                  <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+                    Premium travel packages, curated for real moments.
+                  </h1>
+                  <p className="mt-4 text-lg text-muted-foreground">
+                    Book boutique stays, romantic escapes, and family getaways with transparent pricing and instant confirmation.
+                  </p>
+                  <div className="mt-6">
+                    <Button
+                      onClick={() => navigate('/explore')}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
+                    >
+                      Explore Packages
+                    </Button>
+                  </div>
+                </div>
+              </section>
 
-              {/* Featured Hotels Section - Wrapped in Error Boundary */}
-              <QueryErrorBoundaryWrapper>
-                <FeaturedHotelsSection
-                  onNavigate={handleNavigate}
-                  onPackageSelect={handlePackageSelect}
-                />
-              </QueryErrorBoundaryWrapper>
+              {/* Trust Strip */}
+              <section className="-mt-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Card className="border border-border/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                        <ShieldCheck className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-sm font-semibold">Verified partners</div>
+                    </div>
+                  </Card>
+                  <Card className="border border-border/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                        <Zap className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-sm font-semibold">Instant confirmation</div>
+                    </div>
+                  </Card>
+                  <Card className="border border-border/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-sm font-semibold">Secure checkout</div>
+                    </div>
+                  </Card>
+                  <Card className="border border-border/60 rounded-2xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+                        <Star className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="text-sm font-semibold">Top-rated stays</div>
+                    </div>
+                  </Card>
+                </div>
+              </section>
 
-              {/* Featured Tours Section - Wrapped in Error Boundary */}
-              <QueryErrorBoundaryWrapper>
-                <FeaturedToursSection onNavigate={handleNavigate} onTourSelect={handleTourSelect} />
-              </QueryErrorBoundaryWrapper>
+              {/* Curated Rows (real Supabase data) */}
+              <div className="space-y-12">
+                <CuratedPackagesRow kind="new_arrivals" title="New Arrivals" />
+                <CuratedPackagesRow kind="top_rated" title="Top Rated" />
+                <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
+                <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
+                <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
+              </div>
             </>
           )}
 
@@ -120,6 +176,82 @@ export default function LandingPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+function CuratedPackagesRow({
+  kind,
+  title,
+}: {
+  kind: CuratedPackageKind
+  title: string
+}) {
+  const { data = [], isLoading, isError } = useCuratedPackages(kind)
+
+  return (
+    <section>
+      <div className="flex items-end justify-between">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
+          <p className="text-muted-foreground mt-1">Curated from live listings</p>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[0, 1, 2, 3].map((i) => (
+              <Card key={i} className="rounded-2xl border border-border/60 overflow-hidden">
+                <div className="aspect-video">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-7 w-24 rounded-full" />
+                    <Skeleton className="h-7 w-28 rounded-full" />
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-9 w-24 rounded-md" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : isError ? (
+          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            Unable to load packages right now.
+          </Card>
+        ) : data.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {data.map((pkg) => (
+              <PackageCard
+                key={pkg.id}
+                id={pkg.id}
+                slug={pkg.slug ?? undefined}
+                images={pkg.images}
+                title={pkg.title}
+                subtitle={pkg.hotelName}
+                location={pkg.location}
+                durationDays={pkg.durationDays}
+                rating={pkg.rating}
+                reviewCount={pkg.reviewCount}
+                priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+                totalOriginal={pkg.totalOriginal}
+                totalDiscounted={pkg.totalDiscounted}
+                badge={pkg.badge}
+              />
+            ))}
+          </div>
+        ) : (
+          <Card className="rounded-2xl border border-border/60 p-6">
+            <div className="text-sm text-muted-foreground">No packages available yet.</div>
+          </Card>
+        )}
+      </div>
+    </section>
   )
 }
 

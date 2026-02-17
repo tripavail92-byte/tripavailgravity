@@ -170,16 +170,21 @@ export default function WishlistPage() {
                   <PackageCard
                     id={item.id}
                     slug={item.slug}
-                    image={
-                      item.cover_image ||
-                      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e'
+                    images={
+                      item.media_urls?.length
+                        ? item.media_urls
+                        : [
+                            item.cover_image ||
+                              'https://images.unsplash.com/photo-1507525428034-b723cf961d3e',
+                          ]
                     }
-                    title={item.name}
+                    title={item.name || 'Unnamed Package'}
                     location={item.location}
-                    duration={item.duration_days}
+                    durationDays={item.duration_days}
                     rating={item.rating}
-                    price={item.base_price_per_night || 0}
-                    type={item.package_type}
+                    reviewCount={item.review_count}
+                    priceFrom={item.base_price_per_night || null}
+                    badge={item.package_type}
                   />
                 )}
               </div>
