@@ -189,11 +189,8 @@ function mapPackageRowToUnifiedExperience(pkg: any): UnifiedExperience {
   const price = basePrice ?? derivedPriceFromRoomsConfig
   const { totalOriginal, totalDiscounted } = computePriceTotals(price, pkg.discount_offers)
 
-  const hotelRating = safeNumber(hotel?.rating)
-  const rawPackageRating = safeNumber(pkg.rating)
-  const rating = rawPackageRating ?? hotelRating
-
-  const reviewCount = safeNumber(pkg.review_count) ?? safeNumber(hotel?.review_count)
+  const rating = safeNumber(hotel?.rating)
+  const reviewCount = safeNumber(hotel?.review_count)
 
   return {
     id: pkg.id,
@@ -203,7 +200,7 @@ function mapPackageRowToUnifiedExperience(pkg: any): UnifiedExperience {
     images,
     rating,
     reviewCount,
-    created_at: pkg.created_at,
+    created_at: pkg.created_at ?? pkg.updated_at ?? '1970-01-01T00:00:00.000Z',
     type: 'hotel',
   }
 }
@@ -220,9 +217,8 @@ async function fetchHomepageMergePackages(take: number): Promise<UnifiedExperien
       rooms_config,
       base_price_per_night,
       discount_offers,
-      rating,
-      review_count,
       created_at,
+      updated_at,
       hotels (
         rating,
         review_count

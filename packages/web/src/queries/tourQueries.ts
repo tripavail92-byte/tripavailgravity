@@ -60,6 +60,7 @@ function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
 
   const price = Number(tour.price)
   const rating = typeof tour.rating === 'number' ? tour.rating : tour.rating != null ? Number(tour.rating) : null
+  const reviewCount = typeof tour.review_count === 'number' ? tour.review_count : tour.review_count != null ? Number(tour.review_count) : null
 
   return {
     id: tour.id,
@@ -67,8 +68,8 @@ function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
     price: Number.isFinite(price) && price > 0 ? price : null,
     images,
     rating: Number.isFinite(rating as number) ? (rating as number) : null,
-    reviewCount: null,
-    created_at: tour.created_at,
+    reviewCount: Number.isFinite(reviewCount as number) ? (reviewCount as number) : null,
+    created_at: tour.created_at ?? tour.updated_at ?? '1970-01-01T00:00:00.000Z',
     type: 'tour',
   }
 }
@@ -76,7 +77,7 @@ function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
 async function fetchHomepageMergeTours(take: number): Promise<UnifiedExperience[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,title,price,rating,images,created_at')
+    .select('id,title,price,rating,review_count,images,created_at,updated_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
