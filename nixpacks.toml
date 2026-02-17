@@ -7,7 +7,7 @@ cmds = ["pnpm install --frozen-lockfile"]
 [phases.build]
 cmds = [
   "rm -rf packages/web/dist",
-  "pnpm --filter @trip avail/web build"
+  "pnpm --filter @tripavail/web build"
 ]
 
 [start]
