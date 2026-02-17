@@ -8,4 +8,4 @@ cmds = ["pnpm install --frozen-lockfile"]
 cmds = ["pnpm --filter @tripavail/web build"]
 
 [start]
-cmd = "pnpm --filter @tripavail/web preview --host"
+cmd = "pnpm start"
