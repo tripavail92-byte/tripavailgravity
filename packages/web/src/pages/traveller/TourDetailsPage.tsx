@@ -144,8 +144,8 @@ export default function TourDetailsPage() {
 
       {/* Hero Image Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:h-[500px]">
-          <div className="md:col-span-2 rounded-3xl overflow-hidden shadow-xl aspect-[16/10] md:aspect-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] md:h-[500px]">
+          <div className="md:col-span-2 rounded-3xl overflow-hidden shadow-xl">
             <img
               src={
                 tour.images?.[0] ||
@@ -184,11 +184,11 @@ export default function TourDetailsPage() {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 pt-2">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column: Details */}
           <div className="lg:col-span-2 space-y-10">
-            <div className="space-y-5 isolate">
+            <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <GlassBadge variant="primary" size="default" className="font-bold">
                   {tour.tour_type}
@@ -197,31 +197,28 @@ export default function TourDetailsPage() {
                   Verified Operator
                 </GlassBadge>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-foreground leading-tight break-words">
-                {tour.title}
-              </h1>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-muted-foreground font-medium">
-                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
+              <h1 className="text-4xl font-black text-foreground leading-tight">{tour.title}</h1>
+              <div className="flex flex-wrap items-center gap-6 text-muted-foreground font-medium">
+                <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
-                  <span className="min-w-0 truncate sm:whitespace-normal">
+                  <span>
                     {tour.location.city}, {tour.location.country}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
+                <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-primary" />
-                  <span className="min-w-0 truncate">{tour.duration}</span>
+                  <span>{tour.duration}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
+                <div className="flex items-center gap-2">
                   <Star className="w-5 h-5 text-warning fill-current" />
                   <span className="text-foreground font-bold">{tour.rating}</span>
-                  <span className="min-w-0 text-sm font-medium truncate">({tour.review_count} reviews)</span>
+                  <span className="text-sm font-medium">({tour.review_count} reviews)</span>
                 </div>
               </div>
             </div>
 
             {/* Tabs */}
-            <div className="mt-1 border-b border-border/50 overflow-x-auto">
-              <div className="flex min-w-max">
+            <div className="flex border-b border-border/50">
               {[
                 { id: 'overview', label: 'Overview', icon: Info },
                 { id: 'itinerary', label: 'Itinerary', icon: Map },
@@ -230,7 +227,7 @@ export default function TourDetailsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 sm:px-6 py-4 font-bold text-sm whitespace-nowrap shrink-0 transition-all border-b-2 ${
+                  className={`flex items-center gap-2 px-6 py-4 font-bold text-sm transition-all border-b-2 ${
                     activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-muted-foreground/70 hover:text-foreground'
@@ -240,7 +237,6 @@ export default function TourDetailsPage() {
                   {tab.label}
                 </button>
               ))}
-              </div>
             </div>
 
             {/* Tab Content */}

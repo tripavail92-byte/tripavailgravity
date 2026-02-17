@@ -12,7 +12,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
-import { handlePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
+import { handlePaymentSuccess } from '@/features/booking'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 
 export default function BookingConfirmationPage() {
