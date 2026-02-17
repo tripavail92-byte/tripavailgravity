@@ -7,6 +7,7 @@ import App from './App.tsx'
 import { GlobalErrorBoundary } from './components/GlobalErrorBoundary'
 import { ThemeProvider } from './theme/ThemeContext'
 
+// Force build refresh - 2026-02-17
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GlobalErrorBoundary>
     <ThemeProvider defaultMode="system" storageKey="tripavail-theme-mode">
