@@ -6,7 +6,9 @@ cmds = ["pnpm install --frozen-lockfile"]
 
 [phases.build]
 cmds = [
+  "rm -rf .turbo",
   "rm -rf packages/web/dist",
+  "rm -rf packages/shared/dist",
   "pnpm --filter @tripavail/web build"
 ]
 
