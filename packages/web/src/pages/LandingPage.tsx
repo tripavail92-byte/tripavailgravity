@@ -519,6 +519,8 @@ function FeaturedHotelsSection({
 
         if (error) throw error
 
+        console.log('[FeaturedHotelsSection] Fetched packages:', data)
+
         if (data && isMounted) {
           // ... (mapping logic)
           const mappedPackages = data.map((pkg: any) => {
@@ -562,6 +564,7 @@ function FeaturedHotelsSection({
               badge: 'New Arrival',
             }
           })
+          console.log('[FeaturedHotelsSection] Mapped packages:', mappedPackages)
           setFeaturedHotels(mappedPackages)
         }
       } catch (e) {
@@ -697,6 +700,8 @@ function FeaturedToursSection({
 
         if (error) throw error
 
+        console.log('[FeaturedToursSection] Fetched tours:', data)
+
         if (data && isMounted) {
           const mappedTours = (data || []).map((tour: any) => {
             const locationObj = tour.location || {}
@@ -723,6 +728,7 @@ function FeaturedToursSection({
             }
           })
 
+          console.log('[FeaturedToursSection] Mapped tours:', mappedTours)
           setFeaturedTours(mappedTours)
         }
       } catch (e) {
