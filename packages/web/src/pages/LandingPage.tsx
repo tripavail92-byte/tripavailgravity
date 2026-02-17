@@ -522,16 +522,30 @@ function AirbnbHeader() {
 
           {/* Right User Menu */}
           <div className="flex items-center justify-end gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsSearchOverlayOpen(true)}
-              className="md:hidden inline-flex items-center gap-1 sm:gap-2 border border-white/30 rounded-full px-2.5 sm:px-3 py-2 hover:bg-muted/30 transition-colors shrink-0"
-              aria-label="Open search"
-            >
-              <Search className="w-4 h-4" />
-              <span className="hidden sm:inline text-sm font-medium">Search</span>
-              <SlidersHorizontal className="w-4 h-4 opacity-80" />
-            </button>
+            <div className="md:hidden min-w-0">
+              <GlassCard
+                variant="light"
+                className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full max-w-[360px] flex flex-row items-center gap-2 border border-white/30"
+              >
+                <button
+                  type="button"
+                  className="flex-1 px-4 flex items-center gap-2 min-w-0"
+                  onClick={() => setIsSearchOverlayOpen(true)}
+                  aria-label="Open search"
+                >
+                  <Search className="w-4 h-4 text-primary" />
+                  <span className="truncate font-bold text-foreground text-sm">Where to next?</span>
+                </button>
+
+                <Button
+                  type="button"
+                  onClick={() => setIsSearchOverlayOpen(true)}
+                  className="px-5 h-10 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 shrink-0"
+                >
+                  Explore Now
+                </Button>
+              </GlassCard>
+            </div>
 
             {!isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-2">
