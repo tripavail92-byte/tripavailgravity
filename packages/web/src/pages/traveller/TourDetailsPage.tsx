@@ -203,18 +203,18 @@ export default function TourDetailsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-muted-foreground font-medium">
                 <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <MapPin className="w-5 h-5 text-primary" />
-                  <span className="truncate sm:whitespace-normal">
+                  <span className="min-w-0 truncate sm:whitespace-normal">
                     {tour.location.city}, {tour.location.country}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <Clock className="w-5 h-5 text-primary" />
-                  <span>{tour.duration}</span>
+                  <span className="min-w-0 truncate">{tour.duration}</span>
                 </div>
                 <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2 min-w-0">
                   <Star className="w-5 h-5 text-warning fill-current" />
                   <span className="text-foreground font-bold">{tour.rating}</span>
-                  <span className="text-sm font-medium truncate">({tour.review_count} reviews)</span>
+                  <span className="min-w-0 text-sm font-medium truncate">({tour.review_count} reviews)</span>
                 </div>
               </div>
             </div>
