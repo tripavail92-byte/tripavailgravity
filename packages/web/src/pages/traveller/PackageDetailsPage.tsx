@@ -38,6 +38,7 @@ import { packageBookingService } from '@/features/booking'
 import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons'
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 // Helper to normalize amenity strings to kebab-case for centralized icon lookup
@@ -79,6 +80,24 @@ export default function PackageDetailsPage() {
   } | null>(null)
   const [availabilityError, setAvailabilityError] = useState<string | null>(null)
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return
+        setIsAuthenticated(Boolean(data?.session))
+      })
+      .catch(() => {
+        if (!mounted) return
+        setIsAuthenticated(false)
+      })
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -195,6 +214,23 @@ export default function PackageDetailsPage() {
       const checkIn = formatDateParam(dateRange.from)
       const checkOut = formatDateParam(dateRange.to)
 
+      // If the viewer isn't logged in, avoid RPC calls that may be protected by RLS.
+      // Provide a best-effort client-side estimate so the page stays usable.
+      if (isAuthenticated === false) {
+        const base = Number(packageData?.base_price_per_night)
+        if (Number.isFinite(base) && base > 0 && nightsLocal > 0) {
+          setPriceQuote({
+            total_price: Math.round(base * nightsLocal),
+            price_per_night: Math.round(base),
+            number_of_nights: nightsLocal,
+          })
+        } else {
+          setPriceQuote(null)
+        }
+        setAvailabilityError(null)
+        return
+      }
+
       setIsCheckingAvailability(true)
       setAvailabilityError(null)
 
@@ -217,8 +253,19 @@ export default function PackageDetailsPage() {
 
         setPriceQuote(pricing)
       } catch (err: any) {
-        setPriceQuote(null)
-        setAvailabilityError(err?.message || 'Failed to check availability')
+        // Fallback: show an estimate instead of breaking the UI.
+        const base = Number(packageData?.base_price_per_night)
+        if (Number.isFinite(base) && base > 0 && nightsLocal > 0) {
+          setPriceQuote({
+            total_price: Math.round(base * nightsLocal),
+            price_per_night: Math.round(base),
+            number_of_nights: nightsLocal,
+          })
+          setAvailabilityError(null)
+        } else {
+          setPriceQuote(null)
+          setAvailabilityError(err?.message || 'Failed to check availability')
+        }
       } finally {
         setIsCheckingAvailability(false)
       }
@@ -228,6 +275,7 @@ export default function PackageDetailsPage() {
   }, [
     dateRange?.from,
     dateRange?.to,
+    isAuthenticated,
     packageData?.id,
     packageData?.minimum_nights,
     packageData?.maximum_nights,
