@@ -50,6 +50,18 @@ export const useAuth = create<AuthState>((set, get) => ({
             }
           : await roleService.getActiveRole(session.user.id)
 
+        // Fallback: If no role found (e.g. new Google sign-up), default to Traveller
+        if (!activeRole && !adminRole) {
+          activeRole = {
+            id: session.user.id,
+            user_id: session.user.id,
+            role_type: 'traveller',
+            is_active: true,
+            profile_completion: 20, // Give them a start
+            verification_status: 'incomplete',
+          }
+        }
+
         set({ user: session.user, activeRole, isLoading: false, initialized: true })
       } else {
         set({ user: null, activeRole: null, isLoading: false, initialized: true })
@@ -72,6 +84,18 @@ export const useAuth = create<AuthState>((set, get) => ({
                 verification_status: 'approved',
               }
             : await roleService.getActiveRole(session.user.id)
+
+          // Fallback: If no role found, default to Traveller
+          if (!activeRole && !adminRole) {
+            activeRole = {
+              id: session.user.id,
+              user_id: session.user.id,
+              role_type: 'traveller',
+              is_active: true,
+              profile_completion: 20,
+              verification_status: 'incomplete',
+            }
+          }
           set({ user: session.user, activeRole, isLoading: false })
         } else if (event === 'SIGNED_OUT') {
           set({ user: null, activeRole: null, isLoading: false })
