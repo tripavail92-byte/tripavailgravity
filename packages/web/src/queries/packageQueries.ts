@@ -431,12 +431,9 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
       media_urls,
       rooms_config,
       package_type,
-      rating,
-      review_count,
       minimum_nights,
       base_price_per_night,
       discount_offers,
-      is_featured,
       hotels (
         name,
         city,
@@ -448,7 +445,6 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
     )
     .eq('is_published', true)
     .eq('status', 'live')
-    .eq('is_featured', true)
     .order('created_at', { ascending: false })
     .limit(10)
 
