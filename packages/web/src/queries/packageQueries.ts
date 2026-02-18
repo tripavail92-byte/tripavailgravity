@@ -431,14 +431,24 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
       media_urls,
       rooms_config,
       package_type,
+      rating,
+      review_count,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      is_featured,
       hotels (
         name,
         city,
-        country
+        country,
+        rating,
+        review_count
       )
     `,
     )
     .eq('is_published', true)
+    .eq('status', 'live')
+    .eq('is_featured', true)
     .order('created_at', { ascending: false })
     .limit(10)
 
@@ -449,44 +459,7 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
 
   if (!data) return []
 
-  // Map to UI-friendly format
-  return data.map((pkg: any) => {
-    // Calculate best price from rooms_config
-    let price: number | 'Contact' = 'Contact'
-    if (pkg.rooms_config && typeof pkg.rooms_config === 'object') {
-      const prices = Object.values(pkg.rooms_config as Record<string, any>)
-        .map((r: any) => Number(r.price) || 0)
-        .filter((p) => p > 0)
-      if (prices.length > 0) price = Math.min(...prices)
-    }
-
-    // Build location string
-    const hotel = pkg.hotels
-    const location =
-      hotel && (hotel.city || hotel.country)
-        ? `${hotel.city || ''}, ${hotel.country || ''}`.replace(/^, /, '').replace(/, $/, '')
-        : 'Multiple Locations'
-
-    // Get images
-    const images =
-      pkg.media_urls && Array.isArray(pkg.media_urls) && pkg.media_urls.length > 0
-        ? pkg.media_urls
-        : pkg.cover_image
-          ? [pkg.cover_image]
-          : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080']
-
-    return {
-      id: pkg.id,
-      slug: pkg.slug,
-      title: pkg.name || 'Unnamed Package',
-      hotelName: hotel?.name || 'Partner Hotel',
-      location,
-      packagePrice: price,
-      rating: 5.0, // Placeholder - should come from reviews
-      images,
-      badge: 'New Arrival',
-    }
-  })
+  return (data as any[]).map((pkg) => mapPackageRowToMappedPackage(pkg, 'Featured'))
 }
 
 /**

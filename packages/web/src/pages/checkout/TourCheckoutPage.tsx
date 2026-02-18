@@ -111,7 +111,10 @@ export default function TourCheckoutPage() {
   // Require authentication
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
+      navigate(
+        '/auth?mode=signup&notice=checkout&redirect=' +
+          encodeURIComponent(window.location.pathname + window.location.search),
+      )
     }
   }, [loading, user, navigate])
 
@@ -181,7 +184,10 @@ export default function TourCheckoutPage() {
           message.toLowerCase().includes('sign in again') ||
           message.toLowerCase().includes('not authenticated')
         ) {
-          navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
+          navigate(
+            '/auth?mode=signup&notice=checkout&redirect=' +
+              encodeURIComponent(window.location.pathname + window.location.search),
+          )
         }
       } finally {
         setCreatingPaymentIntent(false)
@@ -628,7 +634,7 @@ function TourPaymentForm(props: { bookingId: string; total: number; currency: st
     try {
       const returnUrl =
         window.location.origin +
-        `/booking/tour/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`
+        `/booking/confirmation?booking_id=${encodeURIComponent(props.bookingId)}`
 
       const result = await stripe.confirmPayment({
         elements,
@@ -643,7 +649,7 @@ function TourPaymentForm(props: { bookingId: string; total: number; currency: st
       const paymentIntentId = result.paymentIntent?.id
       if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
         navigate(
-          `/booking/tour/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`,
+          `/booking/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`,
         )
       }
     } catch (err) {

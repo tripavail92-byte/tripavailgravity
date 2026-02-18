@@ -343,7 +343,9 @@ export default function PackageDetailsPage() {
 
       const pricing = await packageBookingService.calculatePrice(packageData.id, checkIn, checkOut)
 
-      navigate(`/checkout/package/${packageData.id}`, {
+      const checkoutUrl = `/checkout/package/${packageData.id}?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}&guests=${encodeURIComponent(String(guests))}`
+
+      navigate(checkoutUrl, {
         state: {
           checkIn,
           checkOut,

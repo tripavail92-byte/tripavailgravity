@@ -42,6 +42,17 @@ export default function PackageCheckoutPage() {
 
   const state = location.state as CheckoutState | undefined
 
+  const searchParams = new URLSearchParams(location.search)
+  const queryCheckIn = searchParams.get('checkIn') || undefined
+  const queryCheckOut = searchParams.get('checkOut') || undefined
+  const queryGuestsRaw = searchParams.get('guests') || undefined
+  const queryGuestCount = queryGuestsRaw ? Number(queryGuestsRaw) : undefined
+
+  const checkoutCheckIn = state?.checkIn ?? queryCheckIn
+  const checkoutCheckOut = state?.checkOut ?? queryCheckOut
+  const checkoutGuestCount =
+    state?.guestCount ?? (Number.isFinite(queryGuestCount) && (queryGuestCount as number) > 0 ? (queryGuestCount as number) : undefined)
+
   const [packageData, setPackageData] = useState<any | null>(null)
   const [pricing, setPricing] = useState<CheckoutState['pricing'] | null>(state?.pricing || null)
   const [pendingBooking, setPendingBooking] = useState<PackageBooking | null>(null)
@@ -74,7 +85,10 @@ export default function PackageCheckoutPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
+      navigate(
+        '/auth?mode=signup&notice=checkout&redirect=' +
+          encodeURIComponent(window.location.pathname + window.location.search),
+      )
     }
   }, [loading, user, navigate])
 
@@ -87,14 +101,14 @@ export default function PackageCheckoutPage() {
         typeof pricing.total_price === 'number' &&
         pricing.total_price > 0
 
-      if (!id || !packageData?.id || !state?.checkIn || !state?.checkOut || hasValidPricing) return
+      if (!id || !packageData?.id || !checkoutCheckIn || !checkoutCheckOut || hasValidPricing) return
 
       try {
         // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)
         const calculated = await packageBookingService.calculatePrice(
           packageData.id,
-          state.checkIn,
-          state.checkOut,
+          checkoutCheckIn,
+          checkoutCheckOut,
         )
         setPricing(calculated)
       } catch (error) {
@@ -103,7 +117,7 @@ export default function PackageCheckoutPage() {
     }
 
     loadPricing()
-  }, [id, packageData?.id, state?.checkIn, state?.checkOut, pricing])
+  }, [id, packageData?.id, checkoutCheckIn, checkoutCheckOut, pricing])
 
   useEffect(() => {
     if (!pendingBooking?.expires_at) return
@@ -181,7 +195,10 @@ export default function PackageCheckoutPage() {
           message.toLowerCase().includes('sign in again') ||
           message.toLowerCase().includes('not authenticated')
         ) {
-          navigate('/auth/login?returnTo=' + encodeURIComponent(window.location.pathname))
+          navigate(
+            '/auth?mode=signup&notice=checkout&redirect=' +
+              encodeURIComponent(window.location.pathname + window.location.search),
+          )
         }
       } finally {
         setCreatingPaymentIntent(false)
@@ -198,7 +215,7 @@ export default function PackageCheckoutPage() {
   }, [pendingBooking?.id])
 
   const handleCreatePendingBooking = async () => {
-    if (!id || !user?.id || !state?.checkIn || !state?.checkOut || !state?.guestCount) {
+    if (!id || !user?.id || !checkoutCheckIn || !checkoutCheckOut || !checkoutGuestCount) {
       setBookingError('Missing booking details. Please try again.')
       return
     }
@@ -211,9 +228,9 @@ export default function PackageCheckoutPage() {
       const result = await createPackageBookingWithValidation({
         package_id: packageData.id,
         traveler_id: user.id,
-        check_in_date: state.checkIn,
-        check_out_date: state.checkOut,
-        guest_count: state.guestCount,
+        check_in_date: checkoutCheckIn,
+        check_out_date: checkoutCheckOut,
+        guest_count: checkoutGuestCount,
       })
 
       setPendingBooking(result.booking as PackageBooking)
@@ -252,10 +269,10 @@ export default function PackageCheckoutPage() {
     )
   }
 
-  if (!packageData || !state?.checkIn || !state?.checkOut) {
+  if (!packageData || !checkoutCheckIn || !checkoutCheckOut || !checkoutGuestCount) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Package not found</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking details missing</h1>
         <Button
           onClick={() => navigate(-1)}
           variant="default"
@@ -267,14 +284,14 @@ export default function PackageCheckoutPage() {
     )
   }
 
-  const checkInDate = format(new Date(state.checkIn), 'MMM d, yyyy')
-  const checkOutDate = format(new Date(state.checkOut), 'MMM d, yyyy')
+  const checkInDate = format(new Date(checkoutCheckIn), 'MMM d, yyyy')
+  const checkOutDate = format(new Date(checkoutCheckOut), 'MMM d, yyyy')
   const nights = pricing?.number_of_nights || 0
 
   const minNights = Number(packageData?.minimum_nights ?? 1)
   const maxNights = Number(packageData?.maximum_nights ?? 30)
   const computedNights = Math.round(
-    (new Date(state.checkOut).getTime() - new Date(state.checkIn).getTime()) /
+    (new Date(checkoutCheckOut).getTime() - new Date(checkoutCheckIn).getTime()) /
       (1000 * 60 * 60 * 24),
   )
   const stayNights = nights || computedNights
@@ -333,7 +350,7 @@ export default function PackageCheckoutPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-primary" />
-                    {state.guestCount} guest{state.guestCount > 1 ? 's' : ''}
+                    {checkoutGuestCount} guest{checkoutGuestCount > 1 ? 's' : ''}
                   </div>
                 </div>
               </GlassContent>

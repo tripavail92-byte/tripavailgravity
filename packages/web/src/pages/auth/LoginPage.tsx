@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,33 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
+  const redirectedRef = useRef(false)
+
+  const redirectParam = searchParams.get('redirect')
+  const safeRedirect = useMemo(() => {
+    if (!redirectParam) return null
+    // Prevent open-redirects: only allow same-site absolute paths.
+    if (!redirectParam.startsWith('/')) return null
+    if (redirectParam.startsWith('//')) return null
+    // Avoid redirecting back into auth loop.
+    if (redirectParam.startsWith('/auth')) return null
+    return redirectParam
+  }, [redirectParam])
+
+  useEffect(() => {
+    // Persist deep-link so OAuth callbacks / refresh don't lose it.
+    if (safeRedirect) {
+      try {
+        sessionStorage.setItem('postAuthRedirect', safeRedirect)
+      } catch {
+        // ignore
+      }
+    }
+  }, [safeRedirect])
+
+  const notice = searchParams.get('notice')
+  const showCheckoutNotice = notice === 'checkout'
+
   useEffect(() => {
     const mode = searchParams.get('mode')
     if (mode === 'signup') setIsLogin(false)
@@ -34,14 +61,40 @@ export default function LoginPage() {
 
   useEffect(() => {
     console.log('[LoginPage] Auth state changed:', { user: !!user, activeRole: activeRole?.role_type })
-    
+
+    if (redirectedRef.current) return
+
+    // 1) Enterprise deep-link: if a redirect is present (or persisted), honor it ASAP.
+    if (user && !isLoading) {
+      let target: string | null = safeRedirect
+
+      if (!target) {
+        try {
+          const stored = sessionStorage.getItem('postAuthRedirect')
+          if (stored && stored.startsWith('/') && !stored.startsWith('//') && !stored.startsWith('/auth')) {
+            target = stored
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (target) {
+        redirectedRef.current = true
+        try {
+          sessionStorage.removeItem('postAuthRedirect')
+        } catch {
+          // ignore
+        }
+        console.log('[LoginPage] Redirecting to deep-link:', target)
+        navigate(target)
+        return
+      }
+    }
+
+    // 2) Default behavior: role-based landing once role is known.
     if (user && activeRole) {
-      const redirectTo = searchParams.get('redirect')
-      
-      if (redirectTo) {
-        console.log('[LoginPage] Redirecting to:', redirectTo)
-        navigate(redirectTo)
-      } else {
+      {
         // Role-based default routing
         switch (activeRole.role_type) {
           case 'admin':
@@ -64,10 +117,9 @@ export default function LoginPage() {
         }
       }
     } else if (user && !activeRole && !isLoading) {
-      // User logged in but no active role yet - this shouldn't happen often
-      // but if it does, send them to homepage as fallback
-      console.log('[LoginPage] User authenticated but no active role, redirecting to homepage')
-      navigate('/')
+      // User authenticated but role not yet resolved: do nothing.
+      // This avoids breaking deep-links while roles are still loading.
+      console.log('[LoginPage] User authenticated but role not resolved yet')
     }
   }, [user, activeRole, navigate, searchParams, isLoading])
 
@@ -98,9 +150,11 @@ export default function LoginPage() {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </CardTitle>
           <CardDescription className="text-center">
-            {isLogin
-              ? 'Enter your credentials to access your account'
-              : 'Sign up to start your journey with TripAvail'}
+            {showCheckoutNotice && !isLogin
+              ? 'Create an account to continue booking. You’ll be returned to checkout after signup.'
+              : isLogin
+                ? 'Enter your credentials to access your account'
+                : 'Sign up to start your journey with TripAvail'}
           </CardDescription>
         </CardHeader>
         <CardContent>

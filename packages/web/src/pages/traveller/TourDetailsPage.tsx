@@ -79,7 +79,7 @@ export default function TourDetailsPage() {
     if (!tour?.id) return
     // Navigate using the ID/Slug from URL is fine, but for consistency let's use the actual tour ID if we have it
     // Checkout page also handles both ID and Slug, but it's safer to use the UUID if possible
-    navigate(`/checkout/tour/${id}`)
+    navigate(`/checkout/tour/${tour.id || id}`)
   }
 
   const formatDate = (dateString: string) => {
