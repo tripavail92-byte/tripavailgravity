@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowRight, Clock } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Tour } from '@/features/tour-operator/services/tourService'
@@ -9,6 +10,7 @@ interface DraftsAlertProps {
 }
 
 export function DraftsAlert({ drafts }: DraftsAlertProps) {
+  const navigate = useNavigate()
   if (drafts.length === 0) return null
 
   return (
@@ -33,6 +35,7 @@ export function DraftsAlert({ drafts }: DraftsAlertProps) {
             <div
               key={draft.id}
               className="bg-background/60 hover:bg-background border border-amber-500/20 rounded-lg px-3 py-2 flex items-center gap-3 transition-all cursor-pointer group"
+              onClick={() => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(draft.id)}`)}
             >
               <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-300">
                 {Math.round(Math.random() * 40 + 40)}%
@@ -57,8 +60,9 @@ export function DraftsAlert({ drafts }: DraftsAlertProps) {
       <Button
         size="sm"
         className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm shadow-amber-500/20 whitespace-nowrap"
+        onClick={() => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(drafts[0].id)}`)}
       >
-        Resume Setup
+        Resume Draft
       </Button>
     </motion.div>
   )

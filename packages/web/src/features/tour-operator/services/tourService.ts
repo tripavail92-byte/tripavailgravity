@@ -140,6 +140,22 @@ export const tourService = {
     return data as unknown as Tour
   },
 
+  async getOperatorTourById(operatorId: string, tourId: string) {
+    const { data, error } = await supabase
+      .from('tours')
+      .select('*')
+      .eq('id', tourId)
+      .eq('operator_id', operatorId)
+      .single()
+
+    if (error) {
+      console.error(`Error fetching operator tour ${tourId}:`, error)
+      throw error
+    }
+
+    return data as unknown as Tour
+  },
+
   async getOperatorTours(operatorId: string) {
     const { data, error } = await supabase
       .from('tours')

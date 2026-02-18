@@ -22,17 +22,17 @@ export function WelcomeStep({ onNext }: StepProps) {
         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
           <Plane className="w-12 h-12 text-primary" aria-hidden="true" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">
+        <h2 className="text-3xl font-extrabold text-foreground mb-4 tracking-tight">
           Welcome to TripAvail
         </h2>
-        <p className="text-gray-600 mb-8 max-w-md text-lg leading-relaxed font-medium">
+        <p className="text-muted-foreground mb-8 max-w-md text-lg leading-relaxed font-medium">
           Join our community of tour operators and start creating amazing travel experiences for
           adventurers around the world.
         </p>
         <Button
           onClick={onNext}
           size="lg"
-          className="bg-primary hover:bg-primary-hover text-white px-12 py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+          className="bg-primary hover:bg-primary/90 text-white px-12 py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
         >
           Get Started
         </Button>

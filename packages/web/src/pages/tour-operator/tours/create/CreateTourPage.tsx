@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Tour, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
@@ -28,9 +28,35 @@ const STEPS = [
 export default function CreateTourPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
   const [tourData, setTourData] = useState<Partial<Tour>>({})
   const [isSaving, setIsSaving] = useState(false)
+
+  const tourIdToEdit = useMemo(() => {
+    const raw = searchParams.get('tour_id')
+    return raw && raw.trim().length > 0 ? raw.trim() : null
+  }, [searchParams])
+
+  useEffect(() => {
+    const loadTourForEdit = async () => {
+      if (!user?.id || !tourIdToEdit) return
+      try {
+        setIsSaving(true)
+        const existing = await tourService.getOperatorTourById(user.id, tourIdToEdit)
+        setTourData(existing)
+      } catch (error) {
+        console.error('Error loading tour for edit:', error)
+        toast.error('Failed to load tour for editing')
+      } finally {
+        setIsSaving(false)
+      }
+    }
+
+    loadTourForEdit()
+    // Only load when switching to a new id
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, tourIdToEdit])
 
   const handleUpdate = (data: Partial<Tour>) => {
     setTourData((prev) => ({ ...prev, ...data }))
@@ -46,7 +72,7 @@ export default function CreateTourPage() {
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1)
     } else {
-      navigate('/operator/tours')
+      navigate('/operator/dashboard')
     }
   }
 
@@ -55,7 +81,7 @@ export default function CreateTourPage() {
     setIsSaving(true)
     try {
       // Clean up and ensure required fields
-      const dataToSave = {
+      const dataToSave: any = {
         ...tourData,
         operator_id: user.id,
         is_active: true,
@@ -64,14 +90,23 @@ export default function CreateTourPage() {
         is_featured: false, // Default for new tours
       }
 
+      // Prevent accidental primary key overwrite during updates
+      delete dataToSave.id
+
       // Remove any legacy fields that might cause schema mismatch
       if ((dataToSave as any).difficulty) {
         delete (dataToSave as any).difficulty
       }
 
-      await tourService.createTour(dataToSave as any)
-      toast.success('Tour published successfully!')
-      navigate('/operator/tours')
+      if (tourIdToEdit) {
+        await tourService.updateTour(tourIdToEdit, dataToSave)
+        toast.success('Tour updated successfully!')
+      } else {
+        await tourService.createTour(dataToSave)
+        toast.success('Tour published successfully!')
+      }
+
+      navigate('/operator/dashboard')
     } catch (error) {
       console.error('Error publishing tour:', error)
       toast.error('Failed to publish tour. Please check all fields.')
@@ -122,7 +157,9 @@ export default function CreateTourPage() {
         <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="flex flex-col items-center">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <span className="mt-2 font-medium text-muted-foreground">Publishing...</span>
+            <span className="mt-2 font-medium text-muted-foreground">
+              {tourIdToEdit ? 'Loading/Updating...' : 'Publishing...'}
+            </span>
           </div>
         </div>
       )}

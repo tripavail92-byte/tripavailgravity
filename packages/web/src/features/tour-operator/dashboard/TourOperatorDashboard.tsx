@@ -41,11 +41,11 @@ export function TourOperatorDashboard() {
   }, [user])
 
   const handleCreateTour = () => {
-    navigate('/tour-operator/tours/create')
+    navigate('/operator/tours/new')
   }
 
   const handleEditTour = (tour: Tour) => {
-    navigate(`/tour-operator/tours/edit/${tour.id}`)
+    navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
   }
 
   const handleViewTour = (tour: Tour) => {
