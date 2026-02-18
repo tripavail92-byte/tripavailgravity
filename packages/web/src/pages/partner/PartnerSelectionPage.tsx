@@ -80,7 +80,7 @@ export default function PartnerSelectionPage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-50 flex items-center justify-center p-4"
+      className="min-h-screen bg-muted/30 flex items-center justify-center p-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -89,8 +89,8 @@ export default function PartnerSelectionPage() {
       <div className="w-full max-w-5xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Choose Your Partner Type</h1>
-          <p className="text-lg text-gray-600">Select how you want to earn with TripAvail</p>
+          <h1 className="text-4xl font-bold text-foreground mb-3">Choose Your Partner Type</h1>
+          <p className="text-lg text-muted-foreground">Select how you want to earn with TripAvail</p>
           {activeRole && activeRole.role_type !== 'traveller' && (
             <p className="mt-4 text-warning font-medium">
               ⚠️ You have already selected a partner role. This choice is permanent.
@@ -100,11 +100,11 @@ export default function PartnerSelectionPage() {
 
         {/* Partner Options - Clean Design */}
         {hasPartnerRole ? (
-          <div className="text-center p-12 bg-white rounded-2xl border border-gray-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <div className="text-center p-12 bg-card rounded-2xl border border-border">
+            <h3 className="text-2xl font-bold text-foreground mb-4">
               You're Already a Partner!
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               You have selected <span className="font-bold text-primary">{activeRole?.role_type.replace('_', ' ')}</span> as your partner role.
               <br />
               Partner role selection is permanent and cannot be changed.
@@ -126,7 +126,7 @@ export default function PartnerSelectionPage() {
                 transition={{ delay: 0.1 + index * 0.1 }}
               >
                 <Card
-                  className="p-8 bg-white border border-gray-200 rounded-2xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+                  className="p-8 bg-card border border-border rounded-2xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
                   onMouseEnter={() => setHoveredOption(option.id)}
                   onMouseLeave={() => setHoveredOption(null)}
                   onClick={() => handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')}
@@ -142,8 +142,8 @@ export default function PartnerSelectionPage() {
 
                   {/* Title and Description */}
                   <div className="text-center mb-4">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{option.title}</h3>
-                    <p className="text-gray-600">{option.description}</p>
+                    <h3 className="text-2xl font-bold text-foreground mb-2">{option.title}</h3>
+                    <p className="text-muted-foreground">{option.description}</p>
                   </div>
 
                   {/* Stats */}
@@ -176,15 +176,15 @@ export default function PartnerSelectionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Why Partner with TripAvail?</h3>
+          <h3 className="text-2xl font-bold text-foreground mb-6">Why Partner with TripAvail?</h3>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h4 className="text-gray-900 font-semibold mb-1">Grow Your Business</h4>
-                <p className="text-sm text-gray-600">Reach millions of travelers worldwide</p>
+                <h4 className="text-foreground font-semibold mb-1">Grow Your Business</h4>
+                <p className="text-sm text-muted-foreground">Reach millions of travelers worldwide</p>
               </div>
             </div>
 
@@ -193,8 +193,8 @@ export default function PartnerSelectionPage() {
                 <Star className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h4 className="text-gray-900 font-semibold mb-1">Build Your Brand</h4>
-                <p className="text-sm text-gray-600">Showcase your unique offerings</p>
+                <h4 className="text-foreground font-semibold mb-1">Build Your Brand</h4>
+                <p className="text-sm text-muted-foreground">Showcase your unique offerings</p>
               </div>
             </div>
 
@@ -203,8 +203,8 @@ export default function PartnerSelectionPage() {
                 <Users className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h4 className="text-gray-900 font-semibold mb-1">Manage Everything</h4>
-                <p className="text-sm text-gray-600">Powerful tools for seamless operations</p>
+                <h4 className="text-foreground font-semibold mb-1">Manage Everything</h4>
+                <p className="text-sm text-muted-foreground">Powerful tools for seamless operations</p>
               </div>
             </div>
           </div>

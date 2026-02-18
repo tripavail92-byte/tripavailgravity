@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { Tour, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,14 +29,17 @@ export default function CreateTourPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
+  const { id: routeTourId } = useParams() // Capture path param
   const [currentStep, setCurrentStep] = useState(0)
   const [tourData, setTourData] = useState<Partial<Tour>>({})
   const [isSaving, setIsSaving] = useState(false)
 
+  // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
+    if (routeTourId) return routeTourId
     const raw = searchParams.get('tour_id')
     return raw && raw.trim().length > 0 ? raw.trim() : null
-  }, [searchParams])
+  }, [searchParams, routeTourId])
 
   useEffect(() => {
     const loadTourForEdit = async () => {

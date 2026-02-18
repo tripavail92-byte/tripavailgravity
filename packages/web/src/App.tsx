@@ -199,6 +199,15 @@ function App() {
               }
             />
 
+            <Route
+              path="/operator/tours/edit/:id"
+              element={
+                <RoleGuard allowedRoles={['tour_operator']}>
+                  <CreateTourPage />
+                </RoleGuard>
+              }
+            />
+
             {/* Hotel Manager Settings */}
             <Route
               path="/manager/settings"

@@ -31,8 +31,8 @@ export default function VerificationStatusPage() {
           description:
             'Your documents are currently under review by our compliance team. This typically takes 48-72 hours.',
           action: (
-            <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-100">
-              <p className="text-sm text-amber-800 font-medium">
+            <div className="mt-8 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+              <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
                 Need to update something? Contact our partner support team.
               </p>
             </div>
@@ -46,19 +46,19 @@ export default function VerificationStatusPage() {
   const content = getStatusContent()
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans pb-20">
+    <div className="min-h-screen bg-muted/30 font-sans pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-6">
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-6 py-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm border border-primary/20">
               V
             </div>
             <div>
-              <h1 className="font-black text-gray-900 tracking-tighter text-xl uppercase italic">
+              <h1 className="font-black text-foreground tracking-tighter text-xl uppercase italic">
                 Partner Verification
               </h1>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mt-1">
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-1">
                 {roleLabel} • Trusted Status
               </p>
             </div>
@@ -86,15 +86,15 @@ export default function VerificationStatusPage() {
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full -ml-32 -mb-32 blur-3xl" />
 
               <div className="relative z-10 flex flex-col items-center">
-                <div className="mb-8 p-6 bg-white rounded-3xl shadow-xl shadow-gray-200/50">
+                <div className="mb-8 p-6 bg-background rounded-3xl shadow-xl shadow-muted/50">
                   {content.icon}
                 </div>
 
-                <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-4 italic uppercase">
+                <h2 className="text-4xl font-black text-foreground tracking-tighter mb-4 italic uppercase">
                   {content.title}
                 </h2>
 
-                <p className="text-xl text-gray-500 max-w-xl mx-auto font-medium leading-relaxed">
+                <p className="text-xl text-muted-foreground max-w-xl mx-auto font-medium leading-relaxed">
                   {content.description}
                 </p>
 
@@ -137,12 +137,12 @@ function TrustCard({
   description: string
 }) {
   return (
-    <Card className="p-6 rounded-2xl border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow group">
-      <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:text-primary group-hover:bg-primary/5 transition-colors mb-4">
+    <Card className="p-6 rounded-2xl border-border bg-card shadow-sm hover:shadow-md transition-shadow group">
+      <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:bg-primary/5 transition-colors mb-4">
         {icon}
       </div>
-      <h3 className="font-bold text-gray-900 mb-1 italic uppercase tracking-tight">{title}</h3>
-      <p className="text-sm text-gray-500 leading-snug">{description}</p>
+      <h3 className="font-bold text-foreground mb-1 italic uppercase tracking-tight">{title}</h3>
+      <p className="text-sm text-muted-foreground leading-snug">{description}</p>
     </Card>
   )
 }
