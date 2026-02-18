@@ -33,9 +33,9 @@ export function DrawerMenu() {
   }
 
   const handleLogout = async () => {
+    setIsDrawerOpen(false)
     await signOut()
     navigate('/')
-    setIsDrawerOpen(false)
   }
 
   // iOS-style elastic spring animation configuration

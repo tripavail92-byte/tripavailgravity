@@ -39,7 +39,7 @@ export const useAuth = create<AuthState>((set, get) => ({
           p_user_id: session.user.id,
         })
 
-        const activeRole: UserRole | null = !adminRoleError && adminRole
+        let activeRole: UserRole | null = !adminRoleError && adminRole
           ? {
               id: session.user.id,
               user_id: session.user.id,
@@ -74,7 +74,7 @@ export const useAuth = create<AuthState>((set, get) => ({
             p_user_id: session.user.id,
           })
 
-          const activeRole: UserRole | null = !adminRoleError && adminRole
+          let activeRole: UserRole | null = !adminRoleError && adminRole
             ? {
                 id: session.user.id,
                 user_id: session.user.id,
@@ -192,8 +192,10 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       await authService.signOut()
     } catch (error) {
-      set({ isLoading: false })
-      throw error
+      console.error('Sign out failed:', error)
+      // We continue to ensure local state is cleared
+    } finally {
+      set({ user: null, activeRole: null, isLoading: false })
     }
   },
 
