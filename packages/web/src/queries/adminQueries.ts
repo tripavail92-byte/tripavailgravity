@@ -66,22 +66,28 @@ export function useAdminUsers(
 /**
  * Fetch admin role for a user (AdminGuard)
  */
-async function fetchAdminRole(userId: string): Promise<AdminUser | null> {
-  const { data, error } = await supabase
-    .from('admin_users')
-    .select('*')
-    .eq('id', userId)
-    .limit(1)
-    .single()
+async function fetchAdminRole(userId: string): Promise<Partial<AdminUser> | null> {
+  const { data, error } = await supabase.rpc('get_admin_role', {
+    p_user_id: userId,
+  })
 
   if (error) {
-    // Not found is not an error - user is just not an admin
-    if (error.code === 'PGRST116') return null
-    console.error('[adminQueries] Error fetching admin role:', error)
+    console.error('[adminQueries] Error fetching admin role via RPC:', error)
     throw error
   }
 
-  return data
+  if (!data) return null
+
+  // Return partial object satisfying the needs of AdminGuard (which only needs .role)
+  // We mock the other required fields if strictly getting AdminUser type, 
+  // but changing return type to Partial<AdminUser> is safer if TS allows.
+  // AdminGuard checks !adminUser.role, so this works.
+  return {
+    id: userId,
+    email: 'hidden@admin.com', // Placeholder as RPC doesn't return email
+    role: data,
+    created_at: new Date().toISOString(),
+  } as AdminUser
 }
 
 /**

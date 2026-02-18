@@ -1,11 +1,14 @@
-import { Briefcase, Calendar, Crown, Flower, Heart, Mountain, Users, Utensils } from 'lucide-react'
+import { Anchor, Briefcase, Calendar, Crown, Flower, Globe, Heart, Landmark, Mountain, Users, Utensils } from 'lucide-react'
 
 import { PackageType } from '../types'
 import {
   AdventurePackageVector,
   BusinessEliteVector,
+  CruiseWaterVector,
   CulinaryJourneyVector,
+  CulturalHistoryVector,
   CustomPackageVector,
+  EcoNatureVector,
   FamilyAdventureVector,
   LuxuryExperienceVector,
   RomanticEscapeVector,
@@ -94,11 +97,41 @@ export const PACKAGE_TYPE_CONFIG = {
     bg: 'bg-primary/5',
     border: 'border-primary/20',
   },
+  [PackageType.CULTURAL_HISTORY]: {
+    label: 'Cultural & History',
+    description: 'Explore heritage and traditions',
+    features: ['Museum passes', 'Guided heritage tours', 'Local workshops'],
+    icon: Landmark,
+    vector: CulturalHistoryVector,
+    color: 'text-primary',
+    bg: 'bg-primary/5',
+    border: 'border-primary/20',
+  },
+  [PackageType.ECO_NATURE]: {
+    label: 'Eco & Nature',
+    description: 'Sustainable nature experiences',
+    features: ['Wildlife watching', 'Eco-lodging', 'Conservation tours'],
+    icon: Globe,
+    vector: EcoNatureVector,
+    color: 'text-primary',
+    bg: 'bg-primary/5',
+    border: 'border-primary/20',
+  },
+  [PackageType.CRUISE_WATER]: {
+    label: 'Cruise & Water',
+    description: 'Ocean and river adventures',
+    features: ['Cabin upgrades', 'Shore excursions', 'Onboard credit'],
+    icon: Anchor,
+    vector: CruiseWaterVector,
+    color: 'text-primary',
+    bg: 'bg-primary/5',
+    border: 'border-primary/20',
+  },
   [PackageType.CUSTOM]: {
     label: 'Custom Package',
     description: 'Design your own package from scratch',
     features: ['Fully customizable', 'Your vision', 'Unlimited creativity'],
-    icon: Briefcase,
+    icon: Briefcase, // Or Magic Wand if available? Briefcase is fine fallback.
     vector: CustomPackageVector,
     color: 'text-primary',
     bg: 'bg-primary/5',

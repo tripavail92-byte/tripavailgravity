@@ -8,3 +8,7 @@ export * from './RomanticEscapeVector'
 export * from './types'
 export * from './WeekendGetawayVector'
 export * from './WellnessRetreatVector'
+
+export * from './CulturalHistoryVector'
+export * from './EcoNatureVector'
+export * from './CruiseWaterVector'

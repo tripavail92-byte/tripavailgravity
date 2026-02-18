@@ -8,6 +8,12 @@ export enum PackageType {
   WELLNESS_RETREAT = 'wellness-retreat',
 
   LUXURY_EXPERIENCE = 'luxury-experience',
+  
+  // New Premium Types
+  CULTURAL_HISTORY = 'cultural-history',
+  ECO_NATURE = 'eco-nature',
+  CRUISE_WATER = 'cruise-water',
+
   CUSTOM = 'custom',
 }
 

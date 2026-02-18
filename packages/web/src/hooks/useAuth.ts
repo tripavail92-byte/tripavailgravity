@@ -50,8 +50,10 @@ export const useAuth = create<AuthState>((set, get) => ({
             }
           : await roleService.getActiveRole(session.user.id)
 
-        // Fallback: If no role found (e.g. new Google sign-up), default to Traveller
-        if (!activeRole && !adminRole) {
+        if (activeRole?.role_type === 'admin') {
+          console.warn('[useAuth] User detected as Admin via get_admin_role:', adminRole)
+        } else if (!activeRole && !adminRole) {
+          console.log('[useAuth] No active role found, defaulting to Traveller')
           activeRole = {
             id: session.user.id,
             user_id: session.user.id,
@@ -62,6 +64,7 @@ export const useAuth = create<AuthState>((set, get) => ({
           }
         }
 
+        console.log('[useAuth] Initialized with role:', activeRole)
         set({ user: session.user, activeRole, isLoading: false, initialized: true })
       } else {
         set({ user: null, activeRole: null, isLoading: false, initialized: true })

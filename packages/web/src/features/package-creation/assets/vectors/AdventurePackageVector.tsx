@@ -1,131 +1,193 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
 
 import { VectorProps } from './types'
 
-// Adventure Package - Mountain Peak with Flag
 export function AdventurePackageVector({
   className = '',
   isActive = false,
-  size = 80,
+  size = 120,
 }: VectorProps) {
-  const [isHovered, setIsHovered] = useState(false)
-
   return (
     <motion.svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="0 0 120 120"
       fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       className={className}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ scale: 1.05 }}
+      initial="idle"
+      animate={isActive ? 'active' : 'idle'}
+      whileHover="hover"
     >
-      {/* Sky/Background Circle */}
+      <defs>
+        <linearGradient id="advSky" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#E0F2FE" />
+          <stop offset="100%" stopColor="#BAE6FD" />
+        </linearGradient>
+        
+        <linearGradient id="advMountainMain" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#4F46E5" />
+          <stop offset="100%" stopColor="#3730A3" />
+        </linearGradient>
+
+        <linearGradient id="advMountainSec" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6366F1" />
+          <stop offset="100%" stopColor="#4338CA" />
+        </linearGradient>
+
+        <linearGradient id="advSun" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FCD34D" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+
+        <filter id="advShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+          <feOffset dx="0" dy="2" result="offsetblur" />
+          <feFlood floodColor="#000000" floodOpacity="0.1" />
+          <feComposite in2="offsetblur" operator="in" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Background Circle (Optional, kept subtle) */}
       <motion.circle
-        cx="50"
-        cy="50"
-        r="40"
-        fill="#E3F2FD"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 0.5 }}
-      />
-
-      {/* Back Mountains */}
-      <motion.path
-        d="M10 75L30 45L50 60L70 35L90 75Z"
-        fill="#9D4EDD"
-        opacity="0.4"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 0.4 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      />
-
-      {/* Front Mountain */}
-      <motion.path
-        d="M15 75L35 50L55 65L75 40L85 75Z"
-        fill="url(#adventureMountainGradient)"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-      />
-
-      {/* Snow Caps */}
-      <motion.path
-        d="M35 50L40 42L45 50L42 52Z"
-        fill="#fff"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.7 }}
-      />
-      <motion.path
-        d="M75 40L80 32L85 40L82 42Z"
-        fill="#fff"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.8 }}
-      />
-
-      {/* Flag Pole */}
-      <motion.line
-        x1="80"
-        y1="32"
-        x2="80"
-        y2="20"
-        stroke="#FFD700"
-        strokeWidth="2"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.5, delay: 0.9 }}
-      />
-
-      {/* Waving Flag */}
-      <motion.path
-        d="M80 20L88 22L86 26L80 24Z"
-        fill="#FFD700"
-        initial={{ scaleX: 0 }}
-        animate={{
-          scaleX: 1,
-          x: isActive ? [0, 1, 0] : 0,
-        }}
-        transition={{
-          scaleX: { duration: 0.4, delay: 1 },
-          x: { duration: 1, repeat: Infinity, ease: 'easeInOut' },
-        }}
-        style={{ transformOrigin: 'left' }}
+        cx="60"
+        cy="60"
+        r="55"
+        fill="url(#advSky)"
+        opacity="0.3"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 0.3 }}
+        transition={{ duration: 0.8 }}
       />
 
       {/* Sun */}
       <motion.circle
-        cx="25"
+        cx="90"
         cy="30"
         r="8"
-        fill="#FDB022"
+        fill="url(#advSun)"
+        variants={{
+          idle: { scale: 1, y: 0 },
+          active: { 
+            scale: [1, 1.1, 1],
+            y: [0, -2, 0],
+            filter: "drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))"
+          },
+          hover: { scale: 1.1 }
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Back Mountain */}
+      <motion.path
+        d="M20 90 L50 40 L80 90 Z"
+        fill="url(#advMountainSec)"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 0.8 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+      />
+      
+      {/* Snow Cap Back */}
+      <motion.path
+        d="M50 40 L60 56 L50 52 L40 56 Z"
+        fill="#FFFFFF"
+        opacity="0.9"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.4 }}
+      />
+
+      {/* Main Mountain */}
+      <motion.path
+        d="M40 95 L80 35 L120 95 H40Z" // Shifted for composition
+        transform="translate(-10, 0)"
+        fill="url(#advMountainMain)"
+        filter="url(#advShadow)"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      />
+
+      {/* Snow Cap Main */}
+      <motion.path
+        d="M70 35 L85 55 L70 50 L55 55 Z"
+        fill="#FFFFFF"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.5 }}
       />
 
       {/* Clouds */}
-      {isHovered && (
-        <motion.g
-          initial={{ x: -20, opacity: 0 }}
-          animate={{ x: [0, 15, 0], opacity: 1 }}
-          transition={{ duration: 4, repeat: Infinity }}
-        >
-          <motion.ellipse cx="60" cy="28" rx="6" ry="3" fill="#fff" opacity="0.8" />
-          <motion.ellipse cx="65" cy="26" rx="5" ry="3" fill="#fff" opacity="0.8" />
-        </motion.g>
-      )}
+      <motion.g
+        initial={{ x: -10, opacity: 0 }}
+        animate={{ x: 0, opacity: 0.8 }}
+        transition={{ delay: 0.6 }}
+      >
+        <motion.ellipse
+          cx="30"
+          cy="45"
+          rx="12"
+          ry="6"
+          fill="#FFFFFF"
+          variants={{
+            active: { x: [0, 10, 0] },
+            idle: { x: 0 }
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.ellipse
+          cx="40"
+          cy="50"
+          rx="10"
+          ry="5"
+          fill="#FFFFFF"
+          opacity="0.8"
+          variants={{
+            active: { x: [0, 8, 0] },
+            idle: { x: 0 }
+          }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        />
+      </motion.g>
 
-      <defs>
-        <linearGradient id="adventureMountainGradient" x1="15" y1="40" x2="85" y2="75">
-          <stop offset="0%" stopColor="#9D4EDD" />
-          <stop offset="100%" stopColor="#00D4FF" />
-        </linearGradient>
-      </defs>
+      {/* Flag */}
+      <motion.line
+        x1="70"
+        y1="35"
+        x2="70"
+        y2="20"
+        stroke="#475569"
+        strokeWidth="2"
+        strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ delay: 0.7 }}
+      />
+      <motion.path
+        d="M70 20 L85 25 L70 30"
+        fill="#EF4444"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ delay: 0.9 }}
+        style={{ originX: 0 }}
+      />
+      
+      {/* Trees (Foreground) */}
+      <motion.g
+        initial={{ scaleY: 0 }}
+        animate={{ scaleY: 1 }}
+        transition={{ delay: 0.8 }}
+        style={{ originY: 1 }}
+      >
+        <path d="M20 95 L25 80 L30 95 Z" fill="#15803D" />
+        <path d="M35 95 L40 85 L45 95 Z" fill="#166534" />
+        <path d="M85 95 L90 82 L95 95 Z" fill="#15803D" />
+      </motion.g>
+
     </motion.svg>
   )
 }

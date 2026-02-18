@@ -41,6 +41,8 @@ export function RoleBasedDrawer() {
         return 'Hotel Manager'
       case 'tour_operator':
         return 'Tour Operator'
+      case 'admin':
+        return 'Administrator'
       case 'traveller':
       default:
         return 'Traveler'
@@ -53,6 +55,8 @@ export function RoleBasedDrawer() {
         return 'from-blue-500 to-indigo-600'
       case 'tour_operator':
         return 'from-emerald-500 to-teal-600'
+      case 'admin':
+        return 'from-red-500 to-rose-600'
       case 'traveller':
         return 'from-primary to-primary/80'
       default:

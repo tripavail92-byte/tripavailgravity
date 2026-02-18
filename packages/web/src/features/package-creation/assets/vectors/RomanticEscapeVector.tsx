@@ -1,202 +1,125 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
 
 import { VectorProps } from './types'
 
-// Romantic Escape - Couple with Heart in the Middle
-export function RomanticEscapeVector({ className = '', isActive = false, size = 80 }: VectorProps) {
-  const [isHovered, setIsHovered] = useState(false)
-
+export function RomanticEscapeVector({
+  className = '',
+  isActive = false,
+  size = 120,
+}: VectorProps) {
   return (
     <motion.svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="0 0 120 120"
       fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       className={className}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ scale: 1.05 }}
-      animate={isActive ? { scale: [1, 1.03, 1] } : {}}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+      initial="idle"
+      animate={isActive ? 'active' : 'idle'}
+      whileHover="hover"
     >
-      {/* Background Sunset Circle */}
+      <defs>
+        <linearGradient id="romHeart1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FB7185" />
+          <stop offset="100%" stopColor="#E11D48" />
+        </linearGradient>
+
+        <linearGradient id="romHeart2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F472B6" />
+          <stop offset="100%" stopColor="#DB2777" />
+        </linearGradient>
+
+         <filter id="romShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+          <feOffset dx="0" dy="2" result="offsetblur" />
+          <feFlood floodColor="#be185d" floodOpacity="0.2" />
+          <feComposite in2="offsetblur" operator="in" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Soft Background */}
       <motion.circle
-        cx="50"
-        cy="50"
-        r="38"
-        fill="#FFE5EC"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.4 }}
-        transition={{ duration: 0.5 }}
-      />
-
-      {/* Person 1 (Left - Male) */}
-      <motion.g
-        initial={{ x: -15, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        {/* Head */}
-        <motion.circle cx="32" cy="45" r="6" fill="#9D4EDD" />
-        {/* Body */}
-        <motion.rect x="27" y="52" width="10" height="16" rx="3" fill="#9D4EDD" />
-        {/* Arm reaching toward center */}
-        <motion.path
-          d="M37 56L42 50"
-          stroke="#9D4EDD"
-          strokeWidth="3"
-          strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 0.8 }}
-        />
-      </motion.g>
-
-      {/* Person 2 (Right - Female) */}
-      <motion.g
-        initial={{ x: 15, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        {/* Head */}
-        <motion.circle cx="68" cy="45" r="6" fill="#00D4FF" />
-        {/* Body (dress shape) */}
-        <motion.path d="M63 52L68 52L70 68L66 68Z" fill="#00D4FF" />
-        {/* Arm reaching toward center */}
-        <motion.path
-          d="M63 56L58 50"
-          stroke="#00D4FF"
-          strokeWidth="3"
-          strokeLinecap="round"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 0.9 }}
-        />
-      </motion.g>
-
-      {/* Center Heart */}
-      <motion.path
-        d="M50 58L40 48C37 45 37 40 40 37C43 34 48 34 50 38C52 34 57 34 60 37C63 40 63 45 60 48L50 58Z"
-        fill="url(#romanticHeartGradient)"
-        initial={{ scale: 0, rotate: -10 }}
-        animate={{
-          scale: isActive ? [1, 1.15, 1] : 1,
-          rotate: 0,
-        }}
-        transition={{
-          scale: { duration: 1.5, repeat: Infinity },
-          rotate: { duration: 0.6, type: 'spring', stiffness: 200 },
-        }}
-      />
-
-      {/* Heart Shine */}
-      <motion.ellipse
-        cx="46"
-        cy="42"
-        rx="4"
-        ry="6"
-        fill="#fff"
+        cx="60"
+        cy="60"
+        r="50"
+        fill="#FFE4E6"
         opacity="0.4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 1.2 }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.8 }}
       />
 
-      {/* Floating Hearts Around Couple */}
-      {[
-        { x: 25, y: 30, delay: 0 },
-        { x: 75, y: 32, delay: 0.3 },
-        { x: 30, y: 70, delay: 0.6 },
-        { x: 70, y: 68, delay: 0.9 },
-      ].map((heart, i) => (
-        <motion.path
-          key={i}
-          d={`M${heart.x} ${heart.y}C${heart.x} ${heart.y} ${heart.x - 1.5} ${heart.y - 1.5} ${heart.x - 1.5} ${heart.y - 2.5}C${heart.x - 1.5} ${heart.y - 3.5} ${heart.x} ${heart.y - 4} ${heart.x + 1} ${heart.y - 3.5}C${heart.x + 2} ${heart.y - 4} ${heart.x + 3} ${heart.y - 3.5} ${heart.x + 3} ${heart.y - 2.5}C${heart.x + 3} ${heart.y - 1.5} ${heart.x + 1.5} ${heart.y} ${heart.x + 1} ${heart.y + 1.5}Z`}
-          fill="#E91E63"
-          opacity="0.5"
-          initial={{ y: heart.y + 10, opacity: 0 }}
-          animate={{
-            y: [heart.y + 10, heart.y - 10, heart.y - 10],
-            opacity: [0, 0.5, 0],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            delay: heart.delay,
-            ease: 'easeInOut',
-          }}
-        />
+      {/* Champagne Glasses (Subtle hint) */}
+      <motion.g
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <path d="M40 70 L40 90 M35 90 H45" stroke="#94A3B8" strokeWidth="2" />
+        <path d="M40 70 Q30 50 40 40 Q50 50 40 70" fill="#FEF3C7" stroke="#CBD5E1" strokeWidth="1" opacity="0.6"/>
+        
+        <path d="M80 70 L80 90 M75 90 H85" stroke="#94A3B8" strokeWidth="2" />
+        <path d="M80 70 Q70 50 80 40 Q90 50 80 70" fill="#FEF3C7" stroke="#CBD5E1" strokeWidth="1" opacity="0.6"/>
+      </motion.g>
+
+      {/* Main Heart */}
+      <motion.path
+        d="M60 45 C60 45 50 25 35 35 C20 45 35 65 60 85 C85 65 100 45 85 35 C70 25 60 45 60 45 Z"
+        fill="url(#romHeart1)"
+        filter="url(#romShadow)"
+        initial={{ scale: 0, y: 10 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ delay: 0.2, type: "spring" }}
+        variants={{
+            active: { 
+                scale: [1, 1.1, 1],
+                filter: "drop-shadow(0 4px 6px rgba(225, 29, 72, 0.3))" 
+            },
+            idle: { scale: 1 }
+        }}
+      />
+      
+      {/* Secondary Heart */}
+      <motion.path
+        d="M85 35 C85 35 80 25 72 30 C64 35 70 45 80 55 C90 45 96 35 88 30 C80 25 85 35 85 35 Z"
+        fill="url(#romHeart2)"
+        initial={{ scale: 0, x: -10 }}
+        animate={{ scale: 1, x: 0 }}
+        transition={{ delay: 0.5, type: "spring" }}
+          variants={{
+            active: { 
+                y: [0, -5, 0],
+                rotate: [0, 5, 0]
+            },
+            idle: { y: 0 }
+        }}
+      />
+
+      {/* Floating Particles/Bubbles */}
+      {[...Array(5)].map((_, i) => (
+         <motion.circle
+            key={i}
+            cx={40 + i * 10}
+            cy={50}
+            r={1.5}
+            fill="#FECDD3"
+            variants={{
+                active: { 
+                    y: [-10, -30], 
+                    x: [0, (i % 2 === 0 ? 5 : -5)],
+                    opacity: [0, 0.8, 0] 
+                },
+                idle: { opacity: 0 }
+            }}
+            transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
+         />
       ))}
 
-      {/* Ground/Base Line */}
-      <motion.line
-        x1="22"
-        y1="70"
-        x2="78"
-        y2="70"
-        stroke="#F8BBD0"
-        strokeWidth="2"
-        strokeLinecap="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
-      />
-
-      {/* Sparkles on Hover */}
-      {isHovered &&
-        [
-          { x: 40, y: 35 },
-          { x: 60, y: 37 },
-        ].map((sparkle, i) => (
-          <motion.g key={i}>
-            <motion.line
-              x1={sparkle.x - 2}
-              y1={sparkle.y}
-              x2={sparkle.x + 2}
-              y2={sparkle.y}
-              stroke="#FFD700"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{
-                pathLength: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: i * 0.2,
-              }}
-            />
-            <motion.line
-              x1={sparkle.x}
-              y1={sparkle.y - 2}
-              x2={sparkle.x}
-              y2={sparkle.y + 2}
-              stroke="#FFD700"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{
-                pathLength: [0, 1, 0],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 1,
-                repeat: Infinity,
-                delay: i * 0.2 + 0.1,
-              }}
-            />
-          </motion.g>
-        ))}
-
-      <defs>
-        <linearGradient id="romanticHeartGradient" x1="40" y1="37" x2="60" y2="58">
-          <stop offset="0%" stopColor="#9D4EDD" />
-          <stop offset="100%" stopColor="#00D4FF" />
-        </linearGradient>
-      </defs>
     </motion.svg>
   )
 }

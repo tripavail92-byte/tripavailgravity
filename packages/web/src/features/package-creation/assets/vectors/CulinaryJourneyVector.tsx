@@ -1,199 +1,171 @@
 import { motion } from 'motion/react'
-import { useState } from 'react'
 
 import { VectorProps } from './types'
 
-// Culinary Journey - Chef Hat with Steam
 export function CulinaryJourneyVector({
   className = '',
   isActive = false,
-  size = 80,
+  size = 120,
 }: VectorProps) {
-  const [isHovered, setIsHovered] = useState(false)
-
   return (
     <motion.svg
       width={size}
       height={size}
-      viewBox="0 0 100 100"
+      viewBox="0 0 120 120"
       fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       className={className}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ scale: 1.05 }}
+      initial="idle"
+      animate={isActive ? 'active' : 'idle'}
+      whileHover="hover"
     >
-      {/* Plate */}
-      <motion.ellipse
-        cx="50"
-        cy="70"
-        rx="28"
-        ry="6"
-        fill="#F57C00"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.5 }}
-      />
+      <defs>
+        <linearGradient id="culCloche" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#E2E8F0" />
+          <stop offset="100%" stopColor="#94A3B8" />
+        </linearGradient>
+        
+        <linearGradient id="culPlate" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F1F5F9" />
+        </linearGradient>
 
-      {/* Plate Detail */}
-      <motion.ellipse
-        cx="50"
-        cy="70"
-        rx="24"
-        ry="5"
-        fill="#FF9800"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      />
+        <filter id="culShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+          <feOffset dx="0" dy="4" result="offsetblur" />
+          <feFlood floodColor="#000000" floodOpacity="0.2" />
+          <feComposite in2="offsetblur" operator="in" />
+          <feMerge>
+            <feMergeNode />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
 
-      {/* Chef Hat Base */}
-      <motion.rect
-        x="35"
-        y="60"
-        width="30"
-        height="10"
-        rx="2"
-        fill="url(#culinaryHatBaseGradient)"
-        stroke="#9D4EDD"
-        strokeWidth="1"
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: 1 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-        style={{ transformOrigin: 'bottom' }}
-      />
-
-      {/* Chef Hat Puffy Top */}
-      <motion.path
-        d="M38 60C38 52 42 45 50 45C58 45 62 52 62 60Z"
-        fill="#fff"
-        stroke="#00D4FF"
-        strokeWidth="1.5"
+      {/* Decorative Table Circle */}
+      <motion.circle
+        cx="60"
+        cy="90"
+        r="40"
+        fill="#FEF3C7"
+        opacity="0.5"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.5, type: 'spring', stiffness: 200 }}
+        transition={{ duration: 0.6 }}
       />
 
-      {/* Hat Pleats */}
-      {[0, 1, 2, 3].map((i) => (
-        <motion.line
-          key={i}
-          x1={40 + i * 5}
-          y1={60}
-          x2={40 + i * 5}
-          y2={50}
-          stroke="#F5F5F5"
-          strokeWidth="0.5"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ delay: 0.7 + i * 0.05 }}
-        />
-      ))}
+      {/* Plate */}
+      <motion.ellipse
+        cx="60"
+        cy="90"
+        rx="45"
+        ry="12"
+        fill="url(#culPlate)"
+        filter="url(#culShadow)"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.2, type: "spring" }}
+      />
+      <motion.ellipse
+        cx="60"
+        cy="90"
+        rx="30"
+        ry="8"
+        stroke="#E2E8F0"
+        strokeWidth="1"
+        fill="none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      />
 
-      {/* Steam Rising */}
-      {[0, 1, 2].map((i) => (
-        <motion.path
-          key={i}
-          d={`M${42 + i * 8} 43Q${44 + i * 8} 38 ${42 + i * 8} 33Q${40 + i * 8} 28 ${42 + i * 8} 23`}
-          stroke="#90CAF9"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{
-            pathLength: [0, 1],
-            opacity: [0, 0.7, 0],
-          }}
-          transition={{
-            duration: 2.5,
-            repeat: Infinity,
-            delay: i * 0.4,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
+      {/* Cloche (Lid) */}
+      <motion.path
+        d="M20 90 Q20 40 60 40 Q100 40 100 90"
+        fill="url(#culCloche)"
+        stroke="#64748B"
+        strokeWidth="1"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ 
+            y: isActive ? -20 : 0,
+            opacity: 1
+        }}
+        transition={{ 
+            duration: 0.8, 
+            type: "spring", 
+            bounce: 0.4
+        }}
+      />
+      
+      {/* Cloche Handle */}
+      <motion.circle
+        cx="60"
+        cy="40"
+        r="5"
+        fill="#64748B"
+        initial={{ scale: 0 }}
+        animate={{ 
+            scale: 1,
+            y: isActive ? -20 : 0
+        }}
+        transition={{ delay: 0.3 }}
+      />
 
-      {/* Fork and Knife Crossed */}
+      {/* Food Reveal (Inside) */}
       <motion.g
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isActive ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Fork */}
-        <motion.g transform="rotate(-15 20 72)">
-          <motion.line
-            x1="20"
-            y1="65"
-            x2="20"
-            y2="78"
-            stroke="#E65100"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <motion.line
-            x1="18"
-            y1="65"
-            x2="18"
-            y2="70"
-            stroke="#E65100"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-          <motion.line
-            x1="22"
-            y1="65"
-            x2="22"
-            y2="70"
-            stroke="#E65100"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </motion.g>
-
-        {/* Knife */}
-        <motion.g transform="rotate(15 80 72)">
-          <motion.line
-            x1="80"
-            y1="65"
-            x2="80"
-            y2="78"
-            stroke="#E65100"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <motion.path d="M78 65L80 68L82 65Z" fill="#E65100" />
-        </motion.g>
+          {/* Steak/Food Item */}
+          <ellipse cx="60" cy="88" rx="20" ry="8" fill="#713F12" />
+          <path d="M50 88 Q60 80 70 88" stroke="#A16207" strokeWidth="2" />
+          
+           {/* Steam */}
+          {[...Array(3)].map((_, i) => (
+            <motion.path
+                key={i}
+                d={`M${55 + i * 5} 80 Q${60 + i * 5} 70 ${55 + i * 5} 60`}
+                stroke="#FFFFFF"
+                strokeWidth="2"
+                strokeLinecap="round"
+                opacity="0.6"
+                variants={{
+                    active: { y: [-5, -15], opacity: [0, 0.6, 0] },
+                    idle: { opacity: 0 }
+                }}
+                transition={{ 
+                    duration: 1.5, 
+                    repeat: Infinity, 
+                    delay: i * 0.3,
+                    ease: "easeOut"
+                }}
+            />
+          ))}
       </motion.g>
 
-      {/* Stars on hover */}
-      {isHovered && (
-        <>
-          <motion.circle
-            cx="30"
-            cy="52"
-            r="2"
-            fill="#9D4EDD"
-            initial={{ scale: 0 }}
-            animate={{ scale: [0, 1.2, 0] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          />
-          <motion.circle
-            cx="70"
-            cy="52"
-            r="2"
-            fill="#00D4FF"
-            initial={{ scale: 0 }}
-            animate={{ scale: [0, 1.2, 0] }}
-            transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
-          />
-        </>
-      )}
+      {/* Fork and Knife */}
+      <motion.g
+         initial={{ opacity: 0, x: -10 }}
+         animate={{ opacity: 1, x: 0 }}
+         transition={{ delay: 0.6 }}
+      >
+        {/* Knife */}
+        <rect x="105" y="60" width="4" height="40" fill="#94A3B8" rx="1" />
+        <rect x="105" y="100" width="4" height="15" fill="#475569" rx="1" />
+      </motion.g>
+      
+       <motion.g
+         initial={{ opacity: 0, x: 10 }}
+         animate={{ opacity: 1, x: 0 }}
+         transition={{ delay: 0.6 }}
+      >
+         {/* Fork */}
+        <rect x="10" y="60" width="4" height="40" fill="#94A3B8" rx="1" />
+        <path d="M10 60 L6 50 M14 60 L18 50 M12 60 L12 50" stroke="#94A3B8" strokeWidth="2" />
+        <rect x="10" y="100" width="4" height="15" fill="#475569" rx="1" />
+      </motion.g>
 
-      <defs>
-        <linearGradient id="culinaryHatBaseGradient" x1="35" y1="60" x2="65" y2="70">
-          <stop offset="0%" stopColor="#F3E5F5" />
-          <stop offset="100%" stopColor="#E1F5FE" />
-        </linearGradient>
-      </defs>
     </motion.svg>
   )
 }
