@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { useVerificationQueue } from '@/queries/adminQueries'
 
 const navItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
@@ -22,6 +23,10 @@ const navItems = [
 export default function AdminLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [openReportsCount, setOpenReportsCount] = useState<number>(0)
+
+  // Live pending partner applications count — powers the sidebar badge
+  const { data: pendingQueue = [] } = useVerificationQueue('pending')
+  const pendingPartnersCount = pendingQueue.length
 
   useEffect(() => {
     let isCancelled = false
@@ -52,13 +57,27 @@ export default function AdminLayout() {
   }, [])
 
   const renderNavLabel = (label: string) => {
-    if (label !== 'Reports') return label
-    return (
-      <span className="inline-flex items-center gap-2">
-        <span>{label}</span>
-        {openReportsCount > 0 ? <Badge variant="secondary">{openReportsCount}</Badge> : null}
-      </span>
-    )
+    if (label === 'Reports') {
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span>{label}</span>
+          {openReportsCount > 0 ? <Badge variant="secondary">{openReportsCount}</Badge> : null}
+        </span>
+      )
+    }
+    if (label === 'Partners') {
+      return (
+        <span className="inline-flex items-center gap-2">
+          <span>{label}</span>
+          {pendingPartnersCount > 0 ? (
+            <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0">
+              {pendingPartnersCount}
+            </Badge>
+          ) : null}
+        </span>
+      )
+    }
+    return label
   }
 
   return (
