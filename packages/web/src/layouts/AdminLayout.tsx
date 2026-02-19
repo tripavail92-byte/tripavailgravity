@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 const navItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
@@ -69,16 +70,19 @@ export default function AdminLayout() {
             <div className="text-sm font-semibold">TripAvail</div>
             <div className="text-base font-bold">Admin</div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setMobileNavOpen((v) => !v)}
-            aria-expanded={mobileNavOpen}
-            aria-controls="admin-mobile-nav"
-          >
-            Menu
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-expanded={mobileNavOpen}
+              aria-controls="admin-mobile-nav"
+            >
+              Menu
+            </Button>
+          </div>
         </div>
 
         {mobileNavOpen && (

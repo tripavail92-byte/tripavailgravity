@@ -15,6 +15,31 @@ type UserListItem = {
   created_at: string
 }
 
+export type VerificationRequest = {
+  id: string
+  user_id: string
+  partner_type: 'hotel_manager' | 'tour_operator'
+  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'info_requested'
+  submitted_at: string
+  reviewed_at: string | null
+  reviewed_by: string | null
+  decision_reason: string | null
+  submission_data: Record<string, unknown>
+  version: number
+  // joined
+  profile?: { email: string; first_name: string | null; last_name: string | null } | null
+}
+
+export type AppNotification = {
+  id: string
+  user_id: string
+  type: string
+  title: string
+  body: string | null
+  read: boolean
+  created_at: string
+}
+
 /**
  * Query Keys for Admin Operations
  */
@@ -26,6 +51,8 @@ export const adminKeys = {
   listings: () => [...adminKeys.all, 'listings'] as const,
   partners: () => [...adminKeys.all, 'partners'] as const,
   role: (userId: string) => [...adminKeys.all, 'role', userId] as const,
+  verificationQueue: (status?: string) => [...adminKeys.all, 'verification-queue', status ?? 'all'] as const,
+  notifications: (userId: string) => ['notifications', userId] as const,
 }
 
 /**
@@ -98,9 +125,9 @@ export function useAdminRole(
   userId: string | undefined,
   options?: Omit<UseQueryOptions<AdminUser | null, Error>, 'queryKey' | 'queryFn'>,
 ) {
-  return useQuery({
+  return useQuery<AdminUser | null, Error>({
     queryKey: adminKeys.role(userId || ''),
-    queryFn: () => fetchAdminRole(userId!),
+    queryFn: () => fetchAdminRole(userId!) as Promise<AdminUser | null>,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000,
     enabled: !!userId, // Only run if userId exists
@@ -274,8 +301,147 @@ export function useUpdateUserStatus() {
       return data
     },
     onSuccess: () => {
-      // Surgical invalidation: only users list
       queryClient.invalidateQueries({ queryKey: adminKeys.users() })
+    },
+  })
+}
+
+// ============================================================
+// Verification Queue
+// ============================================================
+
+async function fetchVerificationQueue(status?: string): Promise<VerificationRequest[]> {
+  let query = supabase
+    .from('partner_verification_requests')
+    .select('*')
+    .order('submitted_at', { ascending: true }) // oldest first (FIFO queue)
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status)
+  }
+
+  const { data, error } = await query
+  if (error) throw error
+  return (data || []) as VerificationRequest[]
+}
+
+export function useVerificationQueue(
+  status?: string,
+  options?: Omit<UseQueryOptions<VerificationRequest[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery<VerificationRequest[], Error>({
+    queryKey: adminKeys.verificationQueue(status),
+    queryFn: () => fetchVerificationQueue(status),
+    staleTime: 15 * 1000, // 15s — queue should be fresh
+    refetchInterval: 30 * 1000, // auto-refresh every 30s
+    ...options,
+  })
+}
+
+export function useApprovePartner() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      partnerType,
+      requestId,
+    }: { userId: string; partnerType: string; requestId: string }) => {
+      const { error } = await supabase.rpc('admin_approve_partner' as any, {
+        p_user_id: userId,
+        p_partner_type: partnerType,
+        p_request_id: requestId,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
+      queryClient.invalidateQueries({ queryKey: adminKeys.partners() })
+    },
+  })
+}
+
+export function useRejectPartner() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      partnerType,
+      requestId,
+      reason,
+    }: { userId: string; partnerType: string; requestId: string; reason: string }) => {
+      const { error } = await supabase.rpc('admin_reject_partner' as any, {
+        p_user_id: userId,
+        p_partner_type: partnerType,
+        p_request_id: requestId,
+        p_reason: reason,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
+      queryClient.invalidateQueries({ queryKey: adminKeys.partners() })
+    },
+  })
+}
+
+export function useRequestPartnerInfo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      partnerType,
+      requestId,
+      message,
+    }: { userId: string; partnerType: string; requestId: string; message: string }) => {
+      const { error } = await supabase.rpc('admin_request_partner_info' as any, {
+        p_user_id: userId,
+        p_partner_type: partnerType,
+        p_request_id: requestId,
+        p_message: message,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
+    },
+  })
+}
+
+// ============================================================
+// Notifications (partner bell)
+// ============================================================
+
+export function useNotifications(userId: string | undefined) {
+  return useQuery<AppNotification[], Error>({
+    queryKey: adminKeys.notifications(userId || ''),
+    queryFn: async () => {
+      if (!userId) return []
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (error) throw error
+      return (data || []) as AppNotification[]
+    },
+    enabled: !!userId,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  })
+}
+
+export function useMarkNotificationsRead() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (notificationIds?: string[]) => {
+      const { error } = await supabase.rpc('mark_notifications_read' as any, {
+        p_notification_ids: notificationIds ?? null,
+      })
+      if (error) throw error
+    },
+    onSuccess: (_data, _vars, _ctx) => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
   })
 }
