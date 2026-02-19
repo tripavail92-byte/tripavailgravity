@@ -240,30 +240,39 @@ $$;
 
 -- PACKAGES table
 
--- Drop any existing "partner can insert" style policies first
-DROP POLICY IF EXISTS "Partners can create packages"          ON public.packages;
-DROP POLICY IF EXISTS "Hotel managers can insert packages"    ON public.packages;
-DROP POLICY IF EXISTS "authenticated users can insert packages" ON public.packages;
-DROP POLICY IF EXISTS "Users can insert their own packages"   ON public.packages;
-DROP POLICY IF EXISTS "Partners can insert packages"          ON public.packages;
+-- Drop the existing policy from the original migration (exact name)
+DROP POLICY IF EXISTS "Users can insert their own packages"                ON public.packages;
+DROP POLICY IF EXISTS "Partners can create packages"                        ON public.packages;
+DROP POLICY IF EXISTS "Hotel managers can insert packages"                  ON public.packages;
+DROP POLICY IF EXISTS "authenticated users can insert packages"             ON public.packages;
+DROP POLICY IF EXISTS "Partners can insert packages"                        ON public.packages;
 
--- Create the governed INSERT policy
+-- Governed INSERT policy — can_partner_operate enforced at DB level
 CREATE POLICY "Operative partners can create packages"
   ON public.packages
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    auth.uid() = user_id
+    auth.uid() = owner_id
     AND public.can_partner_operate(auth.uid(), 'hotel_manager')
   );
 
 -- TOURS table
 
-DROP POLICY IF EXISTS "Tour operators can create tours"             ON public.tours;
-DROP POLICY IF EXISTS "Operators can insert their own tours"        ON public.tours;
-DROP POLICY IF EXISTS "authenticated users can insert tours"        ON public.tours;
-DROP POLICY IF EXISTS "Users can insert their own tours"            ON public.tours;
-DROP POLICY IF EXISTS "Partners can insert tours"                   ON public.tours;
+DROP POLICY IF EXISTS "Operators can manage own tours"             ON public.tours;
+DROP POLICY IF EXISTS "Tour operators can create tours"            ON public.tours;
+DROP POLICY IF EXISTS "Operators can insert their own tours"       ON public.tours;
+DROP POLICY IF EXISTS "authenticated users can insert tours"       ON public.tours;
+DROP POLICY IF EXISTS "Users can insert their own tours"           ON public.tours;
+DROP POLICY IF EXISTS "Partners can insert tours"                  ON public.tours;
+
+-- NOTE: The original 'Operators can manage own tours' policy is FOR ALL, which
+-- covers INSERT too. We replace it with a split SELECT + INSERT to add the governance check.
+CREATE POLICY "Operators can manage own tours"
+  ON public.tours
+  FOR SELECT
+  TO authenticated
+  USING (is_active = true OR auth.uid() = operator_id);
 
 CREATE POLICY "Operative tour operators can create tours"
   ON public.tours
@@ -274,6 +283,18 @@ CREATE POLICY "Operative tour operators can create tours"
     AND public.can_partner_operate(auth.uid(), 'tour_operator')
   );
 
+CREATE POLICY "Operators can update own tours"
+  ON public.tours
+  FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = operator_id);
+
+CREATE POLICY "Operators can delete own tours"
+  ON public.tours
+  FOR DELETE
+  TO authenticated
+  USING (auth.uid() = operator_id);
+
 -- ============================================================================
 -- GAP 3: Booking acceptance — prevent bookings on suspended-partner listings
 --
@@ -281,22 +302,25 @@ CREATE POLICY "Operative tour operators can create tours"
 -- Gate the package_bookings INSERT similarly.
 -- ============================================================================
 
-DROP POLICY IF EXISTS "Travellers can create bookings"             ON public.package_bookings;
-DROP POLICY IF EXISTS "authenticated users can insert bookings"    ON public.package_bookings;
-DROP POLICY IF EXISTS "Users can insert their own bookings"        ON public.package_bookings;
+-- PACKAGE BOOKINGS — prevent bookings on suspended-partner listings
 
--- Travellers can book, but only if the package's owner is still operative
+-- Drop the exact policy name from the original migration
+DROP POLICY IF EXISTS "Travelers can create package bookings"         ON public.package_bookings;
+DROP POLICY IF EXISTS "Travellers can create bookings"                ON public.package_bookings;
+DROP POLICY IF EXISTS "authenticated users can insert bookings"       ON public.package_bookings;
+DROP POLICY IF EXISTS "Users can insert their own bookings"           ON public.package_bookings;
+
 CREATE POLICY "Travellers can book operative listings"
   ON public.package_bookings
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    auth.uid() = traveller_id
+    auth.uid() = traveler_id
     AND EXISTS (
       SELECT 1 FROM public.packages p
       WHERE p.id = package_id
         AND p.status = 'live'
-        AND public.can_partner_operate(p.user_id, 'hotel_manager')
+        AND public.can_partner_operate(p.owner_id, 'hotel_manager')
     )
   );
 

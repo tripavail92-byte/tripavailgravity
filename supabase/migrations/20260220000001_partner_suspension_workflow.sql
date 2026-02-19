@@ -176,7 +176,7 @@ BEGIN
   IF p_status IN ('suspended', 'deleted') THEN
     UPDATE public.packages
     SET status = 'suspended', moderation_reason = p_reason, moderated_by = v_admin_id, moderated_at = TIMEZONE('UTC', NOW())
-    WHERE user_id = v_user_uuid AND status = 'live';
+    WHERE owner_id = v_user_uuid AND status = 'live';
   END IF;
 
   -- If reactivating, restore their packages to live (only if they were our previous 'live')
