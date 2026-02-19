@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import type { Database } from '@/types/database.types'
 import { supabase } from '@/lib/supabase'
 
@@ -325,15 +326,49 @@ async function fetchVerificationQueue(status?: string): Promise<VerificationRequ
   return (data || []) as VerificationRequest[]
 }
 
+/**
+ * useVerificationQueue
+ * Fetches the partner approval queue and keeps it live via Supabase Realtime.
+ * Subscribes to postgres_changes on partner_verification_requests — any INSERT
+ * or UPDATE instantly invalidates the cache so the admin sees the new row
+ * without polling.
+ */
 export function useVerificationQueue(
   status?: string,
   options?: Omit<UseQueryOptions<VerificationRequest[], Error>, 'queryKey' | 'queryFn'>,
 ) {
+  const queryClient = useQueryClient()
+
+  // Realtime subscription — replace 30s poll
+  useEffect(() => {
+    const channelName = `verification-queue-${status ?? 'all'}`
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',                                     // INSERT | UPDATE | DELETE
+          schema: 'public',
+          table: 'partner_verification_requests',
+          ...(status && status !== 'all' ? { filter: `status=eq.${status}` } : {}),
+        },
+        () => {
+          // Invalidate both the filtered and the 'all' query — sidebar badge updates too
+          queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue(status) })
+          queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue('all') })
+          queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
+        },
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [status, queryClient])
+
   return useQuery<VerificationRequest[], Error>({
     queryKey: adminKeys.verificationQueue(status),
     queryFn: () => fetchVerificationQueue(status),
-    staleTime: 15 * 1000, // 15s — queue should be fresh
-    refetchInterval: 30 * 1000, // auto-refresh every 30s
+    staleTime: 15 * 1000,      // 15s stale — Realtime keeps it fresh
+    // refetchInterval removed — Realtime channel handles live updates
     ...options,
   })
 }
@@ -411,7 +446,51 @@ export function useRequestPartnerInfo() {
 // Notifications (partner bell)
 // ============================================================
 
+/**
+ * useNotifications
+ * Fetches the partner's in-app notification bell and keeps it live via Realtime.
+ * Subscribes to postgres_changes on notifications table filtered by user_id.
+ * Every new notification (INSERT) immediately invalidates and refetches —
+ * the bell badge increments in real time without any polling.
+ */
 export function useNotifications(userId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  // Realtime subscription per-user — replaces 30s poll
+  useEffect(() => {
+    if (!userId) return
+
+    const channel = supabase
+      .channel(`notifications-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',          // only new notifications trigger the bell
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: adminKeys.notifications(userId) })
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',          // catch mark-as-read updates too
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: adminKeys.notifications(userId) })
+        },
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, queryClient])
+
   return useQuery<AppNotification[], Error>({
     queryKey: adminKeys.notifications(userId || ''),
     queryFn: async () => {
@@ -427,7 +506,7 @@ export function useNotifications(userId: string | undefined) {
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    // refetchInterval removed — Realtime channel handles live updates
   })
 }
 
