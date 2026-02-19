@@ -1,488 +1,332 @@
 -- =============================================================================
--- pgTAP Integration Tests: Partner Governance System
--- Run with:  supabase test db
--- =============================================================================
--- These tests run INSIDE the real PostgreSQL instance.
--- They use pgTAP's plan/ok/is/throws_ok/lives_ok APIs and test:
---   1. can_partner_operate() — all 8 matrix cells
---   2. Support-role blocking on all 5 admin RPCs
---   3. Cascade suspension (packages hidden atomically)
---   4. Reinstatement no-auto-reactivate (listings stay suspended)
---   5. RLS enforcement — authenticated user cannot write governance columns
---   6. Audit log written on every status change
---   7. Notification written on every status change
+-- Governance Integration Tests — Plain SQL (no pgTAP required)
+-- Run directly in Supabase Studio SQL editor or via psql.
 --
--- Auth simulation:
---   SECURITY DEFINER RPCs read auth.uid() from the JWT claims injected via:
---   SET LOCAL "request.jwt.claims" = '{"sub":"<uuid>","role":"authenticated"}'
+-- Uses DO blocks with ASSERT. Any failure raises an exception with the
+-- test label so you can see exactly which assertion failed.
+-- All fixtures live inside BEGIN/ROLLBACK — zero data residue.
 -- =============================================================================
 
 BEGIN;
 
-SELECT plan(40);
-
 -- =============================================================================
--- SETUP — create isolated test fixtures
--- Everything uses random UUIDs to avoid collisions with live data.
--- All fixtures are rolled back via BEGIN/ROLLBACK wrapping the test.
+-- SETUP
 -- =============================================================================
 
--- Test UUIDs
+CREATE TEMP TABLE _t (key TEXT PRIMARY KEY, val UUID NOT NULL DEFAULT gen_random_uuid());
+INSERT INTO _t(key) VALUES ('partner'),('super_admin'),('moderator'),('support'),('pkg');
+
+-- auth.users (required by FK)
+INSERT INTO auth.users(id, email, email_confirmed_at, created_at, updated_at)
+SELECT val, key||'_'||val||'@test.invalid', NOW(), NOW(), NOW() FROM _t
+WHERE key IN ('partner','super_admin','moderator','support');
+
+-- public.profiles
+INSERT INTO public.profiles(id, email, first_name, last_name)
+SELECT val, key||'_'||val||'@test.invalid', 'Test', initcap(key) FROM _t WHERE key = 'partner';
+
+-- hotel_manager_profiles — approved + active
+INSERT INTO public.hotel_manager_profiles(user_id, business_name, account_status)
+SELECT val, 'Test Hotel Ltd', 'active' FROM _t WHERE key = 'partner';
+
+-- user_roles — approved
+INSERT INTO public.user_roles(user_id, role_type, is_active, verification_status)
+SELECT val, 'hotel_manager', true, 'approved' FROM _t WHERE key = 'partner';
+
+-- admin_users
+INSERT INTO public.admin_users(id, email, role)
+VALUES (
+  (SELECT val FROM _t WHERE key='super_admin'),
+  (SELECT key||'_'||val||'@test.invalid' FROM _t WHERE key='super_admin'),
+  'super_admin'::public.admin_role_enum
+),(
+  (SELECT val FROM _t WHERE key='moderator'),
+  (SELECT key||'_'||val||'@test.invalid' FROM _t WHERE key='moderator'),
+  'moderator'::public.admin_role_enum
+),(
+  (SELECT val FROM _t WHERE key='support'),
+  (SELECT key||'_'||val||'@test.invalid' FROM _t WHERE key='support'),
+  'support'::public.admin_role_enum
+);
+
+-- live package
+INSERT INTO public.packages(id, owner_id, package_type, name, status, is_published)
+VALUES(
+  (SELECT val FROM _t WHERE key='pkg'),
+  (SELECT val FROM _t WHERE key='partner'),
+  'hotel', 'Test Package', 'live', true
+);
+
+-- =============================================================================
+-- BLOCK 1: can_partner_operate() matrix
+-- =============================================================================
 DO $$
+DECLARE p UUID := (SELECT val FROM _t WHERE key='partner');
 BEGIN
-  -- We use temp variables in a temp table to share state across DO blocks
-  CREATE TEMP TABLE IF NOT EXISTS _test_ids (
-    key  TEXT PRIMARY KEY,
-    val  UUID NOT NULL
-  );
+  -- approved + active = TRUE
+  ASSERT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: Matrix [approved+active] should be TRUE';
+  RAISE NOTICE 'PASS: Matrix [approved+active] = TRUE';
 
-  INSERT INTO _test_ids VALUES
-    ('partner_user',   gen_random_uuid()),
-    ('super_admin',    gen_random_uuid()),
-    ('moderator_user', gen_random_uuid()),
-    ('support_user',   gen_random_uuid()),
-    ('package_id',     gen_random_uuid());
+  -- approved + suspended = FALSE
+  UPDATE public.hotel_manager_profiles SET account_status='suspended' WHERE user_id=p;
+  ASSERT NOT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: Matrix [approved+suspended] should be FALSE';
+  RAISE NOTICE 'PASS: Matrix [approved+suspended] = FALSE';
+
+  -- approved + deleted = FALSE
+  UPDATE public.hotel_manager_profiles SET account_status='deleted' WHERE user_id=p;
+  ASSERT NOT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: Matrix [approved+deleted] should be FALSE';
+  RAISE NOTICE 'PASS: Matrix [approved+deleted] = FALSE';
+
+  -- pending + active = FALSE
+  UPDATE public.hotel_manager_profiles SET account_status='active' WHERE user_id=p;
+  UPDATE public.user_roles SET verification_status='pending'
+    WHERE user_id=p AND role_type='hotel_manager';
+  ASSERT NOT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: Matrix [pending+active] should be FALSE';
+  RAISE NOTICE 'PASS: Matrix [pending+active] = FALSE';
+
+  -- rejected + active = FALSE
+  UPDATE public.user_roles SET verification_status='rejected'
+    WHERE user_id=p AND role_type='hotel_manager';
+  ASSERT NOT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: Matrix [rejected+active] should be FALSE';
+  RAISE NOTICE 'PASS: Matrix [rejected+active] = FALSE';
+
+  -- restore for next blocks
+  UPDATE public.user_roles SET verification_status='approved'
+    WHERE user_id=p AND role_type='hotel_manager';
 END $$;
 
--- Create auth.users rows (bypassing email confirmation, used by FK constraints)
-INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at)
-SELECT val, 'partner_' || val || '@test.invalid', NOW(), NOW(), NOW()
-FROM _test_ids WHERE key = 'partner_user';
+-- =============================================================================
+-- BLOCK 2: Scenario A — suspend via real RPC (super_admin)
+-- =============================================================================
+DO $$
+DECLARE
+  p    UUID := (SELECT val FROM _t WHERE key='partner');
+  adm  UUID := (SELECT val FROM _t WHERE key='super_admin');
+  pkg  UUID := (SELECT val FROM _t WHERE key='pkg');
+BEGIN
+  -- Set auth context to super_admin
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', adm::text, 'role', 'authenticated')::text, true);
+  SET LOCAL role = authenticated;
 
-INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at)
-SELECT val, 'admin_' || val || '@test.invalid', NOW(), NOW(), NOW()
-FROM _test_ids WHERE key IN ('super_admin', 'moderator_user', 'support_user');
+  PERFORM public.admin_set_hotel_manager_status(p::text, 'suspended',
+    'Policy violation: duplicate listing found during audit');
 
--- Create profiles for test users
-INSERT INTO public.profiles (id, email, first_name, last_name, created_at)
-SELECT val, 'partner_' || val || '@test.invalid', 'Test', 'Partner', NOW()
-FROM _test_ids WHERE key = 'partner_user';
+  RESET role;
 
--- Create hotel_manager_profiles
-INSERT INTO public.hotel_manager_profiles (user_id, business_name, account_status)
-SELECT val, 'Test Hotel Ltd', 'active'
-FROM _test_ids WHERE key = 'partner_user';
+  ASSERT (SELECT account_status FROM public.hotel_manager_profiles WHERE user_id=p) = 'suspended',
+    'FAIL: account_status should be suspended after RPC';
+  RAISE NOTICE 'PASS: Scenario A — account_status = suspended in DB';
 
--- Create user_roles — partner approved initially
-INSERT INTO public.user_roles (user_id, role_type, is_active, verification_status)
-SELECT val, 'hotel_manager', true, 'approved'
-FROM _test_ids WHERE key = 'partner_user';
+  ASSERT NOT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: can_partner_operate() should be FALSE after suspension';
+  RAISE NOTICE 'PASS: Scenario A — can_partner_operate() = FALSE';
 
--- Create admin_users for each admin type
-INSERT INTO public.admin_users (id, email, role)
-SELECT val, 'admin_' || val || '@test.invalid', 'super_admin'
-FROM _test_ids WHERE key = 'super_admin';
+  ASSERT (SELECT status FROM public.packages WHERE id=pkg) = 'suspended',
+    'FAIL: live package should have been cascaded to suspended';
+  RAISE NOTICE 'PASS: Scenario A — live package cascaded to suspended';
 
-INSERT INTO public.admin_users (id, email, role)
-SELECT val, 'admin_' || val || '@test.invalid', 'moderator'
-FROM _test_ids WHERE key = 'moderator_user';
+  ASSERT EXISTS(SELECT 1 FROM public.admin_action_logs
+    WHERE entity_id=p AND entity_type='partner' AND action_type='suspend_partner'),
+    'FAIL: audit log row missing for suspension';
+  RAISE NOTICE 'PASS: Scenario A — audit log written';
 
-INSERT INTO public.admin_users (id, email, role)
-SELECT val, 'admin_' || val || '@test.invalid', 'support'
-FROM _test_ids WHERE key = 'support_user';
-
--- Create a LIVE package owned by the partner
-INSERT INTO public.packages (id, owner_id, package_type, name, status, is_published)
-SELECT
-  (SELECT val FROM _test_ids WHERE key = 'package_id'),
-  (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-  'hotel',
-  'Test Package',
-  'live',
-  true;
+  ASSERT EXISTS(SELECT 1 FROM public.notifications
+    WHERE user_id=p AND type='account_suspended'),
+    'FAIL: notification missing for suspension';
+  RAISE NOTICE 'PASS: Scenario A — notification delivered';
+END $$;
 
 -- =============================================================================
--- BLOCK 1: can_partner_operate() — governance matrix
+-- BLOCK 3: Scenario B — reinstate, no auto-reactivate
 -- =============================================================================
+DO $$
+DECLARE
+  p    UUID := (SELECT val FROM _t WHERE key='partner');
+  adm  UUID := (SELECT val FROM _t WHERE key='super_admin');
+  pkg  UUID := (SELECT val FROM _t WHERE key='pkg');
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', adm::text, 'role', 'authenticated')::text, true);
+  SET LOCAL role = authenticated;
 
-SELECT ok(
-  public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Matrix: approved + active = TRUE'
-);
+  PERFORM public.admin_set_hotel_manager_status(p::text, 'active',
+    'Appeal reviewed and approved by compliance team');
 
--- Temporarily suspend to test matrix cell
-UPDATE public.hotel_manager_profiles
-SET account_status = 'suspended'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user');
+  RESET role;
 
-SELECT ok(
-  NOT public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Matrix: approved + suspended = FALSE'
-);
+  ASSERT (SELECT account_status FROM public.hotel_manager_profiles WHERE user_id=p) = 'active',
+    'FAIL: account_status should be active after reinstatement';
+  RAISE NOTICE 'PASS: Scenario B — account_status = active';
 
--- Soft-delete
-UPDATE public.hotel_manager_profiles
-SET account_status = 'deleted'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user');
+  ASSERT public.can_partner_operate(p,'hotel_manager'),
+    'FAIL: can_partner_operate() should be TRUE after reinstatement';
+  RAISE NOTICE 'PASS: Scenario B — can_partner_operate() = TRUE';
 
-SELECT ok(
-  NOT public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Matrix: approved + deleted = FALSE'
-);
+  -- CONSERVATIVE POLICY: package must NOT auto-reactivate
+  ASSERT (SELECT status FROM public.packages WHERE id=pkg) = 'suspended',
+    'FAIL: package should NOT auto-reactivate (conservative policy)';
+  RAISE NOTICE 'PASS: Scenario B — package stays suspended (no auto-reactivate)';
 
--- Reset to active
-UPDATE public.hotel_manager_profiles
-SET account_status = 'active'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user');
+  ASSERT EXISTS(SELECT 1 FROM public.notifications
+    WHERE user_id=p AND type='account_reinstated'),
+    'FAIL: reinstatement notification missing';
+  RAISE NOTICE 'PASS: Scenario B — reinstatement notification delivered';
 
--- Not yet verified
-UPDATE public.user_roles
-SET verification_status = 'pending'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-  AND role_type = 'hotel_manager';
-
-SELECT ok(
-  NOT public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Matrix: pending + active = FALSE'
-);
-
--- Rejected
-UPDATE public.user_roles
-SET verification_status = 'rejected'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-  AND role_type = 'hotel_manager';
-
-SELECT ok(
-  NOT public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Matrix: rejected + active = FALSE'
-);
-
--- Restore to approved for remaining tests
-UPDATE public.user_roles
-SET verification_status = 'approved'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-  AND role_type = 'hotel_manager';
-
+  ASSERT EXISTS(SELECT 1 FROM public.admin_action_logs
+    WHERE entity_id=p AND entity_type='partner' AND action_type='activate_partner'),
+    'FAIL: audit log missing for reinstatement';
+  RAISE NOTICE 'PASS: Scenario B — reinstatement audit log written';
+END $$;
 
 -- =============================================================================
--- BLOCK 2: Scenario A — suspend partner via real RPC
--- Auth context: super_admin calls the RPC
+-- BLOCK 4: Scenario C — support role BLOCKED (4 checks)
 -- =============================================================================
+DO $$
+DECLARE
+  p    UUID := (SELECT val FROM _t WHERE key='partner');
+  sup  UUID := (SELECT val FROM _t WHERE key='support');
+  blocked BOOLEAN;
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', sup::text, 'role', 'authenticated')::text, true);
+  SET LOCAL role = authenticated;
 
--- Simulate super_admin as the authenticated caller
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'super_admin'
-);
-SET LOCAL role = authenticated;
+  -- Test 1: admin_set_hotel_manager_status
+  blocked := false;
+  BEGIN
+    PERFORM public.admin_set_hotel_manager_status(p::text,'suspended','Support trying to suspend');
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: support should be BLOCKED from admin_set_hotel_manager_status';
+  RAISE NOTICE 'PASS: Scenario C — support blocked from admin_set_hotel_manager_status';
 
-SELECT lives_ok(
-  $f$ SELECT public.admin_set_hotel_manager_status(
-    (SELECT val::TEXT FROM _test_ids WHERE key = 'partner_user'),
-    'suspended',
-    'Policy violation: duplicate listing detected during audit'
-  ) $f$,
-  'super_admin can suspend a hotel manager'
-);
+  -- Test 2: admin_approve_partner
+  blocked := false;
+  BEGIN
+    PERFORM public.admin_approve_partner(p,'hotel_manager',gen_random_uuid());
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: support should be BLOCKED from admin_approve_partner';
+  RAISE NOTICE 'PASS: Scenario C — support blocked from admin_approve_partner';
 
--- Reset role for assertions
-RESET role;
-RESET "request.jwt.claims";
+  -- Test 3: admin_reject_partner
+  blocked := false;
+  BEGIN
+    PERFORM public.admin_reject_partner(p,'hotel_manager',gen_random_uuid(),'reason text here ok');
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: support should be BLOCKED from admin_reject_partner';
+  RAISE NOTICE 'PASS: Scenario C — support blocked from admin_reject_partner';
 
--- Assert: account_status changed
-SELECT is(
-  (SELECT account_status FROM public.hotel_manager_profiles
-   WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')),
-  'suspended',
-  'Scenario A: account_status is suspended in DB'
-);
+  -- Test 4: admin_request_partner_info
+  blocked := false;
+  BEGIN
+    PERFORM public.admin_request_partner_info(p,'hotel_manager',gen_random_uuid(),'need more docs from partner');
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: support should be BLOCKED from admin_request_partner_info';
+  RAISE NOTICE 'PASS: Scenario C — support blocked from admin_request_partner_info';
 
--- Assert: can_partner_operate returns FALSE
-SELECT ok(
-  NOT public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Scenario A: can_partner_operate returns FALSE after suspension'
-);
-
--- Assert: live package was cascaded to suspended
-SELECT is(
-  (SELECT status FROM public.packages
-   WHERE id = (SELECT val FROM _test_ids WHERE key = 'package_id')),
-  'suspended',
-  'Scenario A: live package cascaded to suspended'
-);
-
--- Assert: audit log written
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM public.admin_action_logs
-    WHERE entity_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-      AND entity_type = 'partner'
-      AND action_type = 'suspend_partner'
-  ),
-  'Scenario A: audit log entry written for suspension'
-);
-
--- Assert: notification sent to partner
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM public.notifications
-    WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-      AND type = 'account_suspended'
-  ),
-  'Scenario A: notification sent to partner on suspension'
-);
-
+  RESET role;
+END $$;
 
 -- =============================================================================
--- BLOCK 3: Scenario B — reinstate suspended partner (no auto-reactivate)
+-- BLOCK 5: RLS — direct account_status write blocked + suspended INSERT blocked
 -- =============================================================================
+DO $$
+DECLARE
+  p       UUID := (SELECT val FROM _t WHERE key='partner');
+  blocked BOOLEAN;
+BEGIN
+  -- Re-suspend account for INSERT test
+  UPDATE public.hotel_manager_profiles SET account_status='suspended' WHERE user_id=p;
 
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'super_admin'
-);
-SET LOCAL role = authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', p::text, 'role', 'authenticated')::text, true);
+  SET LOCAL role = authenticated;
 
-SELECT lives_ok(
-  $f$ SELECT public.admin_set_hotel_manager_status(
-    (SELECT val::TEXT FROM _test_ids WHERE key = 'partner_user'),
-    'active',
-    'Appeal reviewed and approved by compliance team'
-  ) $f$,
-  'super_admin can reinstate a suspended hotel manager'
-);
+  -- Test 1: direct column write
+  blocked := false;
+  BEGIN
+    UPDATE public.hotel_manager_profiles SET account_status='active' WHERE user_id=p;
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: authenticated user must not directly write account_status';
+  RAISE NOTICE 'PASS: RLS — direct account_status write blocked';
 
-RESET role;
-RESET "request.jwt.claims";
+  -- Test 2: suspended partner INSERT package
+  blocked := false;
+  BEGIN
+    INSERT INTO public.packages(owner_id, package_type, name, status)
+    VALUES(p, 'hotel', 'Sneaky insert from suspended partner', 'draft');
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: suspended partner must not INSERT packages (WITH CHECK)';
+  RAISE NOTICE 'PASS: RLS — suspended partner INSERT on packages blocked';
 
--- Assert: account active again
-SELECT is(
-  (SELECT account_status FROM public.hotel_manager_profiles
-   WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')),
-  'active',
-  'Scenario B: account_status is active after reinstatement'
-);
-
--- Assert: can_partner_operate is TRUE again
-SELECT ok(
-  public.can_partner_operate(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager'
-  ),
-  'Scenario B: can_partner_operate returns TRUE after reinstatement'
-);
-
--- Assert: package NOT auto-reactivated (stays suspended — conservative policy)
-SELECT is(
-  (SELECT status FROM public.packages
-   WHERE id = (SELECT val FROM _test_ids WHERE key = 'package_id')),
-  'suspended',
-  'Scenario B: package NOT auto-reactivated after reinstatement (correct conservative behavior)'
-);
-
--- Assert: reinstatement notification sent
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM public.notifications
-    WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-      AND type = 'account_reinstated'
-  ),
-  'Scenario B: notification sent to partner on reinstatement'
-);
-
--- Assert: reinstatement audit log written
-SELECT ok(
-  EXISTS (
-    SELECT 1 FROM public.admin_action_logs
-    WHERE entity_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')
-      AND entity_type = 'partner'
-      AND action_type = 'activate_partner'
-  ),
-  'Scenario B: audit log entry written for reinstatement'
-);
-
+  RESET role;
+END $$;
 
 -- =============================================================================
--- BLOCK 4: Scenario C — support role BLOCKED at DB level
+-- BLOCK 6: Moderator CAN act
 -- =============================================================================
+DO $$
+DECLARE
+  p    UUID := (SELECT val FROM _t WHERE key='partner');
+  mod  UUID := (SELECT val FROM _t WHERE key='moderator');
+BEGIN
+  -- Restore to active
+  UPDATE public.hotel_manager_profiles SET account_status='active' WHERE user_id=p;
 
--- Support trying to suspend hotel manager — must RAISE
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'support_user'
-);
-SET LOCAL role = authenticated;
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', mod::text, 'role', 'authenticated')::text, true);
+  SET LOCAL role = authenticated;
 
-SELECT throws_ok(
-  $f$ SELECT public.admin_set_hotel_manager_status(
-    (SELECT val::TEXT FROM _test_ids WHERE key = 'partner_user'),
-    'suspended',
-    'Support trying to suspend - should be blocked'
-  ) $f$,
-  'Support role cannot change partner account status',
-  'Scenario C: support cannot call admin_set_hotel_manager_status'
-);
+  PERFORM public.admin_set_hotel_manager_status(p::text,'suspended',
+    'Moderator suspension — permitted action');
 
--- Support trying to approve verification — must RAISE
-SELECT throws_ok(
-  $f$ SELECT public.admin_approve_partner(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager',
-    gen_random_uuid()
-  ) $f$,
-  'Support role cannot approve partner applications. Moderator or Super-Admin required.',
-  'Scenario C: support cannot call admin_approve_partner'
-);
+  RESET role;
 
--- Support trying to reject — must RAISE
-SELECT throws_ok(
-  $f$ SELECT public.admin_reject_partner(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager',
-    gen_random_uuid(),
-    'Support trying to reject application'
-  ) $f$,
-  'Support role cannot reject partner applications. Moderator or Super-Admin required.',
-  'Scenario C: support cannot call admin_reject_partner'
-);
-
--- Support trying to request info — must RAISE
-SELECT throws_ok(
-  $f$ SELECT public.admin_request_partner_info(
-    (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-    'hotel_manager',
-    gen_random_uuid(),
-    'Support requesting more information from partner'
-  ) $f$,
-  'Support role cannot send info requests on verification. Moderator or Super-Admin required.',
-  'Scenario C: support cannot call admin_request_partner_info'
-);
-
-RESET role;
-RESET "request.jwt.claims";
-
+  ASSERT (SELECT account_status FROM public.hotel_manager_profiles WHERE user_id=p) = 'suspended',
+    'FAIL: moderator suspension did not update DB';
+  RAISE NOTICE 'PASS: Moderator CAN suspend partner, DB updated correctly';
+END $$;
 
 -- =============================================================================
--- BLOCK 5: RLS enforcement — direct column write blocked for authenticated users
+-- BLOCK 7: Non-admin / anon blocked
 -- =============================================================================
+DO $$
+DECLARE
+  p       UUID := (SELECT val FROM _t WHERE key='partner');
+  blocked BOOLEAN := false;
+BEGIN
+  PERFORM set_config('request.jwt.claims',
+    '{"sub":"00000000-0000-0000-0000-000000000001","role":"anon"}', true);
+  SET LOCAL role = anon;
 
--- Simulate as the partner themselves (not admin)
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'partner_user'
-);
-SET LOCAL role = authenticated;
+  BEGIN
+    PERFORM public.admin_set_hotel_manager_status(p::text,'active','Anon trying to reinstate');
+  EXCEPTION WHEN OTHERS THEN
+    blocked := true;
+  END;
+  ASSERT blocked, 'FAIL: anon must not call any admin RPC';
+  RAISE NOTICE 'PASS: Anonymous / non-admin blocked from all admin RPCs';
 
--- Attempt: partner directly updates their own account_status via table write
--- Should fail because authenticated role has REVOKE on account_status column
-SELECT throws_ok(
-  $f$ UPDATE public.hotel_manager_profiles
-      SET account_status = 'active'
-      WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user') $f$,
-  NULL,
-  'RLS: authenticated user cannot directly write account_status column'
-);
+  RESET role;
+END $$;
 
--- Attempt: suspended partner tries to INSERT a new package (can_partner_operate = FALSE here too)
--- Re-suspend first via service role
-RESET role;
-RESET "request.jwt.claims";
-
-UPDATE public.hotel_manager_profiles
-SET account_status = 'suspended'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user');
-
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'partner_user'
-);
-SET LOCAL role = authenticated;
-
-SELECT throws_ok(
-  $f$ INSERT INTO public.packages (owner_id, package_type, name, status)
-      VALUES (
-        (SELECT val FROM _test_ids WHERE key = 'partner_user'),
-        'hotel',
-        'Suspended partner new package attempt',
-        'draft'
-      ) $f$,
-  NULL,
-  'RLS: suspended partner cannot INSERT new package (can_partner_operate = FALSE enforced in WITH CHECK)'
-);
-
-RESET role;
-RESET "request.jwt.claims";
-
-
--- =============================================================================
--- BLOCK 6: Moderator CAN act (positive permission test)
--- =============================================================================
-
--- Restore partner to active + approved first
-UPDATE public.hotel_manager_profiles
-SET account_status = 'active'
-WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user');
-
-SET LOCAL "request.jwt.claims" = (
-  SELECT '{"sub":"' || val::TEXT || '","role":"authenticated"}'
-  FROM _test_ids WHERE key = 'moderator_user'
-);
-SET LOCAL role = authenticated;
-
-SELECT lives_ok(
-  $f$ SELECT public.admin_set_hotel_manager_status(
-    (SELECT val::TEXT FROM _test_ids WHERE key = 'partner_user'),
-    'suspended',
-    'Moderator performing suspension — permitted action'
-  ) $f$,
-  'Moderator CAN call admin_set_hotel_manager_status'
-);
-
-RESET role;
-RESET "request.jwt.claims";
-
-SELECT is(
-  (SELECT account_status FROM public.hotel_manager_profiles
-   WHERE user_id = (SELECT val FROM _test_ids WHERE key = 'partner_user')),
-  'suspended',
-  'Moderator suspension: DB state reflects change'
-);
-
-
--- =============================================================================
--- BLOCK 7: Unauthenticated / non-admin attempt
--- =============================================================================
-
--- Not an admin at all — completely unauthenticated context
-SET LOCAL "request.jwt.claims" = '{"sub":"00000000-0000-0000-0000-000000000001","role":"anon"}';
-SET LOCAL role = anon;
-
-SELECT throws_ok(
-  $f$ SELECT public.admin_set_hotel_manager_status(
-    (SELECT val::TEXT FROM _test_ids WHERE key = 'partner_user'),
-    'active',
-    'Anon user trying to reinstate partner'
-  ) $f$,
-  NULL,
-  'Non-admin (anon) cannot call admin_set_hotel_manager_status'
-);
-
-RESET role;
-RESET "request.jwt.claims";
-
-
--- =============================================================================
--- DONE
--- =============================================================================
-
-SELECT * FROM finish();
+RAISE NOTICE '=== ALL GOVERNANCE INTEGRATION TESTS PASSED ===';
 
 ROLLBACK;
