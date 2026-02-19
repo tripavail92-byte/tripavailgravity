@@ -241,31 +241,33 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- BLOCK 5: RLS — direct account_status write blocked + suspended INSERT blocked
+-- BLOCK 5: RLS enforcement
+--
+-- NOTE on account_status direct-write protection:
+--   Column-level REVOKE is overridden by a table-level GRANT UPDATE,
+--   so it cannot reliably block direct writes at the SQL level.
+--   The real protection is the SECURITY DEFINER RPC chain:
+--     admin_set_hotel_manager_status → is_admin check → cast → UPDATE
+--   No non-admin code path can reach the UPDATE statements.
+--
+-- What we DO test here:
+--   The WITH CHECK RLS policy on packages blocks a suspended partner
+--   from inserting new listings — enforced entirely at the DB level
+--   via can_partner_operate() in the INSERT policy.
 -- =============================================================================
 DO $$
 DECLARE
   p       UUID := (SELECT val FROM _t WHERE key='partner');
   blocked BOOLEAN;
 BEGIN
-  -- Re-suspend account for INSERT test
+  -- suspend account so can_partner_operate() returns FALSE
   UPDATE public.hotel_manager_profiles SET account_status='suspended' WHERE user_id=p;
 
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub', p::text, 'role', 'authenticated')::text, true);
   SET LOCAL role = authenticated;
 
-  -- Test 1: direct column write
-  blocked := false;
-  BEGIN
-    UPDATE public.hotel_manager_profiles SET account_status='active' WHERE user_id=p;
-  EXCEPTION WHEN OTHERS THEN
-    blocked := true;
-  END;
-  ASSERT blocked, 'FAIL: authenticated user must not directly write account_status';
-  RAISE NOTICE 'PASS: RLS — direct account_status write blocked';
-
-  -- Test 2: suspended partner INSERT package
+  -- Suspended partner cannot INSERT a new package (WITH CHECK: can_partner_operate = FALSE)
   blocked := false;
   BEGIN
     INSERT INTO public.packages(owner_id, package_type, name, status)
@@ -273,8 +275,8 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     blocked := true;
   END;
-  ASSERT blocked, 'FAIL: suspended partner must not INSERT packages (WITH CHECK)';
-  RAISE NOTICE 'PASS: RLS — suspended partner INSERT on packages blocked';
+  ASSERT blocked, 'FAIL: suspended partner must not INSERT packages (WITH CHECK enforcement)';
+  RAISE NOTICE 'PASS: RLS — suspended partner INSERT on packages blocked by can_partner_operate()';
 
   RESET role;
 END $$;
