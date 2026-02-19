@@ -28,8 +28,7 @@
 -- ============================================================================
 
 ALTER TABLE public.hotel_manager_profiles
-  ADD COLUMN IF NOT EXISTS account_status TEXT NOT NULL DEFAULT 'active'
-    CHECK (account_status IN ('active', 'suspended', 'deleted'));
+  ADD COLUMN IF NOT EXISTS account_status public.account_status_enum NOT NULL DEFAULT 'active'::public.account_status_enum;
 
 ALTER TABLE public.hotel_manager_profiles
   ADD COLUMN IF NOT EXISTS account_status_reason TEXT,
@@ -37,8 +36,7 @@ ALTER TABLE public.hotel_manager_profiles
   ADD COLUMN IF NOT EXISTS account_status_changed_by UUID REFERENCES public.admin_users(id) ON DELETE SET NULL;
 
 ALTER TABLE public.tour_operator_profiles
-  ADD COLUMN IF NOT EXISTS account_status TEXT NOT NULL DEFAULT 'active'
-    CHECK (account_status IN ('active', 'suspended', 'deleted'));
+  ADD COLUMN IF NOT EXISTS account_status public.account_status_enum NOT NULL DEFAULT 'active'::public.account_status_enum;
 
 ALTER TABLE public.tour_operator_profiles
   ADD COLUMN IF NOT EXISTS account_status_reason TEXT,
@@ -141,6 +139,9 @@ BEGIN
     RAISE EXCEPTION 'Invalid status: %. Must be active, suspended, or deleted', p_status;
   END IF;
 
+  -- Cast TEXT param to enum (column is account_status_enum)
+  -- Validation above ensures this cast is safe
+
   IF p_reason IS NULL OR LENGTH(TRIM(p_reason)) < 10 THEN
     RAISE EXCEPTION 'Reason must be at least 10 characters';
   END IF;
@@ -164,11 +165,10 @@ BEGIN
   -- Apply the status change
   UPDATE public.hotel_manager_profiles
   SET
-    account_status            = p_status,
+    account_status            = p_status::public.account_status_enum,
     account_status_reason     = TRIM(p_reason),
     account_status_changed_at = TIMEZONE('UTC', NOW()),
     account_status_changed_by = v_admin_id,
-    -- If deleting, unpublish their listings
     updated_at                = TIMEZONE('UTC', NOW())
   WHERE user_id = v_user_uuid;
 
@@ -274,7 +274,7 @@ BEGIN
 
   UPDATE public.tour_operator_profiles
   SET
-    account_status            = p_status,
+    account_status            = p_status::public.account_status_enum,
     account_status_reason     = TRIM(p_reason),
     account_status_changed_at = TIMEZONE('UTC', NOW()),
     account_status_changed_by = v_admin_id,
