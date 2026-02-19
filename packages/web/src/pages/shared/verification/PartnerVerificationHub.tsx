@@ -104,17 +104,55 @@ export function PartnerVerificationHub() {
   }
 
   const finishVerification = async () => {
-    if (!user?.id) return
+    if (!user?.id || !role) return
     setIsLoading(true)
     try {
-      // Save final verification data and mark as pending review
+      // 1. Persist full profile (documents, URLs, etc.) as before
       await service.saveOnboardingData(
         user.id,
-        {
-          verification: verificationData,
-        },
+        { verification: verificationData },
         true,
       )
+
+      // 2. Build a snapshot of all submitted data for the immutable request record
+      //    This is what the admin sees in the review queue.
+      const profileData = await service.getOnboardingData(user.id)
+      const snapshot = {
+        // Identity
+        email: profileData?.personalInfo?.email ?? user.email,
+        first_name: profileData?.personalInfo?.firstName,
+        last_name: profileData?.personalInfo?.lastName,
+        phone: profileData?.personalInfo?.phoneNumber,
+        // Business
+        business_name: (profileData as any)?.businessInfo?.businessName
+          ?? (profileData as any)?.company_name,
+        registration_number: (profileData as any)?.businessInfo?.registrationNumber,
+        business_address: (profileData as any)?.businessInfo?.businessAddress,
+        // Documents (URLs the admin can click on)
+        verification_urls: verificationData.businessDocs ?? {},
+        verification_documents: {
+          id_card_url: verificationData.idCardUrl,
+          id_back_url: verificationData.idBackUrl,
+          selfie_url: verificationData.selfieUrl,
+          matching_score: verificationData.matchingScore,
+          ownership_docs: verificationData.ownershipDocs ?? {},
+        },
+        submitted_at: new Date().toISOString(),
+      }
+
+      // 3. Create the versioned request record — this populates the admin queue.
+      //    The RPC also sets verification_status = 'pending' on user_roles.
+      const { error: rpcError } = await supabase.rpc('partner_submit_verification' as any, {
+        p_partner_type: role,
+        p_submission_data: snapshot,
+      })
+
+      if (rpcError) {
+        console.error('[PartnerVerificationHub] partner_submit_verification failed:', rpcError)
+        // Don't block the user — profile is saved, queue entry might fail silently
+        // (e.g. RLS or function grant issue) — log but continue
+      }
+
       setStep('complete')
     } catch (error) {
       console.error('Error finishing verification:', error)
