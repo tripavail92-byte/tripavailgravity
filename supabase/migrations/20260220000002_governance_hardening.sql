@@ -248,6 +248,7 @@ DROP POLICY IF EXISTS "authenticated users can insert packages"             ON p
 DROP POLICY IF EXISTS "Partners can insert packages"                        ON public.packages;
 
 -- Governed INSERT policy — can_partner_operate enforced at DB level
+DROP POLICY IF EXISTS "Operative partners can create packages" ON public.packages;
 CREATE POLICY "Operative partners can create packages"
   ON public.packages
   FOR INSERT
@@ -268,6 +269,10 @@ DROP POLICY IF EXISTS "Partners can insert tours"                  ON public.tou
 
 -- NOTE: The original 'Operators can manage own tours' policy is FOR ALL, which
 -- covers INSERT too. We replace it with a split SELECT + INSERT to add the governance check.
+DROP POLICY IF EXISTS "Operators can manage own tours" ON public.tours;
+DROP POLICY IF EXISTS "Operative tour operators can create tours" ON public.tours;
+DROP POLICY IF EXISTS "Operators can update own tours" ON public.tours;
+DROP POLICY IF EXISTS "Operators can delete own tours" ON public.tours;
 CREATE POLICY "Operators can manage own tours"
   ON public.tours
   FOR SELECT
@@ -310,6 +315,7 @@ DROP POLICY IF EXISTS "Travellers can create bookings"                ON public.
 DROP POLICY IF EXISTS "authenticated users can insert bookings"       ON public.package_bookings;
 DROP POLICY IF EXISTS "Users can insert their own bookings"           ON public.package_bookings;
 
+DROP POLICY IF EXISTS "Travellers can book operative listings" ON public.package_bookings;
 CREATE POLICY "Travellers can book operative listings"
   ON public.package_bookings
   FOR INSERT
