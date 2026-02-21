@@ -247,19 +247,45 @@ export function useAdminListings(
  * Fetch partners (Admin Partners Page)
  */
 async function fetchPartners(): Promise<any[]> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, first_name, last_name, account_type, created_at')
-    .in('account_type', ['tour_operator', 'hotel_manager'])
+  // 1. Get all partner roles
+  const { data: roles, error: rolesError } = await supabase
+    .from('user_roles')
+    .select('user_id, role_type, created_at')
+    .in('role_type', ['tour_operator', 'hotel_manager'])
     .order('created_at', { ascending: false })
     .limit(100)
 
-  if (error) {
-    console.error('[adminQueries] Error fetching partners:', error)
-    throw error
+  if (rolesError) {
+    console.error('[adminQueries] Error fetching partner roles:', rolesError)
+    throw rolesError
   }
 
-  return data || []
+  if (!roles || roles.length === 0) return []
+
+  // 2. Fetch the base profiles for these users
+  const userIds = Array.from(new Set(roles.map((r) => r.user_id)))
+  const { data: profiles, error: profError } = await supabase
+    .from('profiles')
+    .select('id, email, first_name, last_name, created_at')
+    .in('id', userIds)
+
+  if (profError) {
+    throw profError
+  }
+
+  // 3. Map the roles back to a profile structure that the UI expects
+  const profileMap = new Map((profiles || []).map((p) => [p.id, p]))
+
+  return roles.map((r) => {
+    const prof = profileMap.get(r.user_id)
+    return {
+      ...(prof || {}),
+      id: r.user_id,
+      account_type: r.role_type,
+      // Use the role created_at as the "joined as partner" date
+      created_at: r.created_at || prof?.created_at,
+    }
+  })
 }
 
 /**
