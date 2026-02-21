@@ -105,33 +105,34 @@ export function RoleBasedDrawer() {
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Drawer Container - Full Height Edge to Edge */}
+            {/* Drawer Container - Premium Floating Card */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={spring}
-              className="fixed right-0 top-0 bottom-0 w-[85vw] max-w-[280px] z-[100]"
+              className="fixed right-2 top-2 bottom-2 w-[85vw] max-w-[280px] z-[100]"
             >
-              <div className="h-full rounded-l-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col border-l border-white/10">
-                {/* Profile Header - Ultra Compact (Zero Scroll Focus) */}
-                <div className="relative shrink-0 pt-8 px-4 pb-2">
-                  <div className="absolute top-4 left-4 z-20">
+              <div className="h-full rounded-[24px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col border border-white/10">
+                {/* Profile Header - Professional Spacing (Zero-Scroll Focus) */}
+                <div className="relative shrink-0 pt-11 px-4 pb-3">
+                  {/* Close Button - Corrected Size & Position */}
+                  <div className="absolute top-3 left-3 z-20">
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-black/10 transition-colors"
+                      className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-black/10 transition-colors"
                       aria-label="Close menu"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2.5 mt-2">
-                    <div className={cn('w-9 h-9 rounded-xl bg-gradient-to-br p-[1.5px] shadow-sm', roleGradient)}>
-                      <div className="w-full h-full rounded-[10px] overflow-hidden bg-background">
+                  <div className="flex items-center gap-3">
+                    <div className={cn('w-10 h-10 rounded-2xl bg-gradient-to-br p-[2px] shadow-sm', roleGradient)}>
+                      <div className="w-full h-full rounded-[14px] overflow-hidden bg-background">
                         <Avatar className="w-full h-full">
                           <AvatarImage src={user.user_metadata?.avatar_url} />
-                          <AvatarFallback className="text-[10px] font-black uppercase">
+                          <AvatarFallback className="text-xs font-black uppercase">
                             {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
@@ -139,18 +140,18 @@ export function RoleBasedDrawer() {
                     </div>
 
                     <div className="flex flex-col min-w-0">
-                      <h3 className="font-black text-[11px] truncate leading-tight">
+                      <h3 className="font-black text-xs truncate leading-none mb-1">
                         {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
                       </h3>
-                      <div className="inline-flex items-center gap-1 px-1 py-0 rounded-full bg-muted/50 border border-border text-[7px] font-bold uppercase tracking-wider text-muted-foreground w-fit">
-                        <MapPin className="w-1.5 h-1.5" />
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted/50 border border-border text-[8px] font-bold uppercase tracking-wider text-muted-foreground w-fit">
+                        <MapPin className="w-2 h-2" />
                         <span>{roleLabel}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Navigation Items Area - Flexible & Ultra Compact (No Scroll) */}
+                {/* Navigation Items Area - Flexible (No Scroll) */}
                 <div className="flex-1 min-h-0 px-2 flex flex-col justify-center">
                   <div className="space-y-0.5">
                     {navItems.map((item) => {
@@ -162,22 +163,22 @@ export function RoleBasedDrawer() {
                           className="w-full group focus:outline-none"
                         >
                           <div className={cn(
-                            'flex items-center gap-2 px-2 py-1 rounded-xl transition-all border',
+                            'flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all border',
                             isActive ? 'bg-muted/60 border-border/50 shadow-sm' : 'hover:bg-muted/30 border-transparent'
                           )}>
                             <div className={cn(
-                              'w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm',
+                              'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm',
                               getBadgeColor(item.label)
                             )}>
-                              <item.icon size={13} className="text-white" />
+                              <item.icon size={14} className="text-white" />
                             </div>
                             <span className={cn(
-                              'text-[10px] font-bold truncate w-full text-left leading-tight',
+                              'text-[11px] font-bold truncate w-full text-left leading-tight',
                               isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
                             )}>
                               {item.label}
                             </span>
-                            <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors" />
+                            <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors" />
                           </div>
                         </button>
                       )
@@ -185,23 +186,23 @@ export function RoleBasedDrawer() {
                   </div>
                 </div>
 
-                {/* Footer Actions - Tight Padding (No Scroll Focus) */}
-                <div className="shrink-0 p-2.5 border-t border-border/20 bg-background/90 backdrop-blur-xl space-y-1.5 mb-1">
+                {/* Footer Actions - Standardized (No Scroll Focus) */}
+                <div className="shrink-0 p-3 border-t border-border/20 bg-background/90 backdrop-blur-xl space-y-2">
                   {activeRole.role_type === 'traveller' ? (
                     <Button
                       data-tour="partner-switch"
-                      className="w-full h-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 active:scale-95 transition-all text-white rounded-lg shadow-md border-0"
+                      className="w-full h-9 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 active:scale-95 transition-all text-white rounded-xl shadow-lg border-0"
                       onClick={() => {
                         setIsOpen(false)
                         navigate('/partner/onboarding')
                       }}
                     >
-                      <span className="font-black text-[8px] uppercase tracking-widest">Become a Partner</span>
+                      <span className="font-black text-[9px] uppercase tracking-widest">Become a Partner</span>
                     </Button>
                   ) : (
                     <Button
                       variant="outline"
-                      className="w-full h-7.5 justify-start gap-2 rounded-lg border-border/40 text-[8px] font-black uppercase tracking-wider"
+                      className="w-full h-8 justify-start gap-2 rounded-lg border-border/40 text-[9px] font-black uppercase tracking-wider"
                       onClick={async () => {
                         setIsOpen(false)
                         try {
@@ -217,13 +218,14 @@ export function RoleBasedDrawer() {
                     </Button>
                   )}
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    className="w-full h-8 flex items-center justify-center gap-2 text-destructive hover:bg-destructive/5 rounded-lg text-[8px] font-black uppercase tracking-[0.2em]"
                     onClick={handleSignOut}
-                    className="w-full py-1.5 flex items-center justify-center gap-2 text-destructive hover:bg-destructive/5 rounded-lg text-[7px] font-black uppercase tracking-[0.2em] transition-colors"
                   >
-                    <LogOut className="h-2.5 w-2.5" />
+                    <LogOut className="h-3 w-3" />
                     Logout
-                  </button>
+                  </Button>
                 </div>
               </div>
             </motion.div>
