@@ -3,6 +3,7 @@ import {
   CheckCircle,
   Clock,
   MessageSquare,
+  MoreHorizontal,
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
@@ -25,15 +26,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -384,24 +394,45 @@ const STATUS_OPTIONS = [
 ] as const
 
 function AllPartnersTab() {
-  const [hotelManagers, setHotelManagers] = useState<PartnerRow[]>([])
-  const [tourOperators, setTourOperators] = useState<PartnerRow[]>([])
+  const [partners, setPartners] = useState<(PartnerRow & { roleType: string; rpcName: string })[]>(
+    [],
+  )
   const [usersById, setUsersById] = useState<Record<string, ProfileIdentity>>({})
   const [verificationByUserId, setVerificationByUserId] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
-  const [nextStatus, setNextStatus] = useState<Record<string, StatusAction>>({})
-  const [reason, setReason] = useState<Record<string, string>>({})
-  const [busy, setBusy] = useState<Record<string, boolean>>({})
-  const [confirmDel, setConfirmDel] = useState<{ key: string; fn: () => void } | null>(null)
+
+  // Dialog State
+  const [actionDialog, setActionDialog] = useState<{
+    isOpen: boolean
+    targetStatus: StatusAction
+    partnerId: string
+    roleType: string
+    rpcName: string
+    partnerName: string
+  } | null>(null)
+  const [reason, setReason] = useState('')
+  const [isBusy, setIsBusy] = useState(false)
 
   const load = async () => {
     setLoading(true)
     try {
       const [hmData, opData] = await Promise.all([fetchHotelManagers(100), fetchTourOperators(100)])
-      const hmRows = hmData as PartnerRow[]
-      const opRows = opData as PartnerRow[]
+      const hmRows = (hmData as PartnerRow[]).map((r) => ({
+        ...r,
+        roleType: 'hotel_manager',
+        rpcName: 'admin_set_hotel_manager_status',
+      }))
+      const opRows = (opData as PartnerRow[]).map((r) => ({
+        ...r,
+        roleType: 'tour_operator',
+        rpcName: 'admin_set_tour_operator_status',
+      }))
 
-      const ids = Array.from(new Set([...hmRows, ...opRows].map((r) => r.user_id)))
+      const allPartners = [...hmRows, ...opRows].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
+
+      const ids = Array.from(new Set(allPartners.map((r) => r.user_id)))
       const profiles = ids.length ? await fetchProfilesByIds(ids) : []
       setUsersById(Object.fromEntries(profiles.map((p: any) => [p.id, p])))
 
@@ -415,7 +446,6 @@ function AllPartnersTab() {
         const vsMap: Record<string, string> = {}
         if (roles) {
           for (const r of roles) {
-            // Use the verification status of the partner role for this user
             if (r.role_type === 'hotel_manager' || r.role_type === 'tour_operator') {
               vsMap[`${r.user_id}:${r.role_type}`] = r.verification_status
             }
@@ -424,8 +454,7 @@ function AllPartnersTab() {
         setVerificationByUserId(vsMap)
       }
 
-      setHotelManagers(hmRows)
-      setTourOperators(opRows)
+      setPartners(allPartners)
     } catch (err: any) {
       console.error('[AdminPartnersPage] load error:', err)
       toast.error('Failed to load partners: ' + (err.message || String(err)))
@@ -438,65 +467,41 @@ function AllPartnersTab() {
     load()
   }, [])
 
-  const applyStatus = async (key: string, userId: string, rpcName: string, partnerType: string) => {
-    const status = nextStatus[key] || 'active'
-    const r = (reason[key] || '').trim()
+  const handleActionConfirm = async () => {
+    if (!actionDialog) return
+
+    const r = reason.trim()
     if (r.length < MIN_REASON_LEN) {
       toast.error(`Reason must be at least ${MIN_REASON_LEN} characters`)
       return
     }
-    if (status === 'deleted') {
-      setConfirmDel({
-        key,
-        fn: async () => {
-          setConfirmDel(null)
-          await doApply(key, userId, rpcName, status, r)
-        },
-      })
-      return
-    }
-    await doApply(key, userId, rpcName, status, r)
-  }
 
-  const doApply = async (
-    key: string,
-    userId: string,
-    rpcName: string,
-    status: string,
-    r: string,
-  ) => {
-    setBusy((p) => ({ ...p, [key]: true }))
+    setIsBusy(true)
     try {
-      const { error } = await (supabase as any).rpc(rpcName, {
-        p_user_id: userId,
-        p_status: status,
+      const { error } = await (supabase as any).rpc(actionDialog.rpcName, {
+        p_user_id: actionDialog.partnerId,
+        p_status: actionDialog.targetStatus,
         p_reason: r,
       })
       if (error) throw error
-      toast.success(`Status changed to "${status}" — partner notified`)
-      setReason((p) => ({ ...p, [key]: '' }))
+      toast.success(
+        `Status changed to "${actionDialog.targetStatus}" — ${actionDialog.partnerName} notified`,
+      )
+      setActionDialog(null)
+      setReason('')
       await load()
     } catch (err: any) {
       toast.error(err?.message || 'Failed to update status')
     } finally {
-      setBusy((p) => ({ ...p, [key]: false }))
+      setIsBusy(false)
     }
   }
 
-  function PartnerCard({
-    row,
-    keyPrefix,
-    rpcName,
-    roleType,
-  }: {
-    row: PartnerRow
-    keyPrefix: string
-    rpcName: string
-    roleType: string
-  }) {
+  const openActionDialog = (
+    row: PartnerRow & { roleType: string; rpcName: string },
+    targetStatus: StatusAction,
+  ) => {
     const u = usersById[row.user_id]
-    const key = `${keyPrefix}:${row.user_id}`
-    const verificationStatus = verificationByUserId[`${row.user_id}:${roleType}`]
     const name =
       row.business_name ||
       row.company_name ||
@@ -504,98 +509,18 @@ function AllPartnersTab() {
       u?.email ||
       row.user_id
 
-    const isBusy = !!busy[key]
-    const currentStatus = (row.account_status || 'active') as StatusAction
-    const targetStatus = nextStatus[key] || currentStatus
+    // Check if the current status is already the target status
+    if (row.account_status === targetStatus) return
 
-    return (
-      <Card
-        className={`transition-all ${currentStatus === 'suspended' ? 'border-orange-200 bg-orange-50/30 dark:bg-orange-950/10' : currentStatus === 'deleted' ? 'opacity-60 border-dashed' : ''}`}
-      >
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-base truncate">{name}</CardTitle>
-              {u?.email && <div className="text-sm text-muted-foreground truncate">{u.email}</div>}
-              <div className="text-xs text-muted-foreground mt-0.5">
-                Joined {row.created_at ? new Date(row.created_at).toLocaleDateString() : '—'}
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              {/* Governance matrix badge */}
-              <OperativeBadge verification={verificationStatus} account={row.account_status} />
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Select
-              value={targetStatus}
-              onValueChange={(v) => setNextStatus((p) => ({ ...p, [key]: v as StatusAction }))}
-              disabled={isBusy}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Input
-              placeholder="Reason (required, 12+ chars)"
-              value={reason[key] || ''}
-              onChange={(e) => setReason((p) => ({ ...p, [key]: e.target.value }))}
-              disabled={isBusy}
-              className={
-                targetStatus === 'suspended'
-                  ? 'border-orange-300 focus:ring-orange-300'
-                  : targetStatus === 'deleted'
-                    ? 'border-red-300 focus:ring-red-300'
-                    : ''
-              }
-            />
-
-            <Button
-              onClick={() => applyStatus(key, row.user_id, rpcName, roleType)}
-              disabled={isBusy || targetStatus === currentStatus}
-              variant={
-                targetStatus === 'suspended'
-                  ? 'outline'
-                  : targetStatus === 'deleted'
-                    ? 'destructive'
-                    : 'default'
-              }
-              className={
-                targetStatus === 'suspended'
-                  ? 'border-orange-400 text-orange-700 hover:bg-orange-50'
-                  : ''
-              }
-            >
-              {isBusy ? 'Applying…' : `Set ${targetStatus}`}
-            </Button>
-          </div>
-
-          {/* Warn admin of cascade effect */}
-          {(targetStatus === 'suspended' || targetStatus === 'deleted') &&
-            targetStatus !== currentStatus && (
-              <div className="mt-3 flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2.5 border border-amber-200 dark:border-amber-800">
-                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span>
-                  {targetStatus === 'suspended'
-                    ? 'All active listings/tours by this partner will be hidden from the marketplace. Partner is notified.'
-                    : 'Soft-delete: profile stays in DB but account and all listings become inaccessible.'}
-                </span>
-              </div>
-            )}
-        </CardContent>
-      </Card>
-    )
+    setReason('')
+    setActionDialog({
+      isOpen: true,
+      targetStatus,
+      partnerId: row.user_id,
+      roleType: row.roleType,
+      rpcName: row.rpcName,
+      partnerName: name,
+    })
   }
 
   if (loading)
@@ -604,7 +529,7 @@ function AllPartnersTab() {
         {[1, 2, 3].map((i) => (
           <Card key={i}>
             <CardContent className="p-6">
-              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-12 w-full" />
             </CardContent>
           </Card>
         ))}
@@ -645,75 +570,193 @@ function AllPartnersTab() {
         </CardContent>
       </Card>
 
-      <div className="space-y-6">
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Hotel Managers <span className="font-normal">({hotelManagers.length})</span>
-          </h2>
-          {!hotelManagers.length ? (
-            <Card>
-              <CardContent className="p-6 text-sm text-muted-foreground">
-                No hotel managers yet.
-              </CardContent>
-            </Card>
-          ) : (
-            hotelManagers.map((p) => (
-              <PartnerCard
-                key={p.user_id}
-                row={p}
-                keyPrefix="hm"
-                rpcName="admin_set_hotel_manager_status"
-                roleType="hotel_manager"
-              />
-            ))
-          )}
-        </section>
+      <Card>
+        <div className="p-1 border-b">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead>Partner</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Joined</TableHead>
+                <TableHead>Governance</TableHead>
+                <TableHead className="w-[80px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {partners.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    No partners found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                partners.map((row) => {
+                  const u = usersById[row.user_id]
+                  const verificationStatus = verificationByUserId[`${row.user_id}:${row.roleType}`]
+                  const name =
+                    row.business_name ||
+                    row.company_name ||
+                    [u?.first_name, u?.last_name].filter(Boolean).join(' ') ||
+                    'Unknown'
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Tour Operators <span className="font-normal">({tourOperators.length})</span>
-          </h2>
-          {!tourOperators.length ? (
-            <Card>
-              <CardContent className="p-6 text-sm text-muted-foreground">
-                No tour operators yet.
-              </CardContent>
-            </Card>
-          ) : (
-            tourOperators.map((p) => (
-              <PartnerCard
-                key={p.user_id}
-                row={p}
-                keyPrefix="op"
-                rpcName="admin_set_tour_operator_status"
-                roleType="tour_operator"
-              />
-            ))
-          )}
-        </section>
-      </div>
+                  const isSuspended = row.account_status === 'suspended'
+                  const isDeleted = row.account_status === 'deleted'
 
-      {/* Soft-delete confirm dialog */}
+                  return (
+                    <TableRow
+                      key={`${row.user_id}:${row.roleType}`}
+                      className={
+                        isSuspended ? 'bg-orange-50/30' : isDeleted ? 'opacity-60 bg-muted/30' : ''
+                      }
+                    >
+                      <TableCell className="font-medium">
+                        {name}
+                        {isDeleted && (
+                          <span className="ml-2 text-xs text-red-600 font-semibold uppercase tracking-wider">
+                            (Deleted)
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{u?.email || '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-normal">
+                          {row.roleType === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {row.created_at ? new Date(row.created_at).toLocaleDateString() : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <OperativeBadge
+                          verification={verificationStatus}
+                          account={row.account_status}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[180px]">
+                            <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {STATUS_OPTIONS.map((opt) => {
+                              const Icon = opt.icon
+                              const isActive = (row.account_status || 'active') === opt.value
+                              return (
+                                <DropdownMenuItem
+                                  key={opt.value}
+                                  disabled={isActive}
+                                  onClick={() => openActionDialog(row, opt.value)}
+                                  className={`gap-2 cursor-pointer ${
+                                    opt.value === 'deleted' && !isActive
+                                      ? 'text-red-600 focus:text-red-600'
+                                      : opt.value === 'suspended' && !isActive
+                                        ? 'text-orange-600 focus:text-orange-600'
+                                        : ''
+                                  }`}
+                                >
+                                  <Icon className="h-4 w-4" />
+                                  <span>{opt.label}</span>
+                                  {isActive && <span className="ml-auto text-xs">(Current)</span>}
+                                </DropdownMenuItem>
+                              )
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {/* Action Confirmation Dialog */}
       <Dialog
-        open={!!confirmDel}
-        onOpenChange={(o) => {
-          if (!o) setConfirmDel(null)
+        open={actionDialog?.isOpen || false}
+        onOpenChange={(open) => {
+          if (!open && !isBusy) setActionDialog(null)
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Soft-delete this partner?</DialogTitle>
+            <DialogTitle>
+              {actionDialog?.targetStatus === 'suspended'
+                ? 'Suspend Partner Account'
+                : actionDialog?.targetStatus === 'deleted'
+                  ? 'Soft-Delete Partner Profile'
+                  : 'Reactivate Partner Account'}
+            </DialogTitle>
             <DialogDescription>
-              The profile remains in the database but becomes inaccessible. All active listings and
-              tours will be hidden. This action is logged to the audit trail.
+              Action target:{' '}
+              <span className="font-semibold text-foreground">{actionDialog?.partnerName}</span>
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {(actionDialog?.targetStatus === 'suspended' ||
+              actionDialog?.targetStatus === 'deleted') && (
+              <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  {actionDialog?.targetStatus === 'suspended'
+                    ? 'All active listings/tours by this partner will be hidden from the marketplace. The partner will be notified.'
+                    : 'The profile remains in the database but becomes inaccessible. All active listings and tours will be hidden.'}
+                </span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reason for Status Change</label>
+              <Input
+                placeholder="Required. E.g. Missing valid licenses, policy violation..."
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                disabled={isBusy}
+                className={
+                  actionDialog?.targetStatus === 'suspended'
+                    ? 'border-orange-300 focus-visible:ring-orange-400'
+                    : actionDialog?.targetStatus === 'deleted'
+                      ? 'border-red-300 focus-visible:ring-red-400'
+                      : ''
+                }
+              />
+              <p className="text-xs text-muted-foreground text-right mt-1">
+                {reason.length}/{MIN_REASON_LEN} chars min
+              </p>
+            </div>
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDel(null)}>
+            <Button variant="outline" onClick={() => setActionDialog(null)} disabled={isBusy}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={() => confirmDel?.fn()}>
-              Confirm Delete
+            <Button
+              variant={
+                actionDialog?.targetStatus === 'suspended'
+                  ? 'secondary'
+                  : actionDialog?.targetStatus === 'deleted'
+                    ? 'destructive'
+                    : 'default'
+              }
+              className={
+                actionDialog?.targetStatus === 'suspended'
+                  ? 'bg-orange-100 text-orange-800 hover:bg-orange-200 border border-orange-200'
+                  : ''
+              }
+              onClick={handleActionConfirm}
+              disabled={isBusy || reason.trim().length < MIN_REASON_LEN}
+            >
+              {isBusy
+                ? 'Applying...'
+                : `Confirm ${actionDialog?.targetStatus === 'active' ? 'Reactivation' : actionDialog?.targetStatus}`}
             </Button>
           </DialogFooter>
         </DialogContent>
