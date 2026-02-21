@@ -7,6 +7,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from
 import { AdminGuard } from '@/components/auth/AdminGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { RoleGuard } from '@/components/auth/RoleGuard'
+import { TourManager } from '@/components/tour/TourManager'
 import { useAuth } from '@/hooks/useAuth'
 // Eager load critical components
 import AdminLayout from '@/layouts/AdminLayout'
@@ -139,6 +140,7 @@ function App() {
         {/* Global admin redirect — must be inside BrowserRouter */}
         <AdminRedirector />
         <Toaster position="top-center" />
+        <TourManager />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/auth" element={<LoginPage />} />

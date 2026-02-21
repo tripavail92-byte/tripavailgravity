@@ -71,6 +71,7 @@ export function ListingsGrid() {
           </div>
 
           <Button
+            data-tour="add-property"
             onClick={handleNewListing}
             className="bg-primary-gradient text-white hover:opacity-90 transition-opacity"
           >
@@ -91,6 +92,7 @@ export function ListingsGrid() {
             Create your first listing to start receiving bookings
           </p>
           <Button
+            data-tour="add-property"
             onClick={handleNewListing}
             className="bg-primary-gradient text-white hover:opacity-90 transition-opacity"
           >

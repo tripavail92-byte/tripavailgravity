@@ -620,6 +620,7 @@ function AirbnbHeader() {
               className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl w-full flex flex-row items-center gap-2 border border-white/30"
             >
               <button
+                data-tour="search-bar"
                 type="button"
                 className="flex-1 w-full px-6 flex items-center gap-3 border-r border-border/50 py-3 min-w-0"
                 onClick={() => setIsSearchOverlayOpen(true)}
@@ -657,6 +658,7 @@ function AirbnbHeader() {
                 className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full max-w-[360px] flex flex-row items-center gap-2 border border-white/30"
               >
                 <button
+                  data-tour="search-bar"
                   type="button"
                   className="flex-1 px-4 flex items-center gap-2 min-w-0"
                   onClick={() => setIsSearchOverlayOpen(true)}

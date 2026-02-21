@@ -82,7 +82,7 @@ export function StatsOverview() {
   const stats = isTourOperator ? tourStats : hotelStats
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div data-tour="dashboard-stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, index) => (
         <motion.div
           key={stat.label}

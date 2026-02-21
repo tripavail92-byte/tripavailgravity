@@ -141,6 +141,7 @@ export function RoleBasedDrawer() {
   return (
     <>
       <button
+        data-tour="profile-menu"
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 border border-border bg-background/50 backdrop-blur-sm rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0"
       >
@@ -358,6 +359,7 @@ export function RoleBasedDrawer() {
                   <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md space-y-3">
                     {activeRole.role_type === 'traveller' ? (
                       <Button
+                        data-tour="partner-switch"
                         className="w-full bg-gradient-to-br from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-primary-foreground border-0 h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
                         onClick={() => {
                           setIsOpen(false)

@@ -79,6 +79,7 @@ export function TourOperatorDashboard() {
               </p>
             </div>
             <Button
+              data-tour="add-tour"
               onClick={handleCreateTour}
               className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-6 rounded-2xl font-bold gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
@@ -136,6 +137,7 @@ export function TourOperatorDashboard() {
                     Start by creating your first tour package to reach travellers worldwide.
                   </p>
                   <Button
+                    data-tour="add-tour"
                     onClick={handleCreateTour}
                     variant="outline"
                     className="h-11 px-8 rounded-xl border-primary/20 text-primary font-bold hover:bg-primary/5"
