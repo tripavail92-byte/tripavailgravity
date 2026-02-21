@@ -21,10 +21,10 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
         activeRole.role_type === 'admin'
           ? 'Admin'
           : activeRole.role_type === 'hotel_manager'
-          ? 'Hotel Manager'
-          : activeRole.role_type === 'tour_operator'
-            ? 'Tour Operator'
-            : 'Traveler'
+            ? 'Hotel Manager'
+            : activeRole.role_type === 'tour_operator'
+              ? 'Tour Operator'
+              : 'Traveler'
 
       toast.error(`Access Denied: You are logged in as a ${roleLabel}.`, {
         id: 'role-denied', // Prevent duplicate toasts
@@ -55,10 +55,10 @@ export function RoleGuard({ children, allowedRoles, redirectTo }: RoleGuardProps
       activeRole?.role_type === 'admin'
         ? '/admin/dashboard'
         : activeRole?.role_type === 'hotel_manager'
-        ? '/manager/dashboard'
-        : activeRole?.role_type === 'tour_operator'
-          ? '/operator/dashboard'
-          : '/'
+          ? '/manager/dashboard'
+          : activeRole?.role_type === 'tour_operator'
+            ? '/operator/dashboard'
+            : '/'
 
     return <Navigate to={defaultDashboard} replace />
   }

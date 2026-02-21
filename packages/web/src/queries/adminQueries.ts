@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import type { Database } from '@/types/database.types'
+
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type AdminUser = Database['public']['Tables']['admin_users']['Row']
@@ -52,7 +53,8 @@ export const adminKeys = {
   listings: () => [...adminKeys.all, 'listings'] as const,
   partners: () => [...adminKeys.all, 'partners'] as const,
   role: (userId: string) => [...adminKeys.all, 'role', userId] as const,
-  verificationQueue: (status?: string) => [...adminKeys.all, 'verification-queue', status ?? 'all'] as const,
+  verificationQueue: (status?: string) =>
+    [...adminKeys.all, 'verification-queue', status ?? 'all'] as const,
   notifications: (userId: string) => ['notifications', userId] as const,
 }
 
@@ -107,7 +109,7 @@ async function fetchAdminRole(userId: string): Promise<Partial<AdminUser> | null
   if (!data) return null
 
   // Return partial object satisfying the needs of AdminGuard (which only needs .role)
-  // We mock the other required fields if strictly getting AdminUser type, 
+  // We mock the other required fields if strictly getting AdminUser type,
   // but changing return type to Partial<AdminUser> is safer if TS allows.
   // AdminGuard checks !adminUser.role, so this works.
   return {
@@ -347,7 +349,7 @@ export function useVerificationQueue(
       .on(
         'postgres_changes',
         {
-          event: '*',                                     // INSERT | UPDATE | DELETE
+          event: '*', // INSERT | UPDATE | DELETE
           schema: 'public',
           table: 'partner_verification_requests',
           ...(status && status !== 'all' ? { filter: `status=eq.${status}` } : {}),
@@ -361,13 +363,15 @@ export function useVerificationQueue(
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [status, queryClient])
 
   return useQuery<VerificationRequest[], Error>({
     queryKey: adminKeys.verificationQueue(status),
     queryFn: () => fetchVerificationQueue(status),
-    staleTime: 15 * 1000,      // 15s stale — Realtime keeps it fresh
+    staleTime: 15 * 1000, // 15s stale — Realtime keeps it fresh
     // refetchInterval removed — Realtime channel handles live updates
     ...options,
   })
@@ -380,7 +384,11 @@ export function useApprovePartner() {
       userId,
       partnerType,
       requestId,
-    }: { userId: string; partnerType: string; requestId: string }) => {
+    }: {
+      userId: string
+      partnerType: string
+      requestId: string
+    }) => {
       const { error } = await supabase.rpc('admin_approve_partner' as any, {
         p_user_id: userId,
         p_partner_type: partnerType,
@@ -403,7 +411,12 @@ export function useRejectPartner() {
       partnerType,
       requestId,
       reason,
-    }: { userId: string; partnerType: string; requestId: string; reason: string }) => {
+    }: {
+      userId: string
+      partnerType: string
+      requestId: string
+      reason: string
+    }) => {
       const { error } = await supabase.rpc('admin_reject_partner' as any, {
         p_user_id: userId,
         p_partner_type: partnerType,
@@ -427,7 +440,12 @@ export function useRequestPartnerInfo() {
       partnerType,
       requestId,
       message,
-    }: { userId: string; partnerType: string; requestId: string; message: string }) => {
+    }: {
+      userId: string
+      partnerType: string
+      requestId: string
+      message: string
+    }) => {
       const { error } = await supabase.rpc('admin_request_partner_info' as any, {
         p_user_id: userId,
         p_partner_type: partnerType,
@@ -465,7 +483,7 @@ export function useNotifications(userId: string | undefined) {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',          // only new notifications trigger the bell
+          event: 'INSERT', // only new notifications trigger the bell
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${userId}`,
@@ -477,7 +495,7 @@ export function useNotifications(userId: string | undefined) {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',          // catch mark-as-read updates too
+          event: 'UPDATE', // catch mark-as-read updates too
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${userId}`,
@@ -488,7 +506,9 @@ export function useNotifications(userId: string | undefined) {
       )
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [userId, queryClient])
 
   return useQuery<AppNotification[], Error>({

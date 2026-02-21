@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
-import type { Database } from '@/types/database.types'
+
 import { supabase } from '@/lib/supabase'
+import type { Database } from '@/types/database.types'
 
 type PackageBooking = Database['public']['Tables']['package_bookings']['Row']
 type TourBooking = Database['public']['Tables']['tour_bookings']['Row']
@@ -22,11 +23,7 @@ export const bookingKeys = {
  * Fetch package booking by ID
  */
 async function fetchPackageBookingById(id: string): Promise<PackageBooking> {
-  const { data, error } = await supabase
-    .from('package_bookings')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabase.from('package_bookings').select('*').eq('id', id).single()
 
   if (error) {
     console.error(`[bookingQueries] Error fetching package booking ${id}:`, error)
@@ -58,11 +55,7 @@ export function usePackageBooking(
  * Fetch tour booking by ID
  */
 async function fetchTourBookingById(id: string): Promise<TourBooking> {
-  const { data, error } = await supabase
-    .from('tour_bookings')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabase.from('tour_bookings').select('*').eq('id', id).single()
 
   if (error) {
     console.error(`[bookingQueries] Error fetching tour booking ${id}:`, error)

@@ -123,7 +123,9 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
               </Label>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground font-bold uppercase">Min</Label>
+                  <Label className="text-[10px] text-muted-foreground font-bold uppercase">
+                    Min
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -151,7 +153,9 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground font-bold uppercase">Max</Label>
+                  <Label className="text-[10px] text-muted-foreground font-bold uppercase">
+                    Max
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"

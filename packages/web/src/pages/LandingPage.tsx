@@ -1,11 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query'
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
   Flame,
   Heart,
-  ShieldCheck,
   Search,
+  ShieldCheck,
   SlidersHorizontal,
   Star,
   TrendingUp,
@@ -15,14 +16,14 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
-import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
+import { SearchOverlay } from '@/components/search/SearchOverlay'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
-import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -30,9 +31,21 @@ import { Card } from '@/components/ui/card'
 import { GlassCard } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/hooks/useAuth'
-import { type CuratedPackageKind, useCuratedPackages, useFeaturedPackages, prefetchPackage, useHomepageMixPackages } from '@/queries/packageQueries'
-import { type TourCategoryKind, useToursByCategory, useFeaturedTours, usePakistanNorthernTours, prefetchTour, useHomepageMixTours } from '@/queries/tourQueries'
-import { useQueryClient } from '@tanstack/react-query'
+import {
+  type CuratedPackageKind,
+  prefetchPackage,
+  useCuratedPackages,
+  useFeaturedPackages,
+  useHomepageMixPackages,
+} from '@/queries/packageQueries'
+import {
+  prefetchTour,
+  type TourCategoryKind,
+  useFeaturedTours,
+  useHomepageMixTours,
+  usePakistanNorthernTours,
+  useToursByCategory,
+} from '@/queries/tourQueries'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -61,7 +74,8 @@ export default function LandingPage() {
                 Premium travel packages, curated for real moments.
               </h1>
               <p className="mt-4 text-lg text-muted-foreground">
-                Book boutique stays, romantic escapes, and family getaways with transparent pricing and instant confirmation.
+                Book boutique stays, romantic escapes, and family getaways with transparent pricing
+                and instant confirmation.
               </p>
               <div className="mt-6">
                 <Button
@@ -147,14 +161,12 @@ type MixedRowItem =
   | { type: 'hotel'; id: string; created_at: string; rating: number | null; pkg: any }
   | { type: 'tour'; id: string; created_at: string; rating: number | null; tour: any }
 
-function MixedHomepageRow({
-  kind,
-  title,
-}: {
-  kind: 'new' | 'top-rated'
-  title: string
-}) {
-  const { data: hotelPackages = [], isLoading: hotelsLoading, isError: hotelsError } = useHomepageMixPackages(48)
+function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: string }) {
+  const {
+    data: hotelPackages = [],
+    isLoading: hotelsLoading,
+    isError: hotelsError,
+  } = useHomepageMixPackages(48)
   const { data: tours = [], isLoading: toursLoading, isError: toursError } = useHomepageMixTours(48)
 
   const isLoading = hotelsLoading || toursLoading
@@ -214,7 +226,10 @@ function MixedHomepageRow({
     }
 
     if (interleaved.length < total) {
-      const remaining = [...sortedHotels.slice(pickedHotels.length), ...sortedTours.slice(pickedTours.length)]
+      const remaining = [
+        ...sortedHotels.slice(pickedHotels.length),
+        ...sortedTours.slice(pickedTours.length),
+      ]
         .slice()
         .sort(compareRatingDesc)
 
@@ -268,10 +283,7 @@ function MixedHomepageRow({
         ) : merged.length > 0 ? (
           <HorizontalPreviewSlider>
             {merged.map((item) => (
-              <div
-                key={`${item.type}-${item.id}`}
-                className="flex-shrink-0 w-[280px] sm:w-[320px]"
-              >
+              <div key={`${item.type}-${item.id}`} className="flex-shrink-0 w-[280px] sm:w-[320px]">
                 {item.type === 'hotel' ? (
                   <PackageCard
                     id={item.pkg.id}
@@ -283,7 +295,9 @@ function MixedHomepageRow({
                     durationDays={item.pkg.durationDays ?? 3}
                     rating={item.pkg.rating}
                     reviewCount={item.pkg.reviewCount}
-                    priceFrom={typeof item.pkg.packagePrice === 'number' ? item.pkg.packagePrice : null}
+                    priceFrom={
+                      typeof item.pkg.packagePrice === 'number' ? item.pkg.packagePrice : null
+                    }
                     totalOriginal={item.pkg.totalOriginal}
                     totalDiscounted={item.pkg.totalDiscounted}
                     badge={'Hotel Stay'}
@@ -319,13 +333,7 @@ function MixedHomepageRow({
   )
 }
 
-function CuratedPackagesRow({
-  kind,
-  title,
-}: {
-  kind: CuratedPackageKind
-  title: string
-}) {
+function CuratedPackagesRow({ kind, title }: { kind: CuratedPackageKind; title: string }) {
   const { data = [], isLoading, isError } = useCuratedPackages(kind)
   const viewAllHref = useMemo(() => `/explore/hotel-packages/${kind}`, [kind])
 
@@ -345,28 +353,28 @@ function CuratedPackagesRow({
       <div className="mt-6">
         {isLoading ? (
           <HorizontalPreviewSlider>
-              {[0, 1, 2, 3].map((i) => (
-                <Card
-                  key={i}
-                  className="rounded-2xl border border-border/60 overflow-hidden shrink-0 w-[280px] sm:w-[320px]"
-                >
-                  <div className="aspect-[4/5]">
-                    <Skeleton className="w-full h-full" />
+            {[0, 1, 2, 3].map((i) => (
+              <Card
+                key={i}
+                className="rounded-2xl border border-border/60 overflow-hidden shrink-0 w-[280px] sm:w-[320px]"
+              >
+                <div className="aspect-[4/5]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-7 w-24 rounded-full" />
+                    <Skeleton className="h-7 w-28 rounded-full" />
                   </div>
-                  <div className="p-4 space-y-3">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex gap-2">
-                      <Skeleton className="h-7 w-24 rounded-full" />
-                      <Skeleton className="h-7 w-28 rounded-full" />
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <Skeleton className="h-8 w-24" />
-                      <Skeleton className="h-9 w-24 rounded-md" />
-                    </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-9 w-24 rounded-md" />
                   </div>
-                </Card>
-              ))}
+                </div>
+              </Card>
+            ))}
           </HorizontalPreviewSlider>
         ) : isError ? (
           <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
@@ -374,25 +382,25 @@ function CuratedPackagesRow({
           </Card>
         ) : data.length > 0 ? (
           <HorizontalPreviewSlider>
-              {data.map((pkg) => (
-                <div key={pkg.id} className="shrink-0 w-[280px] sm:w-[320px]">
-                  <PackageCard
-                    id={pkg.id}
-                    slug={pkg.slug ?? undefined}
-                    images={pkg.images}
-                    title={pkg.title}
-                    subtitle={pkg.hotelName}
-                    location={pkg.location}
-                    durationDays={pkg.durationDays}
-                    rating={pkg.rating}
-                    reviewCount={pkg.reviewCount}
-                    priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
-                    totalOriginal={pkg.totalOriginal}
-                    totalDiscounted={pkg.totalDiscounted}
-                    badge={pkg.badge}
-                  />
-                </div>
-              ))}
+            {data.map((pkg) => (
+              <div key={pkg.id} className="shrink-0 w-[280px] sm:w-[320px]">
+                <PackageCard
+                  id={pkg.id}
+                  slug={pkg.slug ?? undefined}
+                  images={pkg.images}
+                  title={pkg.title}
+                  subtitle={pkg.hotelName}
+                  location={pkg.location}
+                  durationDays={pkg.durationDays}
+                  rating={pkg.rating}
+                  reviewCount={pkg.reviewCount}
+                  priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+                  totalOriginal={pkg.totalOriginal}
+                  totalDiscounted={pkg.totalDiscounted}
+                  badge={pkg.badge}
+                />
+              </div>
+            ))}
           </HorizontalPreviewSlider>
         ) : (
           <Card className="rounded-2xl border border-border/60 p-6">
@@ -495,9 +503,7 @@ function PakistanNorthernToursRow() {
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Northern Pakistan Tours
           </h2>
-          <p className="text-muted-foreground mt-1">
-            Hunza, Skardu, Fairy Meadows, Naran, Swat
-          </p>
+          <p className="text-muted-foreground mt-1">Hunza, Skardu, Fairy Meadows, Naran, Swat</p>
         </div>
 
         <Button asChild variant="link" className="px-0">
@@ -508,21 +514,21 @@ function PakistanNorthernToursRow() {
       <div className="mt-6">
         {isLoading ? (
           <HorizontalPreviewSlider>
-              {[0, 1, 2, 3].map((i) => (
-                <Card
-                  key={i}
-                  className="rounded-3xl border border-border/60 overflow-hidden shrink-0 w-[260px] sm:w-[280px]"
-                >
-                  <div className="aspect-[4/5]">
-                    <Skeleton className="w-full h-full" />
-                  </div>
-                  <div className="p-4 space-y-3">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-6 w-1/2" />
-                  </div>
-                </Card>
-              ))}
+            {[0, 1, 2, 3].map((i) => (
+              <Card
+                key={i}
+                className="rounded-3xl border border-border/60 overflow-hidden shrink-0 w-[260px] sm:w-[280px]"
+              >
+                <div className="aspect-[4/5]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              </Card>
+            ))}
           </HorizontalPreviewSlider>
         ) : isError ? (
           <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
@@ -530,26 +536,26 @@ function PakistanNorthernToursRow() {
           </Card>
         ) : data.length > 0 ? (
           <HorizontalPreviewSlider>
-              {data.slice(0, 8).map((tour) => (
-                <div key={tour.id} className="shrink-0 w-[260px] sm:w-[280px]">
-                  <TourCard
-                    id={tour.id}
-                    slug={tour.slug ?? undefined}
-                    image={
-                      tour.images?.[0] ||
-                      'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
-                    }
-                    title={tour.title}
-                    location={tour.location}
-                    duration={'Multi-day'}
-                    rating={tour.rating}
-                    price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                    currency="USD"
-                    type={tour.badge}
-                    isFeatured={tour.badge === 'Featured'}
-                  />
-                </div>
-              ))}
+            {data.slice(0, 8).map((tour) => (
+              <div key={tour.id} className="shrink-0 w-[260px] sm:w-[280px]">
+                <TourCard
+                  id={tour.id}
+                  slug={tour.slug ?? undefined}
+                  image={
+                    tour.images?.[0] ||
+                    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
+                  }
+                  title={tour.title}
+                  location={tour.location}
+                  duration={'Multi-day'}
+                  rating={tour.rating}
+                  price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                  currency="USD"
+                  type={tour.badge}
+                  isFeatured={tour.badge === 'Featured'}
+                />
+              </div>
+            ))}
           </HorizontalPreviewSlider>
         ) : (
           <Card className="rounded-2xl border border-border/60 p-6">

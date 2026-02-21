@@ -3,8 +3,8 @@ import { toast } from 'react-hot-toast'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useAdminRole } from '@/queries/adminQueries'
 import { supabase } from '@/lib/supabase'
+import { useAdminRole } from '@/queries/adminQueries'
 
 type AdminGuardState =
   | { status: 'checking' }
@@ -22,7 +22,11 @@ export function AdminGuard({ children }: AdminGuardProps) {
   const [state, setState] = useState<AdminGuardState>({ status: 'checking' })
 
   // ✅ Enterprise: Use query hook instead of manual useEffect
-  const { data: adminUser, isLoading, error } = useAdminRole(user?.id, {
+  const {
+    data: adminUser,
+    isLoading,
+    error,
+  } = useAdminRole(user?.id, {
     enabled: initialized && !!user,
   })
 

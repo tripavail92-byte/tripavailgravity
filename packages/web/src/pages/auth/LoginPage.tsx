@@ -60,7 +60,10 @@ export default function LoginPage() {
   }, [searchParams])
 
   useEffect(() => {
-    console.log('[LoginPage] Auth state changed:', { user: !!user, activeRole: activeRole?.role_type })
+    console.log('[LoginPage] Auth state changed:', {
+      user: !!user,
+      activeRole: activeRole?.role_type,
+    })
 
     if (redirectedRef.current) return
 
@@ -71,7 +74,12 @@ export default function LoginPage() {
       if (!target) {
         try {
           const stored = sessionStorage.getItem('postAuthRedirect')
-          if (stored && stored.startsWith('/') && !stored.startsWith('//') && !stored.startsWith('/auth')) {
+          if (
+            stored &&
+            stored.startsWith('/') &&
+            !stored.startsWith('//') &&
+            !stored.startsWith('/auth')
+          ) {
             target = stored
           }
         } catch {

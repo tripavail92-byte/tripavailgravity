@@ -174,7 +174,11 @@ export const tourService = {
 
   async getToursByIds(ids: string[]) {
     if (!ids.length) return []
-    const { data, error } = await supabase.from('tours').select('*').in('id', ids).eq('is_active', true)
+    const { data, error } = await supabase
+      .from('tours')
+      .select('*')
+      .in('id', ids)
+      .eq('is_active', true)
 
     if (error) {
       console.error('Error fetching tours by IDs:', error)

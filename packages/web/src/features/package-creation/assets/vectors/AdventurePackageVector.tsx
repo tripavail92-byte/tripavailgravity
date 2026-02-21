@@ -24,7 +24,7 @@ export function AdventurePackageVector({
           <stop offset="0%" stopColor="#E0F2FE" />
           <stop offset="100%" stopColor="#BAE6FD" />
         </linearGradient>
-        
+
         <linearGradient id="advMountainMain" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#4F46E5" />
           <stop offset="100%" stopColor="#3730A3" />
@@ -72,14 +72,14 @@ export function AdventurePackageVector({
         fill="url(#advSun)"
         variants={{
           idle: { scale: 1, y: 0 },
-          active: { 
+          active: {
             scale: [1, 1.1, 1],
             y: [0, -2, 0],
-            filter: "drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))"
+            filter: 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))',
           },
-          hover: { scale: 1.1 }
+          hover: { scale: 1.1 },
         }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
 
       {/* Back Mountain */}
@@ -90,7 +90,7 @@ export function AdventurePackageVector({
         animate={{ y: 0, opacity: 0.8 }}
         transition={{ duration: 0.6, delay: 0.1 }}
       />
-      
+
       {/* Snow Cap Back */}
       <motion.path
         d="M50 40 L60 56 L50 52 L40 56 Z"
@@ -135,9 +135,9 @@ export function AdventurePackageVector({
           fill="#FFFFFF"
           variants={{
             active: { x: [0, 10, 0] },
-            idle: { x: 0 }
+            idle: { x: 0 },
           }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.ellipse
           cx="40"
@@ -148,9 +148,9 @@ export function AdventurePackageVector({
           opacity="0.8"
           variants={{
             active: { x: [0, 8, 0] },
-            idle: { x: 0 }
+            idle: { x: 0 },
           }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
         />
       </motion.g>
 
@@ -175,7 +175,7 @@ export function AdventurePackageVector({
         transition={{ delay: 0.9 }}
         style={{ originX: 0 }}
       />
-      
+
       {/* Trees (Foreground) */}
       <motion.g
         initial={{ scaleY: 0 }}
@@ -187,7 +187,6 @@ export function AdventurePackageVector({
         <path d="M35 95 L40 85 L45 95 Z" fill="#166534" />
         <path d="M85 95 L90 82 L95 95 Z" fill="#15803D" />
       </motion.g>
-
     </motion.svg>
   )
 }

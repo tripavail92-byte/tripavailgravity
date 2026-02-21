@@ -12,7 +12,9 @@ import { supabase } from '@/lib/supabase'
 export async function fetchReports(limit = 50) {
   const { data, error } = await supabase
     .from('reports')
-    .select('id, reporter_id, target_entity_type, target_entity_id, report_reason, details, status, status_reason, created_at')
+    .select(
+      'id, reporter_id, target_entity_type, target_entity_id, report_reason, details, status, status_reason, created_at',
+    )
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -77,15 +79,15 @@ export async function fetchTourOperators(limit = 100) {
 }
 
 /**
- * Fetch profile by user ID
+ * Fetch profiles by user IDs
  */
-export async function fetchProfileById(userId: string) {
+export async function fetchProfilesByIds(userIds: string[]) {
+  if (!userIds || !userIds.length) return []
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, first_name, last_name')
-    .eq('id', userId)
-    .single()
+    .in('id', userIds)
 
   if (error) throw error
-  return data
+  return data || []
 }

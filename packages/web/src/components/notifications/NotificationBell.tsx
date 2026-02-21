@@ -3,19 +3,19 @@
  * Shows unread count badge, drops down a list of notifications.
  * Marks all as read when opened.
  */
-import { useState, useRef, useEffect } from 'react'
-import { Bell, CheckCheck, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
 import { formatDistanceToNow } from 'date-fns'
+import { Bell, CheckCheck, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useNotifications, useMarkNotificationsRead } from '@/queries/adminQueries'
+import { useMarkNotificationsRead, useNotifications } from '@/queries/adminQueries'
 
 const TYPE_ICONS: Record<string, string> = {
-  verification_approved:       '🎉',
-  verification_rejected:       '❌',
+  verification_approved: '🎉',
+  verification_rejected: '❌',
   verification_info_requested: '📋',
-  default:                     '🔔',
+  default: '🔔',
 }
 
 export function NotificationBell() {
@@ -26,7 +26,7 @@ export function NotificationBell() {
   const { data: notifications = [] } = useNotifications(user?.id)
   const markRead = useMarkNotificationsRead()
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   // Mark all as read when panel opens
   useEffect(() => {
@@ -50,7 +50,7 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       {/* Bell button */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         className="relative p-2 rounded-xl hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
@@ -94,7 +94,7 @@ export function NotificationBell() {
                   No notifications yet.
                 </div>
               ) : (
-                notifications.map(n => (
+                notifications.map((n) => (
                   <div
                     key={n.id}
                     className={`px-4 py-3 flex gap-3 items-start transition-colors hover:bg-muted/50 ${!n.read ? 'bg-primary/5' : ''}`}
@@ -105,15 +105,15 @@ export function NotificationBell() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground">{n.title}</p>
                       {n.body && (
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          {n.body}
+                        </p>
                       )}
                       <p className="text-xs text-muted-foreground/60 mt-1">
                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </p>
                     </div>
-                    {!n.read && (
-                      <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
-                    )}
+                    {!n.read && <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />}
                   </div>
                 ))
               )}

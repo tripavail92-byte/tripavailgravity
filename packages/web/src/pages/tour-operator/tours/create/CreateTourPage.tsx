@@ -58,7 +58,6 @@ export default function CreateTourPage() {
 
     loadTourForEdit()
     // Only load when switching to a new id
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, tourIdToEdit])
 
   const handleUpdate = (data: Partial<Tour>) => {

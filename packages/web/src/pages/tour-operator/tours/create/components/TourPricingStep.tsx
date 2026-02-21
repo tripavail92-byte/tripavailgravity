@@ -225,7 +225,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Price</label>
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground">
+                      Price
+                    </label>
                     <Input
                       type="number"
                       value={tier.pricePerPerson}
@@ -440,7 +442,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         <Button variant="outline" onClick={onBack} className="px-8">
           Back
         </Button>
-        <Button onClick={onNext} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
+        <Button
+          onClick={onNext}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+        >
           Next Step
         </Button>
       </div>

@@ -1,9 +1,9 @@
 /**
  * Development-Only Audit Logger
- * 
+ *
  * Logs warnings when hardcoded colors are detected in development.
  * This helps catch regressions during migration.
- * 
+ *
  * Usage: Import at top of main.tsx during development
  */
 
@@ -38,8 +38,10 @@ if (import.meta.env.DEV) {
           const matches = value.match(pattern)
           console.warn(
             `🎨 [Theme Audit] Hardcoded color detected: ${matches?.[0]}`,
-            '\n  Element:', this,
-            '\n  Full className:', value,
+            '\n  Element:',
+            this,
+            '\n  Full className:',
+            value,
             '\n  ❌ Should use semantic tokens instead (e.g., bg-surface-*, text-*, bg-category-*)',
           )
         }

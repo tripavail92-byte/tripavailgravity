@@ -1,19 +1,21 @@
 /**
  * Booking Mutation Hooks
- * 
+ *
  * ✅ Enterprise: Mutations with proper cache invalidation
- * 
+ *
  * CRITICAL: When bookings are created/confirmed, availability cache MUST be invalidated
  * to prevent showing stale availability to other users.
  */
 
-import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query'
+import { useMutation, type UseMutationOptions, useQueryClient } from '@tanstack/react-query'
+
 import {
   type PackageBooking,
   packageBookingService,
   type TourBooking,
   tourBookingService,
 } from '@/features/booking'
+
 import { availabilityKeys } from './availabilityQueries'
 import { bookingKeys } from './bookingQueries'
 
@@ -38,15 +40,18 @@ interface ConfirmPackageBookingParams {
 
 /**
  * Hook: Create Package Booking Hold
- * 
+ *
  * ✅ Invalidates availability cache for specific dates
  * ⚡ Creates 10-minute hold atomically
  */
 export function useCreatePackageBooking(
-  options?: Omit<UseMutationOptions<PackageBooking, Error, CreatePackageBookingParams>, 'mutationFn'>
+  options?: Omit<
+    UseMutationOptions<PackageBooking, Error, CreatePackageBookingParams>,
+    'mutationFn'
+  >,
 ) {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (params: CreatePackageBookingParams) => {
       return await packageBookingService.createPendingBooking(params)
@@ -57,30 +62,33 @@ export function useCreatePackageBooking(
         queryKey: availabilityKeys.packageAvailability(
           variables.package_id,
           variables.check_in_date,
-          variables.check_out_date
-        )
+          variables.check_out_date,
+        ),
       })
-      
+
       // Invalidate user's booking list
       queryClient.invalidateQueries({
-        queryKey: bookingKeys.userPackageBookings(variables.traveler_id)
+        queryKey: bookingKeys.userPackageBookings(variables.traveler_id),
       })
     },
-    ...options
+    ...options,
   })
 }
 
 /**
  * Hook: Confirm Package Booking (After Payment)
- * 
+ *
  * ✅ Invalidates availability cache
  * ⚡ Called from payment success handler
  */
 export function useConfirmPackageBooking(
-  options?: Omit<UseMutationOptions<PackageBooking, Error, ConfirmPackageBookingParams>, 'mutationFn'>
+  options?: Omit<
+    UseMutationOptions<PackageBooking, Error, ConfirmPackageBookingParams>,
+    'mutationFn'
+  >,
 ) {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async ({ bookingId }: ConfirmPackageBookingParams) => {
       return await packageBookingService.confirmBooking(bookingId)
@@ -92,16 +100,16 @@ export function useConfirmPackageBooking(
         queryKey: availabilityKeys.packageAvailability(
           variables.packageId,
           variables.checkIn,
-          variables.checkOut
-        )
+          variables.checkOut,
+        ),
       })
-      
+
       // Also invalidate all bookings for this package (admin view)
       queryClient.invalidateQueries({
-        queryKey: bookingKeys.packageBookings()
+        queryKey: bookingKeys.packageBookings(),
       })
     },
-    ...options
+    ...options,
   })
 }
 
@@ -127,14 +135,14 @@ interface ConfirmTourBookingParams {
 
 /**
  * Hook: Create Tour Booking Hold
- * 
+ *
  * ✅ Invalidates tour slot availability
  */
 export function useCreateTourBooking(
-  options?: Omit<UseMutationOptions<TourBooking, Error, CreateTourBookingParams>, 'mutationFn'>
+  options?: Omit<UseMutationOptions<TourBooking, Error, CreateTourBookingParams>, 'mutationFn'>,
 ) {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (params: CreateTourBookingParams) => {
       return await tourBookingService.createPendingBooking({
@@ -150,21 +158,21 @@ export function useCreateTourBooking(
       // Invalidate tour slot availability for this schedule + date
       if (variables.tour_date) {
         queryClient.invalidateQueries({
-          queryKey: availabilityKeys.tourAvailability(variables.schedule_id, variables.tour_date)
+          queryKey: availabilityKeys.tourAvailability(variables.schedule_id, variables.tour_date),
         })
       }
-      
+
       // Invalidate available slots query
       queryClient.invalidateQueries({
-        queryKey: availabilityKeys.tourSlots(variables.schedule_id)
+        queryKey: availabilityKeys.tourSlots(variables.schedule_id),
       })
-      
+
       // Invalidate user's tour bookings
       queryClient.invalidateQueries({
-        queryKey: bookingKeys.userTourBookings(variables.traveler_id)
+        queryKey: bookingKeys.userTourBookings(variables.traveler_id),
       })
     },
-    ...options
+    ...options,
   })
 }
 
@@ -172,10 +180,10 @@ export function useCreateTourBooking(
  * Hook: Confirm Tour Booking (After Payment)
  */
 export function useConfirmTourBooking(
-  options?: Omit<UseMutationOptions<TourBooking, Error, ConfirmTourBookingParams>, 'mutationFn'>
+  options?: Omit<UseMutationOptions<TourBooking, Error, ConfirmTourBookingParams>, 'mutationFn'>,
 ) {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async ({ bookingId }: ConfirmTourBookingParams) => {
       return await tourBookingService.confirmBooking(bookingId)
@@ -183,36 +191,36 @@ export function useConfirmTourBooking(
     onSuccess: (_data, variables) => {
       // CRITICAL: Invalidate tour availability
       queryClient.invalidateQueries({
-        queryKey: availabilityKeys.tourAvailability(variables.scheduleId, variables.tourDate)
+        queryKey: availabilityKeys.tourAvailability(variables.scheduleId, variables.tourDate),
       })
-      
+
       queryClient.invalidateQueries({
-        queryKey: availabilityKeys.tourSlots(variables.scheduleId)
+        queryKey: availabilityKeys.tourSlots(variables.scheduleId),
       })
-      
+
       // Invalidate all tour bookings (admin view)
       queryClient.invalidateQueries({
-        queryKey: bookingKeys.tourBookings()
+        queryKey: bookingKeys.tourBookings(),
       })
     },
-    ...options
+    ...options,
   })
 }
 
 /**
  * Optimistic Update Utilities (Advanced Pattern)
- * 
+ *
  * For instant UI feedback before server confirms
  */
 
 export function useOptimisticPackageBooking() {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (params: CreatePackageBookingParams) => {
       return await packageBookingService.createPendingBooking(params)
     },
-    
+
     // Before mutation runs
     onMutate: async (variables) => {
       // Cancel outgoing availability queries
@@ -220,33 +228,33 @@ export function useOptimisticPackageBooking() {
         queryKey: availabilityKeys.packageAvailability(
           variables.package_id,
           variables.check_in_date,
-          variables.check_out_date
-        )
+          variables.check_out_date,
+        ),
       })
-      
+
       // Get current availability value
       const previousAvailability = queryClient.getQueryData<boolean>(
         availabilityKeys.packageAvailability(
           variables.package_id,
           variables.check_in_date,
-          variables.check_out_date
-        )
+          variables.check_out_date,
+        ),
       )
-      
+
       // Optimistically mark as unavailable
       queryClient.setQueryData(
         availabilityKeys.packageAvailability(
           variables.package_id,
           variables.check_in_date,
-          variables.check_out_date
+          variables.check_out_date,
         ),
-        false
+        false,
       )
-      
+
       // Return context for rollback
       return { previousAvailability }
     },
-    
+
     // If mutation fails, rollback
     onError: (_err, variables, context) => {
       if (context?.previousAvailability !== undefined) {
@@ -254,22 +262,22 @@ export function useOptimisticPackageBooking() {
           availabilityKeys.packageAvailability(
             variables.package_id,
             variables.check_in_date,
-            variables.check_out_date
+            variables.check_out_date,
           ),
-          context.previousAvailability
+          context.previousAvailability,
         )
       }
     },
-    
+
     // Always refetch to ensure accuracy
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({
         queryKey: availabilityKeys.packageAvailability(
           variables.package_id,
           variables.check_in_date,
-          variables.check_out_date
-        )
+          variables.check_out_date,
+        ),
       })
-    }
+    },
   })
 }

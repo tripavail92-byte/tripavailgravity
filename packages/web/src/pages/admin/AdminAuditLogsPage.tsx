@@ -24,7 +24,7 @@ export default function AdminAuditLogsPage() {
   // ✅ Enterprise: Use query hook instead of manual useEffect
   const { data: logs = [], isLoading: loading, error, refetch: reload } = useAuditLogs()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  
+
   // ✅ Set error from query
   useEffect(() => {
     if (error) {

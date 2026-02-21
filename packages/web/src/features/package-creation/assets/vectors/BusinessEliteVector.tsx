@@ -2,11 +2,7 @@ import { motion } from 'motion/react'
 
 import { VectorProps } from './types'
 
-export function BusinessEliteVector({
-  className = '',
-  isActive = false,
-  size = 120,
-}: VectorProps) {
+export function BusinessEliteVector({ className = '', isActive = false, size = 120 }: VectorProps) {
   return (
     <motion.svg
       width={size}
@@ -63,22 +59,21 @@ export function BusinessEliteVector({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.1 }}
       />
-       {/* Windows 1 */}
-       {[...Array(3)].map((_, i) => (
-          <motion.rect
-            key={`w1-${i}`}
-            x="25"
-            y={50 + i * 15}
-            width="20"
-            height="8"
-            fill="#CBD5E1"
-            opacity="0.5"
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ delay: 0.5 + i * 0.1 }}
-          />
-       ))}
-
+      {/* Windows 1 */}
+      {[...Array(3)].map((_, i) => (
+        <motion.rect
+          key={`w1-${i}`}
+          x="25"
+          y={50 + i * 15}
+          width="20"
+          height="8"
+          fill="#CBD5E1"
+          opacity="0.5"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.5 + i * 0.1 }}
+        />
+      ))}
 
       {/* Skyscraper 2 (Main) */}
       <motion.rect
@@ -91,77 +86,82 @@ export function BusinessEliteVector({
         filter="url(#bizShadow)"
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.7, type: "spring", bounce: 0.2 }}
-      />
-      
-      {/* Glass Front Reflection */}
-      <motion.path
-        d="M45 20 L85 20 L85 120 L45 120 Z"
-        fill="url(#bizGlass)"
-        opacity="0.1"
-      />
-      <motion.path
-        d="M45 20 L85 60 L45 100 Z"
-        fill="white"
-        opacity="0.05"
+        transition={{ duration: 0.7, type: 'spring', bounce: 0.2 }}
       />
 
-       {/* Windows 2 (Grid) */}
-       {[...Array(5)].map((_, i) => (
-          <motion.g key={`w2-${i}`}>
-             <motion.rect
-              x="50"
-              y={30 + i * 12}
-              width="12"
-              height="8"
-              fill="#E0F2FE"
-              opacity="0.3"
-              variants={{
-                active: { opacity: [0.3, 0.8, 0.3] },
-                idle: { opacity: 0.3 }
-              }}
-              transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
-             />
-             <motion.rect
-              x="68"
-              y={30 + i * 12}
-              width="12"
-              height="8"
-              fill="#E0F2FE"
-              opacity="0.3"
-               variants={{
-                active: { opacity: [0.3, 0.8, 0.3] },
-                idle: { opacity: 0.3 }
-              }}
-              transition={{ duration: 2, delay: i * 0.2 + 1, repeat: Infinity }}
-             />
-          </motion.g>
-       ))}
+      {/* Glass Front Reflection */}
+      <motion.path d="M45 20 L85 20 L85 120 L45 120 Z" fill="url(#bizGlass)" opacity="0.1" />
+      <motion.path d="M45 20 L85 60 L45 100 Z" fill="white" opacity="0.05" />
+
+      {/* Windows 2 (Grid) */}
+      {[...Array(5)].map((_, i) => (
+        <motion.g key={`w2-${i}`}>
+          <motion.rect
+            x="50"
+            y={30 + i * 12}
+            width="12"
+            height="8"
+            fill="#E0F2FE"
+            opacity="0.3"
+            variants={{
+              active: { opacity: [0.3, 0.8, 0.3] },
+              idle: { opacity: 0.3 },
+            }}
+            transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
+          />
+          <motion.rect
+            x="68"
+            y={30 + i * 12}
+            width="12"
+            height="8"
+            fill="#E0F2FE"
+            opacity="0.3"
+            variants={{
+              active: { opacity: [0.3, 0.8, 0.3] },
+              idle: { opacity: 0.3 },
+            }}
+            transition={{ duration: 2, delay: i * 0.2 + 1, repeat: Infinity }}
+          />
+        </motion.g>
+      ))}
 
       {/* Briefcase (Foreground) */}
       <motion.g
         initial={{ scale: 0, y: 10 }}
         animate={{ scale: 1, y: 0 }}
-        transition={{ delay: 0.6, type: "spring" }}
+        transition={{ delay: 0.6, type: 'spring' }}
       >
-         <rect x="75" y="85" width="36" height="26" rx="3" fill="#B45309" stroke="#78350F" strokeWidth="2" />
-         <path d="M88 85 V80 C88 78 90 76 93 76 H93 C96 76 98 78 98 80 V85" stroke="#78350F" strokeWidth="2" fill="none" />
-         <circle cx="93" cy="98" r="3" fill="#FCD34D" />
-         <rect x="75" y="85" width="5" height="26" fill="#78350F" opacity="0.2" />
-         <rect x="106" y="85" width="5" height="26" fill="#78350F" opacity="0.2" />
+        <rect
+          x="75"
+          y="85"
+          width="36"
+          height="26"
+          rx="3"
+          fill="#B45309"
+          stroke="#78350F"
+          strokeWidth="2"
+        />
+        <path
+          d="M88 85 V80 C88 78 90 76 93 76 H93 C96 76 98 78 98 80 V85"
+          stroke="#78350F"
+          strokeWidth="2"
+          fill="none"
+        />
+        <circle cx="93" cy="98" r="3" fill="#FCD34D" />
+        <rect x="75" y="85" width="5" height="26" fill="#78350F" opacity="0.2" />
+        <rect x="106" y="85" width="5" height="26" fill="#78350F" opacity="0.2" />
       </motion.g>
 
       {/* Plane (Flying past) */}
       <motion.path
-        d="M10 20 L18 18 L14 26 Z" 
+        d="M10 20 L18 18 L14 26 Z"
         fill="#3B82F6"
         variants={{
-           active: { x: [0, 100], y: [0, -10], opacity: [0, 1, 0] },
-           idle: { opacity: 0 }
+          active: { x: [0, 100], y: [0, -10], opacity: [0, 1, 0] },
+          idle: { opacity: 0 },
         }}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear", delay: 1 }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'linear', delay: 1 }}
       />
-        
     </motion.svg>
   )
 }

@@ -1,9 +1,9 @@
 import { Search } from 'lucide-react'
 
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 export function DashboardHeader() {
   const { activeRole } = useAuth()

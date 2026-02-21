@@ -95,8 +95,12 @@ export function PackageCard({
               <div className="text-white font-bold text-base leading-snug line-clamp-2">
                 {title}
               </div>
-              {subtitle ? <div className="text-white/85 text-sm line-clamp-1">{subtitle}</div> : null}
-              {location ? <div className="text-white/75 text-xs line-clamp-1">{location}</div> : null}
+              {subtitle ? (
+                <div className="text-white/85 text-sm line-clamp-1">{subtitle}</div>
+              ) : null}
+              {location ? (
+                <div className="text-white/75 text-xs line-clamp-1">{location}</div>
+              ) : null}
             </div>
 
             {typeof rating === 'number' && rating > 0 ? (
@@ -165,13 +169,17 @@ export function PackageCard({
                     <span className="text-sm text-muted-foreground line-through">
                       ${Math.round(totalOriginal)}
                     </span>
-                    <span className="font-bold text-lg text-foreground">${Math.round(totalDiscounted)}</span>
+                    <span className="font-bold text-lg text-foreground">
+                      ${Math.round(totalDiscounted)}
+                    </span>
                   </div>
                 </>
               ) : typeof priceFrom === 'number' && priceFrom > 0 ? (
                 <>
                   <span className="text-xs text-muted-foreground">From</span>
-                  <span className="font-bold text-lg text-foreground">${Math.round(priceFrom)}</span>
+                  <span className="font-bold text-lg text-foreground">
+                    ${Math.round(priceFrom)}
+                  </span>
                 </>
               ) : (
                 <>

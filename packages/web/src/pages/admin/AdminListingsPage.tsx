@@ -21,7 +21,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { fetchPackagesForModeration, fetchToursForModeration } from '@/features/admin/services/adminService'
+import {
+  fetchPackagesForModeration,
+  fetchToursForModeration,
+} from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 
 type PackageRow = {
@@ -398,7 +401,9 @@ export default function AdminListingsPage() {
           <h2 className="text-lg font-semibold text-foreground">Tours</h2>
           {!tours.length ? (
             <Card>
-              <CardContent className="p-6 text-sm text-muted-foreground">No tours found.</CardContent>
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                No tours found.
+              </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
@@ -457,7 +462,10 @@ export default function AdminListingsPage() {
                           disabled={!!busyByKey[`tour:${t.id}`]}
                         />
 
-                        <Button onClick={() => applyTourModeration(t)} disabled={busyByKey[`tour:${t.id}`]}>
+                        <Button
+                          onClick={() => applyTourModeration(t)}
+                          disabled={busyByKey[`tour:${t.id}`]}
+                        >
                           {busyByKey[`tour:${t.id}`] ? (
                             <span className="inline-flex items-center gap-2">
                               <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
@@ -481,7 +489,9 @@ export default function AdminListingsPage() {
 
         <Dialog
           open={confirm.open}
-          onOpenChange={(open) => setConfirm((prev) => ({ ...prev, open, onConfirm: open ? prev.onConfirm : null }))}
+          onOpenChange={(open) =>
+            setConfirm((prev) => ({ ...prev, open, onConfirm: open ? prev.onConfirm : null }))
+          }
         >
           <DialogContent>
             <DialogHeader>
@@ -509,7 +519,16 @@ export default function AdminListingsPage() {
         </Dialog>
       </div>
     )
-  }, [busyByKey, errorMessage, loading, nextStatusByKey, packages, reasonByKey, statusOptions, tours])
+  }, [
+    busyByKey,
+    errorMessage,
+    loading,
+    nextStatusByKey,
+    packages,
+    reasonByKey,
+    statusOptions,
+    tours,
+  ])
 
   return (
     <div>

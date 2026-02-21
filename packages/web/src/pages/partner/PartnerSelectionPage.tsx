@@ -42,7 +42,8 @@ export default function PartnerSelectionPage() {
   })
 
   const hasPartnerRole =
-    activeRole && (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator')
+    activeRole &&
+    (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator')
 
   const handleSelectPartner = async (mode: 'hotel_manager' | 'tour_operator') => {
     // If not logged in, redirect to auth with selected role
@@ -90,7 +91,9 @@ export default function PartnerSelectionPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-3">Choose Your Partner Type</h1>
-          <p className="text-lg text-muted-foreground">Select how you want to earn with TripAvail</p>
+          <p className="text-lg text-muted-foreground">
+            Select how you want to earn with TripAvail
+          </p>
           {activeRole && activeRole.role_type !== 'traveller' && (
             <p className="mt-4 text-warning font-medium">
               ⚠️ You have already selected a partner role. This choice is permanent.
@@ -101,16 +104,24 @@ export default function PartnerSelectionPage() {
         {/* Partner Options - Clean Design */}
         {hasPartnerRole ? (
           <div className="text-center p-12 bg-card rounded-2xl border border-border">
-            <h3 className="text-2xl font-bold text-foreground mb-4">
-              You're Already a Partner!
-            </h3>
+            <h3 className="text-2xl font-bold text-foreground mb-4">You're Already a Partner!</h3>
             <p className="text-muted-foreground mb-6">
-              You have selected <span className="font-bold text-primary">{activeRole?.role_type.replace('_', ' ')}</span> as your partner role.
+              You have selected{' '}
+              <span className="font-bold text-primary">
+                {activeRole?.role_type.replace('_', ' ')}
+              </span>{' '}
+              as your partner role.
               <br />
               Partner role selection is permanent and cannot be changed.
             </p>
             <button
-              onClick={() => navigate(activeRole?.role_type === 'hotel_manager' ? '/manager/dashboard' : '/operator/dashboard')}
+              onClick={() =>
+                navigate(
+                  activeRole?.role_type === 'hotel_manager'
+                    ? '/manager/dashboard'
+                    : '/operator/dashboard',
+                )
+              }
               className="px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium"
             >
               Go to Dashboard
@@ -129,7 +140,9 @@ export default function PartnerSelectionPage() {
                   className="p-8 bg-card border border-border rounded-2xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
                   onMouseEnter={() => setHoveredOption(option.id)}
                   onMouseLeave={() => setHoveredOption(null)}
-                  onClick={() => handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')}
+                  onClick={() =>
+                    handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')
+                  }
                 >
                   {/* Clean Modern Icon */}
                   <motion.div
@@ -184,7 +197,9 @@ export default function PartnerSelectionPage() {
               </div>
               <div>
                 <h4 className="text-foreground font-semibold mb-1">Grow Your Business</h4>
-                <p className="text-sm text-muted-foreground">Reach millions of travelers worldwide</p>
+                <p className="text-sm text-muted-foreground">
+                  Reach millions of travelers worldwide
+                </p>
               </div>
             </div>
 
@@ -204,7 +219,9 @@ export default function PartnerSelectionPage() {
               </div>
               <div>
                 <h4 className="text-foreground font-semibold mb-1">Manage Everything</h4>
-                <p className="text-sm text-muted-foreground">Powerful tools for seamless operations</p>
+                <p className="text-sm text-muted-foreground">
+                  Powerful tools for seamless operations
+                </p>
               </div>
             </div>
           </div>

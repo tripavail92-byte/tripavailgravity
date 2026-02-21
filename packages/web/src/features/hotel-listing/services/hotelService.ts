@@ -283,10 +283,7 @@ export const hotelService = {
   async getRoomsByIds(roomIds: string[], selectFields = 'name, description, amenities') {
     if (!roomIds || roomIds.length === 0) return []
 
-    const { data, error } = await supabase
-      .from('rooms')
-      .select(selectFields)
-      .in('id', roomIds)
+    const { data, error } = await supabase.from('rooms').select(selectFields).in('id', roomIds)
 
     if (error) {
       console.warn('[hotelService] Error fetching rooms:', error)

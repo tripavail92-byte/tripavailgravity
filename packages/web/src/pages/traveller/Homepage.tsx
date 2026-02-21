@@ -17,23 +17,36 @@ export default function Homepage() {
 
   const showMergedList = filter === 'new' || filter === 'top-rated'
 
-  const { data: mergeHotels = [], isLoading: mergeHotelsLoading, isError: mergeHotelsError } = useHomepageMixPackages(
-    showMergedList ? 96 : 1,
-    { enabled: showMergedList },
-  )
-  const { data: mergeTours = [], isLoading: mergeToursLoading, isError: mergeToursError } = useHomepageMixTours(
-    showMergedList ? 96 : 1,
-    { enabled: showMergedList },
-  )
+  const {
+    data: mergeHotels = [],
+    isLoading: mergeHotelsLoading,
+    isError: mergeHotelsError,
+  } = useHomepageMixPackages(showMergedList ? 96 : 1, { enabled: showMergedList })
+  const {
+    data: mergeTours = [],
+    isLoading: mergeToursLoading,
+    isError: mergeToursError,
+  } = useHomepageMixTours(showMergedList ? 96 : 1, { enabled: showMergedList })
 
   // ✅ Enterprise: Query hooks instead of manual useEffect
-  const { data: packages = [], isLoading: packagesLoading, error: packagesError } = useFeaturedPackages()
+  const {
+    data: packages = [],
+    isLoading: packagesLoading,
+    error: packagesError,
+  } = useFeaturedPackages()
   const { data: tours = [], isLoading: toursLoading, error: toursError } = useFeaturedTours()
 
   const loading = packagesLoading || toursLoading
 
   const mergedList = useMemo(() => {
-    if (!showMergedList) return [] as Array<{ type: 'hotel' | 'tour'; id: string; rating: number | null; created_at: string; payload: any }>
+    if (!showMergedList)
+      return [] as Array<{
+        type: 'hotel' | 'tour'
+        id: string
+        rating: number | null
+        created_at: string
+        payload: any
+      }>
 
     const combined = [
       ...mergeHotels.map((pkg: any) => ({
@@ -53,21 +66,17 @@ export default function Homepage() {
     ]
 
     if (filter === 'new') {
-      return combined
-        .slice()
-        .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+      return combined.slice().sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
     }
 
-    return combined
-      .slice()
-      .sort((a, b) => {
-        const ar = a.rating
-        const br = b.rating
-        if (ar == null && br == null) return 0
-        if (ar == null) return 1
-        if (br == null) return -1
-        return br - ar
-      })
+    return combined.slice().sort((a, b) => {
+      const ar = a.rating
+      const br = b.rating
+      if (ar == null && br == null) return 0
+      if (ar == null) return 1
+      if (br == null) return -1
+      return br - ar
+    })
   }, [showMergedList, filter, mergeHotels, mergeTours])
 
   if (showMergedList) {
@@ -113,7 +122,11 @@ export default function Homepage() {
                     durationDays={item.payload.durationDays ?? 3}
                     rating={item.payload.rating}
                     reviewCount={item.payload.reviewCount}
-                    priceFrom={typeof item.payload.packagePrice === 'number' ? item.payload.packagePrice : null}
+                    priceFrom={
+                      typeof item.payload.packagePrice === 'number'
+                        ? item.payload.packagePrice
+                        : null
+                    }
                     totalOriginal={item.payload.totalOriginal}
                     totalDiscounted={item.payload.totalDiscounted}
                     badge={'Hotel Stay'}
@@ -283,9 +296,7 @@ export default function Homepage() {
               <Badge className="bg-primary/10 text-primary border-none mb-3 px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
                 Explore Tours
               </Badge>
-              <h2 className="text-3xl font-bold text-foreground mb-2">
-                Popular Tour Experiences
-              </h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">Popular Tour Experiences</h2>
               <p className="text-muted-foreground font-medium">
                 Curated adventures led by local experts
               </p>
@@ -311,7 +322,10 @@ export default function Homepage() {
                   key={tour.id}
                   id={tour.id}
                   slug={tour.slug ?? undefined}
-                  image={tour.images?.[0] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'}
+                  image={
+                    tour.images?.[0] ||
+                    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'
+                  }
                   title={tour.title}
                   location={tour.location}
                   duration={'5 days'}

@@ -10,10 +10,14 @@ function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
     const maybeHint = (error as any).hint
 
     const parts: string[] = []
-    if (typeof maybeMessage === 'string' && maybeMessage.trim().length > 0) parts.push(maybeMessage.trim())
-    if (typeof maybeCode === 'string' && maybeCode.trim().length > 0) parts.push(`code=${maybeCode.trim()}`)
-    if (typeof maybeDetails === 'string' && maybeDetails.trim().length > 0) parts.push(`details=${maybeDetails.trim()}`)
-    if (typeof maybeHint === 'string' && maybeHint.trim().length > 0) parts.push(`hint=${maybeHint.trim()}`)
+    if (typeof maybeMessage === 'string' && maybeMessage.trim().length > 0)
+      parts.push(maybeMessage.trim())
+    if (typeof maybeCode === 'string' && maybeCode.trim().length > 0)
+      parts.push(`code=${maybeCode.trim()}`)
+    if (typeof maybeDetails === 'string' && maybeDetails.trim().length > 0)
+      parts.push(`details=${maybeDetails.trim()}`)
+    if (typeof maybeHint === 'string' && maybeHint.trim().length > 0)
+      parts.push(`hint=${maybeHint.trim()}`)
 
     if (parts.length > 0) {
       return new Error(parts.join(' | '))

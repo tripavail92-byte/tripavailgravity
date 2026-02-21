@@ -65,7 +65,9 @@ export function TourCard({
             {/* Title overlay (always visible) */}
             <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
               <div className="min-w-0 rounded-xl bg-black/35 backdrop-blur-sm px-3 py-2 border border-white/10">
-                <div className="text-white font-bold text-base leading-snug line-clamp-2">{title}</div>
+                <div className="text-white font-bold text-base leading-snug line-clamp-2">
+                  {title}
+                </div>
                 <div className="text-white/75 text-xs line-clamp-1">{location}</div>
               </div>
 
@@ -79,7 +81,9 @@ export function TourCard({
 
             <div className="absolute bottom-3 left-3 right-3 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 opacity-0 group-hover:opacity-100">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/80">View Details</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-white/80">
+                  View Details
+                </span>
                 <ArrowRight className="w-5 h-5" />
               </div>
             </div>

@@ -17,7 +17,11 @@ export default function TourCategoryPage() {
     return isTourCategoryKind(category) ? category : null
   }, [category])
 
-  const { data = [], isLoading, isError } = useToursByCategoryFull(tourCategory ?? 'adventure-trips', {
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = useToursByCategoryFull(tourCategory ?? 'adventure-trips', {
     enabled: Boolean(tourCategory),
   })
 
@@ -26,7 +30,9 @@ export default function TourCategoryPage() {
       <div className="container mx-auto max-w-7xl px-4 pt-28 pb-16">
         <Card className="rounded-2xl border border-border/60 p-6">
           <div className="text-lg font-bold">Category not found</div>
-          <div className="text-sm text-muted-foreground mt-1">This tours category doesn’t exist.</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            This tours category doesn’t exist.
+          </div>
           <div className="mt-4">
             <Link className="text-primary underline underline-offset-4" to="/">
               Back to Home

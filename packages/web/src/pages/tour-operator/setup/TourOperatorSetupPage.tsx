@@ -127,7 +127,9 @@ export default function TourOperatorSetupPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground font-medium tracking-tight">Loading your profile...</p>
+          <p className="text-muted-foreground font-medium tracking-tight">
+            Loading your profile...
+          </p>
         </div>
       </div>
     )

@@ -47,7 +47,9 @@ export function CompletionStep() {
                   </div>
                   <div className="text-left">
                     <p className="font-bold text-foreground">Verify Identity</p>
-                    <p className="text-xs text-muted-foreground">Enable bookings with biometric matching</p>
+                    <p className="text-xs text-muted-foreground">
+                      Enable bookings with biometric matching
+                    </p>
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 text-primary transform group-hover:translate-x-1 transition-all" />

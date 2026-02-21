@@ -1,4 +1,16 @@
-import { Anchor, Briefcase, Calendar, Crown, Flower, Globe, Heart, Landmark, Mountain, Users, Utensils } from 'lucide-react'
+import {
+  Anchor,
+  Briefcase,
+  Calendar,
+  Crown,
+  Flower,
+  Globe,
+  Heart,
+  Landmark,
+  Mountain,
+  Users,
+  Utensils,
+} from 'lucide-react'
 
 import { PackageType } from '../types'
 import {

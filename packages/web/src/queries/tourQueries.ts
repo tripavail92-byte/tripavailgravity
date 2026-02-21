@@ -1,7 +1,8 @@
-import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
+
+import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database.types'
 import type { UnifiedExperience } from '@/types/experience'
-import { supabase } from '@/lib/supabase'
 
 type Tour = Database['public']['Tables']['tours']['Row']
 
@@ -12,14 +13,20 @@ type Tour = Database['public']['Tables']['tours']['Row']
 export const tourKeys = {
   all: ['tours'] as const,
   lists: () => [...tourKeys.all, 'list'] as const,
-  list: (filters?: { location?: string; dates?: string; guests?: number; tourType?: string; page?: number }) => 
+  list: (filters?: {
+    location?: string
+    dates?: string
+    guests?: number
+    tourType?: string
+    page?: number
+  }) =>
     [
-      ...tourKeys.lists(), 
-      filters?.location ?? '', 
-      filters?.dates ?? '', 
-      filters?.guests ?? 0, 
-      filters?.tourType ?? '', 
-      filters?.page ?? 1
+      ...tourKeys.lists(),
+      filters?.location ?? '',
+      filters?.dates ?? '',
+      filters?.guests ?? 0,
+      filters?.tourType ?? '',
+      filters?.page ?? 1,
     ] as const,
   details: () => [...tourKeys.all, 'detail'] as const,
   detail: (id: string) => [...tourKeys.details(), id] as const,
@@ -71,11 +78,19 @@ export interface HomepageMixTour {
 function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
   const images = Array.isArray(tour.images)
     ? tour.images
-    : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+    : [
+        'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+      ]
 
   const price = Number(tour.price)
-  const rating = typeof tour.rating === 'number' ? tour.rating : tour.rating != null ? Number(tour.rating) : null
-  const reviewCount = typeof tour.review_count === 'number' ? tour.review_count : tour.review_count != null ? Number(tour.review_count) : null
+  const rating =
+    typeof tour.rating === 'number' ? tour.rating : tour.rating != null ? Number(tour.rating) : null
+  const reviewCount =
+    typeof tour.review_count === 'number'
+      ? tour.review_count
+      : tour.review_count != null
+        ? Number(tour.review_count)
+        : null
 
   return {
     id: tour.id,
@@ -124,7 +139,9 @@ export function useHomepageMergeTours(
 async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,price,rating,review_count,is_featured,images,created_at,updated_at')
+    .select(
+      'id,slug,title,location,price,rating,review_count,is_featured,images,created_at,updated_at',
+    )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -147,11 +164,14 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
 
     const images = Array.isArray(tour.images)
       ? tour.images
-      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+      : [
+          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+        ]
 
     const price = Number(tour.price)
     const rating = typeof tour.rating === 'number' ? tour.rating : Number(tour.rating) || 0
-    const reviewCount = typeof tour.review_count === 'number' ? tour.review_count : Number(tour.review_count) || 0
+    const reviewCount =
+      typeof tour.review_count === 'number' ? tour.review_count : Number(tour.review_count) || 0
     const isFeatured = Boolean(tour.is_featured)
 
     return {
@@ -214,7 +234,9 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
 
     const images = Array.isArray(tour.images)
       ? tour.images
-      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+      : [
+          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+        ]
 
     return {
       id: tour.id,
@@ -229,7 +251,10 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
   })
 }
 
-async function fetchToursByCategory(category: TourCategoryKind, take: number = 12): Promise<MappedTour[]> {
+async function fetchToursByCategory(
+  category: TourCategoryKind,
+  take: number = 12,
+): Promise<MappedTour[]> {
   const tourType = tourTypeForCategory(category)
 
   const { data, error } = await supabase
@@ -259,7 +284,9 @@ async function fetchToursByCategory(category: TourCategoryKind, take: number = 1
 
     const images = Array.isArray(tour.images)
       ? tour.images
-      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+      : [
+          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+        ]
 
     return {
       id: tour.id,
@@ -303,7 +330,9 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
 
     const images = Array.isArray(tour.images)
       ? tour.images
-      : ['https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080']
+      : [
+          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+        ]
 
     return {
       id: tour.id,
@@ -438,9 +467,9 @@ export function useTour(
 /**
  * Prefetch Tour - Enterprise UX Pattern
  * ✅ Production-safe: Throttled, mobile-aware, cache-aware
- * 
+ *
  * Usage:
- * <Link 
+ * <Link
  *   onMouseEnter={() => prefetchTour(queryClient, id)}
  *   onTouchStart={() => prefetchTour(queryClient, id)}
  * >
@@ -492,21 +521,21 @@ export function useTourMutation() {
     },
     onSuccess: (data, variables) => {
       // ✅ SURGICAL: Only invalidate what this mutation affects
-      
+
       // 1. Update specific tour cache directly
       if (variables.id) {
         queryClient.setQueryData(tourKeys.detail(variables.id), data)
       }
-      
+
       // 2. Only invalidate featured if this tour is featured
       // @ts-ignore - data shape depends on implementation
       if (data?.is_featured) {
         queryClient.invalidateQueries({ queryKey: tourKeys.featured() })
       }
-      
+
       // 3. Invalidate search/lists only (not all tours)
       queryClient.invalidateQueries({ queryKey: tourKeys.lists() })
-      
+
       // ❌ NEVER blanket invalidate: tourKeys.all
     },
     onError: (error) => {

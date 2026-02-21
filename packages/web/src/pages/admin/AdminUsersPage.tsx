@@ -21,8 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useAdminUsers, useUpdateUserStatus } from '@/queries/adminQueries'
 import { supabase } from '@/lib/supabase'
+import { useAdminUsers, useUpdateUserStatus } from '@/queries/adminQueries'
 
 type ProfileRow = {
   id: string
@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
   // ✅ Enterprise: Use query hook instead of manual useEffect
   const { data: rows = [], isLoading: loading, error, refetch } = useAdminUsers()
   const updateUserStatus = useUpdateUserStatus()
-  
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [nextStatusById, setNextStatusById] = useState<Record<string, AccountStatus>>({})
@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
   }, [])
 
   const applyStatus = async (row: ProfileRow) => {
-    const nextStatus = (nextStatusById[row.id] || (row.account_status || 'active')) as AccountStatus
+    const nextStatus = (nextStatusById[row.id] || row.account_status || 'active') as AccountStatus
     const reason = (reasonById[row.id] || '').trim()
 
     if (!reason) {
@@ -98,8 +98,7 @@ export default function AdminUsersPage() {
     if (nextStatus === 'deleted') {
       setConfirm({
         open: true,
-        title: 'Soft-delete user?'
-        ,
+        title: 'Soft-delete user?',
         description:
           'This is a soft-delete. The user profile remains in the database, but will be treated as deleted/disabled in the product.',
         onConfirm: () => {
@@ -118,7 +117,6 @@ export default function AdminUsersPage() {
     nextStatus: AccountStatus,
     reason: string,
   ) => {
-
     setBusyById((prev) => ({ ...prev, [row.id]: true }))
     try {
       const { error } = await rpc('admin_set_traveler_status', {
@@ -210,7 +208,10 @@ export default function AdminUsersPage() {
                 <div className="mt-4 flex flex-col gap-3">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <Select
-                      value={nextStatusById[row.id] || ((row.account_status || 'active') as AccountStatus)}
+                      value={
+                        nextStatusById[row.id] ||
+                        ((row.account_status || 'active') as AccountStatus)
+                      }
                       onValueChange={(value) =>
                         setNextStatusById((prev) => ({
                           ...prev,

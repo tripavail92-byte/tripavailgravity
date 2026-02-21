@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { useVerificationQueue } from '@/queries/adminQueries'
 
 const navItems = [

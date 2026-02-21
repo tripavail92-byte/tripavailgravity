@@ -2,11 +2,7 @@ import { motion } from 'motion/react'
 
 import { VectorProps } from './types'
 
-export function CruiseWaterVector({
-  className = '',
-  isActive = false,
-  size = 120,
-}: VectorProps) {
+export function CruiseWaterVector({ className = '', isActive = false, size = 120 }: VectorProps) {
   return (
     <motion.svg
       width={size}
@@ -42,28 +38,28 @@ export function CruiseWaterVector({
         animate={{ scale: 1 }}
         transition={{ delay: 0.2 }}
       />
-      
+
       {/* Ship */}
       <motion.g
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.8, type: "spring" }}
+        transition={{ duration: 0.8, type: 'spring' }}
       >
-          {/* Hull */}
-          <path d="M20 70 L30 90 H90 L100 70 H20 Z" fill="url(#cruiseShip)" />
-          {/* Deck/Cabin */}
-          <rect x="35" y="55" width="50" height="15" fill="#CBD5E1" rx="2" />
-          <rect x="40" y="45" width="30" height="10" fill="#CBD5E1" rx="1" />
-          
-          {/* Windows */}
-          <circle cx="45" cy="62" r="2" fill="#38BDF8" />
-          <circle cx="55" cy="62" r="2" fill="#38BDF8" />
-          <circle cx="65" cy="62" r="2" fill="#38BDF8" />
-          <circle cx="75" cy="62" r="2" fill="#38BDF8" />
-          
-           {/* Chimney */}
-          <rect x="50" y="35" width="8" height="10" fill="#EF4444" />
-          <path d="M50 35 L58 35 L62 30 L46 30 Z" fill="#EF4444" />
+        {/* Hull */}
+        <path d="M20 70 L30 90 H90 L100 70 H20 Z" fill="url(#cruiseShip)" />
+        {/* Deck/Cabin */}
+        <rect x="35" y="55" width="50" height="15" fill="#CBD5E1" rx="2" />
+        <rect x="40" y="45" width="30" height="10" fill="#CBD5E1" rx="1" />
+
+        {/* Windows */}
+        <circle cx="45" cy="62" r="2" fill="#38BDF8" />
+        <circle cx="55" cy="62" r="2" fill="#38BDF8" />
+        <circle cx="65" cy="62" r="2" fill="#38BDF8" />
+        <circle cx="75" cy="62" r="2" fill="#38BDF8" />
+
+        {/* Chimney */}
+        <rect x="50" y="35" width="8" height="10" fill="#EF4444" />
+        <path d="M50 35 L58 35 L62 30 L46 30 Z" fill="#EF4444" />
       </motion.g>
 
       {/* Waves (Foreground) */}
@@ -72,40 +68,39 @@ export function CruiseWaterVector({
         fill="url(#cruiseWater)"
         opacity="0.8"
         variants={{
-            active: { x: [-10, 0, -10] },
-            idle: { x: 0 }
+          active: { x: [-10, 0, -10] },
+          idle: { x: 0 },
         }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
-      
+
       <motion.path
         d="M-20 100 Q0 95 20 100 Q40 105 60 100 Q80 95 100 100 Q120 105 140 100 V120 H-20 Z"
         fill="#0EA5E9"
         opacity="0.6"
-         variants={{
-            active: { x: [0, -10, 0] },
-            idle: { x: 0 }
+        variants={{
+          active: { x: [0, -10, 0] },
+          idle: { x: 0 },
         }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
       />
 
       {/* Smoke */}
-       {[...Array(3)].map((_, i) => (
-            <motion.circle
-                key={i}
-                cx="54"
-                cy="30"
-                r={3 + i}
-                fill="#FFFFFF"
-                opacity="0.5"
-                variants={{
-                    active: { y: [-10, -20], x: [5, 15], opacity: [0, 0.5, 0] },
-                    idle: { opacity: 0 }
-                }}
-                transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
-            />
-       ))}
-
+      {[...Array(3)].map((_, i) => (
+        <motion.circle
+          key={i}
+          cx="54"
+          cy="30"
+          r={3 + i}
+          fill="#FFFFFF"
+          opacity="0.5"
+          variants={{
+            active: { y: [-10, -20], x: [5, 15], opacity: [0, 0.5, 0] },
+            idle: { opacity: 0 },
+          }}
+          transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
+        />
+      ))}
     </motion.svg>
   )
 }

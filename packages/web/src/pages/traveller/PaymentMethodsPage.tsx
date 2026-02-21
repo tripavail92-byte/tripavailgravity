@@ -168,7 +168,9 @@ export default function PaymentMethodsPage() {
                 Secure Payments
               </span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">Payment Methods</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">
+              Payment Methods
+            </h1>
             <p className="text-muted-foreground font-medium">
               Manage your credit cards and mobile wallets for a faster checkout.
             </p>
@@ -225,7 +227,9 @@ export default function PaymentMethodsPage() {
         <div className="mt-12 p-6 rounded-3xl bg-info/10 border border-info/20 flex gap-4">
           <Info className="w-5 h-5 text-info flex-shrink-0 mt-1" />
           <div>
-            <h4 className="text-sm font-bold text-foreground mb-1">Your security is our priority</h4>
+            <h4 className="text-sm font-bold text-foreground mb-1">
+              Your security is our priority
+            </h4>
             <p className="text-xs text-muted-foreground font-medium leading-relaxed">
               TripAvail uses Stripe for international credit card processing. We never store your
               full card details on our servers. Mobile wallet transactions are secured via dedicated
@@ -333,7 +337,9 @@ export default function PaymentMethodsPage() {
                         }`}
                       >
                         <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center shadow-sm">
-                          <Badge className="bg-success text-success-foreground border-none p-1">EP</Badge>
+                          <Badge className="bg-success text-success-foreground border-none p-1">
+                            EP
+                          </Badge>
                         </div>
                         <span className="text-xs font-bold text-foreground/80">EasyPaisa</span>
                       </button>
@@ -347,14 +353,18 @@ export default function PaymentMethodsPage() {
                         }`}
                       >
                         <div className="w-10 h-10 bg-background rounded-xl flex items-center justify-center shadow-sm">
-                          <Badge className="bg-warning text-warning-foreground border-none p-1">JC</Badge>
+                          <Badge className="bg-warning text-warning-foreground border-none p-1">
+                            JC
+                          </Badge>
                         </div>
                         <span className="text-xs font-bold text-foreground/80">JazzCash</span>
                       </button>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-foreground/80 ml-1">Wallet Number</label>
+                      <label className="text-sm font-bold text-foreground/80 ml-1">
+                        Wallet Number
+                      </label>
                       <div className="relative">
                         <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/70" />
                         <input

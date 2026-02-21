@@ -147,7 +147,9 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
                 Step 1: Government ID
               </h4>
-              <p className="text-muted-foreground mt-1 font-medium">Upload both sides of your ID card.</p>
+              <p className="text-muted-foreground mt-1 font-medium">
+                Upload both sides of your ID card.
+              </p>
             </div>
 
             {/* ID FRONT */}
@@ -162,14 +164,18 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <div
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idCardUrl ? 'bg-success/20 text-success' : 'bg-background text-muted-foreground',
+                      idCardUrl
+                        ? 'bg-success/20 text-success'
+                        : 'bg-background text-muted-foreground',
                     )}
                   >
                     {idCardUrl ? <Check className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
                   </div>
                   <div className="text-left">
                     <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front</h5>
-                    <p className="text-xs text-muted-foreground font-medium">Photo page with your face</p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Photo page with your face
+                    </p>
                   </div>
                 </div>
                 <div>
@@ -215,14 +221,18 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <div
                     className={cn(
                       'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idBackUrl ? 'bg-success/20 text-success' : 'bg-background text-muted-foreground',
+                      idBackUrl
+                        ? 'bg-success/20 text-success'
+                        : 'bg-background text-muted-foreground',
                     )}
                   >
                     {idBackUrl ? <Check className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                   </div>
                   <div className="text-left">
                     <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back</h5>
-                    <p className="text-xs text-muted-foreground font-medium">Rear side with details</p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Rear side with details
+                    </p>
                   </div>
                 </div>
                 <div>
@@ -356,7 +366,9 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">
               Verifying Identity
             </h4>
-            <p className="text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data...</p>
+            <p className="text-muted-foreground mt-2 font-medium">
+              AI is analyzing your biometric data...
+            </p>
           </motion.div>
         )}
 
@@ -378,7 +390,9 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <div
                 className={cn(
                   'w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl',
-                  verificationResult?.match ? 'bg-success text-primary-foreground' : 'bg-destructive text-primary-foreground',
+                  verificationResult?.match
+                    ? 'bg-success text-primary-foreground'
+                    : 'bg-destructive text-primary-foreground',
                 )}
               >
                 {verificationResult?.match ? (

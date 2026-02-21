@@ -152,10 +152,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
               </h2>
               <p className="text-sm text-muted-foreground mt-1">Step {currentStep} of 4</p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
               <X size={20} className="text-muted-foreground" />
             </button>
           </div>

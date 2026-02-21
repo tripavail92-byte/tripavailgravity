@@ -51,7 +51,10 @@ export default function PackageCheckoutPage() {
   const checkoutCheckIn = state?.checkIn ?? queryCheckIn
   const checkoutCheckOut = state?.checkOut ?? queryCheckOut
   const checkoutGuestCount =
-    state?.guestCount ?? (Number.isFinite(queryGuestCount) && (queryGuestCount as number) > 0 ? (queryGuestCount as number) : undefined)
+    state?.guestCount ??
+    (Number.isFinite(queryGuestCount) && (queryGuestCount as number) > 0
+      ? (queryGuestCount as number)
+      : undefined)
 
   const [packageData, setPackageData] = useState<any | null>(null)
   const [pricing, setPricing] = useState<CheckoutState['pricing'] | null>(state?.pricing || null)
@@ -101,7 +104,8 @@ export default function PackageCheckoutPage() {
         typeof pricing.total_price === 'number' &&
         pricing.total_price > 0
 
-      if (!id || !packageData?.id || !checkoutCheckIn || !checkoutCheckOut || hasValidPricing) return
+      if (!id || !packageData?.id || !checkoutCheckIn || !checkoutCheckOut || hasValidPricing)
+        return
 
       try {
         // IMPORTANT: Use packageData.id (UUID) instead of id (which might be a slug)

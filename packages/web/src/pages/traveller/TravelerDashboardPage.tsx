@@ -180,7 +180,9 @@ export default function TravelerDashboardPage() {
                     <div className="w-16 h-16 bg-muted/60 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Compass className="w-8 h-8 text-muted-foreground/40" />
                     </div>
-                    <p className="text-muted-foreground font-medium mb-6">No upcoming trips booked yet.</p>
+                    <p className="text-muted-foreground font-medium mb-6">
+                      No upcoming trips booked yet.
+                    </p>
                     <Button asChild className="rounded-full px-8">
                       <Link to="/explore">Explore Experiences</Link>
                     </Button>

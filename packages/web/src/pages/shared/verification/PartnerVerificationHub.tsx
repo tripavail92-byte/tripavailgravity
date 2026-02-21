@@ -108,11 +108,7 @@ export function PartnerVerificationHub() {
     setIsLoading(true)
     try {
       // 1. Persist full profile (documents, URLs, etc.) as before
-      await service.saveOnboardingData(
-        user.id,
-        { verification: verificationData },
-        true,
-      )
+      await service.saveOnboardingData(user.id, { verification: verificationData }, true)
 
       // 2. Build a snapshot of all submitted data for the immutable request record
       //    This is what the admin sees in the review queue.
@@ -124,8 +120,8 @@ export function PartnerVerificationHub() {
         last_name: profileData?.personalInfo?.lastName,
         phone: profileData?.personalInfo?.phoneNumber,
         // Business
-        business_name: (profileData as any)?.businessInfo?.businessName
-          ?? (profileData as any)?.company_name,
+        business_name:
+          (profileData as any)?.businessInfo?.businessName ?? (profileData as any)?.company_name,
         registration_number: (profileData as any)?.businessInfo?.registrationNumber,
         business_address: (profileData as any)?.businessInfo?.businessAddress,
         // Documents (URLs the admin can click on)

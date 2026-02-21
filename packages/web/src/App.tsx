@@ -4,15 +4,15 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
-import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { AdminGuard } from '@/components/auth/AdminGuard'
+import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { useAuth } from '@/hooks/useAuth'
-import { queryClient } from '@/lib/queryClient'
 // Eager load critical components
 import AdminLayout from '@/layouts/AdminLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
+import { queryClient } from '@/lib/queryClient'
 import LoginPage from '@/pages/auth/LoginPage'
 import LandingPage from '@/pages/LandingPage'
 
@@ -141,184 +141,187 @@ function App() {
         <Toaster position="top-center" />
         <Suspense fallback={<PageLoader />}>
           <Routes>
-          <Route path="/auth" element={<LoginPage />} />
-          <Route path="/test-kyc" element={<TestKYC />} />
+            <Route path="/auth" element={<LoginPage />} />
+            <Route path="/test-kyc" element={<TestKYC />} />
 
-          {/* Traveller Routes (Teal Theme) */}
-          <Route element={<TravellerLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/hotels" element={<HotelsPage />} />
-            <Route path="/tours" element={<ToursPage />} />
-            <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
-            <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-            <Route path="/explore" element={<Homepage />} />
-            {/* Hotel Packages Categories */}
-            <Route path="/explore/hotel-packages/:kind" element={<PackageCategoryPage />} />
-            {/* Back-compat: old path, still shows hotel packages */}
-            <Route path="/explore/packages/:kind" element={<PackageCategoryPage />} />
+            {/* Traveller Routes (Teal Theme) */}
+            <Route element={<TravellerLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/hotels" element={<HotelsPage />} />
+              <Route path="/tours" element={<ToursPage />} />
+              <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
+              <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+              <Route path="/explore" element={<Homepage />} />
+              {/* Hotel Packages Categories */}
+              <Route path="/explore/hotel-packages/:kind" element={<PackageCategoryPage />} />
+              {/* Back-compat: old path, still shows hotel packages */}
+              <Route path="/explore/packages/:kind" element={<PackageCategoryPage />} />
 
-            {/* Tours Categories */}
-            <Route path="/explore/tours/categories/:category" element={<TourCategoryPage />} />
-            {/* Tours Collections (region/collection pages) */}
-            <Route path="/explore/tours/collections/:collection" element={<TourCollectionPage />} />
-            {/* Back-compat: old path treated as a collection */}
-            <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
-            <Route path="/packages/:id" element={<PackageDetailsPage />} />
-            <Route path="/stays/:id" element={<PackageDetailsPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/hotel/:id" element={<HotelDetailsPage />} />
-            <Route path="/tours/:id" element={<TourDetailsPage />} />
-            <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
-            <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
-            <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
+              {/* Tours Categories */}
+              <Route path="/explore/tours/categories/:category" element={<TourCategoryPage />} />
+              {/* Tours Collections (region/collection pages) */}
+              <Route
+                path="/explore/tours/collections/:collection"
+                element={<TourCollectionPage />}
+              />
+              {/* Back-compat: old path treated as a collection */}
+              <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
+              <Route path="/packages/:id" element={<PackageDetailsPage />} />
+              <Route path="/stays/:id" element={<PackageDetailsPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/hotel/:id" element={<HotelDetailsPage />} />
+              <Route path="/tours/:id" element={<TourDetailsPage />} />
+              <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
+              <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
+              <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
+              <Route
+                path="/booking/package/confirmation"
+                element={<PackageBookingConfirmationPage />}
+              />
+
+              {/* Profile & Settings */}
+              <Route path="/profile" element={<TravellerProfilePage />} />
+              <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/trips" element={<MyTripsPage />} />
+              <Route path="/settings" element={<AccountSettingsPage />} />
+
+              {/* Legal */}
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/refunds" element={<RefundsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+            </Route>
+
+            {/* Authenticated Routes with Drawer (Purple Theme) */}
+            <Route element={<DashboardLayout />}>
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/hotels/:id" element={<HotelDetailsPage />} />
+              <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
+
+              <Route
+                path="/manager/dashboard"
+                element={
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <DashboardPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/dashboard"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorDashboardPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/tours/new"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <CreateTourPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/tours/edit/:id"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <CreateTourPage />
+                  </RoleGuard>
+                }
+              />
+
+              {/* Hotel Manager Settings */}
+              <Route
+                path="/manager/settings"
+                element={
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <HotelManagerSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/settings"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <TourOperatorSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/manager/verification"
+                element={
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <VerificationStatusPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/verification"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <VerificationStatusPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route path="/dashboard" element={<DashboardRedirect />} />
+            </Route>
+
+            {/* Admin Routes (Phase 2 skeleton) */}
             <Route
-              path="/booking/package/confirmation"
-              element={<PackageBookingConfirmationPage />}
-            />
+              path="/admin"
+              element={
+                <AdminGuard>
+                  <AdminLayout />
+                </AdminGuard>
+              }
+            >
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="partners" element={<AdminPartnersPage />} />
+              <Route path="listings" element={<AdminListingsPage />} />
+              <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
+            </Route>
 
-            {/* Profile & Settings */}
-            <Route path="/profile" element={<TravellerProfilePage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
-            <Route path="/trips" element={<MyTripsPage />} />
-            <Route path="/settings" element={<AccountSettingsPage />} />
-
-            {/* Legal */}
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/refunds" element={<RefundsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-          </Route>
-
-          {/* Authenticated Routes with Drawer (Purple Theme) */}
-          <Route element={<DashboardLayout />}>
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/hotels/:id" element={<HotelDetailsPage />} />
-            <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
+            {/* Full Screen Flows */}
+            <Route path="/manager/list-hotel" element={<ListHotelPage />} />
+            <Route path="/manager/list-package" element={<ListPackagePage />} />
 
             <Route
-              path="/manager/dashboard"
+              path="/manager/setup"
               element={
                 <RoleGuard allowedRoles={['hotel_manager']}>
-                  <DashboardPage />
+                  <HotelManagerSetupPage />
                 </RoleGuard>
               }
             />
-
             <Route
-              path="/operator/dashboard"
+              path="/operator/setup"
               element={
                 <RoleGuard allowedRoles={['tour_operator']}>
-                  <OperatorDashboardPage />
+                  <TourOperatorSetupPage />
                 </RoleGuard>
               }
             />
 
-            <Route
-              path="/operator/tours/new"
-              element={
-                <RoleGuard allowedRoles={['tour_operator']}>
-                  <CreateTourPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="/operator/tours/edit/:id"
-              element={
-                <RoleGuard allowedRoles={['tour_operator']}>
-                  <CreateTourPage />
-                </RoleGuard>
-              }
-            />
-
-            {/* Hotel Manager Settings */}
-            <Route
-              path="/manager/settings"
-              element={
-                <RoleGuard allowedRoles={['hotel_manager']}>
-                  <HotelManagerSettingsPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="/operator/settings"
-              element={
-                <RoleGuard allowedRoles={['tour_operator']}>
-                  <TourOperatorSettingsPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="/manager/verification"
-              element={
-                <RoleGuard allowedRoles={['hotel_manager']}>
-                  <VerificationStatusPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route
-              path="/operator/verification"
-              element={
-                <RoleGuard allowedRoles={['tour_operator']}>
-                  <VerificationStatusPage />
-                </RoleGuard>
-              }
-            />
-
-            <Route path="/dashboard" element={<DashboardRedirect />} />
-          </Route>
-
-          {/* Admin Routes (Phase 2 skeleton) */}
-          <Route
-            path="/admin"
-            element={
-              <AdminGuard>
-                <AdminLayout />
-              </AdminGuard>
-            }
-          >
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="users" element={<AdminUsersPage />} />
-            <Route path="partners" element={<AdminPartnersPage />} />
-            <Route path="listings" element={<AdminListingsPage />} />
-            <Route path="bookings" element={<AdminBookingsPage />} />
-            <Route path="reports" element={<AdminReportsPage />} />
-            <Route path="audit-logs" element={<AdminAuditLogsPage />} />
-            <Route path="settings" element={<AdminSettingsPage />} />
-          </Route>
-
-          {/* Full Screen Flows */}
-          <Route path="/manager/list-hotel" element={<ListHotelPage />} />
-          <Route path="/manager/list-package" element={<ListPackagePage />} />
-
-          <Route
-            path="/manager/setup"
-            element={
-              <RoleGuard allowedRoles={['hotel_manager']}>
-                <HotelManagerSetupPage />
-              </RoleGuard>
-            }
-          />
-          <Route
-            path="/operator/setup"
-            element={
-              <RoleGuard allowedRoles={['tour_operator']}>
-                <TourOperatorSetupPage />
-              </RoleGuard>
-            }
-          />
-
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-      {/* React Query Devtools - Development Only */}
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </BrowserRouter>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+        {/* React Query Devtools - Development Only */}
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </BrowserRouter>
     </QueryClientProvider>
   )
 }

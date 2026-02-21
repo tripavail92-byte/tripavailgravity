@@ -19,7 +19,11 @@ export default function TourCollectionPage() {
     return isTourCollection(collection) ? collection : null
   }, [collection])
 
-  const { data = [], isLoading, isError } = usePakistanNorthernToursFull({
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = usePakistanNorthernToursFull({
     enabled: tourCollection === 'pakistan-northern',
   })
 
@@ -46,7 +50,9 @@ export default function TourCollectionPage() {
       <div className="container mx-auto max-w-7xl px-4 pt-28 pb-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Northern Pakistan Tours</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              Northern Pakistan Tours
+            </h1>
             <p className="mt-2 text-muted-foreground">Hunza, Skardu, Fairy Meadows, Naran, Swat</p>
           </div>
           <Link className="text-primary underline underline-offset-4" to="/">

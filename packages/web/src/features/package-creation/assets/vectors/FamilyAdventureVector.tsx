@@ -19,7 +19,7 @@ export function FamilyAdventureVector({
       animate={isActive ? 'active' : 'idle'}
       whileHover="hover"
     >
-       <defs>
+      <defs>
         <linearGradient id="famGrass" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#86EFAC" />
           <stop offset="100%" stopColor="#22C55E" />
@@ -58,7 +58,7 @@ export function FamilyAdventureVector({
         animate={{ scale: 1 }}
         transition={{ duration: 0.5 }}
       />
-      
+
       {/* Hill/Grass */}
       <motion.path
         d="M10 100 Q60 80 110 100 V120 H10 Z"
@@ -72,58 +72,67 @@ export function FamilyAdventureVector({
       <motion.g
         initial={{ scale: 0, y: 10 }}
         animate={{ scale: 1, y: 0 }}
-        transition={{ delay: 0.3, type: "spring" }}
+        transition={{ delay: 0.3, type: 'spring' }}
       >
-         <rect x="40" y="60" width="40" height="40" fill="url(#famHouse)" rx="2" filter="url(#famShadow)" />
-         <path d="M35 60 L60 35 L85 60" fill="url(#famRoof)" stroke="#B91C1C" strokeWidth="2" strokeLinejoin="round" />
-         <rect x="52" y="80" width="16" height="20" fill="#78350F" rx="1" />
-         <rect x="65" y="68" width="8" height="8" fill="#E0F2FE" stroke="#78350F" strokeWidth="1" />
-         <rect x="47" y="68" width="8" height="8" fill="#E0F2FE" stroke="#78350F" strokeWidth="1" />
+        <rect
+          x="40"
+          y="60"
+          width="40"
+          height="40"
+          fill="url(#famHouse)"
+          rx="2"
+          filter="url(#famShadow)"
+        />
+        <path
+          d="M35 60 L60 35 L85 60"
+          fill="url(#famRoof)"
+          stroke="#B91C1C"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <rect x="52" y="80" width="16" height="20" fill="#78350F" rx="1" />
+        <rect x="65" y="68" width="8" height="8" fill="#E0F2FE" stroke="#78350F" strokeWidth="1" />
+        <rect x="47" y="68" width="8" height="8" fill="#E0F2FE" stroke="#78350F" strokeWidth="1" />
       </motion.g>
 
       {/* Kite */}
       <motion.g
         variants={{
-            active: { 
-                y: [0, -10, 0],
-                x: [0, 5, 0],
-                rotate: [0, 5, -5, 0]
-            },
-            idle: { y: 0, x: 0, rotate: 0 }
+          active: {
+            y: [0, -10, 0],
+            x: [0, 5, 0],
+            rotate: [0, 5, -5, 0],
+          },
+          idle: { y: 0, x: 0, rotate: 0 },
         }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       >
-          {/* String */}
-          <motion.path 
-            d="M90 30 Q90 50 80 80" 
-            stroke="#9ca3af" 
-            strokeWidth="1" 
-            fill="none" 
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ delay: 0.6 }}
-          />
-          {/* Kite Body */}
-          <motion.path
-            d="M90 20 L100 30 L90 45 L80 30 Z"
-            fill="#A855F7"
-            stroke="#7E22CE"
-            strokeWidth="1"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.7 }}
-          />
-          {/* Tail */}
-          <motion.path
-             d="M90 45 Q85 50 90 55"
-             stroke="#A855F7"
-             strokeWidth="2"
-             fill="none"
-          />
+        {/* String */}
+        <motion.path
+          d="M90 30 Q90 50 80 80"
+          stroke="#9ca3af"
+          strokeWidth="1"
+          fill="none"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 0.6 }}
+        />
+        {/* Kite Body */}
+        <motion.path
+          d="M90 20 L100 30 L90 45 L80 30 Z"
+          fill="#A855F7"
+          stroke="#7E22CE"
+          strokeWidth="1"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.7 }}
+        />
+        {/* Tail */}
+        <motion.path d="M90 45 Q85 50 90 55" stroke="#A855F7" strokeWidth="2" fill="none" />
       </motion.g>
 
       {/* Sun */}
-       <motion.circle
+      <motion.circle
         cx="20"
         cy="30"
         r="8"
@@ -132,18 +141,17 @@ export function FamilyAdventureVector({
         animate={{ scale: 1 }}
         transition={{ delay: 0.4 }}
       />
-      
+
       {/* Tree */}
       <motion.g
-         initial={{ scaleY: 0 }}
-         animate={{ scaleY: 1 }}
-         transition={{ delay: 0.8 }}
-         style={{ originY: 1 }}
+        initial={{ scaleY: 0 }}
+        animate={{ scaleY: 1 }}
+        transition={{ delay: 0.8 }}
+        style={{ originY: 1 }}
       >
         <rect x="25" y="80" width="6" height="20" fill="#78350F" />
         <circle cx="28" cy="75" r="12" fill="#166534" />
       </motion.g>
-
     </motion.svg>
   )
 }

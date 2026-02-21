@@ -92,7 +92,9 @@ export default function BookingConfirmationPage() {
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
           <h2 className="text-2xl font-bold text-foreground">Confirming Your Booking</h2>
-          <p className="text-muted-foreground font-medium">Please wait while we process your payment...</p>
+          <p className="text-muted-foreground font-medium">
+            Please wait while we process your payment...
+          </p>
         </div>
       </div>
     )
@@ -119,7 +121,9 @@ export default function BookingConfirmationPage() {
             </p>
           </div>
           <div className="space-y-3 pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">Please contact support if this issue persists.</p>
+            <p className="text-sm text-muted-foreground">
+              Please contact support if this issue persists.
+            </p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => navigate('/')} className="flex-1">
                 Back to Home
@@ -185,7 +189,9 @@ export default function BookingConfirmationPage() {
               <div className="space-y-3 p-4 bg-muted/50 rounded-xl">
                 <div className="flex items-start justify-between">
                   <span className="text-muted-foreground font-medium">Tour Name</span>
-                  <span className="text-foreground font-bold text-right max-w-xs">{tour.title}</span>
+                  <span className="text-foreground font-bold text-right max-w-xs">
+                    {tour.title}
+                  </span>
                 </div>
                 <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
@@ -223,9 +229,7 @@ export default function BookingConfirmationPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-info" />
                   <div>
-                    <p className="text-xs text-info font-bold uppercase tracking-widest">
-                      Return
-                    </p>
+                    <p className="text-xs text-info font-bold uppercase tracking-widest">Return</p>
                     <p className="text-foreground font-bold">{formatDate(schedule.end_time)}</p>
                   </div>
                 </div>

@@ -355,9 +355,7 @@ export function TripAvailSearchBar({
               className="mt-3 overflow-hidden"
             >
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Quick filters:
-                </span>
+                <span className="text-xs font-medium text-muted-foreground">Quick filters:</span>
                 {quickFilters.map((filter) => (
                   <motion.button
                     key={filter.id}
@@ -391,9 +389,7 @@ export function TripAvailSearchBar({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <History className="w-4 h-4 text-muted-foreground" />
-                      <h4 className="text-sm font-semibold text-foreground">
-                        Recent Searches
-                      </h4>
+                      <h4 className="text-sm font-semibold text-foreground">Recent Searches</h4>
                     </div>
                     <div className="space-y-1">
                       {recentSearches.slice(0, 4).map((search, index) => (
@@ -409,9 +405,7 @@ export function TripAvailSearchBar({
                           <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 text-muted-foreground" />
                             <div>
-                              <span className="text-sm text-foreground">
-                                {search.query}
-                              </span>
+                              <span className="text-sm text-foreground">{search.query}</span>
                               <span className="text-xs text-muted-foreground ml-2">
                                 {search.category}
                               </span>
@@ -427,9 +421,7 @@ export function TripAvailSearchBar({
                   <div className="space-y-3 border-t border-border pt-3">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />
-                      <h4 className="text-sm font-semibold text-foreground">
-                        Smart Suggestions
-                      </h4>
+                      <h4 className="text-sm font-semibold text-foreground">Smart Suggestions</h4>
                     </div>
                     <div className="space-y-1">
                       {smartSuggestions.slice(0, 3).map((suggestion, index) => (
@@ -444,12 +436,8 @@ export function TripAvailSearchBar({
                         >
                           <Sparkles className="w-4 h-4 text-primary mt-0.5" />
                           <div>
-                            <span className="text-sm text-foreground">
-                              {suggestion.query}
-                            </span>
-                            <p className="text-xs text-muted-foreground">
-                              {suggestion.reason}
-                            </p>
+                            <span className="text-sm text-foreground">{suggestion.query}</span>
+                            <p className="text-xs text-muted-foreground">{suggestion.reason}</p>
                           </div>
                         </motion.button>
                       ))}
@@ -538,9 +526,7 @@ export function TripAvailSearchBar({
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Filters
-                    </h3>
+                    <h3 className="text-lg font-semibold text-foreground">Filters</h3>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"

@@ -35,13 +35,17 @@ export function DraftsAlert({ drafts }: DraftsAlertProps) {
             <div
               key={draft.id}
               className="bg-background/60 hover:bg-background border border-amber-500/20 rounded-lg px-3 py-2 flex items-center gap-3 transition-all cursor-pointer group"
-              onClick={() => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(draft.id)}`)}
+              onClick={() =>
+                navigate(`/operator/tours/new?tour_id=${encodeURIComponent(draft.id)}`)
+              }
             >
               <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-300">
                 {Math.round(Math.random() * 40 + 40)}%
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-amber-900 dark:text-amber-100 truncate">{draft.title}</p>
+                <p className="text-xs font-bold text-amber-900 dark:text-amber-100 truncate">
+                  {draft.title}
+                </p>
                 <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
                   <Clock className="w-3 h-3" />
                   <span>Last updated {new Date(draft.updated_at).toLocaleDateString()}</span>

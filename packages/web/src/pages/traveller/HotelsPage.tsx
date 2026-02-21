@@ -105,7 +105,9 @@ export default function HotelsPage() {
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Hotels</h1>
-            <p className="text-muted-foreground font-medium">Browse featured, top rated, and package-wise stays</p>
+            <p className="text-muted-foreground font-medium">
+              Browse featured, top rated, and package-wise stays
+            </p>
           </div>
           <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
             <Link to="/">Back to Home</Link>

@@ -1,9 +1,10 @@
 import type { User } from '@supabase/supabase-js'
 import { authService } from '@tripavail/shared/auth/service'
-import { supabase } from '@/lib/supabase'
 import { roleService } from '@tripavail/shared/roles/service'
 import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
+
+import { supabase } from '@/lib/supabase'
 
 interface AuthState {
   user: User | null
@@ -39,16 +40,17 @@ export const useAuth = create<AuthState>((set, get) => ({
           p_user_id: session.user.id,
         })
 
-        let activeRole: UserRole | null = !adminRoleError && adminRole
-          ? {
-              id: session.user.id,
-              user_id: session.user.id,
-              role_type: 'admin',
-              is_active: true,
-              profile_completion: 100,
-              verification_status: 'approved',
-            }
-          : await roleService.getActiveRole(session.user.id)
+        let activeRole: UserRole | null =
+          !adminRoleError && adminRole
+            ? {
+                id: session.user.id,
+                user_id: session.user.id,
+                role_type: 'admin',
+                is_active: true,
+                profile_completion: 100,
+                verification_status: 'approved',
+              }
+            : await roleService.getActiveRole(session.user.id)
 
         if (activeRole?.role_type === 'admin') {
           console.warn('[useAuth] User detected as Admin via get_admin_role:', adminRole)
@@ -77,16 +79,17 @@ export const useAuth = create<AuthState>((set, get) => ({
             p_user_id: session.user.id,
           })
 
-          let activeRole: UserRole | null = !adminRoleError && adminRole
-            ? {
-                id: session.user.id,
-                user_id: session.user.id,
-                role_type: 'admin',
-                is_active: true,
-                profile_completion: 100,
-                verification_status: 'approved',
-              }
-            : await roleService.getActiveRole(session.user.id)
+          let activeRole: UserRole | null =
+            !adminRoleError && adminRole
+              ? {
+                  id: session.user.id,
+                  user_id: session.user.id,
+                  role_type: 'admin',
+                  is_active: true,
+                  profile_completion: 100,
+                  verification_status: 'approved',
+                }
+              : await roleService.getActiveRole(session.user.id)
 
           // Fallback: If no role found, default to Traveller
           if (!activeRole && !adminRole) {
@@ -121,11 +124,14 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       // Add 10 second timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Authentication timeout - please check your connection')), 10000)
+        setTimeout(
+          () => reject(new Error('Authentication timeout - please check your connection')),
+          10000,
+        ),
       )
-      
+
       const signInPromise = authService.signIn(email, password)
-      
+
       await Promise.race([signInPromise, timeoutPromise])
       // State updated by onAuthStateChange listener
     } catch (error) {
@@ -138,7 +144,8 @@ export const useAuth = create<AuthState>((set, get) => ({
   signInWithGoogle: async () => {
     set({ isLoading: true })
     try {
-      const appBaseUrl = (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || window.location.origin
+      const appBaseUrl =
+        (import.meta.env.VITE_APP_URL as string | undefined)?.trim() || window.location.origin
       const normalizedBaseUrl = appBaseUrl.replace(/\/+$/, '')
       const redirectTo = `${normalizedBaseUrl}/auth/callback`
       await authService.signInWithGoogle(redirectTo)

@@ -1,16 +1,10 @@
-﻿export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: '14.1'
   }
   public: {
     Tables: {
@@ -107,11 +101,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "admin_action_logs_admin_id_fkey"
-            columns: ["admin_id"]
+            foreignKeyName: 'admin_action_logs_admin_id_fkey'
+            columns: ['admin_id']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -142,11 +136,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "admin_login_logs_admin_id_fkey"
-            columns: ["admin_id"]
+            foreignKeyName: 'admin_login_logs_admin_id_fkey'
+            columns: ['admin_id']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -155,19 +149,19 @@ export type Database = {
           created_at: string
           email: string
           id: string
-          role: Database["public"]["Enums"]["admin_role_enum"]
+          role: Database['public']['Enums']['admin_role_enum']
         }
         Insert: {
           created_at?: string
           email: string
           id: string
-          role: Database["public"]["Enums"]["admin_role_enum"]
+          role: Database['public']['Enums']['admin_role_enum']
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
-          role?: Database["public"]["Enums"]["admin_role_enum"]
+          role?: Database['public']['Enums']['admin_role_enum']
         }
         Relationships: []
       }
@@ -197,7 +191,7 @@ export type Database = {
       }
       hotel_manager_profiles: {
         Row: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           bank_info: Json | null
           business_address: string | null
           business_license: string | null
@@ -223,7 +217,7 @@ export type Database = {
           verification_urls: Json | null
         }
         Insert: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           bank_info?: Json | null
           business_address?: string | null
           business_license?: string | null
@@ -249,7 +243,7 @@ export type Database = {
           verification_urls?: Json | null
         }
         Update: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           bank_info?: Json | null
           business_address?: string | null
           business_license?: string | null
@@ -276,18 +270,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "hotel_manager_profiles_status_updated_by_fkey"
-            columns: ["status_updated_by"]
+            foreignKeyName: 'hotel_manager_profiles_status_updated_by_fkey'
+            columns: ['status_updated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "hotel_manager_profiles_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: 'hotel_manager_profiles_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -474,11 +468,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "hotels_owner_id_fkey"
-            columns: ["owner_id"]
+            foreignKeyName: 'hotels_owner_id_fkey'
+            columns: ['owner_id']
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -551,18 +545,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "package_bookings_package_id_fkey"
-            columns: ["package_id"]
+            foreignKeyName: 'package_bookings_package_id_fkey'
+            columns: ['package_id']
             isOneToOne: false
-            referencedRelation: "packages"
-            referencedColumns: ["id"]
+            referencedRelation: 'packages'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "package_bookings_traveler_id_fkey"
-            columns: ["traveler_id"]
+            foreignKeyName: 'package_bookings_traveler_id_fkey'
+            columns: ['traveler_id']
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -597,7 +591,7 @@ export type Database = {
           room_ids: string[] | null
           rooms_config: Json | null
           slug: string | null
-          status: Database["public"]["Enums"]["moderation_status_enum"]
+          status: Database['public']['Enums']['moderation_status_enum']
           updated_at: string | null
         }
         Insert: {
@@ -630,7 +624,7 @@ export type Database = {
           room_ids?: string[] | null
           rooms_config?: Json | null
           slug?: string | null
-          status?: Database["public"]["Enums"]["moderation_status_enum"]
+          status?: Database['public']['Enums']['moderation_status_enum']
           updated_at?: string | null
         }
         Update: {
@@ -663,23 +657,23 @@ export type Database = {
           room_ids?: string[] | null
           rooms_config?: Json | null
           slug?: string | null
-          status?: Database["public"]["Enums"]["moderation_status_enum"]
+          status?: Database['public']['Enums']['moderation_status_enum']
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "packages_hotel_id_fkey"
-            columns: ["hotel_id"]
+            foreignKeyName: 'packages_hotel_id_fkey'
+            columns: ['hotel_id']
             isOneToOne: false
-            referencedRelation: "hotels"
-            referencedColumns: ["id"]
+            referencedRelation: 'hotels'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "packages_moderated_by_fkey"
-            columns: ["moderated_by"]
+            foreignKeyName: 'packages_moderated_by_fkey'
+            columns: ['moderated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -751,7 +745,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           address: string | null
           avatar_url: string | null
           bio: string | null
@@ -772,7 +766,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -793,7 +787,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           address?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -815,11 +809,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_status_updated_by_fkey"
-            columns: ["status_updated_by"]
+            foreignKeyName: 'profiles_status_updated_by_fkey'
+            columns: ['status_updated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -830,7 +824,7 @@ export type Database = {
           id: string
           report_reason: string
           reporter_id: string | null
-          status: Database["public"]["Enums"]["report_status_enum"]
+          status: Database['public']['Enums']['report_status_enum']
           status_reason: string | null
           status_updated_at: string | null
           status_updated_by: string | null
@@ -843,7 +837,7 @@ export type Database = {
           id?: string
           report_reason: string
           reporter_id?: string | null
-          status?: Database["public"]["Enums"]["report_status_enum"]
+          status?: Database['public']['Enums']['report_status_enum']
           status_reason?: string | null
           status_updated_at?: string | null
           status_updated_by?: string | null
@@ -856,7 +850,7 @@ export type Database = {
           id?: string
           report_reason?: string
           reporter_id?: string | null
-          status?: Database["public"]["Enums"]["report_status_enum"]
+          status?: Database['public']['Enums']['report_status_enum']
           status_reason?: string | null
           status_updated_at?: string | null
           status_updated_by?: string | null
@@ -865,11 +859,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "reports_status_updated_by_fkey"
-            columns: ["status_updated_by"]
+            foreignKeyName: 'reports_status_updated_by_fkey'
+            columns: ['status_updated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -927,11 +921,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "rooms_hotel_id_fkey"
-            columns: ["hotel_id"]
+            foreignKeyName: 'rooms_hotel_id_fkey'
+            columns: ['hotel_id']
             isOneToOne: false
-            referencedRelation: "hotels"
-            referencedColumns: ["id"]
+            referencedRelation: 'hotels'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -989,31 +983,31 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tour_bookings_schedule_id_fkey"
-            columns: ["schedule_id"]
+            foreignKeyName: 'tour_bookings_schedule_id_fkey'
+            columns: ['schedule_id']
             isOneToOne: false
-            referencedRelation: "tour_schedules"
-            referencedColumns: ["id"]
+            referencedRelation: 'tour_schedules'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tour_bookings_tour_id_fkey"
-            columns: ["tour_id"]
+            foreignKeyName: 'tour_bookings_tour_id_fkey'
+            columns: ['tour_id']
             isOneToOne: false
-            referencedRelation: "tours"
-            referencedColumns: ["id"]
+            referencedRelation: 'tours'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tour_bookings_traveler_id_fkey"
-            columns: ["traveler_id"]
+            foreignKeyName: 'tour_bookings_traveler_id_fkey'
+            columns: ['traveler_id']
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
       tour_operator_profiles: {
         Row: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           categories: string[] | null
           company_logo_url: string | null
           company_name: string | null
@@ -1043,7 +1037,7 @@ export type Database = {
           years_experience: string | null
         }
         Insert: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           categories?: string[] | null
           company_logo_url?: string | null
           company_name?: string | null
@@ -1073,7 +1067,7 @@ export type Database = {
           years_experience?: string | null
         }
         Update: {
-          account_status?: Database["public"]["Enums"]["account_status_enum"]
+          account_status?: Database['public']['Enums']['account_status_enum']
           categories?: string[] | null
           company_logo_url?: string | null
           company_name?: string | null
@@ -1104,18 +1098,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tour_operator_profiles_status_updated_by_fkey"
-            columns: ["status_updated_by"]
+            foreignKeyName: 'tour_operator_profiles_status_updated_by_fkey'
+            columns: ['status_updated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tour_operator_profiles_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: 'tour_operator_profiles_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1251,11 +1245,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "tour_schedules_tour_id_fkey"
-            columns: ["tour_id"]
+            foreignKeyName: 'tour_schedules_tour_id_fkey'
+            columns: ['tour_id']
             isOneToOne: false
-            referencedRelation: "tours"
-            referencedColumns: ["id"]
+            referencedRelation: 'tours'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1303,7 +1297,7 @@ export type Database = {
           seasonal_pricing: boolean | null
           short_description: string | null
           slug: string | null
-          status: Database["public"]["Enums"]["moderation_status_enum"]
+          status: Database['public']['Enums']['moderation_status_enum']
           title: string
           tour_type: string
           updated_at: string | null
@@ -1351,7 +1345,7 @@ export type Database = {
           seasonal_pricing?: boolean | null
           short_description?: string | null
           slug?: string | null
-          status?: Database["public"]["Enums"]["moderation_status_enum"]
+          status?: Database['public']['Enums']['moderation_status_enum']
           title: string
           tour_type: string
           updated_at?: string | null
@@ -1399,25 +1393,25 @@ export type Database = {
           seasonal_pricing?: boolean | null
           short_description?: string | null
           slug?: string | null
-          status?: Database["public"]["Enums"]["moderation_status_enum"]
+          status?: Database['public']['Enums']['moderation_status_enum']
           title?: string
           tour_type?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tours_moderated_by_fkey"
-            columns: ["moderated_by"]
+            foreignKeyName: 'tours_moderated_by_fkey'
+            columns: ['moderated_by']
             isOneToOne: false
-            referencedRelation: "admin_users"
-            referencedColumns: ["id"]
+            referencedRelation: 'admin_users'
+            referencedColumns: ['id']
           },
           {
-            foreignKeyName: "tours_operator_id_fkey"
-            columns: ["operator_id"]
+            foreignKeyName: 'tours_operator_id_fkey'
+            columns: ['operator_id']
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1442,11 +1436,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "traveller_profiles_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: 'traveller_profiles_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1480,11 +1474,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
+            foreignKeyName: 'user_roles_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
+            referencedRelation: 'users'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1648,7 +1642,7 @@ export type Database = {
         Args: {
           p_package_id: string
           p_reason: string
-          p_status: Database["public"]["Enums"]["moderation_status_enum"]
+          p_status: Database['public']['Enums']['moderation_status_enum']
         }
         Returns: {
           base_price_per_night: number | null
@@ -1680,12 +1674,12 @@ export type Database = {
           room_ids: string[] | null
           rooms_config: Json | null
           slug: string | null
-          status: Database["public"]["Enums"]["moderation_status_enum"]
+          status: Database['public']['Enums']['moderation_status_enum']
           updated_at: string | null
         }
         SetofOptions: {
-          from: "*"
-          to: "packages"
+          from: '*'
+          to: 'packages'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1693,7 +1687,7 @@ export type Database = {
       admin_moderate_tour: {
         Args: {
           p_reason: string
-          p_status: Database["public"]["Enums"]["moderation_status_enum"]
+          p_status: Database['public']['Enums']['moderation_status_enum']
           p_tour_id: string
         }
         Returns: {
@@ -1739,14 +1733,14 @@ export type Database = {
           seasonal_pricing: boolean | null
           short_description: string | null
           slug: string | null
-          status: Database["public"]["Enums"]["moderation_status_enum"]
+          status: Database['public']['Enums']['moderation_status_enum']
           title: string
           tour_type: string
           updated_at: string | null
         }
         SetofOptions: {
-          from: "*"
-          to: "tours"
+          from: '*'
+          to: 'tours'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1754,11 +1748,11 @@ export type Database = {
       admin_set_hotel_manager_status: {
         Args: {
           p_reason: string
-          p_status: Database["public"]["Enums"]["account_status_enum"]
+          p_status: Database['public']['Enums']['account_status_enum']
           p_user_id: string
         }
         Returns: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           bank_info: Json | null
           business_address: string | null
           business_license: string | null
@@ -1784,8 +1778,8 @@ export type Database = {
           verification_urls: Json | null
         }
         SetofOptions: {
-          from: "*"
-          to: "hotel_manager_profiles"
+          from: '*'
+          to: 'hotel_manager_profiles'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1794,7 +1788,7 @@ export type Database = {
         Args: {
           p_reason: string
           p_report_id: string
-          p_status: Database["public"]["Enums"]["report_status_enum"]
+          p_status: Database['public']['Enums']['report_status_enum']
         }
         Returns: {
           created_at: string
@@ -1802,7 +1796,7 @@ export type Database = {
           id: string
           report_reason: string
           reporter_id: string | null
-          status: Database["public"]["Enums"]["report_status_enum"]
+          status: Database['public']['Enums']['report_status_enum']
           status_reason: string | null
           status_updated_at: string | null
           status_updated_by: string | null
@@ -1810,8 +1804,8 @@ export type Database = {
           target_entity_type: string
         }
         SetofOptions: {
-          from: "*"
-          to: "reports"
+          from: '*'
+          to: 'reports'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1819,11 +1813,11 @@ export type Database = {
       admin_set_tour_operator_status: {
         Args: {
           p_reason: string
-          p_status: Database["public"]["Enums"]["account_status_enum"]
+          p_status: Database['public']['Enums']['account_status_enum']
           p_user_id: string
         }
         Returns: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           categories: string[] | null
           company_logo_url: string | null
           company_name: string | null
@@ -1853,8 +1847,8 @@ export type Database = {
           years_experience: string | null
         }
         SetofOptions: {
-          from: "*"
-          to: "tour_operator_profiles"
+          from: '*'
+          to: 'tour_operator_profiles'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1862,11 +1856,11 @@ export type Database = {
       admin_set_traveler_status: {
         Args: {
           p_reason: string
-          p_status: Database["public"]["Enums"]["account_status_enum"]
+          p_status: Database['public']['Enums']['account_status_enum']
           p_user_id: string
         }
         Returns: {
-          account_status: Database["public"]["Enums"]["account_status_enum"]
+          account_status: Database['public']['Enums']['account_status_enum']
           address: string | null
           avatar_url: string | null
           bio: string | null
@@ -1887,8 +1881,8 @@ export type Database = {
           updated_at: string
         }
         SetofOptions: {
-          from: "*"
-          to: "profiles"
+          from: '*'
+          to: 'profiles'
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1933,7 +1927,7 @@ export type Database = {
       generate_slug: { Args: { title: string }; Returns: string }
       get_admin_role: {
         Args: { p_user_id: string }
-        Returns: Database["public"]["Enums"]["admin_role_enum"]
+        Returns: Database['public']['Enums']['admin_role_enum']
       }
       get_available_slots: {
         Args: { schedule_id_param: string }
@@ -1946,10 +1940,10 @@ export type Database = {
       }
     }
     Enums: {
-      account_status_enum: "active" | "suspended" | "deleted"
-      admin_role_enum: "super_admin" | "moderator" | "support"
-      moderation_status_enum: "live" | "hidden" | "suspended" | "deleted"
-      report_status_enum: "open" | "in_review" | "resolved" | "dismissed"
+      account_status_enum: 'active' | 'suspended' | 'deleted'
+      admin_role_enum: 'super_admin' | 'moderator' | 'support'
+      moderation_status_enum: 'live' | 'hidden' | 'suspended' | 'deleted'
+      report_status_enum: 'open' | 'in_review' | 'resolved' | 'dismissed'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1957,33 +1951,31 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1992,23 +1984,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -2017,23 +2009,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
+    | keyof DefaultSchema['Tables']
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -2042,45 +2034,45 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
+    | keyof DefaultSchema['Enums']
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
+    | keyof DefaultSchema['CompositeTypes']
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      account_status_enum: ["active", "suspended", "deleted"],
-      admin_role_enum: ["super_admin", "moderator", "support"],
-      moderation_status_enum: ["live", "hidden", "suspended", "deleted"],
-      report_status_enum: ["open", "in_review", "resolved", "dismissed"],
+      account_status_enum: ['active', 'suspended', 'deleted'],
+      admin_role_enum: ['super_admin', 'moderator', 'support'],
+      moderation_status_enum: ['live', 'hidden', 'suspended', 'deleted'],
+      report_status_enum: ['open', 'in_review', 'resolved', 'dismissed'],
     },
   },
 } as const

@@ -1,5 +1,6 @@
 import { QueryErrorResetBoundary } from '@tanstack/react-query'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
+
 import { Button } from '@/components/ui/button'
 
 /**
@@ -41,7 +42,7 @@ function QueryErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 /**
  * Query Error Boundary Wrapper
  * Enterprise pattern: Combines QueryErrorResetBoundary with ErrorBoundary
- * 
+ *
  * Usage:
  * <QueryErrorBoundaryWrapper>
  *   <ComponentThatUsesQueries />

@@ -341,7 +341,7 @@ function LocationPickerContent({
   }
 
   return (
-      <div className="fixed inset-0 bg-background z-50 flex flex-col\">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col\">
       {/* Minimal Header - Airbnb Style */}
       <div className="bg-background border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
@@ -534,8 +534,12 @@ export function LocationPicker(props: LocationPickerProps) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
         <div className="text-center p-8">
-          <h2 className="text-xl font-semibold text-destructive mb-2">Google Maps API Key Missing</h2>
-          <p className="text-muted-foreground">Please add VITE_GOOGLE_MAPS_API_KEY to your .env file</p>
+          <h2 className="text-xl font-semibold text-destructive mb-2">
+            Google Maps API Key Missing
+          </h2>
+          <p className="text-muted-foreground">
+            Please add VITE_GOOGLE_MAPS_API_KEY to your .env file
+          </p>
         </div>
       </div>
     )

@@ -143,19 +143,21 @@ describe('Scenario C — Support Role Cannot Act', () => {
 
 describe('Governance Matrix — full 2-axis grid', () => {
   const matrix: Array<[VerificationStatus, AccountStatus, boolean, string]> = [
-    ['approved',      'active',    true,  'approved + active = OPERATIVE'],
-    ['approved',      'suspended', false, 'approved + suspended = BLOCKED'],
-    ['approved',      'deleted',   false, 'approved + deleted = BLOCKED'],
-    ['pending',       'active',    false, 'pending + active = NOT YET VERIFIED'],
-    ['under_review',  'active',    false, 'under_review + active = NOT YET VERIFIED'],
-    ['rejected',      'active',    false, 'rejected + active = NOT VERIFIED'],
-    ['info_requested','active',    false, 'info_requested + active = NOT VERIFIED'],
-    ['pending',       'suspended', false, 'pending + suspended = DOUBLY BLOCKED'],
+    ['approved', 'active', true, 'approved + active = OPERATIVE'],
+    ['approved', 'suspended', false, 'approved + suspended = BLOCKED'],
+    ['approved', 'deleted', false, 'approved + deleted = BLOCKED'],
+    ['pending', 'active', false, 'pending + active = NOT YET VERIFIED'],
+    ['under_review', 'active', false, 'under_review + active = NOT YET VERIFIED'],
+    ['rejected', 'active', false, 'rejected + active = NOT VERIFIED'],
+    ['info_requested', 'active', false, 'info_requested + active = NOT VERIFIED'],
+    ['pending', 'suspended', false, 'pending + suspended = DOUBLY BLOCKED'],
   ]
 
   matrix.forEach(([verif, account, expected, label]) => {
     it(label, () => {
-      expect(canPartnerOperate({ verificationStatus: verif, accountStatus: account })).toBe(expected)
+      expect(canPartnerOperate({ verificationStatus: verif, accountStatus: account })).toBe(
+        expected,
+      )
     })
   })
 })

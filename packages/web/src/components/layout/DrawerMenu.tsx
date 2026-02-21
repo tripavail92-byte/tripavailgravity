@@ -333,11 +333,7 @@ export function DrawerMenu() {
                             'px-2 py-0.5 rounded-full bg-muted/50 border border-border shadow-sm flex items-center gap-1 flex-shrink-0',
                           )}
                         >
-                          <Crown
-                            size={9}
-                            className="text-warning"
-                            fill="currentColor"
-                          />
+                          <Crown size={9} className="text-warning" fill="currentColor" />
                           <span className="text-foreground/80 font-bold text-[9px] uppercase tracking-wider">
                             {roleLabel}
                           </span>
@@ -357,9 +353,7 @@ export function DrawerMenu() {
                       <span
                         className={cn(
                           'font-bold',
-                          activeRole?.role_type === 'traveller'
-                            ? 'text-warning'
-                            : 'text-primary',
+                          activeRole?.role_type === 'traveller' ? 'text-warning' : 'text-primary',
                         )}
                       >
                         40%
@@ -486,7 +480,9 @@ export function DrawerMenu() {
                             <p className="text-primary-foreground text-xs font-bold uppercase tracking-wide">
                               Become a Partner
                             </p>
-                            <p className="text-primary-foreground/60 text-[9px]">Grow with TripAvail</p>
+                            <p className="text-primary-foreground/60 text-[9px]">
+                              Grow with TripAvail
+                            </p>
                           </div>
                           <span className="text-primary-foreground/80 text-base">›</span>
                         </div>
@@ -508,11 +504,7 @@ export function DrawerMenu() {
                 >
                   <div className="rounded-xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 p-2.5 transition-colors">
                     <div className="flex items-center justify-center gap-2">
-                      <LogOut
-                        className="text-destructive"
-                        size={16}
-                        strokeWidth={2.5}
-                      />
+                      <LogOut className="text-destructive" size={16} strokeWidth={2.5} />
                       <span className="text-destructive text-[10px] font-bold uppercase tracking-wider">
                         Sign Out
                       </span>

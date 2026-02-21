@@ -7,11 +7,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { type CuratedPackageKind, useCuratedPackagesFull } from '@/queries/packageQueries'
 
 const TITLES: Record<CuratedPackageKind, { title: string; subtitle: string }> = {
-  new_arrivals: { title: 'New Arrivals', subtitle: 'Hotel packages recently added from live listings' },
+  new_arrivals: {
+    title: 'New Arrivals',
+    subtitle: 'Hotel packages recently added from live listings',
+  },
   top_rated: { title: 'Top Rated', subtitle: 'Top-rated hotel packages across partners' },
-  best_for_couples: { title: 'Best for Couples', subtitle: 'Romantic hotel packages and private stays' },
-  family_friendly: { title: 'Family Friendly', subtitle: 'Family hotel packages and spacious suites' },
-  weekend_getaways: { title: 'Weekend Getaways', subtitle: 'Short-stay hotel packages for quick resets' },
+  best_for_couples: {
+    title: 'Best for Couples',
+    subtitle: 'Romantic hotel packages and private stays',
+  },
+  family_friendly: {
+    title: 'Family Friendly',
+    subtitle: 'Family hotel packages and spacious suites',
+  },
+  weekend_getaways: {
+    title: 'Weekend Getaways',
+    subtitle: 'Short-stay hotel packages for quick resets',
+  },
 }
 
 function isCuratedPackageKind(value: string | undefined): value is CuratedPackageKind {
@@ -32,7 +44,11 @@ export default function PackageCategoryPage() {
     return isCuratedPackageKind(kind) ? kind : null
   }, [kind])
 
-  const { data = [], isLoading, isError } = useCuratedPackagesFull(curatedKind ?? 'new_arrivals', {
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = useCuratedPackagesFull(curatedKind ?? 'new_arrivals', {
     enabled: Boolean(curatedKind),
   })
 

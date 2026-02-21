@@ -51,7 +51,9 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-10">
       <div>
-        <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">Tour Services</h3>
+        <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
+          Tour Services
+        </h3>
         <p className="text-lg text-muted-foreground leading-relaxed font-medium">
           What types of tours do you specialize in? Select all that apply.
         </p>

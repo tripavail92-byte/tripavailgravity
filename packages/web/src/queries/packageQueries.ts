@@ -1,7 +1,8 @@
-import { useQuery, type UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
+
+import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database.types'
 import type { UnifiedExperience } from '@/types/experience'
-import { supabase } from '@/lib/supabase'
 
 type Package = Database['public']['Tables']['packages']['Row']
 type Hotel = Database['public']['Tables']['hotels']['Row']
@@ -9,20 +10,26 @@ type Hotel = Database['public']['Tables']['hotels']['Row']
 /**
  * Query Keys - Following TanStack Query best practices
  * Hierarchical structure for precise cache invalidation
- * 
+ *
  * ✅ Enterprise: Keys serialize primitives to avoid object identity trap
  */
 export const packageKeys = {
   all: ['packages'] as const,
   lists: () => [...packageKeys.all, 'list'] as const,
-  list: (filters?: { city?: string; dates?: string; guests?: number; sort?: string; page?: number }) => 
+  list: (filters?: {
+    city?: string
+    dates?: string
+    guests?: number
+    sort?: string
+    page?: number
+  }) =>
     [
-      ...packageKeys.lists(), 
-      filters?.city ?? '', 
-      filters?.dates ?? '', 
-      filters?.guests ?? 0, 
-      filters?.sort ?? '', 
-      filters?.page ?? 1
+      ...packageKeys.lists(),
+      filters?.city ?? '',
+      filters?.dates ?? '',
+      filters?.guests ?? 0,
+      filters?.sort ?? '',
+      filters?.page ?? 1,
     ] as const,
   details: () => [...packageKeys.all, 'detail'] as const,
   detail: (id: string) => [...packageKeys.details(), id] as const,
@@ -131,7 +138,9 @@ function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
       ? pkg.media_urls
       : pkg.cover_image
         ? [pkg.cover_image]
-        : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080']
+        : [
+            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080',
+          ]
 
   const basePrice = safeNumber(pkg.base_price_per_night)
 
@@ -177,7 +186,9 @@ function mapPackageRowToUnifiedExperience(pkg: any): UnifiedExperience {
       ? pkg.media_urls
       : pkg.cover_image
         ? [pkg.cover_image]
-        : ['https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080']
+        : [
+            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1080',
+          ]
 
   const basePrice = safeNumber(pkg.base_price_per_night)
 
@@ -314,7 +325,10 @@ export function useHomepageMixPackages(
   })
 }
 
-async function fetchCuratedPackages(kind: CuratedPackageKind, take: number = 8): Promise<MappedPackage[]> {
+async function fetchCuratedPackages(
+  kind: CuratedPackageKind,
+  take: number = 8,
+): Promise<MappedPackage[]> {
   let query = supabase
     .from('packages')
     .select(
@@ -520,11 +534,11 @@ export function usePackage(
 /**
  * Prefetch Package - Enterprise UX Pattern
  * ✅ Production-safe: Throttled, mobile-aware, cache-aware
- * 
+ *
  * Call this on hover to preload data before navigation
- * 
+ *
  * Usage:
- * <Link 
+ * <Link
  *   onMouseEnter={() => prefetchPackage(queryClient, id)}
  *   onTouchStart={() => prefetchPackage(queryClient, id)}
  * >
@@ -577,22 +591,22 @@ export function usePackageMutation() {
     },
     onSuccess: (data, variables) => {
       // ✅ SURGICAL: Only invalidate what this mutation affects
-      
+
       // 1. If updating specific package, update its cache directly
       if (variables.id) {
         queryClient.setQueryData(packageKeys.detail(variables.id), data)
       }
-      
+
       // 2. Only invalidate featured if this package is featured
       // @ts-ignore - data shape depends on implementation
       if (data?.is_featured) {
         queryClient.invalidateQueries({ queryKey: packageKeys.featured() })
       }
-      
+
       // 3. Invalidate search results (if package appears in searches)
       // Only invalidate lists, not all packages
       queryClient.invalidateQueries({ queryKey: packageKeys.lists() })
-      
+
       // ❌ NEVER: queryClient.invalidateQueries({ queryKey: packageKeys.all })
       // That would nuke: traveler feed, search, collections, admin lists, drafts, etc.
     },

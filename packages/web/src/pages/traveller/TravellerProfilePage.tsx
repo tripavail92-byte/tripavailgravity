@@ -526,7 +526,9 @@ export default function TravellerProfilePage() {
                               Verified
                             </GlassBadge>
                           )}
-                          {!isEditing && <ChevronRight className="w-4 h-4 text-muted-foreground/70" />}
+                          {!isEditing && (
+                            <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
+                          )}
                         </div>
                       </div>
                     </motion.div>

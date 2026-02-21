@@ -101,9 +101,9 @@ export function CulturalHistoryVector({
         filter="url(#cultShadow)"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, type: "spring" }}
+        transition={{ delay: 0.3, type: 'spring' }}
       />
-      
+
       {/* Sun/Moon */}
       <motion.circle
         cx="60"
@@ -114,39 +114,53 @@ export function CulturalHistoryVector({
         animate={{ scale: 1 }}
         transition={{ delay: 0.6 }}
       />
-      
+
       {/* Scroll/Map (Floating) */}
       <motion.g
-         variants={{
-            active: { y: [0, -5, 0] },
-            idle: { y: 0 }
-         }}
-         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        variants={{
+          active: { y: [0, -5, 0] },
+          idle: { y: 0 },
+        }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <rect x="80" y="60" width="20" height="25" rx="2" fill="#FEF3C7" stroke="#92400E" strokeWidth="1" transform="rotate(15 90 72)"/>
-        <path d="M85 65 L95 65 M85 70 L95 70 M85 75 L90 75" stroke="#92400E" strokeWidth="1" transform="rotate(15 90 72)" />
+        <rect
+          x="80"
+          y="60"
+          width="20"
+          height="25"
+          rx="2"
+          fill="#FEF3C7"
+          stroke="#92400E"
+          strokeWidth="1"
+          transform="rotate(15 90 72)"
+        />
+        <path
+          d="M85 65 L95 65 M85 70 L95 70 M85 75 L90 75"
+          stroke="#92400E"
+          strokeWidth="1"
+          transform="rotate(15 90 72)"
+        />
       </motion.g>
 
       {/* Sparkles */}
       {isActive && (
-          <>
-            <motion.path
-                d="M30 30 L32 25 L34 30 L39 32 L34 34 L32 39 L30 34 L25 32 Z"
-                fill="#FCD34D"
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1, 0], rotate: 180 }}
-                transition={{ duration: 2, repeat: Infinity }}
-            />
-            <motion.path
-                d="M90 30 L92 25 L94 30 L99 32 L94 34 L92 39 L90 34 L85 32 Z"
-                fill="#FCD34D"
-                initial={{ scale: 0 }}
-                animate={{ scale: [0, 1, 0], rotate: 180 }}
-                transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-            />
-          </>
+        <>
+          <motion.path
+            d="M30 30 L32 25 L34 30 L39 32 L34 34 L32 39 L30 34 L25 32 Z"
+            fill="#FCD34D"
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1, 0], rotate: 180 }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+          <motion.path
+            d="M90 30 L92 25 L94 30 L99 32 L94 34 L92 39 L90 34 L85 32 Z"
+            fill="#FCD34D"
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1, 0], rotate: 180 }}
+            transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+          />
+        </>
       )}
-
     </motion.svg>
   )
 }

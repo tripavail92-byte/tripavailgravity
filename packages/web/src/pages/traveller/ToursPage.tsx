@@ -5,7 +5,12 @@ import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useFeaturedTours, useHomepageMixTours, usePakistanNorthernTours, useToursByCategory } from '@/queries/tourQueries'
+import {
+  useFeaturedTours,
+  useHomepageMixTours,
+  usePakistanNorthernTours,
+  useToursByCategory,
+} from '@/queries/tourQueries'
 
 export default function ToursPage() {
   const featuredQuery = useFeaturedTours()
@@ -115,7 +120,9 @@ export default function ToursPage() {
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Tours</h1>
-            <p className="text-muted-foreground font-medium">Browse featured, top rated, and category-wise tours</p>
+            <p className="text-muted-foreground font-medium">
+              Browse featured, top rated, and category-wise tours
+            </p>
           </div>
           <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
             <Link to="/">Back to Home</Link>
@@ -130,9 +137,19 @@ export default function ToursPage() {
           <div className="space-y-10">
             {renderSection('Featured', 'Hand-picked tours from live listings', featured, 'mapped')}
             {renderSection('Top Rated', 'Highest rated experiences', topRated, 'mix')}
-            {renderSection('Adventure Trips', 'Adrenaline and outdoor experiences', adventure, 'mapped')}
+            {renderSection(
+              'Adventure Trips',
+              'Adrenaline and outdoor experiences',
+              adventure,
+              'mapped',
+            )}
             {renderSection('Hiking Trips', 'Nature-focused itineraries', hiking, 'mapped')}
-            {renderSection('Pakistan Northern', 'Curated northern routes', pakistanNorthern, 'mapped')}
+            {renderSection(
+              'Pakistan Northern',
+              'Curated northern routes',
+              pakistanNorthern,
+              'mapped',
+            )}
           </div>
         )}
       </main>

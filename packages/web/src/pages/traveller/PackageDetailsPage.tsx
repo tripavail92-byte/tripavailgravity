@@ -411,11 +411,7 @@ export default function PackageDetailsPage() {
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header / Nav */}
-      <GlassCard
-        variant="nav"
-        blur="md"
-        className="sticky top-0 z-40 border-b border-border/40"
-      >
+      <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -562,10 +558,7 @@ export default function PackageDetailsPage() {
             </motion.div>
 
             {/* Description */}
-            <GlassCard
-              variant="card"
-              className="rounded-3xl border-none shadow-xl"
-            >
+            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
               </GlassHeader>
@@ -647,10 +640,7 @@ export default function PackageDetailsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Free Inclusions */}
                 {packageData.free_inclusions?.length > 0 && (
-                  <GlassCard
-                    variant="card"
-                    className="rounded-3xl border-none shadow-xl"
-                  >
+                  <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                     <GlassHeader>
                       <GlassTitle className="text-xl font-bold flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-primary animate-pulse" />
@@ -678,10 +668,7 @@ export default function PackageDetailsPage() {
 
                 {/* Exclusive Discount Offers */}
                 {packageData.discount_offers?.length > 0 && (
-                  <GlassCard
-                    variant="card"
-                    className="rounded-3xl border-none shadow-xl"
-                  >
+                  <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                     <GlassHeader>
                       <GlassTitle className="text-xl font-bold flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-warning/10 text-warning flex items-center justify-center font-black text-xs">
@@ -769,7 +756,10 @@ export default function PackageDetailsPage() {
                   {inclusions && inclusions.length > 0 ? (
                     <ul className="space-y-4">
                       {inclusions.map((item: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-3 text-foreground font-medium">
+                        <li
+                          key={idx}
+                          className="flex items-start gap-3 text-foreground font-medium"
+                        >
                           <div className="mt-1 w-1.5 h-1.5 rounded-full bg-success shrink-0" />
                           <span>{item}</span>
                         </li>
@@ -848,7 +838,9 @@ export default function PackageDetailsPage() {
                     : 'Price on request'}
                 </span>
                 {displayBasePrice > 0 && (
-                  <span className="text-muted-foreground font-bold mb-1.5 tracking-wide">/ night</span>
+                  <span className="text-muted-foreground font-bold mb-1.5 tracking-wide">
+                    / night
+                  </span>
                 )}
               </div>
 
@@ -955,7 +947,9 @@ export default function PackageDetailsPage() {
                           <div className="font-black text-foreground text-sm uppercase tracking-wider">
                             Travelers
                           </div>
-                          <div className="text-[10px] text-muted-foreground/70 font-bold">Ages 13+</div>
+                          <div className="text-[10px] text-muted-foreground/70 font-bold">
+                            Ages 13+
+                          </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <GlassButton

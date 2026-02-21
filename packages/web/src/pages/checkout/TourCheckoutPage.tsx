@@ -443,7 +443,9 @@ export default function TourCheckoutPage() {
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Clock className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="text-2xl font-bold text-foreground mb-2">Booking Hold Active</h3>
+                      <h3 className="text-2xl font-bold text-foreground mb-2">
+                        Booking Hold Active
+                      </h3>
                       <p className="text-muted-foreground font-medium">
                         Your seats are reserved for 10 minutes
                       </p>
@@ -451,7 +453,9 @@ export default function TourCheckoutPage() {
 
                     {/* Countdown Timer */}
                     <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 text-center">
-                      <p className="text-sm text-muted-foreground font-medium mb-2">Time Remaining</p>
+                      <p className="text-sm text-muted-foreground font-medium mb-2">
+                        Time Remaining
+                      </p>
                       <div className="text-5xl font-black text-primary">
                         {String(countdown.minutes).padStart(2, '0')}:
                         {String(countdown.seconds).padStart(2, '0')}
@@ -468,7 +472,9 @@ export default function TourCheckoutPage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground font-medium">Guests</span>
-                        <span className="font-bold text-foreground">{pendingBooking.pax_count}</span>
+                        <span className="font-bold text-foreground">
+                          {pendingBooking.pax_count}
+                        </span>
                       </div>
                       <div className="h-px bg-border/60" />
                       <div className="flex items-center justify-between text-lg">
@@ -583,11 +589,15 @@ export default function TourCheckoutPage() {
                 <GlassContent className="p-6 space-y-3">
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">Secure Payment</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Secure Payment
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Lock className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">Data Protected</span>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Data Protected
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-success" />

@@ -210,11 +210,11 @@ export default function TourDetailsPage() {
                 className="w-full h-full object-cover cursor-pointer"
               />
               <div className="absolute bottom-4 right-4">
-                  <GlassButton
-                    variant="light"
-                    size="sm"
-                    className="gap-2 bg-background/70 hover:bg-background/80"
-                  >
+                <GlassButton
+                  variant="light"
+                  size="sm"
+                  className="gap-2 bg-background/70 hover:bg-background/80"
+                >
                   <Camera size={16} />
                   Show all photos
                 </GlassButton>
@@ -290,7 +290,9 @@ export default function TourDetailsPage() {
             {/* Hosted by */}
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">Hosted by Premium Tour Operator</GlassTitle>
+                <GlassTitle className="text-2xl font-bold">
+                  Hosted by Premium Tour Operator
+                </GlassTitle>
               </GlassHeader>
               <GlassContent>
                 <p className="text-muted-foreground">Verified Operator • Small groups</p>
@@ -334,7 +336,10 @@ export default function TourDetailsPage() {
                   <div className="space-y-3">
                     <h4 className="text-base font-semibold text-foreground">Exclusions</h4>
                     {tour.exclusions?.map((exc, i) => (
-                      <div key={i} className="flex items-center gap-3 text-muted-foreground line-through">
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 text-muted-foreground line-through"
+                      >
                         <X className="w-5 h-5" />
                         <span>{exc}</span>
                       </div>
@@ -453,7 +458,9 @@ export default function TourDetailsPage() {
                     ) : (
                       <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                         <AlertCircle className="w-5 h-5 text-warning" />
-                        <p className="text-sm text-warning font-medium">No departure dates available</p>
+                        <p className="text-sm text-warning font-medium">
+                          No departure dates available
+                        </p>
                       </div>
                     )}
                   </div>

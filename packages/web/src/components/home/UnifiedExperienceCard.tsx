@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { UnifiedExperience } from '@/types/experience'
 import { cn } from '@/lib/utils'
+import type { UnifiedExperience } from '@/types/experience'
 
 export function UnifiedExperienceCard({
   experience,
