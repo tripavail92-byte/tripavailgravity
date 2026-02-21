@@ -185,8 +185,9 @@ export function RoleBasedDrawer() {
               transition={spring}
               className="h-full rounded-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col"
             >
+              {/* Scrollable Content Area */}
               <div
-                className="flex-1 overflow-y-auto no-scrollbar"
+                className="flex-1 overflow-y-auto no-scrollbar pb-6"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'var(--border) transparent',
@@ -204,203 +205,199 @@ export function RoleBasedDrawer() {
                   </motion.button>
                 </div>
 
-                <>
-                  {/* Logged In View - Themed & Horizontal Profile */}
-                  <div className="p-5 pb-0">
-                    {/* Profile Header - Horizontal */}
-                    <div className="flex items-center gap-4 mt-8 mb-4">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={spring}
-                        className={cn(
-                          'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px]',
-                          roleGradient,
-                        )}
-                      >
-                        <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
-                          <Avatar className="w-full h-full">
-                            <AvatarImage
-                              src={user.user_metadata?.avatar_url}
-                              className="object-cover"
-                            />
-                            <AvatarFallback className="bg-muted text-foreground text-xl font-black">
-                              {user.user_metadata?.full_name?.charAt(0) ||
-                                user.email?.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                      </motion.div>
-
-                      <div className="flex flex-col min-w-0 pr-8">
-                        <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5">
-                          {user.user_metadata?.full_name?.split(' ')[0] ||
-                            user.email?.split('@')[0] ||
-                            'Traveler'}
-                        </h3>
-                        <p className="text-[10px] text-muted-foreground truncate mb-1.5">
-                          {user.email}
-                        </p>
-
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm',
-                            )}
-                          >
-                            <MapPin className="w-2.5 h-2.5 text-muted-foreground/70 dark:text-white/70" />
-                            <span>{roleLabel}</span>
-                          </div>
-                        </div>
+                {/* Profile Header - Horizontal */}
+                <div className="p-5 pb-0">
+                  <div className="flex items-center gap-4 mt-8 mb-4">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={spring}
+                      className={cn(
+                        'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px]',
+                        roleGradient
+                      )}
+                    >
+                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
+                        <Avatar className="w-full h-full">
+                          <AvatarImage
+                            src={user.user_metadata?.avatar_url}
+                            className="object-cover"
+                          />
+                          <AvatarFallback className="bg-muted text-foreground text-xl font-black">
+                            {user.user_metadata?.full_name?.charAt(0) ||
+                              user.email?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                       </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Completion Bar - Compact */}
-                    <div className="space-y-1.5 p-3 rounded-2xl bg-muted/30 border border-border shadow-sm">
-                      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
-                        <span>Profile Score</span>
-                        <span
+                    <div className="flex flex-col min-w-0 pr-8">
+                      <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5">
+                        {user.user_metadata?.full_name?.split(' ')[0] ||
+                          user.email?.split('@')[0] ||
+                          'Traveler'}
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground truncate mb-1.5">
+                        {user.email}
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <div
                           className={cn(
-                            'bg-clip-text text-transparent bg-gradient-to-r',
-                            roleGradient,
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm'
                           )}
                         >
-                          40%
-                        </span>
-                      </div>
-                      <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                        <motion.div
-                          className={cn('h-full rounded-full bg-gradient-to-r', roleGradient)}
-                          initial={{ width: 0 }}
-                          animate={{ width: '40%' }}
-                          transition={{ duration: 1, ease: 'easeOut' }}
-                        />
+                          <MapPin className="w-2.5 h-2.5 text-muted-foreground/70 dark:text-white/70" />
+                          <span>{roleLabel}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Navigation Items - Compact Colorful Squares */}
-                  <div className="flex-1 px-4 py-4">
-                    <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
-                      Navigation
-                    </h3>
+                  {/* Completion Bar - Compact */}
+                  <div className="space-y-1.5 p-3 rounded-2xl bg-muted/30 border border-border shadow-sm">
+                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
+                      <span>Profile Score</span>
+                      <span
+                        className={cn(
+                          'bg-clip-text text-transparent bg-gradient-to-r',
+                          roleGradient
+                        )}
+                      >
+                        40%
+                      </span>
+                    </div>
+                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                      <motion.div
+                        className={cn('h-full rounded-full bg-gradient-to-r', roleGradient)}
+                        initial={{ width: 0 }}
+                        animate={{ width: '40%' }}
+                        transition={{ duration: 1, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                    <div className="space-y-1.5">
-                      {navItems.map((item) => {
-                        const isActive = location.pathname === item.href
-                        const badgeColor = getBadgeColor(item.label)
-                        const animation = getIconAnimation(item.label, isActive)
+                {/* Navigation Items */}
+                <div className="px-4 py-4">
+                  <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
+                    Navigation
+                  </h3>
 
-                        return (
-                          <motion.button
-                            key={item.href}
-                            whileHover={{ x: 4 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleNavigation(item.href)}
-                            className="w-full group"
+                  <div className="space-y-1.5">
+                    {navItems.map((item) => {
+                      const isActive = location.pathname === item.href
+                      const badgeColor = getBadgeColor(item.label)
+                      const animation = getIconAnimation(item.label, isActive)
+
+                      return (
+                        <motion.button
+                          key={item.href}
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleNavigation(item.href)}
+                          className="w-full group"
+                        >
+                          <div
+                            className={cn(
+                              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all',
+                              isActive
+                                ? 'bg-muted/80 border border-border/50'
+                                : 'hover:bg-muted/50 border border-transparent'
+                            )}
                           >
                             <div
-                              className={cn(
-                                'flex items-center gap-3 px-3 py-2 rounded-xl transition-all', // Reduced py
-                                isActive
-                                  ? 'bg-muted/80 border border-border/50'
-                                  : 'hover:bg-muted/50 border border-transparent',
-                              )}
+                              className={`w-9 h-9 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg`}
                             >
-                              {/* Icon Container - Smaller */}
-                              <div
-                                className={`w-9 h-9 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg`}
+                              <motion.div
+                                variants={{
+                                  hover: animation.hover,
+                                  initial: { rotate: 0, scale: 1, x: 0, y: 0 },
+                                }}
+                                initial="initial"
+                                whileHover="hover"
                               >
-                                <motion.div
-                                  variants={{
-                                    hover: animation.hover,
-                                    initial: { rotate: 0, scale: 1, x: 0, y: 0 },
-                                  }}
-                                  initial="initial"
-                                  whileHover="hover"
-                                >
-                                  <item.icon
-                                    size={16} // Smaller icon
-                                    className="text-primary-foreground"
-                                    strokeWidth={2}
-                                  />
-                                </motion.div>
-                              </div>
-
-                              <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
-                                <span
-                                  className={cn(
-                                    'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5',
-                                    isActive
-                                      ? 'text-foreground font-bold'
-                                      : 'text-muted-foreground group-hover:text-foreground',
-                                  )}
-                                >
-                                  {item.label}
-                                </span>
-                                {item.subtext && (
-                                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate">
-                                    {item.subtext}
-                                  </span>
-                                )}
-                              </div>
-
-                              <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
-                                ›
-                              </span>
+                                <item.icon
+                                  size={16}
+                                  className="text-primary-foreground"
+                                  strokeWidth={2}
+                                />
+                              </motion.div>
                             </div>
-                          </motion.button>
-                        )
-                      })}
-                    </div>
-                  </div>
 
-                  {/* Footer Actions */}
-                  <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md space-y-3">
-                    {activeRole.role_type === 'traveller' ? (
-                      <Button
-                        data-tour="partner-switch"
-                        className="w-full bg-gradient-to-br from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-primary-foreground border-0 h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
-                        onClick={() => {
-                          setIsOpen(false)
-                          navigate('/partner/onboarding')
-                        }}
-                      >
-                        <span className="font-black text-xs uppercase tracking-widest">
-                          Become a Partner
-                        </span>
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start gap-2 h-9 rounded-xl border-border bg-background hover:bg-muted text-foreground font-bold text-xs"
-                        onClick={async () => {
-                          setIsOpen(false)
-                          try {
-                            await switchRole('traveller')
-                            navigate('/')
-                          } catch (error) {
-                            console.error('Failed to switch role', error)
-                          }
-                        }}
-                      >
-                        <LogOut className="h-4 w-4 rotate-180 text-muted-foreground" />
-                        Switch to Traveler
-                      </Button>
-                    )}
+                            <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
+                              <span
+                                className={cn(
+                                  'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5',
+                                  isActive
+                                    ? 'text-foreground font-bold'
+                                    : 'text-muted-foreground group-hover:text-foreground'
+                                )}
+                              >
+                                {item.label}
+                              </span>
+                              {item.subtext && (
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate">
+                                  {item.subtext}
+                                </span>
+                              )}
+                            </div>
 
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        variant="ghost"
-                        className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
-                        onClick={handleSignOut}
-                      >
-                        <LogOut className="h-3.5 w-3.5" />
-                        <span>Sign Out</span>
-                      </Button>
-                    </div>
+                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
+                              ›
+                            </span>
+                          </div>
+                        </motion.button>
+                      )
+                    })}
                   </div>
-                </>
+                </div>
+              </div>
+
+              {/* Footer Actions - Pinned to bottom */}
+              <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md space-y-3 shrink-0">
+                {activeRole.role_type === 'traveller' ? (
+                  <Button
+                    data-tour="partner-switch"
+                    className="w-full bg-gradient-to-br from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-primary-foreground border-0 h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
+                    onClick={() => {
+                      setIsOpen(false)
+                      navigate('/partner/onboarding')
+                    }}
+                  >
+                    <span className="font-black text-xs uppercase tracking-widest">
+                      Become a Partner
+                    </span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 h-9 rounded-xl border-border bg-background hover:bg-muted text-foreground font-bold text-xs"
+                    onClick={async () => {
+                      setIsOpen(false)
+                      try {
+                        await switchRole('traveller')
+                        navigate('/')
+                      } catch (error) {
+                        console.error('Failed to switch role', error)
+                      }
+                    }}
+                  >
+                    <LogOut className="h-4 w-4 rotate-180 text-muted-foreground" />
+                    Switch to Traveler
+                  </Button>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
+                  </Button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
