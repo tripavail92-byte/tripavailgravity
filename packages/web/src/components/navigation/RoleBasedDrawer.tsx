@@ -1,4 +1,4 @@
-import { AlignJustify, LogOut, MapPin, X } from 'lucide-react'
+import { AlignJustify, ChevronRight, LogOut, MapPin, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -9,6 +9,16 @@ import { ROLE_NAVIGATION } from '@/config/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+/**
+ * RoleBasedDrawer Component
+ * 
+ * A highly responsive, compact drawer for user profile and navigation.
+ * Designed to fit perfectly even on small mobile devices by using:
+ * - Ultra-compact header and footer
+ * - Scrollable navigation area
+ * - Dynamic viewport sizing
+ * - High z-index to avoid overlap issues
+ */
 export function RoleBasedDrawer() {
   const { user, activeRole, signOut, initialized, switchRole } = useAuth()
   const navigate = useNavigate()
@@ -26,104 +36,12 @@ export function RoleBasedDrawer() {
     navigate('/')
   }
 
-  // iOS-style elastic spring animation configuration
   const spring = {
     type: 'spring' as const,
     stiffness: 400,
     damping: 30,
   }
 
-  // Helper to format role label
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'hotel_manager':
-        return 'Hotel Manager'
-      case 'tour_operator':
-        return 'Tour Operator'
-      case 'admin':
-        return 'Administrator'
-      case 'traveller':
-      default:
-        return 'Traveler'
-    }
-  }
-
-  const getRoleBadgeGradient = (role: string) => {
-    switch (role) {
-      case 'hotel_manager':
-        return 'from-blue-500 to-indigo-600'
-      case 'tour_operator':
-        return 'from-emerald-500 to-teal-600'
-      case 'admin':
-        return 'from-red-500 to-rose-600'
-      case 'traveller':
-        return 'from-primary to-primary/80'
-      default:
-        return 'from-gray-500 to-slate-600'
-    }
-  }
-
-  // Helper to get gradient color based on label (Image 2 Style)
-  const getBadgeColor = (label: string): string => {
-    const l = label.toLowerCase()
-    if (l.includes('dashboard')) return 'from-blue-500 to-indigo-600'
-    if (l.includes('profile')) return 'from-purple-500 to-violet-600'
-    if (l.includes('trip') || l.includes('tour')) return 'from-cyan-400 to-blue-500'
-    if (l.includes('wishlist')) return 'from-pink-500 to-rose-500'
-    if (l.includes('payment') || l.includes('wallet')) return 'from-emerald-400 to-teal-500'
-    if (l.includes('booking')) return 'from-emerald-500 to-teal-600'
-    if (l.includes('setting')) return 'from-gray-500 to-slate-600'
-    if (l.includes('help')) return 'from-amber-500 to-orange-600'
-    if (l.includes('legal') || l.includes('policy')) return 'from-slate-500 to-gray-600'
-    if (l.includes('list')) return 'from-indigo-500 to-purple-600'
-    if (l.includes('verification')) return 'from-rose-500 to-red-600'
-    if (l.includes('calendar')) return 'from-orange-400 to-amber-500'
-
-    return 'from-blue-500 to-indigo-600' // Default
-  }
-
-  // Custom Icon Animation Logic
-  const getIconAnimation = (label: string, isActive: boolean) => {
-    const base = {
-      scale: isActive ? 1.1 : 1,
-    }
-    const l = label.toLowerCase()
-
-    if (l.includes('dashboard')) {
-      return {
-        ...base,
-        hover: {
-          rotate: 360,
-          transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] as const },
-        },
-      }
-    }
-    if (l.includes('trip') || l.includes('tour') || l.includes('propert')) {
-      return {
-        ...base,
-        hover: { x: 3, y: -3, transition: { type: 'spring' as const, stiffness: 300 } },
-      }
-    }
-    if (l.includes('profile')) {
-      return {
-        ...base,
-        hover: { scale: 1.2, transition: { type: 'spring' as const, stiffness: 400 } },
-      }
-    }
-    if (l.includes('wishlist') || l.includes('heart')) {
-      return { ...base, hover: { scale: 1.2, color: '#f472b6' } }
-    }
-    if (l.includes('payment') || l.includes('card')) {
-      return { ...base, hover: { rotateY: 180, transition: { duration: 0.4 } } }
-    }
-    if (l.includes('setting')) {
-      return { ...base, hover: { rotate: 90 } }
-    }
-
-    return { ...base, hover: { scale: 1.15, rotate: 5 } }
-  }
-
-  // Loading state
   if (!initialized) {
     return (
       <Button variant="ghost" size="icon" className="rounded-full">
@@ -134,12 +52,33 @@ export function RoleBasedDrawer() {
 
   if (!user || !activeRole) return null
 
-  const roleLabel = getRoleLabel(activeRole.role_type)
-  const roleGradient = getRoleBadgeGradient(activeRole.role_type)
+  const roleLabel = activeRole.role_type === 'hotel_manager' ? 'Hotel Manager'
+    : activeRole.role_type === 'tour_operator' ? 'Tour Operator'
+      : 'Traveler'
+
+  const roleGradient = activeRole.role_type === 'hotel_manager' ? 'from-blue-600 to-indigo-600'
+    : activeRole.role_type === 'tour_operator' ? 'from-fuchsia-600 to-purple-600'
+      : 'from-amber-600 to-orange-600'
+
   const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
+
+  const getBadgeColor = (label: string) => {
+    const l = label.toLowerCase()
+    if (l.includes('dashboard')) return 'from-blue-500 to-indigo-500'
+    if (l.includes('hotel') || l.includes('list')) return 'from-violet-500 to-purple-500'
+    if (l.includes('package')) return 'from-purple-500 to-fuchsia-500'
+    if (l.includes('calendar')) return 'from-orange-500 to-amber-500'
+    if (l.includes('booking')) return 'from-teal-500 to-emerald-500'
+    if (l.includes('verification')) return 'from-rose-500 to-red-500'
+    if (l.includes('setting')) return 'from-slate-500 to-gray-500'
+    if (l.includes('support')) return 'from-orange-500 to-red-500'
+    if (l.includes('legal')) return 'from-slate-600 to-zinc-600'
+    return 'from-blue-500 to-indigo-500'
+  }
 
   return (
     <>
+      {/* Profile Toggle Button */}
       <button
         data-tour="profile-menu"
         onClick={() => setIsOpen(true)}
@@ -147,260 +86,148 @@ export function RoleBasedDrawer() {
       >
         <AlignJustify className="w-4 h-4 text-foreground group-hover:text-primary" />
         <Avatar className="h-7 w-7 border border-border">
-          <AvatarImage src={user?.user_metadata?.avatar_url} alt="Traveler" />
-          <AvatarFallback aria-label="Traveler" className="bg-muted text-muted-foreground">
-            {user?.email ? user.email.charAt(0).toUpperCase() : <MapPin className="h-4 w-4" />}
+          <AvatarImage src={user?.user_metadata?.avatar_url} />
+          <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-bold">
+            {user?.email?.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
       </button>
 
-      {/* Drawer Overlay */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Drawer Right Side */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={spring}
-            className="fixed right-4 top-4 bottom-4 w-[85vw] max-w-[320px] z-50"
-          >
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              transition={spring}
-              className="h-full rounded-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Scrollable Content Area */}
-              <div
-                className="flex-1 overflow-y-auto no-scrollbar pb-6"
-                style={{
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'var(--border) transparent',
-                }}
-              >
-                {/* Close Button - Top Left */}
-                <div className="absolute top-5 left-5 z-20">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsOpen(false)}
-                    className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors text-foreground dark:text-white"
-                  >
-                    <X size={16} />
-                  </motion.button>
-                </div>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"
+              onClick={() => setIsOpen(false)}
+            />
 
-                {/* Profile Header - Horizontal */}
-                <div className="p-5 pb-0">
-                  <div className="flex items-center gap-4 mt-8 mb-4">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={spring}
-                      className={cn(
-                        'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px]',
-                        roleGradient
-                      )}
+            {/* Drawer Container - Full Height Edge to Edge */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={spring}
+              className="fixed right-0 top-0 bottom-0 w-[85vw] max-w-[280px] z-[100]"
+            >
+              <div className="h-full rounded-l-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col border-l border-white/10">
+                {/* Profile Header - Ultra Compact (Zero Scroll Focus) */}
+                <div className="relative shrink-0 pt-8 px-4 pb-2">
+                  <div className="absolute top-4 left-4 z-20">
+                    <button
+                      onClick={() => setIsOpen(false)}
+                      className="w-7 h-7 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-black/10 transition-colors"
+                      aria-label="Close menu"
                     >
-                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 mt-2">
+                    <div className={cn('w-9 h-9 rounded-xl bg-gradient-to-br p-[1.5px] shadow-sm', roleGradient)}>
+                      <div className="w-full h-full rounded-[10px] overflow-hidden bg-background">
                         <Avatar className="w-full h-full">
-                          <AvatarImage
-                            src={user.user_metadata?.avatar_url}
-                            className="object-cover"
-                          />
-                          <AvatarFallback className="bg-muted text-foreground text-xl font-black">
-                            {user.user_metadata?.full_name?.charAt(0) ||
-                              user.email?.charAt(0).toUpperCase()}
+                          <AvatarImage src={user.user_metadata?.avatar_url} />
+                          <AvatarFallback className="text-[10px] font-black uppercase">
+                            {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                       </div>
-                    </motion.div>
+                    </div>
 
-                    <div className="flex flex-col min-w-0 pr-8">
-                      <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5">
-                        {user.user_metadata?.full_name?.split(' ')[0] ||
-                          user.email?.split('@')[0] ||
-                          'Traveler'}
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="font-black text-[11px] truncate leading-tight">
+                        {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
                       </h3>
-                      <p className="text-[10px] text-muted-foreground truncate mb-1.5">
-                        {user.email}
-                      </p>
-
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm'
-                          )}
-                        >
-                          <MapPin className="w-2.5 h-2.5 text-muted-foreground/70 dark:text-white/70" />
-                          <span>{roleLabel}</span>
-                        </div>
+                      <div className="inline-flex items-center gap-1 px-1 py-0 rounded-full bg-muted/50 border border-border text-[7px] font-bold uppercase tracking-wider text-muted-foreground w-fit">
+                        <MapPin className="w-1.5 h-1.5" />
+                        <span>{roleLabel}</span>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Completion Bar - Compact */}
-                  <div className="space-y-1.5 p-3 rounded-2xl bg-muted/30 border border-border shadow-sm">
-                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
-                      <span>Profile Score</span>
-                      <span
-                        className={cn(
-                          'bg-clip-text text-transparent bg-gradient-to-r',
-                          roleGradient
-                        )}
-                      >
-                        40%
-                      </span>
-                    </div>
-                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        className={cn('h-full rounded-full bg-gradient-to-r', roleGradient)}
-                        initial={{ width: 0 }}
-                        animate={{ width: '40%' }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Navigation Items */}
-                <div className="px-4 py-4">
-                  <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
-                    Navigation
-                  </h3>
-
-                  <div className="space-y-1.5">
+                {/* Navigation Items Area - Flexible & Ultra Compact (No Scroll) */}
+                <div className="flex-1 min-h-0 px-2 flex flex-col justify-center">
+                  <div className="space-y-0.5">
                     {navItems.map((item) => {
                       const isActive = location.pathname === item.href
-                      const badgeColor = getBadgeColor(item.label)
-                      const animation = getIconAnimation(item.label, isActive)
-
                       return (
-                        <motion.button
+                        <button
                           key={item.href}
-                          whileHover={{ x: 4 }}
-                          whileTap={{ scale: 0.98 }}
                           onClick={() => handleNavigation(item.href)}
-                          className="w-full group"
+                          className="w-full group focus:outline-none"
                         >
-                          <div
-                            className={cn(
-                              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all',
-                              isActive
-                                ? 'bg-muted/80 border border-border/50'
-                                : 'hover:bg-muted/50 border border-transparent'
-                            )}
-                          >
-                            <div
-                              className={`w-9 h-9 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg`}
-                            >
-                              <motion.div
-                                variants={{
-                                  hover: animation.hover,
-                                  initial: { rotate: 0, scale: 1, x: 0, y: 0 },
-                                }}
-                                initial="initial"
-                                whileHover="hover"
-                              >
-                                <item.icon
-                                  size={16}
-                                  className="text-primary-foreground"
-                                  strokeWidth={2}
-                                />
-                              </motion.div>
+                          <div className={cn(
+                            'flex items-center gap-2 px-2 py-1 rounded-xl transition-all border',
+                            isActive ? 'bg-muted/60 border-border/50 shadow-sm' : 'hover:bg-muted/30 border-transparent'
+                          )}>
+                            <div className={cn(
+                              'w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm',
+                              getBadgeColor(item.label)
+                            )}>
+                              <item.icon size={13} className="text-white" />
                             </div>
-
-                            <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
-                              <span
-                                className={cn(
-                                  'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5',
-                                  isActive
-                                    ? 'text-foreground font-bold'
-                                    : 'text-muted-foreground group-hover:text-foreground'
-                                )}
-                              >
-                                {item.label}
-                              </span>
-                              {item.subtext && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate">
-                                  {item.subtext}
-                                </span>
-                              )}
-                            </div>
-
-                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
-                              ›
+                            <span className={cn(
+                              'text-[10px] font-bold truncate w-full text-left leading-tight',
+                              isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
+                            )}>
+                              {item.label}
                             </span>
+                            <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/30 group-hover:text-foreground/50 transition-colors" />
                           </div>
-                        </motion.button>
+                        </button>
                       )
                     })}
                   </div>
                 </div>
-              </div>
 
-              {/* Footer Actions - Pinned to bottom */}
-              <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md space-y-3 shrink-0">
-                {activeRole.role_type === 'traveller' ? (
-                  <Button
-                    data-tour="partner-switch"
-                    className="w-full bg-gradient-to-br from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-primary-foreground border-0 h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
-                    onClick={() => {
-                      setIsOpen(false)
-                      navigate('/partner/onboarding')
-                    }}
-                  >
-                    <span className="font-black text-xs uppercase tracking-widest">
-                      Become a Partner
-                    </span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 h-9 rounded-xl border-border bg-background hover:bg-muted text-foreground font-bold text-xs"
-                    onClick={async () => {
-                      setIsOpen(false)
-                      try {
-                        await switchRole('traveller')
-                        navigate('/')
-                      } catch (error) {
-                        console.error('Failed to switch role', error)
-                      }
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 rotate-180 text-muted-foreground" />
-                    Switch to Traveler
-                  </Button>
-                )}
+                {/* Footer Actions - Tight Padding (No Scroll Focus) */}
+                <div className="shrink-0 p-2.5 border-t border-border/20 bg-background/90 backdrop-blur-xl space-y-1.5 mb-1">
+                  {activeRole.role_type === 'traveller' ? (
+                    <Button
+                      data-tour="partner-switch"
+                      className="w-full h-8 bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 active:scale-95 transition-all text-white rounded-lg shadow-md border-0"
+                      onClick={() => {
+                        setIsOpen(false)
+                        navigate('/partner/onboarding')
+                      }}
+                    >
+                      <span className="font-black text-[8px] uppercase tracking-widest">Become a Partner</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full h-7.5 justify-start gap-2 rounded-lg border-border/40 text-[8px] font-black uppercase tracking-wider"
+                      onClick={async () => {
+                        setIsOpen(false)
+                        try {
+                          await switchRole('traveller')
+                          navigate('/')
+                        } catch (error) {
+                          console.error('Role switch failed:', error)
+                        }
+                      }}
+                    >
+                      <LogOut className="h-3 w-3 rotate-180" />
+                      Switch to Traveler
+                    </Button>
+                  )}
 
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
+                  <button
                     onClick={handleSignOut}
+                    className="w-full py-1.5 flex items-center justify-center gap-2 text-destructive hover:bg-destructive/5 rounded-lg text-[7px] font-black uppercase tracking-[0.2em] transition-colors"
                   >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </Button>
+                    <LogOut className="h-2.5 w-2.5" />
+                    Logout
+                  </button>
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
