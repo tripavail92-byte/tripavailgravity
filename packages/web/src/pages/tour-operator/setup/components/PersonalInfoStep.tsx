@@ -214,7 +214,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
               <SelectTrigger className="w-[140px] rounded-2xl border-border/60 py-7 focus:ring-primary/20 focus:border-primary/50 transition-all font-medium text-base">
                 <SelectValue placeholder="Code" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden p-1">
+              <SelectContent className="rounded-2xl border-border/50 shadow-xl p-1 max-h-64 overflow-y-auto">
                 {COUNTRY_OPTIONS.map((opt) => (
                   <SelectItem key={`${opt.iso}-${opt.code}`} value={opt.code} className="rounded-xl px-4 py-2.5">
                     {opt.iso} {opt.code}
