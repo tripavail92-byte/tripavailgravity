@@ -6,13 +6,14 @@ interface StatCardProps {
   label: string
   value: string
   change: string
-  trend: 'up' | 'down'
+  trend: 'up' | 'down' | 'neutral'
   icon: LucideIcon
   period?: string
 }
 
 export function StatCard({ label, value, change, trend, icon: Icon, period }: StatCardProps) {
   const isPositive = trend === 'up'
+  const isNeutral = trend === 'neutral'
   const TrendIcon = isPositive ? TrendingUp : TrendingDown
 
   return (
@@ -26,8 +27,16 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
           <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
 
           <div className="flex items-center gap-1 text-sm">
-            <TrendIcon className={`w-4 h-4 ${isPositive ? 'text-success' : 'text-error'}`} />
-            <span className={`font-medium ${isPositive ? 'text-success' : 'text-error'}`}>
+            {!isNeutral && (
+              <TrendIcon className={`w-4 h-4 ${isPositive ? 'text-success' : 'text-error'}`} />
+            )}
+            <span
+              className={
+                isNeutral
+                  ? 'font-medium text-gray-500'
+                  : `font-medium ${isPositive ? 'text-success' : 'text-error'}`
+              }
+            >
               {change}
             </span>
             {period && <span className="text-gray-500 ml-1">{period}</span>}

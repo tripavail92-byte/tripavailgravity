@@ -40,7 +40,7 @@ export function DraftsAlert({ drafts }: DraftsAlertProps) {
               }
             >
               <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-300">
-                {Math.round(Math.random() * 40 + 40)}%
+                Draft
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-amber-900 dark:text-amber-100 truncate">

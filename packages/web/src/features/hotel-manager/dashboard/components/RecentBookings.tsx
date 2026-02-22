@@ -85,39 +85,8 @@ function BookingCard({
 }
 
 export function RecentBookings() {
-  // Mock data - will be replaced with real data
-  const bookings = [
-    {
-      id: '1',
-      guestName: 'John Doe',
-      roomType: 'Deluxe Ocean View',
-      checkIn: 'Jan 15',
-      checkOut: 'Jan 20',
-      nights: 5,
-      totalPrice: '$1,200',
-      status: 'confirmed' as const,
-    },
-    {
-      id: '2',
-      guestName: 'Sarah Miller',
-      roomType: 'Executive Suite',
-      checkIn: 'Jan 22',
-      checkOut: 'Jan 25',
-      nights: 3,
-      totalPrice: '$900',
-      status: 'pending' as const,
-    },
-    {
-      id: '3',
-      guestName: 'Mike Johnson',
-      roomType: 'Standard Room',
-      checkIn: 'Today',
-      checkOut: 'Jan 18',
-      nights: 3,
-      totalPrice: '$450',
-      status: 'checkin-today' as const,
-    },
-  ]
+  // No mock/demo data: show empty state until real bookings are wired.
+  const bookings: BookingCardProps[] = []
 
   return (
     <div>
@@ -132,18 +101,27 @@ export function RecentBookings() {
           </Button>
         </div>
 
-        <div className="space-y-3">
-          {bookings.map((booking, index) => (
-            <motion.div
-              key={booking.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
-            >
-              <BookingCard {...booking} />
-            </motion.div>
-          ))}
-        </div>
+        {bookings.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-gray-600 font-medium">No bookings yet</p>
+            <p className="text-xs text-gray-500 mt-1">
+              New reservations will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {bookings.map((booking, index) => (
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + index * 0.1, duration: 0.4 }}
+              >
+                <BookingCard {...booking} />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </GlassCard>
     </div>
   )

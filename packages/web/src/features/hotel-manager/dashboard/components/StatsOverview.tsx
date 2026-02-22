@@ -12,77 +12,72 @@ export function StatsOverview() {
   const hotelStats = [
     {
       label: 'Total Revenue',
-      value: '$12,450',
-      change: '+12.5%',
-      trend: 'up' as const,
+      value: '$0',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: DollarSign,
-      period: 'this month',
     },
     {
       label: 'Total Bookings',
-      value: '42',
-      change: '+8.2%',
-      trend: 'up' as const,
+      value: '0',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: Calendar,
-      period: 'active',
     },
     {
       label: 'Occupancy Rate',
-      value: '78%',
-      change: '+5.1%',
-      trend: 'up' as const,
+      value: '0%',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: TrendingUp,
-      period: 'this month',
     },
     {
       label: 'Average Rating',
-      value: '4.8',
-      change: '+0.2',
-      trend: 'up' as const,
+      value: '—',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: Star,
-      period: 'from 124 reviews',
     },
   ]
 
   const tourStats = [
     {
       label: 'Tour Revenue',
-      value: '$8,240',
-      change: '+15.2%',
-      trend: 'up' as const,
+      value: '$0',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: DollarSign,
-      period: 'this month',
     },
     {
       label: 'Total Travellers',
-      value: '156',
-      change: '+22.4%',
-      trend: 'up' as const,
+      value: '0',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: Users,
-      period: 'this month',
     },
     {
       label: 'Active Tours',
-      value: '12',
-      change: '+2',
-      trend: 'up' as const,
+      value: '0',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: MapPin,
-      period: 'published',
     },
     {
       label: 'Experience Rating',
-      value: '4.9',
-      change: '+0.1',
-      trend: 'up' as const,
+      value: '—',
+      change: 'No data yet',
+      trend: 'neutral' as const,
       icon: Star,
-      period: 'from 84 reviews',
     },
   ]
 
   const stats = isTourOperator ? tourStats : hotelStats
 
   return (
-    <div data-tour="dashboard-stats" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div
+      data-tour="dashboard-stats"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+    >
       {stats.map((stat, index) => (
         <motion.div
           key={stat.label}
