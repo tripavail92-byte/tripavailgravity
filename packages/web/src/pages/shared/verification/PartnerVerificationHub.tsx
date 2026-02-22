@@ -113,12 +113,24 @@ export function PartnerVerificationHub() {
       // 2. Build a snapshot of all submitted data for the immutable request record
       //    This is what the admin sees in the review queue.
       const profileData = await service.getOnboardingData(user.id)
+      const personalInfo: any = (profileData as any)?.personalInfo || {}
+
+      const splitFullName = (fullName: string) => {
+        const cleaned = (fullName || '').trim().replace(/\s+/g, ' ')
+        if (!cleaned) return { firstName: undefined, lastName: undefined }
+        const [firstName, ...rest] = cleaned.split(' ')
+        return { firstName, lastName: rest.join(' ') || undefined }
+      }
+
+      const nameFromOperator = splitFullName(personalInfo.operatorName)
       const snapshot = {
         // Identity
-        email: profileData?.personalInfo?.email ?? user.email,
-        first_name: profileData?.personalInfo?.firstName,
-        last_name: profileData?.personalInfo?.lastName,
-        phone: profileData?.personalInfo?.phoneNumber,
+        email: personalInfo.email ?? user.email,
+        first_name:
+          personalInfo.firstName ?? (role === 'tour_operator' ? nameFromOperator.firstName : undefined),
+        last_name:
+          personalInfo.lastName ?? (role === 'tour_operator' ? nameFromOperator.lastName : undefined),
+        phone: personalInfo.phoneNumber ?? (role === 'tour_operator' ? personalInfo.phone : undefined),
         // Business
         business_name:
           (profileData as any)?.businessInfo?.businessName ?? (profileData as any)?.company_name,

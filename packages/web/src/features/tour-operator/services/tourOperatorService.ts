@@ -2,24 +2,23 @@ import { supabase } from '../../../../../shared/src/core/client'
 
 export interface TourOperatorOnboardingData {
   personalInfo?: {
-    firstName: string
-    lastName: string
+    operatorName: string
     email: string
-    phoneNumber: string
+    phone: string
     contactPerson: string
   }
   profilePicture?: string
   businessInfo?: {
-    companyLogo: string
+    companyLogo: string | null
     businessName: string
     yearsInBusiness: string
     teamSize: string
-    description: string
+    businessDescription: string
     registrationNumber?: string
   }
   services?: {
-    categories: string[]
-    customServices: string[]
+    selected: string[]
+    custom: string[]
   }
   coverage?: {
     primaryLocation: string
@@ -40,6 +39,29 @@ export interface TourOperatorOnboardingData {
   }
 }
 
+const KNOWN_SERVICE_CATEGORY_IDS = new Set([
+  'day-trip',
+  'weekend',
+  'hiking',
+  'sightseeing',
+  'festivals',
+  'leisure',
+])
+
+function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const cleaned = (fullName || '').trim().replace(/\s+/g, ' ')
+  if (!cleaned) return { firstName: '', lastName: '' }
+  const [firstName, ...rest] = cleaned.split(' ')
+  return { firstName, lastName: rest.join(' ') }
+}
+
+function normalizeCategories(services?: TourOperatorOnboardingData['services']): string[] {
+  const selected = services?.selected ?? []
+  const custom = services?.custom ?? []
+  const combined = [...selected, ...custom].map((s) => s.trim()).filter(Boolean)
+  return Array.from(new Set(combined))
+}
+
 export const tourOperatorService = {
   async saveOnboardingData(
     userId: string,
@@ -48,21 +70,24 @@ export const tourOperatorService = {
   ) {
     if (!userId) throw new Error('User ID required')
 
+    const { firstName, lastName } = splitFullName(data.personalInfo?.operatorName || '')
+    const categories = normalizeCategories(data.services)
+
     const profilePayload = {
       user_id: userId,
-      first_name: data.personalInfo?.firstName,
-      last_name: data.personalInfo?.lastName,
+      first_name: firstName,
+      last_name: lastName,
       email: data.personalInfo?.email,
-      phone_number: data.personalInfo?.phoneNumber,
+      phone_number: data.personalInfo?.phone,
       contact_person: data.personalInfo?.contactPerson,
       profile_picture_url: data.profilePicture,
       company_logo_url: data.businessInfo?.companyLogo,
       company_name: data.businessInfo?.businessName,
       years_experience: data.businessInfo?.yearsInBusiness,
       team_size: data.businessInfo?.teamSize,
-      description: data.businessInfo?.description,
+      description: data.businessInfo?.businessDescription,
       registration_number: data.businessInfo?.registrationNumber,
-      categories: data.services?.categories,
+      categories,
       primary_city: data.coverage?.primaryLocation,
       coverage_range: data.coverage?.radius,
       policies: data.policies,
@@ -115,12 +140,20 @@ export const tourOperatorService = {
 
       // Map DB columns back to frontend structure
       const profile = data as any
+
+      const allCategories: string[] = profile.categories || []
+      const selected = allCategories.filter((id) => KNOWN_SERVICE_CATEGORY_IDS.has(id))
+      const custom = allCategories.filter((id) => !KNOWN_SERVICE_CATEGORY_IDS.has(id))
+
+      const operatorName = [profile.first_name, profile.last_name]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
       const onboardingData: TourOperatorOnboardingData = {
         personalInfo: {
-          firstName: profile.first_name || '',
-          lastName: profile.last_name || '',
+          operatorName,
           email: profile.email || '',
-          phoneNumber: profile.phone_number || '',
+          phone: profile.phone_number || '',
           contactPerson: profile.contact_person || '',
         },
         profilePicture: profile.profile_picture_url,
@@ -129,11 +162,11 @@ export const tourOperatorService = {
           businessName: profile.company_name || '',
           yearsInBusiness: profile.years_experience || '',
           teamSize: profile.team_size || '',
-          description: profile.description || '',
+          businessDescription: profile.description || '',
         },
         services: {
-          categories: profile.categories || [],
-          customServices: [],
+          selected,
+          custom,
         },
         coverage: {
           primaryLocation: profile.primary_city || '',
