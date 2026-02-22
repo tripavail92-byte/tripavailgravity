@@ -502,27 +502,26 @@ export function DrawerMenu() {
                     </motion.button>
                   )}
 
-                  <div className="h-6" />
-                </div>
-              </div>
-
-              {/* Footer / Sign Out */}
-              <div className="p-4 pt-0 border-t border-border/50 bg-background/50 backdrop-blur-md">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleLogout}
-                  className="w-full mt-4"
-                >
-                  <div className="rounded-xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 p-2.5 transition-colors">
-                    <div className="flex items-center justify-center gap-2">
-                      <LogOut className="text-destructive" size={16} strokeWidth={2.5} />
-                      <span className="text-destructive text-[10px] font-bold uppercase tracking-wider">
+                  {/* Sign out inside the menu so it's never out of view */}
+                  <motion.button
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleLogout}
+                    className="w-full mt-2 group"
+                  >
+                    <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-destructive/10 border border-transparent transition-all">
+                      <div className="w-8 h-8 rounded-lg bg-destructive/15 flex items-center justify-center flex-shrink-0 border border-destructive/20">
+                        <LogOut className="text-destructive" size={16} strokeWidth={2.2} />
+                      </div>
+                      <span className="text-sm font-bold flex-1 text-left transition-colors text-destructive">
                         Sign Out
                       </span>
+                      <span className="text-destructive/60 text-base transition-colors">›</span>
                     </div>
-                  </div>
-                </motion.button>
+                  </motion.button>
+
+                  <div className="h-6" />
+                </div>
               </div>
             </motion.div>
           </motion.div>

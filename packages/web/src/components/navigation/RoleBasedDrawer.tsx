@@ -200,7 +200,7 @@ export function RoleBasedDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={spring}
-            className="fixed right-4 top-4 bottom-4 w-[85vw] max-w-[320px] z-50"
+            className="fixed right-3 top-3 bottom-3 w-[85vw] max-w-[320px] z-50 [@media(max-height:740px)]:right-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:bottom-2"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
@@ -230,7 +230,7 @@ export function RoleBasedDrawer() {
                 </div>
 
                 {/* Profile Header - Horizontal */}
-                <div className="p-4 pb-0 [@media(max-height:740px)]:p-3 [@media(max-height:740px)]:pb-0">
+                <div className="p-4 pb-0 [@media(max-height:820px)]:p-3 [@media(max-height:820px)]:pb-0">
                   <div className="flex items-center gap-4 mt-7 mb-3 [@media(max-height:740px)]:mt-6 [@media(max-height:740px)]:mb-2.5">
                     <motion.div
                       initial={{ scale: 0 }}
@@ -261,7 +261,7 @@ export function RoleBasedDrawer() {
                           user.email?.split('@')[0] ||
                           'Traveler'}
                       </h3>
-                      <p className="text-[10px] text-muted-foreground truncate mb-1.5">
+                      <p className="text-[10px] text-muted-foreground truncate mb-1.5 [@media(max-height:820px)]:hidden">
                         {user.email}
                       </p>
 
@@ -279,7 +279,7 @@ export function RoleBasedDrawer() {
                   </div>
 
                   {/* Completion Bar - Compact */}
-                  <div className="space-y-1.5 p-2.5 rounded-2xl bg-muted/30 border border-border shadow-sm [@media(max-height:740px)]:hidden">
+                  <div className="space-y-1.5 p-2.5 rounded-2xl bg-muted/30 border border-border shadow-sm [@media(max-height:820px)]:hidden">
                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
                       <span>Profile Score</span>
                       <span
@@ -406,20 +406,30 @@ export function RoleBasedDrawer() {
                         </div>
                       </motion.button>
                     </div>
+
+                    {/* Sign out inside the menu so it's never out of view */}
+                    <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                      <motion.button
+                        whileHover={{ x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleSignOut}
+                        className="w-full group"
+                      >
+                        <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-destructive/10 border border-transparent">
+                          <div className="w-8 h-8 rounded-lg bg-destructive/15 flex items-center justify-center flex-shrink-0 border border-destructive/20">
+                            <LogOut size={15} className="text-destructive" strokeWidth={2.2} />
+                          </div>
+
+                          <span className="text-sm font-bold flex-1 text-left transition-colors text-destructive">
+                            Sign Out
+                          </span>
+
+                          <span className="text-destructive/60 text-base transition-colors">›</span>
+                        </div>
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Footer Actions - Pinned to bottom */}
-              <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 [@media(max-height:740px)]:p-3">
-                <Button
-                  variant="ghost"
-                  className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  <span>Sign Out</span>
-                </Button>
               </div>
             </motion.div>
           </motion.div>
