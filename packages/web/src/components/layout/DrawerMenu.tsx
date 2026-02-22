@@ -252,7 +252,7 @@ export function DrawerMenu() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 pointer-events-auto"
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[1400] pointer-events-auto"
             onClick={() => setIsDrawerOpen(false)}
           />
         )}
@@ -266,7 +266,7 @@ export function DrawerMenu() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={spring}
-            className="fixed left-4 top-4 bottom-4 w-[85vw] max-w-[320px] z-50 pointer-events-auto"
+            className="fixed left-3 top-3 bottom-3 w-[75vw] max-w-[260px] z-[1401] pointer-events-auto [@media(max-height:740px)]:left-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:bottom-2"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
@@ -352,32 +352,7 @@ export function DrawerMenu() {
                   </div>
                 </div>
 
-                {/* Progress Bar - Compact & Less Intrusive */}
-                <div className="px-4 py-4 [@media(max-height:740px)]:hidden">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[9px]">
-                      <span className="text-muted-foreground font-bold uppercase tracking-wider">
-                        Profile Score
-                      </span>
-                      <span
-                        className={cn(
-                          'font-bold',
-                          activeRole?.role_type === 'traveller' ? 'text-warning' : 'text-primary',
-                        )}
-                      >
-                        40%
-                      </span>
-                    </div>
-                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: '40%' }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                        className={cn('h-full rounded-full bg-gradient-to-r', roleGradient)}
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Profile score removed to keep menu clear at all zoom levels */}
 
                 {/* Menu Items - Compact & Colorful Squares */}
                 <div className="px-4 pb-4 [@media(max-height:740px)]:px-3">

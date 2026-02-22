@@ -186,7 +186,7 @@ export function RoleBasedDrawer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1400]"
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -200,7 +200,7 @@ export function RoleBasedDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={spring}
-            className="fixed right-3 top-3 bottom-3 w-[85vw] max-w-[320px] z-50 [@media(max-height:740px)]:right-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:bottom-2"
+            className="fixed right-3 top-3 bottom-3 w-[75vw] max-w-[260px] z-[1401] [@media(max-height:740px)]:right-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:bottom-2"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
@@ -237,7 +237,7 @@ export function RoleBasedDrawer() {
                       animate={{ scale: 1 }}
                       transition={spring}
                       className={cn(
-                        'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px] [@media(max-height:740px)]:w-12 [@media(max-height:740px)]:h-12 [@media(max-height:740px)]:rounded-[16px]',
+                        'w-12 h-12 rounded-[16px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px] [@media(max-height:740px)]:w-11 [@media(max-height:740px)]:h-11 [@media(max-height:740px)]:rounded-[14px]',
                         roleGradient
                       )}
                     >
@@ -256,7 +256,7 @@ export function RoleBasedDrawer() {
                     </motion.div>
 
                     <div className="flex flex-col min-w-0 pr-8">
-                      <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5 [@media(max-height:740px)]:text-[13px]">
+                      <h3 className="font-bold text-[13px] truncate text-foreground tracking-tight mb-0.5">
                         {user.user_metadata?.full_name?.split(' ')[0] ||
                           user.email?.split('@')[0] ||
                           'Traveler'}
@@ -278,28 +278,7 @@ export function RoleBasedDrawer() {
                     </div>
                   </div>
 
-                  {/* Completion Bar - Compact */}
-                  <div className="space-y-1.5 p-2.5 rounded-2xl bg-muted/30 border border-border shadow-sm [@media(max-height:820px)]:hidden">
-                    <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
-                      <span>Profile Score</span>
-                      <span
-                        className={cn(
-                          'bg-clip-text text-transparent bg-gradient-to-r',
-                          roleGradient
-                        )}
-                      >
-                        40%
-                      </span>
-                    </div>
-                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                      <motion.div
-                        className={cn('h-full rounded-full bg-gradient-to-r', roleGradient)}
-                        initial={{ width: 0 }}
-                        animate={{ width: '40%' }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                      />
-                    </div>
-                  </div>
+                  {/* Profile score removed to keep menu clear at all zoom levels */}
                 </div>
 
                 {/* Navigation Items */}
