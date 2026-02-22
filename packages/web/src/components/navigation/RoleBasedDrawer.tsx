@@ -1,4 +1,4 @@
-import { AlignJustify, LogOut, MapPin, X } from 'lucide-react'
+import { AlignJustify, Briefcase, LogOut, MapPin, RefreshCcw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -138,6 +138,30 @@ export function RoleBasedDrawer() {
   const roleGradient = getRoleBadgeGradient(activeRole.role_type)
   const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
 
+  const roleAction =
+    activeRole.role_type === 'traveller'
+      ? {
+          label: 'Become a Partner',
+          icon: Briefcase,
+          onClick: () => {
+            setIsOpen(false)
+            navigate('/partner/onboarding')
+          },
+        }
+      : {
+          label: 'Switch to Traveler',
+          icon: RefreshCcw,
+          onClick: async () => {
+            setIsOpen(false)
+            try {
+              await switchRole('traveller')
+              navigate('/')
+            } catch (error) {
+              console.error('Failed to switch role', error)
+            }
+          },
+        }
+
   return (
     <>
       <button
@@ -187,14 +211,14 @@ export function RoleBasedDrawer() {
             >
               {/* Scrollable Content Area */}
               <div
-                className="flex-1 overflow-y-auto no-scrollbar pb-6"
+                className="flex-1 overflow-y-auto no-scrollbar pb-3 [@media(max-height:740px)]:pb-2"
                 style={{
                   scrollbarWidth: 'thin',
                   scrollbarColor: 'var(--border) transparent',
                 }}
               >
                 {/* Close Button - Top Left */}
-                <div className="absolute top-5 left-5 z-20">
+                <div className="absolute top-5 left-5 z-20 [@media(max-height:740px)]:top-4 [@media(max-height:740px)]:left-4">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -206,18 +230,18 @@ export function RoleBasedDrawer() {
                 </div>
 
                 {/* Profile Header - Horizontal */}
-                <div className="p-5 pb-0">
-                  <div className="flex items-center gap-4 mt-8 mb-4">
+                <div className="p-4 pb-0 [@media(max-height:740px)]:p-3 [@media(max-height:740px)]:pb-0">
+                  <div className="flex items-center gap-4 mt-7 mb-3 [@media(max-height:740px)]:mt-6 [@media(max-height:740px)]:mb-2.5">
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={spring}
                       className={cn(
-                        'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px]',
+                        'w-14 h-14 rounded-[18px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px] [@media(max-height:740px)]:w-12 [@media(max-height:740px)]:h-12 [@media(max-height:740px)]:rounded-[16px]',
                         roleGradient
                       )}
                     >
-                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
+                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background [@media(max-height:740px)]:rounded-[14px]">
                         <Avatar className="w-full h-full">
                           <AvatarImage
                             src={user.user_metadata?.avatar_url}
@@ -232,7 +256,7 @@ export function RoleBasedDrawer() {
                     </motion.div>
 
                     <div className="flex flex-col min-w-0 pr-8">
-                      <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5">
+                      <h3 className="font-bold text-base truncate text-foreground tracking-tight mb-0.5 [@media(max-height:740px)]:text-[13px]">
                         {user.user_metadata?.full_name?.split(' ')[0] ||
                           user.email?.split('@')[0] ||
                           'Traveler'}
@@ -255,7 +279,7 @@ export function RoleBasedDrawer() {
                   </div>
 
                   {/* Completion Bar - Compact */}
-                  <div className="space-y-1.5 p-3 rounded-2xl bg-muted/30 border border-border shadow-sm">
+                  <div className="space-y-1.5 p-2.5 rounded-2xl bg-muted/30 border border-border shadow-sm [@media(max-height:740px)]:hidden">
                     <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground px-1">
                       <span>Profile Score</span>
                       <span
@@ -279,12 +303,12 @@ export function RoleBasedDrawer() {
                 </div>
 
                 {/* Navigation Items */}
-                <div className="px-4 py-4">
+                <div className="px-4 py-3 [@media(max-height:740px)]:px-3 [@media(max-height:740px)]:py-2.5">
                   <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
                     Navigation
                   </h3>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 [@media(max-height:740px)]:space-y-1">
                     {navItems.map((item) => {
                       const isActive = location.pathname === item.href
                       const badgeColor = getBadgeColor(item.label)
@@ -300,14 +324,14 @@ export function RoleBasedDrawer() {
                         >
                           <div
                             className={cn(
-                              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all',
+                              'flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all [@media(max-height:740px)]:py-1.5',
                               isActive
                                 ? 'bg-muted/80 border border-border/50'
                                 : 'hover:bg-muted/50 border border-transparent'
                             )}
                           >
                             <div
-                              className={`w-9 h-9 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg`}
+                              className={`w-8 h-8 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8`}
                             >
                               <motion.div
                                 variants={{
@@ -318,7 +342,7 @@ export function RoleBasedDrawer() {
                                 whileHover="hover"
                               >
                                 <item.icon
-                                  size={16}
+                                  size={15}
                                   className="text-primary-foreground"
                                   strokeWidth={2}
                                 />
@@ -328,7 +352,7 @@ export function RoleBasedDrawer() {
                             <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
                               <span
                                 className={cn(
-                                  'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5',
+                                  'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5 [@media(max-height:740px)]:text-[13px]',
                                   isActive
                                     ? 'text-foreground font-bold'
                                     : 'text-muted-foreground group-hover:text-foreground'
@@ -337,7 +361,7 @@ export function RoleBasedDrawer() {
                                 {item.label}
                               </span>
                               {item.subtext && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate [@media(max-height:740px)]:hidden">
                                   {item.subtext}
                                 </span>
                               )}
@@ -350,54 +374,52 @@ export function RoleBasedDrawer() {
                         </motion.button>
                       )
                     })}
+
+                    {/* Role action moved into menu to keep it always visible */}
+                    <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                      <motion.button
+                        whileHover={{ x: 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={roleAction.onClick}
+                        data-tour={activeRole.role_type === 'traveller' ? 'partner-switch' : undefined}
+                        className="w-full group"
+                      >
+                        <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                          <div
+                            className={cn(
+                              'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8',
+                              activeRole.role_type === 'traveller'
+                                ? 'from-violet-600 to-indigo-600'
+                                : 'from-slate-500 to-gray-600'
+                            )}
+                          >
+                            <roleAction.icon size={15} className="text-primary-foreground" strokeWidth={2} />
+                          </div>
+
+                          <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                            {roleAction.label}
+                          </span>
+
+                          <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
+                            ›
+                          </span>
+                        </div>
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Footer Actions - Pinned to bottom */}
-              <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md space-y-3 shrink-0">
-                {activeRole.role_type === 'traveller' ? (
-                  <Button
-                    data-tour="partner-switch"
-                    className="w-full bg-gradient-to-br from-violet-600 to-indigo-600 hover:scale-[1.02] active:scale-95 transition-all text-primary-foreground border-0 h-auto py-2.5 flex flex-col items-center gap-0.5 rounded-xl shadow-lg shadow-primary/20"
-                    onClick={() => {
-                      setIsOpen(false)
-                      navigate('/partner/onboarding')
-                    }}
-                  >
-                    <span className="font-black text-xs uppercase tracking-widest">
-                      Become a Partner
-                    </span>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 h-9 rounded-xl border-border bg-background hover:bg-muted text-foreground font-bold text-xs"
-                    onClick={async () => {
-                      setIsOpen(false)
-                      try {
-                        await switchRole('traveller')
-                        navigate('/')
-                      } catch (error) {
-                        console.error('Failed to switch role', error)
-                      }
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 rotate-180 text-muted-foreground" />
-                    Switch to Traveler
-                  </Button>
-                )}
-
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="ghost"
-                    className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </Button>
-                </div>
+              <div className="p-4 border-t border-border/50 bg-background/50 backdrop-blur-md shrink-0 [@media(max-height:740px)]:p-3">
+                <Button
+                  variant="ghost"
+                  className="w-full h-9 justify-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border border-destructive/20"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign Out</span>
+                </Button>
               </div>
             </motion.div>
           </motion.div>

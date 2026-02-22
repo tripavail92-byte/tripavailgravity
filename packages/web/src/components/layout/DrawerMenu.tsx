@@ -9,6 +9,7 @@ import {
   LogOut,
   MapPin,
   Menu,
+  RefreshCcw,
   Search,
   Settings,
   UserCircle,
@@ -22,7 +23,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 export function DrawerMenu() {
-  const { user, activeRole, signOut } = useAuth()
+  const { user, activeRole, signOut, switchRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -155,6 +156,12 @@ export function DrawerMenu() {
           path: '/payments',
           color: 'from-emerald-400 to-teal-500',
         },
+        {
+          icon: Briefcase,
+          label: 'Become a Partner',
+          path: '/partner/onboarding',
+          color: 'from-violet-600 to-indigo-600',
+        },
       ]
     }
     if (activeRole?.role_type === 'hotel_manager') {
@@ -222,6 +229,8 @@ export function DrawerMenu() {
   const roleLabel = getRoleLabel(activeRole?.role_type || '')
   const roleGradient = getRoleBadgeGradient(activeRole?.role_type || '')
 
+  const isTraveller = activeRole?.role_type === 'traveller'
+
   return (
     <div className="relative md:hidden">
       {/* Menu Button - Themed Style */}
@@ -274,7 +283,7 @@ export function DrawerMenu() {
                 }}
               >
                 {/* Header - Horizontal Compact Layout */}
-                <div className="relative p-5 pb-0">
+                <div className="relative p-4 pb-0 [@media(max-height:740px)]:p-3 [@media(max-height:740px)]:pb-0">
                   {/* Close Button - Absolute Top Right */}
                   <div className="absolute top-5 right-5 z-20">
                     <motion.button
@@ -295,11 +304,11 @@ export function DrawerMenu() {
                       animate={{ scale: 1 }}
                       transition={spring}
                       className={cn(
-                        'w-14 h-14 rounded-[18px] flex-shrink-0 flex items-center justify-center shadow-lg bg-gradient-to-br p-[2px]',
+                        'w-14 h-14 rounded-[18px] flex-shrink-0 flex items-center justify-center shadow-lg bg-gradient-to-br p-[2px] [@media(max-height:740px)]:w-12 [@media(max-height:740px)]:h-12 [@media(max-height:740px)]:rounded-[16px]',
                         roleGradient,
                       )}
                     >
-                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background">
+                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background [@media(max-height:740px)]:rounded-[14px]">
                         {user?.user_metadata?.avatar_url ? (
                           <img
                             src={user.user_metadata.avatar_url}
@@ -320,10 +329,10 @@ export function DrawerMenu() {
 
                     {/* Info */}
                     <div className="flex flex-col min-w-0 pr-8">
-                      <h2 className="text-foreground text-base font-bold truncate">
+                      <h2 className="text-foreground text-base font-bold truncate [@media(max-height:740px)]:text-[13px]">
                         {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Traveler'}
                       </h2>
-                      <p className="text-muted-foreground text-[10px] truncate mb-1.5">
+                      <p className="text-muted-foreground text-[10px] truncate mb-1.5 [@media(max-height:740px)]:hidden">
                         {user?.email}
                       </p>
 
@@ -344,7 +353,7 @@ export function DrawerMenu() {
                 </div>
 
                 {/* Progress Bar - Compact & Less Intrusive */}
-                <div className="px-5 py-5">
+                <div className="px-4 py-4 [@media(max-height:740px)]:hidden">
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-[9px]">
                       <span className="text-muted-foreground font-bold uppercase tracking-wider">
@@ -371,12 +380,12 @@ export function DrawerMenu() {
                 </div>
 
                 {/* Menu Items - Compact & Colorful Squares */}
-                <div className="px-4 pb-4">
+                <div className="px-4 pb-4 [@media(max-height:740px)]:px-3">
                   <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
                     Menu
                   </h3>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 [@media(max-height:740px)]:space-y-1">
                     {menuItems.map((item) => {
                       const isActive = location.pathname === item.path
                       const animation = getIconAnimation(item.label, isActive)
@@ -387,11 +396,12 @@ export function DrawerMenu() {
                           whileHover={{ x: 4 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleNavigation(item.path)}
+                          data-tour={item.label === 'Become a Partner' ? 'partner-switch' : undefined}
                           className="w-full group"
                         >
                           <div
                             className={cn(
-                              'flex items-center gap-3 px-3 py-2 rounded-xl transition-all', // Reduced py
+                              'flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all [@media(max-height:740px)]:py-1.5',
                               isActive
                                 ? 'bg-muted/80 border border-border/50'
                                 : 'hover:bg-muted/50 border border-transparent',
@@ -399,7 +409,7 @@ export function DrawerMenu() {
                           >
                             {/* Colorful Icon Container - Slightly Smaller */}
                             <div
-                              className={`w-9 h-9 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-lg`}
+                              className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8`}
                             >
                               <motion.div
                                 variants={{
@@ -410,7 +420,7 @@ export function DrawerMenu() {
                                 whileHover="hover"
                               >
                                 <item.icon
-                                  size={18} // Smaller icon
+                                  size={16}
                                   className="text-primary-foreground"
                                   strokeWidth={2}
                                 />
@@ -420,7 +430,7 @@ export function DrawerMenu() {
                             {/* Label */}
                             <span
                               className={cn(
-                                'text-sm font-medium flex-1 text-left transition-colors',
+                                'text-sm font-medium flex-1 text-left transition-colors [@media(max-height:740px)]:text-[13px]',
                                 isActive
                                   ? 'text-foreground font-bold'
                                   : 'text-muted-foreground group-hover:text-foreground',
@@ -445,10 +455,10 @@ export function DrawerMenu() {
                     whileTap={{ scale: 0.98 }}
                     className="w-full mt-1.5 group"
                   >
-                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted/50 border border-transparent transition-all">
-                      <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border/50">
+                    <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-muted/50 border border-transparent transition-all">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-border/50">
                         <motion.div whileHover={{ scale: 1.1, rotate: 10 }}>
-                          <HelpCircle className="text-muted-foreground" size={18} />
+                          <HelpCircle className="text-muted-foreground" size={16} />
                         </motion.div>
                       </div>
                       <div className="flex-1 text-left">
@@ -462,30 +472,32 @@ export function DrawerMenu() {
                     </div>
                   </motion.button>
 
-                  {/* Become a Partner - Compact Premium */}
-                  {activeRole?.role_type === 'traveller' && (
+                  {/* Role switching kept inside the menu for visibility */}
+                  {!isTraveller && (
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ x: 4 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => handleNavigation('/partner/onboarding')}
-                      className="w-full mt-4"
+                      onClick={async () => {
+                        setIsDrawerOpen(false)
+                        try {
+                          await switchRole('traveller')
+                          navigate('/')
+                        } catch (error) {
+                          console.error('Failed to switch role', error)
+                        }
+                      }}
+                      className="w-full mt-2 group"
                     >
-                      <div className="relative rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 p-2.5 overflow-hidden shadow-lg shadow-primary/20 border border-primary/10">
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-                        <div className="relative flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-md bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                            <Briefcase className="text-primary-foreground" size={16} />
-                          </div>
-                          <div className="flex-1 text-left">
-                            <p className="text-primary-foreground text-xs font-bold uppercase tracking-wide">
-                              Become a Partner
-                            </p>
-                            <p className="text-primary-foreground/60 text-[9px]">
-                              Grow with TripAvail
-                            </p>
-                          </div>
-                          <span className="text-primary-foreground/80 text-base">›</span>
+                      <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-muted/50 border border-transparent transition-all [@media(max-height:740px)]:py-1.5">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8">
+                          <RefreshCcw size={16} className="text-primary-foreground" strokeWidth={2} />
                         </div>
+                        <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                          Switch to Traveler
+                        </span>
+                        <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
+                          ›
+                        </span>
                       </div>
                     </motion.button>
                   )}
