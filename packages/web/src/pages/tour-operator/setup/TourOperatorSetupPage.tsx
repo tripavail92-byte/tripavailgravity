@@ -44,9 +44,9 @@ export default function TourOperatorSetupPage() {
   // Handle deep linking to specific steps
   useEffect(() => {
     const stepId = searchParams.get('step')
-    if (stepId === 'welcome') {
-      setCurrentStep(0)
-    }
+    if (!stepId) return
+    const idx = STEPS.findIndex((s) => s.id === stepId)
+    if (idx >= 0) setCurrentStep(idx)
   }, [searchParams])
 
   // Enforce Tour Operator theme on mount
