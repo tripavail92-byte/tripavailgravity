@@ -1,6 +1,7 @@
 import { supabase } from '../../../../../shared/src/core/client'
 
 export interface TourOperatorOnboardingData {
+  setupCurrentStep?: number
   personalInfo?: {
     operatorName: string
     email: string
@@ -67,6 +68,7 @@ export const tourOperatorService = {
     userId: string,
     data: Partial<TourOperatorOnboardingData>,
     setupCompleted: boolean = false,
+    currentStep?: number,
   ) {
     if (!userId) throw new Error('User ID required')
 
@@ -99,6 +101,8 @@ export const tourOperatorService = {
       },
       verification_urls: data.verification?.businessDocs,
       setup_completed: setupCompleted,
+      // Persist step index so wizard can resume; clear when finished
+      setup_current_step: setupCompleted ? 0 : (currentStep ?? undefined),
       updated_at: new Date().toISOString(),
     }
 
@@ -150,6 +154,7 @@ export const tourOperatorService = {
         .join(' ')
         .trim()
       const onboardingData: TourOperatorOnboardingData = {
+        setupCurrentStep: typeof profile.setup_current_step === 'number' ? profile.setup_current_step : 0,
         personalInfo: {
           operatorName,
           email: profile.email || '',

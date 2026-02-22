@@ -58,7 +58,7 @@ export default function TourOperatorSetupPage() {
     }
   }, [])
 
-  // Load existing data on mount
+  // Load existing data + resume step on mount
   useEffect(() => {
     const loadExistingData = async () => {
       if (!user?.id) return
@@ -66,6 +66,11 @@ export default function TourOperatorSetupPage() {
         const data = await tourOperatorService.getOnboardingData(user.id)
         if (data) {
           setSetupData(data)
+          // Resume from last saved step unless deep-link overrides it
+          const urlStep = searchParams.get('step')
+          if (!urlStep && typeof data.setupCurrentStep === 'number' && data.setupCurrentStep > 0) {
+            setCurrentStep(data.setupCurrentStep)
+          }
         }
       } catch (error) {
         console.error('Error loading onboarding data:', error)
@@ -77,11 +82,16 @@ export default function TourOperatorSetupPage() {
   }, [user?.id])
 
   const saveProgress = useCallback(
-    async (dataToSave: any, isFinal: boolean = false) => {
+    async (dataToSave: any, isFinal: boolean = false, stepIndex?: number) => {
       if (!user?.id) return
       setIsSaving(true)
       try {
-        await tourOperatorService.saveOnboardingData(user.id, dataToSave, isFinal)
+        await tourOperatorService.saveOnboardingData(
+          user.id,
+          dataToSave,
+          isFinal,
+          stepIndex ?? currentStep,
+        )
         if (isFinal) {
           toast.success('Onboarding completed!')
         }
@@ -92,15 +102,17 @@ export default function TourOperatorSetupPage() {
         setIsSaving(false)
       }
     },
-    [user?.id],
+    [user?.id, currentStep],
   )
 
   const handleNext = async () => {
+    const nextStep = currentStep + 1
     const isFinal = currentStep === STEPS.length - 2
-    await saveProgress(setupData, isFinal)
+    // Save data + the step we're advancing TO so resume lands on the right step
+    await saveProgress(setupData, isFinal, isFinal ? 0 : nextStep)
 
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1)
+      setCurrentStep(nextStep)
     }
   }
 
@@ -113,8 +125,9 @@ export default function TourOperatorSetupPage() {
   }
 
   const handleSaveAndExit = async () => {
-    await saveProgress(setupData, false)
-    toast.success('Progress saved')
+    // Persist current step index so wizard resumes here
+    await saveProgress(setupData, false, currentStep)
+    toast.success('Progress saved — you can resume anytime')
     navigate('/operator/dashboard')
   }
 

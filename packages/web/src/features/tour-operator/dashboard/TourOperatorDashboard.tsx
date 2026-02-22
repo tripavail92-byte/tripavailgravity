@@ -1,4 +1,4 @@
-import { Loader2, Package, Plus } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Loader2, Package, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +21,7 @@ export function TourOperatorDashboard() {
   const [drafts, setDrafts] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
   const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null)
+  const [setupCurrentStep, setSetupCurrentStep] = useState<number>(0)
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -28,12 +29,13 @@ export function TourOperatorDashboard() {
       try {
         const { data: profile, error: profileError } = await supabase
           .from('tour_operator_profiles')
-          .select('setup_completed')
+          .select('setup_completed, setup_current_step')
           .eq('user_id', user.id)
           .maybeSingle()
 
         if (profileError) throw profileError
         setSetupCompleted(profile?.setup_completed === true)
+        setSetupCurrentStep(profile?.setup_current_step ?? 0)
 
         const [pub, drf] = await Promise.all([
           tourService.fetchPublishedTours(user.id),
@@ -103,6 +105,39 @@ export function TourOperatorDashboard() {
               Create Tour Package
             </Button>
           </div>
+
+          {/* Resume Setup Banner — shown when setup is not yet finished */}
+          {setupCompleted === false && (
+            <div className="flex items-center justify-between gap-4 bg-warning/10 border border-warning/30 rounded-2xl px-6 py-5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-sm">
+                    Your operator setup is incomplete
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Complete your profile to start listing tour packages.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-warning text-warning-foreground hover:bg-warning/90"
+                onClick={() =>
+                  navigate(
+                    setupCurrentStep > 0
+                      ? `/operator/setup?step=${['welcome','personal','profile-pic','business','services','coverage','policies','completion'][setupCurrentStep] ?? 'welcome'}`
+                      : '/operator/setup',
+                  )
+                }
+              >
+                Resume Setup
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
 
           {/* Stats Overview */}
           <StatsOverview />
