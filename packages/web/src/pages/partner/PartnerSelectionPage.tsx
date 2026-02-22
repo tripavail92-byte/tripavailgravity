@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function PartnerSelectionPage() {
-  const { switchRole, activeRole } = useAuth()
+  const { switchRole, activeRole, partnerType } = useAuth()
   const navigate = useNavigate()
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -31,19 +31,21 @@ export default function PartnerSelectionPage() {
     },
   ]
 
-  // Filter out already-selected partner roles
+  // Permanent partner selection: once set, hide the opposite option everywhere.
+  const hasPartnerRole = partnerType === 'hotel_manager' || partnerType === 'tour_operator'
+
   const availablePartnerOptions = allPartnerOptions.filter((option) => {
-    if (!activeRole) return true
-    // If user already has a partner role, hide all partner options
-    if (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator') {
-      return false
-    }
-    return true
+    if (!hasPartnerRole) return true
+    // Only show the already-selected role (enterprise clarity). Never show both.
+    return option.id === partnerType
   })
 
-  const hasPartnerRole =
-    activeRole &&
-    (activeRole.role_type === 'hotel_manager' || activeRole.role_type === 'tour_operator')
+  const partnerLabel =
+    partnerType === 'hotel_manager'
+      ? 'Hotel Manager'
+      : partnerType === 'tour_operator'
+        ? 'Tour Operator'
+        : null
 
   const handleSelectPartner = async (mode: 'hotel_manager' | 'tour_operator') => {
     // If not logged in, redirect to auth with selected role
@@ -52,10 +54,10 @@ export default function PartnerSelectionPage() {
       return
     }
 
-    // Check if user already has a partner role
-    if (activeRole.role_type !== 'traveller') {
+    // Hard lock (Option A): if partnerType is already set, block switching.
+    if (partnerType && partnerType !== mode) {
       alert(
-        `You have already selected ${activeRole.role_type}. Partner role selection is permanent.`,
+        `You are already a ${partnerType.replace('_', ' ')}. Partner role selection is permanent.`,
       )
       return
     }
@@ -63,17 +65,29 @@ export default function PartnerSelectionPage() {
     setIsLoading(true)
     try {
       await switchRole(mode)
-      // Redirect to specific dashboard based on role
-      if (mode === 'hotel_manager') {
-        navigate('/manager/dashboard')
-      } else if (mode === 'tour_operator') {
-        navigate('/operator/dashboard')
-      } else {
-        navigate('/dashboard')
-      }
+      // After becoming a partner, redirect into the required setup flow.
+      // - Tour Operator -> Setup
+      // - Hotel Manager  -> Hotel listing
+      navigate(mode === 'tour_operator' ? '/operator/setup' : '/manager/list-hotel')
     } catch (error) {
       console.error('Failed to switch role:', error)
       alert('Failed to switch role. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleGoToDashboard = async () => {
+    if (!partnerType) return
+    setIsLoading(true)
+    try {
+      // Ensure the active role matches the partner type before routing.
+      await switchRole(partnerType)
+      // Use /dashboard so the redirect logic can send them to setup/listing if needed.
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('Failed to open partner dashboard:', error)
+      alert('Failed to open dashboard. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -94,9 +108,9 @@ export default function PartnerSelectionPage() {
           <p className="text-lg text-muted-foreground">
             Select how you want to earn with TripAvail
           </p>
-          {activeRole && activeRole.role_type !== 'traveller' && (
+          {hasPartnerRole && (
             <p className="mt-4 text-warning font-medium">
-              ⚠️ You have already selected a partner role. This choice is permanent.
+              ⚠️ You have already selected {partnerLabel}. This choice is permanent.
             </p>
           )}
         </div>
@@ -105,24 +119,32 @@ export default function PartnerSelectionPage() {
         {hasPartnerRole ? (
           <div className="text-center p-12 bg-card rounded-2xl border border-border">
             <h3 className="text-2xl font-bold text-foreground mb-4">You're Already a Partner!</h3>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-background/50 backdrop-blur-sm mb-5">
+              <span className="text-base" aria-hidden>
+                {partnerType === 'hotel_manager' ? '🏨' : '🏔️'}
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                {partnerType === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {partnerType === 'hotel_manager'
+                  ? 'Manage your hotel listings'
+                  : 'Manage your tour packages'}
+              </span>
+            </div>
             <p className="text-muted-foreground mb-6">
               You have selected{' '}
               <span className="font-bold text-primary">
-                {activeRole?.role_type.replace('_', ' ')}
+                {partnerType?.replace('_', ' ')}
               </span>{' '}
               as your partner role.
               <br />
               Partner role selection is permanent and cannot be changed.
             </p>
             <button
-              onClick={() =>
-                navigate(
-                  activeRole?.role_type === 'hotel_manager'
-                    ? '/manager/dashboard'
-                    : '/operator/dashboard',
-                )
-              }
-              className="px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium"
+              onClick={handleGoToDashboard}
+              disabled={isLoading}
+              className="px-6 py-3 bg-primary hover:bg-primary/90 rounded-xl text-white transition-all duration-300 font-medium disabled:opacity-50"
             >
               Go to Dashboard
             </button>

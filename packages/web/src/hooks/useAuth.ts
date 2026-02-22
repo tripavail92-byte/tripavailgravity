@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase'
 interface AuthState {
   user: User | null
   activeRole: UserRole | null
+  // Permanent partner type selection (mutually exclusive). Independent of active role.
+  partnerType: 'hotel_manager' | 'tour_operator' | null
   isLoading: boolean
   initialized: boolean
 
@@ -25,6 +27,7 @@ interface AuthState {
 export const useAuth = create<AuthState>((set, get) => ({
   user: null,
   activeRole: null,
+  partnerType: null,
   isLoading: true,
   initialized: false,
 
@@ -52,6 +55,23 @@ export const useAuth = create<AuthState>((set, get) => ({
               }
             : await roleService.getActiveRole(session.user.id)
 
+        // Partner type is a permanent selection (hotel_manager OR tour_operator).
+        // We derive it from the existence of partner roles in user_roles.
+        let partnerType: 'hotel_manager' | 'tour_operator' | null = null
+        if (!adminRoleError && adminRole) {
+          partnerType = null
+        } else {
+          try {
+            const roles = await roleService.getUserRoles(session.user.id)
+            const partnerRole = roles.find(
+              (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
+            )
+            partnerType = (partnerRole?.role_type as any) ?? null
+          } catch (e) {
+            console.warn('[useAuth] Failed to fetch partner roles:', e)
+          }
+        }
+
         if (activeRole?.role_type === 'admin') {
           console.warn('[useAuth] User detected as Admin via get_admin_role:', adminRole)
         } else if (!activeRole && !adminRole) {
@@ -67,9 +87,9 @@ export const useAuth = create<AuthState>((set, get) => ({
         }
 
         console.log('[useAuth] Initialized with role:', activeRole)
-        set({ user: session.user, activeRole, isLoading: false, initialized: true })
+        set({ user: session.user, activeRole, partnerType, isLoading: false, initialized: true })
       } else {
-        set({ user: null, activeRole: null, isLoading: false, initialized: true })
+        set({ user: null, activeRole: null, partnerType: null, isLoading: false, initialized: true })
       }
 
       // Listen for changes
@@ -91,6 +111,21 @@ export const useAuth = create<AuthState>((set, get) => ({
                 }
               : await roleService.getActiveRole(session.user.id)
 
+          let partnerType: 'hotel_manager' | 'tour_operator' | null = null
+          if (!adminRoleError && adminRole) {
+            partnerType = null
+          } else {
+            try {
+              const roles = await roleService.getUserRoles(session.user.id)
+              const partnerRole = roles.find(
+                (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
+              )
+              partnerType = (partnerRole?.role_type as any) ?? null
+            } catch (e) {
+              console.warn('[useAuth] Failed to fetch partner roles on sign-in:', e)
+            }
+          }
+
           // Fallback: If no role found, default to Traveller
           if (!activeRole && !adminRole) {
             activeRole = {
@@ -102,9 +137,9 @@ export const useAuth = create<AuthState>((set, get) => ({
               verification_status: 'incomplete',
             }
           }
-          set({ user: session.user, activeRole, isLoading: false })
+          set({ user: session.user, activeRole, partnerType, isLoading: false })
         } else if (event === 'SIGNED_OUT') {
-          set({ user: null, activeRole: null, isLoading: false })
+          set({ user: null, activeRole: null, partnerType: null, isLoading: false })
         }
       })
     } catch (error) {
@@ -183,7 +218,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     // Simulate network delay
     setTimeout(() => {
-      set({ user: mockUser, activeRole: mockRole, isLoading: false })
+      set({ user: mockUser, activeRole: mockRole, partnerType: null, isLoading: false })
     }, 800)
   },
 
@@ -205,7 +240,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       console.error('Sign out failed:', error)
       // We continue to ensure local state is cleared
     } finally {
-      set({ user: null, activeRole: null, isLoading: false })
+      set({ user: null, activeRole: null, partnerType: null, isLoading: false })
     }
   },
 
@@ -221,7 +256,18 @@ export const useAuth = create<AuthState>((set, get) => ({
       if (result.status === 'success') {
         // Re-fetch to be safe or construct optimistic update
         const newRole = await roleService.getActiveRole(user.id)
-        set({ activeRole: newRole, isLoading: false })
+        let partnerType: 'hotel_manager' | 'tour_operator' | null = null
+        try {
+          const roles = await roleService.getUserRoles(user.id)
+          const partnerRole = roles.find(
+            (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
+          )
+          partnerType = (partnerRole?.role_type as any) ?? null
+        } catch (e) {
+          console.warn('[useAuth] Failed to refresh partner roles after switch:', e)
+        }
+
+        set({ activeRole: newRole, partnerType, isLoading: false })
       }
     } catch (error) {
       set({ isLoading: false })

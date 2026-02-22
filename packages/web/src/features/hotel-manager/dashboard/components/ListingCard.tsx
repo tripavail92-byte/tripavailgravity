@@ -10,9 +10,9 @@ interface ListingCardProps {
   location: string
   status: 'published' | 'draft' | 'paused'
   imageUrl?: string
-  bookings: number
-  rating: number
-  revenue: string
+  bookings?: number
+  rating?: number
+  revenue?: string
 }
 
 export function ListingCard({
@@ -84,15 +84,17 @@ export function ListingCard({
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div>
             <p className="text-xs text-gray-500">Bookings</p>
-            <p className="text-sm font-semibold text-gray-900">{bookings}</p>
+            <p className="text-sm font-semibold text-gray-900">{bookings ?? '—'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Rating</p>
-            <p className="text-sm font-semibold text-gray-900">⭐ {rating}</p>
+            <p className="text-sm font-semibold text-gray-900">
+              {typeof rating === 'number' ? `⭐ ${rating}` : '—'}
+            </p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Revenue</p>
-            <p className="text-sm font-semibold text-gray-900">{revenue}</p>
+            <p className="text-sm font-semibold text-gray-900">{revenue ?? '—'}</p>
           </div>
         </div>
 

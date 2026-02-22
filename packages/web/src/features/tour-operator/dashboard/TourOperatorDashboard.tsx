@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@tripavail/shared/core/client'
 
 import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'
 import { StatsOverview } from '../../hotel-manager/dashboard/components/StatsOverview'
@@ -19,11 +20,21 @@ export function TourOperatorDashboard() {
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
   const [drafts, setDrafts] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
+  const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null)
 
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!user) return
       try {
+        const { data: profile, error: profileError } = await supabase
+          .from('tour_operator_profiles')
+          .select('setup_completed')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (profileError) throw profileError
+        setSetupCompleted(profile?.setup_completed === true)
+
         const [pub, drf] = await Promise.all([
           tourService.fetchPublishedTours(user.id),
           tourService.fetchDraftTours(user.id),
@@ -41,6 +52,10 @@ export function TourOperatorDashboard() {
   }, [user])
 
   const handleCreateTour = () => {
+    if (setupCompleted !== true) {
+      navigate('/operator/setup')
+      return
+    }
     navigate('/operator/tours/new')
   }
 
@@ -81,6 +96,7 @@ export function TourOperatorDashboard() {
             <Button
               data-tour="add-tour"
               onClick={handleCreateTour}
+              disabled={setupCompleted !== true}
               className="bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 h-12 px-6 rounded-2xl font-bold gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-5 h-5" />

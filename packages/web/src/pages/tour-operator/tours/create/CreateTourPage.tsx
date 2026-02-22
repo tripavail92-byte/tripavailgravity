@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
+import { supabase } from '@tripavail/shared/core/client'
 import { Tour, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -33,6 +34,7 @@ export default function CreateTourPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [tourData, setTourData] = useState<Partial<Tour>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [gateLoading, setGateLoading] = useState(true)
 
   // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
@@ -40,6 +42,39 @@ export default function CreateTourPage() {
     const raw = searchParams.get('tour_id')
     return raw && raw.trim().length > 0 ? raw.trim() : null
   }, [searchParams, routeTourId])
+
+  useEffect(() => {
+    const checkSetup = async () => {
+      if (!user?.id) {
+        setGateLoading(false)
+        return
+      }
+      try {
+        const { data, error } = await supabase
+          .from('tour_operator_profiles')
+          .select('setup_completed')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (error) throw error
+
+        if (data?.setup_completed !== true) {
+          toast.error('Complete Tour Operator Setup before creating tours')
+          navigate('/operator/setup', { replace: true })
+          return
+        }
+      } catch (e) {
+        console.error('[CreateTourPage] Failed to check setup completion', e)
+        toast.error('Unable to verify setup status')
+        navigate('/operator/setup', { replace: true })
+        return
+      } finally {
+        setGateLoading(false)
+      }
+    }
+
+    checkSetup()
+  }, [navigate, user?.id])
 
   useEffect(() => {
     const loadTourForEdit = async () => {
@@ -59,6 +94,19 @@ export default function CreateTourPage() {
     loadTourForEdit()
     // Only load when switching to a new id
   }, [user?.id, tourIdToEdit])
+
+  if (gateLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium tracking-tight">
+            Checking setup status...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const handleUpdate = (data: Partial<Tour>) => {
     setTourData((prev) => ({ ...prev, ...data }))

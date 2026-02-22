@@ -12,21 +12,21 @@ export function StatsOverview() {
   const hotelStats = [
     {
       label: 'Total Revenue',
-      value: '$0',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: DollarSign,
     },
     {
       label: 'Total Bookings',
-      value: '0',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: Calendar,
     },
     {
       label: 'Occupancy Rate',
-      value: '0%',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: TrendingUp,
@@ -43,21 +43,21 @@ export function StatsOverview() {
   const tourStats = [
     {
       label: 'Tour Revenue',
-      value: '$0',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: DollarSign,
     },
     {
       label: 'Total Travellers',
-      value: '0',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: Users,
     },
     {
       label: 'Active Tours',
-      value: '0',
+      value: '—',
       change: 'No data yet',
       trend: 'neutral' as const,
       icon: MapPin,

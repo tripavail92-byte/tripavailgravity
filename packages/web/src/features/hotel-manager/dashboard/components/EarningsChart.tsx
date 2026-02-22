@@ -9,7 +9,9 @@ export function EarningsChart() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Revenue Overview</h2>
-          <p className="text-sm text-gray-600 mt-1">Track your earnings over time</p>
+          <p className="text-sm text-gray-600 mt-1">
+            Revenue data will appear here once you have bookings.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -35,17 +37,13 @@ export function EarningsChart() {
       </div>
 
       {/* Chart Placeholder - Will be replaced with Recharts */}
-      <div
-        className="h-80 rounded-xl flex items-center justify-center"
-        style={{
-          background:
-            'linear-gradient(135deg, rgba(157, 78, 221, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%)',
-        }}
-      >
+      <div className="h-80 rounded-xl flex items-center justify-center bg-gray-50 border border-gray-200">
         <div className="text-center">
-          <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: '#9D4EDD' }} />
-          <p className="text-gray-600 font-medium">Interactive chart coming soon</p>
-          <p className="text-sm text-gray-500 mt-1">Revenue visualization with Recharts</p>
+          <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+          <p className="text-gray-700 font-medium">No revenue yet</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Complete listings and start receiving bookings.
+          </p>
         </div>
       </div>
     </GlassCard>

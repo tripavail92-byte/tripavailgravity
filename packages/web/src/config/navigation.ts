@@ -47,22 +47,21 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
   ],
   tour_operator: [
     {
-      label: 'Create New Tour Packages',
-      icon: Plus,
-      href: '/operator/tours/new',
-      subtext: 'Design a new tour experience',
-    },
-    {
       label: 'Tour Operator Setup',
       icon: MapPin,
       href: '/operator/setup',
       subtext: 'Complete your profile',
     },
     {
+      label: 'Create New Tour Packages',
+      icon: Plus,
+      href: '/operator/tours/new',
+      subtext: 'Design a new tour experience',
+    },
+    {
       label: 'Dashboard',
       icon: LayoutDashboard,
       href: '/operator/dashboard',
-      subtext: '5 live • 2 draft',
     },
     { label: 'Calendar', icon: Calendar, href: '/operator/calendar' },
     { label: 'Bookings', icon: BookCheck, href: '/operator/bookings' },

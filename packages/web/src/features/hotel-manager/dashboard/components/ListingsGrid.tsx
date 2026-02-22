@@ -115,9 +115,9 @@ export function ListingsGrid() {
                 location={listing.location || 'Location not set'}
                 status="published"
                 imageUrl={listing.images?.[0]}
-                bookings={0} // TODO: Fetch from bookings table
-                rating={0} // TODO: Fetch from reviews
-                revenue="$0" // TODO: Calculate from bookings
+                bookings={undefined}
+                rating={undefined}
+                revenue={undefined}
               />
             </motion.div>
           ))}

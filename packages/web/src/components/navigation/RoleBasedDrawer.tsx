@@ -1,6 +1,6 @@
-import { AlignJustify, Briefcase, LogOut, MapPin, RefreshCcw, X } from 'lucide-react'
+import { AlignJustify, Briefcase, LayoutDashboard, LogOut, MapPin, RefreshCcw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -8,12 +8,65 @@ import { Button } from '@/components/ui/button'
 import { ROLE_NAVIGATION } from '@/config/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { supabase } from '@tripavail/shared/core/client'
 
 export function RoleBasedDrawer() {
-  const { user, activeRole, signOut, initialized, switchRole } = useAuth()
+  const { user, activeRole, partnerType, signOut, initialized, switchRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
+  const [tourSetupCompleted, setTourSetupCompleted] = useState<boolean | null>(null)
+  const [hasPublishedHotel, setHasPublishedHotel] = useState<boolean | null>(null)
+
+  // Load partner completion status (used to disable listing actions).
+  // Kept local to the drawer to avoid widening global auth state.
+  // We treat "unknown" as incomplete to keep creation flows locked.
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      if (!user?.id || !activeRole?.role_type) return
+
+      try {
+        if (activeRole.role_type === 'tour_operator') {
+          const { data, error } = await supabase
+            .from('tour_operator_profiles')
+            .select('setup_completed')
+            .eq('user_id', user.id)
+            .maybeSingle()
+
+          if (error) throw error
+          if (!cancelled) setTourSetupCompleted(data?.setup_completed === true)
+        } else {
+          if (!cancelled) setTourSetupCompleted(null)
+        }
+
+        if (activeRole.role_type === 'hotel_manager') {
+          const { count, error } = await supabase
+            .from('hotels')
+            .select('*', { count: 'exact', head: true })
+            .eq('owner_id', user.id)
+            .eq('is_published', true)
+
+          if (error) throw error
+          if (!cancelled) setHasPublishedHotel((count ?? 0) > 0)
+        } else {
+          if (!cancelled) setHasPublishedHotel(null)
+        }
+      } catch (e) {
+        console.error('[RoleBasedDrawer] Failed to load completion status', e)
+        if (!cancelled) {
+          setTourSetupCompleted(false)
+          setHasPublishedHotel(false)
+        }
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [activeRole?.role_type, user?.id])
 
   const handleNavigation = (path: string) => {
     setIsOpen(false)
@@ -141,10 +194,26 @@ export function RoleBasedDrawer() {
   const roleAction =
     activeRole.role_type === 'traveller'
       ? {
-          label: 'Become a Partner',
-          icon: Briefcase,
-          onClick: () => {
+          label:
+            partnerType === 'hotel_manager'
+              ? 'Hotel Manager Dashboard'
+              : partnerType === 'tour_operator'
+                ? 'Tour Operator Dashboard'
+                : 'Become a Partner',
+          icon: partnerType ? LayoutDashboard : Briefcase,
+          onClick: async () => {
             setIsOpen(false)
+            if (partnerType === 'hotel_manager' || partnerType === 'tour_operator') {
+              try {
+                // Ensure the active role matches their permanent partner type.
+                await switchRole(partnerType)
+                // Use /dashboard so redirect logic can send them to setup/listing if needed.
+                navigate('/dashboard')
+              } catch (error) {
+                console.error('Failed to open partner dashboard', error)
+              }
+              return
+            }
             navigate('/partner/onboarding')
           },
         }
@@ -293,12 +362,37 @@ export function RoleBasedDrawer() {
                       const badgeColor = getBadgeColor(item.label)
                       const animation = getIconAnimation(item.label, isActive)
 
+                      const isTourCreateBlocked =
+                        activeRole.role_type === 'tour_operator' &&
+                        item.href === '/operator/tours/new' &&
+                        tourSetupCompleted !== true
+
+                      const isHotelPackagesBlocked =
+                        activeRole.role_type === 'hotel_manager' &&
+                        item.href === '/manager/list-package' &&
+                        hasPublishedHotel !== true
+
+                      const isBlocked = isTourCreateBlocked || isHotelPackagesBlocked
+                      const blockedTarget = isTourCreateBlocked
+                        ? '/operator/setup'
+                        : isHotelPackagesBlocked
+                          ? '/manager/list-hotel'
+                          : item.href
+
                       return (
                         <motion.button
                           key={item.href}
-                          whileHover={{ x: 4 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleNavigation(item.href)}
+                          whileHover={isBlocked ? undefined : { x: 4 }}
+                          whileTap={isBlocked ? undefined : { scale: 0.98 }}
+                          onClick={() => handleNavigation(blockedTarget)}
+                          aria-disabled={isBlocked}
+                          title={
+                            isTourCreateBlocked
+                              ? 'Complete Tour Operator Setup to create tours'
+                              : isHotelPackagesBlocked
+                                ? 'Create a hotel listing before listing packages'
+                                : undefined
+                          }
                           className="w-full group"
                         >
                           <div
@@ -307,6 +401,8 @@ export function RoleBasedDrawer() {
                               isActive
                                 ? 'bg-muted/80 border border-border/50'
                                 : 'hover:bg-muted/50 border border-transparent'
+                              ,
+                              isBlocked && 'opacity-60 cursor-not-allowed hover:bg-transparent'
                             )}
                           >
                             <div

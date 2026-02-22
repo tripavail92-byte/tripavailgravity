@@ -23,7 +23,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 export function DrawerMenu() {
-  const { user, activeRole, signOut, switchRole } = useAuth()
+  const { user, activeRole, partnerType, signOut, switchRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -125,6 +125,33 @@ export function DrawerMenu() {
   // Define menu items based on role
   const getMenuItems = () => {
     if (activeRole?.role_type === 'traveller') {
+      const partnerShortcut =
+        partnerType === 'hotel_manager'
+          ? {
+              icon: LayoutDashboard,
+              label: 'Hotel Manager Dashboard',
+              path: '/manager/dashboard',
+              color: 'from-blue-500 to-indigo-600',
+              onClick: async () => {
+                setIsDrawerOpen(false)
+                await switchRole('hotel_manager')
+                navigate('/manager/dashboard')
+              },
+            }
+          : partnerType === 'tour_operator'
+            ? {
+                icon: LayoutDashboard,
+                label: 'Tour Operator Dashboard',
+                path: '/operator/dashboard',
+                color: 'from-emerald-500 to-teal-600',
+                onClick: async () => {
+                  setIsDrawerOpen(false)
+                  await switchRole('tour_operator')
+                  navigate('/operator/dashboard')
+                },
+              }
+            : null
+
       return [
         {
           icon: Search,
@@ -156,12 +183,14 @@ export function DrawerMenu() {
           path: '/payments',
           color: 'from-emerald-400 to-teal-500',
         },
-        {
-          icon: Briefcase,
-          label: 'Become a Partner',
-          path: '/partner/onboarding',
-          color: 'from-violet-600 to-indigo-600',
-        },
+        partnerShortcut
+          ? partnerShortcut
+          : {
+              icon: Briefcase,
+              label: 'Become a Partner',
+              path: '/partner/onboarding',
+              color: 'from-violet-600 to-indigo-600',
+            },
       ]
     }
     if (activeRole?.role_type === 'hotel_manager') {
@@ -370,7 +399,13 @@ export function DrawerMenu() {
                           key={item.label}
                           whileHover={{ x: 4 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() => handleNavigation(item.path)}
+                          onClick={() => {
+                            if ('onClick' in item && typeof (item as any).onClick === 'function') {
+                              ;(item as any).onClick()
+                              return
+                            }
+                            handleNavigation(item.path)
+                          }}
                           data-tour={item.label === 'Become a Partner' ? 'partner-switch' : undefined}
                           className="w-full group"
                         >

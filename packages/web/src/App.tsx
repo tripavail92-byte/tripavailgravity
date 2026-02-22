@@ -297,8 +297,22 @@ function App() {
             </Route>
 
             {/* Full Screen Flows */}
-            <Route path="/manager/list-hotel" element={<ListHotelPage />} />
-            <Route path="/manager/list-package" element={<ListPackagePage />} />
+            <Route
+              path="/manager/list-hotel"
+              element={
+                <RoleGuard allowedRoles={['hotel_manager']}>
+                  <ListHotelPage />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/manager/list-package"
+              element={
+                <RoleGuard allowedRoles={['hotel_manager']}>
+                  <ListPackagePage />
+                </RoleGuard>
+              }
+            />
 
             <Route
               path="/manager/setup"
