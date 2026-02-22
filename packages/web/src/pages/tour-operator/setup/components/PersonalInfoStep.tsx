@@ -18,12 +18,72 @@ interface StepProps {
 }
 
 const COUNTRY_OPTIONS = [
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰', placeholder: '3001234567' },
-  { code: '+1', country: 'United States', flag: '🇺🇸', placeholder: '4155550123' },
-  { code: '+44', country: 'United Kingdom', flag: '🇬🇧', placeholder: '7400123456' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪', placeholder: '501234567' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦', placeholder: '501234567' },
-  { code: '+91', country: 'India', flag: '🇮🇳', placeholder: '9876543210' },
+  { iso: 'AE', code: '+971', placeholder: '501234567' },
+  { iso: 'AR', code: '+54', placeholder: '1112345678' },
+  { iso: 'AT', code: '+43', placeholder: '6601234567' },
+  { iso: 'AU', code: '+61', placeholder: '412345678' },
+  { iso: 'BD', code: '+880', placeholder: '1712345678' },
+  { iso: 'BE', code: '+32', placeholder: '470123456' },
+  { iso: 'BG', code: '+359', placeholder: '881234567' },
+  { iso: 'BH', code: '+973', placeholder: '36001234' },
+  { iso: 'BR', code: '+55', placeholder: '11912345678' },
+  { iso: 'CA', code: '+1', placeholder: '4165550123' },
+  { iso: 'CH', code: '+41', placeholder: '791234567' },
+  { iso: 'CL', code: '+56', placeholder: '912345678' },
+  { iso: 'CN', code: '+86', placeholder: '13123456789' },
+  { iso: 'CO', code: '+57', placeholder: '3001234567' },
+  { iso: 'CZ', code: '+420', placeholder: '601123456' },
+  { iso: 'DE', code: '+49', placeholder: '15123456789' },
+  { iso: 'DK', code: '+45', placeholder: '20123456' },
+  { iso: 'EG', code: '+20', placeholder: '1012345678' },
+  { iso: 'ES', code: '+34', placeholder: '612345678' },
+  { iso: 'FI', code: '+358', placeholder: '401234567' },
+  { iso: 'FR', code: '+33', placeholder: '612345678' },
+  { iso: 'GB', code: '+44', placeholder: '7400123456' },
+  { iso: 'GH', code: '+233', placeholder: '201234567' },
+  { iso: 'GR', code: '+30', placeholder: '6912345678' },
+  { iso: 'HK', code: '+852', placeholder: '51234567' },
+  { iso: 'HU', code: '+36', placeholder: '201234567' },
+  { iso: 'ID', code: '+62', placeholder: '81234567890' },
+  { iso: 'IE', code: '+353', placeholder: '851234567' },
+  { iso: 'IN', code: '+91', placeholder: '9876543210' },
+  { iso: 'IQ', code: '+964', placeholder: '7901234567' },
+  { iso: 'IR', code: '+98', placeholder: '9123456789' },
+  { iso: 'IT', code: '+39', placeholder: '3123456789' },
+  { iso: 'JO', code: '+962', placeholder: '790123456' },
+  { iso: 'JP', code: '+81', placeholder: '9012345678' },
+  { iso: 'KE', code: '+254', placeholder: '712345678' },
+  { iso: 'KR', code: '+82', placeholder: '1012345678' },
+  { iso: 'KW', code: '+965', placeholder: '50012345' },
+  { iso: 'LB', code: '+961', placeholder: '70123456' },
+  { iso: 'LK', code: '+94', placeholder: '771234567' },
+  { iso: 'MA', code: '+212', placeholder: '612345678' },
+  { iso: 'MX', code: '+52', placeholder: '5512345678' },
+  { iso: 'MY', code: '+60', placeholder: '123456789' },
+  { iso: 'NG', code: '+234', placeholder: '8012345678' },
+  { iso: 'NL', code: '+31', placeholder: '612345678' },
+  { iso: 'NO', code: '+47', placeholder: '41234567' },
+  { iso: 'NP', code: '+977', placeholder: '9812345678' },
+  { iso: 'NZ', code: '+64', placeholder: '211234567' },
+  { iso: 'OM', code: '+968', placeholder: '92123456' },
+  { iso: 'PE', code: '+51', placeholder: '912345678' },
+  { iso: 'PH', code: '+63', placeholder: '9171234567' },
+  { iso: 'PK', code: '+92', placeholder: '3001234567' },
+  { iso: 'PL', code: '+48', placeholder: '501234567' },
+  { iso: 'PT', code: '+351', placeholder: '912345678' },
+  { iso: 'QA', code: '+974', placeholder: '33123456' },
+  { iso: 'RO', code: '+40', placeholder: '712345678' },
+  { iso: 'RU', code: '+7', placeholder: '9123456789' },
+  { iso: 'SA', code: '+966', placeholder: '501234567' },
+  { iso: 'SE', code: '+46', placeholder: '701234567' },
+  { iso: 'SG', code: '+65', placeholder: '81234567' },
+  { iso: 'TH', code: '+66', placeholder: '812345678' },
+  { iso: 'TN', code: '+216', placeholder: '20123456' },
+  { iso: 'TR', code: '+90', placeholder: '5312345678' },
+  { iso: 'UA', code: '+380', placeholder: '501234567' },
+  { iso: 'US', code: '+1', placeholder: '4155550123' },
+  { iso: 'VN', code: '+84', placeholder: '912345678' },
+  { iso: 'ZA', code: '+27', placeholder: '821234567' },
 ] as const
 
 const DEFAULT_COUNTRY_CODE = '+92'
@@ -156,8 +216,8 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden p-1">
                 {COUNTRY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.code} value={opt.code} className="rounded-xl px-4 py-2.5">
-                    {opt.flag} {opt.country} {opt.code}
+                  <SelectItem key={`${opt.iso}-${opt.code}`} value={opt.code} className="rounded-xl px-4 py-2.5">
+                    {opt.iso} {opt.code}
                   </SelectItem>
                 ))}
               </SelectContent>
