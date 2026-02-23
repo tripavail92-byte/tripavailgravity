@@ -54,7 +54,8 @@ export const CulturalIcon = () => (
         <motion.rect
           key={i} x={x} y="40" width="6" height="35"
           fill="hsl(var(--card))" stroke="hsl(var(--border))" strokeWidth="1.5"
-          animate={{ height: [35, 37, 35] }}
+          animate={{ scaleY: [1, 1.06, 1] }}
+          style={{ transformOrigin: '50% 100%' }}
           transition={{ duration: 2, delay: i * 0.2, repeat: Infinity }}
         />
       ))}
@@ -161,13 +162,7 @@ export const BeachIcon = () => (
         fill="#93C5FD"
         stroke="#1D4ED8"
         strokeWidth="2"
-        animate={{
-          d: [
-            'M10 70 Q30 60 50 70 Q70 80 90 70 V90 H10 Z',
-            'M10 75 Q30 85 50 75 Q70 65 90 75 V90 H10 Z',
-            'M10 70 Q30 60 50 70 Q70 80 90 70 V90 H10 Z',
-          ],
-        }}
+        animate={{ y: [0, 5, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       />
     </svg>
@@ -298,7 +293,7 @@ export const PhotographyIcon = () => (
       <motion.circle
         cx="50" cy="60" r="10"
         fill="hsl(var(--muted-foreground)/0.25)"
-        animate={{ r: [10, 11, 10] }}
+        animate={{ scale: [1, 1.1, 1] }}
         transition={{ duration: 2, repeat: Infinity }}
       />
       <motion.circle
@@ -422,7 +417,7 @@ export const CustomIcon = () => (
           key={i}
           x1="35" y1={y} x2="65" y2={y}
           stroke="currentColor" strokeWidth="3" strokeLinecap="round"
-          animate={{ x1: [35, 37, 35] }}
+          animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 2, delay: i * 0.3, repeat: Infinity }}
         />
       ))}
