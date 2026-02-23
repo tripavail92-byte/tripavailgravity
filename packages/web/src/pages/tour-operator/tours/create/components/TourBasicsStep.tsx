@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { Check, Info, Sparkles, X } from 'lucide-react'
@@ -119,7 +119,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <div className="space-y-6">
         {/* Header card */}
-        <Card className="p-6 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
           <div className="relative flex items-center gap-4">
             <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -148,7 +148,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
-          {/* Tour Category â€” 15-card grid */}
+          {/* Tour Category — 15-card grid */}
           <div className="space-y-4">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Tour Category *
@@ -211,7 +211,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                       Describe your custom category
                     </Label>
                     <Input
-                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinemaâ€¦"
+                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema…"
                       value={data.custom_category_label || ''}
                       onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
                       className="h-10 text-sm"
@@ -277,7 +277,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             </div>
 
             <Textarea
-              placeholder="A brief teaser for the tour cardâ€¦"
+              placeholder="A brief teaser for the tour card…"
               value={data.short_description || ''}
               onChange={(e) => onUpdate({ short_description: e.target.value })}
               rows={3}
@@ -326,7 +326,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                   {/* Template list */}
                   {loadingTemplates ? (
                     <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
-                      Loading suggestionsâ€¦
+                      Loading suggestions…
                     </div>
                   ) : templates.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-4">
@@ -346,7 +346,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                             <span className="uppercase font-semibold text-primary/70">
                               {tmpl.tone}
                             </span>
-                            <span>Â·</span>
+                            <span>·</span>
                             <span>{tmpl.length_class}</span>
                           </p>
                           <p className="text-sm text-foreground leading-relaxed line-clamp-3">
@@ -367,7 +367,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
           <Button
             onClick={onNext}
             size="lg"
-            className="px-8 min-w-[140px] bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold shadow-lg shadow-primary/25 border-0"
+            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/30 border-0"
             disabled={!isValid}
           >
             Next Step

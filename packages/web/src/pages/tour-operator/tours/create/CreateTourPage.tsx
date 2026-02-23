@@ -97,7 +97,7 @@ export default function CreateTourPage() {
 
   if (gateLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 30%, #f3e8ff 60%, #fce7f3 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           <p className="text-muted-foreground font-medium tracking-tight">
@@ -168,7 +168,7 @@ export default function CreateTourPage() {
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 30%, #f3e8ff 60%, #fce7f3 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
       {/* Decorative orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />

@@ -1,17 +1,17 @@
-﻿import { motion } from 'motion/react'
+import { motion } from 'motion/react'
 
 // Design-token-safe colors (CSS variable references work in SVG fill/stroke):
-// Primary fills  → hsl(var(--muted))
-// Strokes        → hsl(var(--border))
-// Accent fills   → purposeful accent colors kept for icon identity
-// Dark fills     → hsl(var(--muted-foreground))
+// Primary fills  ? hsl(var(--muted))
+// Strokes        ? hsl(var(--border))
+// Accent fills   ? purposeful accent colors kept for icon identity
+// Dark fills     ? hsl(var(--muted-foreground))
 
 const iconVariants = {
   initial: { scale: 1, filter: 'drop-shadow(0px 0px 0px rgba(0,0,0,0))' },
   hover: { scale: 1.08, filter: 'drop-shadow(0px 8px 16px rgba(0,0,0,0.12))' },
 }
 
-// ── Existing 8 icons (colors updated to CSS variables) ────────────────────────
+// -- Existing 8 icons (colors updated to CSS variables) ------------------------
 
 export const AdventureIcon = () => (
   <motion.div
@@ -217,7 +217,7 @@ export const ReligiousIcon = () => (
   </motion.div>
 )
 
-// ── 6 new icons ───────────────────────────────────────────────────────────────
+// -- 6 new icons ---------------------------------------------------------------
 
 export const HoneymoonIcon = () => (
   <motion.div

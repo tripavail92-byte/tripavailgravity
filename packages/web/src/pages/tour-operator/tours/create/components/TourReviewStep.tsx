@@ -22,7 +22,7 @@ interface TourReviewStepProps {
 export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps) {
   return (
     <div className="space-y-6">
-      <div className="relative p-6 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 text-white border-none shadow-xl overflow-hidden">
+      <div className="relative p-6 rounded-2xl bg-primary text-white border-none shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
@@ -38,7 +38,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
       <div className="grid gap-6">
         <div className="glass-card rounded-2xl p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <Info className="w-4 h-4 text-pink-500" /> Basic Information
+            <Info className="w-4 h-4 text-primary" /> Basic Information
           </h3>
 
           <div className="space-y-3">
@@ -59,7 +59,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
 
         <div className="glass-card rounded-2xl p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-rose-500" /> Pricing & Policies
+            <DollarSign className="w-4 h-4 text-primary" /> Pricing & Policies
           </h3>
 
           <div className="space-y-3">
@@ -78,7 +78,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
 
         <div className="glass-card rounded-2xl p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-pink-500" /> Scheduling
+            <Calendar className="w-4 h-4 text-primary" /> Scheduling
           </h3>
           <div className="text-sm text-muted-foreground">
             {data.schedules?.length || 0} departure dates configured.
@@ -98,7 +98,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
         <Button
           onClick={onPublish}
           size="lg"
-          className="px-10 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold shadow-lg shadow-pink-500/30"
+          className="px-10 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/25"
         >
           🚀 Publish Tour
         </Button>

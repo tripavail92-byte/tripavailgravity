@@ -64,7 +64,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -163,7 +163,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
         <Button
           onClick={onNext}
           size="lg"
-          className="px-12 bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-600 hover:to-fuchsia-700 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-violet-500/25"
+          className="px-12 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-violet-500/25"
           disabled={isUploading || images.length === 0}
         >
           Next Step

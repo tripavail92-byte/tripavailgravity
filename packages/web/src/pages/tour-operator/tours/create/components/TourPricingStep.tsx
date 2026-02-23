@@ -94,7 +94,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -203,7 +203,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -554,7 +554,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>
@@ -698,7 +698,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -1049,7 +1049,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>
@@ -1255,7 +1255,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -1606,7 +1606,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>
@@ -1760,7 +1760,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -2111,7 +2111,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>
@@ -2281,7 +2281,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <Card className="p-6 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center">
@@ -2632,7 +2632,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>
@@ -2710,7 +2710,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 shadow-lg shadow-emerald-500/25"
+          className="bg-primary hover:bg-primary/90 text-white px-8 shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>

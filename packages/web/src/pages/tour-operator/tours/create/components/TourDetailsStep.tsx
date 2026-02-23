@@ -41,7 +41,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-indigo-500 via-blue-600 to-violet-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -237,7 +237,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 min-w-[140px] bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold shadow-lg border-0"
+          className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold shadow-lg border-0"
         >
           Next Step
         </Button>

@@ -206,7 +206,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* Header */}
-      <div className="relative p-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white border-none shadow-xl overflow-hidden">
+      <div className="relative p-6 rounded-2xl bg-primary text-white border-none shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
@@ -228,7 +228,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
           <Button
             size="sm"
             onClick={addDay}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-none shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-white border-none shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Day
@@ -301,12 +301,12 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       <div className="glass-card rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">
-            Activities - <span className="text-amber-600">Day {currentDay?.day}</span>
+            Activities - <span className="text-primary">Day {currentDay?.day}</span>
           </h3>
           <Button
             size="sm"
             onClick={() => setShowAddActivity(true)}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm"
+            className="bg-primary hover:bg-primary/90 text-white shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Activity
@@ -316,9 +316,9 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
         {/* Activities List */}
         <div className="space-y-3">
           {currentDay?.activities.length === 0 ? (
-            <div className="text-center py-12 bg-amber-50/40 backdrop-blur-sm rounded-2xl border-2 border-dashed border-amber-200/60">
-              <div className="w-16 h-16 bg-amber-100/60 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-8 h-8 text-amber-500" />
+            <div className="text-center py-12 bg-primary/5 backdrop-blur-sm rounded-2xl border-2 border-dashed border-primary/20">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-primary" />
               </div>
               <p className="text-foreground font-medium">No activities added yet</p>
               <p className="text-sm text-muted-foreground">
@@ -561,7 +561,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 <Button
                   onClick={addActivity}
                   disabled={!newActivity.title || !newActivity.time}
-                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white shadow-md"
                 >
                   Add Activity
                 </Button>
@@ -584,7 +584,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold shadow-lg shadow-amber-500/25"
+          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/25"
           disabled={itinerary.length === 0}
         >
           Next Step
