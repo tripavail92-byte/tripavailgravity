@@ -1,4 +1,4 @@
-import { Camera, FlipHorizontal, Loader2, RefreshCw, UploadCloud } from 'lucide-react'
+import { Camera, FlipHorizontal, Loader2, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,9 @@ interface SelfieCaptureWidgetProps {
 type CameraState = 'idle' | 'requesting' | 'live' | 'preview' | 'denied'
 
 export function SelfieCaptureWidget({ onCapture, disabled }: SelfieCaptureWidgetProps) {
-  const videoRef    = useRef<HTMLVideoElement>(null)
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  const streamRef   = useRef<MediaStream | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef  = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   const [cameraState, setCameraState] = useState<CameraState>('idle')
   const [previewSrc, setPreviewSrc]   = useState<string | null>(null)
@@ -87,12 +86,6 @@ export function SelfieCaptureWidget({ onCapture, disabled }: SelfieCaptureWidget
     )
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    onCapture(file)
-  }
-
   return (
     <div className="space-y-4">
       {/* ── CAMERA VIEWPORT ── */}
@@ -142,7 +135,7 @@ export function SelfieCaptureWidget({ onCapture, disabled }: SelfieCaptureWidget
             <Camera className="w-10 h-10 text-destructive" />
             <p className="font-bold text-destructive text-sm">Camera permission denied</p>
             <p className="text-xs text-muted-foreground">
-              Allow camera access in your browser settings, or upload a photo instead.
+              Go to your browser settings, allow camera access for this site, then try again.
             </p>
           </div>
         )}
@@ -217,39 +210,7 @@ export function SelfieCaptureWidget({ onCapture, disabled }: SelfieCaptureWidget
           </div>
         )}
 
-        {/* Divider + file upload fallback */}
-        {cameraState !== 'preview' && (
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">or</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-        )}
-        {cameraState !== 'preview' && (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              id="selfie-file-upload"
-              className="hidden"
-              accept="image/*"
-              capture="user"
-              onChange={handleFileUpload}
-              disabled={disabled}
-            />
-            <Button
-              asChild
-              variant="outline"
-              className="w-full h-11 rounded-2xl font-bold gap-2"
-              disabled={disabled}
-            >
-              <label htmlFor="selfie-file-upload" className="cursor-pointer">
-                <UploadCloud className="w-4 h-4" />
-                Upload from Device
-              </label>
-            </Button>
-          </>
-        )}
+
       </div>
     </div>
   )
