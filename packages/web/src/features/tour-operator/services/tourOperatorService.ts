@@ -23,7 +23,7 @@ export interface TourOperatorOnboardingData {
   }
   coverage?: {
     primaryLocation: string
-    radius: string
+    radii: string[]
   }
   policies?: {
     accepted: boolean
@@ -91,7 +91,7 @@ export const tourOperatorService = {
       registration_number: data.businessInfo?.registrationNumber,
       categories,
       primary_city: data.coverage?.primaryLocation,
-      coverage_range: data.coverage?.radius,
+      coverage_range: (data.coverage?.radii ?? []).join(', ') || null,
       policies: data.policies,
       verification_documents: {
         idCardUrl: data.verification?.idCardUrl,
@@ -110,7 +110,25 @@ export const tourOperatorService = {
       console.log('📤 Saving tour operator profile:', profilePayload)
       const { error } = await supabase.from('tour_operator_profiles').upsert(profilePayload)
 
-      if (error) throw error
+      if (error) {
+        // If the error is about setup_current_step column not existing yet (migration pending),
+        // retry without it so the rest of the data still saves correctly.
+        if (
+          error.message?.includes('setup_current_step') ||
+          error.details?.includes('setup_current_step')
+        ) {
+          console.warn(
+            '⚠️  setup_current_step column not found — retrying without it. Run the pending migration in Supabase dashboard.',
+          )
+          const { setup_current_step: _omitted, ...payloadWithoutStep } = profilePayload
+          const { error: retryError } = await supabase
+            .from('tour_operator_profiles')
+            .upsert(payloadWithoutStep)
+          if (retryError) throw retryError
+        } else {
+          throw error
+        }
+      }
 
       // If setup is completed, update the user_role status from 'incomplete' to 'pending'
       if (setupCompleted) {
@@ -175,7 +193,9 @@ export const tourOperatorService = {
         },
         coverage: {
           primaryLocation: profile.primary_city || '',
-          radius: profile.coverage_range || '',
+          radii: profile.coverage_range
+            ? profile.coverage_range.split(', ').filter(Boolean)
+            : [],
         },
         policies: profile.policies,
         verification: profile.verification_documents

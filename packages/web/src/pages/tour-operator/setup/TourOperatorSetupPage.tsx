@@ -81,8 +81,8 @@ export default function TourOperatorSetupPage() {
   }, [user?.id])
 
   const saveProgress = useCallback(
-    async (dataToSave: any, isFinal: boolean = false, stepIndex?: number) => {
-      if (!user?.id) return
+    async (dataToSave: any, isFinal: boolean = false, stepIndex?: number): Promise<boolean> => {
+      if (!user?.id) return false
       setIsSaving(true)
       try {
         await tourOperatorService.saveOnboardingData(
@@ -94,9 +94,11 @@ export default function TourOperatorSetupPage() {
         if (isFinal) {
           toast.success('Onboarding completed!')
         }
+        return true
       } catch (error) {
         console.error('Error saving progress:', error)
         toast.error('Failed to save progress')
+        return false
       } finally {
         setIsSaving(false)
       }
@@ -128,9 +130,9 @@ export default function TourOperatorSetupPage() {
   }
 
   const handleSaveAndExit = async () => {
-    // Persist current step index so wizard resumes here
-    await saveProgress(setupData, false, currentStep)
-    toast.success('Progress saved — you can resume anytime')
+    const saved = await saveProgress(setupData, false, currentStep)
+    if (saved) toast.success('Progress saved — you can resume anytime')
+    // Always navigate — don't trap the user on the page if save fails
     navigate(exitDestination)
   }
 
