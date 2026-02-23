@@ -171,8 +171,8 @@ if (ocrData && typeof ocrData === 'object' && !ocrData.error) {
   console.log('   OCR result preview:', JSON.stringify(ocrData).slice(0, 200))
 }
 
-// 5. face_match (Azure Face API biometric comparison)
-console.log('\n── 5. face_match (Azure → GPT-vision fallback) ──')
+// 5. face_match (DeepFace → Azure → GPT-vision, auto-tiered)
+console.log('\n── 5. face_match (DeepFace/Azure/GPT — auto-tiered) ──')
 const faceUrl = HOSTED_FACE_URL || SELFIE_URL  // prefer Supabase-hosted; edge fn can always fetch it
 const { data: faceData } = await callFunction('face_match', {
   taskType:  'face_match',
