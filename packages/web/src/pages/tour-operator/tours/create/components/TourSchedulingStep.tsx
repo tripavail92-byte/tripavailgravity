@@ -42,8 +42,9 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
-        <div className="flex items-center gap-4">
+      <Card className="p-6 bg-gradient-to-br from-cyan-500 via-sky-600 to-blue-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+        <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <Calendar className="w-6 h-6 text-white" />
           </div>
@@ -58,9 +59,9 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
 
       <div className="space-y-4">
         {schedules.map((schedule) => (
-          <Card
+          <div
             key={schedule.id}
-            className="p-6 border-border shadow-sm rounded-2xl hover:border-primary/20 transition-colors"
+            className="glass-card p-6 rounded-2xl border border-white/40 shadow-md hover:border-cyan-200/60 transition-all duration-200"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
               <div className="md:col-span-4 space-y-2">
@@ -109,14 +110,16 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                 </Button>
               </div>
             </div>
-          </Card>
+          </div>
         ))}
 
         {schedules.length === 0 && (
-          <div className="text-center py-12 bg-muted rounded-2xl border-2 border-dashed border-border">
-            <Calendar className="w-12 h-12 text-muted mx-auto mb-3" />
-            <h3 className="text-foreground font-bold">No dates scheduled</h3>
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center py-16 rounded-2xl border-2 border-dashed border-cyan-200/60 bg-white/30 backdrop-blur-sm">
+            <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-cyan-500" />
+            </div>
+            <h3 className="text-foreground font-bold text-lg">No dates scheduled yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
               Add departure dates to let travelers book your tour.
             </p>
           </div>
@@ -125,21 +128,21 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         <Button
           onClick={addSchedule}
           variant="outline"
-          className="w-full h-14 border-dashed border-2 border-input hover:border-primary hover:bg-primary/5 hover:text-primary transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
+          className="w-full h-14 border-dashed border-2 border-cyan-200 hover:border-cyan-400 hover:bg-cyan-50/50 hover:text-cyan-600 bg-white/40 text-muted-foreground transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
         >
           <Plus className="w-5 h-5" />
           Add Departure Date
         </Button>
       </div>
 
-      <div className="flex items-center justify-between pt-6 border-t border-border">
-        <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none">
+      <div className="flex items-center justify-between pt-6 border-t border-white/30">
+        <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm">
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none"
+          className="px-8 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-cyan-500/25"
           disabled={schedules.length === 0}
         >
           Next Step

@@ -97,7 +97,7 @@ export default function CreateTourPage() {
 
   if (gateLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 30%, #f3e8ff 60%, #fce7f3 100%)' }}>
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           <p className="text-muted-foreground font-medium tracking-tight">
@@ -168,9 +168,16 @@ export default function CreateTourPage() {
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
-    <div className="min-h-screen bg-muted flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 30%, #f3e8ff 60%, #fce7f3 100%)' }}>
+      {/* Decorative orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -top-20 right-20 w-72 h-72 bg-purple-300/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 -right-20 w-80 h-80 bg-pink-200/20 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <div className="bg-background border-b border-border px-6 py-4 sticky top-0 z-10">
+      <div className="glass-nav border-b border-white/30 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto space-y-3">
           {/* Title row */}
           <div className="flex justify-between items-center">
@@ -231,15 +238,15 @@ export default function CreateTourPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 max-w-3xl mx-auto w-full p-6">
+      <div className="flex-1 max-w-3xl mx-auto w-full p-6 relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="bg-background rounded-lg shadow-sm border border-border p-8"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="glass-card rounded-3xl border border-white/40 shadow-2xl p-8"
           >
             <CurrentStepComponent
               data={tourData}

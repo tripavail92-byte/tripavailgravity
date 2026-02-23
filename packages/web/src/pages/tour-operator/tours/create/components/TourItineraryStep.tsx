@@ -206,28 +206,29 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* Header */}
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-none shadow-md">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <MapPin className="w-6 h-6 text-primary-foreground" />
+      <div className="relative p-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white border-none shadow-xl overflow-hidden">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+        <div className="relative flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
+            <MapPin className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Itinerary</h2>
-            <p className="text-primary-foreground/90 text-sm font-medium">
+            <p className="text-white/90 text-sm font-medium">
               Plan your day-by-day tour schedule
             </p>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Day Tabs */}
-      <Card className="p-4 bg-background border-border shadow-sm">
+      <div className="glass-card rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">Itinerary Days</h3>
           <Button
             size="sm"
             onClick={addDay}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground border-none shadow-sm"
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-none shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Day
@@ -252,7 +253,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
 
         {/* Day Details */}
         {currentDay && (
-          <div className="space-y-4 bg-muted/50 p-4 rounded-2xl border border-border">
+          <div className="space-y-4 bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/60">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
@@ -262,7 +263,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                   value={currentDay.title}
                   onChange={(e) => updateDay(currentDay.id, 'title', e.target.value)}
                   placeholder={`Day ${currentDay.day} - Enter title`}
-                  className="bg-background"
+                  className="bg-white/60 backdrop-blur-sm border-white/60"
                 />
               </div>
               <div className="md:col-span-2">
@@ -274,7 +275,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                   onChange={(e) => updateDay(currentDay.id, 'description', e.target.value)}
                   placeholder="Describe what happens on this day..."
                   rows={2}
-                  className="bg-background resize-none"
+                  className="bg-white/60 backdrop-blur-sm border-white/60 resize-none"
                 />
               </div>
             </div>
@@ -294,18 +295,18 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
             )}
           </div>
         )}
-      </Card>
+      </div>
 
       {/* Activities */}
-      <Card className="p-4 bg-background border-border shadow-sm">
+      <div className="glass-card rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-foreground">
-            Activities - <span className="text-primary">Day {currentDay?.day}</span>
+            Activities - <span className="text-amber-600">Day {currentDay?.day}</span>
           </h3>
           <Button
             size="sm"
             onClick={() => setShowAddActivity(true)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Activity
@@ -315,9 +316,9 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
         {/* Activities List */}
         <div className="space-y-3">
           {currentDay?.activities.length === 0 ? (
-            <div className="text-center py-12 bg-muted rounded-2xl border-2 border-dashed border-border">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-8 h-8 text-muted-foreground" />
+            <div className="text-center py-12 bg-amber-50/40 backdrop-blur-sm rounded-2xl border-2 border-dashed border-amber-200/60">
+              <div className="w-16 h-16 bg-amber-100/60 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-8 h-8 text-amber-500" />
               </div>
               <p className="text-foreground font-medium">No activities added yet</p>
               <p className="text-sm text-muted-foreground">
@@ -333,7 +334,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               return (
                 <motion.div
                   key={activity.id}
-                  className="flex items-start gap-4 p-4 border border-border rounded-xl bg-background hover:border-primary/30 hover:shadow-md transition-all group"
+                  className="flex items-start gap-4 p-4 border border-white/50 rounded-xl bg-white/50 backdrop-blur-sm hover:border-amber-200/70 hover:shadow-md hover:bg-white/70 transition-all group"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
@@ -391,7 +392,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
             })
           )}
         </div>
-      </Card>
+      </div>
 
       {/* Add Activity Modal */}
       <AnimatePresence>
@@ -405,12 +406,12 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
             />
             <motion.div
-              className="bg-background rounded-2xl shadow-2xl w-full max-w-lg z-10 overflow-hidden"
+              className="glass-card rounded-2xl shadow-2xl w-full max-w-lg z-10 overflow-hidden border border-white/40"
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              <div className="p-6 border-b border-border flex justify-between items-center">
+              <div className="p-6 border-b border-white/30 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-foreground">Add New Activity</h3>
                 <Button
                   variant="ghost"
@@ -549,7 +550,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 </div>
               </div>
 
-              <div className="p-6 border-t border-border bg-muted flex gap-3">
+              <div className="p-6 border-t border-white/30 bg-white/30 backdrop-blur-sm flex gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setShowAddActivity(false)}
@@ -560,7 +561,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 <Button
                   onClick={addActivity}
                   disabled={!newActivity.title || !newActivity.time}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md"
                 >
                   Add Activity
                 </Button>
@@ -571,14 +572,19 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       </AnimatePresence>
 
       {/* Navigation Footer */}
-      <div className="flex justify-between pt-6 border-t border-border">
-        <Button variant="outline" onClick={onBack} size="lg" className="px-8 border-input">
+      <div className="flex justify-between pt-6 border-t border-white/30">
+        <Button
+          variant="outline"
+          onClick={onBack}
+          size="lg"
+          className="px-8 bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm"
+        >
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+          className="px-8 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold shadow-lg shadow-amber-500/25"
           disabled={itinerary.length === 0}
         >
           Next Step

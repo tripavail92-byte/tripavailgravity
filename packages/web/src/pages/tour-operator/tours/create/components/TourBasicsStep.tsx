@@ -119,8 +119,9 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <div className="space-y-6">
         {/* Header card */}
-        <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
-          <div className="flex items-center gap-4">
+        <Card className="p-6 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+          <div className="relative flex items-center gap-4">
             <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
               <Info className="w-6 h-6 text-white" />
             </div>
@@ -366,7 +367,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
           <Button
             onClick={onNext}
             size="lg"
-            className="px-8 bg-primary hover:bg-primary/90 text-white font-bold"
+            className="px-8 min-w-[140px] bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold shadow-lg shadow-primary/25 border-0"
             disabled={!isValid}
           >
             Next Step

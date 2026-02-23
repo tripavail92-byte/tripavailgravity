@@ -64,8 +64,9 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
-        <div className="flex items-center gap-4">
+      <Card className="p-6 bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+        <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <ImageIcon className="w-6 h-6 text-white" />
           </div>
@@ -81,10 +82,11 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
       <div
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all bg-muted/50 hover:bg-background',
+          'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300',
+          'bg-white/40 hover:bg-white/60 backdrop-blur-sm',
           isDragActive
-            ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
-            : 'border-input hover:border-primary/40',
+            ? 'border-violet-400 bg-violet-50/60 ring-4 ring-violet-200/50 shadow-lg'
+            : 'border-white/60 hover:border-violet-300',
         )}
       >
         <input {...getInputProps()} />
@@ -161,7 +163,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack }: TourMediaStepP
         <Button
           onClick={onNext}
           size="lg"
-          className="px-12 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-primary/20"
+          className="px-12 bg-gradient-to-r from-violet-500 to-fuchsia-600 hover:from-violet-600 hover:to-fuchsia-700 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-violet-500/25"
           disabled={isUploading || images.length === 0}
         >
           Next Step

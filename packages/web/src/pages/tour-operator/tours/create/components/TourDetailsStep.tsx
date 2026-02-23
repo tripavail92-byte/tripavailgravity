@@ -41,13 +41,14 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
-        <div className="flex items-center gap-4">
+      <Card className="p-6 bg-gradient-to-br from-indigo-500 via-blue-600 to-violet-600 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+        <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Requirements & Logistics</h2>
+            <h2 className="text-xl font-bold">Requirements &amp; Logistics</h2>
             <p className="text-white/80 text-sm">
               Define who can participate and the physical demands.
             </p>
@@ -56,7 +57,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
       </Card>
 
       <div className="grid gap-6">
-        <Card className="p-6 border-border shadow-sm rounded-2xl">
+        <div className="glass-card rounded-2xl p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
@@ -208,9 +209,9 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
               </div>
             </div>
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-6 border-border shadow-sm rounded-2xl">
+        <div className="glass-card rounded-2xl p-6">
           <Label className="text-sm font-bold text-foreground uppercase tracking-wide mb-4 block">
             Physical Requirements / Logistics
           </Label>
@@ -221,22 +222,22 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             rows={4}
             className="border-input focus:border-primary/50 focus:ring-primary/20 resize-none"
           />
-        </Card>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between pt-6 border-t border-border">
+      <div className="flex items-center justify-between pt-6 border-t border-white/30">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 border-input hover:bg-muted"
+          className="px-8 bg-white/50 border-white/60 hover:bg-white/70"
         >
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold"
+          className="px-8 min-w-[140px] bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold shadow-lg border-0"
         >
           Next Step
         </Button>
