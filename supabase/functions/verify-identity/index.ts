@@ -15,6 +15,20 @@ serve(async (req) => {
     try {
         const { idCardUrl, selfieUrl, userId, role, taskType } = await req.json();
 
+        // ── Basic field validation ─────────────────────────────────────────────
+        if (!taskType) {
+            return new Response(JSON.stringify({ error: 'taskType is required' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        if (['validate_id', 'validate_id_back', 'extract_ocr'].includes(taskType) && !idCardUrl) {
+            return new Response(JSON.stringify({ error: 'idCardUrl is required for ' + taskType }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        if (taskType === 'face_match' && (!idCardUrl || !selfieUrl)) {
+            return new Response(JSON.stringify({ match: false, score: 0, reason: 'idCardUrl and selfieUrl are both required for face_match' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
         // ── Secrets ──────────────────────────────────────────────────────────
         const openaiKey      = Deno.env.get('OPENAI_API_KEY');
         const azureFaceKey   = Deno.env.get('AZURE_FACE_KEY');
@@ -179,35 +193,71 @@ serve(async (req) => {
                 }
             }
 
-        // ── 4. Face Match — Azure Face API (real biometrics) ─────────────────
+        // ── 4. Face Match — Azure Face API with GPT fallback ─────────────────
         } else if (taskType === 'face_match') {
             eventType = 'biometric_match';
 
-            // Step 1: Detect face on ID card photo
-            const idFaceId = await azureDetectFace(idCardUrl);
-            if (!idFaceId) {
-                aiResult = { match: false, score: 0, reason: 'No face detected on the ID card. Ensure the front side with your photo is uploaded.' };
-            } else {
-                // Step 2: Detect face in selfie
-                const selfieFaceId = await azureDetectFace(selfieUrl);
-                if (!selfieFaceId) {
-                    aiResult = { match: false, score: 0, reason: 'No face detected in the selfie. Ensure your face is clearly visible and well-lit.' };
+            let azureBlocked = false;
+            try {
+                // Step 1: Detect face on ID card photo
+                const idFaceId = await azureDetectFace(idCardUrl);
+                if (!idFaceId) {
+                    aiResult = { match: false, score: 0, reason: 'No face detected on the ID card. Ensure the front side with your photo is uploaded.', method: 'azure' };
                 } else {
-                    // Step 3: Compare biometric embeddings
-                    const verification = await azureVerifyFaces(idFaceId, selfieFaceId);
-                    const score = Math.round(verification.confidence * 100);
-                    // Azure threshold: >= 0.5 = same person (recognition_04 model)
-                    // We use 60% as minimum for safety margin
-                    const MATCH_THRESHOLD = 60;
-                    aiResult = {
-                        match: score >= MATCH_THRESHOLD,
-                        score,
-                        reason: score >= MATCH_THRESHOLD
-                            ? `Azure Face AI confirmed identity match with ${score}% biometric confidence.`
-                            : `Biometric match failed (${score}% confidence, minimum ${MATCH_THRESHOLD}% required). Please retake your selfie in good lighting, holding your ID next to your face.`,
-                        isIdentical: verification.isIdentical,
-                    };
+                    // Step 2: Detect face in selfie
+                    const selfieFaceId = await azureDetectFace(selfieUrl);
+                    if (!selfieFaceId) {
+                        aiResult = { match: false, score: 0, reason: 'No face detected in the selfie. Ensure your face is clearly visible and well-lit.', method: 'azure' };
+                    } else {
+                        // Step 3: Compare biometric embeddings
+                        const verification = await azureVerifyFaces(idFaceId, selfieFaceId);
+                        const score = Math.round(verification.confidence * 100);
+                        const MATCH_THRESHOLD = 60;
+                        aiResult = {
+                            match: score >= MATCH_THRESHOLD,
+                            score,
+                            method: 'azure',
+                            reason: score >= MATCH_THRESHOLD
+                                ? `Azure Face AI confirmed identity match with ${score}% biometric confidence.`
+                                : `Biometric match failed (${score}% confidence, minimum ${MATCH_THRESHOLD}% required). Please retake your selfie in good lighting.`,
+                            isIdentical: verification.isIdentical,
+                        };
+                    }
                 }
+            } catch (azureErr: any) {
+                // Azure Responsible AI gate — verification feature requires access approval
+                const msg = azureErr.message || '';
+                if (msg.includes('UnsupportedFeature') || msg.includes('Verification') || msg.includes('facerecognition')) {
+                    azureBlocked = true;
+                } else {
+                    throw azureErr; // re-throw real errors (bad key, network, etc.)
+                }
+            }
+
+            // GPT-4o-mini visual fallback (used when Azure Verify is not approved yet)
+            if (azureBlocked) {
+                const [idBase64, selfieBase64] = await Promise.all([
+                    imageUrlToBase64(idCardUrl),
+                    imageUrlToBase64(selfieUrl),
+                ]);
+                const gptResult = await gptVision(
+                    `Compare the person's face in Image 1 (government ID card) with Image 2 (selfie).
+                     Are they the same person? Consider: jaw shape, eye spacing, nose shape, overall facial structure.
+                     Ignore differences in lighting, age (within 10 years), glasses, or head angle.
+                     Return ONLY JSON: { "match": boolean, "confidence": number (0-100), "reason": string }`,
+                    idBase64,
+                    [selfieBase64]
+                );
+                const score = Math.round(gptResult.confidence ?? 0);
+                const MATCH_THRESHOLD = 70; // GPT is less precise, use higher threshold
+                aiResult = {
+                    match: score >= MATCH_THRESHOLD && gptResult.match === true,
+                    score,
+                    method: 'gpt_vision',
+                    reason: (score >= MATCH_THRESHOLD && gptResult.match)
+                        ? `GPT-4o visual analysis confirmed identity match (${score}% confidence).`
+                        : gptResult.reason || `Visual match failed (${score}% confidence). Please retake your selfie in good lighting, similar angle to your ID photo.`,
+                };
             }
         }
 
