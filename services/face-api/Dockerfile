@@ -15,6 +15,8 @@ RUN python preload_models.py
 
 EXPOSE 8000
 
+# Reset the base image entrypoint (serengil/deepface uses entrypoint.sh for gunicorn)
+ENTRYPOINT []
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 EXPOSE 8000
