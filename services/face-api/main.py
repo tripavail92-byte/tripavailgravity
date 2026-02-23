@@ -19,7 +19,7 @@ from pathlib import Path
 import httpx
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, HttpUrl
 from deepface import DeepFace
