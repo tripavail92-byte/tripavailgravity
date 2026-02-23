@@ -22,6 +22,8 @@ import { aiVerificationService } from '@/features/verification/services/aiVerifi
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+import { SelfieCaptureWidget } from './SelfieCaptureWidget'
+
 interface IdentitySubFlowProps {
   onComplete: (data: {
     idCardUrl: string
@@ -313,33 +315,10 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </div>
             </div>
 
-            <Card className="p-8 border-2 border-dashed border-border flex flex-col items-center justify-center bg-muted/50 rounded-[32px]">
-              <div className="w-16 h-16 bg-background rounded-2xl shadow-sm flex items-center justify-center mb-4">
-                <Camera className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <input
-                type="file"
-                id="selfie-upload"
-                className="hidden"
-                accept="image/*"
-                capture="user"
-                onChange={(e) => e.target.files?.[0] && handleSelfieUpload(e.target.files[0])}
-                disabled={isUploadingSelfie}
-              />
-              <Button
-                asChild
-                className="rounded-2xl px-8 h-12 bg-primary-gradient text-primary-foreground font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
-              >
-                <label htmlFor="selfie-upload" className="cursor-pointer">
-                  {isUploadingSelfie ? (
-                    <Loader2 className="animate-spin mr-2" />
-                  ) : (
-                    <Camera className="mr-2" />
-                  )}
-                  Take Selfie
-                </label>
-              </Button>
-            </Card>
+            <SelfieCaptureWidget
+              onCapture={handleSelfieUpload}
+              disabled={isUploadingSelfie}
+            />
             <button
               onClick={() => setSubStep('id_upload')}
               className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary"
