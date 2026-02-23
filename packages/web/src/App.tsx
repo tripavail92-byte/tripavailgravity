@@ -61,6 +61,7 @@ const TourOperatorSettingsPage = lazy(
   () => import('@/pages/tour-operator/TourOperatorSettingsPage'),
 )
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
+const MobileKYCPage = lazy(() => import('@/pages/shared/verification/MobileKYCPage'))
 
 // Admin (Phase 2 skeleton)
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
@@ -145,6 +146,8 @@ function App() {
           <Routes>
             <Route path="/auth" element={<LoginPage />} />
             <Route path="/test-kyc" element={<TestKYC />} />
+            {/* Public mobile KYC capture page — no auth required, session_token is the credential */}
+            <Route path="/kyc/mobile" element={<MobileKYCPage />} />
 
             {/* Traveller Routes (Teal Theme) */}
             <Route element={<TravellerLayout />}>

@@ -12,6 +12,9 @@ project_id = "Tripfinal"
 [functions.verify-identity]
 verify_jwt = false
 
+[functions.kyc-mobile-upload]
+verify_jwt = false
+
 [functions.stripe-create-payment-intent]
 verify_jwt = false
 
