@@ -191,45 +191,38 @@ export function RoleBasedDrawer() {
   const roleGradient = getRoleBadgeGradient(activeRole.role_type)
   const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
 
-  const roleAction =
-    activeRole.role_type === 'traveller'
-      ? {
-          label:
-            partnerType === 'hotel_manager'
-              ? 'Hotel Manager Dashboard'
-              : partnerType === 'tour_operator'
-                ? 'Tour Operator Dashboard'
-                : 'Become a Partner',
-          icon: partnerType ? LayoutDashboard : Briefcase,
-          onClick: async () => {
-            setIsOpen(false)
-            if (partnerType === 'hotel_manager' || partnerType === 'tour_operator') {
-              try {
-                // Ensure the active role matches their permanent partner type.
-                await switchRole(partnerType)
-                // Use /dashboard so redirect logic can send them to setup/listing if needed.
-                navigate('/dashboard')
-              } catch (error) {
-                console.error('Failed to open partner dashboard', error)
-              }
-              return
-            }
-            navigate('/partner/onboarding')
-          },
-        }
-      : {
-          label: 'Switch to Traveler',
-          icon: RefreshCcw,
-          onClick: async () => {
-            setIsOpen(false)
-            try {
-              await switchRole('traveller')
-              navigate('/')
-            } catch (error) {
-              console.error('Failed to switch role', error)
-            }
-          },
-        }
+  const isTraveller = activeRole.role_type === 'traveller'
+
+  const partnerDashboardAction = isTraveller && partnerType
+    ? {
+        label: partnerType === 'hotel_manager' ? 'Hotel Manager Dashboard' : 'Tour Operator Dashboard',
+        icon: LayoutDashboard,
+        gradient: partnerType === 'hotel_manager' ? 'from-blue-500 to-indigo-600' : 'from-emerald-500 to-teal-600',
+        onClick: async () => {
+          setIsOpen(false)
+          try {
+            await switchRole(partnerType)
+            navigate(partnerType === 'hotel_manager' ? '/manager/dashboard' : '/operator/dashboard')
+          } catch (error) {
+            console.error('Failed to open partner dashboard', error)
+          }
+        },
+      }
+    : null
+
+  const switchToTravelerAction = !isTraveller
+    ? {
+        onClick: async () => {
+          setIsOpen(false)
+          try {
+            await switchRole('traveller')
+            navigate('/')
+          } catch (error) {
+            console.error('Failed to switch role', error)
+          }
+        },
+      }
+    : null
 
   return (
     <>
@@ -450,37 +443,77 @@ export function RoleBasedDrawer() {
                       )
                     })}
 
-                    {/* Role action moved into menu to keep it always visible */}
-                    <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
-                      <motion.button
-                        whileHover={{ x: 4 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={roleAction.onClick}
-                        data-tour={activeRole.role_type === 'traveller' ? 'partner-switch' : undefined}
-                        className="w-full group"
-                      >
-                        <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
-                          <div
-                            className={cn(
-                              'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8',
-                              activeRole.role_type === 'traveller'
-                                ? 'from-violet-600 to-indigo-600'
-                                : 'from-slate-500 to-gray-600'
-                            )}
-                          >
-                            <roleAction.icon size={15} className="text-primary-foreground" strokeWidth={2} />
+                    {/* Partner dashboard shortcut (only for travellers with existing partner role) */}
+                    {partnerDashboardAction && (
+                      <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                        <motion.button
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={partnerDashboardAction.onClick}
+                          className="w-full group"
+                        >
+                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                            <div
+                              className={cn(
+                                'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg',
+                                partnerDashboardAction.gradient
+                              )}
+                            >
+                              <partnerDashboardAction.icon size={15} className="text-primary-foreground" strokeWidth={2} />
+                            </div>
+                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                              {partnerDashboardAction.label}
+                            </span>
+                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
                           </div>
+                        </motion.button>
+                      </div>
+                    )}
 
-                          <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
-                            {roleAction.label}
-                          </span>
+                    {/* Become a Partner — always visible to travellers */}
+                    {isTraveller && (
+                      <div className={cn('[@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', !partnerDashboardAction && 'pt-2 mt-2 border-t border-border/50')}>
+                        <motion.button
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => { setIsOpen(false); navigate('/partner/onboarding') }}
+                          data-tour="partner-switch"
+                          className="w-full group"
+                        >
+                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                              <Briefcase size={15} className="text-primary-foreground" strokeWidth={2} />
+                            </div>
+                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                              Become a Partner
+                            </span>
+                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
+                          </div>
+                        </motion.button>
+                      </div>
+                    )}
 
-                          <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
-                            ›
-                          </span>
-                        </div>
-                      </motion.button>
-                    </div>
+                    {/* Switch to Traveler — for hotel/tour operator roles */}
+                    {switchToTravelerAction && (
+                      <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                        <motion.button
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={switchToTravelerAction.onClick}
+                          className="w-full group"
+                        >
+                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                              <RefreshCcw size={15} className="text-primary-foreground" strokeWidth={2} />
+                            </div>
+                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                              Switch to Traveler
+                            </span>
+                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
+                          </div>
+                        </motion.button>
+                      </div>
+                    )}
 
                     {/* Sign out inside the menu so it's never out of view */}
                     <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
