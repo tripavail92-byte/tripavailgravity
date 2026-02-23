@@ -31,8 +31,6 @@ serve(async (req) => {
 
         // ── Secrets ──────────────────────────────────────────────────────────
         const openaiKey      = Deno.env.get('OPENAI_API_KEY');
-        const azureFaceKey   = Deno.env.get('AZURE_FACE_KEY');
-        const azureEndpoint  = Deno.env.get('AZURE_FACE_ENDPOINT');
         const faceApiUrl     = Deno.env.get('FACE_API_URL');    // Railway DeepFace service
         const faceApiSecret  = Deno.env.get('FACE_API_SECRET'); // shared Bearer token
         const supabaseUrl    = Deno.env.get('SUPABASE_URL')!;
@@ -92,47 +90,6 @@ serve(async (req) => {
             const data = await res.json();
             if (data.error) throw new Error(data.error.message);
             return JSON.parse(data.choices[0].message.content);
-        };
-
-        /**
-         * Azure Face API — detect face in an image, return faceId.
-         * Uses URL-based detection (no need to upload binary).
-         */
-        const azureDetectFace = async (imageUrl: string): Promise<string | null> => {
-            if (!azureFaceKey || !azureEndpoint) throw new Error('Azure Face API credentials not set');
-            const detectUrl = `${azureEndpoint}face/v1.0/detect?detectionModel=detection_03&returnFaceId=true&recognitionModel=recognition_04`;
-            const res = await fetch(detectUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Ocp-Apim-Subscription-Key': azureFaceKey,
-                },
-                body: JSON.stringify({ url: imageUrl }),
-            });
-            const faces = await res.json();
-            if (!res.ok) throw new Error(`Azure Detect Error: ${JSON.stringify(faces)}`);
-            if (!Array.isArray(faces) || faces.length === 0) return null;
-            return faces[0].faceId as string;
-        };
-
-        /**
-         * Azure Face API — verify two faceIds match.
-         * Returns { isIdentical, confidence } where confidence is 0–1.
-         */
-        const azureVerifyFaces = async (faceId1: string, faceId2: string) => {
-            if (!azureFaceKey || !azureEndpoint) throw new Error('Azure Face API credentials not set');
-            const verifyUrl = `${azureEndpoint}face/v1.0/verify`;
-            const res = await fetch(verifyUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Ocp-Apim-Subscription-Key': azureFaceKey,
-                },
-                body: JSON.stringify({ faceId1, faceId2 }),
-            });
-            const result = await res.json();
-            if (!res.ok) throw new Error(`Azure Verify Error: ${JSON.stringify(result)}`);
-            return result as { isIdentical: boolean; confidence: number };
         };
 
         // ── Task Handlers ─────────────────────────────────────────────────────
@@ -195,7 +152,7 @@ serve(async (req) => {
                 }
             }
 
-        // ── 4. Face Match — Railway DeepFace → Azure fallback → GPT-vision fallback ─
+        // ── 4. Face Match — Railway DeepFace (FaceNet-512) → GPT-4o-mini fallback ──
         } else if (taskType === 'face_match') {
             eventType = 'biometric_match';
 
@@ -220,53 +177,16 @@ serve(async (req) => {
                             reason: r.reason,
                             distance: r.distance,
                         };
-                        // Skip Azure + GPT tiers when Railway succeeds
                     } else {
                         const err = await faceRes.text();
                         console.warn(`[face-api] HTTP ${faceRes.status}: ${err.slice(0, 200)}`);
                     }
                 } catch (railwayErr: any) {
-                    console.warn('[face-api] Railway unreachable, falling back:', railwayErr.message);
+                    console.warn('[face-api] Railway unreachable, falling back to GPT:', railwayErr.message);
                 }
             }
 
-            // ── Tier 2: Azure Face API (if available + Railway skipped/failed) ─
-            if (!aiResult.method) {
-                let azureBlocked = false;
-                try {
-                    const idFaceId = await azureDetectFace(idCardUrl);
-                    if (!idFaceId) {
-                        aiResult = { match: false, score: 0, reason: 'No face detected on the ID card.', method: 'azure' };
-                    } else {
-                        const selfieFaceId = await azureDetectFace(selfieUrl);
-                        if (!selfieFaceId) {
-                            aiResult = { match: false, score: 0, reason: 'No face detected in the selfie.', method: 'azure' };
-                        } else {
-                            const verification = await azureVerifyFaces(idFaceId, selfieFaceId);
-                            const score = Math.round(verification.confidence * 100);
-                            const MATCH_THRESHOLD = 60;
-                            aiResult = {
-                                match: score >= MATCH_THRESHOLD,
-                                score,
-                                method: 'azure',
-                                reason: score >= MATCH_THRESHOLD
-                                    ? `Azure Face AI confirmed identity match with ${score}% biometric confidence.`
-                                    : `Biometric match failed (${score}%, minimum ${MATCH_THRESHOLD}%). Please retake your selfie in good lighting.`,
-                                isIdentical: verification.isIdentical,
-                            };
-                        }
-                    }
-                } catch (azureErr: any) {
-                    const msg = azureErr.message || '';
-                    if (msg.includes('UnsupportedFeature') || msg.includes('facerecognition')) {
-                        azureBlocked = true;
-                    } else {
-                        console.warn('[azure] error:', msg);
-                    }
-                }
-            }
-
-            // ── Tier 3: GPT-4o-mini visual comparison (final fallback) ─────────
+            // ── Tier 2: GPT-4o-mini visual comparison (fallback if Railway fails) ─
             if (!aiResult.method) {
                 const [idBase64, selfieBase64] = await Promise.all([
                     imageUrlToBase64(idCardUrl),
