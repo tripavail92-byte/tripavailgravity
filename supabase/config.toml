@@ -9,6 +9,9 @@ project_id = "Tripfinal"
 # Supabase's `verify_jwt` flag is incompatible with new JWT Signing Keys.
 # For functions that must work with Signing Keys, we disable the Edge Runtime
 # verification and perform JWT verification inside the function using JWKS.
+[functions.verify-identity]
+verify_jwt = false
+
 [functions.stripe-create-payment-intent]
 verify_jwt = false
 
