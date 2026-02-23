@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Loader2, Package, Plus } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Loader2, Package, Plus, ShieldAlert } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -15,8 +15,9 @@ import { ActiveToursGrid } from './components/ActiveToursGrid'
 import { DraftsAlert } from './components/DraftsAlert'
 
 export function TourOperatorDashboard() {
-  const { user } = useAuth()
+  const { user, activeRole } = useAuth()
   const navigate = useNavigate()
+  const verificationStatus = activeRole?.verification_status ?? 'incomplete'
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
   const [drafts, setDrafts] = useState<Tour[]>([])
   const [loading, setLoading] = useState(true)
@@ -136,6 +137,48 @@ export function TourOperatorDashboard() {
                 Resume Setup
                 <ArrowRight className="w-4 h-4" />
               </Button>
+            </div>
+          )}
+
+          {/* Identity Verification Banner — shown when setup done but docs not yet submitted */}
+          {setupCompleted === true && verificationStatus === 'incomplete' && (
+            <div className="flex items-center justify-between gap-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl px-6 py-5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-sm">
+                    Identity verification required
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Upload your CNIC (front &amp; back) and a selfie to enable bookings.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => navigate('/operator/verification')}
+              >
+                Verify Identity
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
+          {/* Pending review banner */}
+          {setupCompleted === true && verificationStatus === 'pending' && (
+            <div className="flex items-center gap-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-6 py-5">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-sm">Verification under review</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Our compliance team is reviewing your documents. Typical review time: 1–3 business days.
+                </p>
+              </div>
             </div>
           )}
 

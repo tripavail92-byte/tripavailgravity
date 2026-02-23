@@ -130,15 +130,6 @@ export const tourOperatorService = {
         }
       }
 
-      // If setup is completed, update the user_role status from 'incomplete' to 'pending'
-      if (setupCompleted) {
-        await supabase
-          .from('user_roles')
-          .update({ verification_status: 'pending' })
-          .eq('user_id', userId)
-          .eq('role_type', 'tour_operator')
-      }
-
       return { success: true }
     } catch (error) {
       console.error('❌ Error saving tour operator profile:', error)

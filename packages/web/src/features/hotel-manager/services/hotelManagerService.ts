@@ -78,15 +78,6 @@ export const hotelManagerService = {
 
       if (error) throw error
 
-      // If setup is completed, update the user_role status from 'incomplete' to 'pending'
-      if (setupCompleted) {
-        await supabase
-          .from('user_roles')
-          .update({ verification_status: 'pending' })
-          .eq('user_id', userId)
-          .eq('role_type', 'hotel_manager')
-      }
-
       return { success: true }
     } catch (error) {
       console.error('❌ Error saving hotel manager profile:', error)

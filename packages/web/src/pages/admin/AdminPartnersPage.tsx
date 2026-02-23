@@ -230,6 +230,15 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
   const sd = req.submission_data as Record<string, any>
   const partnerLabel = req.partner_type === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'
 
+  const vd = (sd?.verification_documents ?? {}) as Record<string, any>
+  const identityDocs = [
+    { key: 'id_card_url', label: 'CNIC Front', emoji: '🪪' },
+    { key: 'id_back_url', label: 'CNIC Back', emoji: '🔄' },
+    { key: 'selfie_url', label: 'Selfie / Biometric', emoji: '🤳' },
+  ].filter((d) => !!vd[d.key])
+  const matchScore: number | null =
+    typeof vd.matching_score === 'number' ? vd.matching_score : null
+
   return (
     <>
       <Card className="border-l-4 border-l-amber-400">
@@ -269,6 +278,48 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
         </CardHeader>
 
         <CardContent>
+          {/* Identity / Biometric Documents */}
+          {identityDocs.length > 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50/60 border border-blue-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
+                  Identity Verification (CNIC)
+                </p>
+                {matchScore !== null && (
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      matchScore >= 70
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    AI Match: {Math.round(matchScore)}%
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {identityDocs.map((doc) => (
+                  <a
+                    key={doc.key}
+                    href={vd[doc.key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
+                  >
+                    {doc.emoji} {doc.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {identityDocs.length === 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50/60 border border-amber-200">
+              <p className="text-xs font-semibold text-amber-700">
+                ⚠️ No identity documents submitted — partner has not completed CNIC verification
+              </p>
+            </div>
+          )}
+
           {sd?.verification_urls && Object.keys(sd.verification_urls).length > 0 && (
             <div className="mb-4 p-3 rounded-lg bg-muted/50 space-y-1">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
