@@ -63,10 +63,10 @@ export function CompletionStep() {
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Setup Complete
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">
+        <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">
           You're All Set!
         </h2>
-        <p className="text-white/55 max-w-sm mx-auto leading-relaxed font-medium">
+        <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed font-medium">
           Your operator profile is complete. Our team will review your verification documents
           shortly.
         </p>
@@ -89,25 +89,25 @@ export function CompletionStep() {
             className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all group text-left ${
               action.accent
                 ? 'border-primary/40 bg-primary/20 hover:bg-primary/30 shadow-lg shadow-primary/10'
-                : 'border-white/10 bg-white/[0.04] hover:bg-white/[0.08] hover:border-white/20'
+                : 'border-border/60 bg-background hover:bg-muted/30 hover:border-border'
             }`}
           >
             <div className="flex items-center gap-4">
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 ${
                   action.accent
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                    : 'bg-white/10 text-white/60 group-hover:bg-primary/20 group-hover:text-primary'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                    : 'bg-muted text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary'
                 }`}
               >
                 <action.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-bold text-white text-sm">{action.label}</p>
-                <p className="text-xs text-white/40 font-medium">{action.desc}</p>
+                <p className="font-bold text-foreground text-sm">{action.label}</p>
+                <p className="text-xs text-muted-foreground/70 font-medium">{action.desc}</p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-primary transform group-hover:translate-x-1 transition-all flex-shrink-0" />
+            <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transform group-hover:translate-x-1 transition-all flex-shrink-0" />
           </motion.button>
         ))}
       </motion.div>
@@ -116,7 +116,7 @@ export function CompletionStep() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="text-white/25 text-[10px] font-bold uppercase tracking-[0.2em] mt-10"
+        className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-10"
       >
         Powered by TripAvail Partner Network
       </motion.p>

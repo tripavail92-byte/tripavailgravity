@@ -23,17 +23,16 @@ export function WelcomeStep({ onNext }: StepProps) {
         transition={{ type: 'spring', stiffness: 220, damping: 18, delay: 0.05 }}
         className="relative mb-8"
       >
-        <div className="absolute inset-0 rounded-[32px] bg-primary/40 blur-2xl scale-110" />
         <div className="relative w-28 h-28 bg-gradient-to-br from-primary to-primary/70 rounded-[32px] flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-primary/30">
-          <Plane className="w-14 h-14 text-white drop-shadow-lg" aria-hidden="true" />
+          <Plane className="w-14 h-14 text-primary-foreground drop-shadow-lg" aria-hidden="true" />
         </div>
         {/* Floating star badge */}
         <motion.div
           animate={{ y: [-3, 3, -3] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-3 -right-3 w-9 h-9 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl flex items-center justify-center shadow-lg"
+          className="absolute -top-3 -right-3 w-9 h-9 bg-card border border-border rounded-xl flex items-center justify-center shadow-lg"
         >
-          <Star className="w-4 h-4 text-white fill-white" />
+          <Star className="w-4 h-4 text-primary fill-primary" />
         </motion.div>
       </motion.div>
 
@@ -48,10 +47,10 @@ export function WelcomeStep({ onNext }: StepProps) {
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Partner Program
         </div>
-        <h2 className="text-4xl font-black text-white tracking-tight leading-tight">
+        <h2 className="text-4xl font-black text-foreground tracking-tight leading-tight">
           Welcome to<br />TripAvail
         </h2>
-        <p className="text-white/55 text-base leading-relaxed max-w-sm mx-auto font-medium">
+        <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto font-medium">
           Join elite tour operators creating unforgettable experiences for adventurers around the world.
         </p>
       </motion.div>
@@ -69,14 +68,14 @@ export function WelcomeStep({ onNext }: StepProps) {
             initial={{ x: -12, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.35 + i * 0.08 }}
-            className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.05] border border-white/10 hover:bg-white/[0.08] transition-colors group"
+            className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors group"
           >
             <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
               <h.icon className="w-5 h-5 text-primary" />
             </div>
             <div className="text-left">
-              <p className="text-white font-bold text-sm">{h.label}</p>
-              <p className="text-white/45 text-xs font-medium">{h.desc}</p>
+              <p className="text-foreground font-bold text-sm">{h.label}</p>
+              <p className="text-muted-foreground/70 text-xs font-medium">{h.desc}</p>
             </div>
             <CheckCircle2 className="w-4 h-4 text-primary/60 ml-auto flex-shrink-0" />
           </motion.div>
@@ -88,7 +87,7 @@ export function WelcomeStep({ onNext }: StepProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="text-white/30 text-xs font-bold uppercase tracking-widest"
+        className="text-muted-foreground/50 text-xs font-bold uppercase tracking-widest"
       >
         Setup takes about 5 minutes
       </motion.p>

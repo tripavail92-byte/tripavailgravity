@@ -39,19 +39,19 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <div className="space-y-10">
         <div>
-          <h3 className="text-2xl font-black text-white mb-1.5 tracking-tight">
+          <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
             Coverage Area
           </h3>
-          <p className="text-white/55 leading-relaxed font-medium">
+          <p className="text-muted-foreground leading-relaxed font-medium">
             Where do you operate your tours?
           </p>
         </div>
 
-        <div className="space-y-10 p-6 rounded-2xl bg-white/[0.04] border border-white/10">
+          <div className="space-y-10 p-6 rounded-2xl bg-muted/30 border border-border/50">
           <div className="space-y-4">
             <Label
               htmlFor="location"
-              className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+              className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
             >
               Primary Operating City *
             </Label>
@@ -63,7 +63,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
           </div>
 
           <div className="space-y-6">
-            <Label className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Service Coverage Range *
             </Label>
             <div className="grid grid-cols-2 gap-6">
@@ -77,7 +77,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                     className={`p-6 rounded-2xl border text-left transition-all relative group h-full flex flex-col justify-between overflow-hidden ${
                       isSelected
                         ? 'border-primary bg-primary/20 shadow-xl shadow-primary/10'
-                        : 'border-white/15 bg-white/[0.04] hover:border-white/30 hover:bg-white/[0.07]'
+                        : 'border-border/60 bg-background hover:border-border hover:bg-muted/30'
                     }`}
                     aria-pressed={isSelected}
                   >
@@ -87,7 +87,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                           className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                             isSelected
                               ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30'
-                              : 'bg-white/10 text-white/40 group-hover:bg-primary/20 group-hover:text-primary'
+                              : 'bg-muted text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary'
                           }`}
                         >
                           <Globe className="w-7 h-7" aria-hidden="true" />
@@ -100,17 +100,17 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                       </div>
                       <div>
                         <p
-                          className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}
+                          className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
                         >
                           {opt.title}
                         </p>
-                        <p className="text-[10px] text-white/40 font-black uppercase tracking-[0.15em] mt-1 leading-none">
+                        <p className="text-[10px] text-muted-foreground/70 font-black uppercase tracking-[0.15em] mt-1 leading-none">
                           {opt.desc}
                         </p>
                       </div>
                     </div>
                     <div
-                      className={`mt-6 inline-flex px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest self-start transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-white/10 text-white/50'}`}
+                          className={`mt-6 inline-flex px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest self-start transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
                     >
                       {opt.radius}
                     </div>
@@ -129,7 +129,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
             <span className="font-bold text-primary text-sm uppercase tracking-widest">
               Need a custom range?
             </span>
-            <p className="text-sm text-white/45 leading-relaxed font-medium">
+              <p className="text-sm text-muted-foreground leading-relaxed font-medium">
               Don't worry, you can always update your operating areas and specific destinations for
               each individual tour package later.
             </p>

@@ -51,10 +51,10 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-10">
       <div>
-        <h3 className="text-2xl font-black text-white mb-1.5 tracking-tight">
+        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
           Tour Services
         </h3>
-        <p className="text-white/55 leading-relaxed font-medium">
+        <p className="text-muted-foreground leading-relaxed font-medium">
           What types of tours do you specialize in? Select all that apply.
         </p>
       </div>
@@ -70,7 +70,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
               className={`p-8 rounded-[28px] border-2 text-left transition-all relative group flex flex-col items-center text-center space-y-4 ${
                 isSelected
                   ? 'border-primary bg-primary/20 shadow-xl shadow-primary/10'
-                  : 'border-white/15 bg-white/[0.04] hover:border-white/30 hover:bg-white/[0.07]'
+                  : 'border-border/60 bg-background hover:border-border hover:bg-muted/30'
               }`}
               aria-pressed={isSelected}
             >
@@ -78,23 +78,23 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
                 className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                   isSelected
                     ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30'
-                    : 'bg-white/10 text-white/40 group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-105'
+                    : 'bg-muted text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-105'
                 }`}
               >
                 <s.icon className={`${isSelected ? 'w-8 h-8' : 'w-7 h-7'}`} aria-hidden="true" />
               </div>
               <div className="space-y-1">
                 <p
-                  className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}
+                  className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
                 >
                   {s.name}
                 </p>
-                <p className="text-xs text-white/40 font-bold uppercase tracking-widest leading-none">
+                <p className="text-xs text-muted-foreground/70 font-bold uppercase tracking-widest leading-none">
                   {s.desc}
                 </p>
               </div>
               {isSelected && (
-                <div className="absolute top-4 right-4 bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-white/20">
+                <div className="absolute top-4 right-4 bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-background/20">
                   <Check className="w-3.5 h-3.5" />
                 </div>
               )}
@@ -103,13 +103,13 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
         })}
       </div>
 
-      <div className="space-y-6 pt-8 border-t border-white/10">
+      <div className="space-y-6 pt-8 border-t border-border/50">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h4 className="text-lg font-bold text-white tracking-tight">
+            <h4 className="text-lg font-bold text-foreground tracking-tight">
               Custom Categories
             </h4>
-            <p className="text-sm text-white/45 font-medium">
+            <p className="text-sm text-muted-foreground font-medium">
               Add any other niche specialties you offer.
             </p>
           </div>
@@ -129,13 +129,13 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 bg-white/[0.04] p-4 rounded-3xl border border-white/15"
+            className="flex gap-3 bg-muted/30 p-4 rounded-3xl border border-border/50"
           >
             <Input
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
               placeholder="e.g. Desert Safari, Food Tour..."
-              className="rounded-2xl border-white/20 bg-white/10 text-white placeholder:text-white/30 h-14 text-base focus-visible:ring-primary/30"
+              className="rounded-2xl border-border/60 bg-background h-14 text-base focus-visible:ring-primary/20"
               autoFocus
             />
             <Button onClick={addCustom} className="rounded-2xl px-8 h-14 font-bold">
@@ -144,7 +144,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
             <Button
               variant="ghost"
               onClick={() => setIsAdding(false)}
-              className="rounded-2xl h-14 font-bold text-white/50 hover:text-white hover:bg-white/10"
+              className="rounded-2xl h-14 font-bold text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               Cancel
             </Button>
@@ -155,7 +155,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
           {custom.map((c) => (
             <span
               key={c}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 text-white rounded-2xl text-sm font-bold border border-white/20 shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-background text-foreground rounded-2xl text-sm font-bold border border-border/60 shadow-sm transition-all hover:border-primary/40 hover:bg-primary/10"
             >
               {c}
               <button

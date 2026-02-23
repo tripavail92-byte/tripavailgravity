@@ -159,19 +159,19 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-2xl font-black text-white mb-1.5 tracking-tight">
+        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
           Personal Information
         </h3>
-        <p className="text-white/55 leading-relaxed font-medium">
+        <p className="text-muted-foreground leading-relaxed font-medium">
           Let's start with your basic contact information.
         </p>
       </div>
 
-      <div className="space-y-6 p-6 rounded-2xl bg-white/[0.04] border border-white/10">
+      <div className="space-y-6 p-6 rounded-2xl bg-muted/30 border border-border/50">
         <div className="space-y-3">
           <Label
             htmlFor="operatorName"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Your Full Name *
           </Label>
@@ -180,14 +180,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.operatorName}
             onChange={(e) => handleChange('operatorName', e.target.value)}
             placeholder="e.g. Hassan Noor"
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="email"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Work Email Address *
           </Label>
@@ -197,20 +197,20 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="hello@adventure.com"
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="phone"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Phone Number *
           </Label>
           <div className="flex gap-3">
             <Select value={countryCode} onValueChange={handleCountryChange}>
-              <SelectTrigger className="w-[140px] rounded-xl border-white/20 bg-white/10 text-white py-6 focus:ring-primary/30 focus:border-primary/60 transition-all font-medium text-base">
+              <SelectTrigger className="w-[140px] rounded-xl border-border/60 bg-background py-7 focus:ring-primary/20 focus:border-primary/50 transition-all font-medium text-base">
                 <SelectValue placeholder="Code" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-border/50 shadow-xl p-1 max-h-64 overflow-y-auto">
@@ -232,7 +232,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
               placeholder={
                 COUNTRY_OPTIONS.find((o) => o.code === countryCode)?.placeholder || '3001234567'
               }
-              className="flex-1 rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+              className="flex-1 rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
             />
           </div>
         </div>
@@ -240,7 +240,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
         <div className="space-y-3">
           <Label
             htmlFor="contactPerson"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Primary Contact Person
           </Label>
@@ -249,14 +249,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             value={formData.contactPerson}
             onChange={(e) => handleChange('contactPerson', e.target.value)}
             placeholder="Name of the person managing the account"
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
         </div>
       </div>
 
       <div className="flex gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-        <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-400 font-black">!</div>
-        <p className="text-sm text-amber-300/80 leading-relaxed font-medium">
+        <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-600 font-black">!</div>
+        <p className="text-sm text-amber-700/80 leading-relaxed font-medium">
           Make sure your email and phone number are correct. We'll use these for important booking notifications and account verification.
         </p>
       </div>

@@ -61,21 +61,21 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-2xl font-black text-white mb-1.5 tracking-tight">
+        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
           Business Details
         </h3>
-        <p className="text-white/55 leading-relaxed font-medium">
+        <p className="text-muted-foreground leading-relaxed font-medium">
           Tell travelers about your tour business operation.
         </p>
       </div>
 
-      <div className="space-y-8 p-6 rounded-2xl bg-white/[0.04] border border-white/10">
+      <div className="space-y-8 p-6 rounded-2xl bg-muted/30 border border-border/50">
         <div className="space-y-4">
-          <Label className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
             Company Logo
           </Label>
-          <div className="flex items-center gap-6 p-6 border-2 border-dashed border-white/15 rounded-2xl bg-white/[0.03] transition-colors hover:bg-white/[0.05]">
-            <div className="w-24 h-24 bg-white/10 rounded-2xl flex items-center justify-center overflow-hidden border border-white/15 flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-6 p-6 border-2 border-dashed border-border/50 rounded-2xl bg-muted/30 transition-colors hover:bg-muted/50">
+            <div className="w-24 h-24 bg-muted rounded-2xl flex items-center justify-center overflow-hidden border border-border/50 flex-shrink-0 shadow-sm">
               {isUploading ? (
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               ) : formData.companyLogo ? (
@@ -85,7 +85,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                   className="w-full h-full object-contain"
                 />
               ) : (
-                <Building className="w-8 h-8 text-white/20" aria-hidden="true" />
+                <Building className="w-8 h-8 text-muted-foreground/30" aria-hidden="true" />
               )}
             </div>
             <div className="flex-1 space-y-3">
@@ -113,7 +113,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
                     ? 'Change Logo'
                     : 'Upload Logo'}
               </label>
-              <p className="text-xs text-white/40 font-medium">
+              <p className="text-xs text-muted-foreground/70 font-medium">
                 PNG or SVG (max. 2MB). Squarish format looks best.
               </p>
             </div>
@@ -123,7 +123,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
         <div className="space-y-3">
           <Label
             htmlFor="businessName"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Registered Business Name *
           </Label>
@@ -132,14 +132,14 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             value={formData.businessName}
             onChange={(e) => handleInputChange('businessName', e.target.value)}
             placeholder="Official company name"
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
         </div>
 
         <div className="space-y-3">
           <Label
             htmlFor="registrationNumber"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Business Registration Number
           </Label>
@@ -148,20 +148,20 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             value={formData.registrationNumber}
             onChange={(e) => handleInputChange('registrationNumber', e.target.value)}
             placeholder="e.g. 12345-67890"
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 py-6 focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base"
+            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
-            <Label className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Experience
             </Label>
             <Select
               value={formData.yearsInBusiness}
               onValueChange={(v: string) => handleInputChange('yearsInBusiness', v)}
             >
-              <SelectTrigger className="rounded-xl border-white/20 bg-white/10 text-white py-6 focus:ring-primary/30 focus:border-primary/60 transition-all font-medium text-base">
+              <SelectTrigger className="rounded-xl border-border/60 bg-background py-7 focus:ring-primary/20 focus:border-primary/50 transition-all font-medium text-base">
                 <SelectValue placeholder="Years in bus..." />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden p-1">
@@ -181,14 +181,14 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             </Select>
           </div>
           <div className="space-y-3">
-            <Label className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Team Size
             </Label>
             <Select
               value={formData.teamSize}
               onValueChange={(v: string) => handleInputChange('teamSize', v)}
             >
-              <SelectTrigger className="rounded-xl border-white/20 bg-white/10 text-white py-6 focus:ring-primary/30 focus:border-primary/60 transition-all font-medium text-base">
+              <SelectTrigger className="rounded-xl border-border/60 bg-background py-7 focus:ring-primary/20 focus:border-primary/50 transition-all font-medium text-base">
                 <SelectValue placeholder="Members..." />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden p-1">
@@ -212,7 +212,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
         <div className="space-y-3">
           <Label
             htmlFor="description"
-            className="text-xs font-bold uppercase tracking-widest text-white/60 ml-1"
+            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
           >
             Business Description
           </Label>
@@ -222,7 +222,7 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             value={formData.businessDescription}
             onChange={(e) => handleInputChange('businessDescription', e.target.value)}
             placeholder="Describe your specialties and experience..."
-            className="rounded-xl border-white/20 bg-white/10 text-white placeholder:text-white/30 min-h-[140px] focus-visible:ring-primary/30 focus-visible:border-primary/60 transition-all text-base p-4"
+            className="rounded-xl border-border/60 bg-background min-h-[140px] focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base p-4"
           />
         </div>
       </div>
