@@ -181,7 +181,7 @@ export default function CreateTourPage() {
           </div>
 
           {/* Visual stepper */}
-          <div className="flex items-center overflow-x-auto pb-1 gap-0">
+          <div className="flex items-center justify-center overflow-x-auto pb-1 gap-0">
             {STEPS.map((step, idx) => {
               const isCompleted = idx < currentStep
               const isCurrent = idx === currentStep
