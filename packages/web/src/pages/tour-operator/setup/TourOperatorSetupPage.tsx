@@ -36,7 +36,7 @@ export default function TourOperatorSetupPage() {
   const [setupData, setSetupData] = useState<Partial<TourOperatorOnboardingData>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const { user } = useAuth()
+  const { user, activeRole } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
@@ -115,11 +115,15 @@ export default function TourOperatorSetupPage() {
     }
   }
 
+  /** Where to land after leaving the setup wizard */
+  const exitDestination =
+    activeRole?.role_type === 'tour_operator' ? '/operator/dashboard' : '/'
+
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
     } else {
-      navigate('/operator/dashboard')
+      navigate(exitDestination)
     }
   }
 
@@ -127,7 +131,7 @@ export default function TourOperatorSetupPage() {
     // Persist current step index so wizard resumes here
     await saveProgress(setupData, false, currentStep)
     toast.success('Progress saved — you can resume anytime')
-    navigate('/operator/dashboard')
+    navigate(exitDestination)
   }
 
   const updateData = (data: any) => {
