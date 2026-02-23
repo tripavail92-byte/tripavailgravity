@@ -22,6 +22,7 @@ import { OcrResult, aiVerificationService } from '@/features/verification/servic
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+import { IDCaptureWidget } from './IDCaptureWidget'
 import { SelfieCaptureWidget } from './SelfieCaptureWidget'
 
 interface IdentitySubFlowProps {
@@ -174,118 +175,74 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             </div>
 
             {/* ID FRONT */}
-            <Card
-              className={cn(
-                'p-6 border-2 border-dashed transition-all',
-                idCardUrl ? 'bg-success/10 border-success/20' : 'bg-muted border-border',
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={cn(
-                      'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idCardUrl
-                        ? 'bg-success/20 text-success'
-                        : 'bg-background text-muted-foreground',
-                    )}
-                  >
-                    {idCardUrl ? <Check className="w-6 h-6" /> : <CreditCard className="w-6 h-6" />}
+            {idCardUrl ? (
+              <Card className="p-6 border-2 bg-success/10 border-success/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-success/20 text-success">
+                      <Check className="w-6 h-6" />
+                    </div>
+                    <div className="text-left">
+                      <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front</h5>
+                      <p className="text-xs text-muted-foreground font-medium">Captured &amp; validated</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front</h5>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Photo page with your face
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <input
-                    type="file"
-                    id="id-front-upload"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleIdFrontUpload(e.target.files[0])}
-                    disabled={isUploadingFront}
-                  />
-                  <Button
-                    asChild
-                    variant={idCardUrl ? 'outline' : 'default'}
-                    className={cn(
-                      'rounded-xl',
-                      idCardUrl && 'border-success/20 text-success hover:bg-success/10',
-                    )}
-                  >
-                    <label htmlFor="id-front-upload" className="cursor-pointer">
-                      {isUploadingFront ? (
-                        <Loader2 className="animate-spin w-4 h-4" />
-                      ) : idCardUrl ? (
-                        'Change'
-                      ) : (
-                        'Upload'
-                      )}
-                    </label>
+                  <Button variant="outline" size="sm" className="rounded-xl border-success/20 text-success hover:bg-success/10"
+                    onClick={() => setIdCardUrl('')}>
+                    Retake
                   </Button>
                 </div>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="w-4 h-4 text-primary" />
+                  <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front — Face Side</h5>
+                </div>
+                <IDCaptureWidget side="front" onCapture={handleIdFrontUpload} disabled={isUploadingFront} />
+                {isUploadingFront && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Validating with AI…
+                  </div>
+                )}
               </div>
-            </Card>
+            )}
 
-            {/* ID BACK */}
-            <Card
-              className={cn(
-                'p-6 border-2 border-dashed transition-all',
-                idBackUrl ? 'bg-success/10 border-success/20' : 'bg-muted border-border',
-              )}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={cn(
-                      'w-12 h-12 rounded-xl flex items-center justify-center',
-                      idBackUrl
-                        ? 'bg-success/20 text-success'
-                        : 'bg-background text-muted-foreground',
-                    )}
-                  >
-                    {idBackUrl ? <Check className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
+            {/* ID BACK — only show after front is captured */}
+            {idCardUrl && (
+              idBackUrl ? (
+                <Card className="p-6 border-2 bg-success/10 border-success/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-success/20 text-success">
+                        <Check className="w-6 h-6" />
+                      </div>
+                      <div className="text-left">
+                        <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back</h5>
+                        <p className="text-xs text-muted-foreground font-medium">Captured &amp; validated</p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="rounded-xl border-success/20 text-success hover:bg-success/10"
+                      onClick={() => setIdBackUrl('')}>
+                      Retake
+                    </Button>
                   </div>
-                  <div className="text-left">
-                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back</h5>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Rear side with details
-                    </p>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back — Rear Side</h5>
                   </div>
+                  <IDCaptureWidget side="back" onCapture={handleIdBackUpload} disabled={isUploadingBack} />
+                  {isUploadingBack && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Validating with AI…
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <input
-                    type="file"
-                    id="id-back-upload"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleIdBackUpload(e.target.files[0])}
-                    disabled={isUploadingBack}
-                  />
-                  <Button
-                    asChild
-                    variant={idBackUrl ? 'outline' : 'default'}
-                    className={cn(
-                      'rounded-xl',
-                      idBackUrl && 'border-success/20 text-success hover:bg-success/10',
-                    )}
-                  >
-                    <label htmlFor="id-back-upload" className="cursor-pointer">
-                      {isUploadingBack ? (
-                        <Loader2 className="animate-spin w-4 h-4" />
-                      ) : idBackUrl ? (
-                        'Change'
-                      ) : (
-                        'Upload'
-                      )}
-                    </label>
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              )
+            )}
 
             <div className="pt-4">
               {/* OCR extracted data preview */}

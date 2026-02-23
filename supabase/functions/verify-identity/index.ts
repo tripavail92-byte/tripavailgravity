@@ -24,6 +24,22 @@ serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
+        // ── Rate Limiter: max 10 attempts per userId per 24 h ─────────────────
+        if (userId) {
+            const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const { count, error: countErr } = await supabase
+                .from('verification_activity_logs')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .gte('created_at', since);
+            if (!countErr && (count ?? 0) >= 10) {
+                return new Response(
+                    JSON.stringify({ error: 'Too many verification attempts. Please try again after 24 hours.' }),
+                    { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+                );
+            }
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
         /** Convert a public URL to base64 data URI (for OpenAI) */
         const imageUrlToBase64 = async (url: string): Promise<string> => {
