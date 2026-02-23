@@ -48,6 +48,11 @@ export default function TourOperatorSetupPage() {
     if (idx >= 0) setCurrentStep(idx)
   }, [searchParams])
 
+  // Scroll to top whenever the step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [currentStep])
+
   // Enforce Tour Operator theme on mount
   useEffect(() => {
     document.documentElement.setAttribute('data-role', 'tour_operator')
