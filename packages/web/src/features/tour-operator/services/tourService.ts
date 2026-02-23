@@ -14,10 +14,12 @@ export interface Tour {
     address?: string
   }
   duration: string
+  duration_days?: number | null
   price: number
   currency: string
   description: string | null
   short_description: string | null
+  custom_category_label?: string | null
   images: string[]
   highlights: string[]
   inclusions: string[]

@@ -171,11 +171,61 @@ export default function CreateTourPage() {
     <div className="min-h-screen bg-muted flex flex-col">
       {/* Header */}
       <div className="bg-background border-b border-border px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-foreground">Create New Tour</h1>
-          <div className="text-sm text-muted-foreground">
-            Step {currentStep + 1} of {STEPS.length}:{' '}
-            <span className="font-medium text-foreground">{STEPS[currentStep].title}</span>
+        <div className="max-w-5xl mx-auto space-y-3">
+          {/* Title row */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-bold text-foreground">Create New Tour</h1>
+            <span className="text-xs text-muted-foreground font-medium">
+              {currentStep + 1} / {STEPS.length}
+            </span>
+          </div>
+
+          {/* Visual stepper */}
+          <div className="flex items-center overflow-x-auto pb-1 gap-0">
+            {STEPS.map((step, idx) => {
+              const isCompleted = idx < currentStep
+              const isCurrent = idx === currentStep
+              return (
+                <div key={step.title} className="flex items-center shrink-0">
+                  {/* Circle + label */}
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                        isCompleted
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : isCurrent
+                            ? 'bg-primary/15 text-primary border-2 border-primary'
+                            : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <svg viewBox="0 0 12 12" className="w-3.5 h-3.5" fill="currentColor">
+                          <path d="M1.5 6 L4.5 9 L10.5 3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      ) : (
+                        idx + 1
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap ${
+                        isCurrent ? 'text-primary' : isCompleted ? 'text-primary/70' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {step.title}
+                    </span>
+                  </div>
+
+                  {/* Connector line (not after last step) */}
+                  {idx < STEPS.length - 1 && (
+                    <div
+                      className={`h-0.5 w-8 mx-1 mb-4 rounded-full transition-all duration-300 ${
+                        idx < currentStep ? 'bg-primary' : 'bg-border'
+                      }`}
+                    />
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>

@@ -1,6 +1,8 @@
+﻿import { useEffect, useState } from 'react'
+
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Check, Info } from 'lucide-react'
-import { motion } from 'motion/react'
+import { Check, Info, Sparkles, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,17 +11,26 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { supabase } from '@/lib/supabase'
 
 import {
   AdventureIcon,
   BeachIcon,
+  BudgetIcon,
   CityIcon,
   CulturalIcon,
+  CustomIcon,
+  FamilyIcon,
   FoodIcon,
   HistoricalIcon,
+  HoneymoonIcon,
+  LuxuryIcon,
   NatureIcon,
+  PhotographyIcon,
   ReligiousIcon,
+  WellnessIcon,
 } from './CategoryIcons'
+import { DurationScroller } from './DurationScroller'
 
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || ''
 
@@ -29,12 +40,85 @@ interface TourBasicsStepProps {
   onNext: () => void
 }
 
+const CATEGORIES = [
+  { id: 'Adventure',    icon: AdventureIcon,   label: 'Adventure' },
+  { id: 'Cultural',     icon: CulturalIcon,    label: 'Cultural' },
+  { id: 'Nature',       icon: NatureIcon,      label: 'Nature' },
+  { id: 'City Tour',    icon: CityIcon,        label: 'City Tour' },
+  { id: 'Food & Drink', icon: FoodIcon,        label: 'Food & Drink' },
+  { id: 'Beach',        icon: BeachIcon,       label: 'Beach' },
+  { id: 'Historical',   icon: HistoricalIcon,  label: 'Historical' },
+  { id: 'Religious',    icon: ReligiousIcon,   label: 'Religious' },
+  { id: 'Honeymoon',    icon: HoneymoonIcon,   label: 'Honeymoon' },
+  { id: 'Family',       icon: FamilyIcon,      label: 'Family' },
+  { id: 'Photography',  icon: PhotographyIcon, label: 'Photography' },
+  { id: 'Wellness',     icon: WellnessIcon,    label: 'Wellness' },
+  { id: 'Luxury',       icon: LuxuryIcon,      label: 'Luxury' },
+  { id: 'Budget',       icon: BudgetIcon,      label: 'Budget' },
+  { id: 'Custom',       icon: CustomIcon,      label: 'Custom' },
+] as const
+
+const TONES = [
+  { id: 'luxury',     label: 'Luxury' },
+  { id: 'budget',     label: 'Budget' },
+  { id: 'family',     label: 'Family' },
+  { id: 'adventure',  label: 'Adventure' },
+  { id: 'romantic',   label: 'Romantic' },
+  { id: 'corporate',  label: 'Corporate' },
+  { id: 'general',    label: 'General' },
+] as const
+
+interface Template {
+  id: string
+  text: string
+  tone: string
+  length_class: string
+}
+
 export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) {
-  const isValid = data.title && data.tour_type && data.duration && data.location?.city
+  const [showAiPanel, setShowAiPanel] = useState(false)
+  const [selectedTone, setSelectedTone] = useState<string>('general')
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+
+  const isValid =
+    !!data.title &&
+    !!(data.tour_type || data.custom_category_label) &&
+    !!(data.duration_days) &&
+    !!data.location?.city
+
+  // Fetch templates whenever the panel opens, tone, or tour_type changes
+  useEffect(() => {
+    if (!showAiPanel) return
+    const tourType = data.tour_type && data.tour_type !== 'Custom' ? data.tour_type : undefined
+
+    setLoadingTemplates(true)
+
+    let query = supabase
+      .from('tour_description_templates')
+      .select('id, text, tone, length_class')
+      .eq('is_active', true)
+      .eq('tone', selectedTone)
+
+    if (tourType) {
+      query = query.eq('tour_type', tourType) as typeof query
+    }
+
+    query.limit(8).then(({ data: rows }) => {
+      setTemplates((rows ?? []) as Template[])
+      setLoadingTemplates(false)
+    })
+  }, [showAiPanel, selectedTone, data.tour_type])
+
+  function applyTemplate(text: string) {
+    onUpdate({ short_description: text })
+    setShowAiPanel(false)
+  }
 
   return (
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <div className="space-y-6">
+        {/* Header card */}
         <Card className="p-6 bg-gradient-to-r from-primary to-primary/80 text-white border-none shadow-md">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -50,6 +134,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
         </Card>
 
         <div className="grid gap-6">
+          {/* Tour Title */}
           <div className="space-y-2">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Tour Title *
@@ -62,37 +147,35 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
+          {/* Tour Category — 15-card grid */}
           <div className="space-y-4">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Tour Category *
             </Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { id: 'Adventure', icon: AdventureIcon, label: 'Adventure' },
-                { id: 'Cultural', icon: CulturalIcon, label: 'Cultural' },
-                { id: 'Nature', icon: NatureIcon, label: 'Nature' },
-                { id: 'City Tour', icon: CityIcon, label: 'City' },
-                { id: 'Food & Drink', icon: FoodIcon, label: 'Food & Culinary' },
-                { id: 'Beach', icon: BeachIcon, label: 'Beach & Coastal' },
-                { id: 'Historical', icon: HistoricalIcon, label: 'Historical' },
-                { id: 'Religious', icon: ReligiousIcon, label: 'Religious' },
-              ].map((cat) => (
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+              {CATEGORIES.map((cat) => (
                 <motion.button
                   key={cat.id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => onUpdate({ tour_type: cat.id })}
-                  className={`relative flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all duration-300 gap-3 group ${
+                  onClick={() =>
+                    onUpdate({
+                      tour_type: cat.id,
+                      // Clear custom label when a non-custom category is chosen
+                      custom_category_label: cat.id === 'Custom' ? data.custom_category_label : undefined,
+                    })
+                  }
+                  className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
                     data.tour_type === cat.id
                       ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
                       : 'border-border bg-background hover:border-primary/30 hover:shadow-md'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
                     <cat.icon />
                   </div>
                   <span
-                    className={`text-xs font-black uppercase tracking-widest text-center ${
+                    className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${
                       data.tour_type === cat.id
                         ? 'text-primary'
                         : 'text-muted-foreground group-hover:text-foreground'
@@ -103,28 +186,58 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                   {data.tour_type === cat.id && (
                     <motion.div
                       layoutId="selected-category"
-                      className="absolute -top-1 -right-1 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300"
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3 h-3" />
                     </motion.div>
                   )}
                 </motion.button>
               ))}
             </div>
+
+            {/* Custom label input */}
+            <AnimatePresence>
+              {data.tour_type === 'Custom' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-2 space-y-1">
+                    <Label className="text-xs text-muted-foreground">
+                      Describe your custom category
+                    </Label>
+                    <Input
+                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema…"
+                      value={data.custom_category_label || ''}
+                      onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
+                      className="h-10 text-sm"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* Duration Scroller */}
           <div className="space-y-2">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Duration *
             </Label>
-            <Input
-              placeholder="e.g. 3 hours, 2 days"
-              value={data.duration || ''}
-              onChange={(e) => onUpdate({ duration: e.target.value })}
-              className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+            <DurationScroller
+              value={data.duration_days ?? 1}
+              onChange={(days) =>
+                onUpdate({
+                  duration_days: days,
+                  duration: `${days} day${days !== 1 ? 's' : ''}`,
+                })
+              }
             />
           </div>
 
+          {/* Location */}
           <div className="space-y-2">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Location (City) *
@@ -135,7 +248,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                 onUpdate({
                   location: {
                     ...data.location,
-                    city: city,
+                    city,
                     country: data.location?.country || '',
                   },
                 })
@@ -144,20 +257,111 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
+          {/* Short Description + AI Suggest */}
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Short Description
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                Short Description
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs h-7 px-3 border-primary/40 text-primary hover:bg-primary/5"
+                onClick={() => setShowAiPanel((v) => !v)}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                AI Suggest
+              </Button>
+            </div>
+
             <Textarea
-              placeholder="A brief teaser for the tour card..."
+              placeholder="A brief teaser for the tour card…"
               value={data.short_description || ''}
               onChange={(e) => onUpdate({ short_description: e.target.value })}
-              rows={2}
+              rows={3}
               className="border-input focus:border-primary/50 focus:ring-primary/20 resize-none"
             />
+
+            {/* AI Suggest panel */}
+            <AnimatePresence>
+              {showAiPanel && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="rounded-2xl border border-border bg-card shadow-lg p-4 space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">
+                      Pick a tone &amp; select a template
+                    </p>
+                    <button
+                      onClick={() => setShowAiPanel(false)}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Tone chips */}
+                  <div className="flex flex-wrap gap-2">
+                    {TONES.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedTone(t.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                          selectedTone === t.id
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Template list */}
+                  {loadingTemplates ? (
+                    <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
+                      Loading suggestions…
+                    </div>
+                  ) : templates.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No templates for this combination yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {templates.map((tmpl) => (
+                        <motion.button
+                          key={tmpl.id}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          onClick={() => applyTemplate(tmpl.text)}
+                          className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                        >
+                          <p className="text-xs text-muted-foreground mb-1 flex gap-2">
+                            <span className="uppercase font-semibold text-primary/70">
+                              {tmpl.tone}
+                            </span>
+                            <span>·</span>
+                            <span>{tmpl.length_class}</span>
+                          </p>
+                          <p className="text-sm text-foreground leading-relaxed line-clamp-3">
+                            {tmpl.text}
+                          </p>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
+        {/* Next button */}
         <div className="flex justify-end pt-4">
           <Button
             onClick={onNext}
