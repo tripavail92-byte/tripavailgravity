@@ -22,7 +22,7 @@ export interface OcrResult {
 }
 
 export const aiVerificationService = {
-  // v4.0 — Azure Face API (biometric) + GPT-4o-mini (OCR / doc validation)
+  // v4.1 — Railway DeepFace/FaceNet-512 (biometric) → GPT-4o-mini fallback + OCR / doc validation
 
   /**
    * Validate ID front — GPT checks blur, glare, crop, expiry
@@ -88,7 +88,7 @@ export const aiVerificationService = {
   },
 
   /**
-   * Face match — Azure Face API biometric comparison (real embeddings, not GPT)
+   * Face match — Railway DeepFace/FaceNet-512 (Tier 1) → GPT-4o-mini vision (Tier 2 fallback)
    */
   async compareFaceToId(
     idCardUrl: string,
