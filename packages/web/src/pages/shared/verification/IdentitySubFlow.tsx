@@ -18,7 +18,7 @@ import { Card } from '@/components/ui/card'
 import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { KYCSelfieVector } from '@/features/verification/assets/KYCSelfieVector'
-import { aiVerificationService } from '@/features/verification/services/aiVerificationService'
+import { OcrResult, aiVerificationService } from '@/features/verification/services/aiVerificationService'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
@@ -32,6 +32,7 @@ interface IdentitySubFlowProps {
     matchingScore: number
     match: boolean
     reason?: string
+    ocrResult?: OcrResult | null
   }) => void
   initialData?: any
   role: 'tour_operator' | 'hotel_manager'
@@ -52,6 +53,8 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   const [isUploadingFront, setIsUploadingFront] = useState(false)
   const [isUploadingBack, setIsUploadingBack] = useState(false)
   const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
+
+  const [ocrResult, setOcrResult] = useState<OcrResult | null>(initialData?.ocrResult || null)
 
   const [verificationResult, setVerificationResult] = useState<{
     match: boolean
@@ -81,6 +84,17 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
 
       setIdCardUrl(url)
       toast.success('ID Front validated!')
+      // Run OCR extraction in background — don't block the user
+      aiVerificationService.extractOcr(url, user.id, role).then((ocr) => {
+        setOcrResult(ocr)
+        if (ocr.idNumber && !ocr.cnicValid) {
+          toast.error(`CNIC format invalid: ${ocr.idNumber}. Please upload a clear CNIC photo.`)
+        } else if (ocr.expired) {
+          toast.error('This ID appears to be expired. Please upload a valid document.')
+        } else if (ocr.fullName) {
+          toast.success(`ID read: ${ocr.fullName}`)
+        }
+      })
     } catch (error) {
       toast.error('Upload failed. Try again.')
     } finally {
@@ -92,10 +106,15 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
     if (!user?.id) return
     setIsUploadingBack(true)
     try {
-      // No strict AI validation for back yet, just upload
       const url = await service.uploadAsset(user.id, file, 'verification/id_card_back')
+      // Validate back side with AI
+      const validation = await aiVerificationService.validateIdBack(url, user.id, role)
+      if (!validation.valid) {
+        toast.error(validation.reason || 'Invalid back image. Please upload the rear side of your ID.')
+        return
+      }
       setIdBackUrl(url)
-      toast.success('ID Back uploaded!')
+      toast.success('ID Back validated!')
     } catch (error) {
       toast.error('Upload failed. Try again.')
     } finally {
@@ -269,6 +288,19 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             </Card>
 
             <div className="pt-4">
+              {/* OCR extracted data preview */}
+              {ocrResult?.fullName && (
+                <div className="mb-4 p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">ID Data Extracted</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    {ocrResult.fullName && <><span className="text-muted-foreground font-medium">Name</span><span className="font-bold text-foreground">{ocrResult.fullName}</span></>}
+                    {ocrResult.idNumber && <><span className="text-muted-foreground font-medium">ID No.</span><span className={cn('font-bold', ocrResult.cnicValid ? 'text-success' : 'text-destructive')}>{ocrResult.idNumber}</span></>}
+                    {ocrResult.dateOfBirth && <><span className="text-muted-foreground font-medium">DOB</span><span className="font-bold text-foreground">{ocrResult.dateOfBirth}</span></>}
+                    {ocrResult.expiryDate && <><span className="text-muted-foreground font-medium">Expiry</span><span className={cn('font-bold', ocrResult.expired ? 'text-destructive' : 'text-success')}>{ocrResult.expiryDate}</span></>}
+                  </div>
+                  {ocrResult.expired && <p className="text-xs text-destructive font-bold">⚠ This ID appears expired</p>}
+                </div>
+              )}
               <Button
                 className="w-full h-14 rounded-2xl font-black uppercase tracking-widest bg-primary-gradient shadow-lg shadow-primary/20"
                 disabled={!canProceedToSelfie}
@@ -403,6 +435,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                       matchingScore: verificationResult.score,
                       match: true,
                       reason: verificationResult.reason,
+                      ocrResult,
                     })
                   }
                 >
