@@ -25,14 +25,20 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
   const [formData, setFormData] = useState(
     data.coverage || {
       primaryLocation: '',
-      radius: '',
+      radii: [] as string[],
     },
   )
 
-  const update = (field: string, value: string) => {
+  const update = (field: string, value: any) => {
     const next = { ...formData, [field]: value }
     setFormData(next)
     onUpdate({ coverage: next })
+  }
+
+  const toggleRadius = (id: string) => {
+    const current: string[] = formData.radii || []
+    const next = current.includes(id) ? current.filter((r: string) => r !== id) : [...current, id]
+    update('radii', next)
   }
 
   return (
@@ -64,15 +70,15 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
 
           <div className="space-y-6">
             <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
-              Service Coverage Range *
+              Service Coverage Range — select all that apply
             </Label>
             <div className="grid grid-cols-2 gap-6">
               {COVERAGE_OPTIONS.map((opt) => {
-                const isSelected = formData.radius === opt.id
+                const isSelected = (formData.radii || []).includes(opt.id)
                 return (
                   <motion.button
                     key={opt.id}
-                    onClick={() => update('radius', opt.id)}
+                    onClick={() => toggleRadius(opt.id)}
                     whileTap={{ scale: 0.98 }}
                     className={`p-6 rounded-2xl border text-left transition-all relative group h-full flex flex-col justify-between overflow-hidden ${
                       isSelected
@@ -93,7 +99,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
                           <Globe className="w-7 h-7" aria-hidden="true" />
                         </div>
                         {isSelected && (
-                          <div className="bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-white/20">
+                          <div className="bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-background/30">
                             <Check className="w-3.5 h-3.5" />
                           </div>
                         )}
