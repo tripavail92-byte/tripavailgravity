@@ -25,10 +25,22 @@ CREATE INDEX IF NOT EXISTS tdt_tour_type_idx
 
 ALTER TABLE public.tour_description_templates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read active templates"
-  ON public.tour_description_templates FOR SELECT
-  TO authenticated, anon
-  USING (is_active = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename  = 'tour_description_templates'
+      AND policyname = 'Anyone can read active templates'
+  ) THEN
+    EXECUTE $policy$
+      CREATE POLICY "Anyone can read active templates"
+        ON public.tour_description_templates FOR SELECT
+        TO authenticated, anon
+        USING (is_active = true)
+    $policy$;
+  END IF;
+END $$;
 
 -- ── Seed: 10+ templates per major tour type ───────────────────────────────────
 INSERT INTO public.tour_description_templates (tour_type, text, tone, length_class) VALUES
