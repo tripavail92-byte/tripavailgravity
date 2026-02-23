@@ -4,7 +4,6 @@ import { toast } from 'react-hot-toast'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -46,19 +45,19 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
     <div className="space-y-12">
       <div className="space-y-10 flex flex-col items-center">
         <div className="text-center">
-          <h3 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
+          <h3 className="text-2xl font-black text-white mb-1.5 tracking-tight">
             Add a profile photo
           </h3>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed font-medium">
+          <p className="text-white/55 max-w-md mx-auto leading-relaxed font-medium">
             A great photo helps travelers get to know you before booking.
           </p>
         </div>
 
         <div className="relative group">
           <div className="relative">
-            <Avatar className="w-48 h-48 border-[6px] border-background shadow-2xl ring-1 ring-border/[0.05] transition-all group-hover:scale-[1.02]">
+            <Avatar className="w-48 h-48 border-4 border-white/20 shadow-2xl ring-4 ring-primary/30 transition-all group-hover:scale-[1.02]">
               <AvatarImage src={selectedImage || ''} alt="Profile Picture" />
-              <AvatarFallback className="bg-primary/5 text-primary text-4xl">
+              <AvatarFallback className="bg-white/10 text-white/50 text-4xl">
                 {isUploading ? (
                   <Loader2 className="w-12 h-12 animate-spin opacity-40" />
                 ) : (
@@ -70,7 +69,7 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
             {selectedImage && !isUploading && (
               <button
                 onClick={removeImage}
-                className="absolute -top-3 -right-3 bg-background text-destructive rounded-2xl p-3 shadow-2xl border border-destructive/20 transition-all hover:scale-110 active:scale-90 z-10 hover:bg-destructive/10"
+                className="absolute -top-3 -right-3 bg-white/10 backdrop-blur-md text-red-400 rounded-2xl p-3 shadow-2xl border border-white/20 transition-all hover:scale-110 active:scale-90 z-10 hover:bg-red-500/20"
                 aria-label="Remove image"
               >
                 <Trash2 className="w-5 h-5" />
@@ -88,7 +87,7 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
             />
             <label
               htmlFor="profile-upload"
-              className={`absolute bottom-2 right-2 w-12 h-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary-hover transition-all shadow-xl hover:scale-110 active:scale-95 border-[3px] border-background ${isUploading ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
+              className={`absolute bottom-2 right-2 w-12 h-12 bg-primary text-primary-foreground rounded-2xl flex items-center justify-center cursor-pointer hover:bg-primary-hover transition-all shadow-xl hover:scale-110 active:scale-95 border-[3px] border-white/20 ${isUploading ? 'opacity-50 cursor-not-allowed shadow-none' : ''}`}
             >
               {isUploading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -101,14 +100,14 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
 
         <div className="text-center space-y-4 max-w-sm">
           <div className="space-y-1">
-            <h4 className="text-xl font-extrabold text-foreground tracking-tight">
+            <h4 className="text-base font-bold text-white tracking-tight">
               {isUploading
                 ? 'Uploading...'
                 : selectedImage
                   ? 'Looking Great!'
                   : 'Professionalism matters'}
             </h4>
-            <p className="text-sm text-muted-foreground leading-relaxed font-medium">
+            <p className="text-sm text-white/45 leading-relaxed font-medium">
               High-quality square photos (JPG or PNG) work best. Max size 5MB. Travelers prefer see
               your friendly face!
             </p>
@@ -128,21 +127,21 @@ export function ProfilePictureStep({ onUpdate, data }: StepProps) {
             </div>
           )}
           {/* Informational Alert */}
-          <Card className="bg-info/10 border-info/20 rounded-[32px] p-8 flex gap-6 transition-all hover:bg-info/15 group">
-            <div className="w-14 h-14 bg-background rounded-2xl shadow-sm border border-info/20 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110">
-              <Info className="w-7 h-7 text-info" />
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 flex gap-5 group">
+            <div className="w-12 h-12 bg-blue-500/20 border border-blue-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Info className="w-6 h-6 text-blue-400" />
             </div>
-            <div className="space-y-2">
-              <p className="font-black text-info uppercase tracking-widest text-xs italic">
+            <div className="space-y-1.5 text-left">
+              <p className="font-bold text-blue-300 uppercase tracking-widest text-xs">
                 Why this matters
               </p>
-              <p className="text-sm text-info/90 leading-relaxed font-medium">
+              <p className="text-sm text-blue-300/70 leading-relaxed font-medium">
                 A clear, professional profile picture significantly increases booking requests by
                 appearing more trustworthy to travelers. Profiles with real photos receive up to 3x
                 more interest.
               </p>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,5 @@
-import { Plane } from 'lucide-react'
+import { CheckCircle2, Globe, Plane, Star, TrendingUp } from 'lucide-react'
 import { motion } from 'motion/react'
-
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 
 interface StepProps {
   onNext: () => void
@@ -10,33 +7,92 @@ interface StepProps {
   data: any
 }
 
+const HIGHLIGHTS = [
+  { icon: Globe, label: 'Global reach', desc: 'Connect with travelers worldwide' },
+  { icon: TrendingUp, label: 'Grow revenue', desc: 'Managed booking & payments' },
+  { icon: CheckCircle2, label: 'Verified profile', desc: 'Instant trust with travelers' },
+]
+
 export function WelcomeStep({ onNext }: StepProps) {
   return (
-    <Card className="p-8 text-center border-none shadow-none bg-transparent">
+    <div className="flex flex-col items-center text-center py-4">
+      {/* Glowing icon */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="flex flex-col items-center"
+        transition={{ type: 'spring', stiffness: 220, damping: 18, delay: 0.05 }}
+        className="relative mb-8"
       >
-        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <Plane className="w-12 h-12 text-primary" aria-hidden="true" />
+        <div className="absolute inset-0 rounded-[32px] bg-primary/40 blur-2xl scale-110" />
+        <div className="relative w-28 h-28 bg-gradient-to-br from-primary to-primary/70 rounded-[32px] flex items-center justify-center shadow-2xl shadow-primary/40 ring-1 ring-primary/30">
+          <Plane className="w-14 h-14 text-white drop-shadow-lg" aria-hidden="true" />
         </div>
-        <h2 className="text-3xl font-extrabold text-foreground mb-4 tracking-tight">
-          Welcome to TripAvail
-        </h2>
-        <p className="text-muted-foreground mb-8 max-w-md text-lg leading-relaxed font-medium">
-          Join our community of tour operators and start creating amazing travel experiences for
-          adventurers around the world.
-        </p>
-        <Button
-          onClick={onNext}
-          size="lg"
-          className="bg-primary hover:bg-primary/90 text-white px-12 py-7 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+        {/* Floating star badge */}
+        <motion.div
+          animate={{ y: [-3, 3, -3] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-3 -right-3 w-9 h-9 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl flex items-center justify-center shadow-lg"
         >
-          Get Started
-        </Button>
+          <Star className="w-4 h-4 text-white fill-white" />
+        </motion.div>
       </motion.div>
-    </Card>
+
+      {/* Headline */}
+      <motion.div
+        initial={{ y: 16, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.18, duration: 0.4 }}
+        className="space-y-3 mb-10"
+      >
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-bold uppercase tracking-widest mb-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          Partner Program
+        </div>
+        <h2 className="text-4xl font-black text-white tracking-tight leading-tight">
+          Welcome to<br />TripAvail
+        </h2>
+        <p className="text-white/55 text-base leading-relaxed max-w-sm mx-auto font-medium">
+          Join elite tour operators creating unforgettable experiences for adventurers around the world.
+        </p>
+      </motion.div>
+
+      {/* Feature highlights */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+        className="w-full space-y-3 mb-10"
+      >
+        {HIGHLIGHTS.map((h, i) => (
+          <motion.div
+            key={h.label}
+            initial={{ x: -12, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.35 + i * 0.08 }}
+            className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.05] border border-white/10 hover:bg-white/[0.08] transition-colors group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/30 transition-colors">
+              <h.icon className="w-5 h-5 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="text-white font-bold text-sm">{h.label}</p>
+              <p className="text-white/45 text-xs font-medium">{h.desc}</p>
+            </div>
+            <CheckCircle2 className="w-4 h-4 text-primary/60 ml-auto flex-shrink-0" />
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Setup time badge */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+        className="text-white/30 text-xs font-bold uppercase tracking-widest"
+      >
+        Setup takes about 5 minutes
+      </motion.p>
+    </div>
   )
 }
+

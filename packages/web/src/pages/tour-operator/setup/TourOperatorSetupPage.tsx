@@ -1,11 +1,10 @@
-import { Loader2, Save } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Plane, Save } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { AirbnbBottomNav } from '@/features/hotel-listing/components/ui/AirbnbBottomNav'
 import {
   TourOperatorOnboardingData,
   tourOperatorService,
@@ -137,45 +136,76 @@ export default function TourOperatorSetupPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground font-medium tracking-tight">
-            Loading your profile...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-red-950/30 to-gray-950 relative overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] bg-primary/15 rounded-full blur-[100px] pointer-events-none" />
+        <motion.div
+          animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          className="relative z-10 flex flex-col items-center gap-5"
+        >
+          <div className="w-16 h-16 bg-primary/20 backdrop-blur-xl border border-primary/30 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary/20">
+            <Plane className="w-8 h-8 text-primary" />
+          </div>
+          <p className="text-white/60 font-semibold tracking-widest text-sm uppercase">
+            Loading your profile…
           </p>
-        </div>
+        </motion.div>
       </div>
     )
   }
 
   const CurrentStepComponent = STEPS[currentStep].component
+  const isLastContentStep = currentStep === STEPS.length - 2
+  const isCompletionStep = currentStep === STEPS.length - 1
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* Top Bar for Save & Exit */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-6 py-5">
-        <div className="max-w-content mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-red-950/30 to-gray-950 relative overflow-hidden flex flex-col">
+      {/* Decorative floating orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-primary/25 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] bg-primary/15 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] bg-primary/8 rounded-full blur-[80px]" />
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
+
+      {/* Top Nav Header */}
+      <div className="sticky top-0 z-40 bg-white/[0.04] backdrop-blur-xl border-b border-white/10 px-6 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black shadow-sm border border-primary/20">
-              T
+            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/40 ring-2 ring-primary/20">
+              <Plane className="w-5 h-5 text-white" />
             </div>
-            <h1 className="font-black text-foreground tracking-tighter text-xl uppercase italic">
-              Operator Setup
-            </h1>
+            <div>
+              <h1 className="font-black text-white tracking-tight text-sm leading-none">
+                TripAvail
+              </h1>
+              <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                Operator Setup
+              </p>
+            </div>
           </div>
 
-          {currentStep < STEPS.length - 1 && (
+          {!isCompletionStep && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="rounded-2xl border-input hover:border-primary hover:text-primary font-bold shadow-sm h-10 px-5 transition-all hover:scale-105 active:scale-95"
+              className="text-white/60 hover:text-white hover:bg-white/10 border border-white/15 rounded-xl h-9 px-4 font-semibold transition-all"
               onClick={handleSaveAndExit}
               disabled={isSaving}
             >
               {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
               ) : (
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-3.5 h-3.5 mr-2" />
               )}
               Save & Exit
             </Button>
@@ -183,31 +213,79 @@ export default function TourOperatorSetupPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-32 px-6 py-12 max-w-2xl mx-auto w-full">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <CurrentStepComponent onNext={handleNext} onUpdate={updateData} data={setupData} />
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {/* Step progress bar */}
+      {!isCompletionStep && (
+        <div className="max-w-2xl mx-auto w-full px-6 pt-5 pb-1 relative z-10">
+          <div className="flex gap-1.5 mb-2">
+            {STEPS.slice(0, STEPS.length - 1).map((step, i) => (
+              <div
+                key={step.id}
+                className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+                  i < currentStep
+                    ? 'bg-primary shadow-sm shadow-primary/50'
+                    : i === currentStep
+                      ? 'bg-primary/60'
+                      : 'bg-white/15'
+                }`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest">
+              {STEPS[currentStep].title}
+            </p>
+            <p className="text-white/35 text-[10px] font-semibold">
+              {currentStep + 1} of {STEPS.length - 1}
+            </p>
+          </div>
+        </div>
+      )}
 
-      <AirbnbBottomNav
-        currentStep={currentStep + 1}
-        totalSteps={STEPS.length}
-        completedSteps={currentStep}
-        onBack={handleBack}
-        onNext={handleNext}
-        showBack={true}
-        showNext={currentStep < STEPS.length - 1}
-        nextDisabled={isSaving}
-        nextLabel={currentStep === STEPS.length - 2 ? 'Finish Setup' : 'Next'}
-      />
+      {/* Main content */}
+      <div className="flex-1 overflow-y-auto relative z-10">
+        <div className="max-w-2xl mx-auto w-full px-6 py-6 pb-16">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, y: 20, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.99 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+            >
+              {/* Glass card shell */}
+              <div className="rounded-3xl bg-white/[0.06] backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 overflow-hidden">
+                <div className="p-8">
+                  <CurrentStepComponent onNext={handleNext} onUpdate={updateData} data={setupData} />
+                </div>
+
+                {/* Inline footer navigation */}
+                {!isCompletionStep && (
+                  <div className="px-8 pb-8 flex items-center justify-between gap-4 border-t border-white/[0.06] pt-6">
+                    <Button
+                      variant="ghost"
+                      onClick={handleBack}
+                      className="text-white/50 hover:text-white hover:bg-white/10 rounded-xl h-12 px-6 font-semibold transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1.5" />
+                      {currentStep === 0 ? 'Dashboard' : 'Back'}
+                    </Button>
+
+                    <Button
+                      onClick={handleNext}
+                      disabled={isSaving}
+                      className="bg-primary hover:bg-primary/90 text-white rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/30 flex-1 max-w-[220px] transition-all hover:shadow-xl hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                      {isLastContentStep ? 'Finish Setup' : 'Continue'}
+                      {!isSaving && <ChevronRight className="w-4 h-4 ml-1.5" />}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }
