@@ -151,7 +151,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </div>
       </div>
 
-      {/* Group Discounts */
+      {/* Group Discounts */}
       <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -255,7 +255,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </AnimatePresence>
       </div>
 
-      {/* Seasonal Pricing */
+      {/* Seasonal Pricing */}
       <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -307,7 +307,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </AnimatePresence>
       </div>
 
-      {/* Booking Terms */
+      {/* Booking Terms */}
       <div className="glass-card rounded-2xl p-6">
         <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
           <Info className="w-5 h-5 text-primary" /> Booking Terms
@@ -375,7 +375,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </div>
       </div>
 
-      {/* Inclusions & Exclusions */
+      {/* Inclusions & Exclusions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card rounded-2xl p-6">
           <h3 className="text-sm font-bold text-success-dark mb-4 uppercase tracking-wider">
