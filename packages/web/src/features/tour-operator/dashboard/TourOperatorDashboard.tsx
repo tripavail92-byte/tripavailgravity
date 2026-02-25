@@ -1,8 +1,10 @@
 import {
   AlertTriangle,
   ArrowRight,
+  CheckCircle2,
   Clock,
   Compass,
+  Edit3,
   Loader2,
   MapPin,
   Package,
@@ -11,6 +13,7 @@ import {
   ShieldCheck,
   Star,
   Users,
+  XCircle,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -34,6 +37,7 @@ export function TourOperatorDashboard() {
   const verificationStatus = activeRole?.verification_status ?? 'incomplete'
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
   const [drafts, setDrafts] = useState<Tour[]>([])
+  const [continuableTours, setContinuableTours] = useState<Partial<Tour>[]>([])
   const [loading, setLoading] = useState(true)
   const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null)
   const [setupCurrentStep, setSetupCurrentStep] = useState<number>(0)
@@ -58,12 +62,14 @@ export function TourOperatorDashboard() {
         setSetupCompleted(profile?.setup_completed === true)
         setSetupCurrentStep(profile?.setup_current_step ?? 0)
 
-        const [pub, drf] = await Promise.all([
+        const [pub, drf, cont] = await Promise.all([
           tourService.fetchPublishedTours(user.id),
           tourService.fetchDraftTours(user.id),
+          tourService.fetchContinuableTours(user.id),
         ])
         setPublishedTours(pub)
         setDrafts(drf)
+        setContinuableTours(cont)
       } catch (error) {
         console.error('Error loading dashboard data:', error)
       } finally {
@@ -88,7 +94,7 @@ export function TourOperatorDashboard() {
   // ── Quick stats (live counts, others placeholder until analytics lands) ──
   const quickStats = [
     { label: 'Active Tours',     value: publishedTours.length || '—', icon: MapPin,   glow: 'shadow-primary/20'   },
-    { label: 'Draft Tours',      value: drafts.length       || '—', icon: Clock,    glow: 'shadow-amber-500/20' },
+    { label: 'Draft Tours',      value: continuableTours.length || drafts.length || '—', icon: Clock,    glow: 'shadow-amber-500/20' },
     { label: 'Total Travellers', value: '—', icon: Users,    glow: 'shadow-blue-500/20'  },
     { label: 'Avg Rating',       value: '—', icon: Star,     glow: 'shadow-yellow-500/20'},
   ]
@@ -246,6 +252,107 @@ export function TourOperatorDashboard() {
           {/* ── DRAFTS ALERT ── */}
           {drafts.length > 0 && (
             <DraftsAlert drafts={drafts} />
+          )}
+
+          {/* ── CONTINUE EDITING ── */}
+          {continuableTours.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.22 }}
+              className="glass-card-dark border border-white/10 rounded-3xl p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wide">
+                  <Edit3 className="w-5 h-5 text-primary" />
+                  Continue Editing
+                  <Badge className="bg-primary/20 text-primary border-primary/30 font-bold">
+                    {continuableTours.length}
+                  </Badge>
+                </h2>
+                <p className="text-xs text-white/40 font-medium">Pick up where you left off</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {continuableTours.map((tour) => {
+                  const statusConfig = {
+                    draft:       { label: 'Draft',       bg: 'bg-slate-700/60',   text: 'text-slate-300',  border: 'border-slate-600/40', icon: Clock },
+                    in_progress: { label: 'In Progress', bg: 'bg-primary/20',     text: 'text-primary',    border: 'border-primary/40',   icon: Edit3 },
+                    rejected:    { label: 'Rejected',    bg: 'bg-red-500/20',     text: 'text-red-400',    border: 'border-red-500/40',   icon: XCircle },
+                  }[tour.workflow_status as string] ?? { label: tour.workflow_status ?? 'Draft', bg: 'bg-slate-700/60', text: 'text-slate-300', border: 'border-slate-600/40', icon: Clock }
+
+                  const completionPct = tour.completion_percentage ?? 0
+                  const lastEdited = tour.last_edited_at
+                    ? (() => {
+                        const diff = Date.now() - new Date(tour.last_edited_at).getTime()
+                        const minutes = Math.floor(diff / 60000)
+                        if (minutes < 1) return 'Just now'
+                        if (minutes < 60) return `${minutes}m ago`
+                        const hours = Math.floor(minutes / 60)
+                        if (hours < 24) return `${hours}h ago`
+                        return `${Math.floor(hours / 24)}d ago`
+                      })()
+                    : 'Not saved yet'
+
+                  const StatusIcon = statusConfig.icon
+
+                  return (
+                    <div
+                      key={tour.id}
+                      className={`rounded-2xl border ${statusConfig.border} bg-white/5 p-4 flex flex-col gap-3 hover:bg-white/8 transition-all`}
+                    >
+                      {/* Tour name + status */}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-white text-sm leading-snug line-clamp-2 flex-1">
+                          {tour.title || 'Untitled Tour'}
+                        </h3>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${statusConfig.bg} ${statusConfig.text}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusConfig.label}
+                        </span>
+                      </div>
+
+                      {/* Rejection reason */}
+                      {tour.workflow_status === 'rejected' && tour.rejection_reason && (
+                        <p className="text-xs text-red-400/80 bg-red-500/10 rounded-xl px-3 py-2 border border-red-500/20">
+                          {tour.rejection_reason}
+                        </p>
+                      )}
+
+                      {/* Completion bar */}
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-white/40 font-medium">Completion</span>
+                          <span className="text-xs font-bold text-white/70">{completionPct}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            style={{ width: `${completionPct}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Footer: last edited + button */}
+                      <div className="flex items-center justify-between mt-auto pt-1">
+                        <span className="text-xs text-white/30 font-medium flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {lastEdited}
+                        </span>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id ?? '')}`)}
+                          className="h-8 px-4 rounded-xl text-xs font-bold gap-1.5 bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-all"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          Resume
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
           )}
 
           {/* ── MAIN CONTENT GRID ── */}

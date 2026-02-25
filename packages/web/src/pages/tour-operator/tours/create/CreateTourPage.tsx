@@ -1,12 +1,17 @@
-import { Loader2 } from 'lucide-react'
+import { AlertCircle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { supabase } from '@tripavail/shared/core/client'
-import { Tour, tourService } from '@/features/tour-operator/services/tourService'
+import {
+  Tour,
+  calculateCompletionPercentage,
+  tourService,
+} from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
+import { Button } from '@/components/ui/button'
 
 import { TourBasicsStep } from './components/TourBasicsStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
@@ -35,6 +40,14 @@ export default function CreateTourPage() {
   const [tourData, setTourData] = useState<Partial<Tour>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [gateLoading, setGateLoading] = useState(true)
+  // Draft workflow state
+  const [currentTourId, setCurrentTourId] = useState<string | null>(null)
+  const [hasUnsaved, setHasUnsaved] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [showExitModal, setShowExitModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isFirstLoad = useRef(true)
 
   // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
@@ -95,6 +108,52 @@ export default function CreateTourPage() {
     // Only load when switching to a new id
   }, [user?.id, tourIdToEdit])
 
+  // Initialise currentTourId from route/param
+  useEffect(() => {
+    if (tourIdToEdit) setCurrentTourId(tourIdToEdit)
+  }, [tourIdToEdit])
+
+  // Mark unsaved whenever tourData changes (skip the very first setState from loadTourForEdit)
+  useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false
+      return
+    }
+    setHasUnsaved(true)
+  }, [tourData])
+
+  // Autosave: every 30s when there are unsaved changes
+  useEffect(() => {
+    if (!user?.id) return
+    const interval = setInterval(async () => {
+      if (!hasUnsaved) return
+      setAutosaveStatus('saving')
+      try {
+        const pct = calculateCompletionPercentage(tourData)
+        const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+        if (!currentTourId) setCurrentTourId(result.tourId)
+        setLastSavedAt(new Date())
+        setHasUnsaved(false)
+        setAutosaveStatus('saved')
+        setTimeout(() => setAutosaveStatus('idle'), 3000)
+      } catch {
+        setAutosaveStatus('error')
+      }
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [user?.id, hasUnsaved, tourData, currentTourId])
+
+  // Warn before unload if there are unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!hasUnsaved) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [hasUnsaved])
+
   if (gateLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
@@ -110,6 +169,79 @@ export default function CreateTourPage() {
 
   const handleUpdate = (data: Partial<Tour>) => {
     setTourData((prev) => ({ ...prev, ...data }))
+  }
+
+  const performSave = useCallback(async (redirectAfter?: string): Promise<boolean> => {
+    if (!user) return false
+    setIsSaving(true)
+    setAutosaveStatus('saving')
+    try {
+      const pct = calculateCompletionPercentage(tourData)
+      const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+      const savedId = result.tourId
+      if (!currentTourId) setCurrentTourId(savedId)
+      setLastSavedAt(new Date())
+      setHasUnsaved(false)
+      setAutosaveStatus('saved')
+      setTimeout(() => setAutosaveStatus('idle'), 3000)
+      if (redirectAfter) navigate(redirectAfter)
+      return true
+    } catch (error) {
+      console.error('Error saving draft:', error)
+      setAutosaveStatus('error')
+      toast.error('Failed to save. Please try again.')
+      return false
+    } finally {
+      setIsSaving(false)
+    }
+  }, [user, tourData, currentTourId, navigate])
+
+  const handleSaveDraft = async () => {
+    const ok = await performSave()
+    if (ok) toast.success('Draft saved')
+  }
+
+  const handleSaveExit = async () => {
+    setShowExitModal(false)
+    await performSave('/operator/dashboard')
+  }
+
+  const REQUIRED_FOR_SUBMIT = [
+    { field: 'title',    label: 'Tour title' },
+    { field: 'price',    label: 'Pricing' },
+    { field: 'cancellation_policy', label: 'Cancellation policy' },
+  ]
+
+  const handleSubmitForReview = async () => {
+    if (!user) return
+    const missing = REQUIRED_FOR_SUBMIT.filter(
+      ({ field }) => !(tourData as any)[field]
+    )
+    if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
+    if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
+    if ((tourData.schedules?.length ?? 0) === 0) missing.push({ field: 'schedules', label: 'Availability dates' })
+    if (missing.length > 0) {
+      toast.error(`Please complete: ${missing.map(m => m.label).join(', ')}`)
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      // First save everything
+      const pct = calculateCompletionPercentage(tourData)
+      const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+      const savedId = currentTourId ?? result.tourId
+      if (!currentTourId) setCurrentTourId(savedId)
+      // Then flip status
+      await tourService.submitForReview(savedId, user.id)
+      setHasUnsaved(false)
+      toast.success('Tour submitted for review! We\'ll notify you once approved.')
+      navigate('/operator/dashboard')
+    } catch (error) {
+      console.error('Error submitting for review:', error)
+      toast.error('Submission failed. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleNext = () => {
@@ -130,32 +262,27 @@ export default function CreateTourPage() {
     if (!user) return
     setIsSaving(true)
     try {
-      // Clean up and ensure required fields
       const dataToSave: any = {
         ...tourData,
         operator_id: user.id,
         is_active: true,
         is_published: true,
-        is_verified: false, // Default for new tours
-        is_featured: false, // Default for new tours
+        is_verified: false,
+        is_featured: false,
+        workflow_status: 'approved',
+        approved_at: new Date().toISOString(),
       }
-
-      // Prevent accidental primary key overwrite during updates
       delete dataToSave.id
+      if ((dataToSave as any).difficulty) delete (dataToSave as any).difficulty
 
-      // Remove any legacy fields that might cause schema mismatch
-      if ((dataToSave as any).difficulty) {
-        delete (dataToSave as any).difficulty
-      }
-
-      if (tourIdToEdit) {
-        await tourService.updateTour(tourIdToEdit, dataToSave)
+      if (currentTourId) {
+        await tourService.updateTour(currentTourId, dataToSave)
         toast.success('Tour updated successfully!')
       } else {
         await tourService.createTour(dataToSave)
         toast.success('Tour published successfully!')
       }
-
+      setHasUnsaved(false)
       navigate('/operator/dashboard')
     } catch (error) {
       console.error('Error publishing tour:', error)
@@ -180,11 +307,64 @@ export default function CreateTourPage() {
       <div className="glass-nav border-b border-white/30 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto space-y-3">
           {/* Title row */}
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold text-foreground">Create New Tour</h1>
-            <span className="text-xs text-muted-foreground font-medium">
-              {currentStep + 1} / {STEPS.length}
-            </span>
+          <div className="flex justify-between items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <h1 className="text-xl font-bold text-foreground truncate">
+                {tourData.title || 'Create New Tour'}
+              </h1>
+              {/* Autosave indicator */}
+              {autosaveStatus === 'saving' && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                </span>
+              )}
+              {autosaveStatus === 'saved' && (
+                <span className="flex items-center gap-1 text-xs text-primary shrink-0">
+                  <BookmarkCheck className="w-3 h-3" />
+                  Saved {lastSavedAt ? lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                </span>
+              )}
+              {autosaveStatus === 'error' && (
+                <span className="flex items-center gap-1 text-xs text-destructive shrink-0">
+                  <AlertCircle className="w-3 h-3" /> Save failed
+                </span>
+              )}
+              {hasUnsaved && autosaveStatus === 'idle' && (
+                <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" title="Unsaved changes" />
+              )}
+            </div>
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={isSaving || isSubmitting}
+                className="bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm text-xs gap-1.5"
+              >
+                <BookmarkCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Save Draft</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => hasUnsaved ? setShowExitModal(true) : navigate('/operator/dashboard')}
+                disabled={isSaving || isSubmitting}
+                className="bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm text-xs gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Save & Exit</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSubmitForReview}
+                disabled={isSaving || isSubmitting}
+                className="bg-primary hover:bg-primary/90 text-white text-xs gap-1.5 shadow-md shadow-primary/25"
+              >
+                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">Submit for Review</span>
+              </Button>
+            </div>
           </div>
 
           {/* Visual stepper */}
@@ -265,11 +445,64 @@ export default function CreateTourPage() {
           <div className="flex flex-col items-center">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <span className="mt-2 font-medium text-muted-foreground">
-              {tourIdToEdit ? 'Loading/Updating...' : 'Publishing...'}
+              {currentTourId ? 'Saving…' : 'Saving draft…'}
             </span>
           </div>
         </div>
       )}
+
+      {/* Exit Warning Modal */}
+      <AnimatePresence>
+        {showExitModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowExitModal(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 12 }}
+              className="relative glass-card rounded-2xl p-8 max-w-sm w-full z-10 text-center shadow-2xl"
+            >
+              <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-orange-500" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground mb-2">Unsaved Changes</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                You have unsaved changes. Save your progress before leaving?
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={handleSaveExit}
+                  disabled={isSaving}
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-md shadow-primary/25"
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Save & Exit
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => { setHasUnsaved(false); setShowExitModal(false); navigate('/operator/dashboard') }}
+                  className="w-full bg-white/50 border-white/60"
+                >
+                  Discard Changes
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowExitModal(false)}
+                  className="w-full text-muted-foreground"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
