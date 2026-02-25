@@ -46,5 +46,6 @@ STRIPE_EXPORT.md
 !package-lock.json
 !tsconfig.json
 !turbo.json
+!railway.json
 !*config*.json
 !.vscode/*.json
