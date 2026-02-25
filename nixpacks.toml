@@ -9,6 +9,7 @@ cmds = [
   "rm -rf .turbo",
   "rm -rf packages/web/dist",
   "rm -rf packages/shared/dist",
+  "pnpm --filter @tripavail/shared build",
   "pnpm --filter @tripavail/web build"
 ]
 
