@@ -34,7 +34,7 @@ serve(async (req) => {
         const faceApiUrl     = Deno.env.get('FACE_API_URL');    // Railway DeepFace service
         const faceApiSecret  = Deno.env.get('FACE_API_SECRET'); // shared Bearer token
         const supabaseUrl    = Deno.env.get('SUPABASE_URL')!;
-        const supabaseKey    = Deno.env.get('SERVICE_ROLE_KEY')!;
+        const supabaseKey    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
