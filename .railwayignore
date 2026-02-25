@@ -1,20 +1,20 @@
-node_modules
-.turbo
-packages/web/dist
-packages/shared/dist
-packages/python-worker
-services
-.git
+/node_modules/
+/.turbo/
+/packages/web/dist/
+/packages/shared/dist/
+/packages/python-worker/
+/services/
+/.git/
 *.log
 .env*
 !.env.example
-supabase/.branches
-supabase/migrations/*.sql
-online project
-extracted_tripavail
-tools
-scripts
-docs
+/supabase/.branches/
+/supabase/migrations/*.sql
+/online project/
+/extracted_tripavail/
+/tools/
+/scripts/
+/docs/
 __pycache__
 *.pyc
-.venv
+/.venv/
