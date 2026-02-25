@@ -104,7 +104,7 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
     updateAllData({ custom: next })
   }
 
-  const useTemplate = (id: string, template: string) => {
+  const applyTemplate = (id: string, template: string) => {
     handlePolicyChange(id, template)
   }
 
@@ -297,23 +297,23 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                       <policy.icon className="w-6 h-6" />
                     </div>
                     <div>
-                    <Label className="text-sm font-bold text-foreground tracking-tight">
-                      {policy.title}
-                    </Label>
-                    <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest leading-none mt-1">
-                        Required Information
-                      </p>
-                    </div>
-                  </div>
-                  {!customPolicies[policy.id] && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => useTemplate(policy.id, policy.template)}
-                      className="text-xs text-primary border-primary/30 font-bold uppercase tracking-widest hover:bg-primary/15 rounded-xl h-10 px-4 transition-all hover:scale-105"
-                    >
-                      <ClipboardCheck className="w-4 h-4 mr-2" />
-                      Use Template
+                            <Label className="text-sm font-bold text-foreground tracking-tight">
+                              {policy.title}
+                            </Label>
+                            <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest leading-none mt-1">
+                              Required Information
+                            </p>
+                          </div>
+                        </div>
+                        {!customPolicies[policy.id] && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => applyTemplate(policy.id, policy.template)}
+                            className="text-xs text-primary border-primary/30 font-bold uppercase tracking-widest hover:bg-primary/15 rounded-xl h-10 px-4 transition-all hover:scale-105"
+                          >
+                            <ClipboardCheck className="w-4 h-4 mr-2" />
+                            Use Template
                     </Button>
                   )}
                 </div>

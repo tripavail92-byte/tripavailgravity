@@ -20,15 +20,8 @@ export function DashboardRedirect() {
     return null
   }, [roleType, user])
 
-  if (!initialized) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
   useEffect(() => {
+    if (!initialized) return
     let cancelled = false
 
     const run = async () => {
@@ -82,9 +75,9 @@ export function DashboardRedirect() {
     return () => {
       cancelled = true
     }
-  }, [baseTarget, roleType, userId])
+  }, [baseTarget, roleType, userId, initialized])
 
-  if (!target) {
+  if (!initialized || !target) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

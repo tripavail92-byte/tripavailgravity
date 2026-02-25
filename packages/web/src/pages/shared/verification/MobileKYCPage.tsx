@@ -6,15 +6,16 @@ import { useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { aiVerificationService } from '@/features/verification/services/aiVerificationService'
+
 import {
   KycSession,
   getKycSessionByToken,
   updateKycSession,
+  subscribeToKycSession,
 } from '@/features/verification/services/kycSessionService'
 import { cn } from '@/lib/utils'
 
-type MobileStep = 'loading' | 'invalid' | 'expired' | 'id_front' | 'id_back' | 'selfie' | 'verifying' | 'done' | 'error'
+type MobileStep = 'loading' | 'invalid' | 'expired' | 'id_front' | 'id_back' | 'selfie' | 'processing' | 'done' | 'failed' | 'error'
 
 // ── Upload a captured file via the edge function ──────────────────────────────
 async function uploadKycImage(
@@ -181,81 +182,119 @@ export default function MobileKYCPage() {
   const [idBackUrl,  setIdBackUrl]  = useState('')
   const [selfieUrl,  setSelfieUrl]  = useState('')
 
-  // Load session on mount
+  // Load session on mount and subscribe to updates
   useEffect(() => {
-    if (!token) { setStep('invalid'); return }
-    getKycSessionByToken(token).then((s) => {
-      if (!s)                                                    { setStep('invalid'); return }
-      if (new Date(s.expires_at) < new Date() || s.status === 'expired') { setStep('expired'); return }
-      if (s.status === 'complete')                               { setStep('done');    return }
+    if (!token) {
+      setStep('invalid')
+      return
+    }
+
+    const handleSessionUpdate = (s: KycSession) => {
+      if (new Date(s.expires_at) < new Date() || s.status === 'expired') {
+        setStep('expired')
+        return
+      }
+      if (s.status === 'complete') {
+        setStep('done')
+        return
+      }
+      if (s.status === 'failed') {
+        setStep('failed')
+        return
+      }
+      if (s.status === 'processing') {
+        setStep('processing')
+        return
+      }
       setSession(s)
       // Resume from where we left off
-      if (s.selfie_url)    { setIdFrontUrl(s.id_front_url!); setIdBackUrl(s.id_back_url!); setSelfieUrl(s.selfie_url); setStep('done') }
-      else if (s.id_back_url) { setIdFrontUrl(s.id_front_url!); setIdBackUrl(s.id_back_url!); setStep('selfie') }
-      else if (s.id_front_url) { setIdFrontUrl(s.id_front_url!); setStep('id_back') }
-      else                  { setStep('id_front') }
+      if (s.selfie_url) {
+        setIdFrontUrl(s.id_front_url!)
+        setIdBackUrl(s.id_back_url!)
+        setSelfieUrl(s.selfie_url)
+        setStep('done')
+      } else if (s.id_back_url) {
+        setIdFrontUrl(s.id_front_url!)
+        setIdBackUrl(s.id_back_url!)
+        setStep('selfie')
+      } else if (s.id_front_url) {
+        setIdFrontUrl(s.id_front_url!)
+        setStep('id_back')
+      } else {
+        setStep('id_front')
+      }
+    }
+
+    getKycSessionByToken(token).then((s) => {
+      if (!s) {
+        setStep('invalid')
+        return
+      }
+      handleSessionUpdate(s)
     })
+
+    const unsubscribe = subscribeToKycSession(token, handleSessionUpdate)
+    return () => unsubscribe()
   }, [token])
 
   const handleIdFront = async (file: File) => {
     setBusy(true)
     try {
       const url = await uploadKycImage(token, 'id_front', file)
-      // AI validate front
-      const v = await aiVerificationService.validateIdCard(url, session!.user_id, session!.role)
-      if (!v.valid) { toast.error(v.reason || 'Invalid ID front. Please retake.'); return }
       setIdFrontUrl(url)
       toast.success('ID Front captured!')
       setStep('id_back')
-    } catch (e: any) { toast.error(e.message || 'Upload failed') }
-    finally { setBusy(false) }
+    } catch (e: any) {
+      toast.error(e.message || 'Upload failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleIdBack = async (file: File) => {
     setBusy(true)
     try {
       const url = await uploadKycImage(token, 'id_back', file)
-      const v = await aiVerificationService.validateIdBack(url, session!.user_id, session!.role)
-      if (!v.valid) { toast.error(v.reason || 'Invalid ID back. Please retake.'); return }
       setIdBackUrl(url)
       toast.success('ID Back captured!')
       setStep('selfie')
-    } catch (e: any) { toast.error(e.message || 'Upload failed') }
-    finally { setBusy(false) }
+    } catch (e: any) {
+      toast.error(e.message || 'Upload failed')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const handleSelfie = async (file: File) => {
     setBusy(true)
-    setStep('verifying')
+    setStep('processing')
     try {
       const url = await uploadKycImage(token, 'selfie', file)
       setSelfieUrl(url)
 
-      // Face match
-      const result = await aiVerificationService.compareFaceToId(idFrontUrl, url, session!.user_id, session!.role)
-
-      // OCR (non-blocking)
-      let ocrResult: Record<string, any> | null = null
-      try {
-        ocrResult = await aiVerificationService.extractOcr(idFrontUrl, session!.user_id, session!.role)
-      } catch { /* best-effort */ }
-
-      // Mark session complete
+      // Mark session as processing for the background worker to pick up
       await updateKycSession(token, {
-        selfie_url:  url,
-        ocr_result:  ocrResult,
-        match:       result.match,
-        match_score: result.score,
-        match_reason: result.reason,
-        status:      'complete',
+        selfie_url: url,
+        status: 'processing',
       })
-
-      setStep('done')
-      toast.success(result.match ? 'Identity verified! 🎉' : 'Captured — laptop will show result.')
+      // The frontend effect listening to realtime updates will handle the view change
     } catch (e: any) {
       toast.error(e.message || 'Verification failed')
       setStep('selfie')
-    } finally { setBusy(false) }
+      setBusy(false)
+    }
+  }
+
+  const handleRetry = async () => {
+    setBusy(true)
+    try {
+      await updateKycSession(token, { status: 'pending' })
+      setStep('id_front')
+    } catch (e: any) {
+      toast.error('Could not restart session')
+    } finally {
+      setBusy(false)
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -384,9 +423,9 @@ export default function MobileKYCPage() {
             </motion.div>
           )}
 
-          {/* Verifying */}
-          {step === 'verifying' && (
-            <motion.div key="verifying" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 gap-6 text-center">
+          {/* Processing */}
+          {step === 'processing' && (
+            <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 gap-6 text-center">
               <motion.div
                 animate={{ scale: [1, 1.08, 1] }}
                 transition={{ repeat: Infinity, duration: 2 }}
@@ -396,8 +435,20 @@ export default function MobileKYCPage() {
               </motion.div>
               <div>
                 <h2 className="text-xl font-black uppercase tracking-tight">Verifying Identity</h2>
-                <p className="text-sm text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data…</p>
+                <p className="text-sm text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data securely in the background…</p>
               </div>
+            </motion.div>
+          )}
+
+          {/* Failed */}
+          {step === 'failed' && (
+            <motion.div key="failed" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card className="p-8 text-center space-y-4 border-destructive/20 bg-destructive/5">
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+                <h2 className="text-xl font-black uppercase">Verification Failed</h2>
+                <p className="text-muted-foreground text-sm font-medium">We could not match your selfie to the provided ID card. Please try again or use your laptop camera.</p>
+                <Button variant="outline" onClick={handleRetry} disabled={busy}>Try Again</Button>
+              </Card>
             </motion.div>
           )}
 

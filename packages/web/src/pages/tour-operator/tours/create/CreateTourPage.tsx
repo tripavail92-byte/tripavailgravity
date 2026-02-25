@@ -154,23 +154,6 @@ export default function CreateTourPage() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [hasUnsaved])
 
-  if (gateLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground font-medium tracking-tight">
-            Checking setup status...
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  const handleUpdate = (data: Partial<Tour>) => {
-    setTourData((prev) => ({ ...prev, ...data }))
-  }
-
   const performSave = useCallback(async (redirectAfter?: string): Promise<boolean> => {
     if (!user) return false
     setIsSaving(true)
@@ -195,6 +178,23 @@ export default function CreateTourPage() {
       setIsSaving(false)
     }
   }, [user, tourData, currentTourId, navigate])
+
+  if (gateLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium tracking-tight">
+            Checking setup status...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const handleUpdate = (data: Partial<Tour>) => {
+    setTourData((prev) => ({ ...prev, ...data }))
+  }
 
   const handleSaveDraft = async () => {
     const ok = await performSave()

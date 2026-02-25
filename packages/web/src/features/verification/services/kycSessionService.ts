@@ -5,7 +5,7 @@ export interface KycSession {
   session_token: string
   user_id: string
   role: 'tour_operator' | 'hotel_manager'
-  status: 'pending' | 'uploading' | 'complete' | 'expired'
+  status: 'pending' | 'uploading' | 'processing' | 'complete' | 'expired' | 'failed'
   id_front_url: string | null
   id_back_url: string | null
   selfie_url: string | null
