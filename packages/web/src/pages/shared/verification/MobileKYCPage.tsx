@@ -38,7 +38,10 @@ async function fetchSessionByToken(token: string): Promise<TokenSessionView> {
   const res = await fetch(`${supabaseUrl}/functions/v1/kyc-session?session_token=${encodeURIComponent(token)}`,
     {
       method: 'GET',
-      headers: { apikey: anonKey },
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
     },
   )
   const json = await res.json()
@@ -62,7 +65,10 @@ async function uploadKycImage(
 
   const res = await fetch(`${supabaseUrl}/functions/v1/kyc-mobile-upload`, {
     method: 'POST',
-    headers: { apikey: anonKey },
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+    },
     body: form,
   })
   const json = await res.json()
