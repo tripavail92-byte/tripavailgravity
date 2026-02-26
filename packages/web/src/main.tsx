@@ -8,7 +8,7 @@ import { GlobalErrorBoundary } from './components/GlobalErrorBoundary'
 import { ThemeProvider } from './theme/ThemeContext'
 
 // Force cache invalidation - 2026-02-18
-console.info('TripAvail Web v2.0.1')
+console.info('TripAvail Web v2.0.2')
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <GlobalErrorBoundary>
