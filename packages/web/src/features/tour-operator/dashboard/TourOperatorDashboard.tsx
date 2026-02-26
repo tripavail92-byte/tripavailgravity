@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@tripavail/shared/core/client'
+import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 
 import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'
 import { Tour, tourService } from '../services/tourService'
@@ -35,6 +36,8 @@ export function TourOperatorDashboard() {
   const { user, activeRole } = useAuth()
   const navigate = useNavigate()
   const verificationStatus = activeRole?.verification_status ?? 'incomplete'
+  const [isKycProcessing, setIsKycProcessing] = useState(false)
+  const [isKycPendingAdminReview, setIsKycPendingAdminReview] = useState(false)
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
   const [drafts, setDrafts] = useState<Tour[]>([])
   const [continuableTours, setContinuableTours] = useState<Partial<Tour>[]>([])
@@ -47,6 +50,48 @@ export function TourOperatorDashboard() {
     document.documentElement.setAttribute('data-role', 'tour_operator')
     return () => document.documentElement.removeAttribute('data-role')
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const readLocalHint = () => {
+      try {
+        const raw = localStorage.getItem('tripavail_kyc_processing')
+        if (!raw) return false
+        const parsed = JSON.parse(raw)
+        const isForThisRole = parsed?.role === 'tour_operator'
+        const startedAt = typeof parsed?.startedAt === 'number' ? parsed.startedAt : 0
+        return Boolean(isForThisRole && Date.now() - startedAt < 15 * 60 * 1000)
+      } catch {
+        return false
+      }
+    }
+
+    const refresh = async () => {
+      if (!user?.id) return
+      const localHint = readLocalHint()
+      const session = await getActiveKycSession(user.id, 'tour_operator')
+      const processing = session?.status === 'processing'
+      const pendingAdmin = session?.status === 'pending_admin_review'
+
+      if (cancelled) return
+      setIsKycProcessing(Boolean((localHint || processing) && verificationStatus !== 'approved'))
+      setIsKycPendingAdminReview(Boolean(pendingAdmin && verificationStatus !== 'approved'))
+
+      // Clear the short-lived hint once we’re no longer actively processing.
+      if (!processing) {
+        try { localStorage.removeItem('tripavail_kyc_processing') } catch {}
+      }
+    }
+
+    // Initial load + short polling (OCR can take minutes)
+    refresh()
+    const id = window.setInterval(refresh, 8000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [user?.id, verificationStatus])
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -145,6 +190,20 @@ export function TourOperatorDashboard() {
                       <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                       Tour Operator
                     </span>
+                    {isKycProcessing && (
+                      <Badge className="bg-amber-500/20 text-amber-200 border border-amber-500/30 rounded-full px-3 py-1 font-black uppercase tracking-widest text-[10px]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> Processing
+                        </span>
+                      </Badge>
+                    )}
+                    {isKycPendingAdminReview && !isKycProcessing && (
+                      <Badge className="bg-primary/20 text-primary border border-primary/30 rounded-full px-3 py-1 font-black uppercase tracking-widest text-[10px]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5" /> Pending Review
+                        </span>
+                      </Badge>
+                    )}
                     <span className="text-white/20">·</span>
                     <span className="text-xs text-white/40 font-medium">{user?.email}</span>
                   </div>
@@ -191,6 +250,58 @@ export function TourOperatorDashboard() {
           </motion.div>
 
           {/* ── ACTION BANNERS ── */}
+          {isKycProcessing && verificationStatus !== 'approved' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.18 }}
+              className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">Verification processing</p>
+                  <p className="text-xs text-white/50 font-medium">We’re running OCR on your CNIC. This usually takes a few minutes — you can keep using the dashboard.</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-amber-500 text-white hover:bg-amber-400"
+                onClick={() => navigate('/operator/verification')}
+              >
+                View Status <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          )}
+
+          {isKycPendingAdminReview && !isKycProcessing && verificationStatus !== 'approved' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.18 }}
+              className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">Verification pending review</p>
+                  <p className="text-xs text-white/50 font-medium">Your CNIC was processed successfully and is now queued for admin approval.</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-white hover:bg-primary/90 uppercase tracking-wide"
+                onClick={() => navigate('/operator/verification')}
+              >
+                View Details <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          )}
+
           {setupCompleted === false && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
               className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
@@ -213,7 +324,7 @@ export function TourOperatorDashboard() {
             </motion.div>
           )}
 
-          {setupCompleted === true && verificationStatus === 'incomplete' && (
+          {setupCompleted === true && verificationStatus === 'incomplete' && !isKycProcessing && !isKycPendingAdminReview && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
               className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
@@ -223,7 +334,7 @@ export function TourOperatorDashboard() {
                 </div>
                 <div>
                   <p className="font-bold text-white text-sm">Identity verification required</p>
-                  <p className="text-xs text-white/50 font-medium">Upload your CNIC (front &amp; back) + selfie to activate your account.</p>
+                  <p className="text-xs text-white/50 font-medium">Upload your CNIC (front &amp; back) to activate your account.</p>
                 </div>
               </div>
               <Button size="sm"
@@ -235,7 +346,7 @@ export function TourOperatorDashboard() {
             </motion.div>
           )}
 
-          {setupCompleted === true && verificationStatus === 'pending' && (
+          {setupCompleted === true && verificationStatus === 'pending' && !isKycProcessing && !isKycPendingAdminReview && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
               className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center gap-4"
             >

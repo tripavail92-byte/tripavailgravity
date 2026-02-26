@@ -76,6 +76,13 @@ export async function fetchKycTokenSessionView(token: string): Promise<KycTokenS
     // ignore
   }
 
+  if (res.ok && !json) {
+    const err: any = new Error('Failed to load session (invalid JSON response)')
+    err.status = res.status
+    err.raw = raw
+    throw err
+  }
+
   if (!res.ok) {
     const message = json?.error || `Failed to load session (HTTP ${res.status})`
     const err: any = new Error(message)
@@ -126,19 +133,34 @@ export async function getActiveKycSession(
   userId: string,
   role: 'tour_operator' | 'hotel_manager',
 ): Promise<KycSession | null> {
-  const { data, error } = await supabase
+  // Prefer a non-expired session for token-based mobile capture.
+  const nowIso = new Date().toISOString()
+  const { data: active, error: activeErr } = await supabase
     .from('kyc_sessions')
     .select('*')
     .eq('user_id', userId)
     .eq('role', role)
     .in('status', ['pending', 'uploading', 'processing', 'pending_admin_review'])
-    .gt('expires_at', new Date().toISOString())
+    .gt('expires_at', nowIso)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
-  if (error) return null
-  return data as KycSession | null
+  if (!activeErr && active) return active as KycSession
+
+  // If the token expired but OCR already ran (or is running), we still want to resume.
+  const { data: progressed, error: progressedErr } = await supabase
+    .from('kyc_sessions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('role', role)
+    .in('status', ['processing', 'pending_admin_review', 'approved'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (progressedErr) return null
+  return progressed as KycSession | null
 }
 
 /**

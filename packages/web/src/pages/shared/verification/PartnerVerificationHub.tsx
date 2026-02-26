@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,9 +21,11 @@ import { supabase } from '../../../../../shared/src/core/client'
 import { PropertyOwnershipSubFlow } from '../../hotel-manager/setup/components/verification/PropertyOwnershipSubFlow'
 import { BusinessDocsSubFlow } from '../../tour-operator/setup/components/verification/BusinessDocsSubFlow'
 import { IdentitySubFlow } from './IdentitySubFlow'
+import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 
 export function PartnerVerificationHub() {
   const { user, activeRole } = useAuth()
+  const navigate = useNavigate()
   const [step, setStep] = useState<'identity' | 'docs' | 'property' | 'complete'>('identity')
   const [isLoading, setIsLoading] = useState(true)
   const [verificationData, setVerificationData] = useState<any>({
@@ -40,26 +43,96 @@ export function PartnerVerificationHub() {
 
   const role = activeRole?.role_type
   const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService
+  const dashboardPath = role === 'tour_operator' ? '/operator/dashboard' : '/manager/dashboard'
+
+  const persistVerificationProgress = async (nextVerification: any) => {
+    if (!user?.id || !role) return
+
+    const table = role === 'tour_operator' ? 'tour_operator_profiles' : 'hotel_manager_profiles'
+    const verification_documents = {
+      idCardUrl: nextVerification?.idCardUrl || '',
+      idBackUrl: nextVerification?.idBackUrl || '',
+      kycSessionToken: nextVerification?.kycSessionToken || '',
+      kycStatus: nextVerification?.kycStatus || '',
+      cnicNumber: nextVerification?.cnicNumber ?? null,
+      expiryDate: nextVerification?.expiryDate ?? null,
+      ownershipDocs: nextVerification?.ownershipDocs ?? {},
+    }
+
+    const verification_urls = nextVerification?.businessDocs ?? {}
+
+    const { error } = await (supabase
+      .from(table as any)
+      .upsert({
+        user_id: user.id,
+        verification_documents,
+        verification_urls,
+        updated_at: new Date().toISOString(),
+      } as any, { onConflict: 'user_id' }) as any)
+
+    if (error) {
+      console.warn('[PartnerVerificationHub] persistVerificationProgress failed', error)
+    }
+  }
 
   useEffect(() => {
     const loadStatus = async () => {
       if (!user?.id) return
       try {
         const data = await service.getOnboardingData(user.id)
-        if (data?.verification) {
-          const ver = data.verification as any
-          setVerificationData(ver)
-          const identitySubmitted =
-            ver?.kycStatus === 'pending_admin_review' ||
-            ver?.kycStatus === 'approved' ||
-            (Boolean(ver?.idCardUrl) && Boolean(ver?.idBackUrl))
 
-          if (identitySubmitted) {
-            if (role === 'hotel_manager' && !ver.ownershipDocs?.titleDeedUrl) {
-              setStep('property')
-            } else {
-              setStep('docs')
+        const fromProfile = (data?.verification as any) ?? null
+        const sessionRole = role === 'tour_operator' ? 'tour_operator' : 'hotel_manager'
+        const activeSession = role ? await getActiveKycSession(user.id, sessionRole) : null
+
+        const fromSession = activeSession
+          ? {
+              kycSessionToken: activeSession.session_token,
+              kycStatus: activeSession.status,
+              idCardUrl: activeSession.id_front_path ? 'uploaded' : '',
+              idBackUrl: activeSession.id_back_path ? 'uploaded' : '',
+              cnicNumber: activeSession.cnic_number ?? null,
+              expiryDate: activeSession.expiry_date ?? null,
             }
+          : null
+
+        const mergedBase = {
+          ...verificationData,
+          ...(fromProfile ?? {}),
+        }
+
+        // Prefer the latest active session if it differs from what's stored on the profile.
+        // This avoids stale profile data causing the UI to prompt re-upload after a user re-submits CNIC.
+        const shouldPreferSession =
+          Boolean(fromSession) &&
+          (!mergedBase?.kycSessionToken || mergedBase?.kycSessionToken !== fromSession?.kycSessionToken)
+
+        const merged = {
+          ...mergedBase,
+          ...(shouldPreferSession ? fromSession : {}),
+          // If we don't prefer the whole session, still backfill missing fields.
+          ...(!shouldPreferSession && fromSession
+            ? {
+                idCardUrl: mergedBase?.idCardUrl || fromSession.idCardUrl,
+                idBackUrl: mergedBase?.idBackUrl || fromSession.idBackUrl,
+                kycStatus: mergedBase?.kycStatus || fromSession.kycStatus,
+                cnicNumber: mergedBase?.cnicNumber ?? fromSession.cnicNumber ?? null,
+                expiryDate: mergedBase?.expiryDate ?? fromSession.expiryDate ?? null,
+              }
+            : {}),
+        }
+
+        setVerificationData(merged)
+
+        const identitySubmitted =
+          ['processing', 'pending_admin_review', 'approved'].includes((merged?.kycStatus || '').toString()) ||
+          (Boolean(merged?.idCardUrl) && Boolean(merged?.idBackUrl))
+
+        if (identitySubmitted) {
+          if (role === 'hotel_manager' && !merged?.ownershipDocs?.titleDeedUrl) {
+            setStep('property')
+          } else {
+            setStep('docs')
           }
         }
 
@@ -80,8 +153,10 @@ export function PartnerVerificationHub() {
     loadStatus()
   }, [user?.id, role])
 
-  const handleIdentityComplete = (idData: any) => {
-    setVerificationData((prev: any) => ({ ...prev, ...idData }))
+  const handleIdentityComplete = async (idData: any) => {
+    const next = { ...verificationData, ...idData }
+    setVerificationData(next)
+    await persistVerificationProgress(next)
     // Refresh logs after a completion
     const refreshLogs = async () => {
       const { data: logs } = await supabase
@@ -96,7 +171,9 @@ export function PartnerVerificationHub() {
   }
 
   const handleDocsComplete = async (docs: any) => {
-    setVerificationData((prev: any) => ({ ...prev, businessDocs: docs }))
+    const next = { ...verificationData, businessDocs: docs }
+    setVerificationData(next)
+    await persistVerificationProgress(next)
 
     if (role === 'hotel_manager') {
       setStep('property')
@@ -106,7 +183,9 @@ export function PartnerVerificationHub() {
   }
 
   const handlePropertyComplete = async (propertyDocs: any) => {
-    setVerificationData((prev: any) => ({ ...prev, ownershipDocs: propertyDocs }))
+    const next = { ...verificationData, ownershipDocs: propertyDocs }
+    setVerificationData(next)
+    await persistVerificationProgress(next)
     await finishVerification()
   }
 
@@ -202,7 +281,7 @@ export function PartnerVerificationHub() {
         </p>
         <Button
           className="rounded-2xl px-8 h-12 font-bold"
-          onClick={() => window.location.reload()}
+          onClick={() => navigate(dashboardPath)}
         >
           View Status
         </Button>

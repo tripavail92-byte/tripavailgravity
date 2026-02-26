@@ -15,6 +15,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,21 @@ function useCountdown(expiresAt: string | null) {
 export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFlowProps) {
   const { user } = useAuth()
   const isMobile = detectMobile()
+  const navigate = useNavigate()
+
+  const dashboardPath = role === 'tour_operator' ? '/operator/dashboard' : '/manager/dashboard'
+
+  const markProcessingAndGoToDashboard = (sessionToken: string) => {
+    try {
+      localStorage.setItem(
+        'tripavail_kyc_processing',
+        JSON.stringify({ role, sessionToken, startedAt: Date.now() }),
+      )
+    } catch {
+      // best-effort only
+    }
+    navigate(dashboardPath)
+  }
 
   // Desktop QR-handoff state
   const [kycSession, setKycSession] = useState<KycSession | null>(null)
@@ -108,10 +124,56 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
 
   console.log('TripAvail Verification System v5.0 [CNIC OCR + Admin Review]')
 
+  // Resume: if the user refreshes the page, reload the most recent active session from DB.
+  // This prevents forcing re-upload of CNIC images.
+  useEffect(() => {
+    if (!user?.id) return
+    if (isMobile) return
+
+    let cancelled = false
+
+    const resume = async () => {
+      try {
+        const existing = await getActiveKycSession(user.id, role)
+        if (!existing || cancelled) return
+
+        setKycSession(existing)
+        setMobileUrl(buildMobileKycUrl(existing.session_token))
+
+        if (existing.status === 'processing') {
+          setSubStep('qr_complete')
+          markProcessingAndGoToDashboard(existing.session_token)
+          return
+        }
+
+        if (['pending_admin_review', 'approved'].includes(existing.status)) {
+          await handleSessionComplete(existing)
+          return
+        }
+
+        if (existing.status === 'failed') {
+          setSubmissionResult({ ok: false, status: 'failed', reason: existing.failure_reason || 'Processing failed.' })
+          setSubStep('result')
+          return
+        }
+
+        // pending/uploading: show QR waiting so they can continue on phone.
+        setSubStep('qr_waiting')
+      } catch (e) {
+        console.error('[IdentitySubFlow] resume failed', e)
+      }
+    }
+
+    resume()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, role, isMobile])
+
   // Cleanup realtime sub on unmount
   useEffect(() => () => { unsubRef.current?.() }, [])
 
-  // â”€â”€ QR Handoff: create session + subscribe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // QR Handoff: create session + subscribe
   const startQrHandoff = async () => {
     if (!user?.id) return
     try {
@@ -140,6 +202,8 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
         }
         if (updated.status === 'processing') {
           setSubStep('qr_complete')
+          // Let the user continue using the dashboard while OCR runs.
+          if (!isMobile) markProcessingAndGoToDashboard(session.session_token)
         }
         if (updated.status === 'expired') {
           toast.error('Session expired. Generate a new QR code.')
@@ -193,6 +257,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
         }
         if (view?.status === 'processing') {
           setSubStep('qr_complete')
+          if (!isMobile) markProcessingAndGoToDashboard(token)
         }
       }, 4000)
 
@@ -223,6 +288,62 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
     }
   }
 
+  // Safety-net: if we ever land on the QR-complete screen, keep polling the token view.
+  // This prevents the desktop from getting stuck due to realtime glitches or transient JSON errors.
+  useEffect(() => {
+    if (subStep !== 'qr_complete') return
+    const token = kycSession?.session_token
+    if (!token) return
+
+    let cancelled = false
+
+    const tick = async () => {
+      try {
+        const view = await fetchKycTokenSessionView(token)
+        if (cancelled) return
+
+        if (view.status === 'processing') {
+          if (!isMobile) markProcessingAndGoToDashboard(token)
+          return
+        }
+
+        if (['pending_admin_review', 'approved'].includes(view.status)) {
+          const full = await getKycSessionByToken(token)
+          if (full) {
+            setKycSession(full)
+            await handleSessionComplete(full)
+          } else {
+            setSubmissionResult({
+              ok: true,
+              status: view.status,
+              reason: view.failure_reason || undefined,
+              cnicNumber: null,
+              expiryDate: null,
+            })
+            setSubStep('result')
+          }
+          return
+        }
+
+        if (view.status === 'failed') {
+          setSubmissionResult({ ok: false, status: 'failed', reason: view.failure_reason || 'Processing failed.' })
+          setSubStep('result')
+        }
+      } catch (e: any) {
+        // Keep quiet (avoid toast spam). We'll retry on next tick.
+        console.error('[IdentitySubFlow] qr_complete poll failed', e?.status, e?.message)
+      }
+    }
+
+    // Immediate check + short polling.
+    tick()
+    const id = window.setInterval(tick, 3000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [subStep, kycSession?.session_token, isMobile])
+
   const refreshQr = async () => {
     if (kycSession) await expireKycSession(kycSession.session_token)
     unsubRef.current?.()
@@ -246,8 +367,21 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
       headers: { apikey: anonKey },
       body: form,
     })
-    const json = await res.json()
-    if (!res.ok) throw new Error(json.error || 'Upload failed')
+    const raw = await res.text()
+    let json: any = null
+    try {
+      json = raw ? JSON.parse(raw) : null
+    } catch {
+      json = null
+    }
+    if (!res.ok) {
+      const message = json?.error || `Upload failed (HTTP ${res.status})`
+      const err: any = new Error(message)
+      err.status = res.status
+      err.raw = raw
+      throw err
+    }
+    if (!json) throw new Error('Upload failed (invalid JSON response)')
     return json as { path: string; status: string }
   }
 
@@ -326,7 +460,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </p>
             </div>
 
-            {/* Phone â€” recommended */}
+            {/* Phone — recommended */}
             <Card className="p-6 border-2 border-primary/30 bg-primary/5 cursor-pointer hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 transition-all" onClick={startQrHandoff}>
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/20 text-primary shrink-0">
@@ -429,7 +563,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <Loader2 className="w-5 h-5 animate-spin" />
                 </motion.div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">Waiting for your phoneâ€¦</p>
+                  <p className="font-bold text-sm text-foreground">Waiting for your phone...</p>
                   <p className="text-xs text-muted-foreground font-medium">This page updates automatically once complete.</p>
                 </div>
                 {countdown && (
@@ -460,7 +594,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <Check className="w-12 h-12" />
             </motion.div>
             <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Phone Capture Complete!</h4>
-            <p className="text-muted-foreground mt-2 font-medium">Processing OCR and preparing admin reviewâ€¦</p>
+            <p className="text-muted-foreground mt-2 font-medium">Processing OCR and preparing admin review...</p>
           </motion.div>
         )}
 
@@ -490,12 +624,12 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-1">
                   <CreditCard className="w-4 h-4 text-primary" />
-                  <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front â€” Face Side</h5>
+                  <h5 className="font-bold text-foreground uppercase text-sm">ID Card Front - Face Side</h5>
                 </div>
                 <IDCaptureWidget side="front" onCapture={handleIdFrontUpload} disabled={isUploadingFront} />
                 {isUploadingFront && (
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Uploadingâ€¦
+                    <Loader2 className="w-4 h-4 animate-spin" /> Uploading...
                   </div>
                 )}
               </div>
@@ -517,12 +651,12 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-1">
                     <FileText className="w-4 h-4 text-primary" />
-                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back â€” Rear Side</h5>
+                    <h5 className="font-bold text-foreground uppercase text-sm">ID Card Back - Rear Side</h5>
                   </div>
                   <IDCaptureWidget side="back" onCapture={handleIdBackUpload} disabled={isUploadingBack} />
                   {isUploadingBack && (
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Uploadingâ€¦
+                      <Loader2 className="w-4 h-4 animate-spin" /> Uploading...
                     </div>
                   )}
                 </div>
@@ -539,7 +673,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </Button>
               {!isMobile && (
                 <button onClick={() => setSubStep('choose')} className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary">
-                  â† Switch to phone camera
+                  ← Switch to phone camera
                 </button>
               )}
             </div>
