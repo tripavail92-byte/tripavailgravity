@@ -43,6 +43,50 @@ export interface KycSession {
   created_at: string
 }
 
+export type KycTokenSessionView = {
+  id: string
+  status: KycSession['status']
+  expires_at: string
+  has_id_front: boolean
+  has_id_back: boolean
+  failure_code: string | null
+  failure_reason: string | null
+}
+
+export async function fetchKycTokenSessionView(token: string): Promise<KycTokenSessionView> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  const res = await fetch(
+    `${supabaseUrl}/functions/v1/kyc-session?session_token=${encodeURIComponent(token)}`,
+    {
+      method: 'GET',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+    },
+  )
+
+  const raw = await res.text()
+  let json: any = null
+  try {
+    json = raw ? JSON.parse(raw) : null
+  } catch {
+    // ignore
+  }
+
+  if (!res.ok) {
+    const message = json?.error || `Failed to load session (HTTP ${res.status})`
+    const err: any = new Error(message)
+    err.status = res.status
+    err.raw = raw
+    throw err
+  }
+
+  return json as KycTokenSessionView
+}
+
 /**
  * Create a new KYC handoff session for the authenticated user.
  * Returns the full session row (including the auto-generated session_token).

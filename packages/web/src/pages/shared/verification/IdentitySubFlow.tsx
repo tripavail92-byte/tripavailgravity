@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
   KycSession,
+  fetchKycTokenSessionView,
   buildMobileKycUrl,
   createKycSession,
   expireKycSession,
@@ -150,24 +151,47 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
       const token = session.session_token
       const intervalId = setInterval(async () => {
         if (realtimeDone) { clearInterval(intervalId); return }
-        const fresh = await getKycSessionByToken(token)
-        if (fresh?.status && ['pending_admin_review', 'approved'].includes(fresh.status)) {
+
+        let view: Awaited<ReturnType<typeof fetchKycTokenSessionView>> | null = null
+        try {
+          view = await fetchKycTokenSessionView(token)
+        } catch (e: any) {
+          console.error('[IdentitySubFlow] token poll failed', e?.status, e?.message)
+          return
+        }
+
+        if (view?.status && ['pending_admin_review', 'approved'].includes(view.status)) {
           realtimeDone = true
           clearInterval(intervalId)
           unsubRef.current?.()
-          setKycSession(fresh)
           setSubStep('qr_complete')
-          await handleSessionComplete(fresh)
+
+          const full = await getKycSessionByToken(token)
+          if (full) {
+            setKycSession(full)
+            await handleSessionComplete(full)
+          } else {
+            setIdCardUrl(view.has_id_front ? 'uploaded' : '')
+            setIdBackUrl(view.has_id_back ? 'uploaded' : '')
+
+            setSubmissionResult({
+              ok: true,
+              status: view.status,
+              reason: view.failure_reason || undefined,
+              cnicNumber: null,
+              expiryDate: null,
+            })
+            setSubStep('result')
+          }
         }
-        if (fresh?.status === 'failed') {
+        if (view?.status === 'failed') {
           realtimeDone = true
           clearInterval(intervalId)
           unsubRef.current?.()
-          setKycSession(fresh)
           setSubStep('result')
-          setSubmissionResult({ ok: false, status: 'failed', reason: fresh.failure_reason || 'Processing failed.' })
+          setSubmissionResult({ ok: false, status: 'failed', reason: view.failure_reason || 'Processing failed.' })
         }
-        if (fresh?.status === 'processing') {
+        if (view?.status === 'processing') {
           setSubStep('qr_complete')
         }
       }, 4000)
@@ -181,7 +205,6 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   // Called when mobile session is complete
   const handleSessionComplete = async (session: KycSession) => {
     try {
-      if (!session.id_front_path || !session.id_back_path) throw new Error('Incomplete session data.')
       setIdCardUrl('uploaded')
       setIdBackUrl('uploaded')
 
