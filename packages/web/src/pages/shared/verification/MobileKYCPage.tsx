@@ -249,6 +249,7 @@ export default function MobileKYCPage() {
   const [step, setStep]       = useState<MobileStep>('loading')
   const [session, setSession] = useState<TokenSessionView | null>(null)
   const [busy, setBusy]       = useState(false)
+  const [diag, setDiag] = useState<{ status?: number; message?: string } | null>(null)
 
   // Load session on mount (no realtime for anon; poll via edge function)
   useEffect(() => {
@@ -287,6 +288,7 @@ export default function MobileKYCPage() {
       try {
         const s = await fetchSessionByToken(token)
         if (cancelled) return
+        setDiag(null)
         setSession(s)
         apply(s)
       } catch (err: any) {
@@ -298,6 +300,8 @@ export default function MobileKYCPage() {
           message: err?.message,
           raw: err?.raw,
         })
+
+        setDiag({ status: err?.status, message: err?.message })
 
         if (err?.status === 410) setStep('expired')
         else if (typeof err?.status === 'number' && err.status >= 500) setStep('error')
@@ -373,6 +377,11 @@ export default function MobileKYCPage() {
                 <p className="text-muted-foreground text-sm font-medium">
                   This QR code is invalid. Please scan the code displayed on your laptop again.
                 </p>
+                {diag?.status && (
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Code: HTTP {diag.status}
+                  </p>
+                )}
               </Card>
             </motion.div>
           )}
@@ -496,6 +505,11 @@ export default function MobileKYCPage() {
                 <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
                 <h2 className="text-xl font-black uppercase">Something Went Wrong</h2>
                 <p className="text-muted-foreground text-sm font-medium">Please try again or use your laptop camera instead.</p>
+                {diag?.status && (
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Code: HTTP {diag.status}{diag?.message ? ` — ${diag.message}` : ''}
+                  </p>
+                )}
                 <Button variant="outline" onClick={() => setStep('id_front')}>Try Again</Button>
               </Card>
             </motion.div>
