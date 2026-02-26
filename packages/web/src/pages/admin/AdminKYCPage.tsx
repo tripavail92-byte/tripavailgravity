@@ -12,7 +12,6 @@ type KycRow = {
   role: string | null
   status: string
   created_at: string
-  updated_at: string
   expires_at: string | null
   id_front_path: string | null
   id_back_path: string | null
@@ -70,7 +69,7 @@ export default function AdminKYCPage() {
       const { data, error } = await (supabase
         .from('kyc_sessions' as any)
         .select(
-          'id,user_id,role,status,created_at,updated_at,expires_at,id_front_path,id_back_path,cnic_number,full_name,father_name,date_of_birth,expiry_date,failure_code,failure_reason,reviewed_by,reviewed_at,review_notes',
+          'id,user_id,role,status,created_at,expires_at,id_front_path,id_back_path,cnic_number,full_name,father_name,date_of_birth,expiry_date,failure_code,failure_reason,reviewed_by,reviewed_at,review_notes',
         )
         .order('created_at', { ascending: false }) as any)
 
