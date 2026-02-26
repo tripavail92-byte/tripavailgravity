@@ -52,6 +52,7 @@ async function callFunctionJson({ supabaseUrl, anonKey, functionName, body }) {
   const url = `${supabaseUrl}/functions/v1/${functionName}`;
   const headers = {
     apikey: anonKey,
+    authorization: `Bearer ${anonKey}`,
     'content-type': 'application/json',
   };
   const res = await fetch(url, {
@@ -71,7 +72,13 @@ async function callFunctionJson({ supabaseUrl, anonKey, functionName, body }) {
 
 async function fetchSessionByToken({ supabaseUrl, anonKey, token }) {
   const url = `${supabaseUrl}/functions/v1/kyc-session?session_token=${encodeURIComponent(token)}`;
-  const res = await fetch(url, { method: 'GET', headers: { apikey: anonKey } });
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${anonKey}`,
+    },
+  });
   const text = await res.text();
   let json = null;
   try {
@@ -100,6 +107,21 @@ async function main() {
 
   const supabaseUrl = requireEnv(dotenv, 'VITE_SUPABASE_URL');
   const anonKey = requireEnv(dotenv, 'VITE_SUPABASE_ANON_KEY');
+
+  // Probe mode: validate the public QR endpoint without needing service role.
+  // Usage (PowerShell):
+  //   $env:KYC_PROBE_TOKEN="<session_token>"; node scripts/smoke-test-kyc-flow.mjs
+  const probeToken = optionalEnv(dotenv, 'KYC_PROBE_TOKEN');
+  if (probeToken) {
+    console.log('--- KYC endpoint probe (kyc-session) ---');
+    console.log('Supabase:', supabaseUrl);
+    console.log('Session token:', mask(probeToken));
+    const probed = await fetchSessionByToken({ supabaseUrl, anonKey, token: probeToken });
+    console.log('kyc-session probe:', probed.status, probed.body);
+    if (!probed.ok) process.exit(1);
+    return;
+  }
+
   const serviceRoleKey = requireEnv(dotenv, 'SUPABASE_SERVICE_ROLE_KEY');
 
   // Optional: your deployed web origin on Railway (used to validate the QR target URL resolves)

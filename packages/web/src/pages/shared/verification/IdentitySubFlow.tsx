@@ -357,6 +357,34 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </div>
             </div>
 
+            {mobileUrl && (
+              <Card className="p-4 border-border bg-background/50">
+                <p className="text-xs text-muted-foreground font-medium">
+                  If scanning doesn’t open the page, copy this link:
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1 min-w-0 text-[11px] font-mono text-foreground/80 truncate">
+                    {mobileUrl}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl font-bold uppercase text-[10px] tracking-widest"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(mobileUrl)
+                        toast.success('Link copied')
+                      } catch {
+                        toast.error('Could not copy link')
+                      }
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </Card>
+            )}
+
             <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Camera,     label: 'Scan QR',    desc: 'Open phone camera' },
