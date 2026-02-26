@@ -169,6 +169,17 @@ export default function AdminKYCPage() {
         console.warn('[AdminKYCPage] block insert failed', insertErr)
       }
 
+      try {
+        const { error: blockErr } = await supabase.functions.invoke('kyc-block-cnic', {
+          body: { cnic_number: row.cnic_number, reason: 'Blocked by admin' },
+        })
+        if (blockErr) {
+          console.warn('[AdminKYCPage] kyc-block-cnic failed', blockErr)
+        }
+      } catch (e) {
+        console.warn('[AdminKYCPage] kyc-block-cnic threw', e)
+      }
+
       const { error: updateErr } = await (supabase
         .from('kyc_sessions' as any)
         .update({

@@ -1,13 +1,5 @@
 import { supabase } from '../../../../../shared/src/core/client'
 
-interface VerificationResult {
-  success: boolean
-  score: number
-  match: boolean
-  reason?: string
-  isIdentical?: boolean
-}
-
 export interface OcrResult {
   fullName: string | null
   fatherName: string | null
@@ -22,7 +14,7 @@ export interface OcrResult {
 }
 
 export const aiVerificationService = {
-  // v4.1 — Railway DeepFace/FaceNet-512 (biometric) → GPT-4o-mini fallback + OCR / doc validation
+  // Document checks + OCR only (biometric/face scanning is disabled)
 
   /**
    * Validate ID front — GPT checks blur, glare, crop, expiry
@@ -84,30 +76,6 @@ export const aiVerificationService = {
         fullName: null, fatherName: null, dateOfBirth: null, idNumber: null,
         expiryDate: null, gender: null, address: null, docType: null,
       }
-    }
-  },
-
-  /**
-   * Face match — Railway DeepFace/FaceNet-512 (Tier 1) → GPT-4o-mini vision (Tier 2 fallback)
-   */
-  async compareFaceToId(
-    idCardUrl: string,
-    selfieUrl: string,
-    userId: string,
-    role: 'tour_operator' | 'hotel_manager',
-  ): Promise<VerificationResult> {
-    console.warn(
-      '[aiVerificationService.compareFaceToId] Face scanning is temporarily disabled; returning failure. ',
-    )
-    void idCardUrl
-    void selfieUrl
-    void userId
-    void role
-    return {
-      success: false,
-      score: 0,
-      match: false,
-      reason: 'Face scanning is temporarily disabled',
     }
   },
 }

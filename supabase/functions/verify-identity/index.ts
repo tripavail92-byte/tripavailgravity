@@ -13,7 +13,7 @@ serve(async (req) => {
     }
 
     try {
-        const { idCardUrl, selfieUrl, userId, role, taskType } = await req.json();
+        const { idCardUrl, userId, role, taskType } = await req.json();
 
         // ── Basic field validation ─────────────────────────────────────────────
         if (!taskType) {
@@ -33,8 +33,6 @@ serve(async (req) => {
 
         // ── Secrets ──────────────────────────────────────────────────────────
         const openaiKey      = Deno.env.get('OPENAI_API_KEY');
-        const faceApiUrl     = Deno.env.get('FACE_API_URL');    // Railway DeepFace service
-        const faceApiSecret  = Deno.env.get('FACE_API_SECRET'); // shared Bearer token
         const supabaseUrl    = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -154,16 +152,16 @@ serve(async (req) => {
                 }
             }
 
-        // ── 4. Face Match — Railway DeepFace (FaceNet-512) → GPT-4o-mini fallback ──
         }
 
         // ── Log to Supabase ───────────────────────────────────────────────────
         const ip = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || null;
+        const isSuccess = taskType === 'extract_ocr' ? true : Boolean(aiResult.valid);
         const { error: logError } = await supabase.from('verification_activity_logs').insert({
             user_id: userId,
             role: role,
             event_type: eventType,
-            status: (aiResult.valid || aiResult.match) ? 'success' : 'failure',
+            status: isSuccess ? 'success' : 'failure',
             details: { ...aiResult, _ip: ip },
         });
         if (logError) console.error('Logging Error:', logError);

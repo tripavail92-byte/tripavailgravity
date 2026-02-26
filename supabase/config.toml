@@ -15,6 +15,15 @@ verify_jwt = false
 [functions.kyc-mobile-upload]
 verify_jwt = false
 
+[functions.kyc-session]
+verify_jwt = false
+
+[functions.kyc-signed-url]
+verify_jwt = false
+
+[functions.kyc-block-cnic]
+verify_jwt = false
+
 [functions.stripe-create-payment-intent]
 verify_jwt = false
 

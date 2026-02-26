@@ -22,7 +22,6 @@ export interface KycSession {
   // Legacy columns (no longer used by the simplified flow)
   id_front_url?: string | null
   id_back_url?: string | null
-  selfie_url?: string | null
 
   ocr_result: Record<string, any> | null
 
@@ -40,10 +39,6 @@ export interface KycSession {
   reviewed_at?: string | null
   review_notes?: string | null
 
-  // Legacy biometric columns (no longer used)
-  match?: boolean | null
-  match_score?: number | null
-  match_reason?: string | null
   expires_at: string
   created_at: string
 }
@@ -74,7 +69,7 @@ export async function getKycSessionByToken(token: string): Promise<KycSession | 
     .from('kyc_sessions')
     .select('*')
     .eq('session_token', token)
-    .single()
+    .maybeSingle()
 
   if (error) return null
   return data as KycSession
@@ -87,7 +82,7 @@ export async function getActiveKycSession(
   userId: string,
   role: 'tour_operator' | 'hotel_manager',
 ): Promise<KycSession | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('kyc_sessions')
     .select('*')
     .eq('user_id', userId)
@@ -96,8 +91,9 @@ export async function getActiveKycSession(
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
+  if (error) return null
   return data as KycSession | null
 }
 

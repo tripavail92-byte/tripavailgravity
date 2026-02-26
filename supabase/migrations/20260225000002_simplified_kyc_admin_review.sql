@@ -68,6 +68,7 @@ DROP POLICY IF EXISTS "Token holder can update active session" ON public.kyc_ses
 -- Owners can still create/read/update their own sessions.
 DROP POLICY IF EXISTS "Owner can insert kyc session" ON public.kyc_sessions;
 DROP POLICY IF EXISTS "Owner can read own kyc session" ON public.kyc_sessions;
+DROP POLICY IF EXISTS "Owner can update own kyc session" ON public.kyc_sessions;
 
 CREATE POLICY "Owner can insert kyc session"
   ON public.kyc_sessions FOR INSERT
@@ -87,11 +88,13 @@ CREATE POLICY "Owner can update own kyc session"
 
 -- Admin can read/update any session (drives /admin/kyc).
 -- Depends on existing helper: public.is_admin(uuid)
+DROP POLICY IF EXISTS "Admin can read all kyc sessions" ON public.kyc_sessions;
 CREATE POLICY "Admin can read all kyc sessions"
   ON public.kyc_sessions FOR SELECT
   TO authenticated
   USING (public.is_admin(auth.uid()));
 
+DROP POLICY IF EXISTS "Admin can update all kyc sessions" ON public.kyc_sessions;
 CREATE POLICY "Admin can update all kyc sessions"
   ON public.kyc_sessions FOR UPDATE
   TO authenticated

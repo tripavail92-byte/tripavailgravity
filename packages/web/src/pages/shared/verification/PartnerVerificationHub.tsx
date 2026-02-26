@@ -50,9 +50,9 @@ export function PartnerVerificationHub() {
           const ver = data.verification as any
           setVerificationData(ver)
           const identitySubmitted =
-            ver?.matchingScore > 0 ||
             ver?.kycStatus === 'pending_admin_review' ||
-            ver?.kycStatus === 'approved'
+            ver?.kycStatus === 'approved' ||
+            (Boolean(ver?.idCardUrl) && Boolean(ver?.idBackUrl))
 
           if (identitySubmitted) {
             if (role === 'hotel_manager' && !ver.ownershipDocs?.titleDeedUrl) {

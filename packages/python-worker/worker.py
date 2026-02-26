@@ -7,6 +7,7 @@ import requests
 import tempfile
 import re
 from datetime import date, datetime
+import hashlib
 
 import easyocr
 
@@ -32,6 +33,7 @@ reader = easyocr.Reader(['en'], gpu=False) # Fallback to CPU if GPU not availabl
 logger.info("EasyOCR initialized.")
 
 BUCKET = os.getenv("KYC_BUCKET", "tour-operator-assets")
+CNIC_HASH_PEPPER = os.getenv("KYC_CNIC_HASH_PEPPER", "")
 
 def _download_storage_path(bucket: str, path: str, suffix: str) -> str:
     """Download a private Storage object (by path) into a temp file and return the local file path."""
@@ -62,6 +64,12 @@ def _normalize_cnic(raw: str) -> str | None:
     if len(digits) != 13:
         return None
     return f"{digits[0:5]}-{digits[5:12]}-{digits[12:13]}"
+
+
+def _cnic_hash(normalized_cnic: str) -> str:
+    """SHA-256 hash of CNIC normalized form, with optional pepper."""
+    value = (CNIC_HASH_PEPPER + normalized_cnic).encode("utf-8")
+    return hashlib.sha256(value).hexdigest()
 
 
 def _extract_dates(text: str) -> list[date]:
@@ -163,6 +171,26 @@ def process_session(session):
         # Validation: blocked CNIC
         blocked = supabase.table("kyc_blocked_cnics").select("cnic_number").eq("cnic_number", cnic_number).limit(1).execute().data
         if blocked:
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "cnic_blocked",
+                "failure_reason": "This CNIC is blocked. Contact support.",
+                "ocr_result": ocr_payload,
+                "cnic_number": cnic_number,
+            })
+            return
+
+        # Validation: blocked CNIC (hashed registry)
+        cnic_hash = _cnic_hash(cnic_number)
+        blocked_hash = (
+            supabase.table("blocked_cnic_registry")
+            .select("cnic_hash")
+            .eq("cnic_hash", cnic_hash)
+            .limit(1)
+            .execute()
+            .data
+        )
+        if blocked_hash:
             _update_session(session_token, {
                 "status": "failed",
                 "failure_code": "cnic_blocked",

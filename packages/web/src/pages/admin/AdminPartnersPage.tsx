@@ -239,11 +239,7 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
   const legacyIdentityDocs = [
     { key: 'id_card_url', label: 'CNIC Front', emoji: '🪪' },
     { key: 'id_back_url', label: 'CNIC Back', emoji: '🔄' },
-    { key: 'selfie_url', label: 'Selfie / Biometric', emoji: '🤳' },
   ].filter((d) => !!vd[d.key])
-
-  const legacyMatchScore: number | null =
-    typeof vd.matching_score === 'number' ? vd.matching_score : null
 
   return (
     <>
@@ -291,17 +287,6 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
                 <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
                   Identity Verification (CNIC)
                 </p>
-                {legacyMatchScore !== null && (
-                  <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      legacyMatchScore >= 70
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}
-                  >
-                    AI Match: {Math.round(legacyMatchScore)}%
-                  </span>
-                )}
               </div>
 
               {kycToken ? (

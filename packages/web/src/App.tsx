@@ -17,8 +17,6 @@ import { queryClient } from '@/lib/queryClient'
 import LoginPage from '@/pages/auth/LoginPage'
 import LandingPage from '@/pages/LandingPage'
 
-import TestKYC from './pages/TestKYC'
-
 // Lazy load all other pages
 const PartnerSelectionPage = lazy(() => import('@/pages/partner/PartnerSelectionPage'))
 const HotelDetailsPage = lazy(() => import('@/pages/traveller/HotelDetailsPage'))
@@ -146,7 +144,6 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/auth" element={<LoginPage />} />
-            <Route path="/test-kyc" element={<TestKYC />} />
             {/* Public mobile KYC capture page — no auth required, session_token is the credential */}
             <Route path="/kyc/mobile" element={<MobileKYCPage />} />
 
