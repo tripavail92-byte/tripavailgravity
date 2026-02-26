@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "serve -s packages/web/dist -l ${PORT:-4173}",
+    "start": "node server.mjs",
     "dev": "turbo run dev",
     "build": "turbo run build --force",
     "lint": "turbo run lint",
@@ -13,7 +13,8 @@
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.7.1",
     "react-error-boundary": "^6.1.1",
-    "serve": "^14.2.5"
+    "serve": "^14.2.5",
+    "sirv": "^2.0.4"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.93.3",
