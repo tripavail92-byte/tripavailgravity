@@ -96,21 +96,18 @@ export const aiVerificationService = {
     userId: string,
     role: 'tour_operator' | 'hotel_manager',
   ): Promise<VerificationResult> {
-    try {
-      const { data, error } = await supabase.functions.invoke('verify-identity', {
-        body: { idCardUrl, selfieUrl, userId, role, taskType: 'face_match' },
-      })
-      if (error) throw error
-      return {
-        success: true,
-        score: data.score,
-        match: data.match,
-        reason: data.reason,
-        isIdentical: data.isIdentical,
-      }
-    } catch (error: any) {
-      console.error('Face Match Error:', error)
-      return { success: false, score: 0, match: false, reason: error.message || 'Verification server busy' }
+    console.warn(
+      '[aiVerificationService.compareFaceToId] Face scanning is temporarily disabled; returning failure. ',
+    )
+    void idCardUrl
+    void selfieUrl
+    void userId
+    void role
+    return {
+      success: false,
+      score: 0,
+      match: false,
+      reason: 'Face scanning is temporarily disabled',
     }
   },
 }

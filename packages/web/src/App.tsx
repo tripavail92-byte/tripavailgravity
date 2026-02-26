@@ -72,6 +72,7 @@ const AdminBookingsPage = lazy(() => import('@/pages/admin/AdminBookingsPage'))
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
 const AdminAuditLogsPage = lazy(() => import('@/pages/admin/AdminAuditLogsPage'))
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
+const AdminKYCPage = lazy(() => import('@/pages/admin/AdminKYCPage'))
 
 // Legal (public)
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
@@ -292,6 +293,7 @@ function App() {
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="partners" element={<AdminPartnersPage />} />
+              <Route path="kyc" element={<AdminKYCPage />} />
               <Route path="listings" element={<AdminListingsPage />} />
               <Route path="bookings" element={<AdminBookingsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />

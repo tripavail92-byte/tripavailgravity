@@ -3,12 +3,12 @@
  * validates the session token, stores the image in Supabase Storage using
  * the service role key, then patches the kyc_sessions row.
  *
- * Called by the mobile KYC page (no user auth required — session_token is
- * the access credential).
+ * Simplified flow: CNIC front/back only (no selfie, no face scanning).
+ * Storage is private; we store STORAGE PATHS (not public URLs).
  *
  * Body (multipart/form-data OR application/json with base64):
- *   session_token  string   — 64-char hex token from the QR code URL
- *   field          string   — "id_front" | "id_back" | "selfie"
+ *   session_token  string   — token from the QR code URL
+ *   field          string   — "id_front" | "id_back"
  *   image          File | base64 string — the captured image
  */
 
@@ -59,7 +59,7 @@ serve(async (req) => {
     }
 
     // Validate inputs
-    const validFields = ['id_front', 'id_back', 'selfie'];
+    const validFields = ['id_front', 'id_back'];
     if (!sessionToken || !field || !validFields.includes(field)) {
       return new Response(JSON.stringify({ error: 'Invalid session_token or field' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -69,7 +69,7 @@ serve(async (req) => {
     // Load + validate session
     const { data: session, error: sessErr } = await admin
       .from('kyc_sessions')
-      .select('id, user_id, status, expires_at')
+      .select('id, user_id, status, expires_at, id_front_path, id_back_path')
       .eq('session_token', sessionToken)
       .single();
 
@@ -84,6 +84,12 @@ serve(async (req) => {
       });
     }
 
+    if (['approved', 'rejected'].includes(session.status)) {
+      return new Response(JSON.stringify({ error: 'Session already reviewed' }), {
+        status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Upload to Storage
     const storagePath = `verification/kyc-sessions/${session.id}/${field}.${ext}`;
     const { error: uploadErr } = await admin.storage
@@ -95,21 +101,30 @@ serve(async (req) => {
 
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
-    const { data: { publicUrl } } = admin.storage
-      .from(BUCKET)
-      .getPublicUrl(storagePath);
+    // Patch the session row (store private path)
+    const pathField = field === 'id_front' ? 'id_front_path' : 'id_back_path';
+    const patch: Record<string, unknown> = {
+      [pathField]: storagePath,
+      status: 'uploading',
+      failure_code: null,
+      failure_reason: null,
+    };
 
-    // Patch the session row
-    const urlField = field === 'id_front' ? 'id_front_url'
-                   : field === 'id_back'  ? 'id_back_url'
-                   :                        'selfie_url';
+    // If this upload completes the set, move to processing for the OCR worker
+    const willHaveFront = (pathField === 'id_front_path') || !!session.id_front_path;
+    const willHaveBack = (pathField === 'id_back_path') || !!session.id_back_path;
+    if (willHaveFront && willHaveBack) {
+      patch.status = 'processing';
+    }
 
-    await admin
+    const { error: updErr } = await admin
       .from('kyc_sessions')
-      .update({ [urlField]: publicUrl, status: 'uploading' })
+      .update(patch)
       .eq('session_token', sessionToken);
 
-    return new Response(JSON.stringify({ url: publicUrl }), {
+    if (updErr) throw new Error(`Failed to update session: ${updErr.message}`);
+
+    return new Response(JSON.stringify({ path: storagePath, status: patch.status }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

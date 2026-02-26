@@ -231,12 +231,18 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
   const partnerLabel = req.partner_type === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'
 
   const vd = (sd?.verification_documents ?? {}) as Record<string, any>
-  const identityDocs = [
+  const kycToken = vd.kyc_session_token as string | undefined
+  const kycStatus = vd.kyc_status as string | undefined
+  const kycCnic = vd.cnic_number as string | undefined
+  const kycExpiry = vd.expiry_date as string | undefined
+
+  const legacyIdentityDocs = [
     { key: 'id_card_url', label: 'CNIC Front', emoji: '🪪' },
     { key: 'id_back_url', label: 'CNIC Back', emoji: '🔄' },
     { key: 'selfie_url', label: 'Selfie / Biometric', emoji: '🤳' },
   ].filter((d) => !!vd[d.key])
-  const matchScore: number | null =
+
+  const legacyMatchScore: number | null =
     typeof vd.matching_score === 'number' ? vd.matching_score : null
 
   return (
@@ -279,40 +285,73 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
 
         <CardContent>
           {/* Identity / Biometric Documents */}
-          {identityDocs.length > 0 && (
+          {(kycToken || legacyIdentityDocs.length > 0) && (
             <div className="mb-4 p-3 rounded-lg bg-blue-50/60 border border-blue-100 space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
                   Identity Verification (CNIC)
                 </p>
-                {matchScore !== null && (
+                {legacyMatchScore !== null && (
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      matchScore >= 70
+                      legacyMatchScore >= 70
                         ? 'bg-green-100 text-green-700'
                         : 'bg-red-100 text-red-700'
                     }`}
                   >
-                    AI Match: {Math.round(matchScore)}%
+                    AI Match: {Math.round(legacyMatchScore)}%
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {identityDocs.map((doc) => (
-                  <a
-                    key={doc.key}
-                    href={vd[doc.key]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
-                  >
-                    {doc.emoji} {doc.label}
-                  </a>
-                ))}
-              </div>
+
+              {kycToken ? (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>
+                    <span className="font-semibold text-foreground">KYC status:</span>{' '}
+                    {kycStatus ?? '—'}
+                  </div>
+                  <div>
+                    <span className="font-semibold text-foreground">KYC token:</span> {kycToken}
+                  </div>
+                  {kycCnic ? (
+                    <div>
+                      <span className="font-semibold text-foreground">CNIC:</span> {kycCnic}
+                    </div>
+                  ) : null}
+                  {kycExpiry ? (
+                    <div>
+                      <span className="font-semibold text-foreground">Expiry:</span> {kycExpiry}
+                    </div>
+                  ) : null}
+                  <div className="pt-1">
+                    <a
+                      href="/admin/kyc"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
+                    >
+                      🛡️ Review in KYC Queue
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+
+              {legacyIdentityDocs.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {legacyIdentityDocs.map((doc) => (
+                    <a
+                      key={doc.key}
+                      href={vd[doc.key]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
+                    >
+                      {doc.emoji} {doc.label}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
             </div>
           )}
-          {identityDocs.length === 0 && (
+          {!kycToken && legacyIdentityDocs.length === 0 && (
             <div className="mb-4 p-3 rounded-lg bg-amber-50/60 border border-amber-200">
               <p className="text-xs font-semibold text-amber-700">
                 ⚠️ No identity documents submitted — partner has not completed CNIC verification

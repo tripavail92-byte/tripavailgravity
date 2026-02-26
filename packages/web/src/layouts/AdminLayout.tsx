@@ -13,6 +13,7 @@ const navItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
   { label: 'Users', to: '/admin/users' },
   { label: 'Partners', to: '/admin/partners' },
+  { label: 'KYC', to: '/admin/kyc' },
   { label: 'Listings', to: '/admin/listings' },
   { label: 'Bookings', to: '/admin/bookings' },
   { label: 'Reports', to: '/admin/reports' },

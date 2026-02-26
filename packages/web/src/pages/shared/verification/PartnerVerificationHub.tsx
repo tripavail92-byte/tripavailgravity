@@ -28,8 +28,10 @@ export function PartnerVerificationHub() {
   const [verificationData, setVerificationData] = useState<any>({
     idCardUrl: '',
     idBackUrl: '',
-    selfieUrl: '',
-    matchingScore: 0,
+    kycSessionToken: '',
+    kycStatus: '',
+    cnicNumber: null,
+    expiryDate: null,
     businessDocs: {},
     ownershipDocs: {},
   })
@@ -47,7 +49,12 @@ export function PartnerVerificationHub() {
         if (data?.verification) {
           const ver = data.verification as any
           setVerificationData(ver)
-          if (ver.matchingScore > 0) {
+          const identitySubmitted =
+            ver?.matchingScore > 0 ||
+            ver?.kycStatus === 'pending_admin_review' ||
+            ver?.kycStatus === 'approved'
+
+          if (identitySubmitted) {
             if (role === 'hotel_manager' && !ver.ownershipDocs?.titleDeedUrl) {
               setStep('property')
             } else {
@@ -139,10 +146,10 @@ export function PartnerVerificationHub() {
         // Documents (URLs the admin can click on)
         verification_urls: verificationData.businessDocs ?? {},
         verification_documents: {
-          id_card_url: verificationData.idCardUrl,
-          id_back_url: verificationData.idBackUrl,
-          selfie_url: verificationData.selfieUrl,
-          matching_score: verificationData.matchingScore,
+          kyc_session_token: verificationData.kycSessionToken,
+          kyc_status: verificationData.kycStatus,
+          cnic_number: verificationData.cnicNumber,
+          expiry_date: verificationData.expiryDate,
           ownership_docs: verificationData.ownershipDocs ?? {},
         },
         submitted_at: new Date().toISOString(),
@@ -220,7 +227,7 @@ export function PartnerVerificationHub() {
         </h2>
         <p className="text-gray-500 mt-2 font-medium">
           {step === 'identity'
-            ? 'Biometric match with government issued ID'
+            ? 'Submit CNIC front/back for OCR and manual review'
             : step === 'docs'
               ? 'Official registration and license documents'
               : 'Live evidence of property ownership'}

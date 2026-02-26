@@ -5,14 +5,45 @@ export interface KycSession {
   session_token: string
   user_id: string
   role: 'tour_operator' | 'hotel_manager'
-  status: 'pending' | 'uploading' | 'processing' | 'complete' | 'expired' | 'failed'
-  id_front_url: string | null
-  id_back_url: string | null
-  selfie_url: string | null
+  status:
+    | 'pending'
+    | 'uploading'
+    | 'processing'
+    | 'pending_admin_review'
+    | 'approved'
+    | 'rejected'
+    | 'failed'
+    | 'expired'
+
+  // Private storage paths (bucket is private; signed URLs are generated server-side)
+  id_front_path: string | null
+  id_back_path: string | null
+
+  // Legacy columns (no longer used by the simplified flow)
+  id_front_url?: string | null
+  id_back_url?: string | null
+  selfie_url?: string | null
+
   ocr_result: Record<string, any> | null
-  match: boolean | null
-  match_score: number | null
-  match_reason: string | null
+
+  // Structured OCR fields
+  cnic_number?: string | null
+  full_name?: string | null
+  father_name?: string | null
+  date_of_birth?: string | null
+  expiry_date?: string | null
+
+  // Failure + review metadata
+  failure_code?: string | null
+  failure_reason?: string | null
+  reviewed_by?: string | null
+  reviewed_at?: string | null
+  review_notes?: string | null
+
+  // Legacy biometric columns (no longer used)
+  match?: boolean | null
+  match_score?: number | null
+  match_reason?: string | null
   expires_at: string
   created_at: string
 }
@@ -61,7 +92,7 @@ export async function getActiveKycSession(
     .select('*')
     .eq('user_id', userId)
     .eq('role', role)
-    .in('status', ['pending', 'uploading'])
+    .in('status', ['pending', 'uploading', 'processing', 'pending_admin_review'])
     .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
@@ -79,13 +110,14 @@ export async function updateKycSession(
     Pick<
       KycSession,
       | 'status'
-      | 'id_front_url'
-      | 'id_back_url'
-      | 'selfie_url'
+      | 'id_front_path'
+      | 'id_back_path'
       | 'ocr_result'
-      | 'match'
-      | 'match_score'
-      | 'match_reason'
+      | 'cnic_number'
+      | 'expiry_date'
+      | 'failure_code'
+      | 'failure_reason'
+      | 'review_notes'
     >
   >,
 ): Promise<void> {

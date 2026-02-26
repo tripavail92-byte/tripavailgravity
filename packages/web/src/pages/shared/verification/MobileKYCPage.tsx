@@ -1,4 +1,4 @@
-import { AlertCircle, Camera, Check, CreditCard, FileText, Loader2, Shield, UserCheck } from 'lucide-react'
+import { AlertCircle, Camera, Check, CreditCard, FileText, Loader2, Shield } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -7,22 +7,51 @@ import { useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-import {
-  KycSession,
-  getKycSessionByToken,
-  updateKycSession,
-  subscribeToKycSession,
-} from '@/features/verification/services/kycSessionService'
+import { KycSession } from '@/features/verification/services/kycSessionService'
 import { cn } from '@/lib/utils'
 
-type MobileStep = 'loading' | 'invalid' | 'expired' | 'id_front' | 'id_back' | 'selfie' | 'processing' | 'done' | 'failed' | 'error'
+type MobileStep =
+  | 'loading'
+  | 'invalid'
+  | 'expired'
+  | 'id_front'
+  | 'id_back'
+  | 'processing'
+  | 'done'
+  | 'failed'
+  | 'error'
+
+type TokenSessionView = {
+  id: string
+  status: KycSession['status']
+  expires_at: string
+  has_id_front: boolean
+  has_id_back: boolean
+  failure_code: string | null
+  failure_reason: string | null
+}
+
+async function fetchSessionByToken(token: string): Promise<TokenSessionView> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/kyc-session?session_token=${encodeURIComponent(token)}`,
+    {
+      method: 'GET',
+      headers: { apikey: anonKey },
+    },
+  )
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error || 'Failed to load session')
+  return json as TokenSessionView
+}
 
 // ── Upload a captured file via the edge function ──────────────────────────────
 async function uploadKycImage(
   token: string,
-  field: 'id_front' | 'id_back' | 'selfie',
+  field: 'id_front' | 'id_back',
   file: File,
-): Promise<string> {
+): Promise<{ path: string; status: string }> {
   const form = new FormData()
   form.append('session_token', token)
   form.append('field', field)
@@ -38,7 +67,7 @@ async function uploadKycImage(
   })
   const json = await res.json()
   if (!res.ok) throw new Error(json.error || 'Upload failed')
-  return json.url as string
+  return { path: json.path as string, status: json.status as string }
 }
 
 // ── Camera capture helper ─────────────────────────────────────────────────────
@@ -149,10 +178,10 @@ function CameraCapture({
 }
 
 // ── Progress step indicator ───────────────────────────────────────────────────
-function StepDots({ current }: { current: 0 | 1 | 2 }) {
+function StepDots({ current }: { current: 0 | 1 }) {
   return (
     <div className="flex items-center gap-2 justify-center mb-6">
-      {['ID Front', 'ID Back', 'Selfie'].map((label, i) => (
+      {['ID Front', 'ID Back'].map((label, i) => (
         <div key={label} className="flex items-center gap-2">
           <div className={cn(
             'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all',
@@ -162,7 +191,7 @@ function StepDots({ current }: { current: 0 | 1 | 2 }) {
           )}>
             {i < current ? <Check className="w-4 h-4" /> : i + 1}
           </div>
-          {i < 2 && <div className={cn('h-0.5 w-6 rounded', i < current ? 'bg-success' : 'bg-muted')} />}
+          {i < 1 && <div className={cn('h-0.5 w-6 rounded', i < current ? 'bg-success' : 'bg-muted')} />}
         </div>
       ))}
     </div>
@@ -175,27 +204,21 @@ export default function MobileKYCPage() {
   const token     = params.get('session') || ''
 
   const [step, setStep]       = useState<MobileStep>('loading')
-  const [session, setSession] = useState<KycSession | null>(null)
+  const [session, setSession] = useState<TokenSessionView | null>(null)
   const [busy, setBusy]       = useState(false)
 
-  const [idFrontUrl, setIdFrontUrl] = useState('')
-  const [idBackUrl,  setIdBackUrl]  = useState('')
-  const [selfieUrl,  setSelfieUrl]  = useState('')
-
-  // Load session on mount and subscribe to updates
+  // Load session on mount (no realtime for anon; poll via edge function)
   useEffect(() => {
     if (!token) {
       setStep('invalid')
       return
     }
 
-    const handleSessionUpdate = (s: KycSession) => {
+    let cancelled = false
+
+    const apply = (s: TokenSessionView) => {
       if (new Date(s.expires_at) < new Date() || s.status === 'expired') {
         setStep('expired')
-        return
-      }
-      if (s.status === 'complete') {
-        setStep('done')
         return
       }
       if (s.status === 'failed') {
@@ -206,42 +229,40 @@ export default function MobileKYCPage() {
         setStep('processing')
         return
       }
-      setSession(s)
-      // Resume from where we left off
-      if (s.selfie_url) {
-        setIdFrontUrl(s.id_front_url!)
-        setIdBackUrl(s.id_back_url!)
-        setSelfieUrl(s.selfie_url)
+      if (['pending_admin_review', 'approved', 'rejected'].includes(s.status)) {
         setStep('done')
-      } else if (s.id_back_url) {
-        setIdFrontUrl(s.id_front_url!)
-        setIdBackUrl(s.id_back_url!)
-        setStep('selfie')
-      } else if (s.id_front_url) {
-        setIdFrontUrl(s.id_front_url!)
-        setStep('id_back')
-      } else {
-        setStep('id_front')
+        return
+      }
+
+      setSession(s)
+      if (s.has_id_back) setStep('processing')
+      else if (s.has_id_front) setStep('id_back')
+      else setStep('id_front')
+    }
+
+    const load = async () => {
+      try {
+        const s = await fetchSessionByToken(token)
+        if (cancelled) return
+        setSession(s)
+        apply(s)
+      } catch {
+        if (!cancelled) setStep('invalid')
       }
     }
 
-    getKycSessionByToken(token).then((s) => {
-      if (!s) {
-        setStep('invalid')
-        return
-      }
-      handleSessionUpdate(s)
-    })
-
-    const unsubscribe = subscribeToKycSession(token, handleSessionUpdate)
-    return () => unsubscribe()
+    load()
+    const interval = setInterval(load, 2000)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [token])
 
   const handleIdFront = async (file: File) => {
     setBusy(true)
     try {
-      const url = await uploadKycImage(token, 'id_front', file)
-      setIdFrontUrl(url)
+      await uploadKycImage(token, 'id_front', file)
       toast.success('ID Front captured!')
       setStep('id_back')
     } catch (e: any) {
@@ -254,44 +275,11 @@ export default function MobileKYCPage() {
   const handleIdBack = async (file: File) => {
     setBusy(true)
     try {
-      const url = await uploadKycImage(token, 'id_back', file)
-      setIdBackUrl(url)
+      await uploadKycImage(token, 'id_back', file)
       toast.success('ID Back captured!')
-      setStep('selfie')
+      setStep('processing')
     } catch (e: any) {
       toast.error(e.message || 'Upload failed')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleSelfie = async (file: File) => {
-    setBusy(true)
-    setStep('processing')
-    try {
-      const url = await uploadKycImage(token, 'selfie', file)
-      setSelfieUrl(url)
-
-      // Mark session as processing for the background worker to pick up
-      await updateKycSession(token, {
-        selfie_url: url,
-        status: 'processing',
-      })
-      // The frontend effect listening to realtime updates will handle the view change
-    } catch (e: any) {
-      toast.error(e.message || 'Verification failed')
-      setStep('selfie')
-      setBusy(false)
-    }
-  }
-
-  const handleRetry = async () => {
-    setBusy(true)
-    try {
-      await updateKycSession(token, { status: 'pending' })
-      setStep('id_front')
-    } catch (e: any) {
-      toast.error('Could not restart session')
     } finally {
       setBusy(false)
     }
@@ -389,40 +377,6 @@ export default function MobileKYCPage() {
             </motion.div>
           )}
 
-          {/* Selfie */}
-          {step === 'selfie' && (
-            <motion.div key="selfie" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <StepDots current={2} />
-              <div className="text-center mb-4">
-                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-3">
-                  <UserCheck className="w-7 h-7" />
-                </div>
-                <h2 className="text-xl font-black uppercase tracking-tight">Selfie</h2>
-                <p className="text-sm text-muted-foreground mt-1 font-medium">
-                  Hold your ID next to your face — both must be visible.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <div className="p-3 bg-success/10 rounded-xl text-center">
-                  <UserCheck className="w-4 h-4 text-success mx-auto mb-1" />
-                  <p className="text-[10px] font-black uppercase text-success tracking-widest">Face Visible</p>
-                </div>
-                <div className="p-3 bg-success/10 rounded-xl text-center">
-                  <CreditCard className="w-4 h-4 text-success mx-auto mb-1" />
-                  <p className="text-[10px] font-black uppercase text-success tracking-widest">ID Visible</p>
-                </div>
-              </div>
-              <CameraCapture
-                label="selfie" facingMode="user"
-                hint="Use the front camera. Show your face and ID card clearly together."
-                onCapture={handleSelfie} disabled={busy}
-              />
-              <button onClick={() => setStep('id_back')} className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                ← Retake ID Back
-              </button>
-            </motion.div>
-          )}
-
           {/* Processing */}
           {step === 'processing' && (
             <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 gap-6 text-center">
@@ -434,8 +388,8 @@ export default function MobileKYCPage() {
                 <Shield className="w-10 h-10" />
               </motion.div>
               <div>
-                <h2 className="text-xl font-black uppercase tracking-tight">Verifying Identity</h2>
-                <p className="text-sm text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data securely in the background…</p>
+                <h2 className="text-xl font-black uppercase tracking-tight">Submitting Documents</h2>
+                <p className="text-sm text-muted-foreground mt-2 font-medium">We are securely processing your CNIC for OCR. You can switch back to your laptop.</p>
               </div>
             </motion.div>
           )}
@@ -445,9 +399,10 @@ export default function MobileKYCPage() {
             <motion.div key="failed" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Card className="p-8 text-center space-y-4 border-destructive/20 bg-destructive/5">
                 <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-                <h2 className="text-xl font-black uppercase">Verification Failed</h2>
-                <p className="text-muted-foreground text-sm font-medium">We could not match your selfie to the provided ID card. Please try again or use your laptop camera.</p>
-                <Button variant="outline" onClick={handleRetry} disabled={busy}>Try Again</Button>
+                <h2 className="text-xl font-black uppercase">Processing Failed</h2>
+                <p className="text-muted-foreground text-sm font-medium">
+                  {session?.failure_reason || 'We could not process your CNIC. Please retake clearer photos.'}
+                </p>
               </Card>
             </motion.div>
           )}
@@ -473,10 +428,6 @@ export default function MobileKYCPage() {
                   <div className="flex items-center gap-3">
                     <Check className="w-4 h-4 text-success shrink-0" />
                     <span className="text-sm font-medium">ID Back uploaded</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Check className="w-4 h-4 text-success shrink-0" />
-                    <span className="text-sm font-medium">Selfie submitted</span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">You can close this page.</p>

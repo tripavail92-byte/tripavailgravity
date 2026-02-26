@@ -34,8 +34,14 @@ export interface TourOperatorOnboardingData {
   verification?: {
     idCardUrl: string
     idBackUrl: string
-    selfieUrl: string
-    matchingScore: number
+    kycSessionToken?: string
+    kycStatus?: string
+    cnicNumber?: string | null
+    expiryDate?: string | null
+
+    // legacy (biometric) fields — deprecated
+    selfieUrl?: string
+    matchingScore?: number
     businessDocs: Record<string, string>
   }
 }
@@ -96,6 +102,11 @@ export const tourOperatorService = {
       verification_documents: {
         idCardUrl: data.verification?.idCardUrl,
         idBackUrl: data.verification?.idBackUrl,
+        kycSessionToken: data.verification?.kycSessionToken,
+        kycStatus: data.verification?.kycStatus,
+        cnicNumber: data.verification?.cnicNumber,
+        expiryDate: data.verification?.expiryDate,
+
         selfieUrl: data.verification?.selfieUrl,
         matchingScore: data.verification?.matchingScore,
       },
@@ -193,6 +204,11 @@ export const tourOperatorService = {
           ? {
               idCardUrl: profile.verification_documents.idCardUrl || '',
               idBackUrl: profile.verification_documents.idBackUrl || '',
+              kycSessionToken: profile.verification_documents.kycSessionToken || '',
+              kycStatus: profile.verification_documents.kycStatus || '',
+              cnicNumber: profile.verification_documents.cnicNumber ?? null,
+              expiryDate: profile.verification_documents.expiryDate ?? null,
+
               selfieUrl: profile.verification_documents.selfieUrl || '',
               matchingScore: profile.verification_documents.matchingScore || 0,
               businessDocs: profile.verification_urls || {},

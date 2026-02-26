@@ -24,9 +24,11 @@ serve(async (req) => {
             return new Response(JSON.stringify({ error: 'idCardUrl is required for ' + taskType }),
                 { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
-        if (taskType === 'face_match' && (!idCardUrl || !selfieUrl)) {
-            return new Response(JSON.stringify({ match: false, score: 0, reason: 'idCardUrl and selfieUrl are both required for face_match' }),
-                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        if (taskType === 'face_match') {
+            return new Response(
+                JSON.stringify({ error: 'Face scanning is temporarily disabled. Please use CNIC front/back + admin review.' }),
+                { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+            );
         }
 
         // ── Secrets ──────────────────────────────────────────────────────────
@@ -153,63 +155,6 @@ serve(async (req) => {
             }
 
         // ── 4. Face Match — Railway DeepFace (FaceNet-512) → GPT-4o-mini fallback ──
-        } else if (taskType === 'face_match') {
-            eventType = 'biometric_match';
-
-            // ── Tier 1: Railway DeepFace (FaceNet-512) ───────────────────────
-            if (faceApiUrl && faceApiSecret) {
-                try {
-                    const faceRes = await fetch(`${faceApiUrl.replace(/\/$/, '')}/verify`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${faceApiSecret}`,
-                        },
-                        body: JSON.stringify({ id_url: idCardUrl, selfie_url: selfieUrl }),
-                        signal: AbortSignal.timeout(25_000), // 25 s timeout
-                    });
-                    if (faceRes.ok) {
-                        const r = await faceRes.json();
-                        aiResult = {
-                            match:  r.match,
-                            score:  r.score,
-                            method: r.method || 'deepface',
-                            reason: r.reason,
-                            distance: r.distance,
-                        };
-                    } else {
-                        const err = await faceRes.text();
-                        console.warn(`[face-api] HTTP ${faceRes.status}: ${err.slice(0, 200)}`);
-                    }
-                } catch (railwayErr: any) {
-                    console.warn('[face-api] Railway unreachable, falling back to GPT:', railwayErr.message);
-                }
-            }
-
-            // ── Tier 2: GPT-4o-mini visual comparison (fallback if Railway fails) ─
-            if (!aiResult.method) {
-                const [idBase64, selfieBase64] = await Promise.all([
-                    imageUrlToBase64(idCardUrl),
-                    imageUrlToBase64(selfieUrl),
-                ]);
-                const gptResult = await gptVision(
-                    `Compare the person's face in Image 1 (government ID card) with Image 2 (selfie).
-                     Are they the same person? Consider jaw shape, eye spacing, nose, overall facial structure.
-                     Ignore lighting, age differences (within 10 years), glasses, or head angle.
-                     Return ONLY JSON: { "match": boolean, "confidence": number (0-100), "reason": string }`,
-                    idBase64, [selfieBase64]
-                );
-                const score = Math.round(gptResult.confidence ?? 0);
-                const MATCH_THRESHOLD = 70;
-                aiResult = {
-                    match:  score >= MATCH_THRESHOLD && gptResult.match === true,
-                    score,
-                    method: 'gpt_vision',
-                    reason: (score >= MATCH_THRESHOLD && gptResult.match)
-                        ? `GPT-4o visual analysis confirmed identity match (${score}% confidence).`
-                        : gptResult.reason || `Face match failed (${score}%). Please retake your selfie.`,
-                };
-            }
         }
 
         // ── Log to Supabase ───────────────────────────────────────────────────

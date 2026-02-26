@@ -11,7 +11,6 @@
   RefreshCw,
   ShieldCheck,
   Smartphone,
-  UserCheck,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -20,10 +19,6 @@ import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { hotelManagerService } from '@/features/hotel-manager/services/hotelManagerService'
-import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
-import { KYCSelfieVector } from '@/features/verification/assets/KYCSelfieVector'
-import { OcrResult, aiVerificationService } from '@/features/verification/services/aiVerificationService'
 import {
   KycSession,
   buildMobileKycUrl,
@@ -37,17 +32,14 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 import { IDCaptureWidget } from './IDCaptureWidget'
-import { SelfieCaptureWidget } from './SelfieCaptureWidget'
 
 interface IdentitySubFlowProps {
   onComplete: (data: {
-    idCardUrl: string
-    idBackUrl: string
-    selfieUrl: string
-    matchingScore: number
-    match: boolean
-    reason?: string
-    ocrResult?: OcrResult | null
+    kycSessionToken: string
+    kycStatus: KycSession['status']
+    cnicNumber?: string | null
+    expiryDate?: string | null
+    failureReason?: string | null
   }) => void
   initialData?: any
   role: 'tour_operator' | 'hotel_manager'
@@ -65,10 +57,9 @@ function detectMobile(): boolean {
 type SubStep =
   | 'choose'       // desktop: choose method (phone QR vs this device)
   | 'qr_waiting'   // desktop: QR shown, waiting for mobile to complete
-  | 'qr_complete'  // desktop: mobile finished, running final verification
+  | 'qr_complete'  // desktop: phone capture complete, processing OCR
   | 'id_upload'    // desktop fallback / mobile direct: manual upload
-  | 'selfie'
-  | 'verifying'
+  | 'processing'
   | 'result'
 
 // Remaining time (mm:ss) from an ISO expiry string
@@ -104,18 +95,17 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   const [subStep, setSubStep] = useState<SubStep>(isMobile ? 'id_upload' : 'choose')
   const [idCardUrl, setIdCardUrl] = useState<string>(initialData?.idCardUrl || '')
   const [idBackUrl, setIdBackUrl] = useState<string>(initialData?.idBackUrl || '')
-  const [selfieUrl, setSelfieUrl] = useState<string>(initialData?.selfieUrl || '')
   const [isUploadingFront,  setIsUploadingFront]  = useState(false)
   const [isUploadingBack,   setIsUploadingBack]   = useState(false)
-  const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
-  const [ocrResult, setOcrResult] = useState<OcrResult | null>(initialData?.ocrResult || null)
-  const [verificationResult, setVerificationResult] = useState<{
-    match: boolean; score: number; reason?: string
+  const [submissionResult, setSubmissionResult] = useState<{
+    ok: boolean
+    status: KycSession['status']
+    reason?: string
+    cnicNumber?: string | null
+    expiryDate?: string | null
   } | null>(null)
 
-  console.log('TripAvail Verification System v4.0 [QR Handoff + DeepFace]')
-
-  const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService
+  console.log('TripAvail Verification System v5.0 [CNIC OCR + Admin Review]')
 
   // Cleanup realtime sub on unmount
   useEffect(() => () => { unsubRef.current?.() }, [])
@@ -135,11 +125,20 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
 
       const realtime = subscribeToKycSession(session.session_token, async (updated) => {
         setKycSession(updated)
-        if (updated.status === 'complete' && !realtimeDone) {
+        if (['pending_admin_review', 'approved'].includes(updated.status) && !realtimeDone) {
           realtimeDone = true
           unsubRef.current?.()
           setSubStep('qr_complete')
           await handleSessionComplete(updated)
+        }
+        if (updated.status === 'failed' && !realtimeDone) {
+          realtimeDone = true
+          unsubRef.current?.()
+          setSubStep('result')
+          setSubmissionResult({ ok: false, status: 'failed', reason: updated.failure_reason || 'Processing failed.' })
+        }
+        if (updated.status === 'processing') {
+          setSubStep('qr_complete')
         }
         if (updated.status === 'expired') {
           toast.error('Session expired. Generate a new QR code.')
@@ -152,13 +151,24 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
       const intervalId = setInterval(async () => {
         if (realtimeDone) { clearInterval(intervalId); return }
         const fresh = await getKycSessionByToken(token)
-        if (fresh?.status === 'complete') {
+        if (fresh?.status && ['pending_admin_review', 'approved'].includes(fresh.status)) {
           realtimeDone = true
           clearInterval(intervalId)
           unsubRef.current?.()
           setKycSession(fresh)
           setSubStep('qr_complete')
           await handleSessionComplete(fresh)
+        }
+        if (fresh?.status === 'failed') {
+          realtimeDone = true
+          clearInterval(intervalId)
+          unsubRef.current?.()
+          setKycSession(fresh)
+          setSubStep('result')
+          setSubmissionResult({ ok: false, status: 'failed', reason: fresh.failure_reason || 'Processing failed.' })
+        }
+        if (fresh?.status === 'processing') {
+          setSubStep('qr_complete')
         }
       }, 4000)
 
@@ -171,31 +181,19 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   // Called when mobile session is complete
   const handleSessionComplete = async (session: KycSession) => {
     try {
-      if (!session.id_front_url || !session.selfie_url) throw new Error('Incomplete session data.')
-      setIdCardUrl(session.id_front_url)
-      setIdBackUrl(session.id_back_url || '')
-      setSelfieUrl(session.selfie_url)
-      if (session.ocr_result) setOcrResult(session.ocr_result as OcrResult)
+      if (!session.id_front_path || !session.id_back_path) throw new Error('Incomplete session data.')
+      setIdCardUrl('uploaded')
+      setIdBackUrl('uploaded')
 
-      // If mobile already ran face match, use its result
-      if (session.match !== null && session.match_score !== null) {
-        const result = { match: session.match!, score: session.match_score!, reason: session.match_reason || undefined }
-        setVerificationResult(result)
-        setSubStep('result')
-        if (result.match) toast.success('Identity Verified! âœ…')
-        else toast.error(result.reason || 'Biometric match failed.')
-        return
-      }
-
-      // Fallback: run face match on desktop
-      setSubStep('verifying')
-      const result = await aiVerificationService.compareFaceToId(
-        session.id_front_url, session.selfie_url, user!.id, role,
-      )
-      setVerificationResult(result)
+      const ok = ['pending_admin_review', 'approved'].includes(session.status)
+      setSubmissionResult({
+        ok,
+        status: session.status,
+        reason: session.failure_reason || undefined,
+        cnicNumber: session.cnic_number ?? null,
+        expiryDate: session.expiry_date ?? null,
+      })
       setSubStep('result')
-      if (result.match) toast.success('Identity Verified! âœ…')
-      else toast.error(result.reason || 'Biometric match failed.')
     } catch (e: any) {
       toast.error(e.message || 'Session processing failed.')
       setSubStep('choose')
@@ -210,22 +208,43 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
     await startQrHandoff()
   }
 
-  // â”€â”€ Desktop-direct upload handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Desktop-direct upload handlers (private storage via edge function) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const uploadKycImage = async (token: string, field: 'id_front' | 'id_back', file: File) => {
+    const form = new FormData()
+    form.append('session_token', token)
+    form.append('field', field)
+    form.append('image', file, `${field}.jpg`)
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/kyc-mobile-upload`, {
+      method: 'POST',
+      headers: { apikey: anonKey },
+      body: form,
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Upload failed')
+    return json as { path: string; status: string }
+  }
+
+  const ensureSession = async (): Promise<KycSession> => {
+    if (!user?.id) throw new Error('Not signed in')
+    if (kycSession) return kycSession
+    let session = await getActiveKycSession(user.id, role)
+    if (!session) session = await createKycSession(user.id, role)
+    setKycSession(session)
+    return session
+  }
+
   const handleIdFrontUpload = async (file: File) => {
     if (!user?.id) return
     setIsUploadingFront(true)
     try {
-      const url = await service.uploadAsset(user.id, file, 'verification/id_card_front')
-      const validation = await aiVerificationService.validateIdCard(url, user.id, role)
-      if (!validation.valid) { toast.error(validation.reason || 'Invalid ID document.'); return }
-      setIdCardUrl(url)
-      toast.success('ID Front validated!')
-      aiVerificationService.extractOcr(url, user.id, role).then((ocr) => {
-        setOcrResult(ocr)
-        if (ocr.idNumber && !ocr.cnicValid) toast.error(`CNIC format invalid: ${ocr.idNumber}`)
-        else if (ocr.expired) toast.error('This ID appears expired.')
-        else if (ocr.fullName) toast.success(`ID read: ${ocr.fullName}`)
-      })
+      const session = await ensureSession()
+      await uploadKycImage(session.session_token, 'id_front', file)
+      setIdCardUrl('uploaded')
+      toast.success('ID Front uploaded!')
     } catch { toast.error('Upload failed. Try again.') }
     finally { setIsUploadingFront(false) }
   }
@@ -234,32 +253,37 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
     if (!user?.id) return
     setIsUploadingBack(true)
     try {
-      const url = await service.uploadAsset(user.id, file, 'verification/id_card_back')
-      const validation = await aiVerificationService.validateIdBack(url, user.id, role)
-      if (!validation.valid) { toast.error(validation.reason || 'Invalid back image.'); return }
-      setIdBackUrl(url)
-      toast.success('ID Back validated!')
+      const session = await ensureSession()
+      await uploadKycImage(session.session_token, 'id_back', file)
+      setIdBackUrl('uploaded')
+      toast.success('ID Back uploaded!')
+
+      unsubRef.current?.()
+      const realtime = subscribeToKycSession(session.session_token, (updated) => {
+        setKycSession(updated)
+        if (['pending_admin_review', 'approved'].includes(updated.status)) {
+          unsubRef.current?.()
+          setSubmissionResult({
+            ok: true,
+            status: updated.status,
+            cnicNumber: updated.cnic_number ?? null,
+            expiryDate: updated.expiry_date ?? null,
+          })
+          setSubStep('result')
+        }
+        if (updated.status === 'failed') {
+          unsubRef.current?.()
+          setSubmissionResult({ ok: false, status: 'failed', reason: updated.failure_reason || 'Processing failed.' })
+          setSubStep('result')
+        }
+      })
+      unsubRef.current = realtime
+      setSubStep('processing')
     } catch { toast.error('Upload failed. Try again.') }
     finally { setIsUploadingBack(false) }
   }
 
-  const handleSelfieUpload = async (file: File) => {
-    if (!user?.id) return
-    setIsUploadingSelfie(true)
-    try {
-      const url = await service.uploadAsset(user.id, file, 'verification/selfie')
-      setSelfieUrl(url)
-      setSubStep('verifying')
-      const result = await aiVerificationService.compareFaceToId(idCardUrl, url, user.id, role)
-      setVerificationResult(result)
-      setSubStep('result')
-      if (result.match) toast.success('Identity Verified!')
-      else toast.error(result.reason || 'Biometric match failed.')
-    } catch { toast.error('Verification failed. Try again.'); setSubStep('selfie') }
-    finally { setIsUploadingSelfie(false) }
-  }
-
-  const canProceedToSelfie = idCardUrl && idBackUrl
+  const canProceed = idCardUrl && idBackUrl
 
   // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
@@ -275,7 +299,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </div>
               <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Verify Your Identity</h4>
               <p className="text-muted-foreground mt-2 font-medium">
-                We need your ID card (front &amp; back) and a selfie to verify your identity.
+                We need your CNIC (front &amp; back). Verification is completed via OCR and admin approval.
               </p>
             </div>
 
@@ -336,8 +360,8 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
             <div className="grid grid-cols-3 gap-3">
               {[
                 { icon: Camera,     label: 'Scan QR',    desc: 'Open phone camera' },
-                { icon: CreditCard, label: 'Capture ID',  desc: 'Front + Back' },
-                { icon: UserCheck,  label: 'Selfie',      desc: 'With ID in hand' },
+                { icon: CreditCard, label: 'Capture CNIC',  desc: 'Front + Back' },
+                { icon: ShieldCheck,  label: 'Submit',      desc: 'OCR + admin review' },
               ].map(({ icon: Icon, label, desc }) => (
                 <div key={label} className="p-3 bg-muted/50 rounded-2xl text-center space-y-2">
                   <Icon className="w-5 h-5 text-primary mx-auto" />
@@ -385,7 +409,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               <Check className="w-12 h-12" />
             </motion.div>
             <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Phone Capture Complete!</h4>
-            <p className="text-muted-foreground mt-2 font-medium">Running biometric verificationâ€¦</p>
+            <p className="text-muted-foreground mt-2 font-medium">Processing OCR and preparing admin reviewâ€¦</p>
           </motion.div>
         )}
 
@@ -397,7 +421,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 <CreditCard className="w-8 h-8" />
               </div>
               <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Step 1: Government ID</h4>
-              <p className="text-muted-foreground mt-1 font-medium">Upload both sides of your ID card.</p>
+              <p className="text-muted-foreground mt-1 font-medium">Upload both sides of your CNIC.</p>
             </div>
 
             {/* ID FRONT */}
@@ -420,7 +444,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 <IDCaptureWidget side="front" onCapture={handleIdFrontUpload} disabled={isUploadingFront} />
                 {isUploadingFront && (
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Validating with AIâ€¦
+                    <Loader2 className="w-4 h-4 animate-spin" /> Uploadingâ€¦
                   </div>
                 )}
               </div>
@@ -447,34 +471,20 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                   <IDCaptureWidget side="back" onCapture={handleIdBackUpload} disabled={isUploadingBack} />
                   {isUploadingBack && (
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Validating with AIâ€¦
+                      <Loader2 className="w-4 h-4 animate-spin" /> Uploadingâ€¦
                     </div>
                   )}
                 </div>
               )
             )}
 
-            {/* OCR preview */}
-            {ocrResult?.fullName && (
-              <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">ID Data Extracted</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                  {ocrResult.fullName    && <><span className="text-muted-foreground font-medium">Name</span><span className="font-bold text-foreground">{ocrResult.fullName}</span></>}
-                  {ocrResult.idNumber    && <><span className="text-muted-foreground font-medium">ID No.</span><span className={cn('font-bold', ocrResult.cnicValid ? 'text-success' : 'text-destructive')}>{ocrResult.idNumber}</span></>}
-                  {ocrResult.dateOfBirth && <><span className="text-muted-foreground font-medium">DOB</span><span className="font-bold text-foreground">{ocrResult.dateOfBirth}</span></>}
-                  {ocrResult.expiryDate  && <><span className="text-muted-foreground font-medium">Expiry</span><span className={cn('font-bold', ocrResult.expired ? 'text-destructive' : 'text-success')}>{ocrResult.expiryDate}</span></>}
-                </div>
-                {ocrResult.expired && <p className="text-xs text-destructive font-bold">âš  This ID appears expired</p>}
-              </div>
-            )}
-
             <div className="pt-4 space-y-3">
               <Button
                 className="w-full h-14 rounded-2xl font-black uppercase tracking-widest bg-primary-gradient shadow-lg shadow-primary/20"
-                disabled={!canProceedToSelfie}
-                onClick={() => setSubStep('selfie')}
+                disabled={!canProceed}
+                onClick={() => setSubStep('processing')}
               >
-                Continue to Selfie <ArrowRight className="ml-2 w-5 h-5" />
+                Submit for Review <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               {!isMobile && (
                 <button onClick={() => setSubStep('choose')} className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary">
@@ -485,38 +495,15 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
           </motion.div>
         )}
 
-        {/* Selfie */}
-        {subStep === 'selfie' && (
-          <motion.div key="selfie" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-            <div className="text-center">
-              <div className="flex justify-center mb-6"><KYCSelfieVector size={200} className="filter drop-shadow-xl" /></div>
-              <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Step 2: Selfie with ID</h4>
-              <p className="text-muted-foreground mt-2 font-medium px-4">Hold your ID card next to your face. Both must be clearly visible.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-success/10 rounded-2xl flex flex-col items-center text-center space-y-2">
-                <UserCheck className="w-5 h-5 text-success" /><p className="text-[10px] font-black uppercase text-success tracking-widest">Face Visible</p>
-              </div>
-              <div className="p-3 bg-success/10 rounded-2xl flex flex-col items-center text-center space-y-2">
-                <CreditCard className="w-5 h-5 text-success" /><p className="text-[10px] font-black uppercase text-success tracking-widest">ID Visible</p>
-              </div>
-            </div>
-            <SelfieCaptureWidget onCapture={handleSelfieUpload} disabled={isUploadingSelfie} />
-            <button onClick={() => setSubStep('id_upload')} className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary">
-              â† Go Back
-            </button>
-          </motion.div>
-        )}
-
-        {/* Verifying */}
-        {subStep === 'verifying' && (
-          <motion.div key="verifying" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
+        {/* Processing */}
+        {subStep === 'processing' && (
+          <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
             <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}
               className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center text-primary mx-auto mb-8">
               <ShieldCheck className="w-10 h-10" />
             </motion.div>
-            <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Verifying Identity</h4>
-            <p className="text-muted-foreground mt-2 font-medium">AI is analyzing your biometric data...</p>
+            <h4 className="text-2xl font-black text-foreground tracking-tight italic uppercase">Submitting for Review</h4>
+            <p className="text-muted-foreground mt-2 font-medium">OCR is running and your request will appear in the admin KYC queue.</p>
           </motion.div>
         )}
 
@@ -524,24 +511,33 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
         {subStep === 'result' && (
           <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
             <Card className={cn('p-10 rounded-[32px] text-center border-2',
-              verificationResult?.match ? 'bg-success/10 border-success/20' : 'bg-destructive/10 border-destructive/20')}>
+              submissionResult?.ok ? 'bg-success/10 border-success/20' : 'bg-destructive/10 border-destructive/20')}>
               <div className={cn('w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl',
-                verificationResult?.match ? 'bg-success text-primary-foreground' : 'bg-destructive text-primary-foreground')}>
-                {verificationResult?.match ? <Check className="w-10 h-10" /> : <AlertCircle className="w-10 h-10" />}
+                submissionResult?.ok ? 'bg-success text-primary-foreground' : 'bg-destructive text-primary-foreground')}>
+                {submissionResult?.ok ? <Check className="w-10 h-10" /> : <AlertCircle className="w-10 h-10" />}
               </div>
               <h4 className="text-3xl font-black text-foreground tracking-tight italic uppercase">
-                {verificationResult?.match ? 'Identity Matched' : 'Verification Failed'}
+                {submissionResult?.ok ? 'Submitted for Review' : 'Processing Failed'}
               </h4>
               <p className="text-muted-foreground mt-4 font-medium px-4">
-                {verificationResult?.reason ||
-                  (verificationResult?.match
-                    ? `AI confirmed identity with a confidence score of ${verificationResult.score}%.`
-                    : 'The face in the selfie does not match the ID card.')}
+                {submissionResult?.ok
+                  ? 'Your CNIC has been received. Admin approval is required before your KYC is accepted.'
+                  : (submissionResult?.reason || 'We could not process your CNIC. Please try again with clearer photos.')}
               </p>
-              {verificationResult?.match ? (
+              {submissionResult?.ok ? (
                 <Button
                   className="mt-10 rounded-2xl h-14 bg-primary-gradient text-primary-foreground px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
-                  onClick={() => onComplete({ idCardUrl, idBackUrl, selfieUrl, matchingScore: verificationResult.score, match: true, reason: verificationResult.reason, ocrResult })}
+                  onClick={() => {
+                    const token = kycSession?.session_token
+                    if (!token) return
+                    onComplete({
+                      kycSessionToken: token,
+                      kycStatus: submissionResult?.status || 'pending_admin_review',
+                      cnicNumber: submissionResult?.cnicNumber ?? null,
+                      expiryDate: submissionResult?.expiryDate ?? null,
+                      failureReason: null,
+                    })
+                  }}
                 >
                   Proceed to Documents <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>

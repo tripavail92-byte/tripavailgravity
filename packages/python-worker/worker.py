@@ -5,11 +5,9 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 import requests
 import tempfile
+import re
+from datetime import date, datetime
 
-# Suppress deepface/tf warnings if possible
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
-from deepface import DeepFace
 import easyocr
 
 # Configure logging
@@ -33,136 +31,213 @@ logger.info("Initializing EasyOCR models...")
 reader = easyocr.Reader(['en'], gpu=False) # Fallback to CPU if GPU not available
 logger.info("EasyOCR initialized.")
 
-# ── Config ──────────────────────────────────────────────────────────────────
-MODEL_NAME     = os.getenv("DEEPFACE_MODEL", "Facenet512")
-DETECTOR       = os.getenv("DEEPFACE_DETECTOR", "retinaface")
-DISTANCE_METRIC= os.getenv("DEEPFACE_METRIC", "cosine")
-MATCH_THRESHOLD= float(os.getenv("MATCH_THRESHOLD", "0.40")) # cosine distance ≤ threshold = match
+BUCKET = os.getenv("KYC_BUCKET", "tour-operator-assets")
 
-def similarity_to_score(distance: float, threshold: float) -> int:
-    """Convert cosine distance to a 0-100 similarity score."""
-    # At distance=0 → 100%, at distance=threshold → 50%, beyond → <50%
-    score = max(0, min(100, int(100 * (1 - distance / (threshold * 2)))))
-    return score
+def _download_storage_path(bucket: str, path: str, suffix: str) -> str:
+    """Download a private Storage object (by path) into a temp file and return the local file path."""
+    # Use direct Storage API with service role credentials.
+    # https://supabase.com/docs/reference/restful-api/storage-download-file
+    encoded_path = requests.utils.requote_uri(path.lstrip('/'))
+    url = f"{SUPABASE_URL}/storage/v1/object/{bucket}/{encoded_path}"
+    resp = requests.get(
+        url,
+        headers={
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "apikey": SUPABASE_KEY,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
 
-def download_image(url: str, suffix=".jpg") -> str:
-    """Download image to a temporary file and return the path."""
-    response = requests.get(url)
-    response.raise_for_status()
-    
-    fd, path = tempfile.mkstemp(suffix=suffix)
-    with os.fdopen(fd, 'wb') as f:
-        f.write(response.content)
-    return path
+    fd, tmp_path = tempfile.mkstemp(suffix=suffix)
+    with os.fdopen(fd, "wb") as f:
+        f.write(resp.content)
+    return tmp_path
+
+
+def _normalize_cnic(raw: str) -> str | None:
+    if not raw:
+        return None
+    digits = re.sub(r"\D", "", raw)
+    if len(digits) != 13:
+        return None
+    return f"{digits[0:5]}-{digits[5:12]}-{digits[12:13]}"
+
+
+def _extract_dates(text: str) -> list[date]:
+    results: list[date] = []
+    for m in re.finditer(r"\b(\d{2})[\-/](\d{2})[\-/](\d{4})\b", text):
+        dd, mm, yyyy = m.group(1), m.group(2), m.group(3)
+        try:
+            results.append(date(int(yyyy), int(mm), int(dd)))
+        except ValueError:
+            continue
+    return results
+
+
+def _pick_dob_and_expiry(dates: list[date]) -> tuple[date | None, date | None]:
+    if not dates:
+        return None, None
+    today = date.today()
+    past = [d for d in dates if d <= today]
+    future = [d for d in dates if d > today]
+
+    # Heuristic: DOB is an older past date (typically decades ago)
+    dob = None
+    if past:
+        dob = min(past)
+        # If the earliest past date is too recent, it's probably not DOB.
+        if (today - dob).days < 365 * 12:
+            dob = None
+
+    # Heuristic: expiry is a future date (or the latest date we saw)
+    expiry = max(future) if future else None
+    return dob, expiry
+
+
+def _update_session(session_token: str, patch: dict):
+    supabase.table("kyc_sessions").update(patch).eq("session_token", session_token).execute()
 
 def process_session(session):
     session_token = session['session_token']
     user_id = session['user_id']
     logger.info(f"Processing session: {session_token} for user: {user_id}")
     
-    id_front_url = session.get('id_front_url')
-    selfie_url = session.get('selfie_url')
-    
-    if not id_front_url or not selfie_url:
+    id_front_path = session.get('id_front_path')
+    id_back_path = session.get('id_back_path')
+
+    if not id_front_path or not id_back_path:
         logger.error(f"Missing required images for session {session_token}")
-        supabase.table("kyc_sessions").update({
+        _update_session(session_token, {
             "status": "failed",
-            "match_reason": "Missing ID Front or Selfie image."
-        }).eq("session_token", session_token).execute()
+            "failure_code": "missing_images",
+            "failure_reason": "Missing CNIC front/back image.",
+        })
         return
 
     front_path = None
-    selfie_path = None
+    back_path = None
     
     try:
         logger.info(f"Downloading images for session {session_token}...")
-        front_path = download_image(id_front_url, "_front.jpg")
-        selfie_path = download_image(selfie_url, "_selfie.jpg")
-        
-        # 1. Face Match with DeepFace
-        logger.info("Running DeepFace...")
-        try:
-            result = DeepFace.verify(
-                img1_path        = str(selfie_path),
-                img2_path        = str(front_path),
-                model_name       = MODEL_NAME,
-                detector_backend = DETECTOR,
-                distance_metric  = DISTANCE_METRIC,
-                enforce_detection= True, # We want to fail if no face is in either
-                silent           = True,
-            )
-        except ValueError as e:
-            msg = str(e).lower()
-            if "face could not be detected" in msg or "no face" in msg:
-                subject = "ID card" if "img2" in msg else "selfie"
-                logger.error(f"No face detected in {subject}.")
-                
-                # Failed match due to no face
-                supabase.table("kyc_sessions").update({
-                    "status": "failed",
-                    "match": False,
-                    "match_score": 0,
-                    "match_reason": f"No face detected in the {subject}. Ensure the image is clear and well-lit.",
-                    "ocr_result": None
-                }).eq("session_token", session_token).execute()
-                return
-            raise e
-        
-        distance  = round(result.get("distance", 1.0), 4)
-        threshold = result.get("threshold", MATCH_THRESHOLD)
-        is_match  = result.get("verified", False)
-        match_score = similarity_to_score(distance, threshold)
-        
-        logger.info(f"DeepFace result: Match={is_match}, Score={match_score}%, Distance={distance}")
+        front_path = _download_storage_path(BUCKET, id_front_path, "_front.jpg")
+        back_path = _download_storage_path(BUCKET, id_back_path, "_back.jpg")
 
-        match_reason = (
-            f"DeepFace ({MODEL_NAME}) confirmed identity match with {match_score}% similarity (distance: {distance})."
-            if is_match else
-            f"Face match failed — similarity {match_score}% (distance: {distance}, threshold: ≤{threshold}). "
-            "Please retake your selfie in good lighting, facing the camera directly."
-        )
-        
-        # 2. EasyOCR text extraction
         logger.info("Running EasyOCR...")
-        ocr_texts = reader.readtext(front_path, detail=0)
-        ocr_result_str = " ".join(ocr_texts)
-        logger.info(f"OCR extracted {len(ocr_texts)} components.")
-        
-        ocr_payload = {
-            "raw_text": ocr_result_str,
-            "components": ocr_texts,
-            "engine": "easyocr"
-        }
-        
-        # Determine overall status
-        status = "complete" if is_match else "failed"
+        front_components = reader.readtext(front_path, detail=0)
+        back_components = reader.readtext(back_path, detail=0)
+        combined_components = [*front_components, *back_components]
+        raw_text = " ".join(combined_components)
+        logger.info(f"OCR extracted {len(combined_components)} components.")
 
-        # Update Session
+        # Extract CNIC
+        cnic_match = re.search(r"\b\d{5}[\-\s]?\d{7}[\-\s]?\d\b", raw_text)
+        cnic_number = _normalize_cnic(cnic_match.group(0)) if cnic_match else None
+
+        # Extract DOB/Expiry heuristically from all dates
+        dates = _extract_dates(raw_text)
+        dob, expiry = _pick_dob_and_expiry(dates)
+
+        ocr_payload = {
+            "engine": "easyocr",
+            "front_components": front_components,
+            "back_components": back_components,
+            "raw_text": raw_text,
+            "extracted": {
+                "cnic_number": cnic_number,
+                "date_of_birth": dob.isoformat() if dob else None,
+                "expiry_date": expiry.isoformat() if expiry else None,
+            },
+        }
+
+        # Validation: CNIC format
+        if not cnic_number:
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "cnic_unreadable",
+                "failure_reason": "Could not read a valid CNIC number. Please retake clearer photos.",
+                "ocr_result": ocr_payload,
+            })
+            return
+
+        # Validation: blocked CNIC
+        blocked = supabase.table("kyc_blocked_cnics").select("cnic_number").eq("cnic_number", cnic_number).limit(1).execute().data
+        if blocked:
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "cnic_blocked",
+                "failure_reason": "This CNIC is blocked. Contact support.",
+                "ocr_result": ocr_payload,
+                "cnic_number": cnic_number,
+            })
+            return
+
+        # Validation: expiry
+        if expiry and expiry < date.today():
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "id_expired",
+                "failure_reason": "This CNIC appears expired.",
+                "ocr_result": ocr_payload,
+                "cnic_number": cnic_number,
+                "date_of_birth": dob.isoformat() if dob else None,
+                "expiry_date": expiry.isoformat() if expiry else None,
+            })
+            return
+
+        # Validation: duplicate CNIC (other user)
+        dup = (
+            supabase.table("kyc_sessions")
+            .select("id,user_id,status")
+            .eq("cnic_number", cnic_number)
+            .neq("user_id", user_id)
+            .in_("status", ["pending_admin_review", "approved"])
+            .limit(1)
+            .execute()
+            .data
+        )
+
+        if dup:
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "duplicate_cnic",
+                "failure_reason": "This CNIC is already in use on another account.",
+                "ocr_result": ocr_payload,
+                "cnic_number": cnic_number,
+                "date_of_birth": dob.isoformat() if dob else None,
+                "expiry_date": expiry.isoformat() if expiry else None,
+            })
+            return
+
+        # Update session to pending admin review
         logger.info(f"Finished processing session: {session_token}. Updating database...")
-        supabase.table("kyc_sessions").update({
-            "status": status,
-            "match": is_match,
-            "match_score": match_score,
-            "match_reason": match_reason,
-            "ocr_result": ocr_payload
-        }).eq("session_token", session_token).execute()
-        
-        logger.info(f"Session {session_token} successfully marked as {status}.")
+        _update_session(session_token, {
+            "status": "pending_admin_review",
+            "ocr_result": ocr_payload,
+            "cnic_number": cnic_number,
+            "date_of_birth": dob.isoformat() if dob else None,
+            "expiry_date": expiry.isoformat() if expiry else None,
+            "failure_code": None,
+            "failure_reason": None,
+        })
+
+        logger.info(f"Session {session_token} successfully marked as pending_admin_review.")
         
     except Exception as e:
         logger.error(f"Error processing session {session_token}: {e}")
         # Mark as failed
-        supabase.table("kyc_sessions").update({
+        _update_session(session_token, {
             "status": "failed",
-            "match_reason": f"System error during processing: {str(e)}"
-        }).eq("session_token", session_token).execute()
+            "failure_code": "system_error",
+            "failure_reason": f"System error during processing: {str(e)}",
+        })
         
     finally:
         # Cleanup temp files
         if front_path and os.path.exists(front_path):
             os.remove(front_path)
-        if selfie_path and os.path.exists(selfie_path):
-            os.remove(selfie_path)
+        if back_path and os.path.exists(back_path):
+            os.remove(back_path)
 
 def main():
     logger.info("Starting background KYC verification worker...")
