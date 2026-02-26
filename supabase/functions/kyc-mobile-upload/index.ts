@@ -27,8 +27,22 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const supabaseUrl  = Deno.env.get('SUPABASE_URL')!;
-  const serviceKey   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabaseUrl  = Deno.env.get('SUPABASE_URL');
+  const serviceKey   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !serviceKey) {
+    console.error('[kyc-mobile-upload] Missing required env vars', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!serviceKey,
+    });
+    return new Response(JSON.stringify({
+      error: 'Server misconfigured: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY (redeploy function secrets)',
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
   });

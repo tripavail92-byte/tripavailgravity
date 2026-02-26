@@ -44,8 +44,30 @@ async function fetchSessionByToken(token: string): Promise<TokenSessionView> {
       },
     },
   )
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error || 'Failed to load session')
+
+  const raw = await res.text()
+  let json: any = null
+  try {
+    json = raw ? JSON.parse(raw) : null
+  } catch {
+    // Non-JSON error bodies happen when the function is missing or misconfigured.
+  }
+
+  if (!res.ok) {
+    const message = json?.error || `Failed to load session (HTTP ${res.status})`
+    const err: any = new Error(message)
+    err.status = res.status
+    err.raw = raw
+    throw err
+  }
+
+  if (!json) {
+    const err: any = new Error('Failed to load session (invalid JSON response)')
+    err.status = 500
+    err.raw = raw
+    throw err
+  }
+
   return json as TokenSessionView
 }
 
@@ -71,9 +93,24 @@ async function uploadKycImage(
     },
     body: form,
   })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error || 'Upload failed')
-  return { path: json.path as string, status: json.status as string }
+
+  const raw = await res.text()
+  let json: any = null
+  try {
+    json = raw ? JSON.parse(raw) : null
+  } catch {
+    // ignore
+  }
+
+  if (!res.ok) {
+    const message = json?.error || `Upload failed (HTTP ${res.status})`
+    const err: any = new Error(message)
+    err.status = res.status
+    err.raw = raw
+    throw err
+  }
+
+  return { path: json?.path as string, status: json?.status as string }
 }
 
 // ── Camera capture helper ─────────────────────────────────────────────────────
@@ -252,8 +289,19 @@ export default function MobileKYCPage() {
         if (cancelled) return
         setSession(s)
         apply(s)
-      } catch {
-        if (!cancelled) setStep('invalid')
+      } catch (err: any) {
+        if (cancelled) return
+
+        // Diagnostics to avoid "Invalid Link" masking real endpoint problems.
+        console.error('[mobile-kyc] failed to load session', {
+          status: err?.status,
+          message: err?.message,
+          raw: err?.raw,
+        })
+
+        if (err?.status === 410) setStep('expired')
+        else if (typeof err?.status === 'number' && err.status >= 500) setStep('error')
+        else setStep('invalid')
       }
     }
 
