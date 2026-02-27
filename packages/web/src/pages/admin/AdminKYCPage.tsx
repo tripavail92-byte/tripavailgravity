@@ -279,6 +279,8 @@ export default function AdminKYCPage() {
   const load = async () => {
     setIsLoading(true)
     try {
+      const now = new Date().toISOString()
+      // Terminal statuses always show; active-only statuses only show if not expired
       const { data, error } = await (supabase
         .from('kyc_sessions' as any)
         .select(
@@ -286,6 +288,10 @@ export default function AdminKYCPage() {
           'id_front_path,id_back_path,' +
           'cnic_number,full_name,father_name,date_of_birth,expiry_date,gender,address,' +
           'failure_code,failure_reason,reviewed_by,reviewed_at,review_notes',
+        )
+        .or(
+          `status.in.(pending_admin_review,approved,rejected,failed),` +
+          `and(status.in.(uploading,pending,processing),expires_at.gt.${now})`,
         )
         .order('created_at', { ascending: false }) as any)
 

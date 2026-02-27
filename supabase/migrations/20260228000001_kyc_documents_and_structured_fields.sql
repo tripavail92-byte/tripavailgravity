@@ -55,12 +55,14 @@ CREATE INDEX IF NOT EXISTS kyc_docs_current_idx  ON public.kyc_documents (operat
 ALTER TABLE public.kyc_documents ENABLE ROW LEVEL SECURITY;
 
 -- Owner can read their own documents
+DROP POLICY IF EXISTS "Owner can read own kyc docs" ON public.kyc_documents;
 CREATE POLICY "Owner can read own kyc docs"
   ON public.kyc_documents FOR SELECT
   TO authenticated
   USING (auth.uid() = operator_id);
 
 -- Admin can do everything
+DROP POLICY IF EXISTS "Admin full access kyc docs" ON public.kyc_documents;
 CREATE POLICY "Admin full access kyc docs"
   ON public.kyc_documents FOR ALL
   TO authenticated
