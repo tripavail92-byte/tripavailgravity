@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, Download, RefreshCw, ShieldCheck, ShieldX } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, Download, RefreshCw, RotateCcw, ShieldCheck, ShieldOff, ShieldX, UserX } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -58,6 +58,7 @@ function statusPill(status: string) {
     rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800 border-red-200' },
     failed: { label: 'Failed', className: 'bg-red-100 text-red-800 border-red-200' },
     expired: { label: 'Expired', className: 'bg-slate-100 text-slate-700' },
+    revoked: { label: 'Revoked', className: 'bg-purple-100 text-purple-800 border-purple-200' },
   }
   const s = cfg[status] ?? { label: status, className: 'bg-slate-100 text-slate-700' }
   return (
@@ -69,16 +70,57 @@ function statusPill(status: string) {
 
 // ─── Single KYC session card ──────────────────────────────────────────────────
 
+type EnforceAction = 'revoke' | 're_review' | 'suspend_account' | 'reinstate_account'
+
+const ENFORCE_ACTIONS: Record<EnforceAction, {
+  label: string
+  icon: React.ElementType
+  className: string
+  placeholder: string
+  availableFor: string[]
+}> = {
+  revoke: {
+    label: 'Revoke KYC',
+    icon: UserX,
+    className: 'border-red-300 text-red-700 hover:bg-red-50',
+    placeholder: 'Reason for revoking (fraud, expired doc, violation…)',
+    availableFor: ['approved'],
+  },
+  re_review: {
+    label: 'Re-open for Review',
+    icon: RotateCcw,
+    className: 'border-amber-300 text-amber-700 hover:bg-amber-50',
+    placeholder: 'Reason for re-opening…',
+    availableFor: ['approved', 'rejected', 'revoked', 'failed'],
+  },
+  suspend_account: {
+    label: 'Suspend Account',
+    icon: ShieldOff,
+    className: 'border-orange-300 text-orange-700 hover:bg-orange-50',
+    placeholder: 'Reason for suspension (min 10 chars)…',
+    availableFor: ['approved', 'rejected', 'revoked', 'failed', 'pending_admin_review'],
+  },
+  reinstate_account: {
+    label: 'Reinstate Account',
+    icon: ShieldCheck,
+    className: 'border-green-300 text-green-700 hover:bg-green-50',
+    placeholder: 'Reason for reinstatement…',
+    availableFor: ['approved', 'rejected', 'revoked', 'failed', 'pending_admin_review'],
+  },
+}
+
 function KycCard({
   row,
   busyId,
   onMark,
   onBlockCnic,
+  onEnforce,
 }: {
   row: KycRow
   busyId: string | null
   onMark: (row: KycRow, s: 'approved' | 'rejected', notes?: string) => void
   onBlockCnic: (row: KycRow) => void
+  onEnforce: (row: KycRow, action: EnforceAction, reason: string) => Promise<void>
 }) {
   const [images, setImages] = useState<{ front?: string; back?: string; loading?: boolean }>({})
   const isBusy = busyId === row.id
@@ -87,6 +129,27 @@ function KycCard({
   // Rejection notes inline state
   const [rejecting, setRejecting] = useState(false)
   const [rejectNotes, setRejectNotes] = useState('')
+
+  // Post-approval enforcement actions
+  const [activeEnforce, setActiveEnforce] = useState<EnforceAction | null>(null)
+  const [enforceReason, setEnforceReason] = useState('')
+  const [enforcing, setEnforcing] = useState(false)
+
+  const availableActions = Object.entries(ENFORCE_ACTIONS)
+    .filter(([, cfg]) => cfg.availableFor.includes(row.status))
+    .map(([key]) => key as EnforceAction)
+
+  const submitEnforce = async (action: EnforceAction) => {
+    if (!enforceReason.trim()) return
+    setEnforcing(true)
+    try {
+      await onEnforce(row, action, enforceReason.trim())
+      setActiveEnforce(null)
+      setEnforceReason('')
+    } catch { /* onEnforce shows toast */ } finally {
+      setEnforcing(false)
+    }
+  }
 
   // Audit trail
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
@@ -164,6 +227,66 @@ function KycCard({
               {row.expires_at ? new Date(row.expires_at).toLocaleString() : '—'}
             </div>
           </div>
+          {/* Post-approval enforcement action buttons */}
+          {availableActions.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mr-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Admin Actions
+              </span>
+              {availableActions.map((action) => {
+                const cfg = ENFORCE_ACTIONS[action]
+                const Icon = cfg.icon
+                const isActive = activeEnforce === action
+                return (
+                  <div key={action} className="flex items-center gap-1.5 flex-wrap">
+                    {!isActive ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={cn('text-xs gap-1', cfg.className)}
+                        onClick={() => { setActiveEnforce(action); setEnforceReason('') }}
+                        disabled={isBusy || enforcing || activeEnforce !== null}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {cfg.label}
+                      </Button>
+                    ) : (
+                      <>
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder={cfg.placeholder}
+                          value={enforceReason}
+                          onChange={(e) => setEnforceReason(e.target.value)}
+                          className="border rounded-md px-2 py-1 text-xs w-64 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && enforceReason.trim()) submitEnforce(action)
+                            if (e.key === 'Escape') { setActiveEnforce(null); setEnforceReason('') }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={cn('text-xs', cfg.className)}
+                          disabled={!enforceReason.trim() || enforcing}
+                          onClick={() => submitEnforce(action)}
+                        >
+                          {enforcing ? 'Working…' : 'Confirm'}
+                        </Button>
+                        <Button
+                          size="sm" variant="ghost" className="text-xs"
+                          onClick={() => { setActiveEnforce(null); setEnforceReason('') }}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {isPending && (
             <div className="flex items-center gap-2 flex-wrap">
               <Button
@@ -393,6 +516,7 @@ export default function AdminKYCPage() {
   const pending   = useMemo(() => rows.filter((r) => r.status === 'pending_admin_review'), [rows])
   const approved  = useMemo(() => rows.filter((r) => r.status === 'approved'), [rows])
   const rejected  = useMemo(() => rows.filter((r) => r.status === 'rejected'), [rows])
+  const revoked   = useMemo(() => rows.filter((r) => r.status === 'revoked'), [rows])
   const inProcess = useMemo(
     () => rows.filter((r) => ['pending', 'uploading', 'processing'].includes(r.status)),
     [rows],
@@ -412,7 +536,7 @@ export default function AdminKYCPage() {
           'failure_code,failure_reason,reviewed_by,reviewed_at,review_notes',
         )
         .or(
-          `status.in.(pending_admin_review,approved,rejected,failed),` +
+          `status.in.(pending_admin_review,approved,rejected,failed,revoked),` +
           `and(status.in.(uploading,pending,processing),expires_at.gt.${now})`,
         )
         .order('created_at', { ascending: false }) as any)
@@ -500,6 +624,30 @@ export default function AdminKYCPage() {
     }
   }
 
+  const enforce = async (row: KycRow, action: EnforceAction, reason: string) => {
+    setBusyId(row.id)
+    try {
+      const { error } = await (supabase.rpc('admin_enforce_kyc_action' as any, {
+        p_session_id: row.id,
+        p_action: action,
+        p_reason: reason,
+      }) as any)
+      if (error) throw error
+      const messages: Record<EnforceAction, string> = {
+        revoke: '🚫 KYC revoked — operator must re-submit',
+        re_review: '🔄 Session re-opened for review',
+        suspend_account: '⚠️ Account suspended',
+        reinstate_account: '✅ Account reinstated',
+      }
+      toast.success(messages[action])
+      await load()
+    } catch (err: any) {
+      toast.error(err?.message || `Failed to ${action}`)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   const renderList = (list: KycRow[], emptyMsg: string) => {
     if (isLoading) return <div className="text-sm text-muted-foreground py-6">Loading…</div>
     if (list.length === 0)
@@ -513,6 +661,7 @@ export default function AdminKYCPage() {
             busyId={busyId}
             onMark={mark}
             onBlockCnic={blockCnic}
+            onEnforce={enforce}
           />
         ))}
       </div>
@@ -536,11 +685,12 @@ export default function AdminKYCPage() {
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {[
           { label: 'Pending Review', value: pending.length,   color: 'text-amber-600' },
           { label: 'Approved',       value: approved.length,  color: 'text-green-600' },
           { label: 'Rejected',       value: rejected.length,  color: 'text-red-600' },
+          { label: 'Revoked',        value: revoked.length,   color: 'text-purple-600' },
           { label: 'In Progress',    value: inProcess.length, color: 'text-blue-600' },
         ].map((s) => (
           <Card key={s.label}>
@@ -565,6 +715,7 @@ export default function AdminKYCPage() {
           </TabsTrigger>
           <TabsTrigger value="approved">Approved</TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          <TabsTrigger value="revoked">Revoked</TabsTrigger>
           <TabsTrigger value="inprocess">In Progress</TabsTrigger>
           <TabsTrigger value="all">All Sessions</TabsTrigger>
         </TabsList>
@@ -578,6 +729,9 @@ export default function AdminKYCPage() {
           </TabsContent>
           <TabsContent value="rejected">
             {renderList(rejected, 'No rejected sessions.')}
+          </TabsContent>
+          <TabsContent value="revoked">
+            {renderList(revoked, 'No revoked sessions.')}
           </TabsContent>
           <TabsContent value="inprocess">
             {renderList(inProcess, 'No sessions currently in progress.')}
