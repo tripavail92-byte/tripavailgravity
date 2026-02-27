@@ -51,31 +51,58 @@ export async function fetchToursForModeration(limit = 100) {
 }
 
 /**
- * Fetch hotel managers for partner management
+ * Fetch hotel managers — uses SECURITY DEFINER RPC to bypass RLS and see
+ * ALL account statuses (active / suspended / deleted).
+ * Falls back to direct table query if the RPC is not yet deployed.
+ *
+ * @param limit max rows to return
+ * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
-export async function fetchHotelManagers(limit = 100) {
-  const { data, error } = await supabase
-    .from('hotel_manager_profiles')
-    .select('user_id, business_name, account_status, created_at')
-    .order('created_at', { ascending: false })
-    .limit(limit)
+export async function fetchHotelManagers(limit = 100, status: string | null = null) {
+  try {
+    const { data, error } = await (supabase as any).rpc('admin_list_hotel_managers', {
+      p_status: status,
+    })
+    if (error) throw error
+    return (data || []).slice(0, limit)
+  } catch {
+    // Fallback: direct query (may miss suspended rows if RLS filters them)
+    const { data, error } = await supabase
+      .from('hotel_manager_profiles')
+      .select('user_id, business_name, account_status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit)
 
-  if (error) throw error
-  return data || []
+    if (error) throw error
+    return data || []
+  }
 }
 
 /**
- * Fetch tour operators for partner management
+ * Fetch tour operators — uses SECURITY DEFINER RPC to bypass RLS and see
+ * ALL account statuses (active / suspended / deleted).
+ *
+ * @param limit max rows to return
+ * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
-export async function fetchTourOperators(limit = 100) {
-  const { data, error } = await supabase
-    .from('tour_operator_profiles')
-    .select('user_id, company_name, account_status, created_at')
-    .order('created_at', { ascending: false })
-    .limit(limit)
+export async function fetchTourOperators(limit = 100, status: string | null = null) {
+  try {
+    const { data, error } = await (supabase as any).rpc('admin_list_tour_operators', {
+      p_status: status,
+    })
+    if (error) throw error
+    return (data || []).slice(0, limit)
+  } catch {
+    // Fallback: direct query (may miss suspended rows if RLS filters them)
+    const { data, error } = await supabase
+      .from('tour_operator_profiles')
+      .select('user_id, company_name, account_status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit)
 
-  if (error) throw error
-  return data || []
+    if (error) throw error
+    return data || []
+  }
 }
 
 /**

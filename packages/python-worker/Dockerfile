@@ -11,12 +11,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Use uv for ultra-fast dependency resolution (fixes pip hanging on ML libraries)
-RUN pip install --no-cache-dir uv
-
 COPY requirements.txt .
 
-RUN uv pip install --system --no-cache -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Run once to pre-download models if possible, or just copy the file
 COPY . .

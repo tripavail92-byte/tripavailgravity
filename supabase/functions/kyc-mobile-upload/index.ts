@@ -4,7 +4,17 @@
  * the service role key, then patches the kyc_sessions row.
  *
  * Simplified flow: CNIC front/back only (no selfie, no face scanning).
- * Storage is private; we store STORAGE PATHS (not public URLs).
+ * Storage is PRIVATE; we store STORAGE PATHS in:
+ *   - kyc_sessions.id_front_path / id_back_path
+ *   - kyc_documents table (versioned per operator)
+ *
+ * Deterministic storage path:
+ *   kyc/tour_operators/{user_id}/cnic/{front|back}_v{n}.{ext}
+ *
+ * After both images uploaded (status → processing):
+ *   - Calls verify-identity edge fn (extract_ocr task)
+ *   - Writes structured OCR fields back to kyc_sessions
+ *   - Moves session to pending_admin_review
  *
  * Body (multipart/form-data OR application/json with base64):
  *   session_token  string   — token from the QR code URL
@@ -22,26 +32,144 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-const BUCKET = 'tour-operator-assets';
+// Primary KYC bucket (deterministic paths per operator)
+const KYC_BUCKET = 'kyc';
+// Legacy fallback bucket (old sessions still stored here)
+const LEGACY_BUCKET = 'tour-operator-assets';
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+/** Parse image bytes + extension from multipart or JSON/base64 body */
+async function parseBody(req: Request): Promise<{ sessionToken: string; field: string; imageBytes: Uint8Array; ext: string }> {
+  const contentType = req.headers.get('content-type') || '';
+  if (contentType.includes('multipart/form-data')) {
+    const form = await req.formData();
+    const sessionToken = (form.get('session_token') as string)?.trim();
+    const field        = (form.get('field') as string)?.trim();
+    const file         = form.get('image') as File;
+    if (!file) throw new Error('image file is required');
+    const imageBytes = new Uint8Array(await file.arrayBuffer());
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    return { sessionToken, field, imageBytes, ext };
+  } else {
+    const body = await req.json();
+    const sessionToken = body.session_token?.trim();
+    const field        = body.field?.trim();
+    const b64          = (body.image as string).replace(/^data:[^;]+;base64,/, '');
+    const imageBytes   = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    return { sessionToken, field, imageBytes, ext: 'jpg' };
+  }
+}
+
+/** Determine the next version number for a document type for a given operator */
+async function nextVersion(
+  admin: ReturnType<typeof createClient>,
+  operatorId: string,
+  docType: string,
+): Promise<number> {
+  const { data, error } = await admin
+    .from('kyc_documents')
+    .select('version')
+    .eq('operator_id', operatorId)
+    .eq('document_type', docType)
+    .order('version', { ascending: false })
+    .limit(1);
+
+  if (error || !data || data.length === 0) return 1;
+  return (data[0].version as number) + 1;
+}
+
+/** Build the deterministic storage path for a KYC document */
+function buildStoragePath(
+  operatorId: string,
+  docType: 'cnic_front' | 'cnic_back',
+  version: number,
+  ext: string,
+): string {
+  // e.g. kyc/tour_operators/{uuid}/cnic/front_v2.jpg
+  const dir  = docType === 'cnic_front' ? 'front' : 'back';
+  return `kyc/tour_operators/${operatorId}/cnic/${dir}_v${version}.${ext}`;
+}
+
+/** Generate a short-lived signed URL for a private storage path */
+async function signPath(
+  admin: ReturnType<typeof createClient>,
+  bucket: string,
+  path: string,
+): Promise<string | null> {
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, 300);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
+}
+
+/**
+ * Run GPT OCR (via verify-identity function URL) and return structured fields.
+ * We generate a fresh signed URL valid for 5 min so the worker can fetch the image.
+ */
+async function runOcr(
+  admin: ReturnType<typeof createClient>,
+  supabaseUrl: string,
+  operatorId: string,
+  frontPath: string,
+): Promise<Record<string, unknown> | null> {
+  try {
+    // Generate signed URL for the front image
+    const signedUrl = await signPath(admin, KYC_BUCKET, frontPath) ||
+                      await signPath(admin, LEGACY_BUCKET, frontPath);
+    if (!signedUrl) {
+      console.warn('[kyc-mobile-upload] Could not sign front image for OCR');
+      return null;
+    }
+
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const fnUrl = `${supabaseUrl}/functions/v1/verify-identity`;
+
+    const res = await fetch(fnUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify({
+        idCardUrl: signedUrl,
+        userId: operatorId,
+        role: 'tour_operator',
+        taskType: 'extract_ocr',
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn('[kyc-mobile-upload] OCR function returned', res.status, errText);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err: any) {
+    console.warn('[kyc-mobile-upload] OCR call failed:', err.message);
+    return null;
+  }
+}
+
+// ── Main handler ───────────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  const supabaseUrl  = Deno.env.get('SUPABASE_URL');
-  const serviceKey   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !serviceKey) {
     console.error('[kyc-mobile-upload] Missing required env vars', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!serviceKey,
+      hasSupabaseUrl: !!supabaseUrl, hasServiceKey: !!serviceKey,
     });
     return new Response(JSON.stringify({
-      error: 'Server misconfigured: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY (redeploy function secrets)',
+      error: 'Server misconfigured: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY',
     }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
@@ -50,31 +178,8 @@ serve(async (req) => {
   });
 
   try {
-    const contentType = req.headers.get('content-type') || '';
-    let sessionToken: string;
-    let field: string;
-    let imageBytes: Uint8Array;
-    let ext = 'jpg';
+    const { sessionToken, field, imageBytes, ext } = await parseBody(req);
 
-    if (contentType.includes('multipart/form-data')) {
-      // Multipart upload (preferred — avoids base64 overhead)
-      const form = await req.formData();
-      sessionToken = (form.get('session_token') as string)?.trim();
-      field        = (form.get('field') as string)?.trim();
-      const file   = form.get('image') as File;
-      if (!file) throw new Error('image file is required');
-      imageBytes   = new Uint8Array(await file.arrayBuffer());
-      ext = file.name.split('.').pop() || 'jpg';
-    } else {
-      // JSON with base64 image
-      const body = await req.json();
-      sessionToken = body.session_token?.trim();
-      field        = body.field?.trim();
-      const b64    = (body.image as string).replace(/^data:[^;]+;base64,/, '');
-      imageBytes   = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    }
-
-    // Validate inputs
     const validFields = ['id_front', 'id_back'];
     if (!sessionToken || !field || !validFields.includes(field)) {
       return new Response(JSON.stringify({ error: 'Invalid session_token or field' }), {
@@ -82,7 +187,7 @@ serve(async (req) => {
       });
     }
 
-    // Load + validate session
+    // ── Load and validate session ─────────────────────────────────────────────
     const { data: session, error: sessErr } = await admin
       .from('kyc_sessions')
       .select('id, user_id, status, expires_at, id_front_path, id_back_path')
@@ -90,7 +195,7 @@ serve(async (req) => {
       .single();
 
     if (sessErr || !session) {
-      return new Response(JSON.stringify({ error: 'Invalid or not found session' }), {
+      return new Response(JSON.stringify({ error: 'Session not found' }), {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -99,50 +204,125 @@ serve(async (req) => {
         status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
     if (['approved', 'rejected'].includes(session.status)) {
       return new Response(JSON.stringify({ error: 'Session already reviewed' }), {
         status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Upload to Storage
-    const storagePath = `verification/kyc-sessions/${session.id}/${field}.${ext}`;
+    const operatorId = session.user_id as string;
+    const docType: 'cnic_front' | 'cnic_back' = field === 'id_front' ? 'cnic_front' : 'cnic_back';
+
+    // ── Determine version (enterprise: never overwrite originals) ─────────────
+    const version = await nextVersion(admin, operatorId, docType);
+
+    // ── Deterministic storage path ───────────────────────────────────────────
+    const storagePath = buildStoragePath(operatorId, docType, version, ext);
+
+    // Mark previous docs for this type as not current
+    await admin
+      .from('kyc_documents')
+      .update({ is_current: false })
+      .eq('operator_id', operatorId)
+      .eq('document_type', docType);
+
+    // ── Upload to KYC bucket ──────────────────────────────────────────────────
+    const mimeType = ext === 'pdf'
+      ? 'application/pdf'
+      : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+
     const { error: uploadErr } = await admin.storage
-      .from(BUCKET)
-      .upload(storagePath, imageBytes, {
-        contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
-        upsert: true,
-      });
+      .from(KYC_BUCKET)
+      .upload(storagePath, imageBytes, { contentType: mimeType, upsert: false });
 
     if (uploadErr) throw new Error(`Storage upload failed: ${uploadErr.message}`);
 
-    // Patch the session row (store private path)
-    const pathField = field === 'id_front' ? 'id_front_path' : 'id_back_path';
-    const patch: Record<string, unknown> = {
-      [pathField]: storagePath,
-      status: 'uploading',
-      failure_code: null,
+    // ── Insert versioned record in kyc_documents ──────────────────────────────
+    const { error: docInsertErr } = await admin
+      .from('kyc_documents')
+      .insert({
+        operator_id:    operatorId,
+        document_type:  docType,
+        file_path:      storagePath,
+        version,
+        is_current:     true,
+        status:         'pending',
+        kyc_session_id: session.id,
+      });
+
+    if (docInsertErr) {
+      console.warn('[kyc-mobile-upload] kyc_documents insert failed:', docInsertErr.message);
+      // Non-fatal — continue with session update
+    }
+
+    // ── Patch the session row ─────────────────────────────────────────────────
+    const pathField  = field === 'id_front' ? 'id_front_path' : 'id_back_path';
+    const willHaveFront = (pathField === 'id_front_path') || !!session.id_front_path;
+    const willHaveBack  = (pathField === 'id_back_path')  || !!session.id_back_path;
+    const bothUploaded  = willHaveFront && willHaveBack;
+
+    const sessionPatch: Record<string, unknown> = {
+      [pathField]:   storagePath,
+      status:        bothUploaded ? 'processing' : 'uploading',
+      failure_code:  null,
       failure_reason: null,
     };
 
-    // If this upload completes the set, move to processing for the OCR worker
-    const willHaveFront = (pathField === 'id_front_path') || !!session.id_front_path;
-    const willHaveBack = (pathField === 'id_back_path') || !!session.id_back_path;
-    if (willHaveFront && willHaveBack) {
-      patch.status = 'processing';
-    }
-
     const { error: updErr } = await admin
       .from('kyc_sessions')
-      .update(patch)
-      .eq('session_token', sessionToken);
+      .update(sessionPatch)
+      .eq('id', session.id);
 
     if (updErr) throw new Error(`Failed to update session: ${updErr.message}`);
 
-    return new Response(JSON.stringify({ path: storagePath, status: patch.status }), {
-      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // ── Auto-OCR when both images are available ───────────────────────────────
+    if (bothUploaded) {
+      const frontPath = pathField === 'id_front_path'
+        ? storagePath
+        : (session.id_front_path as string);
+
+      const ocr = await runOcr(admin, supabaseUrl, operatorId, frontPath);
+
+      if (ocr) {
+        const ocrPatch: Record<string, unknown> = {
+          status:        'pending_admin_review',
+          cnic_number:   (ocr.idNumber   ?? null) as string | null,
+          full_name:     (ocr.fullName   ?? null) as string | null,
+          father_name:   (ocr.fatherName ?? null) as string | null,
+          date_of_birth: (ocr.dateOfBirth ?? null) as string | null,
+          expiry_date:   (ocr.expiryDate  ?? null) as string | null,
+          gender:        (ocr.gender     ?? null) as string | null,
+          address:       (ocr.address    ?? null) as string | null,
+        };
+
+        const { error: ocrUpdErr } = await admin
+          .from('kyc_sessions')
+          .update(ocrPatch)
+          .eq('id', session.id);
+
+        if (ocrUpdErr) {
+          console.warn('[kyc-mobile-upload] OCR patch failed:', ocrUpdErr.message);
+        } else {
+          console.log('[kyc-mobile-upload] OCR extracted and stored', {
+            sessionId: session.id, cnic: ocr.idNumber, name: ocr.fullName,
+          });
+          sessionPatch.status = 'pending_admin_review';
+        }
+      } else {
+        // OCR failed — still move to pending_admin_review for manual review
+        await admin
+          .from('kyc_sessions')
+          .update({ status: 'pending_admin_review', failure_code: 'ocr_failed', failure_reason: 'Automatic OCR extraction failed — manual review required' })
+          .eq('id', session.id);
+
+        sessionPatch.status = 'pending_admin_review';
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ path: storagePath, status: sessionPatch.status, version }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
 
   } catch (err: any) {
     console.error('[kyc-mobile-upload]', err.message);

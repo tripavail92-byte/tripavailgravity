@@ -463,9 +463,9 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
 
 type StatusAction = 'active' | 'suspended' | 'deleted'
 const STATUS_OPTIONS = [
-  { value: 'active', label: '✅ Active', icon: ShieldCheck },
-  { value: 'suspended', label: '⚠️ Suspend', icon: ShieldOff },
-  { value: 'deleted', label: '🗑️ Soft-Delete', icon: Trash2 },
+  { value: 'active',    label: '✅ Reinstate (Active)', icon: ShieldCheck },
+  { value: 'suspended', label: '⚠️ Suspend',            icon: ShieldOff },
+  { value: 'deleted',   label: '🗑️ Soft-Delete',        icon: Trash2 },
 ] as const
 
 function AllPartnersTab() {
@@ -475,6 +475,8 @@ function AllPartnersTab() {
   const [usersById, setUsersById] = useState<Record<string, ProfileIdentity>>({})
   const [verificationByUserId, setVerificationByUserId] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  // Status filter: null = all
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
 
   // Dialog State
   const [actionDialog, setActionDialog] = useState<{
@@ -488,10 +490,10 @@ function AllPartnersTab() {
   const [reason, setReason] = useState('')
   const [isBusy, setIsBusy] = useState(false)
 
-  const load = async () => {
+  const load = async (filter: string | null = statusFilter) => {
     setLoading(true)
     try {
-      const [hmData, opData] = await Promise.all([fetchHotelManagers(100), fetchTourOperators(100)])
+      const [hmData, opData] = await Promise.all([fetchHotelManagers(100, filter), fetchTourOperators(100, filter)])
       const hmRows = (hmData as PartnerRow[]).map((r) => ({
         ...r,
         roleType: 'hotel_manager',
@@ -539,8 +541,8 @@ function AllPartnersTab() {
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    load(statusFilter)
+  }, [statusFilter])
 
   const handleActionConfirm = async () => {
     if (!actionDialog) return
@@ -613,6 +615,46 @@ function AllPartnersTab() {
 
   return (
     <>
+      {/* Status filter tabs */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-1">
+          Filter:
+        </span>
+        {([
+          { value: null,        label: 'All' },
+          { value: 'active',    label: '✅ Active' },
+          { value: 'suspended', label: '⚠️ Suspended' },
+          { value: 'deleted',   label: '🗑️ Deleted' },
+        ] as { value: string | null; label: string }[]).map((opt) => (
+          <button
+            key={String(opt.value)}
+            onClick={() => setStatusFilter(opt.value)}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              statusFilter === opt.value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-border hover:border-primary hover:text-foreground'
+            }`}
+          >
+            {opt.label}
+            {loading ? '' : (() => {
+              if (opt.value === null) return ` (${partners.length})`
+              // Count from currently loaded list only when showing 'all'
+              return ''
+            })()}
+          </button>
+        ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="ml-auto gap-1.5 text-xs"
+          onClick={() => load(statusFilter)}
+          disabled={loading}
+        >
+          <RefreshCw className="h-3 w-3" />
+          Refresh
+        </Button>
+      </div>
+
       {/* Governance Matrix legend */}
       <Card className="mb-6 bg-muted/40 border-border">
         <CardContent className="p-4">

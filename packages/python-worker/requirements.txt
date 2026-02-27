@@ -1,3 +1,12 @@
+--index-url https://pypi.org/simple
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 supabase==2.3.4
 easyocr==1.7.1
 python-dotenv==1.0.1
+requests==2.32.3
+httpx==0.25.2
+gotrue==2.5.4
+numpy==1.26.4
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu

@@ -3,7 +3,7 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile",
-    "watchPatterns": ["packages/python-worker/**"]
+    "watchPatterns": ["**/*"]
   },
   "deploy": {
     "startCommand": "python -u worker.py",
