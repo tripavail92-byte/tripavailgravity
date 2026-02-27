@@ -14,7 +14,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { verifySupabaseJwtFromRequest } from "../_shared/supabase_jwt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,7 +53,21 @@ serve(async (req) => {
   });
 
   try {
-    const { userId } = await verifySupabaseJwtFromRequest(req, supabaseUrl);
+    // Verify caller identity using the service-role admin client (no external JWT lib needed).
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.replace(/^bearer\s+/i, "").trim();
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Missing auth token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = user.id;
 
     const body         = await req.json();
     const sessionId    = (body.session_id    || "").trim();
