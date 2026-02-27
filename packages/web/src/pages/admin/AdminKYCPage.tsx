@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Download, RefreshCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, RefreshCw, ShieldCheck, ShieldX } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,17 @@ type KycRow = {
   reviewed_by: string | null
   reviewed_at: string | null
   review_notes: string | null
+}
+
+type AuditEntry = {
+  id: string
+  session_id: string
+  user_id: string
+  old_status: string | null
+  new_status: string
+  changed_by: string | null
+  notes: string | null
+  created_at: string
 }
 
 // ─── Status pill ─────────────────────────────────────────────────────────────
@@ -66,12 +77,38 @@ function KycCard({
 }: {
   row: KycRow
   busyId: string | null
-  onMark: (row: KycRow, s: 'approved' | 'rejected') => void
+  onMark: (row: KycRow, s: 'approved' | 'rejected', notes?: string) => void
   onBlockCnic: (row: KycRow) => void
 }) {
   const [images, setImages] = useState<{ front?: string; back?: string; loading?: boolean }>({})
   const isBusy = busyId === row.id
   const isPending = row.status === 'pending_admin_review'
+
+  // Rejection notes inline state
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectNotes, setRejectNotes] = useState('')
+
+  // Audit trail
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
+  const [showAudit, setShowAudit] = useState(false)
+  const [auditLoading, setAuditLoading] = useState(false)
+
+  const toggleAudit = async () => {
+    if (showAudit) { setShowAudit(false); return }
+    setShowAudit(true)
+    if (auditLog.length > 0) return
+    setAuditLoading(true)
+    try {
+      const { data } = await (supabase
+        .from('kyc_audit_log' as any)
+        .select('id,old_status,new_status,changed_by,notes,created_at')
+        .eq('session_id', row.id)
+        .order('created_at', { ascending: true }) as any)
+      setAuditLog((data ?? []) as AuditEntry[])
+    } catch { /* non-fatal */ } finally {
+      setAuditLoading(false)
+    }
+  }
 
   const sign = async (field: 'id_front' | 'id_back') => {
     const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
@@ -132,19 +169,63 @@ function KycCard({
               <Button
                 size="sm"
                 onClick={() => onMark(row, 'approved')}
-                disabled={isBusy}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={isBusy || rejecting}
+                className="bg-green-600 hover:bg-green-700 text-white gap-1"
               >
+                <ShieldCheck className="h-3.5 w-3.5" />
                 Approve
               </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onMark(row, 'rejected')}
-                disabled={isBusy}
-              >
-                Reject
-              </Button>
+              {!rejecting ? (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setRejecting(true)}
+                  disabled={isBusy}
+                  className="gap-1"
+                >
+                  <ShieldX className="h-3.5 w-3.5" />
+                  Reject
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Rejection reason (required)"
+                    value={rejectNotes}
+                    onChange={(e) => setRejectNotes(e.target.value)}
+                    className="border rounded-md px-2 py-1 text-xs w-52 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && rejectNotes.trim()) {
+                        onMark(row, 'rejected', rejectNotes.trim())
+                        setRejecting(false)
+                        setRejectNotes('')
+                      }
+                      if (e.key === 'Escape') { setRejecting(false); setRejectNotes('') }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={!rejectNotes.trim() || isBusy}
+                    onClick={() => {
+                      onMark(row, 'rejected', rejectNotes.trim())
+                      setRejecting(false)
+                      setRejectNotes('')
+                    }}
+                  >
+                    Confirm
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs"
+                    onClick={() => { setRejecting(false); setRejectNotes('') }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -256,6 +337,47 @@ function KycCard({
             </div>
           </div>
         )}
+
+        {/* Audit trail */}
+        <div className="pt-1 border-t border-border/50">
+          <button
+            onClick={toggleAudit}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showAudit ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            Audit Trail
+          </button>
+          {showAudit && (
+            <div className="mt-2 space-y-1.5">
+              {auditLoading && (
+                <p className="text-xs text-muted-foreground">Loading…</p>
+              )}
+              {!auditLoading && auditLog.length === 0 && (
+                <p className="text-xs text-muted-foreground">No audit entries yet.</p>
+              )}
+              {auditLog.map((entry) => (
+                <div key={entry.id} className="flex items-start gap-2 text-xs">
+                  <span className="text-muted-foreground shrink-0 w-32">
+                    {new Date(entry.created_at).toLocaleString()}
+                  </span>
+                  <span className="text-muted-foreground shrink-0">
+                    {entry.old_status ?? '—'} →
+                  </span>
+                  <span className={cn(
+                    'font-semibold shrink-0',
+                    entry.new_status === 'approved' ? 'text-green-700' :
+                    entry.new_status === 'rejected' ? 'text-red-700' : 'text-foreground'
+                  )}>
+                    {entry.new_status}
+                  </span>
+                  {entry.notes && (
+                    <span className="text-muted-foreground truncate">· {entry.notes}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -308,6 +430,10 @@ export default function AdminKYCPage() {
   useEffect(() => { load() }, [])
 
   const mark = async (row: KycRow, nextStatus: 'approved' | 'rejected', notes?: string) => {
+    if (nextStatus === 'rejected' && !notes?.trim()) {
+      toast.error('A rejection reason is required')
+      return
+    }
     setBusyId(row.id)
     try {
       const { data: authData } = await supabase.auth.getUser()
@@ -318,11 +444,16 @@ export default function AdminKYCPage() {
           status: nextStatus,
           reviewed_by: reviewerId,
           reviewed_at: new Date().toISOString(),
-          review_notes: notes ?? null,
+          review_notes: notes?.trim() ?? null,
         })
         .eq('id', row.id) as any)
       if (error) throw error
-      toast.success(nextStatus === 'approved' ? '✅ KYC approved' : '❌ KYC rejected')
+      // DB trigger handles: audit log + profile promotion + user_roles update
+      toast.success(
+        nextStatus === 'approved'
+          ? '✅ KYC approved — operator profile updated'
+          : `❌ KYC rejected — reason logged`,
+      )
       await load()
     } catch (err: any) {
       toast.error(err?.message || 'Failed to update status')
