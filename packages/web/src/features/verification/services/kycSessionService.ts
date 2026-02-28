@@ -12,6 +12,7 @@ export interface KycSession {
     | 'pending_admin_review'
     | 'approved'
     | 'rejected'
+    | 'revoked'
     | 'failed'
     | 'expired'
 
