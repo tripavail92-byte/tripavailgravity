@@ -265,7 +265,8 @@ export default function TourOperatorSetupPage() {
 
                     <Button
                       onClick={handleNext}
-                      disabled={isSaving}
+                      disabled={isSaving || (currentStep === 1 && !(setupData as any).phoneVerified)}
+                      title={(currentStep === 1 && !(setupData as any).phoneVerified) ? 'Verify your phone number to continue' : undefined}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20 flex-1 max-w-[220px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
                     >
                       {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

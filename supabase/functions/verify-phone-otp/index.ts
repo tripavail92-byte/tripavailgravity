@@ -68,6 +68,21 @@ serve(async (req) => {
       throw new Error(`Failed to delete used OTP: ${deleteError.message}`)
     }
 
+    // ── Mark phone_verified on profiles ──────────────────────────────────────
+    // Extract the calling user from their JWT (anon key client respects RLS)
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const authHeader = req.headers.get('Authorization') ?? ''
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user: callerUser } } = await anonClient.auth.getUser()
+    if (callerUser?.id) {
+      await supabase
+        .from('profiles')
+        .update({ phone: phone, phone_verified: true })
+        .eq('id', callerUser.id)
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
