@@ -1,17 +1,17 @@
 // ── send-whatsapp-otp ─────────────────────────────────────────────────────────
 // Generates a 6-digit OTP, stores it in phone_otps (10-min TTL), and delivers
-// it via WhatsApp AUTHENTICATION message template (required for business-initiated
-// messages — free-form text is silently dropped without a prior 24h window).
+// it via a WhatsApp *template* message (required for business-initiated messages —
+// free-form text is often silently dropped without a prior 24h user-initiated window).
 //
 // Required Supabase secrets:
 //   WHATSAPP_ACCESS_TOKEN      — Meta system user token (whatsapp_business_messaging scope)
 //   WHATSAPP_PHONE_NUMBER_ID   — Business phone number ID (from Meta dashboard)
 //
-// Template required (create once in Meta Business Manager → auto-approved):
-//   name: tripavail_otp  |  category: AUTHENTICATION  |  lang: en_US
-//   body: add_security_recommendation: true
-//   footer: code_expiration_minutes: 10
-//   button: OTP / COPY_CODE / "Copy Code"
+// Template required (create once in Meta Business Manager):
+//   name: tripavail_otp  |  category: UTILITY  |  lang: en_US
+//   body text example:
+//     "Your TripAvail verification code is {{1}}. This code expires in 10 minutes."
+//   (one variable: {{1}} = OTP)
 //
 // POST body: { phone: "+923001234567" }
 // Response:  { success: true, message: "OTP sent via WhatsApp" }
@@ -96,10 +96,8 @@ serve(async (req) => {
 
     const waNumber = toWhatsAppNumber(phone)
 
-    // ── Send via AUTHENTICATION template (required for business-initiated msgs) ──
-    // Free-form text is silently dropped by WhatsApp when the business initiates
-    // contact without a prior 24h customer-service window.
-    // AUTHENTICATION templates are auto-approved by Meta and bypass this restriction.
+    // ── Send via template (required for business-initiated msgs) ─────────────
+    // Note: Template must exist + be APPROVED in the WABA.
     const waRes = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
       {
@@ -118,13 +116,6 @@ serve(async (req) => {
             components: [
               {
                 type: 'body',
-                parameters: [{ type: 'text', text: otp }],
-              },
-              {
-                // COPY_CODE button parameter — pre-fills the OTP into the copy button
-                type: 'button',
-                sub_type: 'url',
-                index: '0',
                 parameters: [{ type: 'text', text: otp }],
               },
             ],
