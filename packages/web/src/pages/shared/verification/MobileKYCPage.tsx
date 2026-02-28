@@ -1,6 +1,6 @@
 import { AlertCircle, Camera, Check, CreditCard, FileText, Loader2, Shield } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useSearchParams } from 'react-router-dom'
 
@@ -113,6 +113,30 @@ async function uploadKycImage(
   return { path: json?.path as string, status: json?.status as string }
 }
 
+// ── Document detection state ──────────────────────────────────────────────────
+type DetectionState = 'idle' | 'bad_dark' | 'bad_bright' | 'blurry' | 'ready' | 'locked'
+
+const DETECTION_LABELS: Record<DetectionState, string> = {
+  idle:        'Position card in frame',
+  bad_dark:    'Too dark — find better lighting',
+  bad_bright:  'Too bright — reduce glare',
+  blurry:      'Hold still — card is blurry',
+  ready:       'Looking good — hold steady…',
+  locked:      '✓ Capturing automatically…',
+}
+
+const cornerBase = 'absolute w-8 h-8 transition-colors duration-200'
+function getGuideColors(state: DetectionState) {
+  if (state === 'locked')
+    return { outer: 'border-green-500/80', corner: 'border-green-400' }
+  if (state === 'ready')
+    return { outer: 'border-yellow-400/80', corner: 'border-yellow-400' }
+  if (state === 'idle')
+    return { outer: 'border-white/40', corner: 'border-white' }
+  // bad_dark | bad_bright | blurry
+  return { outer: 'border-red-500/80', corner: 'border-red-500' }
+}
+
 // ── Camera capture helper ─────────────────────────────────────────────────────
 function CameraCapture({
   label,
@@ -127,11 +151,21 @@ function CameraCapture({
   disabled?: boolean
   facingMode?: 'environment' | 'user'
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const videoRef       = useRef<HTMLVideoElement>(null)
+  const canvasRef      = useRef<HTMLCanvasElement>(null)
+  const offscreenRef   = useRef<HTMLCanvasElement | null>(null)
+  const rafRef         = useRef<number | null>(null)
+  const lastTickRef    = useRef<number>(0)
+  const stableRef      = useRef<number>(0)
+  const lockedAtRef    = useRef<number | null>(null)
+  const capturedRef    = useRef<boolean>(false)
+  const captureRef     = useRef<() => void>(() => {})
+
   const [streaming, setStreaming] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [detection, setDetection] = useState<DetectionState>('idle')
 
+  // ── Camera stream ─────────────────────────────────────────────────────────
   useEffect(() => {
     let stream: MediaStream | null = null
     navigator.mediaDevices
@@ -141,6 +175,11 @@ function CameraCapture({
         if (videoRef.current) {
           videoRef.current.srcObject = s
           videoRef.current.play()
+          offscreenRef.current = document.createElement('canvas')
+          capturedRef.current  = false
+          stableRef.current    = 0
+          lockedAtRef.current  = null
+          setDetection('idle')
           setStreaming(true)
         }
       })
@@ -149,7 +188,8 @@ function CameraCapture({
     return () => { stream?.getTracks().forEach((t) => t.stop()) }
   }, [facingMode])
 
-  const capture = () => {
+  // ── Capture helper (forward ref so rAF closure always has latest) ─────────
+  const capture = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return
     const video  = videoRef.current
     const canvas = canvasRef.current
@@ -160,7 +200,106 @@ function CameraCapture({
       (blob) => { if (blob) onCapture(new File([blob], `${label}.jpg`, { type: 'image/jpeg' })) },
       'image/jpeg', 0.92,
     )
-  }
+  }, [label, onCapture])
+
+  useEffect(() => { captureRef.current = capture }, [capture])
+
+  // ── Laplacian-variance + brightness analysis loop (~15 fps) ───────────────
+  useEffect(() => {
+    if (!streaming) return
+
+    const FRAME_INTERVAL_MS = 66          // ~15 fps analysis
+    const STABLE_FRAMES_NEEDED = 10       // ~660 ms of consecutive good frames
+    const AUTO_CAPTURE_DELAY_MS = 1500    // ms after lock before auto-capture
+    const SHARPNESS_THRESHOLD = 150       // Laplacian variance; empirically tuned for mobile CNIC
+    const BRIGHTNESS_LOW = 40
+    const BRIGHTNESS_HIGH = 220
+
+    const analyzeFrame = (): DetectionState => {
+      const video = videoRef.current
+      const offscreen = offscreenRef.current
+      if (!video || !offscreen || video.readyState < 2) return 'idle'
+
+      // Downscale to 320×240 for fast processing
+      const W = 320, H = 240
+      offscreen.width  = W
+      offscreen.height = H
+      const ctx = offscreen.getContext('2d', { willReadFrequently: true })!
+      ctx.drawImage(video, 0, 0, W, H)
+
+      // ── Brightness check on center 60 % ROI ─────────────────────────────
+      const rx = Math.floor(W * 0.2), ry = Math.floor(H * 0.2)
+      const rw = Math.floor(W * 0.6), rh = Math.floor(H * 0.6)
+      const roi = ctx.getImageData(rx, ry, rw, rh).data
+      let brightnessSum = 0
+      const pixelCount = roi.length / 4
+      for (let i = 0; i < roi.length; i += 4) {
+        brightnessSum += 0.299 * roi[i] + 0.587 * roi[i + 1] + 0.114 * roi[i + 2]
+      }
+      const brightness = brightnessSum / pixelCount
+      if (brightness < BRIGHTNESS_LOW)  return 'bad_dark'
+      if (brightness > BRIGHTNESS_HIGH) return 'bad_bright'
+
+      // ── Laplacian variance on full downscaled frame ──────────────────────
+      // Kernel: [ 0  1  0 ]   →  L(x,y) = -4·c + N + S + E + W
+      //         [ 1 -4  1 ]
+      //         [ 0  1  0 ]
+      const full = ctx.getImageData(0, 0, W, H).data
+      const gray = new Float32Array(W * H)
+      for (let i = 0; i < W * H; i++) {
+        gray[i] = 0.299 * full[i * 4] + 0.587 * full[i * 4 + 1] + 0.114 * full[i * 4 + 2]
+      }
+      let lapSumSq = 0, lapCount = 0
+      for (let y = 1; y < H - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+          const c   = gray[y * W + x]
+          const lap = -4 * c
+            + gray[(y - 1) * W + x]
+            + gray[(y + 1) * W + x]
+            + gray[y * W + (x - 1)]
+            + gray[y * W + (x + 1)]
+          lapSumSq += lap * lap
+          lapCount++
+        }
+      }
+      const sharpness = lapSumSq / lapCount
+
+      if (sharpness < SHARPNESS_THRESHOLD) return 'blurry'
+      return 'ready'
+    }
+
+    const loop = (timestamp: number) => {
+      if (timestamp - lastTickRef.current >= FRAME_INTERVAL_MS) {
+        lastTickRef.current = timestamp
+        const state = analyzeFrame()
+
+        if (state === 'ready') {
+          stableRef.current++
+          if (stableRef.current >= STABLE_FRAMES_NEEDED) {
+            if (lockedAtRef.current === null) lockedAtRef.current = Date.now()
+            if (!capturedRef.current && Date.now() - lockedAtRef.current >= AUTO_CAPTURE_DELAY_MS) {
+              capturedRef.current = true
+              // Fire capture outside of rAF to avoid canvas race
+              Promise.resolve().then(() => captureRef.current())
+            }
+            setDetection('locked')
+          } else {
+            setDetection('ready')
+          }
+        } else {
+          stableRef.current  = 0
+          lockedAtRef.current = null
+          setDetection(state)
+        }
+      }
+      rafRef.current = requestAnimationFrame(loop)
+    }
+
+    rafRef.current = requestAnimationFrame(loop)
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
+  }, [streaming])
+
+  const { outer, corner } = getGuideColors(detection)
 
   return (
     <div className="space-y-4">
@@ -176,13 +315,34 @@ function CameraCapture({
         ) : (
           <>
             <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-            {/* Corner guides */}
-            <div className="absolute inset-4 border-2 border-white/40 rounded-xl pointer-events-none">
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-xl" />
-              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-xl" />
-              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-xl" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl" />
+
+            {/* ── Card guide frame + corner brackets ─────────────────────────── */}
+            <div className={cn('absolute inset-4 border-2 rounded-xl pointer-events-none transition-colors duration-200', outer)}>
+              {/* Top-left */}
+              <div className={cn(cornerBase, 'top-0 left-0 border-t-4 border-l-4 rounded-tl-xl', corner)} />
+              {/* Top-right */}
+              <div className={cn(cornerBase, 'top-0 right-0 border-t-4 border-r-4 rounded-tr-xl', corner)} />
+              {/* Bottom-left */}
+              <div className={cn(cornerBase, 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-xl', corner)} />
+              {/* Bottom-right */}
+              <div className={cn(cornerBase, 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-xl', corner)} />
+
+              {/* ── Status pill ──────────────────────────────────────────────── */}
+              {streaming && (
+                <div className={cn(
+                  'absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200',
+                  detection === 'locked'     ? 'bg-green-500 text-white' :
+                  detection === 'ready'      ? 'bg-yellow-400 text-black' :
+                  detection === 'idle'       ? 'bg-white/20 text-white' :
+                                               'bg-red-500 text-white',
+                )}>
+                  {detection === 'locked' && <span className="mr-1">✓</span>}
+                  {DETECTION_LABELS[detection]}
+                </div>
+              )}
             </div>
+
+            {/* Spinner while camera warms up */}
             {!streaming && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/60">
                 <Loader2 className="w-8 h-8 animate-spin text-white" />
@@ -191,8 +351,11 @@ function CameraCapture({
           </>
         )}
       </div>
+
       <canvas ref={canvasRef} className="hidden" />
+
       <p className="text-center text-sm text-muted-foreground font-medium px-4">{hint}</p>
+
       <Button
         className="w-full h-14 rounded-2xl font-black uppercase tracking-widest bg-primary text-primary-foreground shadow-lg text-base"
         onClick={capture}
@@ -204,8 +367,9 @@ function CameraCapture({
           <><Camera className="mr-2 w-5 h-5" /> Capture</>
         )}
       </Button>
-      {/* File fallback */}
-      {!streaming && !disabled && (
+
+      {/* File fallback — always shown so users can bypass camera issues */}
+      {!disabled && (
         <label className="block text-center">
           <span className="text-xs font-bold text-primary uppercase tracking-widest cursor-pointer underline underline-offset-4">
             Choose from gallery
