@@ -1,10 +1,17 @@
 // ── send-whatsapp-otp ─────────────────────────────────────────────────────────
 // Generates a 6-digit OTP, stores it in phone_otps (10-min TTL), and delivers
-// it to the user via WhatsApp Business API message.
+// it via WhatsApp AUTHENTICATION message template (required for business-initiated
+// messages — free-form text is silently dropped without a prior 24h window).
 //
 // Required Supabase secrets:
-//   WHATSAPP_ACCESS_TOKEN      — Meta permanent system user token
+//   WHATSAPP_ACCESS_TOKEN      — Meta system user token (whatsapp_business_messaging scope)
 //   WHATSAPP_PHONE_NUMBER_ID   — Business phone number ID (from Meta dashboard)
+//
+// Template required (create once in Meta Business Manager → auto-approved):
+//   name: tripavail_otp  |  category: AUTHENTICATION  |  lang: en_US
+//   body: add_security_recommendation: true
+//   footer: code_expiration_minutes: 10
+//   button: OTP / COPY_CODE / "Copy Code"
 //
 // POST body: { phone: "+923001234567" }
 // Response:  { success: true, message: "OTP sent via WhatsApp" }
@@ -88,8 +95,11 @@ serve(async (req) => {
     }
 
     const waNumber = toWhatsAppNumber(phone)
-    const messageBody = `Your TripAvail verification code is: *${otp}*\n\nThis code is valid for 10 minutes. Do not share it with anyone.`
 
+    // ── Send via AUTHENTICATION template (required for business-initiated msgs) ──
+    // Free-form text is silently dropped by WhatsApp when the business initiates
+    // contact without a prior 24h customer-service window.
+    // AUTHENTICATION templates are auto-approved by Meta and bypass this restriction.
     const waRes = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
       {
@@ -101,8 +111,24 @@ serve(async (req) => {
         body: JSON.stringify({
           messaging_product: 'whatsapp',
           to: waNumber,
-          type: 'text',
-          text: { body: messageBody },
+          type: 'template',
+          template: {
+            name: 'tripavail_otp',
+            language: { code: 'en_US' },
+            components: [
+              {
+                type: 'body',
+                parameters: [{ type: 'text', text: otp }],
+              },
+              {
+                // COPY_CODE button parameter — pre-fills the OTP into the copy button
+                type: 'button',
+                sub_type: 'url',
+                index: '0',
+                parameters: [{ type: 'text', text: otp }],
+              },
+            ],
+          },
         }),
       },
     )
