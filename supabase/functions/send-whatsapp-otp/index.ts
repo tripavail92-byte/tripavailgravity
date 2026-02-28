@@ -19,9 +19,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Normalise to E.164 without leading '+' for WhatsApp API (e.g. 923001234567)
+// Normalise to E.164 without leading '+' for WhatsApp API (e.g. 923001234567).
+// Server-side defence: strip any trunk prefix 0 that crept in after the country-code digits.
+// E.g. +9203135678933 → 9203135678933 → detect trunk 0 → 923135678933
 function toWhatsAppNumber(phone: string): string {
-  return phone.replace(/[^0-9]/g, '')
+  const raw = phone.replace(/[^0-9]/g, '') // strip all non-digits (including leading '+')
+  // Known country codes that are 1-3 digits; try longest-match first to strip a trunk 0.
+  // Pattern: if digits after CC start with 0 and total length > 12, strip that 0.
+  // E.164 max is 15 digits; domestic Pakistani numbers are 11 digits (0XXXXXXXXXX).
+  // Trunk-prefix 0 causes an extra digit → just detect & remove it safely.
+  const COUNTRY_CODE_LENGTHS = [3, 2, 1] // try 3-digit CC first (e.g. +971), then 2 (+92), then 1 (+1)
+  for (const len of COUNTRY_CODE_LENGTHS) {
+    const subscriber = raw.slice(len)
+    if (subscriber.startsWith('0') && raw.length > 12) {
+      // Very likely trunk 0 — strip it
+      return raw.slice(0, len) + subscriber.slice(1)
+    }
+  }
+  return raw
 }
 
 serve(async (req) => {

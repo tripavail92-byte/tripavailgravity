@@ -98,15 +98,16 @@ function parseInitialPhone(raw: string) {
   const trimmed = (raw || '').trim()
   const digitsOnly = normalizeDigits(trimmed)
   const storedHasPlus = trimmed.startsWith('+')
-  if (!storedHasPlus) return { countryCode: DEFAULT_COUNTRY_CODE, nationalNumber: digitsOnly }
+  if (!storedHasPlus) return { countryCode: DEFAULT_COUNTRY_CODE, nationalNumber: digitsOnly.replace(/^0+/, '') }
   const codesByLength = [...COUNTRY_OPTIONS].map((c) => c.code).sort((a, b) => b.length - a.length)
   for (const code of codesByLength) {
     const codeDigits = code.replace('+', '')
     if (digitsOnly.startsWith(codeDigits)) {
-      return { countryCode: code, nationalNumber: digitsOnly.slice(codeDigits.length) }
+      // Strip trunk prefix 0 from the national portion (handles previously mis-stored numbers)
+      return { countryCode: code, nationalNumber: digitsOnly.slice(codeDigits.length).replace(/^0+/, '') }
     }
   }
-  return { countryCode: DEFAULT_COUNTRY_CODE, nationalNumber: digitsOnly }
+  return { countryCode: DEFAULT_COUNTRY_CODE, nationalNumber: digitsOnly.replace(/^0+/, '') }
 }
 
 // ── OTP input: 6 auto-advance boxes ──────────────────────────────────────────
@@ -198,7 +199,13 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  const normalizePhone = (cc: string, nat: string) => `${cc}${normalizeDigits(nat)}`
+  // Build E.164: strip trunk prefix (leading zeros) from national number.
+  // Many countries prefix domestic numbers with 0 (e.g. PK 03XXXXXXXXX → +92 3XXXXXXXXX).
+  // That 0 is a trunk prefix — it must be dropped when the country code is already present.
+  const normalizePhone = (cc: string, nat: string) => {
+    const national = normalizeDigits(nat).replace(/^0+/, '') // strip trunk prefix 0s
+    return `${cc}${national}`
+  }
 
   const emitUpdate = (fd: typeof formData, pv: boolean) => {
     onUpdate({ personalInfo: { ...fd, email: accountEmail }, phoneVerified: pv })
@@ -220,7 +227,8 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
   }
 
   const handleNationalNumberChange = (nat: string) => {
-    const digits = normalizeDigits(nat)
+    // Strip trunk prefix immediately so the input field shows the correct subscriber number
+    const digits = normalizeDigits(nat).replace(/^0+/, '')
     setNationalNumber(digits)
     const phone = normalizePhone(countryCode, digits)
     const updated = { ...formData, phone }
