@@ -1,16 +1,16 @@
 // ── send-whatsapp-otp ─────────────────────────────────────────────────────────
 // Generates a 6-digit OTP, stores it in phone_otps (10-min TTL), and delivers
-// it via a WhatsApp *template* message (required for business-initiated messages —
-// free-form text is often silently dropped without a prior 24h user-initiated window).
+// it via a WhatsApp *AUTHENTICATION template*.
+//
+// Why templates: business-initiated free-form text is often silently dropped
+// outside a prior 24h user-initiated window; AUTH templates are designed for OTP.
 //
 // Required Supabase secrets:
 //   WHATSAPP_ACCESS_TOKEN      — Meta system user token (whatsapp_business_messaging scope)
 //   WHATSAPP_PHONE_NUMBER_ID   — Business phone number ID (from Meta dashboard)
 //
-// Template required (create once in Meta Business Manager):
-//   name: tripavail_otp  |  category: UTILITY  |  lang: en_US
-//   body text example:
-//     "Your TripAvail verification code is {{1}}. This code expires in 10 minutes."
+// Template required (create once in WhatsApp Manager → Message templates):
+//   name: tripavail_otp  |  category: AUTHENTICATION  |  lang: en_US
 //   (one variable: {{1}} = OTP)
 //
 // POST body: { phone: "+923001234567" }
@@ -96,7 +96,7 @@ serve(async (req) => {
 
     const waNumber = toWhatsAppNumber(phone)
 
-    // ── Send via template (required for business-initiated msgs) ─────────────
+    // ── Send via AUTHENTICATION template (OTP) ──────────────────────────────
     // Note: Template must exist + be APPROVED in the WABA.
     const waRes = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
