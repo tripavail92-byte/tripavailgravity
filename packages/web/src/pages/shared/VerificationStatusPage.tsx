@@ -6,6 +6,7 @@ import {
   Clock,
   MessageSquare,
   RefreshCw,
+  Upload,
   XCircle,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -19,6 +20,27 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
 import { PartnerVerificationHub } from './verification/PartnerVerificationHub'
+
+// ─── Required business docs (tour operators only) ───────────────────────────
+
+const REQUIRED_TOUR_OP_DOCS: { id: string; title: string }[] = [
+  { id: 'secp_certificate', title: 'SECP Certificate' },
+  { id: 'tourism_license',  title: 'Tourism License (DTS)' },
+  { id: 'tax_certificate',  title: 'Tax Registration (NTN)' },
+]
+
+async function fetchProfileVerificationUrls(
+  userId: string,
+  roleType: string,
+): Promise<Record<string, string>> {
+  if (roleType !== 'tour_operator') return {}
+  const { data } = await supabase
+    .from('tour_operator_profiles')
+    .select('verification_urls')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return (data?.verification_urls as Record<string, string>) ?? {}
+}
 
 // ─── Fetch latest request for this user ──────────────────────────────────────
 
@@ -192,12 +214,20 @@ function InfoRequestedView({
   )
 }
 
-function ApprovedView({ roleLabel }: { roleLabel: string }) {
+function ApprovedView({
+  roleLabel,
+  missingDocs,
+  onUploadDocs,
+}: {
+  roleLabel: string
+  missingDocs: { id: string; title: string }[]
+  onUploadDocs: () => void
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-5"
     >
       <GlassCard className="p-8 flex flex-col items-center text-center gap-4">
         <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -206,7 +236,7 @@ function ApprovedView({ roleLabel }: { roleLabel: string }) {
         <div>
           <h2 className="text-xl font-bold text-foreground">Verified Partner ✓</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Your {roleLabel} account is fully active
+            Your {roleLabel} account is active
           </p>
         </div>
         <div className="w-full max-w-xs space-y-3 text-left">
@@ -215,10 +245,45 @@ function ApprovedView({ roleLabel }: { roleLabel: string }) {
           <Step label="Approved" state="complete" />
         </div>
         <p className="text-sm text-muted-foreground">
-          You now have full access to all {roleLabel} features — hotels, listings, tours, and
-          analytics.
+          You have full access to all {roleLabel} features — listings, tours, and analytics.
         </p>
       </GlassCard>
+
+      {/* Missing business documents — always shown until all are uploaded */}
+      {missingDocs.length > 0 && (
+        <div className="rounded-2xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                Business documents still required
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                Your identity (CNIC) is verified, but the following compliance documents are
+                missing. Please upload them to remain in good standing.
+              </p>
+            </div>
+          </div>
+
+          <ul className="space-y-2 pl-1">
+            {missingDocs.map((doc) => (
+              <li key={doc.id} className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-300">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
+                {doc.title}
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            size="sm"
+            className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-0"
+            onClick={onUploadDocs}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Upload Missing Documents
+          </Button>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -243,6 +308,17 @@ export default function VerificationStatusPage() {
     staleTime: 30_000,
   })
 
+  const { data: uploadedDocUrls = {} } = useQuery({
+    queryKey: ['my-verification-urls', user?.id, roleType],
+    queryFn: () => fetchProfileVerificationUrls(user!.id, roleType),
+    enabled: !!user && roleType === 'tour_operator',
+    staleTime: 30_000,
+  })
+
+  const missingDocs = REQUIRED_TOUR_OP_DOCS.filter(
+    (doc) => !uploadedDocUrls[doc.id],
+  )
+
   const showHub =
     verificationStatus === 'incomplete' ||
     verificationStatus === 'rejected' ||
@@ -254,7 +330,8 @@ export default function VerificationStatusPage() {
   const [resubmitting, setResubmitting] = useState(false)
   const handleResubmit = () => setResubmitting(true)
 
-  if (showHub && resubmitting) {
+  // Open hub for re-submission OR to upload missing docs on an approved account
+  if ((showHub && resubmitting) || resubmitting) {
     return <PartnerVerificationHub />
   }
 
@@ -286,7 +363,11 @@ export default function VerificationStatusPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : effectiveStatus === 'approved' ? (
-          <ApprovedView roleLabel={roleLabel} />
+          <ApprovedView
+            roleLabel={roleLabel}
+            missingDocs={missingDocs}
+            onUploadDocs={() => setResubmitting(true)}
+          />
         ) : effectiveStatus === 'pending' || effectiveStatus === 'under_review' ? (
           <PendingView
             roleLabel={roleLabel}
