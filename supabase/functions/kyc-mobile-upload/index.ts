@@ -102,56 +102,6 @@ async function signPath(
   return data.signedUrl;
 }
 
-/**
- * Run GPT OCR (via verify-identity function URL) and return structured fields.
- * We generate a fresh signed URL valid for 5 min so the worker can fetch the image.
- */
-async function runOcr(
-  admin: ReturnType<typeof createClient>,
-  supabaseUrl: string,
-  operatorId: string,
-  frontPath: string,
-): Promise<Record<string, unknown> | null> {
-  try {
-    // Generate signed URL for the front image
-    const signedUrl = await signPath(admin, KYC_BUCKET, frontPath) ||
-                      await signPath(admin, LEGACY_BUCKET, frontPath);
-    if (!signedUrl) {
-      console.warn('[kyc-mobile-upload] Could not sign front image for OCR');
-      return null;
-    }
-
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const fnUrl = `${supabaseUrl}/functions/v1/verify-identity`;
-
-    const res = await fetch(fnUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceKey}`,
-        'apikey': serviceKey,
-      },
-      body: JSON.stringify({
-        idCardUrl: signedUrl,
-        userId: operatorId,
-        role: 'tour_operator',
-        taskType: 'extract_ocr',
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn('[kyc-mobile-upload] OCR function returned', res.status, errText);
-      return null;
-    }
-
-    return await res.json();
-  } catch (err: any) {
-    console.warn('[kyc-mobile-upload] OCR call failed:', err.message);
-    return null;
-  }
-}
-
 // ── Main handler ───────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -276,47 +226,12 @@ serve(async (req) => {
     if (updErr) throw new Error(`Failed to update session: ${updErr.message}`);
 
     // ── Auto-OCR when both images are available ───────────────────────────────
+    // Setting status = 'processing' is enough — the Python EasyOCR worker
+    // polls for sessions in this state, runs OCR, extracts all fields, and
+    // moves the session to 'pending_admin_review' when done.
+    // We do NOT call verify-identity or any external AI API here.
     if (bothUploaded) {
-      const frontPath = pathField === 'id_front_path'
-        ? storagePath
-        : (session.id_front_path as string);
-
-      const ocr = await runOcr(admin, supabaseUrl, operatorId, frontPath);
-
-      if (ocr) {
-        const ocrPatch: Record<string, unknown> = {
-          status:        'pending_admin_review',
-          cnic_number:   (ocr.idNumber   ?? null) as string | null,
-          full_name:     (ocr.fullName   ?? null) as string | null,
-          father_name:   (ocr.fatherName ?? null) as string | null,
-          date_of_birth: (ocr.dateOfBirth ?? null) as string | null,
-          expiry_date:   (ocr.expiryDate  ?? null) as string | null,
-          gender:        (ocr.gender     ?? null) as string | null,
-          address:       (ocr.address    ?? null) as string | null,
-        };
-
-        const { error: ocrUpdErr } = await admin
-          .from('kyc_sessions')
-          .update(ocrPatch)
-          .eq('id', session.id);
-
-        if (ocrUpdErr) {
-          console.warn('[kyc-mobile-upload] OCR patch failed:', ocrUpdErr.message);
-        } else {
-          console.log('[kyc-mobile-upload] OCR extracted and stored', {
-            sessionId: session.id, cnic: ocr.idNumber, name: ocr.fullName,
-          });
-          sessionPatch.status = 'pending_admin_review';
-        }
-      } else {
-        // OCR failed — still move to pending_admin_review for manual review
-        await admin
-          .from('kyc_sessions')
-          .update({ status: 'pending_admin_review', failure_code: 'ocr_failed', failure_reason: 'Automatic OCR extraction failed — manual review required' })
-          .eq('id', session.id);
-
-        sessionPatch.status = 'pending_admin_review';
-      }
+      console.log('[kyc-mobile-upload] Both images uploaded — session queued for OCR worker', session.id);
     }
 
     return new Response(
