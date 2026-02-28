@@ -107,14 +107,30 @@ serve(async (req) => {
       },
     )
 
+    const waBody = await waRes.json().catch(() => ({}))
+    console.log('[send-whatsapp-otp] WA API status:', waRes.status, JSON.stringify(waBody))
+
     if (!waRes.ok) {
-      const errBody = await waRes.json().catch(() => ({}))
-      console.error('[send-whatsapp-otp] WhatsApp API error:', errBody)
-      throw new Error(`WhatsApp API error: ${waRes.status} — ${JSON.stringify(errBody)}`)
+      console.error('[send-whatsapp-otp] WhatsApp API error:', waBody)
+      // Surface the Meta error code + message so the frontend can show it
+      const metaErr = waBody?.error
+      throw new Error(
+        `WhatsApp API error ${waRes.status}: ${metaErr?.message || 'unknown'} (code ${metaErr?.code ?? '?'}, fbtrace_id: ${metaErr?.fbtrace_id ?? '?'})`
+      )
     }
 
+    // Surface WA message ID + status for diagnostics
+    const waMessageId     = waBody?.messages?.[0]?.id ?? null
+    const waMessageStatus = waBody?.messages?.[0]?.message_status ?? null
+    console.log('[send-whatsapp-otp] delivered to waNumber:', waNumber, '| msg_id:', waMessageId, '| status:', waMessageStatus)
+
     return new Response(
-      JSON.stringify({ success: true, message: 'OTP sent via WhatsApp' }),
+      JSON.stringify({
+        success: true,
+        message: 'OTP sent via WhatsApp',
+        // Diagnostic fields — visible in dev tools Network tab
+        _wa: { message_id: waMessageId, message_status: waMessageStatus, to: waNumber },
+      }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
   } catch (err: any) {
