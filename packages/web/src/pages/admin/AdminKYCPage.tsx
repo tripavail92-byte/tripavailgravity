@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronUp, Download, RefreshCw, RotateCcw, ShieldCheck, ShieldOff, ShieldX, UserX } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, Download, Pencil, RefreshCw, RotateCcw, ShieldCheck, ShieldOff, ShieldX, UserX } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,16 @@ type KycRow = {
   reviewed_by: string | null
   reviewed_at: string | null
   review_notes: string | null
+}
+
+// Manual OCR entry (used when OCR fails or fields are incomplete)
+type ManualFields = {
+  cnic_number:   string
+  full_name:     string
+  father_name:   string
+  date_of_birth: string
+  expiry_date:   string
+  gender:        string
 }
 
 type AuditEntry = {
@@ -118,13 +128,29 @@ function KycCard({
 }: {
   row: KycRow
   busyId: string | null
-  onMark: (row: KycRow, s: 'approved' | 'rejected', notes?: string) => void
+  onMark: (row: KycRow, s: 'approved' | 'rejected', notes?: string, manualFields?: ManualFields) => void
   onBlockCnic: (row: KycRow) => void
   onEnforce: (row: KycRow, action: EnforceAction, reason: string) => Promise<void>
 }) {
   const [images, setImages] = useState<{ front?: string; back?: string; loading?: boolean }>({})
   const isBusy = busyId === row.id
   const isPending = row.status === 'pending_admin_review'
+
+  // Manual OCR fields — pre-populated from whatever OCR managed to extract
+  const [manualFields, setManualFields] = useState<ManualFields>({
+    cnic_number:   row.cnic_number   ?? '',
+    full_name:     row.full_name     ?? '',
+    father_name:   row.father_name   ?? '',
+    date_of_birth: row.date_of_birth ?? '',
+    expiry_date:   row.expiry_date   ?? '',
+    gender:        row.gender        ?? '',
+  })
+
+  const ocrFailed  = Boolean(row.failure_code === 'ocr_failed' || row.failure_reason)
+  const hasEmptyFields = !manualFields.cnic_number || !manualFields.full_name
+
+  const setField = (k: keyof ManualFields) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setManualFields((prev) => ({ ...prev, [k]: e.target.value }))
 
   // Rejection notes inline state
   const [rejecting, setRejecting] = useState(false)
@@ -291,9 +317,10 @@ function KycCard({
             <div className="flex items-center gap-2 flex-wrap">
               <Button
                 size="sm"
-                onClick={() => onMark(row, 'approved')}
-                disabled={isBusy || rejecting}
-                className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                onClick={() => onMark(row, 'approved', undefined, manualFields)}
+                disabled={isBusy || rejecting || hasEmptyFields}
+                title={hasEmptyFields ? 'Fill in CNIC number and Full Name below before approving' : ''}
+                className="bg-green-600 hover:bg-green-700 text-white gap-1 disabled:opacity-50"
               >
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Approve
@@ -353,41 +380,109 @@ function KycCard({
           )}
         </div>
 
-        {/* Structured OCR fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs">
-          {([
-            ['CNIC', row.cnic_number],
-            ['Full Name', row.full_name],
-            ['Father Name', row.father_name],
-            ['Date of Birth', row.date_of_birth],
-            ['Expiry Date', row.expiry_date],
-            ['Gender', row.gender],
-          ] as [string, string | null][]).map(([label, val]) => (
-            <div key={label}>
-              <span className="font-semibold text-foreground">{label}: </span>
-              <span className="text-muted-foreground">{val ?? '—'}</span>
+        {/* OCR failure banner */}
+        {ocrFailed && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-500" />
+            <span>
+              <strong>OCR failed</strong> — automatic extraction did not produce results.
+              {isPending
+                ? ' Please download the images, read the CNIC manually, and fill in the fields below before approving.'
+                : ` [${row.failure_code ?? 'ocr_failed'}] ${row.failure_reason ?? ''}`}
+            </span>
+          </div>
+        )}
+
+        {/* Structured OCR fields — editable when pending, read-only otherwise */}
+        {isPending ? (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+              <Pencil className="h-3 w-3" />
+              Identity Fields
+              {hasEmptyFields && (
+                <span className="ml-1 text-amber-600">— CNIC and Full Name required to approve</span>
+              )}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {([
+                { key: 'cnic_number',   label: 'CNIC Number',   placeholder: '12345-6789012-3', required: true  },
+                { key: 'full_name',     label: 'Full Name',     placeholder: 'As on CNIC',      required: true  },
+                { key: 'father_name',   label: 'Father Name',   placeholder: 'As on CNIC',      required: false },
+                { key: 'date_of_birth', label: 'Date of Birth', placeholder: 'DD.MM.YYYY',      required: false },
+                { key: 'expiry_date',   label: 'Expiry Date',   placeholder: 'DD.MM.YYYY',      required: false },
+              ] as { key: keyof ManualFields; label: string; placeholder: string; required: boolean }[]).map(({ key, label, placeholder, required }) => (
+                <label key={key} className="flex flex-col gap-0.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+                  </span>
+                  <input
+                    type="text"
+                    value={manualFields[key]}
+                    onChange={setField(key)}
+                    placeholder={placeholder}
+                    className={cn(
+                      'border rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/50',
+                      required && !manualFields[key] ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20' : 'border-border',
+                    )}
+                  />
+                </label>
+              ))}
+              <label className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Gender</span>
+                <select
+                  value={manualFields.gender}
+                  onChange={setField('gender')}
+                  className="border border-border rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
+                >
+                  <option value="">— select —</option>
+                  <option value="M">Male (M)</option>
+                  <option value="F">Female (F)</option>
+                </select>
+              </label>
             </div>
-          ))}
-          {row.address && (
-            <div className="col-span-2">
-              <span className="font-semibold text-foreground">Address: </span>
-              <span className="text-muted-foreground">{row.address}</span>
-            </div>
-          )}
-          {row.failure_reason && (
-            <div className="col-span-2 text-red-600">
-              <span className="font-semibold">⚠ Failure: </span>
-              {row.failure_code ? `[${row.failure_code}] ` : ''}
-              {row.failure_reason}
-            </div>
-          )}
-          {row.review_notes && (
-            <div className="col-span-2 text-muted-foreground">
-              <span className="font-semibold text-foreground">Review Notes: </span>
-              {row.review_notes}
-            </div>
-          )}
-        </div>
+            {row.address && (
+              <div className="text-xs">
+                <span className="font-semibold text-foreground">Address: </span>
+                <span className="text-muted-foreground">{row.address}</span>
+              </div>
+            )}
+            {row.review_notes && (
+              <div className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">Review Notes: </span>
+                {row.review_notes}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs">
+            {([['CNIC', row.cnic_number], ['Full Name', row.full_name], ['Father Name', row.father_name],
+               ['Date of Birth', row.date_of_birth], ['Expiry Date', row.expiry_date], ['Gender', row.gender],
+            ] as [string, string | null][]).map(([label, val]) => (
+              <div key={label}>
+                <span className="font-semibold text-foreground">{label}: </span>
+                <span className="text-muted-foreground">{val ?? '—'}</span>
+              </div>
+            ))}
+            {row.address && (
+              <div className="col-span-2">
+                <span className="font-semibold text-foreground">Address: </span>
+                <span className="text-muted-foreground">{row.address}</span>
+              </div>
+            )}
+            {row.failure_reason && !ocrFailed && (
+              <div className="col-span-2 text-red-600">
+                <span className="font-semibold">⚠ Failure: </span>
+                {row.failure_code ? `[${row.failure_code}] ` : ''}{row.failure_reason}
+              </div>
+            )}
+            {row.review_notes && (
+              <div className="col-span-2 text-muted-foreground">
+                <span className="font-semibold text-foreground">Review Notes: </span>
+                {row.review_notes}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Document buttons */}
         <div className="flex flex-wrap gap-2 pt-1">
@@ -553,7 +648,12 @@ export default function AdminKYCPage() {
 
   useEffect(() => { load() }, [])
 
-  const mark = async (row: KycRow, nextStatus: 'approved' | 'rejected', notes?: string) => {
+  const mark = async (
+    row: KycRow,
+    nextStatus: 'approved' | 'rejected',
+    notes?: string,
+    manualFields?: ManualFields,
+  ) => {
     if (nextStatus === 'rejected' && !notes?.trim()) {
       toast.error('A rejection reason is required')
       return
@@ -562,21 +662,35 @@ export default function AdminKYCPage() {
     try {
       const { data: authData } = await supabase.auth.getUser()
       const reviewerId = authData?.user?.id ?? null
+
+      // Build the patch — include manually-entered OCR fields on approval
+      // so the trigger promotes them to tour_operator_profiles immediately.
+      const patch: Record<string, any> = {
+        status:      nextStatus,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString(),
+        review_notes: notes?.trim() ?? null,
+      }
+
+      if (nextStatus === 'approved' && manualFields) {
+        if (manualFields.cnic_number.trim())    patch.cnic_number   = manualFields.cnic_number.trim()
+        if (manualFields.full_name.trim())      patch.full_name     = manualFields.full_name.trim()
+        if (manualFields.father_name.trim())    patch.father_name   = manualFields.father_name.trim()
+        if (manualFields.date_of_birth.trim())  patch.date_of_birth = manualFields.date_of_birth.trim()
+        if (manualFields.expiry_date.trim())    patch.expiry_date   = manualFields.expiry_date.trim()
+        if (manualFields.gender.trim())         patch.gender        = manualFields.gender.trim()
+      }
+
       const { error } = await (supabase
         .from('kyc_sessions' as any)
-        .update({
-          status: nextStatus,
-          reviewed_by: reviewerId,
-          reviewed_at: new Date().toISOString(),
-          review_notes: notes?.trim() ?? null,
-        })
+        .update(patch)
         .eq('id', row.id) as any)
       if (error) throw error
       // DB trigger handles: audit log + profile promotion + user_roles update
       toast.success(
         nextStatus === 'approved'
           ? '✅ KYC approved — operator profile updated'
-          : `❌ KYC rejected — reason logged`,
+          : '❌ KYC rejected — reason logged',
       )
       await load()
     } catch (err: any) {
