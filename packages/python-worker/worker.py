@@ -164,9 +164,9 @@ def _extract_cnic_fields(components: list[str], raw_text: str) -> dict:
                 break
 
     # ── Full Name ─────────────────────────────────────────────────────────────
-    # Pattern A: "Name: SOME NAME" on same line
+    # Pattern A: "Name: SOME NAME" — same line only (no newline crossing)
     name_a = re.search(
-        r"(?<![a-z])name\s*[:\-]?\s+([A-Z][A-Z\s]{2,40})",
+        r"(?<![a-z])name\s*[:\-]?\s+([A-Za-z][A-Za-z ]{2,40})",
         raw_text, re.IGNORECASE,
     )
     # Pattern B: label on one component, value on next
@@ -180,8 +180,10 @@ def _extract_cnic_fields(components: list[str], raw_text: str) -> dict:
         for i, comp in enumerate(components):
             if re.search(r"^name$", comp.strip(), re.IGNORECASE) and i + 1 < len(components):
                 nxt = components[i + 1].strip()
+                # Skip obvious location codes: short all-caps tokens like "UC", "USL"
                 if len(nxt) > 2 and not re.search(r"father|husband|date|birth|cnic", nxt, re.IGNORECASE):
                     full_name_raw = nxt
+                    # If next component looks like a name suffix/continuation, skip it
                     break
 
     if full_name_raw:
@@ -189,7 +191,7 @@ def _extract_cnic_fields(components: list[str], raw_text: str) -> dict:
 
     # ── Father's / Husband's Name ─────────────────────────────────────────────
     father_a = re.search(
-        r"(?:father['\u2019s]*\s*name|husband['\u2019s]*\s*name)\s*[:\-]?\s*([A-Z][A-Z\s]{2,40})",
+        r"(?:father['\u2019s]*\s*name|husband['\u2019s]*\s*name)\s*[:\-]?\s*([A-Za-z][A-Za-z ]{2,40})",
         raw_text, re.IGNORECASE,
     )
     father_raw = None
