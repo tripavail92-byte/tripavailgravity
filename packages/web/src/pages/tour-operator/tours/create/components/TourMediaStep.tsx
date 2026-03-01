@@ -20,6 +20,7 @@ interface TourMediaStepProps {
 
 export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTourDraft }: TourMediaStepProps) {
   const { user } = useAuth()
+  const [activeTourId, setActiveTourId] = useState<string | null>(tourId ?? null)
   const [isUploading, setIsUploading] = useState(false)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
   const [mediaItems, setMediaItems] = useState<TourMediaItem[]>([])
@@ -61,12 +62,16 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
   }, [syncParentImages])
 
   useEffect(() => {
-    if (!tourId) {
+    if (tourId) setActiveTourId(tourId)
+  }, [tourId])
+
+  useEffect(() => {
+    if (!activeTourId) {
       setMediaItems([])
       return
     }
-    loadMedia(tourId)
-  }, [tourId, loadMedia])
+    loadMedia(activeTourId)
+  }, [activeTourId, loadMedia])
 
   useEffect(() => {
     if (!isUploading) return
@@ -91,10 +96,11 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
       setIsUploading(true)
       setLastProgressAt(Date.now())
       try {
-        const draftTourId = tourId ?? (ensureTourDraft ? await ensureTourDraft() : null)
+        const draftTourId = activeTourId ?? (ensureTourDraft ? await ensureTourDraft() : null)
         if (!draftTourId) {
           throw new Error('Please complete basic details first so we can save your media')
         }
+        setActiveTourId(draftTourId)
 
         let currentMedia = await tourService.listTourMedia(draftTourId)
         for (const file of acceptedFiles) {
@@ -128,7 +134,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
         setLastProgressAt(null)
       }
     },
-    [user?.id, isUploading, tourId, ensureTourDraft, syncParentImages],
+    [user?.id, isUploading, activeTourId, ensureTourDraft, syncParentImages],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -143,12 +149,12 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
   })
 
   const removeImage = async (mediaId: string) => {
-    if (!tourId || !user?.id) return
+    if (!activeTourId || !user?.id) return
 
     setInlineError(null)
     try {
-      await tourService.removeTourMedia(tourId, mediaId, user.id)
-      const fresh = await tourService.listTourMedia(tourId)
+      await tourService.removeTourMedia(activeTourId, mediaId, user.id)
+      const fresh = await tourService.listTourMedia(activeTourId)
       setMediaItems(fresh)
       syncParentImages(fresh)
       toast.success('Image removed')
@@ -161,12 +167,12 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
   }
 
   const setAsCoverImage = async (mediaId: string) => {
-    if (!tourId || !user?.id) return
+    if (!activeTourId || !user?.id) return
 
     setInlineError(null)
     try {
-      await tourService.setTourMediaMain(tourId, mediaId, user.id)
-      const fresh = await tourService.listTourMedia(tourId)
+      await tourService.setTourMediaMain(activeTourId, mediaId, user.id)
+      const fresh = await tourService.listTourMedia(activeTourId)
       setMediaItems(fresh)
       syncParentImages(fresh)
       toast.success('Cover image updated')
@@ -203,7 +209,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
           <div>
             <h2 className="text-xl font-bold">Tour Media</h2>
             <p className="text-white/80 text-sm">
-              Upload gallery photos and choose one clear Cover Image.
+              Upload gallery photos and choose one clear Cover Image. You can change it anytime.
             </p>
           </div>
         </div>
@@ -291,7 +297,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
             >
               {item.is_main && (
                 <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-[10px] font-bold bg-primary text-white">
-                  Main
+                  Cover Image
                 </div>
               )}
               <img
@@ -299,9 +305,19 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
                 alt={`Tour image ${index + 1}`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center backdrop-blur-[2px] p-2">
+              <div className="absolute inset-x-0 bottom-0 bg-black/45 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-end justify-center backdrop-blur-[2px] p-2">
                 <div className="flex items-center gap-2">
-                  {!item.is_main && (
+                  {item.is_main ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled
+                      className="h-8 px-2 text-xs"
+                    >
+                      <Star className="w-3.5 h-3.5 mr-1" />
+                      Cover Image
+                    </Button>
+                  ) : (
                     <Button
                       variant="secondary"
                       size="sm"
@@ -309,7 +325,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
                       className="h-8 px-2 text-xs"
                     >
                       <Star className="w-3.5 h-3.5 mr-1" />
-                      Set as main
+                      Set as cover
                     </Button>
                   )}
                   <Button
