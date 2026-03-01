@@ -497,10 +497,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border transition-all duration-200 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50 ring-1 ring-gray-900'
-                      : 'border-gray-200 bg-white hover:border-gray-400'
+                      ? 'border-gray-900 bg-slate-50'
+                      : 'border-gray-200 bg-white hover:border-gray-500'
                   }`}
                 >
                   <input
@@ -538,10 +538,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border transition-all duration-200 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50 ring-1 ring-gray-900'
-                      : 'border-gray-200 bg-white hover:border-gray-400'
+                      ? 'border-gray-900 bg-slate-50'
+                      : 'border-gray-200 bg-white hover:border-gray-500'
                   }`}
                 >
                   <input
@@ -564,55 +564,6 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 </label>
               )
             })}
-          </div>
-        </div>
-      </div>
-
-      {/* Tour Theme Color Selection */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#FF7167]/10 flex items-center justify-center">
-                <Percent className="w-4 h-4 text-[#FF7167]" />
-              </div>
-              Tour Accent Color
-            </h3>
-            <p className="text-sm text-gray-500 mt-1 pl-10">
-              Customize the platform theme color specifically for this tour package.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-4 pl-10 pt-2">
-            {['#FF7167', '#FF9F67', '#67D4FF', '#67FFAC', '#C667FF', '#FF67B1', '#2C2C2C'].map(
-              (color) => (
-                <button
-                  key={color}
-                  onClick={() => handleInputChange('theme_color', color)}
-                  className={`w-12 h-12 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center ${
-                    (data.theme_color || '#FF7167') === color
-                      ? 'border-gray-900 scale-110 shadow-lg'
-                      : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color }}
-                >
-                  {(data.theme_color || '#FF7167') === color && (
-                    <BadgeCheck className="w-6 h-6 text-white shadow-sm" />
-                  )}
-                </button>
-              ),
-            )}
-            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-gray-100">
-              <input
-                type="color"
-                value={data.theme_color || '#FF7167'}
-                onChange={(e) => handleInputChange('theme_color', e.target.value)}
-                className="w-8 h-8 rounded-lg cursor-pointer border-none bg-transparent"
-              />
-              <span className="text-xs font-mono font-bold text-gray-500 uppercase">
-                {data.theme_color || '#FF7167'}
-              </span>
-            </div>
           </div>
         </div>
       </div>
