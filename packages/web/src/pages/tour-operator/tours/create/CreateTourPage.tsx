@@ -373,7 +373,7 @@ export default function CreateTourPage() {
     }
   }
 
-  const ensureTourDraftForMedia = useCallback(async (): Promise<string> => {
+  const ensureTourDraftForMedia = async (): Promise<string> => {
     if (!user) throw new Error('Authentication required')
     if (currentTourId) return currentTourId
 
@@ -389,7 +389,7 @@ export default function CreateTourPage() {
     setCurrentTourId(result.tourId)
     setTourData((prev) => ({ ...prev, id: result.tourId } as Partial<Tour>))
     return result.tourId
-  }, [user, currentTourId, tourData, createWorkflowSnapshot])
+  }
 
   const CurrentStepComponent = STEPS[currentStep].component
 
