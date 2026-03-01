@@ -1,4 +1,4 @@
-import { AlertCircle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
+import { AlertCircle, AlertTriangle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -20,8 +20,9 @@ import { TourMediaStep } from './components/TourMediaStep'
 import { TourPricingStep } from './components/TourPricingStep'
 import { TourReviewStep } from './components/TourReviewStep'
 import { TourSchedulingStep } from './components/TourSchedulingStep'
+import { deriveStepWorkflow, StepId } from './stepWorkflow'
 
-const STEPS = [
+const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },
   { id: 'media', title: 'Media', component: TourMediaStep },
   { id: 'itinerary', title: 'Itinerary', component: TourItineraryStep },
@@ -47,6 +48,8 @@ export default function CreateTourPage() {
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [showExitModal, setShowExitModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]))
   const isFirstLoad = useRef(true)
 
   // Support both ?tour_id= and /edit/:id
@@ -96,6 +99,24 @@ export default function CreateTourPage() {
         setIsSaving(true)
         const existing = await tourService.getOperatorTourById(user.id, tourIdToEdit)
         setTourData(existing)
+
+        const workflow = (existing as any)?.draft_data?._workflow
+        if (workflow && typeof workflow === 'object') {
+          const savedCurrentStep = Number(workflow.currentStep)
+          if (Number.isInteger(savedCurrentStep) && savedCurrentStep >= 0 && savedCurrentStep < STEPS.length) {
+            setCurrentStep(savedCurrentStep)
+          }
+
+          if (Array.isArray(workflow.visitedSteps)) {
+            const sanitized = workflow.visitedSteps
+              .map((value: unknown) => Number(value))
+              .filter((value: number) => Number.isInteger(value) && value >= 0 && value < STEPS.length)
+
+            if (sanitized.length > 0) {
+              setVisitedSteps(new Set(sanitized))
+            }
+          }
+        }
       } catch (error) {
         console.error('Error loading tour for edit:', error)
         toast.error('Failed to load tour for editing')
@@ -107,6 +128,34 @@ export default function CreateTourPage() {
     loadTourForEdit()
     // Only load when switching to a new id
   }, [user?.id, tourIdToEdit])
+
+  const stepWorkflow = useMemo(
+    () =>
+      deriveStepWorkflow(
+        tourData,
+        STEPS.map((step) => step.id),
+        currentStep,
+        visitedSteps,
+        submitAttempted,
+      ),
+    [tourData, currentStep, visitedSteps, submitAttempted],
+  )
+
+  const createWorkflowSnapshot = useCallback(
+    () => ({
+      version: 1,
+      currentStep,
+      visitedSteps: Array.from(visitedSteps),
+      stepStatuses: stepWorkflow.map((step) => ({
+        id: step.id,
+        status: step.status,
+        requiredCount: step.requiredCount,
+        filledCount: step.filledCount,
+      })),
+      updatedAt: new Date().toISOString(),
+    }),
+    [currentStep, visitedSteps, stepWorkflow],
+  )
 
   // Initialise currentTourId from route/param
   useEffect(() => {
@@ -130,7 +179,13 @@ export default function CreateTourPage() {
       setAutosaveStatus('saving')
       try {
         const pct = calculateCompletionPercentage(tourData)
-        const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+        const result = await tourService.saveWorkflowDraft(
+          tourData,
+          user.id,
+          currentTourId,
+          pct,
+          createWorkflowSnapshot(),
+        )
         if (!currentTourId) setCurrentTourId(result.tourId)
         setLastSavedAt(new Date())
         setHasUnsaved(false)
@@ -141,7 +196,7 @@ export default function CreateTourPage() {
       }
     }, 30_000)
     return () => clearInterval(interval)
-  }, [user?.id, hasUnsaved, tourData, currentTourId])
+  }, [user?.id, hasUnsaved, tourData, currentTourId, createWorkflowSnapshot])
 
   // Warn before unload if there are unsaved changes
   useEffect(() => {
@@ -160,7 +215,13 @@ export default function CreateTourPage() {
     setAutosaveStatus('saving')
     try {
       const pct = calculateCompletionPercentage(tourData)
-      const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+      const result = await tourService.saveWorkflowDraft(
+        tourData,
+        user.id,
+        currentTourId,
+        pct,
+        createWorkflowSnapshot(),
+      )
       const savedId = result.tourId
       if (!currentTourId) setCurrentTourId(savedId)
       setLastSavedAt(new Date())
@@ -177,7 +238,7 @@ export default function CreateTourPage() {
     } finally {
       setIsSaving(false)
     }
-  }, [user, tourData, currentTourId, navigate])
+  }, [user, tourData, currentTourId, navigate, createWorkflowSnapshot])
 
   if (gateLoading) {
     return (
@@ -214,6 +275,7 @@ export default function CreateTourPage() {
 
   const handleSubmitForReview = async () => {
     if (!user) return
+    setSubmitAttempted(true)
     const missing = REQUIRED_FOR_SUBMIT.filter(
       ({ field }) => !(tourData as any)[field]
     )
@@ -228,7 +290,13 @@ export default function CreateTourPage() {
     try {
       // First save everything
       const pct = calculateCompletionPercentage(tourData)
-      const result = await tourService.saveWorkflowDraft(tourData, user.id, currentTourId, pct)
+      const result = await tourService.saveWorkflowDraft(
+        tourData,
+        user.id,
+        currentTourId,
+        pct,
+        createWorkflowSnapshot(),
+      )
       const savedId = currentTourId ?? result.tourId
       if (!currentTourId) setCurrentTourId(savedId)
       // Then flip status
@@ -246,13 +314,26 @@ export default function CreateTourPage() {
 
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep((prev) => prev + 1)
+      const nextStep = currentStep + 1
+      setVisitedSteps((prev) => {
+        const copy = new Set(prev)
+        copy.add(currentStep)
+        copy.add(nextStep)
+        return copy
+      })
+      setCurrentStep(nextStep)
     }
   }
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1)
+      const previousStep = currentStep - 1
+      setVisitedSteps((prev) => {
+        const copy = new Set(prev)
+        copy.add(previousStep)
+        return copy
+      })
+      setCurrentStep(previousStep)
     } else {
       navigate('/operator/dashboard')
     }
@@ -367,43 +448,86 @@ export default function CreateTourPage() {
           {/* Visual stepper */}
           <div className="flex items-center justify-center overflow-x-auto pb-1 gap-0">
             {STEPS.map((step, idx) => {
-              const isCompleted = idx < currentStep
+              const workflow = stepWorkflow[idx]
+              const isCompleted = workflow?.status === 'complete'
+              const isNeedsAttention = workflow?.status === 'needs_attention'
+              const isInProgress = workflow?.status === 'in_progress'
               const isCurrent = idx === currentStep
               return (
                 <div key={step.title} className="flex items-center shrink-0">
                   {/* Circle + label */}
-                  <div className="flex flex-col items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisitedSteps((prev) => {
+                        const copy = new Set(prev)
+                        copy.add(idx)
+                        return copy
+                      })
+                      setCurrentStep(idx)
+                    }}
+                    className="flex flex-col items-center gap-1"
+                  >
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                         isCompleted
                           ? 'bg-primary text-primary-foreground shadow-sm'
-                          : isCurrent
-                            ? 'bg-primary/15 text-primary border-2 border-primary'
-                            : 'bg-muted text-muted-foreground'
+                          : isNeedsAttention
+                            ? 'bg-destructive/10 text-destructive border-2 border-destructive/40'
+                            : isCurrent || isInProgress
+                              ? 'bg-primary/15 text-primary border-2 border-primary'
+                              : 'bg-muted text-muted-foreground'
                       }`}
                     >
                       {isCompleted ? (
                         <svg viewBox="0 0 12 12" className="w-3.5 h-3.5" fill="currentColor">
                           <path d="M1.5 6 L4.5 9 L10.5 3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
+                      ) : isNeedsAttention ? (
+                        <AlertTriangle className="w-3.5 h-3.5" />
                       ) : (
                         idx + 1
                       )}
                     </div>
                     <span
                       className={`text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap ${
-                        isCurrent ? 'text-primary' : isCompleted ? 'text-primary/70' : 'text-muted-foreground'
+                        isNeedsAttention
+                          ? 'text-destructive'
+                          : isCurrent || isInProgress
+                            ? 'text-primary'
+                            : isCompleted
+                              ? 'text-primary/70'
+                              : 'text-muted-foreground'
                       }`}
                     >
                       {step.title}
                     </span>
-                  </div>
+                    <span
+                      className={`text-[9px] uppercase tracking-wide font-semibold ${
+                        isNeedsAttention
+                          ? 'text-destructive/80'
+                          : isCompleted
+                            ? 'text-primary/70'
+                            : isCurrent || isInProgress
+                              ? 'text-primary/70'
+                              : 'text-muted-foreground'
+                      }`}
+                    >
+                      {isCompleted ? 'Complete' : isNeedsAttention ? 'Needs attention' : isCurrent || isInProgress ? 'In progress' : 'Not started'}
+                    </span>
+                  </button>
 
                   {/* Connector line (not after last step) */}
                   {idx < STEPS.length - 1 && (
                     <div
-                      className={`h-0.5 w-8 mx-1 mb-4 rounded-full transition-all duration-300 ${
-                        idx < currentStep ? 'bg-primary' : 'bg-border'
+                      className={`h-0.5 w-8 mx-1 mb-7 rounded-full transition-all duration-300 ${
+                        isCompleted
+                          ? 'bg-primary'
+                          : isNeedsAttention
+                            ? 'bg-destructive/40'
+                            : isCurrent
+                              ? 'bg-primary/30'
+                              : 'bg-border'
                       }`}
                     />
                   )}

@@ -62,6 +62,7 @@ export interface Tour {
   rejection_reason?: string | null
   submitted_at?: string | null
   approved_at?: string | null
+  draft_data?: Record<string, any> | null
   created_at: string
   updated_at: string
 }
@@ -260,8 +261,30 @@ export const tourService = {
     operatorId: string,
     tourId?: string | null,
     completionPct?: number,
+    workflowSnapshot?: {
+      version: number
+      currentStep: number
+      visitedSteps: number[]
+      stepStatuses: Array<{
+        id: string
+        status: string
+        requiredCount: number
+        filledCount: number
+      }>
+      updatedAt: string
+    },
   ) {
     const now = new Date().toISOString()
+    const { draft_data: existingDraftData, ...restData } = data as Partial<Tour> & {
+      draft_data?: Record<string, any> | null
+    }
+
+    const normalizedDraftData = {
+      ...(existingDraftData && typeof existingDraftData === 'object' ? existingDraftData : {}),
+      ...restData,
+      _workflow: workflowSnapshot ?? (existingDraftData as any)?._workflow ?? null,
+    }
+
     const payload = {
       operator_id: operatorId,
       title: data.title || 'Untitled Tour',
@@ -293,7 +316,7 @@ export const tourService = {
       pricing_tiers: data.pricing_tiers || [],
       itinerary: data.itinerary || [],
       schedules: data.schedules || [],
-      draft_data: data,
+      draft_data: normalizedDraftData,
       workflow_status: 'in_progress',
       last_edited_at: now,
       completion_percentage: completionPct ?? 0,
