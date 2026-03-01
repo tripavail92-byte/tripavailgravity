@@ -230,8 +230,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     key={tier.id}
                     className="flex flex-col md:flex-row gap-4 p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#FF7167]/30 transition-all"
                   >
-                    <div className="flex-1 space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider">
+                    <div className="flex-[1.2] space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider whitespace-nowrap block">
                         Tier Name
                       </label>
                       <Input
@@ -241,8 +241,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       />
                     </div>
 
-                    <div className="flex-1 space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider">
+                    <div className="flex-[1.5] space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider whitespace-nowrap block">
                         Group Size (Pax)
                       </label>
                       <div className="flex items-center gap-2">
@@ -272,20 +272,22 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       </div>
                     </div>
 
-                    <div className="flex-1 space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-[#FF7167] tracking-wider flex items-center justify-between">
-                        <span>Discount %</span>
-                        <span className="text-gray-400 font-semibold normal-case">
+                    <div className="flex-[1.5] space-y-2 min-w-[200px]">
+                      <div className="flex items-center justify-between gap-1">
+                        <label className="text-[11px] uppercase font-bold text-[#FF7167] tracking-wider whitespace-nowrap">
+                          Discount %
+                        </label>
+                        <span className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-0.5 rounded-md whitespace-nowrap">
                           Preview: {data.currency || '$'}
                           {tier.pricePerPerson}
                         </span>
-                      </label>
+                      </div>
                       <div className="relative">
                         <Input
                           type="number"
                           min="0"
                           max="100"
-                          value={discountPct}
+                          value={discountPct === 0 ? '' : discountPct}
                           onChange={(e) => {
                             const val = e.target.value
                             updateTierDiscount(tier.id, val === '' ? 0 : parseInt(val))
