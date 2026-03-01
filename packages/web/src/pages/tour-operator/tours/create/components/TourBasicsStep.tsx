@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
-
 import { APIProvider } from '@vis.gl/react-google-maps'
 import { Check, Info, Sparkles, X } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -41,31 +40,31 @@ interface TourBasicsStepProps {
 }
 
 const CATEGORIES = [
-  { id: 'Adventure',    icon: AdventureIcon,   label: 'Adventure' },
-  { id: 'Cultural',     icon: CulturalIcon,    label: 'Cultural' },
-  { id: 'Nature',       icon: NatureIcon,      label: 'Nature' },
-  { id: 'City Tour',    icon: CityIcon,        label: 'City Tour' },
-  { id: 'Food & Drink', icon: FoodIcon,        label: 'Food & Drink' },
-  { id: 'Beach',        icon: BeachIcon,       label: 'Beach' },
-  { id: 'Historical',   icon: HistoricalIcon,  label: 'Historical' },
-  { id: 'Religious',    icon: ReligiousIcon,   label: 'Religious' },
-  { id: 'Honeymoon',    icon: HoneymoonIcon,   label: 'Honeymoon' },
-  { id: 'Family',       icon: FamilyIcon,      label: 'Family' },
-  { id: 'Photography',  icon: PhotographyIcon, label: 'Photography' },
-  { id: 'Wellness',     icon: WellnessIcon,    label: 'Wellness' },
-  { id: 'Luxury',       icon: LuxuryIcon,      label: 'Luxury' },
-  { id: 'Budget',       icon: BudgetIcon,      label: 'Budget' },
-  { id: 'Custom',       icon: CustomIcon,      label: 'Custom' },
+  { id: 'Adventure', icon: AdventureIcon, label: 'Adventure' },
+  { id: 'Cultural', icon: CulturalIcon, label: 'Cultural' },
+  { id: 'Nature', icon: NatureIcon, label: 'Nature' },
+  { id: 'City Tour', icon: CityIcon, label: 'City Tour' },
+  { id: 'Food & Drink', icon: FoodIcon, label: 'Food & Drink' },
+  { id: 'Beach', icon: BeachIcon, label: 'Beach' },
+  { id: 'Historical', icon: HistoricalIcon, label: 'Historical' },
+  { id: 'Religious', icon: ReligiousIcon, label: 'Religious' },
+  { id: 'Honeymoon', icon: HoneymoonIcon, label: 'Honeymoon' },
+  { id: 'Family', icon: FamilyIcon, label: 'Family' },
+  { id: 'Photography', icon: PhotographyIcon, label: 'Photography' },
+  { id: 'Wellness', icon: WellnessIcon, label: 'Wellness' },
+  { id: 'Luxury', icon: LuxuryIcon, label: 'Luxury' },
+  { id: 'Budget', icon: BudgetIcon, label: 'Budget' },
+  { id: 'Custom', icon: CustomIcon, label: 'Custom' },
 ] as const
 
 const TONES = [
-  { id: 'luxury',     label: 'Luxury' },
-  { id: 'budget',     label: 'Budget' },
-  { id: 'family',     label: 'Family' },
-  { id: 'adventure',  label: 'Adventure' },
-  { id: 'romantic',   label: 'Romantic' },
-  { id: 'corporate',  label: 'Corporate' },
-  { id: 'general',    label: 'General' },
+  { id: 'luxury', label: 'Luxury' },
+  { id: 'budget', label: 'Budget' },
+  { id: 'family', label: 'Family' },
+  { id: 'adventure', label: 'Adventure' },
+  { id: 'romantic', label: 'Romantic' },
+  { id: 'corporate', label: 'Corporate' },
+  { id: 'general', label: 'General' },
 ] as const
 
 interface Template {
@@ -84,7 +83,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
   const isValid =
     !!data.title &&
     !!(data.tour_type || data.custom_category_label) &&
-    !!(data.duration_days) &&
+    !!data.duration_days &&
     !!data.location?.city
 
   // Fetch templates whenever the panel opens, tone, or tour_type changes
@@ -148,7 +147,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
-          {/* Tour Category — 15-card grid */}
+          {/* Tour Category ï¿½ 15-card grid */}
           <div className="space-y-4">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Tour Category *
@@ -163,7 +162,8 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                     onUpdate({
                       tour_type: cat.id,
                       // Clear custom label when a non-custom category is chosen
-                      custom_category_label: cat.id === 'Custom' ? data.custom_category_label : undefined,
+                      custom_category_label:
+                        cat.id === 'Custom' ? data.custom_category_label : undefined,
                     })
                   }
                   className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
@@ -211,7 +211,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                       Describe your custom category
                     </Label>
                     <Input
-                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema…"
+                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinemaï¿½"
                       value={data.custom_category_label || ''}
                       onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
                       className="h-10 text-sm"
@@ -277,7 +277,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             </div>
 
             <Textarea
-              placeholder="A brief teaser for the tour card…"
+              placeholder="A brief teaser for the tour cardï¿½"
               value={data.short_description || ''}
               onChange={(e) => onUpdate({ short_description: e.target.value })}
               rows={3}
@@ -326,7 +326,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                   {/* Template list */}
                   {loadingTemplates ? (
                     <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
-                      Loading suggestions…
+                      Loading suggestionsï¿½
                     </div>
                   ) : templates.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-4">
@@ -346,7 +346,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                             <span className="uppercase font-semibold text-primary/70">
                               {tmpl.tone}
                             </span>
-                            <span>·</span>
+                            <span>ï¿½</span>
                             <span>{tmpl.length_class}</span>
                           </p>
                           <p className="text-sm text-foreground leading-relaxed line-clamp-3">
