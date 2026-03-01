@@ -63,9 +63,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       id: Date.now().toString(),
       name: `Tier ${pricingTiers.length + 1}`,
       minPeople:
-        pricingTiers.length === 0 ? 4 : (pricingTiers[pricingTiers.length - 1].maxPeople || 5) + 1,
+        pricingTiers.length === 0 ? 5 : pricingTiers[pricingTiers.length - 1].minPeople + 1,
       maxPeople:
-        pricingTiers.length === 0 ? 10 : (pricingTiers[pricingTiers.length - 1].maxPeople || 5) + 5,
+        pricingTiers.length === 0 ? 5 : pricingTiers[pricingTiers.length - 1].minPeople + 1,
       pricePerPerson: discountedPrice,
       discountPercentage: defaultDiscount,
     }
@@ -228,9 +228,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 return (
                   <div
                     key={tier.id}
-                    className="flex flex-col md:flex-row items-center gap-6 p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#FF7167]/30 transition-all"
+                    className="flex flex-col md:flex-row items-center gap-4 p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#FF7167]/30 transition-all"
                   >
-                    <div className="w-full md:w-28 flex-shrink-0 space-y-1">
+                    <div className="w-full md:w-24 flex-shrink-0 space-y-1">
                       <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
                         Tier Name
                       </label>
@@ -239,39 +239,28 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       </div>
                     </div>
 
-                    <div className="flex-1 space-y-1 min-w-[200px]">
-                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
-                        Group Size (Pax)
+                    <div className="w-full md:w-32 flex-shrink-0 space-y-1">
+                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block whitespace-nowrap">
+                        Group Size
                       </label>
-                      <div className="flex items-center gap-3">
+                      <div className="relative">
                         <Input
                           type="number"
                           value={tier.minPeople}
                           min={1}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             updatePricingTier(tier.id, 'minPeople', parseInt(e.target.value) || 1)
-                          }
-                          className="h-11 w-20 rounded-xl bg-slate-50 border-gray-200 focus:border-[#FF7167] font-medium text-center px-1"
+                          }}
+                          className="h-11 w-full pr-12 rounded-xl bg-slate-50 border-gray-200 focus:border-[#FF7167] font-bold text-base"
                         />
-                        <span className="text-gray-400 font-medium">to</span>
-                        <Input
-                          type="number"
-                          value={tier.maxPeople}
-                          min={tier.minPeople}
-                          onChange={(e) =>
-                            updatePricingTier(
-                              tier.id,
-                              'maxPeople',
-                              parseInt(e.target.value) || tier.minPeople,
-                            )
-                          }
-                          className="h-11 w-20 rounded-xl bg-slate-50 border-gray-200 focus:border-[#FF7167] font-medium text-center px-1"
-                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
+                          pax
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-1 items-end gap-4 min-w-[250px]">
-                      <div className="space-y-1 w-28">
+                    <div className="w-full flex-1 flex items-end gap-4">
+                      <div className="space-y-1 w-28 flex-shrink-0">
                         <label className="text-[11px] uppercase font-bold text-[#FF7167] tracking-wider block">
                           Discount %
                         </label>
@@ -285,30 +274,30 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                               const val = e.target.value
                               updateTierDiscount(tier.id, val === '' ? 0 : parseInt(val))
                             }}
-                            className="h-11 pl-4 pr-9 rounded-xl border-[#FF7167]/40 bg-[#FFF8F7] text-[#FF7167] focus:border-[#FF7167] focus:ring-[#FF7167]/20 font-bold text-lg"
+                            className="h-11 pl-4 pr-8 rounded-xl border-[#FF7167]/40 bg-[#FFF8F7] text-[#FF7167] focus:border-[#FF7167] focus:ring-[#FF7167]/20 font-bold text-lg"
                           />
                           <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF7167]" />
                         </div>
                       </div>
 
-                      <div className="flex-1 mb-[2px]">
+                      <div className="flex-1 min-w-[120px] mb-[2px]">
                         <div className="text-[11px] uppercase font-bold text-gray-400 tracking-wider mb-1">
                           Preview
                         </div>
-                        <div className="h-11 flex items-center text-lg font-bold text-emerald-600 bg-emerald-50/50 px-4 rounded-xl border border-emerald-100/50">
+                        <div className="h-11 flex items-center text-lg font-bold text-emerald-600 bg-emerald-50/50 px-3 rounded-xl border border-emerald-100/50 flex-shrink-0 overflow-hidden text-ellipsis whitespace-nowrap">
                           {data.currency || '$'} {tier.pricePerPerson}
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center ml-auto">
+                    <div className="flex items-center absolute right-3 top-3 md:relative md:right-0 md:top-0">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => removePricingTier(tier.id)}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl h-11 w-11 transition-colors"
+                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl h-10 w-10 transition-colors"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
