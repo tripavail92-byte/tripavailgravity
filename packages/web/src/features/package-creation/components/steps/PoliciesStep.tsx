@@ -1,4 +1,5 @@
 import { AlertCircle, DollarSign, FileText, Shield } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -82,122 +83,155 @@ export function PoliciesStep({ onComplete, onUpdate, existingData, onBack }: Pol
   const selectedPaymentTerm = PAYMENT_TERMS.find((p) => p.id === paymentTerms)
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Package Policies</h2>
-        <p className="text-gray-600">Define your cancellation, payment, and booking policies</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Package Policies</h2>
+        <p className="text-gray-600 text-lg">
+          Define your cancellation, payment, and booking policies
+        </p>
+      </motion.div>
 
       {/* Cancellation Policy */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="w-5 h-5 text-primary" />
-          <Label className="text-lg font-semibold">Cancellation Policy</Label>
-        </div>
-        <div className="space-y-3">
-          {CANCELLATION_POLICIES.map((policy) => (
-            <button
-              key={policy.id}
-              onClick={() => setCancellationPolicy(policy.id)}
-              className={cn(
-                'w-full p-4 rounded-lg border-2 text-left transition-all',
-                cancellationPolicy === policy.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 hover:border-gray-300',
-              )}
-            >
-              <div className="font-semibold text-gray-900 mb-1">{policy.name}</div>
-              <div className="text-sm text-gray-600 mb-2">{policy.description}</div>
-              {policy.refundSchedule && (
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                  {policy.refundSchedule}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Custom Policy Input */}
-        {cancellationPolicy === 'custom' && (
-          <div className="mt-4">
-            <Label htmlFor="customPolicy" className="mb-2 block">
-              Custom Cancellation Policy
-            </Label>
-            <Textarea
-              id="customPolicy"
-              placeholder="Describe your cancellation policy and refund schedule in detail..."
-              value={customCancellationPolicy}
-              onChange={(e) => setCustomCancellationPolicy(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-5 h-5 text-primary" />
+            <Label className="text-lg font-semibold">Cancellation Policy</Label>
           </div>
-        )}
-      </Card>
+          <div className="space-y-3">
+            {CANCELLATION_POLICIES.map((policy) => (
+              <button
+                key={policy.id}
+                onClick={() => setCancellationPolicy(policy.id)}
+                className={cn(
+                  'w-full p-4 rounded-lg border-2 text-left transition-all',
+                  cancellationPolicy === policy.id
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300',
+                )}
+              >
+                <div className="font-semibold text-gray-900 mb-1">{policy.name}</div>
+                <div className="text-sm text-gray-600 mb-2">{policy.description}</div>
+                {policy.refundSchedule && (
+                  <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                    {policy.refundSchedule}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Policy Input */}
+          {cancellationPolicy === 'custom' && (
+            <div className="mt-4">
+              <Label htmlFor="customPolicy" className="mb-2 block">
+                Custom Cancellation Policy
+              </Label>
+              <Textarea
+                id="customPolicy"
+                placeholder="Describe your cancellation policy and refund schedule in detail..."
+                value={customCancellationPolicy}
+                onChange={(e) => setCustomCancellationPolicy(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+          )}
+        </Card>
+      </motion.div>
 
       {/* Payment Terms */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <DollarSign className="w-5 h-5 text-primary" />
-          <Label className="text-lg font-semibold">Payment Terms</Label>
-        </div>
-        <div className="space-y-3">
-          {PAYMENT_TERMS.map((term) => (
-            <button
-              key={term.id}
-              onClick={() => setPaymentTerms(term.id)}
-              className={cn(
-                'w-full p-4 rounded-lg border-2 text-left transition-all',
-                paymentTerms === term.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 hover:border-gray-300',
-              )}
-            >
-              <div className="font-semibold text-gray-900 mb-1">{term.name}</div>
-              <div className="text-sm text-gray-600">{term.description}</div>
-            </button>
-          ))}
-        </div>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="w-5 h-5 text-primary" />
+            <Label className="text-lg font-semibold">Payment Terms</Label>
+          </div>
+          <div className="space-y-3">
+            {PAYMENT_TERMS.map((term) => (
+              <button
+                key={term.id}
+                onClick={() => setPaymentTerms(term.id)}
+                className={cn(
+                  'w-full p-4 rounded-lg border-2 text-left transition-all',
+                  paymentTerms === term.id
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300',
+                )}
+              >
+                <div className="font-semibold text-gray-900 mb-1">{term.name}</div>
+                <div className="text-sm text-gray-600">{term.description}</div>
+              </button>
+            ))}
+          </div>
+        </Card>
 
-      {/* Terms and Conditions */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-primary" />
-          <Label className="text-lg font-semibold">Additional Terms & Conditions</Label>
-        </div>
-        <div className="bg-info/5 border border-info/20 rounded-lg p-3 mb-4 flex items-start gap-2">
-          <AlertCircle size={16} className="text-info mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-gray-700">
-            Include important details like age restrictions, health requirements, required
-            documents, etc.
-          </p>
-        </div>
-        <Textarea
-          placeholder="e.g., Minimum age: 18 years
+        {/* Terms and Conditions */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="w-5 h-5 text-primary" />
+            <Label className="text-lg font-semibold">Additional Terms & Conditions</Label>
+          </div>
+          <div className="bg-info/5 border border-info/20 rounded-lg p-3 mb-4 flex items-start gap-2">
+            <AlertCircle size={16} className="text-info mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-gray-700">
+              Include important details like age restrictions, health requirements, required
+              documents, etc.
+            </p>
+          </div>
+          <Textarea
+            placeholder="e.g., Minimum age: 18 years
 Valid ID required at check-in
 Medical fitness required for adventure activities
 Travel insurance recommended..."
-          value={termsAndConditions}
-          onChange={(e) => setTermsAndConditions(e.target.value)}
-          rows={6}
-          className="resize-none"
-        />
-      </Card>
+            value={termsAndConditions}
+            onChange={(e) => setTermsAndConditions(e.target.value)}
+            rows={6}
+            className="resize-none"
+          />
+        </Card>
+      </motion.div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+        >
           Back
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={handleContinue}
           disabled={cancellationPolicy === 'custom' && !customCancellationPolicy.trim()}
+          className={cn(
+            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            cancellationPolicy === 'custom' &&
+              !customCancellationPolicy.trim() &&
+              'opacity-50 cursor-not-allowed hover:transform-none',
+          )}
         >
           Continue
-        </Button>
-      </div>
+        </button>
+      </motion.div>
     </div>
   )
 }

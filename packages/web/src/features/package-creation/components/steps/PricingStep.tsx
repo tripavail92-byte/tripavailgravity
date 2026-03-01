@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -220,51 +221,68 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
   const priceRange = getPriceRange()
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Package Pricing</h2>
-        <p className="text-gray-600">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Package Pricing</h2>
+        <p className="text-gray-600 text-lg">
           {existingData?.hotelName
             ? `Select rooms from ${existingData.hotelName} and set package prices`
             : 'Select rooms from your hotel and set package prices'}
         </p>
-      </div>
+      </motion.div>
 
       {/* Info Banner */}
-      <Card className="p-4 bg-info/5 border-info/20">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-1">Pricing from your hotel listing</p>
-            <p>
-              Prices default to your hotel room rates. You can override them for package-specific
-              pricing. New rooms added here will automatically sync to your hotel listing.
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Selected Rooms Summary */}
-      {selectedRooms.size > 0 && (
-        <Card className="p-6 bg-success/5 border-success/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Check className="w-5 h-5 text-success" />
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  {selectedRooms.size} room{selectedRooms.size !== 1 ? 's' : ''} selected
-                </h3>
-                {priceRange && (
-                  <p className="text-sm text-gray-600">
-                    Price range: {priceRange.currency} {priceRange.min}
-                    {priceRange.min !== priceRange.max && ` - ${priceRange.max}`} per night
-                  </p>
-                )}
-              </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-4 bg-info/5 border-info/20 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-gray-700">
+              <p className="font-medium mb-1">Pricing from your hotel listing</p>
+              <p>
+                Prices default to your hotel room rates. You can override them for package-specific
+                pricing. New rooms added here will automatically sync to your hotel listing.
+              </p>
             </div>
           </div>
         </Card>
+      </motion.div>
+
+      {/* Selected Rooms Summary */}
+      {selectedRooms.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Card className="p-6 bg-success/5 border-success/20 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-success" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {selectedRooms.size} room{selectedRooms.size !== 1 ? 's' : ''} selected
+                  </h3>
+                  {priceRange && (
+                    <p className="text-sm text-gray-600">
+                      Price range: {priceRange.currency} {priceRange.min}
+                      {priceRange.min !== priceRange.max && ` - ${priceRange.max}`} per night
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       )}
 
       {/* Loading State */}
@@ -291,7 +309,12 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
 
       {/* Room Cards */}
       {!loading && hotelRooms.length > 0 && (
-        <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="space-y-4"
+        >
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Available Rooms</h3>
             <Button onClick={() => setShowWizard(true)} variant="outline">
@@ -447,7 +470,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
               )
             })}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Room Wizard Modal */}
@@ -461,14 +484,29 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+        >
           Back
-        </Button>
-        <Button onClick={handleContinue} disabled={selectedRooms.size === 0}>
+        </button>
+        <button
+          onClick={handleContinue}
+          disabled={selectedRooms.size === 0}
+          className={cn(
+            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            selectedRooms.size === 0 && 'opacity-50 cursor-not-allowed hover:transform-none',
+          )}
+        >
           Continue
-        </Button>
-      </div>
+        </button>
+      </motion.div>
     </div>
   )
 }

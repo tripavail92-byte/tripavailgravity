@@ -1,5 +1,6 @@
 import { supabase } from '@tripavail/shared/core/client'
 import { AlertCircle, Building2, Check, Loader2, MapPin, Plus } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -30,6 +31,7 @@ export function HotelSelectionStep({
   onComplete,
   onUpdate,
   existingData,
+  onBack,
 }: HotelSelectionStepProps) {
   const [hotels, setHotels] = useState<Hotel[]>([])
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null)
@@ -216,29 +218,45 @@ export function HotelSelectionStep({
 
   // Multiple Hotels Selection
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Select Your Hotel</h2>
-        <p className="text-gray-600">Choose which hotel this package is for</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Select Your Hotel</h2>
+        <p className="text-gray-600 text-lg">Choose which hotel this package is for</p>
+      </motion.div>
 
       {/* Info Banner */}
-      <Card className="p-4 bg-info/5 border-info/20">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-1">Package-Hotel Link</p>
-            <p>
-              Each package is linked to a specific hotel. Room prices and availability will be
-              fetched from the selected hotel.
-            </p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-4 bg-info/5 border-info/20 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-gray-700">
+              <p className="font-medium mb-1">Package-Hotel Link</p>
+              <p>
+                Each package is linked to a specific hotel. Room prices and availability will be
+                fetched from the selected hotel.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </motion.div>
 
       {/* Hotel Cards */}
-      <div className="grid gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="grid gap-4"
+      >
         {hotels.map((hotel) => {
           const isSelected = selectedHotel?.id === hotel.id
 
@@ -304,7 +322,7 @@ export function HotelSelectionStep({
             </Card>
           )
         })}
-      </div>
+      </motion.div>
 
       {/* Error Message */}
       {error && hotels.length > 0 && (
@@ -316,12 +334,36 @@ export function HotelSelectionStep({
         </Card>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-end pt-6">
-        <Button onClick={handleContinue} disabled={!selectedHotel}>
+      {/* Navigation - Note: The HotelSelectionStep doesn't seem to have a back button. We add one if onBack exists. */}
+      {/* Wait, the existing code has no back button! But props has onBack?: () => void. Lets stick to that. */}
+      <motion.div
+        className={cn(
+          'flex pt-8 border-t border-gray-100 mt-8',
+          onBack ? 'justify-between' : 'justify-end',
+        )}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          >
+            Back
+          </button>
+        )}
+        <button
+          onClick={handleContinue}
+          disabled={!selectedHotel}
+          className={cn(
+            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            !selectedHotel && 'opacity-50 cursor-not-allowed hover:transform-none',
+          )}
+        >
           Continue
-        </Button>
-      </div>
+        </button>
+      </motion.div>
     </div>
   )
 }

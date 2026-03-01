@@ -13,7 +13,12 @@ interface PackageTypeStepProps {
   onBack: () => void
 }
 
-export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageTypeStepProps) {
+export function PackageTypeStep({
+  onComplete,
+  existingData,
+  onUpdate,
+  onBack,
+}: PackageTypeStepProps) {
   const selectedType = existingData?.packageType
 
   const handleSelect = (type: PackageType) => {
@@ -31,15 +36,27 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Choose Your Package Type</h2>
-        <p className="text-gray-600 mt-2">
+    <div className="max-w-6xl mx-auto space-y-8 pb-32">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2 mb-8"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+          Choose Your Package Type
+        </h2>
+        <p className="text-gray-600 text-lg">
           Select the type of package that best represents your offering.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
         {Object.entries(PACKAGE_TYPE_CONFIG).map(([key, config]) => {
           const type = key as PackageType
           const isSelected = selectedType === type
@@ -118,22 +135,36 @@ export function PackageTypeStep({ onComplete, existingData, onUpdate }: PackageT
             </motion.button>
           )
         })}
-      </div>
+      </motion.div>
 
-      {selectedType && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center mt-8"
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
         >
+          Back
+        </button>
+        {selectedType ? (
           <button
             onClick={() => onComplete({ packageType: selectedType })}
             className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
           >
             Continue with {PACKAGE_TYPE_CONFIG[selectedType].label}
           </button>
-        </motion.div>
-      )}
+        ) : (
+          <button
+            disabled
+            className="px-8 py-3 bg-black text-white rounded-lg font-medium opacity-50 cursor-not-allowed"
+          >
+            Continue
+          </button>
+        )}
+      </motion.div>
     </div>
   )
 }

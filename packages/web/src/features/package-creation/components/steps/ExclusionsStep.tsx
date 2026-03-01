@@ -1,4 +1,5 @@
 import { AlertCircle, Camera, Plane, Plus, ShoppingBag, Utensils, X, XCircle } from 'lucide-react'
+import { motion } from 'motion/react'
 import { useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -105,59 +106,81 @@ export function ExclusionsStep({
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">What's NOT Included?</h2>
-        <p className="text-gray-600">Select items that are NOT included in your package</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">What's NOT Included?</h2>
+        <p className="text-gray-600 text-lg">Select items that are NOT included in your package</p>
+      </motion.div>
 
       {/* Info Banner */}
-      <Card className="p-4 bg-info/5 border-info/20">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-700">
-            <p className="font-medium mb-1">Be transparent about exclusions</p>
-            <p>
-              Clear communication about what's NOT included helps set proper expectations and builds
-              trust with travelers.
-            </p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-4 bg-info/5 border-info/20 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-gray-700">
+              <p className="font-medium mb-1">Be transparent about exclusions</p>
+              <p>
+                Clear communication about what's NOT included helps set proper expectations and
+                builds trust with travelers.
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </motion.div>
 
       {/* Selected Exclusions Summary */}
       {selectedExclusions.length > 0 && (
-        <Card className="p-6 bg-error/5 border-error/20">
-          <div className="flex items-center gap-2 mb-3">
-            <XCircle className="w-5 h-5 text-error" />
-            <h3 className="font-semibold text-gray-900">
-              {selectedExclusions.length} exclusion{selectedExclusions.length !== 1 ? 's' : ''}{' '}
-              selected
-            </h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedExclusions.map((item) => (
-              <Badge
-                key={item}
-                variant="outline"
-                className="bg-white border-error/30 text-gray-700 pr-1"
-              >
-                {item}
-                <button
-                  onClick={() => removeExclusion(item)}
-                  className="ml-2 rounded-full hover:bg-error/10 p-0.5 transition-colors"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+        >
+          <Card className="p-6 bg-error/5 border-error/20 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <XCircle className="w-5 h-5 text-error" />
+              <h3 className="font-semibold text-gray-900">
+                {selectedExclusions.length} exclusion{selectedExclusions.length !== 1 ? 's' : ''}{' '}
+                selected
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selectedExclusions.map((item) => (
+                <Badge
+                  key={item}
+                  variant="outline"
+                  className="bg-white border-error/30 text-gray-700 pr-1"
                 >
-                  <X size={14} className="text-gray-500 hover:text-error" />
-                </button>
-              </Badge>
-            ))}
-          </div>
-        </Card>
+                  {item}
+                  <button
+                    onClick={() => removeExclusion(item)}
+                    className="ml-2 rounded-full hover:bg-error/10 p-0.5 transition-colors"
+                  >
+                    <X size={14} className="text-gray-500 hover:text-error" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
       )}
 
       {/* Preset Categories */}
-      <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="space-y-4"
+      >
         {PRESET_EXCLUSIONS.map((category) => {
           const IconComponent = category.icon
           const selectedCount = category.items.filter((item) =>
@@ -165,7 +188,10 @@ export function ExclusionsStep({
           ).length
 
           return (
-            <Card key={category.id} className="p-6">
+            <Card
+              key={category.id}
+              className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
                   <IconComponent size={20} className="text-error" />
@@ -177,7 +203,7 @@ export function ExclusionsStep({
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                 {category.items.map((item) => {
                   const isSelected = selectedExclusions.includes(item)
                   return (
@@ -187,7 +213,7 @@ export function ExclusionsStep({
                       className={cn(
                         'px-3 py-2 rounded-lg text-sm font-medium transition-all text-left',
                         isSelected
-                          ? 'bg-error/10 text-error border-2 border-error/30'
+                          ? 'bg-error/10 text-error border-2 border-error/30 ring-1 ring-error/20 shadow-sm'
                           : 'bg-gray-50 text-gray-700 border-2 border-transparent hover:border-gray-200 hover:bg-gray-100',
                       )}
                     >
@@ -202,38 +228,57 @@ export function ExclusionsStep({
             </Card>
           )
         })}
-      </div>
+      </motion.div>
 
       {/* Custom Exclusions */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-gray-900 mb-3">Add Custom Exclusion</h3>
-        <div className="flex gap-2">
-          <Input
-            placeholder="e.g., Entrance fees to monuments, Professional photography..."
-            value={customExclusion}
-            onChange={(e) => setCustomExclusion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addCustomExclusion()}
-            className="flex-1"
-          />
-          <Button
-            onClick={addCustomExclusion}
-            disabled={!customExclusion.trim()}
-            variant="outline"
-            className="flex-shrink-0"
-          >
-            <Plus size={18} className="mr-1" />
-            Add
-          </Button>
-        </div>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
+        <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <h3 className="font-semibold text-gray-900 mb-3">Add Custom Exclusion</h3>
+          <div className="flex gap-2">
+            <Input
+              placeholder="e.g., Entrance fees to monuments, Professional photography..."
+              value={customExclusion}
+              onChange={(e) => setCustomExclusion(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addCustomExclusion()}
+              className="flex-1 bg-white"
+            />
+            <Button
+              onClick={addCustomExclusion}
+              disabled={!customExclusion.trim()}
+              variant="outline"
+              className="flex-shrink-0"
+            >
+              <Plus size={18} className="mr-1" />
+              Add
+            </Button>
+          </div>
+        </Card>
+      </motion.div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+        >
           Back
-        </Button>
-        <Button onClick={handleContinue}>Continue</Button>
-      </div>
+        </button>
+        <button
+          onClick={handleContinue}
+          className="px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800"
+        >
+          Continue
+        </button>
+      </motion.div>
     </div>
   )
 }

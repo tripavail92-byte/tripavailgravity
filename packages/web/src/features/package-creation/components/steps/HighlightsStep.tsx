@@ -281,19 +281,29 @@ export const HighlightsStep = ({
     discounts.reduce((acc, d) => acc + d.originalPrice * (d.discount / 100), 0)
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="text-center space-y-2">
+    <div className="max-w-6xl mx-auto space-y-8 pb-32">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
         <h2 className="text-3xl font-bold tracking-tight text-primary">Package Highlights</h2>
         <p className="text-muted-foreground max-w-[600px] mx-auto text-lg">
           Make your package irresistible with free perks and exclusive discounts.
         </p>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Input Forms */}
-        <div className="lg:col-span-2 space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="lg:col-span-2 space-y-8"
+        >
           {/* Section 1: Free Inclusions */}
-          <Card className="p-6 border-primary/20 shadow-sm overflow-hidden relative group">
+          <Card className="p-6 border-primary/20 shadow-sm hover:shadow-md transition-shadow overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Sparkles className="w-24 h-24 text-primary" />
             </div>
@@ -395,7 +405,7 @@ export const HighlightsStep = ({
           </Card>
 
           {/* Section 2: Exclusive Discounts */}
-          <Card className="p-6 border-primary/20 shadow-sm overflow-hidden relative group">
+          <Card className="p-6 border-primary/20 shadow-sm hover:shadow-md transition-shadow overflow-hidden relative group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <Percent className="w-24 h-24 text-primary" />
             </div>
@@ -620,10 +630,15 @@ export const HighlightsStep = ({
               </div>
             </div>
           </Card>
-        </div>
+        </motion.div>
 
         {/* Right Column: Live Preview */}
-        <div className="lg:col-span-1">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="lg:col-span-1"
+        >
           <div className="sticky top-6">
             <Card className="p-0 overflow-hidden border-2 shadow-lg bg-slate-50 dark:bg-slate-950/50">
               <div className="bg-slate-900 text-white p-4">
@@ -726,14 +741,22 @@ export const HighlightsStep = ({
               </div>
             </Card>
           </div>
-        </div>
+        </motion.div>
       </div>
 
-      <div className="flex justify-between pt-6 border-t">
-        <Button variant="outline" onClick={onBack}>
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+        >
           Back
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={() =>
             onComplete({
               ...existingData,
@@ -741,12 +764,17 @@ export const HighlightsStep = ({
               discountOffers: discounts,
             })
           }
-          size="lg"
           disabled={inclusions.length === 0 && discounts.length === 0}
+          className={cn(
+            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            inclusions.length === 0 &&
+              discounts.length === 0 &&
+              'opacity-50 cursor-not-allowed hover:transform-none',
+          )}
         >
           Continue
-        </Button>
-      </div>
+        </button>
+      </motion.div>
     </div>
   )
 }

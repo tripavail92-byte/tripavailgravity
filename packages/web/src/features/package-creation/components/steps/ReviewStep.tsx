@@ -10,6 +10,7 @@ import {
   PlusCircle,
   XCircle,
 } from 'lucide-react'
+import { motion } from 'motion/react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,6 @@ interface ReviewStepProps {
   onEdit: (stepId: number) => void
   onSubmit: () => void
   isPublishing?: boolean
-  publishError?: string | null
 }
 
 export function ReviewStep({
@@ -33,7 +33,6 @@ export function ReviewStep({
   onEdit,
   onSubmit,
   isPublishing = false,
-  publishError,
 }: ReviewStepProps) {
   // We use parent's isPublishing state and onSubmit callback directly
   // No need for local handleSubmit wrapper
@@ -229,6 +228,7 @@ export function ReviewStep({
   ]
 
   // Helper function to check if field has valid data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hasValidData = (data: any, sectionId?: number) => {
     if (data === undefined || data === null) return false
 
@@ -251,38 +251,60 @@ export function ReviewStep({
   )
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8 pb-32">
       {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Review Your Package</h2>
-        <p className="text-gray-600">Review all details before publishing your package</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="text-center space-y-2"
+      >
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Review Your Package</h2>
+        <p className="text-gray-600 text-lg">Review all details before publishing your package</p>
+      </motion.div>
 
       {/* Completion Progress */}
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-semibold text-gray-900">Completion Status</span>
-          <span className="text-2xl font-bold text-primary">{completionPercentage}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-          <div
-            className="bg-primary h-2 rounded-full transition-all"
-            style={{ width: `${completionPercentage}%` }}
-          />
-        </div>
-        <p className="text-sm text-gray-600">
-          {completedRequired.length} of {requiredSections.length} required sections completed
-        </p>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-semibold text-gray-900">Completion Status</span>
+            <span className="text-2xl font-bold text-primary">{completionPercentage}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div
+              className="bg-primary h-2 rounded-full transition-all"
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600">
+            {completedRequired.length} of {requiredSections.length} required sections completed
+          </p>
+        </Card>
+      </motion.div>
 
       {/* Sections Review */}
-      <div className="space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="space-y-4"
+      >
         {sections.map((section) => {
           const IconComponent = section.icon
           const isComplete = hasValidData(section.data, section.id)
 
           return (
-            <Card key={section.id} className={cn('p-6', !isComplete && 'bg-gray-50')}>
+            <Card
+              key={section.id}
+              className={cn(
+                'p-6 shadow-sm hover:shadow-md transition-shadow',
+                !isComplete && 'bg-gray-50',
+              )}
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div
@@ -320,17 +342,30 @@ export function ReviewStep({
             </Card>
           )
         })}
-      </div>
+      </motion.div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack} disabled={isPublishing}>
+      <motion.div
+        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <button
+          onClick={onBack}
+          disabled={isPublishing}
+          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors disabled:opacity-50"
+        >
           Back
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={onSubmit}
           disabled={completionPercentage < 100 || isPublishing}
-          className="min-w-[140px]"
+          className={cn(
+            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800 flex items-center justify-center min-w-[170px]',
+            (completionPercentage < 100 || isPublishing) &&
+              'opacity-50 cursor-not-allowed hover:transform-none',
+          )}
         >
           {isPublishing ? (
             <>
@@ -343,8 +378,8 @@ export function ReviewStep({
               Publish Package
             </>
           )}
-        </Button>
-      </div>
+        </button>
+      </motion.div>
     </div>
   )
 }
