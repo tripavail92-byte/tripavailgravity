@@ -8,6 +8,8 @@ import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
+import { RequirementCategory, TOUR_REQUIREMENTS } from './RequirementsData'
+
 interface TourDetailsStepProps {
   data: Partial<Tour>
   onUpdate: (data: Partial<Tour>) => void
@@ -90,6 +92,14 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
     const current = data.languages || []
     const updated = current.includes(lang) ? current.filter((l) => l !== lang) : [...current, lang]
     onUpdate({ languages: updated })
+  }
+
+  const toggleRequirement = (reqId: string) => {
+    const current = data.requirements || []
+    const updated = current.includes(reqId)
+      ? current.filter((id) => id !== reqId)
+      : [...current, reqId]
+    onUpdate({ requirements: updated })
   }
 
   return (
@@ -298,12 +308,76 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           </div>
         </div>
 
-        <div className="space-y-4 pt-4">
+        <div className="space-y-4 pt-4 border-t border-gray-100">
           <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-            Physical Requirements / Logistics
+            Tour-Specific Requirements
+          </Label>
+          <div className="space-y-10">
+            {(Object.keys(TOUR_REQUIREMENTS) as RequirementCategory[]).map((category) => (
+              <div key={category} className="space-y-4">
+                <h3 className="text-[14px] font-bold text-[#FF7167] tracking-wider uppercase">
+                  {category}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {TOUR_REQUIREMENTS[category].map((req) => {
+                    const isSelected = (data.requirements || []).includes(req.id)
+                    return (
+                      <motion.button
+                        key={req.id}
+                        type="button"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => toggleRequirement(req.id)}
+                        className={`relative flex items-center p-4 rounded-2xl border transition-all duration-300 text-left group min-h-[5rem] ${
+                          isSelected
+                            ? 'border-[#FF7167] bg-[#FFF8F7] shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-[#FF7167]/40 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 w-full pr-6">
+                          <div
+                            className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${
+                              isSelected
+                                ? 'bg-[#FF7167] text-white'
+                                : 'bg-slate-50 text-gray-500 group-hover:bg-[#FF7167]/10 group-hover:text-[#FF7167]'
+                            }`}
+                          >
+                            <req.icon />
+                          </div>
+                          <span
+                            className={`font-bold text-[14px] leading-snug ${
+                              isSelected
+                                ? 'text-[#FF7167]'
+                                : 'text-gray-700 group-hover:text-gray-900'
+                            }`}
+                          >
+                            {req.label}
+                          </span>
+                        </div>
+
+                        {isSelected && (
+                          <motion.div
+                            layoutId={`selected-req-${req.id}`}
+                            className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-[#FF7167] text-white rounded-full flex items-center justify-center border-[2px] border-white shadow-sm"
+                          >
+                            <Check className="w-3 h-3" strokeWidth={3} />
+                          </motion.div>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-8 border-t border-gray-100">
+          <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
+            Additional Physical Requirements / Logistics
           </Label>
           <Textarea
-            placeholder="e.g. Requires 2km of walking on uneven terrain. Please bring comfortable shoes..."
+            placeholder="e.g. Any custom requirements not covered above..."
             value={data.description || ''}
             onChange={(e) => onUpdate({ description: e.target.value })}
             rows={4}
