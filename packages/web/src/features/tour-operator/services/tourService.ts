@@ -95,6 +95,16 @@ export interface TourSchedule {
   created_at: string
 }
 
+export interface TourMediaItem {
+  id: string
+  tour_id: string
+  url: string
+  storage_path: string
+  sort_order: number
+  is_main: boolean
+  created_at: string
+}
+
 /** Calculate how complete a tour draft is (0–100) */
 export function calculateCompletionPercentage(data: Partial<Tour>): number {
   const checks = [
@@ -466,33 +476,150 @@ export const tourService = {
     return schedules.length > 0 ? schedules[0] : null
   },
 
-  async uploadTourImages(operatorId: string, files: File[]) {
-    const urls: string[] = []
+  async listTourMedia(tourId: string) {
+    const { data, error } = await supabase
+      .from('tour_media')
+      .select('*')
+      .eq('tour_id', tourId)
+      .order('is_main', { ascending: false })
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
 
-    for (const file of files) {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `${operatorId}/${fileName}`
+    if (error) throw error
+    return (data ?? []) as TourMediaItem[]
+  },
 
-      console.log(`📤 Uploading tour image: ${filePath}`)
+  async syncTourImagesFromMedia(tourId: string, operatorId: string) {
+    const media = await this.listTourMedia(tourId)
+    const orderedUrls = media.map((item) => item.url)
 
-      const { error: uploadError } = await supabase.storage
-        .from('tour-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
+    const { error } = await supabase
+      .from('tours')
+      .update({
+        images: orderedUrls,
+        updated_at: new Date().toISOString(),
+        last_edited_at: new Date().toISOString(),
+      } as any)
+      .eq('id', tourId)
+      .eq('operator_id', operatorId)
 
-      if (uploadError) {
-        console.error(`❌ Error uploading file ${file.name}:`, uploadError)
-        throw uploadError
-      }
+    if (error) throw error
+    return orderedUrls
+  },
 
-      const { data } = supabase.storage.from('tour-images').getPublicUrl(filePath)
+  async uploadTourMediaAtomic(params: {
+    tourId: string
+    operatorId: string
+    file: File
+    sortOrder: number
+    makeMain: boolean
+    timeoutMs?: number
+  }) {
+    const {
+      tourId,
+      operatorId,
+      file,
+      sortOrder,
+      makeMain,
+      timeoutMs = 15000,
+    } = params
 
-      urls.push(data.publicUrl)
+    const fileExt = file.name.split('.').pop() || 'jpg'
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `${operatorId}/${tourId}/${fileName}`
+
+    const uploadPromise = supabase.storage
+      .from('tour-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      })
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Upload timeout: no progress detected')), timeoutMs)
+    })
+
+    const uploadResult = await Promise.race([uploadPromise, timeoutPromise]) as {
+      error: any
     }
 
-    return urls
+    if (uploadResult.error) {
+      throw uploadResult.error
+    }
+
+    const { data: publicData } = supabase.storage.from('tour-images').getPublicUrl(filePath)
+    const publicUrl = publicData.publicUrl
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('tour_media')
+      .insert({
+        tour_id: tourId,
+        url: publicUrl,
+        storage_path: filePath,
+        sort_order: sortOrder,
+        is_main: false,
+      } as any)
+      .select('*')
+      .single()
+
+    if (insertError) {
+      await supabase.storage.from('tour-images').remove([filePath])
+      throw insertError
+    }
+
+    if (makeMain) {
+      const { error: mainError } = await supabase.rpc('set_tour_media_main', {
+        p_tour_id: tourId,
+        p_media_id: inserted.id,
+      })
+      if (mainError) {
+        throw mainError
+      }
+    }
+
+    await this.syncTourImagesFromMedia(tourId, operatorId)
+    return inserted as TourMediaItem
+  },
+
+  async setTourMediaMain(tourId: string, mediaId: string, operatorId: string) {
+    const { error } = await supabase.rpc('set_tour_media_main', {
+      p_tour_id: tourId,
+      p_media_id: mediaId,
+    })
+    if (error) throw error
+    await this.syncTourImagesFromMedia(tourId, operatorId)
+    return { success: true }
+  },
+
+  async removeTourMedia(tourId: string, mediaId: string, operatorId: string) {
+    const { data: media, error: mediaError } = await supabase
+      .from('tour_media')
+      .select('id, storage_path, is_main')
+      .eq('id', mediaId)
+      .eq('tour_id', tourId)
+      .single()
+
+    if (mediaError) throw mediaError
+
+    const { error: deleteError } = await supabase
+      .from('tour_media')
+      .delete()
+      .eq('id', mediaId)
+      .eq('tour_id', tourId)
+
+    if (deleteError) throw deleteError
+
+    if (media.storage_path) {
+      await supabase.storage.from('tour-images').remove([media.storage_path])
+    }
+
+    const remaining = await this.listTourMedia(tourId)
+    if (media.is_main && remaining.length > 0) {
+      await this.setTourMediaMain(tourId, remaining[0].id, operatorId)
+    } else {
+      await this.syncTourImagesFromMedia(tourId, operatorId)
+    }
+
+    return { success: true }
   },
 }

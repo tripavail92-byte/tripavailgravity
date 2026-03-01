@@ -373,6 +373,24 @@ export default function CreateTourPage() {
     }
   }
 
+  const ensureTourDraftForMedia = useCallback(async (): Promise<string> => {
+    if (!user) throw new Error('Authentication required')
+    if (currentTourId) return currentTourId
+
+    const pct = calculateCompletionPercentage(tourData)
+    const result = await tourService.saveWorkflowDraft(
+      tourData,
+      user.id,
+      null,
+      pct,
+      createWorkflowSnapshot(),
+    )
+
+    setCurrentTourId(result.tourId)
+    setTourData((prev) => ({ ...prev, id: result.tourId } as Partial<Tour>))
+    return result.tourId
+  }, [user, currentTourId, tourData, createWorkflowSnapshot])
+
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
@@ -555,6 +573,8 @@ export default function CreateTourPage() {
               onNext={handleNext}
               onBack={handleBack}
               onPublish={handlePublish}
+              tourId={currentTourId}
+              ensureTourDraft={ensureTourDraftForMedia}
             />
           </motion.div>
         </AnimatePresence>
