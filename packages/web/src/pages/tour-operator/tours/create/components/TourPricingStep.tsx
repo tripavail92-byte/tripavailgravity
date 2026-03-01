@@ -486,11 +486,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       {/* Inclusions & Exclusions - Vertically Stacked Sections */}
       <div className="space-y-8">
         {/* What's Included */}
-        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
-          <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-              <Plus className="w-4 h-4 text-slate-500" />
-            </div>
+        <div className="rounded-[24px] p-8 border border-gray-200 bg-white">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">
             What&apos;s Included
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -500,10 +497,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border transition-all duration-300 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border transition-all duration-200 ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50/50 shadow-md'
-                      : 'border-slate-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                      ? 'border-gray-900 bg-slate-50 ring-1 ring-gray-900'
+                      : 'border-gray-200 bg-white hover:border-gray-400'
                   }`}
                 >
                   <input
@@ -512,33 +509,17 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     checked={isSelected}
                     onChange={() => toggleInclude(item.id)}
                   />
-                  <div
-                    className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      isSelected
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-slate-50 text-slate-500 group-hover:bg-slate-100'
+                  <Icon
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'}`}
+                    strokeWidth={1.5}
+                  />
+                  <span
+                    className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
+                      isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="w-5 h-5" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className={`block text-[14px] font-bold leading-tight transition-colors ${
-                        isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-                      }`}
-                    >
-                      {item.id}
-                    </span>
-                  </div>
-                  <div
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
-                      isSelected
-                        ? 'border-gray-900 bg-gray-900 text-white'
-                        : 'border-slate-200 group-hover:border-slate-300'
-                    }`}
-                  >
-                    {isSelected && <BadgeCheck className="w-4 h-4" />}
-                  </div>
+                    {item.id}
+                  </span>
                 </label>
               )
             })}
@@ -546,11 +527,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </div>
 
         {/* What's Excluded */}
-        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
-          <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
-              <Trash2 className="w-4 h-4 text-slate-500" />
-            </div>
+        <div className="rounded-[24px] p-8 border border-gray-200 bg-white">
+          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">
             What&apos;s Excluded
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -560,10 +538,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border transition-all duration-300 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border transition-all duration-200 ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50/50 shadow-md'
-                      : 'border-slate-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                      ? 'border-gray-900 bg-slate-50 ring-1 ring-gray-900'
+                      : 'border-gray-200 bg-white hover:border-gray-400'
                   }`}
                 >
                   <input
@@ -572,33 +550,17 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     checked={isSelected}
                     onChange={() => toggleExclude(item.id)}
                   />
-                  <div
-                    className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      isSelected
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-slate-50 text-slate-500 group-hover:bg-slate-100'
+                  <Icon
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'}`}
+                    strokeWidth={1.5}
+                  />
+                  <span
+                    className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
+                      isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="w-5 h-5" strokeWidth={1.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className={`block text-[14px] font-bold leading-tight transition-colors ${
-                        isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-                      }`}
-                    >
-                      {item.id}
-                    </span>
-                  </div>
-                  <div
-                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
-                      isSelected
-                        ? 'border-gray-900 bg-gray-900 text-white'
-                        : 'border-slate-200 group-hover:border-slate-300'
-                    }`}
-                  >
-                    {isSelected && <Trash2 className="w-4 h-4" />}
-                  </div>
+                    {item.id}
+                  </span>
                 </label>
               )
             })}
