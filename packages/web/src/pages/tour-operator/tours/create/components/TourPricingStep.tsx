@@ -483,26 +483,27 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </div>
       </div>
 
-      {/* Inclusions & Exclusions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-emerald-100 bg-white">
-          <h3 className="text-sm font-bold text-emerald-600 mb-6 uppercase tracking-wider flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
-              <Plus className="w-4 h-4" />
+      {/* Inclusions & Exclusions - Vertically Stacked Sections */}
+      <div className="space-y-8">
+        {/* What's Included */}
+        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
+          <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+              <Plus className="w-4 h-4 text-slate-500" />
             </div>
             What&apos;s Included
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {COMMON_INCLUDES.map((item) => {
               const Icon = item.icon
               const isSelected = (data.inclusions || []).includes(item.id)
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border shadow-sm transition-all ${
+                  className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-emerald-200 bg-emerald-50/50'
-                      : 'border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30'
+                      ? 'border-gray-900 bg-slate-50/50 shadow-md'
+                      : 'border-slate-100 bg-white hover:border-gray-200 hover:shadow-sm'
                   }`}
                 >
                   <input
@@ -514,33 +515,29 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   <div
                     className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       isSelected
-                        ? 'bg-emerald-500 text-white shadow-md scale-105'
-                        : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 group-hover:scale-105 group-hover:shadow-sm'
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-slate-50 text-slate-500 group-hover:bg-slate-100'
                     }`}
                   >
-                    <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                    <Icon className="w-5 h-5" strokeWidth={1.5} />
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex-1 min-w-0">
                     <span
-                      className={`block text-[14px] font-bold leading-tight transition-colors ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                      className={`block text-[14px] font-bold leading-tight transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                      }`}
                     >
                       {item.id}
                     </span>
                   </div>
-                  <div className="ml-auto pl-2 flex-shrink-0">
-                    <div
-                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
-                        isSelected
-                          ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
-                          : 'border-gray-200 bg-white group-hover:border-emerald-300'
-                      }`}
-                    >
-                      {isSelected ? (
-                        <Plus className="w-3.5 h-3.5" strokeWidth={4} />
-                      ) : (
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-emerald-200" />
-                      )}
-                    </div>
+                  <div
+                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                      isSelected
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-slate-200 group-hover:border-slate-300'
+                    }`}
+                  >
+                    {isSelected && <BadgeCheck className="w-4 h-4" />}
                   </div>
                 </label>
               )
@@ -548,24 +545,25 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
           </div>
         </div>
 
-        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-red-100 bg-white">
-          <h3 className="text-sm font-bold text-red-500 mb-6 uppercase tracking-wider flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
-              <Trash2 className="w-4 h-4" />
+        {/* What's Excluded */}
+        <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
+          <h3 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+              <Trash2 className="w-4 h-4 text-slate-500" />
             </div>
             What&apos;s Excluded
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {COMMON_EXCLUDES.map((item) => {
               const Icon = item.icon
               const isSelected = (data.exclusions || []).includes(item.id)
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border shadow-sm transition-all ${
+                  className={`flex items-center gap-4 cursor-pointer group p-4 rounded-2xl border transition-all duration-300 ${
                     isSelected
-                      ? 'border-red-200 bg-red-50/50'
-                      : 'border-slate-100 hover:border-red-200 hover:bg-red-50/30'
+                      ? 'border-gray-900 bg-slate-50/50 shadow-md'
+                      : 'border-slate-100 bg-white hover:border-gray-200 hover:shadow-sm'
                   }`}
                 >
                   <input
@@ -577,33 +575,29 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   <div
                     className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
                       isSelected
-                        ? 'bg-red-500 text-white shadow-md scale-105'
-                        : 'bg-red-50 text-red-600 group-hover:bg-red-100 group-hover:scale-105 group-hover:shadow-sm'
+                        ? 'bg-gray-900 text-white'
+                        : 'bg-slate-50 text-slate-500 group-hover:bg-slate-100'
                     }`}
                   >
-                    <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                    <Icon className="w-5 h-5" strokeWidth={1.5} />
                   </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex-1 min-w-0">
                     <span
-                      className={`block text-[14px] font-bold leading-tight transition-colors ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                      className={`block text-[14px] font-bold leading-tight transition-colors ${
+                        isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                      }`}
                     >
                       {item.id}
                     </span>
                   </div>
-                  <div className="ml-auto pl-2 flex-shrink-0">
-                    <div
-                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
-                        isSelected
-                          ? 'border-red-500 bg-red-500 text-white shadow-sm'
-                          : 'border-gray-200 bg-white group-hover:border-red-300'
-                      }`}
-                    >
-                      {isSelected ? (
-                        <Trash2 className="w-3.5 h-3.5" strokeWidth={4} />
-                      ) : (
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-red-200" />
-                      )}
-                    </div>
+                  <div
+                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
+                      isSelected
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-slate-200 group-hover:border-slate-300'
+                    }`}
+                  >
+                    {isSelected && <Trash2 className="w-4 h-4" />}
                   </div>
                 </label>
               )
