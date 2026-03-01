@@ -520,22 +520,26 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   >
                     <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <span
-                      className={`block text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                      className={`block text-[14px] font-bold leading-tight transition-colors ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
                     >
                       {item.id}
                     </span>
                   </div>
                   <div className="ml-auto pl-2 flex-shrink-0">
                     <div
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
+                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
                         isSelected
-                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm'
                           : 'border-gray-200 bg-white group-hover:border-emerald-300'
                       }`}
                     >
-                      {isSelected && <Plus className="w-3 h-3" strokeWidth={4} />}
+                      {isSelected ? (
+                        <Plus className="w-3.5 h-3.5" strokeWidth={4} />
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-emerald-200" />
+                      )}
                     </div>
                   </div>
                 </label>
@@ -579,27 +583,80 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   >
                     <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <span
-                      className={`block text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                      className={`block text-[14px] font-bold leading-tight transition-colors ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
                     >
                       {item.id}
                     </span>
                   </div>
                   <div className="ml-auto pl-2 flex-shrink-0">
                     <div
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
+                      className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all duration-300 ${
                         isSelected
-                          ? 'border-red-500 bg-red-500 text-white'
+                          ? 'border-red-500 bg-red-500 text-white shadow-sm'
                           : 'border-gray-200 bg-white group-hover:border-red-300'
                       }`}
                     >
-                      {isSelected && <Trash2 className="w-3 h-3" strokeWidth={4} />}
+                      {isSelected ? (
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={4} />
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-200 group-hover:bg-red-200" />
+                      )}
                     </div>
                   </div>
                 </label>
               )
             })}
+          </div>
+        </div>
+      </div>
+
+      {/* Tour Theme Color Selection */}
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#FF7167]/10 flex items-center justify-center">
+                <Percent className="w-4 h-4 text-[#FF7167]" />
+              </div>
+              Tour Accent Color
+            </h3>
+            <p className="text-sm text-gray-500 mt-1 pl-10">
+              Customize the platform theme color specifically for this tour package.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-4 pl-10 pt-2">
+            {['#FF7167', '#FF9F67', '#67D4FF', '#67FFAC', '#C667FF', '#FF67B1', '#2C2C2C'].map(
+              (color) => (
+                <button
+                  key={color}
+                  onClick={() => handleInputChange('theme_color', color)}
+                  className={`w-12 h-12 rounded-2xl border-2 transition-all duration-300 flex items-center justify-center ${
+                    (data.theme_color || '#FF7167') === color
+                      ? 'border-gray-900 scale-110 shadow-lg'
+                      : 'border-transparent hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color }}
+                >
+                  {(data.theme_color || '#FF7167') === color && (
+                    <BadgeCheck className="w-6 h-6 text-white shadow-sm" />
+                  )}
+                </button>
+              ),
+            )}
+            <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-2xl border border-gray-100">
+              <input
+                type="color"
+                value={data.theme_color || '#FF7167'}
+                onChange={(e) => handleInputChange('theme_color', e.target.value)}
+                className="w-8 h-8 rounded-lg cursor-pointer border-none bg-transparent"
+              />
+              <span className="text-xs font-mono font-bold text-gray-500 uppercase">
+                {data.theme_color || '#FF7167'}
+              </span>
+            </div>
           </div>
         </div>
       </div>

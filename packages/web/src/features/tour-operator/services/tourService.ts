@@ -64,6 +64,7 @@ export interface Tour {
   submitted_at?: string | null
   approved_at?: string | null
   draft_data?: Record<string, any> | null
+  theme_color?: string | null
   created_at: string
   updated_at: string
 }
