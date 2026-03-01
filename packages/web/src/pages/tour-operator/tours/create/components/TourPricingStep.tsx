@@ -62,8 +62,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
     const newTier = {
       id: Date.now().toString(),
       name: `Tier ${pricingTiers.length + 1}`,
-      minPeople: pricingTiers.length === 0 ? 3 : 6,
-      maxPeople: pricingTiers.length === 0 ? 5 : 10,
+      minPeople:
+        pricingTiers.length === 0 ? 4 : (pricingTiers[pricingTiers.length - 1].maxPeople || 5) + 1,
+      maxPeople:
+        pricingTiers.length === 0 ? 10 : (pricingTiers[pricingTiers.length - 1].maxPeople || 5) + 5,
       pricePerPerson: discountedPrice,
       discountPercentage: defaultDiscount,
     }
@@ -78,7 +80,6 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
     const validDiscount = Math.max(0, Math.min(100, discountPercentage))
     const newPrice = Math.round(basePrice * (1 - validDiscount / 100))
 
-    // Update both discount percentage and calculated price
     const updated = pricingTiers.map((t) =>
       t.id === id ? { ...t, discountPercentage: validDiscount, pricePerPerson: newPrice } : t,
     )
@@ -282,12 +283,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       <div className="relative">
                         <Input
                           type="number"
-                          min={0}
-                          max={100}
+                          min="0"
+                          max="100"
                           value={discountPct}
-                          onChange={(e) =>
-                            updateTierDiscount(tier.id, parseInt(e.target.value) || 0)
-                          }
+                          onChange={(e) => {
+                            const val = e.target.value
+                            updateTierDiscount(tier.id, val === '' ? 0 : parseInt(val))
+                          }}
                           className="h-11 pl-4 pr-10 rounded-xl border-[#FF7167]/40 bg-[#FFF8F7] text-[#FF7167] focus:border-[#FF7167] focus:ring-[#FF7167]/20 font-bold text-lg"
                         />
                         <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF7167]" />

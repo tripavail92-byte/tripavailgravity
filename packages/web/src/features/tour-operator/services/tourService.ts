@@ -39,6 +39,7 @@ export interface Tour {
     minPeople: number
     maxPeople: number
     pricePerPerson: number
+    discountPercentage?: number
   }>
   seasonal_pricing: boolean
   peak_season_multiplier: number
