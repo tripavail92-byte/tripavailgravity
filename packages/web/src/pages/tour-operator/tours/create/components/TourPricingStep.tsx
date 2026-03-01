@@ -520,11 +520,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   >
                     <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </div>
-                  <span
-                    className={`text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
-                  >
-                    {item.id}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className={`block text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                    >
+                      {item.id}
+                    </span>
+                  </div>
                   <div className="ml-auto pl-2 flex-shrink-0">
                     <div
                       className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
@@ -577,11 +579,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   >
                     <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </div>
-                  <span
-                    className={`text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
-                  >
-                    {item.id}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className={`block text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                    >
+                      {item.id}
+                    </span>
+                  </div>
                   <div className="ml-auto pl-2 flex-shrink-0">
                     <div
                       className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
