@@ -1,4 +1,27 @@
-import { DollarSign, Info, Percent, Plus, Trash2, Users } from 'lucide-react'
+import {
+  BadgeCheck,
+  Bed,
+  Bus,
+  Camera,
+  Coins,
+  DollarSign,
+  FileText,
+  HeartPulse,
+  Info,
+  Map,
+  Percent,
+  Plane,
+  Plus,
+  Receipt,
+  ShieldCheck,
+  ShoppingBag,
+  Ticket,
+  Trash2,
+  Users,
+  Utensils,
+  Wallet,
+  Wine,
+} from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -23,25 +46,25 @@ interface TourPricingStepProps {
 }
 
 const COMMON_INCLUDES = [
-  'Professional Tour Guide',
-  'Transportation',
-  'Entrance Fees',
-  'Meals (as specified)',
-  'Accommodation',
-  'Travel Insurance',
-  'Photography',
-  'Local Taxes',
+  { id: 'Professional Tour Guide', icon: BadgeCheck },
+  { id: 'Transportation', icon: Bus },
+  { id: 'Entrance Fees', icon: Ticket },
+  { id: 'Meals (as specified)', icon: Utensils },
+  { id: 'Accommodation', icon: Bed },
+  { id: 'Travel Insurance', icon: ShieldCheck },
+  { id: 'Photography', icon: Camera },
+  { id: 'Local Taxes', icon: Receipt },
 ]
 
 const COMMON_EXCLUDES = [
-  'Personal Expenses',
-  'Tips and Gratuities',
-  'International Flights',
-  'Visa Fees',
-  'Optional Activities',
-  'Alcoholic Beverages',
-  'Shopping',
-  'Emergency Expenses',
+  { id: 'Personal Expenses', icon: Wallet },
+  { id: 'Tips and Gratuities', icon: Coins },
+  { id: 'International Flights', icon: Plane },
+  { id: 'Visa Fees', icon: FileText },
+  { id: 'Optional Activities', icon: Map },
+  { id: 'Alcoholic Beverages', icon: Wine },
+  { id: 'Shopping', icon: ShoppingBag },
+  { id: 'Emergency Expenses', icon: HeartPulse },
 ]
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED']
@@ -469,33 +492,53 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             </div>
             What&apos;s Included
           </h3>
-          <div className="space-y-4">
-            {COMMON_INCLUDES.map((item) => (
-              <label key={item} className="flex items-center gap-4 cursor-pointer group">
-                <div
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
-                    (data.inclusions || []).includes(item)
-                      ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                      : 'border-slate-200 bg-white group-hover:border-emerald-300'
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {COMMON_INCLUDES.map((item) => {
+              const Icon = item.icon
+              const isSelected = (data.inclusions || []).includes(item.id)
+              return (
+                <label
+                  key={item.id}
+                  className={`flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border shadow-sm transition-all ${
+                    isSelected
+                      ? 'border-emerald-200 bg-emerald-50/50'
+                      : 'border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30'
                   }`}
                 >
                   <input
                     type="checkbox"
                     className="hidden"
-                    checked={(data.inclusions || []).includes(item)}
-                    onChange={() => toggleInclude(item)}
+                    checked={isSelected}
+                    onChange={() => toggleInclude(item.id)}
                   />
-                  {(data.inclusions || []).includes(item) && (
-                    <Plus className="w-3 h-3" strokeWidth={3} />
-                  )}
-                </div>
-                <span
-                  className={`text-sm font-medium transition-colors ${(data.inclusions || []).includes(item) ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}
-                >
-                  {item}
-                </span>
-              </label>
-            ))}
+                  <div
+                    className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-emerald-500 text-white shadow-md scale-105'
+                        : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 group-hover:scale-105 group-hover:shadow-sm'
+                    }`}
+                  >
+                    <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                  </div>
+                  <span
+                    className={`text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-emerald-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                  >
+                    {item.id}
+                  </span>
+                  <div className="ml-auto pl-2 flex-shrink-0">
+                    <div
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : 'border-gray-200 bg-white group-hover:border-emerald-300'
+                      }`}
+                    >
+                      {isSelected && <Plus className="w-3 h-3" strokeWidth={4} />}
+                    </div>
+                  </div>
+                </label>
+              )
+            })}
           </div>
         </div>
 
@@ -506,33 +549,53 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             </div>
             What&apos;s Excluded
           </h3>
-          <div className="space-y-4">
-            {COMMON_EXCLUDES.map((item) => (
-              <label key={item} className="flex items-center gap-4 cursor-pointer group">
-                <div
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
-                    (data.exclusions || []).includes(item)
-                      ? 'bg-red-400 border-red-400 text-white shadow-sm'
-                      : 'border-slate-200 bg-white group-hover:border-red-300'
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {COMMON_EXCLUDES.map((item) => {
+              const Icon = item.icon
+              const isSelected = (data.exclusions || []).includes(item.id)
+              return (
+                <label
+                  key={item.id}
+                  className={`flex items-center gap-3 cursor-pointer group p-3 rounded-2xl border shadow-sm transition-all ${
+                    isSelected
+                      ? 'border-red-200 bg-red-50/50'
+                      : 'border-slate-100 hover:border-red-200 hover:bg-red-50/30'
                   }`}
                 >
                   <input
                     type="checkbox"
                     className="hidden"
-                    checked={(data.exclusions || []).includes(item)}
-                    onChange={() => toggleExclude(item)}
+                    checked={isSelected}
+                    onChange={() => toggleExclude(item.id)}
                   />
-                  {(data.exclusions || []).includes(item) && (
-                    <Trash2 className="w-3 h-3" strokeWidth={3} />
-                  )}
-                </div>
-                <span
-                  className={`text-sm font-medium transition-colors ${(data.exclusions || []).includes(item) ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-700'}`}
-                >
-                  {item}
-                </span>
-              </label>
-            ))}
+                  <div
+                    className={`w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-red-500 text-white shadow-md scale-105'
+                        : 'bg-red-50 text-red-600 group-hover:bg-red-100 group-hover:scale-105 group-hover:shadow-sm'
+                    }`}
+                  >
+                    <Icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                  </div>
+                  <span
+                    className={`text-[13px] font-bold transition-colors line-clamp-2 ${isSelected ? 'text-red-900' : 'text-gray-600 group-hover:text-gray-900'}`}
+                  >
+                    {item.id}
+                  </span>
+                  <div className="ml-auto pl-2 flex-shrink-0">
+                    <div
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${
+                        isSelected
+                          ? 'border-red-500 bg-red-500 text-white'
+                          : 'border-gray-200 bg-white group-hover:border-red-300'
+                      }`}
+                    >
+                      {isSelected && <Trash2 className="w-3 h-3" strokeWidth={4} />}
+                    </div>
+                  </div>
+                </label>
+              )
+            })}
           </div>
         </div>
       </div>
