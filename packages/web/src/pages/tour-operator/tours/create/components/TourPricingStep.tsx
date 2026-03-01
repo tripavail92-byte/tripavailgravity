@@ -61,10 +61,11 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
 
     const newTier = {
       id: Date.now().toString(),
-      name: `Group ${pricingTiers.length + 1}`,
+      name: `Tier ${pricingTiers.length + 1}`,
       minPeople: pricingTiers.length === 0 ? 3 : 6,
       maxPeople: pricingTiers.length === 0 ? 5 : 10,
       pricePerPerson: discountedPrice,
+      discountPercentage: defaultDiscount,
     }
     const updated = [...pricingTiers, newTier]
     setPricingTiers(updated)
@@ -76,13 +77,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
     // Ensure discount is between 0 and 100
     const validDiscount = Math.max(0, Math.min(100, discountPercentage))
     const newPrice = Math.round(basePrice * (1 - validDiscount / 100))
-    updatePricingTier(id, 'pricePerPerson', newPrice)
-  }
 
-  const getDiscountPercentage = (pricePerPerson: number) => {
-    const basePrice = data.price || 0
-    if (!basePrice) return 0
-    return Math.round((1 - pricePerPerson / basePrice) * 100)
+    // Update both discount percentage and calculated price
+    const updated = pricingTiers.map((t) =>
+      t.id === id ? { ...t, discountPercentage: validDiscount, pricePerPerson: newPrice } : t,
+    )
+    setPricingTiers(updated)
+    onUpdate({ pricing_tiers: updated })
   }
 
   const updatePricingTier = (id: string, field: string, value: string | number) => {
@@ -217,7 +218,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               )}
 
               {pricingTiers.map((tier) => {
-                const discountPct = getDiscountPercentage(tier.pricePerPerson)
+                const discountPct =
+                  tier.discountPercentage !== undefined
+                    ? tier.discountPercentage
+                    : data.price
+                      ? Math.round((1 - tier.pricePerPerson / data.price) * 100)
+                      : 0
                 return (
                   <div
                     key={tier.id}
