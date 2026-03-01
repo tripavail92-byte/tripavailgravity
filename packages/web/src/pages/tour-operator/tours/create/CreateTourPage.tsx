@@ -336,30 +336,27 @@ export default function CreateTourPage() {
             {/* Action buttons */}
             <div className="flex items-center gap-2 shrink-0">
               <Button
-                size="sm"
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={isSaving || isSubmitting}
-                className="bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm text-xs gap-1.5"
+                className="h-11 px-6 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm text-sm font-semibold gap-2"
               >
                 <BookmarkCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save Draft</span>
               </Button>
               <Button
-                size="sm"
                 variant="outline"
                 onClick={() => hasUnsaved ? setShowExitModal(true) : navigate('/operator/dashboard')}
                 disabled={isSaving || isSubmitting}
-                className="bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm text-xs gap-1.5"
+                className="h-11 px-6 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm text-sm font-semibold gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save & Exit</span>
               </Button>
               <Button
-                size="sm"
                 onClick={handleSubmitForReview}
                 disabled={isSaving || isSubmitting}
-                className="bg-primary hover:bg-primary/90 text-white text-xs gap-1.5 shadow-md shadow-primary/25"
+                className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold gap-2 shadow-md shadow-primary/25"
               >
                 {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">Submit for Review</span>
