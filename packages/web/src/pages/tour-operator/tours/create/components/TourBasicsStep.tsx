@@ -185,8 +185,10 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
               className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
             >
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-widest text-primary">Step 1 Section</p>
-                <h3 className="text-base font-extrabold text-foreground">Tour Category *</h3>
+                <h3 className="text-base font-bold text-foreground">Tour Category *</h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Choose the experience type travelers will see first.
+                </p>
               </div>
               <ChevronDown
                 className={`w-5 h-5 text-primary transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`}
@@ -260,7 +262,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                               Describe your custom category
                             </Label>
                             <Input
-                              placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema�"
+                              placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema"
                               value={data.custom_category_label || ''}
                               onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
                               className="h-10 text-sm"
@@ -282,8 +284,10 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
               className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
             >
               <div className="text-left">
-                <p className="text-xs font-black uppercase tracking-widest text-primary">Step 1 Section</p>
-                <h3 className="text-base font-extrabold text-foreground">Dates & Availability *</h3>
+                <h3 className="text-base font-bold text-foreground">Dates & Availability *</h3>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                  Set primary departure date, start time, and seats.
+                </p>
               </div>
               <ChevronDown
                 className={`w-5 h-5 text-primary transition-transform duration-200 ${isDatesAvailabilityOpen ? 'rotate-180' : ''}`}
@@ -425,7 +429,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             </div>
 
             <Textarea
-              placeholder="A brief teaser for the tour card�"
+              placeholder="A brief teaser for the tour card"
               value={data.short_description || ''}
               onChange={(e) => onUpdate({ short_description: e.target.value })}
               rows={3}
@@ -474,7 +478,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                   {/* Template list */}
                   {loadingTemplates ? (
                     <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
-                      Loading suggestions�
+                      Loading suggestions...
                     </div>
                   ) : templates.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-4">
@@ -494,7 +498,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                             <span className="uppercase font-semibold text-primary/70">
                               {tmpl.tone}
                             </span>
-                            <span>�</span>
+                            <span>•</span>
                             <span>{tmpl.length_class}</span>
                           </p>
                           <p className="text-sm text-foreground leading-relaxed line-clamp-3">
