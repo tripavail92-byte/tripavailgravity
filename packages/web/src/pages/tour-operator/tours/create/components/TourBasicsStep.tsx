@@ -1,5 +1,5 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Check, Info, Sparkles, X } from 'lucide-react'
+import { Check, ChevronDown, Info, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 
@@ -67,6 +67,8 @@ const TONES = [
   { id: 'general', label: 'General' },
 ] as const
 
+const MAX_CAPACITY = 300
+
 interface Template {
   id: string
   text: string
@@ -79,12 +81,16 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
   const [selectedTone, setSelectedTone] = useState<string>('general')
   const [templates, setTemplates] = useState<Template[]>([])
   const [loadingTemplates, setLoadingTemplates] = useState(false)
+  const [isCategoryOpen, setIsCategoryOpen] = useState(true)
+  const [isDatesAvailabilityOpen, setIsDatesAvailabilityOpen] = useState(true)
 
   const isValid =
     !!data.title &&
     !!(data.tour_type || data.custom_category_label) &&
     !!data.duration_days &&
-    !!data.location?.city
+    !!data.location?.city &&
+    !!data.max_participants &&
+    data.max_participants > 0
 
   // Fetch templates whenever the panel opens, tone, or tour_type changes
   useEffect(() => {
@@ -147,115 +153,194 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
-          {/* Tour Category � 15-card grid */}
-          <div className="space-y-4">
-            <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Tour Category *
-            </Label>
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-              {CATEGORIES.map((cat) => (
-                <motion.button
-                  key={cat.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() =>
-                    onUpdate({
-                      tour_type: cat.id,
-                      // Clear custom label when a non-custom category is chosen
-                      custom_category_label:
-                        cat.id === 'Custom' ? data.custom_category_label : undefined,
-                    })
-                  }
-                  className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
-                    data.tour_type === cat.id
-                      ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
-                      : 'border-border bg-background hover:border-primary/30 hover:shadow-md'
-                  }`}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
-                    <cat.icon />
-                  </div>
-                  <span
-                    className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${
-                      data.tour_type === cat.id
-                        ? 'text-primary'
-                        : 'text-muted-foreground group-hover:text-foreground'
-                    }`}
-                  >
-                    {cat.label}
-                  </span>
-                  {data.tour_type === cat.id && (
-                    <motion.div
-                      layoutId="selected-category"
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"
-                    >
-                      <Check className="w-3 h-3" />
-                    </motion.div>
-                  )}
-                </motion.button>
-              ))}
-            </div>
+          <div className="glass-card rounded-2xl border border-white/50 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsCategoryOpen((prev) => !prev)}
+              className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
+            >
+              <div className="text-left">
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Step 1 Section</p>
+                <h3 className="text-base font-extrabold text-foreground">Tour Category *</h3>
+              </div>
+              <ChevronDown
+                className={`w-5 h-5 text-primary transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-            {/* Custom label input */}
             <AnimatePresence>
-              {data.tour_type === 'Custom' && (
+              {isCategoryOpen && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22 }}
                   className="overflow-hidden"
                 >
-                  <div className="pt-2 space-y-1">
-                    <Label className="text-xs text-muted-foreground">
-                      Describe your custom category
-                    </Label>
-                    <Input
-                      placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema�"
-                      value={data.custom_category_label || ''}
-                      onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
-                      className="h-10 text-sm"
-                    />
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                      {CATEGORIES.map((cat) => (
+                        <motion.button
+                          key={cat.id}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() =>
+                            onUpdate({
+                              tour_type: cat.id,
+                              custom_category_label:
+                                cat.id === 'Custom' ? data.custom_category_label : undefined,
+                            })
+                          }
+                          className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
+                            data.tour_type === cat.id
+                              ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
+                              : 'border-border bg-background hover:border-primary/30 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
+                            <cat.icon />
+                          </div>
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${
+                              data.tour_type === cat.id
+                                ? 'text-primary'
+                                : 'text-muted-foreground group-hover:text-foreground'
+                            }`}
+                          >
+                            {cat.label}
+                          </span>
+                          {data.tour_type === cat.id && (
+                            <motion.div
+                              layoutId="selected-category"
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"
+                            >
+                              <Check className="w-3 h-3" />
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      ))}
+                    </div>
+
+                    <AnimatePresence>
+                      {data.tour_type === 'Custom' && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pt-2 space-y-1">
+                            <Label className="text-xs text-muted-foreground">
+                              Describe your custom category
+                            </Label>
+                            <Input
+                              placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema�"
+                              value={data.custom_category_label || ''}
+                              onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
+                              className="h-10 text-sm"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Duration Scroller */}
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Duration *
-            </Label>
-            <DurationScroller
-              value={data.duration_days ?? 1}
-              onChange={(days) =>
-                onUpdate({
-                  duration_days: days,
-                  duration: `${days} day${days !== 1 ? 's' : ''}`,
-                })
-              }
-            />
-          </div>
+          <div className="glass-card rounded-2xl border border-white/50 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsDatesAvailabilityOpen((prev) => !prev)}
+              className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
+            >
+              <div className="text-left">
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Step 1 Section</p>
+                <h3 className="text-base font-extrabold text-foreground">Dates & Availability *</h3>
+              </div>
+              <ChevronDown
+                className={`w-5 h-5 text-primary transition-transform duration-200 ${isDatesAvailabilityOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-          {/* Location */}
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Location (City) *
-            </Label>
-            <CityAutocomplete
-              value={data.location?.city || ''}
-              onCitySelect={(city) =>
-                onUpdate({
-                  location: {
-                    ...data.location,
-                    city,
-                    country: data.location?.country || '',
-                  },
-                })
-              }
-              placeholder="Search for a city..."
-            />
+            <AnimatePresence>
+              {isDatesAvailabilityOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 space-y-5">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                        Duration *
+                      </Label>
+                      <DurationScroller
+                        value={data.duration_days ?? 1}
+                        onChange={(days) =>
+                          onUpdate({
+                            duration_days: days,
+                            duration: `${days} day${days !== 1 ? 's' : ''}`,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                        Location (City) *
+                      </Label>
+                      <CityAutocomplete
+                        value={data.location?.city || ''}
+                        onCitySelect={(city) =>
+                          onUpdate({
+                            location: {
+                              ...data.location,
+                              city,
+                              country: data.location?.country || '',
+                            },
+                          })
+                        }
+                        placeholder="Search for a city..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                        Capacity / Seats *
+                      </Label>
+                      <div className="relative max-w-xs">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={MAX_CAPACITY}
+                          placeholder="e.g. 30"
+                          value={data.max_participants || ''}
+                          onChange={(e) => {
+                            const next = Math.max(
+                              1,
+                              Math.min(MAX_CAPACITY, parseInt(e.target.value || '1', 10) || 1),
+                            )
+                            onUpdate({
+                              max_participants: next,
+                              min_participants: 1,
+                            })
+                          }}
+                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Set your default total seats (1–{MAX_CAPACITY}).
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Short Description + AI Suggest */}
