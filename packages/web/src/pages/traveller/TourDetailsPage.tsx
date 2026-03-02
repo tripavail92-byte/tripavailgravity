@@ -208,14 +208,14 @@ export default function TourDetailsPage() {
   const includedItems =
     (Array.isArray(tour?.inclusions) && tour.inclusions.length > 0
       ? tour.inclusions
-      : Array.isArray((tour as any).included)
-        ? ((tour as any).included as string[])
+      : Array.isArray((tour as any)?.included)
+        ? (((tour as any)?.included as string[]) || [])
         : []) || []
   const excludedItems =
     (Array.isArray(tour?.exclusions) && tour.exclusions.length > 0
       ? tour.exclusions
-      : Array.isArray((tour as any).excluded)
-        ? ((tour as any).excluded as string[])
+      : Array.isArray((tour as any)?.excluded)
+        ? (((tour as any)?.excluded as string[]) || [])
         : []) || []
   const basePrice = Number((tour as any)?.base_price ?? tour?.price ?? 0) || 0
   const depositPercentage = Math.max(0, Math.min(50, tour?.deposit_percentage || 0))
