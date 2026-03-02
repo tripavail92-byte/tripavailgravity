@@ -210,10 +210,35 @@ export function calculateCompletionPercentage(data: Partial<Tour>): number {
 export const tourService = {
   async createTour(tourData: Partial<Tour>) {
     console.log('Creating tour with data:', tourData)
+    const normalizedPrice = Number.isFinite(Number(tourData.price)) ? Number(tourData.price) : 0
+    const normalizedDepositRequired = Boolean(tourData.deposit_required)
+    const normalizedCancellationPolicy =
+      (tourData.cancellation_policy || 'moderate') as
+        | 'flexible'
+        | 'moderate'
+        | 'strict'
+        | 'non-refundable'
+    const normalizedInclusions = Array.isArray(tourData.inclusions) ? tourData.inclusions : []
+    const normalizedExclusions = Array.isArray(tourData.exclusions) ? tourData.exclusions : []
+
+    const payload = {
+      ...tourData,
+      price: normalizedPrice,
+      base_price: normalizedPrice,
+      deposit_required: normalizedDepositRequired,
+      require_deposit: normalizedDepositRequired,
+      cancellation_policy: normalizedCancellationPolicy,
+      cancellation_policy_type: normalizedCancellationPolicy,
+      inclusions: normalizedInclusions,
+      included: normalizedInclusions,
+      exclusions: normalizedExclusions,
+      excluded: normalizedExclusions,
+    }
+
     // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
     const { data, error } = await supabase
       .from('tours')
-      .insert(tourData as any)
+      .insert(payload as any)
       .select()
       .single()
 
@@ -225,8 +250,8 @@ export const tourService = {
     const created = data as unknown as Tour
     await syncTourSchedulesFromJson(
       created.id,
-      tourData.schedules,
-      tourData.max_participants || 10,
+      payload.schedules,
+      payload.max_participants || 10,
     )
 
     return created
@@ -234,9 +259,36 @@ export const tourService = {
 
   async updateTour(id: string, updates: Partial<Tour>) {
     console.log(`Updating tour ${id}:`, updates)
+    const normalizedPrice = Number.isFinite(Number(updates.price)) ? Number(updates.price) : 0
+    const normalizedDepositRequired = Boolean(updates.deposit_required)
+    const normalizedCancellationPolicy =
+      (updates.cancellation_policy || 'moderate') as
+        | 'flexible'
+        | 'moderate'
+        | 'strict'
+        | 'non-refundable'
+    const normalizedInclusions = Array.isArray(updates.inclusions) ? updates.inclusions : []
+    const normalizedExclusions = Array.isArray(updates.exclusions) ? updates.exclusions : []
+
+    const payload = {
+      ...updates,
+      price: normalizedPrice,
+      base_price: normalizedPrice,
+      deposit_required: normalizedDepositRequired,
+      require_deposit: normalizedDepositRequired,
+      cancellation_policy: normalizedCancellationPolicy,
+      cancellation_policy_type: normalizedCancellationPolicy,
+      inclusions: normalizedInclusions,
+      included: normalizedInclusions,
+      exclusions: normalizedExclusions,
+      excluded: normalizedExclusions,
+      updated_at: new Date().toISOString(),
+      last_edited_at: new Date().toISOString(),
+    }
+
     const { data, error } = await supabase
       .from('tours')
-      .update({ ...updates, updated_at: new Date().toISOString(), last_edited_at: new Date().toISOString() } as any)
+      .update(payload as any)
       .eq('id', id)
       .select()
       .single()
@@ -247,7 +299,7 @@ export const tourService = {
     }
 
     const updated = data as unknown as Tour
-    await syncTourSchedulesFromJson(id, updates.schedules, updates.max_participants || 10)
+  await syncTourSchedulesFromJson(id, payload.schedules, payload.max_participants || 10)
 
     return updated
   },
@@ -389,6 +441,17 @@ export const tourService = {
       _workflow: workflowSnapshot ?? (existingDraftData as any)?._workflow ?? null,
     }
 
+    const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
+    const normalizedDepositRequired = Boolean(data.deposit_required)
+    const normalizedCancellationPolicy =
+      (data.cancellation_policy || 'moderate') as
+        | 'flexible'
+        | 'moderate'
+        | 'strict'
+        | 'non-refundable'
+    const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
+    const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+
     const payload = {
       operator_id: operatorId,
       title: data.title || 'Untitled Tour',
@@ -396,13 +459,16 @@ export const tourService = {
       tour_type: data.tour_type || 'Adventure',
       location: data.location || {},
       duration: data.duration || '1 day',
-      price: data.price || 0,
+      price: normalizedPrice,
+      base_price: normalizedPrice,
       currency: data.currency || 'USD',
       is_published: false,
       images: data.images || [],
       highlights: data.highlights || [],
-      inclusions: data.inclusions || [],
-      exclusions: data.exclusions || [],
+      inclusions: normalizedInclusions,
+      included: normalizedInclusions,
+      exclusions: normalizedExclusions,
+      excluded: normalizedExclusions,
       requirements: data.requirements || [],
       languages: data.languages || ['en'],
       min_participants: data.min_participants || 1,
@@ -410,8 +476,10 @@ export const tourService = {
       min_age: data.min_age || 5,
       max_age: data.max_age || 80,
       difficulty_level: data.difficulty_level || 'moderate',
-      cancellation_policy: data.cancellation_policy || 'moderate',
-      deposit_required: data.deposit_required ?? false,
+      cancellation_policy: normalizedCancellationPolicy,
+      cancellation_policy_type: normalizedCancellationPolicy,
+      deposit_required: normalizedDepositRequired,
+      require_deposit: normalizedDepositRequired,
       deposit_percentage: data.deposit_percentage || 0,
       group_discounts: data.group_discounts ?? false,
       seasonal_pricing: data.seasonal_pricing ?? false,
@@ -468,6 +536,17 @@ export const tourService = {
   async saveTourDraft(data: Partial<Tour>, operatorId: string, draftId?: string) {
     if (!operatorId) throw new Error('Operator ID required')
 
+    const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
+    const normalizedDepositRequired = Boolean(data.deposit_required)
+    const normalizedCancellationPolicy =
+      (data.cancellation_policy || 'moderate') as
+        | 'flexible'
+        | 'moderate'
+        | 'strict'
+        | 'non-refundable'
+    const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
+    const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+
     const draftPayload = {
       operator_id: operatorId,
       title: data.title || 'Untitled Tour',
@@ -475,14 +554,17 @@ export const tourService = {
       tour_type: data.tour_type || 'Adventure',
       location: data.location || {},
       duration: data.duration || '1 day',
-      price: data.price || 0,
+      price: normalizedPrice,
+      base_price: normalizedPrice,
       currency: data.currency || 'USD',
       is_published: false,
       // Provide defaults for required fields to satisfy DB constraints for drafts
       images: data.images || [],
       highlights: data.highlights || [],
-      inclusions: data.inclusions || [],
-      exclusions: data.exclusions || [],
+      inclusions: normalizedInclusions,
+      included: normalizedInclusions,
+      exclusions: normalizedExclusions,
+      excluded: normalizedExclusions,
       requirements: data.requirements || [],
       languages: data.languages || ['en'],
       min_participants: data.min_participants || 1,
@@ -490,8 +572,10 @@ export const tourService = {
       min_age: data.min_age || 5,
       max_age: data.max_age || 80,
       difficulty_level: data.difficulty_level || 'moderate',
-      cancellation_policy: data.cancellation_policy || 'moderate',
-      deposit_required: data.deposit_required ?? false,
+      cancellation_policy: normalizedCancellationPolicy,
+      cancellation_policy_type: normalizedCancellationPolicy,
+      deposit_required: normalizedDepositRequired,
+      require_deposit: normalizedDepositRequired,
       deposit_percentage: data.deposit_percentage || 0,
       group_discounts: data.group_discounts ?? false,
       seasonal_pricing: data.seasonal_pricing ?? false,

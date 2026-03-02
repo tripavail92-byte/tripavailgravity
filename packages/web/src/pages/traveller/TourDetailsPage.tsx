@@ -173,7 +173,7 @@ export default function TourDetailsPage() {
       : Array.isArray((tour as any).excluded)
         ? ((tour as any).excluded as string[])
         : []) || []
-  const basePrice = tour.price || 0
+  const basePrice = Number((tour as any).base_price ?? tour.price ?? 0) || 0
   const depositPercentage = Math.max(0, Math.min(50, tour.deposit_percentage || 0))
   const requiresDeposit = Boolean(tour.deposit_required)
   const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
@@ -488,9 +488,20 @@ export default function TourDetailsPage() {
                               Day {day.day}: {day.title}
                             </h4>
                             <GlassBadge variant="info" size="sm">
-                              {day.activities?.length || 0} Activities
+                              {Array.isArray(day.activities)
+                                ? `${day.activities.length} Activities`
+                                : day.description
+                                  ? 'Overview'
+                                  : 'Not specified'}
                             </GlassBadge>
                           </div>
+                          {typeof day.description === 'string' && day.description.trim().length > 0 ? (
+                            <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
+                              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                                {day.description}
+                              </p>
+                            </div>
+                          ) : null}
                           <div className="grid grid-cols-1 gap-4">
                             {day.activities?.map((act: any, ai: number) => (
                               <div
@@ -526,7 +537,7 @@ export default function TourDetailsPage() {
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-black">
-                    {tour.currency} {tour.price}
+                    {tour.currency} {formatMoney(basePrice)}
                     <span className="text-sm font-semibold text-muted-foreground"> / person</span>
                   </GlassTitle>
                 </GlassHeader>
