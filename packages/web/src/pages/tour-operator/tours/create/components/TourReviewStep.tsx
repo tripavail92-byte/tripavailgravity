@@ -1,12 +1,9 @@
 import {
-  Activity,
   Calendar,
   CheckCircle,
   DollarSign,
   Info,
   MapPin,
-  Plus,
-  Users,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -19,7 +16,51 @@ interface TourReviewStepProps {
   onPublish: () => void
 }
 
+function ReviewRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string
+  value: string
+  highlight?: boolean
+}) {
+  return (
+    <div className="flex justify-between items-start gap-4 py-2 border-b border-white/40 last:border-b-0">
+      <span className="text-muted-foreground text-sm font-medium">{label}</span>
+      <span className={highlight ? 'text-primary font-bold text-lg text-right' : 'text-foreground font-bold text-right'}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+const formatDateDisplay = (date: string) => {
+  if (!date) return '—'
+  const parsed = new Date(`${date}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return date
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps) {
+  const schedules = Array.isArray(data.schedules) ? data.schedules : []
+  const itinerary = Array.isArray(data.itinerary) ? data.itinerary : []
+  const images = Array.isArray(data.images) ? data.images : []
+  const highlights = Array.isArray(data.highlights) ? data.highlights : []
+  const requirements = Array.isArray(data.requirements) ? data.requirements : []
+  const languages = Array.isArray(data.languages) ? data.languages : []
+  const inclusions = Array.isArray(data.inclusions) ? data.inclusions : []
+  const exclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+
+  const schedulePreview = schedules
+    .slice(0, 3)
+    .map((schedule: any) => {
+      const dateText = schedule?.date ? formatDateDisplay(schedule.date) : 'No date'
+      const timeText = schedule?.time || 'No time'
+      const capacityText = schedule?.capacity ? `${schedule.capacity} seats` : 'No capacity'
+      return `${dateText} · ${timeText} · ${capacityText}`
+    })
+
   return (
     <div className="space-y-6">
       <div className="relative p-6 rounded-2xl bg-primary text-white border-none shadow-xl overflow-hidden">
@@ -42,18 +83,47 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
           </h3>
 
           <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-white/40">
-              <span className="text-muted-foreground text-sm font-medium">Tour Title</span>
-              <span className="text-foreground font-bold">{data.title}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/40">
-              <span className="text-muted-foreground text-sm font-medium">Category</span>
-              <span className="text-foreground font-bold">{data.tour_type}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/40">
-              <span className="text-muted-foreground text-sm font-medium">Duration</span>
-              <span className="text-foreground font-bold">{data.duration}</span>
-            </div>
+            <ReviewRow label="Tour Title" value={data.title || '—'} />
+            <ReviewRow
+              label="Category"
+              value={data.tour_type === 'Custom' ? data.custom_category_label || 'Custom' : data.tour_type || '—'}
+            />
+            <ReviewRow
+              label="Location"
+              value={data.location?.city ? `${data.location.city}${data.location.country ? `, ${data.location.country}` : ''}` : '—'}
+            />
+            <ReviewRow label="Duration" value={data.duration || '—'} />
+            <ReviewRow label="Short Description" value={data.short_description || 'Not provided'} />
+            <ReviewRow label="Detailed Description" value={data.description || 'Not provided'} />
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-6">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" /> Experience Details
+          </h3>
+
+          <div className="space-y-3">
+            <ReviewRow label="Media Uploaded" value={`${images.length} image${images.length === 1 ? '' : 's'}`} />
+            <ReviewRow label="Highlights" value={`${highlights.length} selected`} />
+            <ReviewRow label="Itinerary Days" value={`${itinerary.length} day entries`} />
+            <ReviewRow label="Difficulty" value={data.difficulty_level || '—'} />
+            <ReviewRow
+              label="Participants"
+              value={`${data.min_participants || 1} - ${data.max_participants || 10}`}
+            />
+            <ReviewRow
+              label="Age Range"
+              value={`${data.min_age || 0} - ${data.max_age || 100}`}
+            />
+            <ReviewRow
+              label="Languages"
+              value={languages.length > 0 ? languages.join(', ') : 'Not selected'}
+            />
+            <ReviewRow
+              label="Requirements"
+              value={requirements.length > 0 ? `${requirements.length} selected` : 'Not selected'}
+            />
           </div>
         </div>
 
@@ -63,16 +133,20 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
           </h3>
 
           <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-white/40">
-              <span className="text-muted-foreground text-sm font-medium">Base Price</span>
-              <span className="text-primary font-bold text-lg">
-                {data.currency} {data.price}
-              </span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/40">
-              <span className="text-muted-foreground text-sm font-medium">Cancellation Policy</span>
-              <span className="text-foreground font-bold">{data.cancellation_policy}</span>
-            </div>
+            <ReviewRow label="Base Price" value={`${data.currency || 'USD'} ${data.price ?? 0}`} highlight />
+            <ReviewRow
+              label="Deposit Required"
+              value={data.deposit_required ? `Yes (${data.deposit_percentage || 0}%)` : 'No'}
+            />
+            <ReviewRow label="Cancellation Policy" value={data.cancellation_policy || '—'} />
+            <ReviewRow
+              label="Inclusions"
+              value={inclusions.length > 0 ? `${inclusions.length} selected` : 'Not selected'}
+            />
+            <ReviewRow
+              label="Exclusions"
+              value={exclusions.length > 0 ? `${exclusions.length} selected` : 'Not selected'}
+            />
           </div>
         </div>
 
@@ -80,8 +154,28 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" /> Scheduling
           </h3>
-          <div className="text-sm text-muted-foreground">
-            {data.schedules?.length || 0} departure dates configured.
+
+          <div className="space-y-3">
+            <ReviewRow
+              label="Departure Dates"
+              value={`${schedules.length} configured`}
+            />
+            {schedulePreview.length > 0 ? (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
+                {schedulePreview.map((line, index) => (
+                  <p key={`${line}-${index}`} className="text-xs text-foreground font-semibold">
+                    {line}
+                  </p>
+                ))}
+                {schedules.length > 3 && (
+                  <p className="text-xs text-muted-foreground font-medium">
+                    + {schedules.length - 3} more schedule{schedules.length - 3 === 1 ? '' : 's'}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No schedules added yet.</p>
+            )}
           </div>
         </div>
       </div>
