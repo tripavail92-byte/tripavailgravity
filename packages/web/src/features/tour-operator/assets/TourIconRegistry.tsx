@@ -2,6 +2,7 @@ import {
   Bed,
   Bus,
   Camera,
+  Circle,
   Check,
   Clock3,
   Coins,
@@ -74,7 +75,7 @@ export const TOUR_ICON_REGISTRY: Record<TourIconKey, LucideIcon> = {
   moderate_policy: Clock3,
   partial_refund: Percent,
   non_refundable: XCircle,
-  generic: Check,
+  generic: Circle,
 }
 
 export const INCLUDED_FEATURE_OPTIONS: TourFeatureItem[] = [
