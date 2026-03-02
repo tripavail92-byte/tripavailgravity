@@ -4,6 +4,8 @@ import {
   Calendar,
   Camera,
   Check,
+  ClipboardList,
+  Globe,
   Heart,
   Loader2,
   MapPin,
@@ -36,6 +38,7 @@ import {
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
+import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 
 function useCountUp(target: number, duration = 320) {
   const safeTarget = Number.isFinite(target) ? target : 0
@@ -479,6 +482,73 @@ export default function TourDetailsPage() {
                   <span className="text-sm font-bold text-foreground capitalize">
                     {tour.difficulty_level || 'Not specified'}
                   </span>
+                </div>
+              </GlassContent>
+            </GlassCard>
+
+            {/* Languages + Requirements */}
+            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+              <GlassHeader>
+                <GlassTitle className="text-2xl font-bold">Before you go</GlassTitle>
+              </GlassHeader>
+              <GlassContent>
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-info/10 rounded-full">
+                        <Globe size={16} className="text-info" />
+                      </div>
+                      <h4 className="text-base font-semibold text-foreground">Languages</h4>
+                    </div>
+
+                    {tour.languages?.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {tour.languages.map((lang) => (
+                          <span
+                            key={lang}
+                            className="inline-flex items-center rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-bold text-foreground"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Not specified</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-success/10 rounded-full">
+                        <ClipboardList size={16} className="text-success" />
+                      </div>
+                      <h4 className="text-base font-semibold text-foreground">Requirements</h4>
+                    </div>
+
+                    {tour.requirements?.length ? (
+                      <div className="space-y-5">
+                        {groupTourRequirementsByCategory(tour.requirements).map((group) => (
+                          <div key={group.category} className="space-y-2">
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                              {group.category}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {group.items.map((item) => (
+                                <span
+                                  key={item.id}
+                                  className="inline-flex items-center rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground"
+                                >
+                                  {item.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No special requirements listed</p>
+                    )}
+                  </div>
                 </div>
               </GlassContent>
             </GlassCard>

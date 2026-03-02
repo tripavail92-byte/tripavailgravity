@@ -1,5 +1,6 @@
-import { Activity, Check } from 'lucide-react'
+import { Activity, Check, ChevronDown } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -18,14 +19,11 @@ interface TourDetailsStepProps {
 }
 
 const LANGUAGES = [
+  'Urdu',
   'English',
-  'Spanish',
-  'French',
-  'German',
-  'Italian',
-  'Chinese',
-  'Japanese',
   'Arabic',
+  'French',
+  'Spanish',
 ]
 
 const DIFFICULTY_LEVELS = [
@@ -88,6 +86,21 @@ const DIFFICULTY_LEVELS = [
 ]
 
 export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsStepProps) {
+  const selectedRequirements = Array.isArray(data.requirements) ? data.requirements : []
+
+  const [openCategories, setOpenCategories] = useState<Set<RequirementCategory>>(() => {
+    const initial = new Set<RequirementCategory>()
+    ;(Object.keys(TOUR_REQUIREMENTS) as RequirementCategory[]).forEach((category) => {
+      const options = TOUR_REQUIREMENTS[category] || []
+      const selectedCount = options.reduce(
+        (count, option) => count + (selectedRequirements.includes(option.id) ? 1 : 0),
+        0,
+      )
+      if (selectedCount > 0) initial.add(category)
+    })
+    return initial
+  })
+
   const toggleLanguage = (lang: string) => {
     const current = data.languages || []
     const updated = current.includes(lang) ? current.filter((l) => l !== lang) : [...current, lang]
@@ -131,6 +144,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                 <motion.button
                   key={level.id}
                   type="button"
+                  animate={{ scale: isSelected ? 1.02 : 1 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() =>
@@ -140,15 +154,15 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                   }
                   className={`relative flex items-center p-4 rounded-2xl border-2 transition-all duration-300 text-left group ${
                     isSelected
-                      ? 'border-[#FF7167] bg-[#FFF8F7] shadow-sm'
+                      ? 'border-primary bg-primary/5 shadow-sm'
                       : 'border-gray-100 bg-white hover:border-gray-200'
                   }`}
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors duration-300 ${
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-4 [&_svg]:!h-4 ${
                         isSelected
-                          ? 'bg-[#FF7167] text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-slate-50 text-gray-600 group-hover:bg-slate-100'
                       }`}
                     >
@@ -157,7 +171,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                     <div>
                       <h4
                         className={`font-bold text-[17px] leading-tight ${
-                          isSelected ? 'text-[#FF7167]' : 'text-gray-900'
+                          isSelected ? 'text-primary' : 'text-gray-900'
                         }`}
                       >
                         {level.label}
@@ -171,7 +185,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                   {isSelected && (
                     <motion.div
                       layoutId="selected-difficulty"
-                      className="absolute -top-3 -right-3 w-7 h-7 bg-[#FF7167] text-white rounded-full flex items-center justify-center border-[3px] border-white shadow-sm"
+                      className="absolute -top-3 -right-3 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[3px] border-white shadow-sm"
                     >
                       <Check className="w-3.5 h-3.5" strokeWidth={3} />
                     </motion.div>
@@ -187,7 +201,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
               Age Range
             </Label>
-            <div className="px-3 py-1 bg-[#FFF0ED] text-[#FF7167] rounded-full text-[11px] font-bold tracking-wide">
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold tracking-wide">
               {data.min_age || 0} - {data.max_age || 100} years
             </div>
           </div>
@@ -200,7 +214,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
               onValueChange={(vals) => {
                 onUpdate({ min_age: vals[0], max_age: vals[1] })
               }}
-              className="w-full [&_[role=slider]]:border-[#FF7167] [&_[role=slider]]:border-2 [&_[role=slider]]:bg-white [&_.bg-primary]:bg-[#FF7167]"
+              className="w-full [&_[role=slider]]:border-primary [&_[role=slider]]:border-2 [&_[role=slider]]:bg-white [&_.bg-primary]:bg-primary"
             />
           </div>
           <div className="flex justify-between text-xs text-slate-500 font-bold px-1 tracking-wide">
@@ -220,12 +234,13 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                 return (
                   <motion.button
                     key={lang}
+                    animate={{ scale: isSelected ? 1.03 : 1 }}
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => toggleLanguage(lang)}
                     className={`px-5 py-2 rounded-2xl text-[14px] font-bold transition-all duration-300 border ${
                       isSelected
-                        ? 'bg-[#FF7167] border-[#FF7167] text-white shadow-md shadow-[#FF7167]/20'
+                        ? 'bg-primary border-primary text-primary-foreground shadow-md'
                         : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 shadow-sm'
                     }`}
                   >
@@ -241,63 +256,106 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
             Tour-Specific Requirements
           </Label>
-          <div className="space-y-10">
-            {(Object.keys(TOUR_REQUIREMENTS) as RequirementCategory[]).map((category) => (
-              <div key={category} className="space-y-4">
-                <h3 className="text-[14px] font-bold text-[#FF7167] tracking-wider uppercase">
-                  {category}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {TOUR_REQUIREMENTS[category].map((req) => {
-                    const isSelected = (data.requirements || []).includes(req.id)
-                    return (
-                      <motion.button
-                        key={req.id}
-                        type="button"
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        onClick={() => toggleRequirement(req.id)}
-                        className={`relative flex items-center p-4 rounded-2xl border transition-all duration-300 text-left group min-h-[5rem] ${
-                          isSelected
-                            ? 'border-[#FF7167] bg-[#FFF8F7] shadow-sm'
-                            : 'border-gray-200 bg-white hover:border-[#FF7167]/40 hover:shadow-sm'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 w-full pr-6">
-                          <div
-                            className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${
-                              isSelected
-                                ? 'bg-[#FF7167] text-white'
-                                : 'bg-slate-50 text-gray-500 group-hover:bg-[#FF7167]/10 group-hover:text-[#FF7167]'
-                            }`}
-                          >
-                            <req.icon />
-                          </div>
-                          <span
-                            className={`font-bold text-[14px] leading-snug ${
-                              isSelected
-                                ? 'text-[#FF7167]'
-                                : 'text-gray-700 group-hover:text-gray-900'
-                            }`}
-                          >
-                            {req.label}
-                          </span>
-                        </div>
+          <div className="space-y-3">
+            {(Object.keys(TOUR_REQUIREMENTS) as RequirementCategory[]).map((category) => {
+              const options = TOUR_REQUIREMENTS[category] || []
+              const selectedCount = options.reduce(
+                (count, option) => count + (selectedRequirements.includes(option.id) ? 1 : 0),
+                0,
+              )
 
-                        {isSelected && (
-                          <motion.div
-                            layoutId={`selected-req-${req.id}`}
-                            className="absolute -top-2.5 -right-2.5 w-6 h-6 bg-[#FF7167] text-white rounded-full flex items-center justify-center border-[2px] border-white shadow-sm"
+              return (
+                <details
+                  key={category}
+                  className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3"
+                  open={openCategories.has(category)}
+                  onToggle={(e) => {
+                    const nextOpen = e.currentTarget.open
+                    setOpenCategories((prev) => {
+                      const next = new Set(prev)
+                      if (nextOpen) next.add(category)
+                      else next.delete(category)
+                      return next
+                    })
+                  }}
+                >
+                  <summary className="list-none flex items-center justify-between gap-3 cursor-pointer select-none">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-black tracking-widest uppercase text-primary truncate">
+                          {category}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {selectedCount > 0
+                            ? `${selectedCount} selected`
+                            : 'Tap to choose what travelers need'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {selectedCount > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-1 text-[11px] font-bold">
+                          {selectedCount}
+                        </span>
+                      ) : null}
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </summary>
+
+                  <div className="pt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {options.map((req) => {
+                        const isSelected = selectedRequirements.includes(req.id)
+                        return (
+                          <motion.button
+                            key={req.id}
+                            type="button"
+                            animate={{ scale: isSelected ? 1.01 : 1 }}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => toggleRequirement(req.id)}
+                            className={`relative flex items-center p-3 rounded-2xl border transition-all duration-300 text-left group min-h-[4.25rem] ${
+                              isSelected
+                                ? 'border-primary bg-primary/5 shadow-sm'
+                                : 'border-gray-200 bg-white hover:border-primary/40 hover:shadow-sm'
+                            }`}
                           >
-                            <Check className="w-3 h-3" strokeWidth={3} />
-                          </motion.div>
-                        )}
-                      </motion.button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
+                            <div className="flex items-center gap-3 w-full pr-6">
+                              <div
+                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-4 [&_svg]:!h-4 ${
+                                  isSelected
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-slate-50 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary'
+                                }`}
+                              >
+                                <req.icon />
+                              </div>
+                              <span
+                                className={`font-bold text-[13px] leading-snug ${
+                                  isSelected ? 'text-primary' : 'text-gray-700 group-hover:text-gray-900'
+                                }`}
+                              >
+                                {req.label}
+                              </span>
+                            </div>
+
+                            {isSelected && (
+                              <motion.div
+                                layoutId={`selected-req-${req.id}`}
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[2px] border-white shadow-sm"
+                              >
+                                <Check className="w-3 h-3" strokeWidth={3} />
+                              </motion.div>
+                            )}
+                          </motion.button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </details>
+              )
+            })}
           </div>
         </div>
 
@@ -310,7 +368,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             value={data.description || ''}
             onChange={(e) => onUpdate({ description: e.target.value })}
             rows={4}
-            className="border-gray-200 focus:border-[#FF7167] focus:ring-[#FF7167]/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-gray-400"
+            className="border-gray-200 focus:border-primary focus:ring-primary/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-gray-400"
           />
         </div>
       </Card>
