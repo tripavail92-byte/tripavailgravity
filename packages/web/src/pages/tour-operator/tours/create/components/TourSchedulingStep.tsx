@@ -1,4 +1,4 @@
-import { Calendar, Plus, Trash2 } from 'lucide-react'
+import { Calendar, Clock3, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,6 @@ interface TourSchedulingStepProps {
 }
 
 const WHEEL_ITEM_HEIGHT = 40
-const MAX_SCHEDULE_CAPACITY = 300
 
 const MONTH_OPTIONS = [
   { value: 1, label: 'Jan' },
@@ -169,7 +168,7 @@ function WheelColumn({ options, selectedValue, onSelect, ariaLabel }: WheelColum
               key={option.value}
               type="button"
               onClick={() => onSelect(option.value)}
-              className={`w-full h-10 snap-center text-center transition-all duration-200 ${
+              className={`block w-full h-10 snap-center text-center transition-all duration-200 ${
                 isSelected
                   ? 'text-primary font-bold text-base scale-[1.03]'
                   : 'text-muted-foreground text-sm hover:text-foreground'
@@ -329,42 +328,6 @@ function TimeWheelPicker({ value, onChange }: TimeWheelPickerProps) {
   )
 }
 
-interface CapacityWheelPickerProps {
-  value: number
-  maxValue?: number
-  onChange: (value: number) => void
-}
-
-function CapacityWheelPicker({ value, maxValue = MAX_SCHEDULE_CAPACITY, onChange }: CapacityWheelPickerProps) {
-  const options = useMemo(
-    () =>
-      Array.from({ length: maxValue }, (_, index) => {
-        const seats = index + 1
-        return { value: seats, label: String(seats) }
-      }),
-    [maxValue],
-  )
-
-  const selected = Math.max(1, Math.min(maxValue, Number.isFinite(value) ? value : 1))
-
-  return (
-    <div className="space-y-3">
-      <div className="px-1 text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
-        Seats
-      </div>
-      <WheelColumn
-        options={options}
-        selectedValue={selected}
-        onSelect={onChange}
-        ariaLabel="Select capacity"
-      />
-      <div className="px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-sm font-bold text-foreground shadow-sm">
-        Selected: {selected} seats
-      </div>
-    </div>
-  )
-}
-
 export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSchedulingStepProps) {
   const [schedules, setSchedules] = useState(data.schedules || [])
 
@@ -413,38 +376,43 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         {schedules.map((schedule) => (
           <div
             key={schedule.id}
-            className="glass-card p-6 rounded-2xl border border-white/40 shadow-md hover:border-primary/20 transition-all duration-200"
+            className="glass-card p-6 rounded-2xl border border-white/50 shadow-lg hover:border-primary/30 transition-all duration-200"
           >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-              <div className="md:col-span-4 space-y-2">
-                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
-                  Departure Date
-                </label>
+            <div className="flex items-center justify-between mb-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-xs font-black uppercase tracking-wider text-foreground">
+                  Schedule {schedules.findIndex((s) => s.id === schedule.id) + 1}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
+                  <Calendar className="w-3.5 h-3.5 text-primary" />
+                  <label className="text-xs font-black text-foreground uppercase tracking-wider">
+                    Departure Date
+                  </label>
+                </div>
                 <DateWheelPicker
                   value={schedule.date}
                   onChange={(date) => updateSchedule(schedule.id, 'date', date)}
                 />
               </div>
-              <div className="md:col-span-4 space-y-2">
-                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
-                  Start Time
-                </label>
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
+                  <Clock3 className="w-3.5 h-3.5 text-primary" />
+                  <label className="text-xs font-black text-foreground uppercase tracking-wider">
+                    Start Time
+                  </label>
+                </div>
                 <TimeWheelPicker
                   value={schedule.time}
                   onChange={(time) => updateSchedule(schedule.id, 'time', time)}
                 />
               </div>
-              <div className="md:col-span-3 space-y-2">
-                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
-                  Capacity
-                </label>
-                <CapacityWheelPicker
-                  value={schedule.capacity || 1}
-                  maxValue={MAX_SCHEDULE_CAPACITY}
-                  onChange={(capacity) => updateSchedule(schedule.id, 'capacity', capacity)}
-                />
-              </div>
-              <div className="md:col-span-1 flex justify-end pb-1">
+              <div className="lg:col-span-2 flex justify-end pb-1">
                 <Button
                   variant="ghost"
                   size="icon"
