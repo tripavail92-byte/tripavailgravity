@@ -17,6 +17,30 @@ module.exports = {
             { allowConstantExport: true },
         ],
         'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+        'no-restricted-imports': [
+            'error',
+            {
+                paths: [
+                    {
+                        name: '@tripavail/shared/core/client',
+                        message:
+                            'Import Supabase via @/lib/supabase to ensure a single client module boundary in the web app.',
+                    },
+                ],
+                patterns: [
+                    {
+                        group: [
+                            '../../**/shared/src/core/client',
+                            '../../**/shared/src/core/client.*',
+                            '../**/shared/src/core/client',
+                            '../**/shared/src/core/client.*',
+                        ],
+                        message:
+                            'Do not import from shared/src (creates a second module instance). Use @/lib/supabase instead.',
+                    },
+                ],
+            },
+        ],
         'simple-import-sort/imports': 'error',
         'simple-import-sort/exports': 'error',
         '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
@@ -28,6 +52,12 @@ module.exports = {
             files: ['src/components/ui/**/*.tsx'],
             rules: {
                 'react-refresh/only-export-components': 'off',
+            },
+        },
+        {
+            files: ['src/lib/supabase.ts'],
+            rules: {
+                'no-restricted-imports': 'off',
             },
         },
     ],
