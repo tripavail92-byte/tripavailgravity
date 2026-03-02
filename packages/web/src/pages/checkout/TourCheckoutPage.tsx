@@ -121,8 +121,29 @@ export default function TourCheckoutPage() {
     }
   }, [loading, user, navigate])
 
-  // Calculate totals
-  const totalPrice = (tour?.price || 0) * guestCount
+  // Calculate totals (apply group pricing tiers when applicable)
+  const baseUnitPrice = Number(tour?.price || 0)
+  const normalizedPricingTiers = Array.isArray(tour?.pricing_tiers)
+    ? tour.pricing_tiers
+        .map((tier: any) => ({
+          minPeople: Number(tier?.minPeople || 0),
+          maxPeople: Number(tier?.maxPeople || 0),
+          pricePerPerson: Number(tier?.pricePerPerson || 0),
+          name: String(tier?.name || ''),
+        }))
+        .filter((tier: any) => tier.minPeople > 0 && tier.pricePerPerson > 0)
+    : []
+
+  const applicableTier = normalizedPricingTiers
+    .filter((tier: any) => {
+      const meetsMin = guestCount >= tier.minPeople
+      const withinMax = tier.maxPeople > 0 ? guestCount <= tier.maxPeople : true
+      return meetsMin && withinMax
+    })
+    .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+
+  const effectiveUnitPrice = applicableTier ? applicableTier.pricePerPerson : baseUnitPrice
+  const totalPrice = effectiveUnitPrice * guestCount
   const scheduleCapacity = schedule?.capacity || null
   const liveAvailableSeats = availableSlots ?? scheduleCapacity ?? 0
   const maxGuests = Math.max(
@@ -577,13 +598,18 @@ export default function TourCheckoutPage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground font-medium">
-                        {tour.currency} {tour.price} × {guestCount}{' '}
+                        {tour.currency} {effectiveUnitPrice.toFixed(2)} × {guestCount}{' '}
                         {guestCount === 1 ? 'Guest' : 'Guests'}
                       </span>
                       <span className="text-foreground font-bold">
                         {tour.currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
+                    {applicableTier ? (
+                      <div className="text-xs text-success font-semibold">
+                        Tier applied: {applicableTier.name || `${applicableTier.minPeople}+ guests`}
+                      </div>
+                    ) : null}
                     <div className="h-px bg-border/60" />
                     <div className="flex items-center justify-between">
                       <span className="text-foreground font-bold">Total</span>
