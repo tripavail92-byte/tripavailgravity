@@ -1,4 +1,10 @@
 import { supabase } from '@/lib/supabase'
+import {
+  buildStructuredFeaturesFromLabels,
+  EXCLUDED_FEATURE_OPTIONS,
+  INCLUDED_FEATURE_OPTIONS,
+  TourFeatureItem,
+} from '@/features/tour-operator/assets/TourIconRegistry'
 
 export interface Tour {
   id: string
@@ -24,6 +30,8 @@ export interface Tour {
   highlights: string[]
   inclusions: string[]
   exclusions: string[]
+  included_features?: TourFeatureItem[]
+  excluded_features?: TourFeatureItem[]
   requirements: string[]
   min_participants: number
   max_participants: number
@@ -220,6 +228,14 @@ export const tourService = {
         | 'non-refundable'
     const normalizedInclusions = Array.isArray(tourData.inclusions) ? tourData.inclusions : []
     const normalizedExclusions = Array.isArray(tourData.exclusions) ? tourData.exclusions : []
+    const normalizedIncludedFeatures =
+      Array.isArray(tourData.included_features) && tourData.included_features.length > 0
+        ? tourData.included_features
+        : buildStructuredFeaturesFromLabels(normalizedInclusions, INCLUDED_FEATURE_OPTIONS)
+    const normalizedExcludedFeatures =
+      Array.isArray(tourData.excluded_features) && tourData.excluded_features.length > 0
+        ? tourData.excluded_features
+        : buildStructuredFeaturesFromLabels(normalizedExclusions, EXCLUDED_FEATURE_OPTIONS)
 
     const payload = {
       ...tourData,
@@ -233,6 +249,8 @@ export const tourService = {
       included: normalizedInclusions,
       exclusions: normalizedExclusions,
       excluded: normalizedExclusions,
+      included_features: normalizedIncludedFeatures,
+      excluded_features: normalizedExcludedFeatures,
     }
 
     // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
@@ -269,6 +287,14 @@ export const tourService = {
         | 'non-refundable'
     const normalizedInclusions = Array.isArray(updates.inclusions) ? updates.inclusions : []
     const normalizedExclusions = Array.isArray(updates.exclusions) ? updates.exclusions : []
+    const normalizedIncludedFeatures =
+      Array.isArray(updates.included_features) && updates.included_features.length > 0
+        ? updates.included_features
+        : buildStructuredFeaturesFromLabels(normalizedInclusions, INCLUDED_FEATURE_OPTIONS)
+    const normalizedExcludedFeatures =
+      Array.isArray(updates.excluded_features) && updates.excluded_features.length > 0
+        ? updates.excluded_features
+        : buildStructuredFeaturesFromLabels(normalizedExclusions, EXCLUDED_FEATURE_OPTIONS)
 
     const payload = {
       ...updates,
@@ -282,6 +308,8 @@ export const tourService = {
       included: normalizedInclusions,
       exclusions: normalizedExclusions,
       excluded: normalizedExclusions,
+      included_features: normalizedIncludedFeatures,
+      excluded_features: normalizedExcludedFeatures,
       updated_at: new Date().toISOString(),
       last_edited_at: new Date().toISOString(),
     }
@@ -451,6 +479,14 @@ export const tourService = {
         | 'non-refundable'
     const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
     const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+    const normalizedIncludedFeatures =
+      Array.isArray(data.included_features) && data.included_features.length > 0
+        ? data.included_features
+        : buildStructuredFeaturesFromLabels(normalizedInclusions, INCLUDED_FEATURE_OPTIONS)
+    const normalizedExcludedFeatures =
+      Array.isArray(data.excluded_features) && data.excluded_features.length > 0
+        ? data.excluded_features
+        : buildStructuredFeaturesFromLabels(normalizedExclusions, EXCLUDED_FEATURE_OPTIONS)
 
     const payload = {
       operator_id: operatorId,
@@ -469,6 +505,8 @@ export const tourService = {
       included: normalizedInclusions,
       exclusions: normalizedExclusions,
       excluded: normalizedExclusions,
+      included_features: normalizedIncludedFeatures,
+      excluded_features: normalizedExcludedFeatures,
       requirements: data.requirements || [],
       languages: data.languages || ['en'],
       min_participants: data.min_participants || 1,
@@ -546,6 +584,14 @@ export const tourService = {
         | 'non-refundable'
     const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
     const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+    const normalizedIncludedFeatures =
+      Array.isArray(data.included_features) && data.included_features.length > 0
+        ? data.included_features
+        : buildStructuredFeaturesFromLabels(normalizedInclusions, INCLUDED_FEATURE_OPTIONS)
+    const normalizedExcludedFeatures =
+      Array.isArray(data.excluded_features) && data.excluded_features.length > 0
+        ? data.excluded_features
+        : buildStructuredFeaturesFromLabels(normalizedExclusions, EXCLUDED_FEATURE_OPTIONS)
 
     const draftPayload = {
       operator_id: operatorId,
@@ -565,6 +611,8 @@ export const tourService = {
       included: normalizedInclusions,
       exclusions: normalizedExclusions,
       excluded: normalizedExclusions,
+      included_features: normalizedIncludedFeatures,
+      excluded_features: normalizedExcludedFeatures,
       requirements: data.requirements || [],
       languages: data.languages || ['en'],
       min_participants: data.min_participants || 1,

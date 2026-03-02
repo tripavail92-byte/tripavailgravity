@@ -4,18 +4,15 @@ import {
   Calendar,
   Camera,
   Check,
-  Clock3,
   Heart,
   Loader2,
   MapPin,
-  Percent,
   Share2,
   Shield,
   Sparkles,
   Star,
   Users,
   X,
-  XCircle,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -31,6 +28,11 @@ import {
   GlassTitle,
 } from '@/components/ui/glass'
 import { tourBookingService } from '@/features/booking'
+import {
+  CANCELLATION_ICON_BY_POLICY,
+  getTourIconComponent,
+  TourFeatureItem,
+} from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 
 export default function TourDetailsPage() {
@@ -139,28 +141,36 @@ export default function TourDetailsPage() {
 
   const cancellationMeta = {
     flexible: {
-      icon: Shield,
+      iconKey: CANCELLATION_ICON_BY_POLICY.flexible,
       title: 'Free Cancellation',
       description: 'Cancel up to 48 hours before departure.',
     },
     moderate: {
-      icon: Clock3,
+      iconKey: CANCELLATION_ICON_BY_POLICY.moderate,
       title: 'Moderate Cancellation',
       description: 'Cancel up to 5 days before departure for free.',
     },
     strict: {
-      icon: Percent,
+      iconKey: CANCELLATION_ICON_BY_POLICY.strict,
       title: 'Strict Cancellation',
       description: '50% refund if cancelled 14 days before departure.',
     },
     'non-refundable': {
-      icon: XCircle,
+      iconKey: CANCELLATION_ICON_BY_POLICY['non-refundable'],
       title: 'Non-Refundable',
       description: 'No refund after booking confirmation.',
     },
   }[cancellationPolicy]
 
-  const CancellationPolicyIcon = cancellationMeta.icon
+  const CancellationPolicyIcon = getTourIconComponent(cancellationMeta.iconKey)
+  const includedFeatures =
+    (Array.isArray((tour as any).included_features) && (tour as any).included_features.length > 0
+      ? ((tour as any).included_features as TourFeatureItem[])
+      : []) || []
+  const excludedFeatures =
+    (Array.isArray((tour as any).excluded_features) && (tour as any).excluded_features.length > 0
+      ? ((tour as any).excluded_features as TourFeatureItem[])
+      : []) || []
   const includedItems =
     (Array.isArray(tour.inclusions) && tour.inclusions.length > 0
       ? tour.inclusions
@@ -442,7 +452,15 @@ export default function TourDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <h4 className="text-base font-semibold text-foreground">Included</h4>
-                      {includedItems.length > 0 ? includedItems.map((inc, i) => (
+                      {includedFeatures.length > 0 ? includedFeatures.map((item, i) => {
+                        const Icon = getTourIconComponent(item.icon_key)
+                        return (
+                          <div key={`${item.label}-${i}`} className="flex items-center gap-3 text-muted-foreground">
+                            <Icon className="w-5 h-5 text-success" />
+                            <span>{item.label}</span>
+                          </div>
+                        )
+                      }) : includedItems.length > 0 ? includedItems.map((inc, i) => (
                         <div key={i} className="flex items-center gap-3 text-muted-foreground">
                           <Check className="w-5 h-5 text-success" />
                           <span>{inc}</span>
@@ -454,7 +472,15 @@ export default function TourDetailsPage() {
 
                     <div className="space-y-3">
                       <h4 className="text-base font-semibold text-foreground">Excluded</h4>
-                      {excludedItems.length > 0 ? excludedItems.map((exc, i) => (
+                      {excludedFeatures.length > 0 ? excludedFeatures.map((item, i) => {
+                        const Icon = getTourIconComponent(item.icon_key)
+                        return (
+                          <div key={`${item.label}-${i}`} className="flex items-center gap-3 text-muted-foreground">
+                            <Icon className="w-5 h-5 text-destructive" />
+                            <span>{item.label}</span>
+                          </div>
+                        )
+                      }) : excludedItems.length > 0 ? excludedItems.map((exc, i) => (
                         <div key={i} className="flex items-center gap-3 text-muted-foreground">
                           <X className="w-5 h-5 text-destructive" />
                           <span>{exc}</span>

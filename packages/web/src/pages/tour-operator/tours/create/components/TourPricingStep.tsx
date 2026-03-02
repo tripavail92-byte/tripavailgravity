@@ -1,29 +1,10 @@
 import {
-  BadgeCheck,
-  Bed,
-  Bus,
-  Camera,
-  Clock3,
-  Coins,
   DollarSign,
-  FileText,
-  HeartPulse,
   Info,
-  Map,
   Percent,
-  Plane,
   Plus,
-  Receipt,
-  Shield,
-  ShieldCheck,
-  ShoppingBag,
-  Ticket,
   Trash2,
   Users,
-  Utensils,
-  Wallet,
-  Wine,
-  XCircle,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
@@ -40,6 +21,13 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import {
+  CANCELLATION_ICON_BY_POLICY,
+  EXCLUDED_FEATURE_OPTIONS,
+  getTourIconComponent,
+  INCLUDED_FEATURE_OPTIONS,
+  TourFeatureItem,
+} from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface TourPricingStepProps {
@@ -49,28 +37,6 @@ interface TourPricingStepProps {
   onBack: () => void
 }
 
-const COMMON_INCLUDES = [
-  { id: 'Professional Tour Guide', icon: BadgeCheck },
-  { id: 'Transportation', icon: Bus },
-  { id: 'Entrance Fees', icon: Ticket },
-  { id: 'Meals (as specified)', icon: Utensils },
-  { id: 'Accommodation', icon: Bed },
-  { id: 'Travel Insurance', icon: ShieldCheck },
-  { id: 'Photography', icon: Camera },
-  { id: 'Local Taxes', icon: Receipt },
-]
-
-const COMMON_EXCLUDES = [
-  { id: 'Personal Expenses', icon: Wallet },
-  { id: 'Tips and Gratuities', icon: Coins },
-  { id: 'International Flights', icon: Plane },
-  { id: 'Visa Fees', icon: FileText },
-  { id: 'Optional Activities', icon: Map },
-  { id: 'Alcoholic Beverages', icon: Wine },
-  { id: 'Shopping', icon: ShoppingBag },
-  { id: 'Emergency Expenses', icon: HeartPulse },
-]
-
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED']
 
 const CANCELLATION_POLICIES = [
@@ -78,30 +44,42 @@ const CANCELLATION_POLICIES = [
     value: 'flexible',
     title: 'Free Cancellation',
     description: 'Cancel up to 48 hours before departure.',
-    icon: Shield,
+    iconKey: CANCELLATION_ICON_BY_POLICY.flexible,
   },
   {
     value: 'moderate',
     title: 'Moderate Policy',
     description: 'Cancel up to 5 days before departure for free.',
-    icon: Clock3,
+    iconKey: CANCELLATION_ICON_BY_POLICY.moderate,
   },
   {
     value: 'strict',
     title: 'Strict Policy',
     description: '50% refund when cancelled at least 14 days before departure.',
-    icon: Percent,
+    iconKey: CANCELLATION_ICON_BY_POLICY.strict,
   },
   {
     value: 'non-refundable',
     title: 'Non-Refundable',
     description: 'No refund after booking confirmation.',
-    icon: XCircle,
+    iconKey: CANCELLATION_ICON_BY_POLICY['non-refundable'],
   },
 ] as const
 
 export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
+  const selectedInclusionLabels = new Set([
+    ...(Array.isArray(data.inclusions) ? data.inclusions : []),
+    ...((Array.isArray((data as any).included_features)
+      ? (data as any).included_features.map((item: TourFeatureItem) => item.label)
+      : []) as string[]),
+  ])
+  const selectedExclusionLabels = new Set([
+    ...(Array.isArray(data.exclusions) ? data.exclusions : []),
+    ...((Array.isArray((data as any).excluded_features)
+      ? (data as any).excluded_features.map((item: TourFeatureItem) => item.label)
+      : []) as string[]),
+  ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (field: keyof Tour, value: any) => {
@@ -154,15 +132,19 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   }
 
   const toggleInclude = (item: string) => {
-    const current = data.inclusions || []
+    const current = Array.from(selectedInclusionLabels)
     const next = current.includes(item) ? current.filter((i) => i !== item) : [...current, item]
-    onUpdate({ inclusions: next })
+    const includedFeatures = INCLUDED_FEATURE_OPTIONS.filter((feature) => next.includes(feature.label))
+    onUpdate({ inclusions: next, included_features: includedFeatures } as Partial<Tour>)
   }
 
   const toggleExclude = (item: string) => {
-    const current = data.exclusions || []
+    const current = Array.from(selectedExclusionLabels)
     const next = current.includes(item) ? current.filter((e) => e !== item) : [...current, item]
-    onUpdate({ exclusions: next })
+    const excludedFeatures = EXCLUDED_FEATURE_OPTIONS.filter((feature) =>
+      next.includes(feature.label),
+    )
+    onUpdate({ exclusions: next, excluded_features: excludedFeatures } as Partial<Tour>)
   }
 
   return (
@@ -500,7 +482,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             </label>
             <div className="space-y-3">
               {CANCELLATION_POLICIES.map((policy) => {
-                const Icon = policy.icon
+                const Icon = getTourIconComponent(policy.iconKey)
                 const isSelected = (data.cancellation_policy || 'flexible') === policy.value
 
                 return (
@@ -541,12 +523,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             What&apos;s Included
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {COMMON_INCLUDES.map((item) => {
-              const Icon = item.icon
-              const isSelected = (data.inclusions || []).includes(item.id)
+            {INCLUDED_FEATURE_OPTIONS.map((item) => {
+              const Icon = getTourIconComponent(item.icon_key)
+              const isSelected = selectedInclusionLabels.has(item.label)
               return (
                 <label
-                  key={item.id}
+                  key={item.label}
                   className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
                       ? 'scale-105 shadow-md border-primary bg-primary/10'
@@ -557,7 +539,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     type="checkbox"
                     className="hidden"
                     checked={isSelected}
-                    onChange={() => toggleInclude(item.id)}
+                    onChange={() => toggleInclude(item.label)}
                   />
                   <Icon
                     className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
@@ -568,7 +550,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
                     }`}
                   >
-                    {item.id}
+                      {item.label}
                   </span>
                 </label>
               )
@@ -582,12 +564,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             What&apos;s Excluded
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {COMMON_EXCLUDES.map((item) => {
-              const Icon = item.icon
-              const isSelected = (data.exclusions || []).includes(item.id)
+            {EXCLUDED_FEATURE_OPTIONS.map((item) => {
+              const Icon = getTourIconComponent(item.icon_key)
+              const isSelected = selectedExclusionLabels.has(item.label)
               return (
                 <label
-                  key={item.id}
+                  key={item.label}
                   className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
                       ? 'scale-105 shadow-md border-primary bg-primary/10'
@@ -598,7 +580,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     type="checkbox"
                     className="hidden"
                     checked={isSelected}
-                    onChange={() => toggleExclude(item.id)}
+                    onChange={() => toggleExclude(item.label)}
                   />
                   <Icon
                     className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
@@ -609,7 +591,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
                     }`}
                   >
-                    {item.id}
+                      {item.label}
                   </span>
                 </label>
               )
