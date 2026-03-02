@@ -195,6 +195,25 @@ export default function TourDetailsPage() {
   const depositPercentage = Math.max(0, Math.min(50, tour.deposit_percentage || 0))
   const requiresDeposit = Boolean(tour.deposit_required)
   const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
+  const groupPricingTiers = Array.isArray(tour.pricing_tiers)
+    ? [...tour.pricing_tiers]
+        .map((tier: any, index: number) => ({
+          key: `${tier?.id || tier?.name || 'tier'}-${index}`,
+          name: tier?.name || `Tier ${index + 1}`,
+          minPeople: Number(tier?.minPeople || 1),
+          maxPeople: Number(tier?.maxPeople || 0),
+          pricePerPerson: Number(tier?.pricePerPerson || 0),
+        }))
+        .filter((tier: any) => tier.pricePerPerson > 0)
+        .sort((a: any, b: any) => a.minPeople - b.minPeople)
+    : []
+  const activeGroupTier = groupPricingTiers
+    .filter((tier: any) => {
+      const meetsMin = selectedSeats >= tier.minPeople
+      const withinMax = tier.maxPeople > 0 ? selectedSeats <= tier.maxPeople : true
+      return meetsMin && withinMax
+    })
+    .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
 
   const tourImages = [
     tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
@@ -442,25 +461,74 @@ export default function TourDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    {tour.group_discounts && (tour.pricing_tiers?.length ?? 0) > 0 ? (
-                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                          Group Pricing Tiers
-                        </p>
-                        <div className="space-y-2">
-                          {(tour.pricing_tiers || []).map((tier: any, index: number) => (
-                            <div
-                              key={`${tier?.id || tier?.name || 'tier'}-${index}`}
-                              className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-2"
-                            >
-                              <span className="text-sm font-semibold text-foreground">
-                                {tier?.name || `Tier ${index + 1}`} • {tier?.minPeople || 1}+
-                              </span>
-                              <span className="text-sm font-black text-primary">
-                                {tour.currency} {formatMoney(Number(tier?.pricePerPerson || 0))}
-                              </span>
+                    {tour.group_discounts && groupPricingTiers.length > 0 ? (
+                      <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-background/80 via-background/65 to-primary/10 backdrop-blur-md p-4 md:p-5 space-y-4 shadow-sm">
+                        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.35),transparent_55%)]" />
+
+                        <div className="relative flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center">
+                              <Users className="w-4 h-4 text-primary" />
                             </div>
-                          ))}
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+                                Group Pricing Tiers
+                              </p>
+                              <p className="text-[11px] text-muted-foreground font-medium">
+                                Better rates unlock for larger groups
+                              </p>
+                            </div>
+                          </div>
+                          <GlassBadge variant="info" size="sm" icon={<Sparkles size={12} />}>
+                            Active Offers
+                          </GlassBadge>
+                        </div>
+
+                        <div className="relative space-y-2.5">
+                          {groupPricingTiers.map((tier: any) => {
+                            const savings = Math.max(0, basePrice - tier.pricePerPerson)
+                            const isActive = activeGroupTier?.key === tier.key
+                            return (
+                              <div
+                                key={tier.key}
+                                className={`rounded-xl backdrop-blur-sm px-3.5 py-3 flex items-center justify-between gap-3 transition-all duration-200 ${
+                                  isActive
+                                    ? 'border border-primary/40 bg-primary/10 shadow-md shadow-primary/10'
+                                    : 'border border-border/50 bg-background/60'
+                                }`}
+                              >
+                                <div className="min-w-0">
+                                  <p className={`text-sm font-bold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                                    {tier.name} • {tier.minPeople}+
+                                  </p>
+                                  {savings > 0 ? (
+                                    <p className="text-xs text-success font-semibold">
+                                      Save {tour.currency} {formatMoney(savings)} per person
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground font-medium">
+                                      Base rate applied
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-right shrink-0">
+                                  {isActive ? (
+                                    <div className="text-[10px] font-black uppercase tracking-wider text-primary mb-0.5">
+                                      Active for {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'}
+                                    </div>
+                                  ) : null}
+                                  {savings > 0 ? (
+                                    <p className="text-[11px] text-muted-foreground line-through font-semibold">
+                                      {tour.currency} {formatMoney(basePrice)}
+                                    </p>
+                                  ) : null}
+                                  <p className="text-sm md:text-base font-black text-primary">
+                                    {tour.currency} {formatMoney(tier.pricePerPerson)}
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     ) : null}
