@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -660,8 +661,8 @@ export default function AdminKYCPage() {
     }
     setBusyId(row.id)
     try {
-      const { data: authData } = await supabase.auth.getUser()
-      const reviewerId = authData?.user?.id ?? null
+      const user = await getUserCached()
+      const reviewerId = user?.id ?? null
 
       // Build the patch — include manually-entered OCR fields on approval
       // so the trigger promotes them to tour_operator_profiles immediately.
@@ -704,8 +705,8 @@ export default function AdminKYCPage() {
     if (!row.cnic_number) { toast.error('No CNIC extracted to block'); return }
     setBusyId(row.id)
     try {
-      const { data: authData } = await supabase.auth.getUser()
-      const adminId = authData?.user?.id ?? null
+      const user = await getUserCached()
+      const adminId = user?.id ?? null
 
       const { error: insertErr } = await (supabase
         .from('kyc_blocked_cnics' as any)

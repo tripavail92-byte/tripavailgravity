@@ -1,3 +1,4 @@
+import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 
 export type PaymentMethodType = 'card' | 'easypaisa' | 'jazzcash'
@@ -40,9 +41,7 @@ export const paymentMethodService = {
   async savePaymentMethod(
     method: Omit<UserPaymentMethod, 'id' | 'user_id' | 'created_at'>,
   ): Promise<UserPaymentMethod> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getUserCached()
     if (!user) throw new Error('User not authenticated')
 
     // If this is the first method, make it default
@@ -76,9 +75,7 @@ export const paymentMethodService = {
    * Set a payment method as default
    */
   async setDefault(id: string): Promise<void> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getUserCached()
     if (!user) throw new Error('User not authenticated')
 
     // Use a transaction-like approach (or let the DB constraint handle it if we had a function)

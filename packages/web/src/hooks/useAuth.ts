@@ -5,6 +5,7 @@ import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
 
 import { isAbortError, isTimeoutError, withTimeout } from '@/lib/withTimeout'
+import { resetAuthCache } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 
 let initializeInFlight: Promise<void> | null = null
@@ -54,6 +55,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       })()
 
       if (session?.user) {
+        resetAuthCache()
         // Admin override: admin accounts should land in Admin UI, not traveller.
         const { data: adminRole, error: adminRoleError } = await withTimeout<any>(
           supabase.rpc('get_admin_role', {
@@ -120,6 +122,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       authListenerUnsubscribe?.()
       const listener = authService.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
+          resetAuthCache()
           set({ isLoading: true })
           try {
             const { data: adminRole, error: adminRoleError } = await withTimeout<any>(
@@ -224,6 +227,7 @@ export const useAuth = create<AuthState>((set, get) => ({
         }
 
         if (event === 'SIGNED_OUT') {
+          resetAuthCache()
           set({ user: null, activeRole: null, partnerType: null, isLoading: false })
         }
       })

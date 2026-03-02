@@ -15,6 +15,7 @@ import {
 } from '@/features/booking'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useAuth } from '@/hooks/useAuth'
+import { getSessionCached } from '@/lib/authCache'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
@@ -157,8 +158,8 @@ export default function PackageCheckoutPage() {
       setPaymentIntentAttempted(true)
 
       try {
-        const { data: sessionData } = await supabase.auth.getSession()
-        let accessToken = sessionData?.session?.access_token
+        const session = await getSessionCached()
+        let accessToken = session?.access_token
 
         if (!accessToken) {
           const { data: refreshed } = await supabase.auth.refreshSession()

@@ -25,11 +25,42 @@ type GlobalWithTripAvailSupabase = typeof globalThis & {
 
 const globalWithSupabase = globalThis as GlobalWithTripAvailSupabase;
 
+// In-memory lock to serialize Supabase Auth's session storage operations.
+// This avoids AbortErrors from navigator.locks acquisition timeouts in some browsers
+// while keeping operations ordered within a single tab.
+const inMemoryLockTails = new Map<string, Promise<void>>();
+
+async function inMemoryLock<T>(name: string, _acquireTimeout: number, fn: () => Promise<T>): Promise<T> {
+    const previous = inMemoryLockTails.get(name) ?? Promise.resolve();
+
+    let release: (() => void) | undefined;
+    const current = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+
+    inMemoryLockTails.set(name, previous.then(() => current));
+
+    await previous;
+    try {
+        return await fn();
+    } finally {
+        release?.();
+    }
+}
+
 // Create a proper client if env vars exist, otherwise create a mock client.
 // IMPORTANT: Use a global singleton to prevent multiple client instances in cases
 // where bundlers accidentally duplicate the module (which can trigger auth lock AbortErrors).
 export const supabase = globalWithSupabase.__tripavail_supabase__
     ?? (globalWithSupabase.__tripavail_supabase__ = (supabaseUrl && supabaseAnonKey)
-        ? createClient(supabaseUrl, supabaseAnonKey)
-        : createClient('https://placeholder.supabase.co', 'placeholder-key'));
+        ? createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                lock: inMemoryLock as any,
+            },
+        })
+        : createClient('https://placeholder.supabase.co', 'placeholder-key', {
+            auth: {
+                lock: inMemoryLock as any,
+            },
+        }));
 

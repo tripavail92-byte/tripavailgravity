@@ -7,6 +7,7 @@
 
 import toast from 'react-hot-toast'
 
+import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 
 export interface UserProfile {
@@ -45,9 +46,7 @@ class UserProfileService {
    */
   async getProfile(): Promise<UserProfile | null> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
       if (!user) {
         throw new Error('No authenticated user')
@@ -82,9 +81,7 @@ class UserProfileService {
    */
   async updateProfile(data: UpdateProfileData): Promise<UserProfile> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
       if (!user) {
         throw new Error('No authenticated user')
@@ -128,9 +125,7 @@ class UserProfileService {
    */
   async sendEmailVerification(): Promise<void> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
       if (!user) {
         throw new Error('No authenticated user')
@@ -177,9 +172,7 @@ class UserProfileService {
    */
   async verifyPhoneOTP(phone: string, otp: string): Promise<void> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
       if (!user) {
         throw new Error('No authenticated user')
@@ -213,9 +206,7 @@ class UserProfileService {
    */
   async uploadAvatar(file: File): Promise<string> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
       if (!user) {
         throw new Error('No authenticated user')

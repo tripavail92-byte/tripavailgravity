@@ -1,7 +1,12 @@
 import { supabase } from '../core/client';
 import { roleService } from '../roles/service';
 
+import type { Session } from '@supabase/supabase-js';
+
 export class AuthService {
+    private _sessionInFlight: Promise<Session | null> | null = null;
+    private _sessionCache: { value: Session | null; at: number } | null = null;
+
     /**
      * Sign in with Email and Password
      */
@@ -62,9 +67,25 @@ export class AuthService {
      * Get current session
      */
     async getSession() {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        return data.session;
+        const now = Date.now();
+        if (this._sessionCache && now - this._sessionCache.at < 1500) {
+            return this._sessionCache.value;
+        }
+
+        if (this._sessionInFlight) return this._sessionInFlight;
+
+        this._sessionInFlight = (async () => {
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                this._sessionCache = { value: data.session, at: Date.now() };
+                return data.session;
+            } finally {
+                this._sessionInFlight = null;
+            }
+        })();
+
+        return this._sessionInFlight;
     }
 
     /**

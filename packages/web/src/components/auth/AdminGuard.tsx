@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
+import { getSessionCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 import { useAdminRole } from '@/queries/adminQueries'
 
@@ -61,8 +62,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
     const fingerprintSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession()
-        const accessToken = data?.session?.access_token
+        const session = await getSessionCached()
+        const accessToken = session?.access_token
         if (!accessToken) return null
 
         if (typeof crypto === 'undefined' || !crypto.subtle) return null

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
+import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 
 import { publishPackage } from '../services/packageService'
@@ -68,12 +69,9 @@ export function CompletePackageCreationFlow() {
 
     try {
       // Get current user
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      const user = await getUserCached()
 
-      if (authError || !user) {
+      if (!user) {
         throw new Error('You must be logged in to publish packages')
       }
 

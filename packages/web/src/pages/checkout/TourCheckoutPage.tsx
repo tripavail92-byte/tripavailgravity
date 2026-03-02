@@ -19,6 +19,7 @@ import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/u
 import { createBookingWithValidation, TourBooking, tourBookingService } from '@/features/booking'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
+import { getSessionCached } from '@/lib/authCache'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
@@ -170,8 +171,8 @@ export default function TourCheckoutPage() {
       setPaymentIntentAttempted(true)
 
       try {
-        const { data: sessionData } = await supabase.auth.getSession()
-        let accessToken = sessionData?.session?.access_token
+        const session = await getSessionCached()
+        let accessToken = session?.access_token
 
         if (!accessToken) {
           const { data: refreshed } = await supabase.auth.refreshSession()
