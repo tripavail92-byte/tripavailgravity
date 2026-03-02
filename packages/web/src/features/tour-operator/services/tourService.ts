@@ -107,6 +107,88 @@ export interface TourMediaItem {
   created_at: string
 }
 
+export interface NormalizedTourScheduleRow {
+  start_time: string
+  end_time: string
+  capacity: number
+  status: 'scheduled' | 'cancelled' | 'completed'
+}
+
+const DEFAULT_SCHEDULE_START = '09:00'
+const DEFAULT_SCHEDULE_DURATION_HOURS = 2
+
+const toIsoOrNull = (value: unknown): string | null => {
+  if (typeof value !== 'string' || value.trim().length === 0) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+const combineDateAndTimeToIso = (dateValue: unknown, timeValue: unknown): string | null => {
+  if (typeof dateValue !== 'string' || dateValue.trim().length === 0) return null
+  const time = typeof timeValue === 'string' && timeValue.trim().length > 0 ? timeValue : DEFAULT_SCHEDULE_START
+  const parsed = new Date(`${dateValue}T${time}:00`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+const parseCapacity = (value: unknown, fallback: number): number => {
+  const normalized = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(normalized) || normalized <= 0) return Math.max(1, fallback)
+  return Math.max(1, Math.round(normalized))
+}
+
+export function normalizeTourSchedules(
+  schedules: unknown,
+  fallbackCapacity = 10,
+): NormalizedTourScheduleRow[] {
+  if (!Array.isArray(schedules)) return []
+
+  return schedules
+    .map((schedule: any) => {
+      const startFromTimestamp = toIsoOrNull(schedule?.start_time)
+      const startFromDateTime = combineDateAndTimeToIso(schedule?.date, schedule?.time)
+      const start_time = startFromTimestamp || startFromDateTime
+
+      if (!start_time) return null
+
+      const endFromTimestamp = toIsoOrNull(schedule?.end_time)
+      const end_time =
+        endFromTimestamp ||
+        new Date(new Date(start_time).getTime() + DEFAULT_SCHEDULE_DURATION_HOURS * 60 * 60 * 1000).toISOString()
+
+      const capacity = parseCapacity(schedule?.capacity, fallbackCapacity)
+      const status =
+        schedule?.status === 'cancelled' || schedule?.status === 'completed'
+          ? schedule.status
+          : 'scheduled'
+
+      return {
+        start_time,
+        end_time,
+        capacity,
+        status,
+      } as NormalizedTourScheduleRow
+    })
+    .filter((row): row is NormalizedTourScheduleRow => row !== null)
+}
+
+async function syncTourSchedulesFromJson(
+  tourId: string,
+  schedules: unknown,
+  fallbackCapacity = 10,
+) {
+  const normalized = normalizeTourSchedules(schedules, fallbackCapacity)
+  const { error } = await supabase.rpc('sync_tour_schedules_from_json', {
+    p_tour_id: tourId,
+    p_schedules: normalized,
+    p_default_capacity: Math.max(1, fallbackCapacity),
+  })
+
+  if (error) {
+    console.error('Error syncing tour schedules:', error)
+    throw error
+  }
+}
+
 /** Calculate how complete a tour draft is (0–100) */
 export function calculateCompletionPercentage(data: Partial<Tour>): number {
   const checks = [
@@ -140,7 +222,14 @@ export const tourService = {
       throw error
     }
 
-    return data as unknown as Tour
+    const created = data as unknown as Tour
+    await syncTourSchedulesFromJson(
+      created.id,
+      tourData.schedules,
+      tourData.max_participants || 10,
+    )
+
+    return created
   },
 
   async updateTour(id: string, updates: Partial<Tour>) {
@@ -157,7 +246,10 @@ export const tourService = {
       throw error
     }
 
-    return data as unknown as Tour
+    const updated = data as unknown as Tour
+    await syncTourSchedulesFromJson(id, updates.schedules, updates.max_participants || 10)
+
+    return updated
   },
 
   async getTourById(identifier: string) {
@@ -344,6 +436,7 @@ export const tourService = {
         .select('id')
         .single()
       if (error) throw error
+      await syncTourSchedulesFromJson(tour.id as string, payload.schedules, payload.max_participants)
       return { success: true, tourId: tour.id as string }
     } else {
       const { data: tour, error } = await supabase
@@ -352,6 +445,7 @@ export const tourService = {
         .select('id')
         .single()
       if (error) throw error
+      await syncTourSchedulesFromJson(tour.id as string, payload.schedules, payload.max_participants)
       return { success: true, tourId: tour.id as string }
     }
   },
@@ -421,6 +515,7 @@ export const tourService = {
         .single()
 
       if (error) throw error
+      await syncTourSchedulesFromJson(tour.id, draftPayload.schedules, draftPayload.max_participants)
       return { success: true, tourId: tour.id }
     } else {
       const { data: tour, error } = await supabase
@@ -430,6 +525,7 @@ export const tourService = {
         .single()
 
       if (error) throw error
+      await syncTourSchedulesFromJson(tour.id, draftPayload.schedules, draftPayload.max_participants)
       return { success: true, tourId: tour.id }
     }
   },

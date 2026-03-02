@@ -19,16 +19,14 @@ import { TourItineraryStep } from './components/TourItineraryStep'
 import { TourMediaStep } from './components/TourMediaStep'
 import { TourPricingStep } from './components/TourPricingStep'
 import { TourReviewStep } from './components/TourReviewStep'
-import { TourSchedulingStep } from './components/TourSchedulingStep'
 import { deriveStepWorkflow, StepId } from './stepWorkflow'
 
 const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },
-  { id: 'media', title: 'Media', component: TourMediaStep },
   { id: 'itinerary', title: 'Itinerary', component: TourItineraryStep },
-  { id: 'details', title: 'Requirements', component: TourDetailsStep },
   { id: 'pricing', title: 'Pricing & Policies', component: TourPricingStep },
-  { id: 'scheduling', title: 'Dates & Availability', component: TourSchedulingStep },
+  { id: 'details', title: 'Requirements', component: TourDetailsStep },
+  { id: 'media', title: 'Media', component: TourMediaStep },
   { id: 'review', title: 'Review', component: TourReviewStep },
 ]
 
@@ -276,12 +274,21 @@ export default function CreateTourPage() {
   const handleSubmitForReview = async () => {
     if (!user) return
     setSubmitAttempted(true)
+    const schedules = Array.isArray(tourData.schedules) ? tourData.schedules : []
+    const hasValidSchedule = schedules.some(
+      (schedule: any) =>
+        typeof schedule?.date === 'string' &&
+        schedule.date.trim().length > 0 &&
+        typeof schedule?.time === 'string' &&
+        schedule.time.trim().length > 0,
+    )
+
     const missing = REQUIRED_FOR_SUBMIT.filter(
       ({ field }) => !(tourData as any)[field]
     )
     if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
-    if ((tourData.schedules?.length ?? 0) === 0) missing.push({ field: 'schedules', label: 'Availability dates' })
+    if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
     if (missing.length > 0) {
       toast.error(`Please complete: ${missing.map(m => m.label).join(', ')}`)
       return

@@ -68,6 +68,7 @@ const TONES = [
 ] as const
 
 const MAX_CAPACITY = 300
+const DEFAULT_START_TIME = '09:00'
 
 interface Template {
   id: string
@@ -84,13 +85,37 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
   const [isCategoryOpen, setIsCategoryOpen] = useState(true)
   const [isDatesAvailabilityOpen, setIsDatesAvailabilityOpen] = useState(true)
 
+  const schedules = Array.isArray(data.schedules) ? data.schedules : []
+  const primarySchedule = schedules[0] || {}
+
+  const updatePrimarySchedule = (updates: Record<string, unknown>) => {
+    const mergedPrimary = {
+      id: primarySchedule?.id || crypto.randomUUID(),
+      date: primarySchedule?.date || '',
+      time: primarySchedule?.time || DEFAULT_START_TIME,
+      capacity: data.max_participants || primarySchedule?.capacity || 10,
+      ...primarySchedule,
+      ...updates,
+    }
+
+    const nextSchedules = [mergedPrimary, ...schedules.slice(1)]
+    onUpdate({ schedules: nextSchedules })
+  }
+
+  const hasPrimarySchedule =
+    typeof primarySchedule?.date === 'string' &&
+    primarySchedule.date.trim().length > 0 &&
+    typeof primarySchedule?.time === 'string' &&
+    primarySchedule.time.trim().length > 0
+
   const isValid =
     !!data.title &&
     !!(data.tour_type || data.custom_category_label) &&
     !!data.duration_days &&
     !!data.location?.city &&
     !!data.max_participants &&
-    data.max_participants > 0
+    data.max_participants > 0 &&
+    hasPrimarySchedule
 
   // Fetch templates whenever the panel opens, tone, or tour_type changes
   useEffect(() => {
@@ -325,9 +350,17 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                               1,
                               Math.min(MAX_CAPACITY, parseInt(e.target.value || '1', 10) || 1),
                             )
+                            const mergedPrimary = {
+                              id: primarySchedule?.id || crypto.randomUUID(),
+                              date: primarySchedule?.date || '',
+                              time: primarySchedule?.time || DEFAULT_START_TIME,
+                              ...primarySchedule,
+                              capacity: next,
+                            }
                             onUpdate({
                               max_participants: next,
                               min_participants: 1,
+                              schedules: [mergedPrimary, ...schedules.slice(1)],
                             })
                           }}
                           className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
@@ -337,6 +370,36 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                         Set your default total seats (1–{MAX_CAPACITY}).
                       </p>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                          Departure Date *
+                        </Label>
+                        <Input
+                          type="date"
+                          value={primarySchedule?.date || ''}
+                          onChange={(e) => updatePrimarySchedule({ date: e.target.value })}
+                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                          Start Time *
+                        </Label>
+                        <Input
+                          type="time"
+                          value={primarySchedule?.time || DEFAULT_START_TIME}
+                          onChange={(e) => updatePrimarySchedule({ time: e.target.value })}
+                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Add your primary departure slot here. You can extend multi-date support later.
+                    </p>
                   </div>
                 </motion.div>
               )}

@@ -24,11 +24,22 @@ const hasNumber = (value: unknown): boolean => typeof value === 'number' && Numb
 
 function evaluateBasics(data: Partial<Tour>) {
   const typeSelected = hasText(data.tour_type) || hasText(data.custom_category_label)
+  const schedules = Array.isArray(data.schedules) ? data.schedules : []
+  const hasSchedule = schedules.some(
+    (schedule: any) =>
+      hasText(schedule?.date) &&
+      hasText(schedule?.time) &&
+      hasNumber(schedule?.capacity) &&
+      Number(schedule.capacity) > 0,
+  )
+
   const checks = [
     hasText(data.title),
     typeSelected,
     hasNumber(data.duration_days) && Number(data.duration_days) > 0,
     hasText(data.location?.city),
+    hasNumber(data.max_participants) && Number(data.max_participants) > 0,
+    hasSchedule,
   ]
 
   const hasAnyInput =
@@ -37,6 +48,8 @@ function evaluateBasics(data: Partial<Tour>) {
     hasText(data.custom_category_label) ||
     (hasNumber(data.duration_days) && Number(data.duration_days) > 0) ||
     hasText(data.location?.city) ||
+    (hasNumber(data.max_participants) && Number(data.max_participants) > 0) ||
+    schedules.length > 0 ||
     hasText(data.short_description)
 
   return {
@@ -72,19 +85,12 @@ function evaluateItinerary(data: Partial<Tour>) {
 }
 
 function evaluateDetails(data: Partial<Tour>) {
-  const hasParticipants =
-    hasNumber(data.min_participants) &&
-    hasNumber(data.max_participants) &&
-    Number(data.min_participants) > 0 &&
-    Number(data.max_participants) >= Number(data.min_participants)
-
   const hasAgeBand =
     hasNumber(data.min_age) && hasNumber(data.max_age) && Number(data.max_age) >= Number(data.min_age)
 
   const checks = [
     hasText(data.difficulty_level),
     (data.languages?.length ?? 0) > 0,
-    hasParticipants,
     hasAgeBand,
     hasText(data.description),
   ]
@@ -92,8 +98,6 @@ function evaluateDetails(data: Partial<Tour>) {
   const hasAnyInput =
     hasText(data.difficulty_level) ||
     (data.languages?.length ?? 0) > 0 ||
-    hasNumber(data.min_participants) ||
-    hasNumber(data.max_participants) ||
     hasNumber(data.min_age) ||
     hasNumber(data.max_age) ||
     hasText(data.description)
