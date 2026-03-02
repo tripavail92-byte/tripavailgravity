@@ -629,7 +629,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={onNext}
-          className="px-8 h-12 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-bold transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold transition-all shadow-lg shadow-primary/25 border-0"
         >
           Continue
         </Button>
