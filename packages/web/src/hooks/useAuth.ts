@@ -4,7 +4,11 @@ import { roleService } from '@tripavail/shared/roles/service'
 import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
 
+import { withTimeout } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
+
+let initializeInFlight: Promise<void> | null = null
+let authListenerUnsubscribe: (() => void) | null = null
 
 interface AuthState {
   user: User | null
@@ -33,15 +37,21 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     if (get().initialized) return
+    if (initializeInFlight) return initializeInFlight
 
-    try {
-      const session = await authService.getSession()
+    const initializePromise = (async () => {
+      try {
+      const session = await withTimeout(authService.getSession(), 8000, 'auth.getSession')
 
       if (session?.user) {
         // Admin override: admin accounts should land in Admin UI, not traveller.
-        const { data: adminRole, error: adminRoleError } = await supabase.rpc('get_admin_role', {
-          p_user_id: session.user.id,
-        })
+        const { data: adminRole, error: adminRoleError } = await withTimeout<any>(
+          supabase.rpc('get_admin_role', {
+            p_user_id: session.user.id,
+          }),
+          8000,
+          'auth.get_admin_role',
+        )
 
         let activeRole: UserRole | null =
           !adminRoleError && adminRole
@@ -62,7 +72,11 @@ export const useAuth = create<AuthState>((set, get) => ({
           partnerType = null
         } else {
           try {
-            const roles = await roleService.getUserRoles(session.user.id)
+            const roles = await withTimeout(
+              roleService.getUserRoles(session.user.id),
+              8000,
+              'auth.getUserRoles',
+            )
             const partnerRole = roles.find(
               (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
             )
@@ -93,55 +107,77 @@ export const useAuth = create<AuthState>((set, get) => ({
       }
 
       // Listen for changes
-      authService.onAuthStateChange(async (event, session) => {
+      authListenerUnsubscribe?.()
+      const listener = authService.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const { data: adminRole, error: adminRoleError } = await supabase.rpc('get_admin_role', {
-            p_user_id: session.user.id,
-          })
+          set({ isLoading: true })
+          try {
+            const { data: adminRole, error: adminRoleError } = await withTimeout<any>(
+              supabase.rpc('get_admin_role', {
+                p_user_id: session.user.id,
+              }),
+              8000,
+              'auth.listener.get_admin_role',
+            )
 
-          let activeRole: UserRole | null =
-            !adminRoleError && adminRole
-              ? {
-                  id: session.user.id,
-                  user_id: session.user.id,
-                  role_type: 'admin',
-                  is_active: true,
-                  profile_completion: 100,
-                  verification_status: 'approved',
-                }
-              : await roleService.getActiveRole(session.user.id)
+            let activeRole: UserRole | null =
+              !adminRoleError && adminRole
+                ? {
+                    id: session.user.id,
+                    user_id: session.user.id,
+                    role_type: 'admin',
+                    is_active: true,
+                    profile_completion: 100,
+                    verification_status: 'approved',
+                  }
+                : await withTimeout(
+                    roleService.getActiveRole(session.user.id),
+                    8000,
+                    'auth.listener.getActiveRole',
+                  )
 
-          let partnerType: 'hotel_manager' | 'tour_operator' | null = null
-          if (!adminRoleError && adminRole) {
-            partnerType = null
-          } else {
-            try {
-              const roles = await roleService.getUserRoles(session.user.id)
-              const partnerRole = roles.find(
-                (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
-              )
-              partnerType = (partnerRole?.role_type as any) ?? null
-            } catch (e) {
-              console.warn('[useAuth] Failed to fetch partner roles on sign-in:', e)
+            let partnerType: 'hotel_manager' | 'tour_operator' | null = null
+            if (!adminRoleError && adminRole) {
+              partnerType = null
+            } else {
+              try {
+                const roles = await withTimeout(
+                  roleService.getUserRoles(session.user.id),
+                  8000,
+                  'auth.listener.getUserRoles',
+                )
+                const partnerRole = roles.find(
+                  (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
+                )
+                partnerType = (partnerRole?.role_type as any) ?? null
+              } catch (e) {
+                console.warn('[useAuth] Failed to fetch partner roles on sign-in:', e)
+              }
             }
-          }
 
-          // Fallback: If no role found, default to Traveller
-          if (!activeRole && !adminRole) {
-            activeRole = {
-              id: session.user.id,
-              user_id: session.user.id,
-              role_type: 'traveller',
-              is_active: true,
-              profile_completion: 20,
-              verification_status: 'incomplete',
+            if (!activeRole && !adminRole) {
+              activeRole = {
+                id: session.user.id,
+                user_id: session.user.id,
+                role_type: 'traveller',
+                is_active: true,
+                profile_completion: 20,
+                verification_status: 'incomplete',
+              }
             }
+            set({ user: session.user, activeRole, partnerType, isLoading: false })
+          } catch (listenerError) {
+            console.error('[useAuth] SIGNED_IN listener failed:', listenerError)
+            set({ user: session.user, isLoading: false })
           }
-          set({ user: session.user, activeRole, partnerType, isLoading: false })
-        } else if (event === 'SIGNED_OUT') {
+          return
+        }
+
+        if (event === 'SIGNED_OUT') {
           set({ user: null, activeRole: null, partnerType: null, isLoading: false })
         }
       })
+      authListenerUnsubscribe = () => listener?.data?.subscription?.unsubscribe?.()
     } catch (error) {
       // Ignore AbortErrors - they're expected in React Strict Mode
       if (error instanceof Error && error.name === 'AbortError') {
@@ -151,7 +187,13 @@ export const useAuth = create<AuthState>((set, get) => ({
         console.error('Auth initialization failed:', error)
         set({ isLoading: false, initialized: true })
       }
+    } finally {
+      initializeInFlight = null
     }
+    })()
+
+    initializeInFlight = initializePromise
+    return initializePromise
   },
 
   signIn: async (email, password) => {
