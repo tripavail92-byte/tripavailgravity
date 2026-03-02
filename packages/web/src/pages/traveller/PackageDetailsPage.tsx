@@ -530,7 +530,7 @@ export default function PackageDetailsPage() {
                       Top Choice
                     </GlassBadge>
                   </div>
-                  <h1 className="text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tight leading-tight">
+                  <h1 className="type-display text-foreground mb-4">
                     {name}
                   </h1>
                   <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
@@ -560,7 +560,7 @@ export default function PackageDetailsPage() {
             {/* Description */}
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
+                <GlassTitle className="type-h2">About the Journey</GlassTitle>
               </GlassHeader>
               <GlassContent>
                 <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
@@ -573,7 +573,7 @@ export default function PackageDetailsPage() {
             {/* Accommodation Details (Room) */}
             {roomData && roomData.length > 0 && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-foreground px-2">Accommodation</h2>
+                <h2 className="type-h2 text-foreground px-2">Accommodation</h2>
                 {roomData.map((room: any, idx: number) => (
                   <GlassCard
                     key={idx}
@@ -583,7 +583,7 @@ export default function PackageDetailsPage() {
                     <GlassHeader className="bg-muted/40 border-b border-border/50 mb-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <GlassTitle className="text-xl font-bold text-primary">
+                          <GlassTitle className="type-title text-primary">
                             {room.name}
                           </GlassTitle>
                           <GlassDescription className="font-medium text-muted-foreground flex items-center gap-1 mt-1">
@@ -603,7 +603,7 @@ export default function PackageDetailsPage() {
                       {/* Room Specific Amenities */}
                       {room.amenities && room.amenities.length > 0 && (
                         <div className="space-y-4">
-                          <h4 className="text-sm font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
+                          <h4 className="type-overline text-foreground flex items-center gap-2">
                             <div className="w-1 h-4 bg-primary rounded-full" />
                             Room Excellence
                           </h4>
@@ -619,7 +619,7 @@ export default function PackageDetailsPage() {
                                   <div className="mb-3 text-primary">
                                     <Icon size={32} isHovered={true} />
                                   </div>
-                                  <span className="text-xs font-bold text-foreground text-center uppercase tracking-tight">
+                                  <span className="type-caption text-foreground text-center uppercase tracking-tight">
                                     {label}
                                   </span>
                                 </motion.div>
@@ -642,7 +642,7 @@ export default function PackageDetailsPage() {
                 {packageData.free_inclusions?.length > 0 && (
                   <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                     <GlassHeader>
-                      <GlassTitle className="text-xl font-bold flex items-center gap-2">
+                      <GlassTitle className="type-title flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-primary animate-pulse" />
                         Included Perks
                       </GlassTitle>
@@ -670,7 +670,7 @@ export default function PackageDetailsPage() {
                 {packageData.discount_offers?.length > 0 && (
                   <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                     <GlassHeader>
-                      <GlassTitle className="text-xl font-bold flex items-center gap-2">
+                      <GlassTitle className="type-title flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-warning/10 text-warning flex items-center justify-center font-black text-xs">
                           %
                         </div>
@@ -713,7 +713,7 @@ export default function PackageDetailsPage() {
             {/* Highlights & Aggregated Amenities */}
             {aggregatedAmenities.length > 0 && (
               <div className="space-y-8">
-                <h2 className="text-2xl font-bold text-foreground px-2 flex items-center gap-2">
+                <h2 className="type-h2 text-foreground px-2 flex items-center gap-2">
                   Amenities & Experience
                   <GlassBadge variant="outline" size="sm" className="font-medium ml-2">
                     Verified
@@ -731,7 +731,7 @@ export default function PackageDetailsPage() {
                         <div className="mb-3 text-primary">
                           <Icon size={48} isHovered={true} />
                         </div>
-                        <span className="text-[10px] font-black text-foreground text-center uppercase tracking-widest">
+                        <span className="type-overline text-foreground text-center">
                           {label}
                         </span>
                       </motion.div>
@@ -747,7 +747,7 @@ export default function PackageDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <GlassCard variant="card" className="rounded-3xl border-none bg-success/10">
                 <GlassHeader>
-                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-success">
+                  <GlassTitle className="type-title flex items-center gap-2 text-success">
                     <Check className="text-success" size={24} strokeWidth={3} />
                     What's Included
                   </GlassTitle>
@@ -773,7 +773,7 @@ export default function PackageDetailsPage() {
 
               <GlassCard variant="card" className="rounded-3xl border-none bg-destructive/10">
                 <GlassHeader>
-                  <GlassTitle className="text-xl font-bold flex items-center gap-2 text-destructive">
+                  <GlassTitle className="type-title flex items-center gap-2 text-destructive">
                     <X className="text-destructive" size={24} strokeWidth={3} />
                     What's Excluded
                   </GlassTitle>
@@ -802,7 +802,7 @@ export default function PackageDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
               {cancellation_policy && (
                 <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">
+                  <h3 className="type-overline text-foreground mb-4">
                     Cancellation Policy
                   </h3>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
@@ -812,7 +812,7 @@ export default function PackageDetailsPage() {
               )}
               {payment_terms && (
                 <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-4">
+                  <h3 className="type-overline text-foreground mb-4">
                     Payment Terms
                   </h3>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
@@ -832,7 +832,7 @@ export default function PackageDetailsPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
 
               <div className="flex items-end gap-2 mb-8 relative">
-                <span className="text-4xl font-black text-foreground tracking-tight">
+                <span className="type-h1 text-foreground tracking-tight">
                   {displayBasePrice > 0
                     ? `$${displayBasePrice.toLocaleString()}`
                     : 'Price on request'}
@@ -851,7 +851,7 @@ export default function PackageDetailsPage() {
                     <PopoverTrigger asChild>
                       <div className="grid grid-cols-2 border-b border-border/50 cursor-pointer hover:bg-muted/40 transition-all duration-300">
                         <div className="p-4 border-r border-border/50">
-                          <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">
+                          <label className="type-overline text-primary block mb-2">
                             Check-in
                           </label>
                           <div className="flex items-center gap-2">
@@ -869,7 +869,7 @@ export default function PackageDetailsPage() {
                           </div>
                         </div>
                         <div className="p-4">
-                          <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">
+                          <label className="type-overline text-primary block mb-2">
                             Check-out
                           </label>
                           <div className="flex items-center gap-2">
@@ -911,7 +911,7 @@ export default function PackageDetailsPage() {
                       />
                       <p
                         className={cn(
-                          'text-[10px] font-black uppercase tracking-widest',
+                          'type-overline',
                           isStayLengthValid ? 'text-muted-foreground' : 'text-destructive',
                         )}
                       >
@@ -925,7 +925,7 @@ export default function PackageDetailsPage() {
                     <PopoverTrigger asChild>
                       <div className="p-4 cursor-pointer hover:bg-muted/40 transition-all duration-300 flex items-center justify-between">
                         <div>
-                          <label className="text-[10px] font-black text-primary uppercase tracking-[0.2em] block mb-2">
+                          <label className="type-overline text-primary block mb-2">
                             Travelers
                           </label>
                           <div className="flex items-center gap-2">
@@ -944,10 +944,10 @@ export default function PackageDetailsPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-black text-foreground text-sm uppercase tracking-wider">
+                          <div className="type-overline text-foreground">
                             Travelers
                           </div>
-                          <div className="text-[10px] text-muted-foreground/70 font-bold">
+                          <div className="type-caption text-muted-foreground/70">
                             Ages 13+
                           </div>
                         </div>
@@ -973,7 +973,7 @@ export default function PackageDetailsPage() {
                           </GlassButton>
                         </div>
                       </div>
-                      <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest">
+                      <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between type-overline text-muted-foreground/70">
                         <span>Capacity Limit</span>
                         <span className="text-primary">{maxGuests} Max</span>
                       </div>
@@ -983,7 +983,7 @@ export default function PackageDetailsPage() {
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
-                    className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
+                    className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
                     onClick={handleRequestToBook}
                     disabled={
                       isCheckingAvailability ||
@@ -1008,7 +1008,7 @@ export default function PackageDetailsPage() {
                       exit={{ opacity: 0, height: 0 }}
                       className="rounded-2xl bg-destructive/10 p-4 border border-destructive/20"
                     >
-                      <p className="text-xs font-bold text-destructive flex items-center gap-2">
+                      <p className="type-caption text-destructive flex items-center gap-2">
                         <AlertCircle size={14} />
                         {availabilityError}
                       </p>
@@ -1022,17 +1022,17 @@ export default function PackageDetailsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="pt-6 border-t border-border/50 space-y-4"
                   >
-                    <div className="flex justify-between items-center text-muted-foreground font-bold text-xs uppercase tracking-wider">
+                    <div className="flex justify-between items-center type-overline text-muted-foreground">
                       <span>
                         ${displayBasePrice.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
                       </span>
                       <span className="text-foreground">${totalPrice.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center bg-muted/40 p-4 rounded-2xl">
-                      <span className="text-sm font-black text-foreground uppercase tracking-widest">
+                      <span className="type-overline text-foreground">
                         Total Cost
                       </span>
-                      <span className="text-2xl font-black text-primary">
+                      <span className="type-h2 text-primary">
                         ${totalPrice.toLocaleString()}
                       </span>
                     </div>
@@ -1043,11 +1043,11 @@ export default function PackageDetailsPage() {
               <div className="flex flex-col items-center gap-4 relative">
                 <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full border border-success/20">
                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  <span className="text-[10px] font-black text-success uppercase tracking-widest">
+                  <span className="type-overline text-success">
                     Free Cancellation
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-tight text-center">
+                <p className="type-overline text-muted-foreground/70 text-center">
                   Trusted by 10,000+ happy travelers this year
                 </p>
               </div>

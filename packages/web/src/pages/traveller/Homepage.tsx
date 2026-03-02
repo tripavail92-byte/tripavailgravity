@@ -89,8 +89,8 @@ export default function Homepage() {
         <main className="max-w-7xl mx-auto px-4 py-10">
           <div className="flex items-end justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{title}</h1>
-              <p className="text-muted-foreground font-medium">Hotel stays and tour experiences</p>
+              <h1 className="type-h1 text-foreground">{title}</h1>
+              <p className="type-body-sm text-muted-foreground">Hotel stays and tour experiences</p>
             </div>
             <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
               <Link to="/explore">Back to Explore</Link>
@@ -104,7 +104,7 @@ export default function Homepage() {
               ))}
             </div>
           ) : isMergedError ? (
-            <div className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 p-6 type-body-sm text-muted-foreground">
               Unable to load experiences right now.
             </div>
           ) : mergedList.length > 0 ? (
@@ -153,7 +153,7 @@ export default function Homepage() {
               )}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border/60 p-6 type-body-sm text-muted-foreground">
               No experiences available yet.
             </div>
           )}
@@ -189,11 +189,11 @@ export default function Homepage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 drop-shadow-2xl">
+            <h1 className="type-display md:text-7xl text-white mb-6 drop-shadow-2xl">
               Wander often, <br />
               <span className="text-secondary">wonder always.</span>
             </h1>
-            <p className="text-xl text-white/90 mb-10 font-medium max-w-2xl mx-auto drop-shadow-lg">
+            <p className="type-title text-white/90 mb-10 max-w-2xl mx-auto drop-shadow-lg">
               Discover hidden gems and curated travel experiences across the globe.
             </p>
 
@@ -209,7 +209,7 @@ export default function Homepage() {
                   className="w-full bg-transparent border-none outline-none font-bold text-foreground placeholder:text-muted-foreground"
                 />
               </div>
-              <Button className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg transition-all hover:scale-[1.02] shadow-xl shadow-primary/20">
+              <Button className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground type-button transition-all hover:scale-[1.02] shadow-xl shadow-primary/20">
                 Explore Now
               </Button>
             </GlassCard>
@@ -229,7 +229,7 @@ export default function Homepage() {
                 <div className="w-16 h-16 rounded-3xl bg-muted/60 flex items-center justify-center group-hover:bg-primary/10 group-hover:rotate-12 transition-all duration-500 shadow-sm">
                   <cat.icon className="w-7 h-7 text-muted-foreground/70 group-hover:text-primary transition-colors" />
                 </div>
-                <span className="text-sm font-black text-muted-foreground group-hover:text-foreground transition-colors uppercase tracking-widest">
+                <span className="type-overline text-muted-foreground group-hover:text-foreground transition-colors">
                   {cat.name}
                 </span>
               </button>
@@ -242,8 +242,8 @@ export default function Homepage() {
       <main className="max-w-7xl mx-auto px-4 mb-20">
         <div className="flex items-end justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Featured Packages</h2>
-            <p className="text-muted-foreground font-medium">
+            <h2 className="type-h1 text-foreground mb-2">Featured Packages</h2>
+            <p className="type-body-sm text-muted-foreground">
               Handpicked hotel stays and experiences
             </p>
           </div>
@@ -293,11 +293,11 @@ export default function Homepage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-end justify-between mb-12">
             <div>
-              <Badge className="bg-primary/10 text-primary border-none mb-3 px-3 py-1 font-bold text-[10px] uppercase tracking-wider">
+              <Badge className="bg-primary/10 text-primary border-none mb-3 px-3 py-1 type-overline">
                 Explore Tours
               </Badge>
-              <h2 className="text-3xl font-bold text-foreground mb-2">Popular Tour Experiences</h2>
-              <p className="text-muted-foreground font-medium">
+              <h2 className="type-h1 text-foreground mb-2">Popular Tour Experiences</h2>
+              <p className="type-body-sm text-muted-foreground">
                 Curated adventures led by local experts
               </p>
             </div>
@@ -339,8 +339,8 @@ export default function Homepage() {
             </div>
           ) : (
             <div className="text-center py-20 bg-background rounded-3xl border border-dashed border-border">
-              <h3 className="text-xl font-bold text-foreground mb-2">No featured tours yet</h3>
-              <p className="text-muted-foreground font-medium">
+              <h3 className="type-title text-foreground mb-2">No featured tours yet</h3>
+              <p className="type-body-sm text-muted-foreground">
                 Our local experts are preparing amazing experiences for you.
               </p>
             </div>

@@ -346,7 +346,7 @@ export default function TourCheckoutPage() {
   if (!tour || !schedule) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Tour not found</h1>
+        <h1 className="type-h2 text-foreground mb-2">Tour not found</h1>
         <Button
           onClick={() => navigate(-1)}
           variant="default"
@@ -384,7 +384,7 @@ export default function TourCheckoutPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-bold text-foreground">Complete Your Booking</h1>
+          <h1 className="type-title text-foreground">Complete Your Booking</h1>
           <div className="w-10" />
         </div>
       </div>
@@ -408,7 +408,7 @@ export default function TourCheckoutPage() {
               <GlassContent className="p-6 pt-4">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">{tour.title}</h3>
+                    <h3 className="type-title text-foreground mb-2">{tour.title}</h3>
                     <div className="flex flex-wrap gap-6 text-sm text-muted-foreground font-medium">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-primary" />
@@ -423,13 +423,13 @@ export default function TourCheckoutPage() {
 
                   {/* Schedule Info */}
                   <div className="p-4 bg-info/10 rounded-xl border border-info/20">
-                    <p className="text-xs font-bold text-info uppercase tracking-widest mb-2">
+                    <p className="type-overline text-info mb-2">
                       Your Departure
                     </p>
                     <p className="text-foreground font-bold">
                       {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="type-body-sm text-muted-foreground mt-1">
                       Returns: {formatDate(schedule.end_time)}
                     </p>
                   </div>
@@ -445,9 +445,9 @@ export default function TourCheckoutPage() {
                 transition={{ delay: 0.1 }}
                 className="bg-background rounded-2xl p-6 border border-border/50 shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-foreground mb-4">Select Number of Guests</h2>
+                <h2 className="type-h2 text-foreground mb-4">Select Number of Guests</h2>
                 <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <p className="type-body-sm text-muted-foreground">
                     Available seats:{' '}
                     <span className="text-foreground font-bold">{liveAvailableSeats}</span>
                   </p>
@@ -463,7 +463,7 @@ export default function TourCheckoutPage() {
                     </button>
                     <div className="flex-1 text-center">
                       <p className="text-3xl font-black text-foreground">{guestCount}</p>
-                      <p className="text-xs text-muted-foreground font-medium">
+                      <p className="type-caption text-muted-foreground">
                         {guestCount === 1 ? 'Guest' : 'Guests'}
                       </p>
                     </div>
@@ -479,7 +479,7 @@ export default function TourCheckoutPage() {
                   {liveAvailableSeats < 5 && liveAvailableSeats > 0 && (
                     <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                       <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
-                      <p className="text-sm text-warning font-medium">
+                      <p className="type-body-sm text-warning">
                         Only {liveAvailableSeats} seat{liveAvailableSeats > 1 ? 's' : ''} left
                       </p>
                     </div>
@@ -502,17 +502,17 @@ export default function TourCheckoutPage() {
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Clock className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="text-2xl font-bold text-foreground mb-2">
+                      <h3 className="type-h2 text-foreground mb-2">
                         Booking Hold Active
                       </h3>
-                      <p className="text-muted-foreground font-medium">
+                      <p className="type-body-sm text-muted-foreground">
                         Your seats are reserved for 10 minutes
                       </p>
                     </div>
 
                     {/* Countdown Timer */}
                     <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 text-center">
-                      <p className="text-sm text-muted-foreground font-medium mb-2">
+                      <p className="type-body-sm text-muted-foreground mb-2">
                         Time Remaining
                       </p>
                       <div className="text-5xl font-black text-primary">
@@ -548,14 +548,14 @@ export default function TourCheckoutPage() {
                     <div className="space-y-4">
                       {stripeAvailable === false ? (
                         <div className="p-4 bg-destructive/10 rounded-xl border border-destructive/20 text-center">
-                          <p className="text-sm text-destructive font-medium">
+                          <p className="type-body-sm text-destructive">
                             Payments are not configured.
                           </p>
                         </div>
                       ) : !clientSecret ? (
                         <div className="p-4 bg-info/10 rounded-xl border border-info/20 text-center">
                           <Loader2 className="w-5 h-5 animate-spin text-primary inline-block mr-2" />
-                          <p className="text-sm text-info font-medium inline">
+                          <p className="type-body-sm text-info inline">
                             {creatingPaymentIntent
                               ? 'Preparing secure payment...'
                               : 'Loading payment form...'}
@@ -586,7 +586,7 @@ export default function TourCheckoutPage() {
                 className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3"
               >
                 <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                <p className="text-sm text-destructive font-medium">{bookingError}</p>
+                <p className="type-body-sm text-destructive">{bookingError}</p>
               </motion.div>
             )}
           </div>
@@ -610,14 +610,14 @@ export default function TourCheckoutPage() {
                       </span>
                     </div>
                     {applicableTier ? (
-                      <div className="text-xs text-success font-semibold">
+                      <div className="type-caption text-success font-semibold">
                         Tier applied: {applicableTier.name || `${applicableTier.minPeople}+ guests`}
                       </div>
                     ) : null}
                     <div className="h-px bg-border/60" />
                     <div className="flex items-center justify-between">
                       <span className="text-foreground font-bold">Total</span>
-                      <span className="text-2xl font-black text-primary">
+                      <span className="type-h2 text-primary">
                         {tour.currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
@@ -653,22 +653,22 @@ export default function TourCheckoutPage() {
                 <GlassContent className="p-6 space-y-3">
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">Secure Payment</span>
+                    <span className="type-body-sm text-muted-foreground">Secure Payment</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Lock className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">Data Protected</span>
+                    <span className="type-body-sm text-muted-foreground">Data Protected</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">Instant Confirmation</span>
+                    <span className="type-body-sm text-muted-foreground">Instant Confirmation</span>
                   </div>
                 </GlassContent>
               </GlassCard>
 
               {/* Policy Info */}
               <div className="bg-info/10 border border-info/20 rounded-2xl p-4">
-                <p className="text-xs text-info font-medium leading-relaxed">
+                <p className="type-caption text-info leading-relaxed">
                   <span className="font-bold">Free cancellation</span> up to 48 hours before
                   departure. Your booking hold will expire in 10 minutes.
                 </p>
@@ -737,13 +737,13 @@ function TourPaymentForm(props: { bookingId: string; total: number; currency: st
       />
 
       {!paymentReady && !error && (
-        <div className="text-xs text-muted-foreground">Loading secure payment form...</div>
+        <div className="type-caption text-muted-foreground">Loading secure payment form...</div>
       )}
 
-      {error && <div className="text-sm text-destructive">{error}</div>}
+      {error && <div className="type-body-sm text-destructive">{error}</div>}
 
       <Button
-        className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black text-lg shadow-xl shadow-primary/25"
+        className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 type-button shadow-xl shadow-primary/25"
         onClick={handlePay}
         disabled={!stripe || !elements || !paymentReady || submitting}
       >
