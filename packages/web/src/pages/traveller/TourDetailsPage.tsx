@@ -167,33 +167,7 @@ export default function TourDetailsPage() {
     return new Intl.NumberFormat('en-PK').format(normalized)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-primary animate-spin" />
-      </div>
-    )
-  }
-
-  if (!tour) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Tour not found</h1>
-        <p className="text-muted-foreground mb-8 text-center max-w-md">
-          The tour you're looking for might have been removed or is no longer available.
-        </p>
-        <Button
-          onClick={() => navigate('/')}
-          variant="default"
-          className="rounded-2xl px-8 h-12 font-bold"
-        >
-          Back to Homepage
-        </Button>
-      </div>
-    )
-  }
-
-  const cancellationPolicy = (tour.cancellation_policy || 'flexible') as
+  const cancellationPolicy = (tour?.cancellation_policy || 'flexible') as
     | 'flexible'
     | 'moderate'
     | 'strict'
@@ -224,30 +198,30 @@ export default function TourDetailsPage() {
 
   const CancellationPolicyIcon = getTourIconComponent(cancellationMeta.iconKey)
   const includedFeatures =
-    (Array.isArray((tour as any).included_features) && (tour as any).included_features.length > 0
-      ? ((tour as any).included_features as TourFeatureItem[])
+    (Array.isArray((tour as any)?.included_features) && (tour as any)?.included_features.length > 0
+      ? (((tour as any)?.included_features as TourFeatureItem[]) || [])
       : []) || []
   const excludedFeatures =
-    (Array.isArray((tour as any).excluded_features) && (tour as any).excluded_features.length > 0
-      ? ((tour as any).excluded_features as TourFeatureItem[])
+    (Array.isArray((tour as any)?.excluded_features) && (tour as any)?.excluded_features.length > 0
+      ? (((tour as any)?.excluded_features as TourFeatureItem[]) || [])
       : []) || []
   const includedItems =
-    (Array.isArray(tour.inclusions) && tour.inclusions.length > 0
+    (Array.isArray(tour?.inclusions) && tour.inclusions.length > 0
       ? tour.inclusions
       : Array.isArray((tour as any).included)
         ? ((tour as any).included as string[])
         : []) || []
   const excludedItems =
-    (Array.isArray(tour.exclusions) && tour.exclusions.length > 0
+    (Array.isArray(tour?.exclusions) && tour.exclusions.length > 0
       ? tour.exclusions
       : Array.isArray((tour as any).excluded)
         ? ((tour as any).excluded as string[])
         : []) || []
-  const basePrice = Number((tour as any).base_price ?? tour.price ?? 0) || 0
-  const depositPercentage = Math.max(0, Math.min(50, tour.deposit_percentage || 0))
-  const requiresDeposit = Boolean(tour.deposit_required)
+  const basePrice = Number((tour as any)?.base_price ?? tour?.price ?? 0) || 0
+  const depositPercentage = Math.max(0, Math.min(50, tour?.deposit_percentage || 0))
+  const requiresDeposit = Boolean(tour?.deposit_required)
   const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
-  const groupPricingTiers = Array.isArray(tour.pricing_tiers)
+  const groupPricingTiers = Array.isArray(tour?.pricing_tiers)
     ? [...tour.pricing_tiers]
         .map((tier: any, index: number) => ({
           key: `${tier?.id || tier?.name || 'tier'}-${index}`,
@@ -290,6 +264,32 @@ export default function TourDetailsPage() {
   const animatedCurrentSavingsPerPerson = useCountUp(currentSavingsPerPerson)
   const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
   const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
+    )
+  }
+
+  if (!tour) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <h1 className="text-2xl font-bold text-foreground mb-2">Tour not found</h1>
+        <p className="text-muted-foreground mb-8 text-center max-w-md">
+          The tour you're looking for might have been removed or is no longer available.
+        </p>
+        <Button
+          onClick={() => navigate('/')}
+          variant="default"
+          className="rounded-2xl px-8 h-12 font-bold"
+        >
+          Back to Homepage
+        </Button>
+      </div>
+    )
+  }
 
   const tourImages = [
     tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
