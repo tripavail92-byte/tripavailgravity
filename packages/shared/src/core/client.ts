@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Dual environment support: Vite (import.meta.env) and Node.js (process.env)
 function getEnvVar(key: string): string {
@@ -19,8 +19,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('To enable Supabase features, set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
 
-// Create a proper client if env vars exist, otherwise create a mock client
-export const supabase = (supabaseUrl && supabaseAnonKey)
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : createClient('https://placeholder.supabase.co', 'placeholder-key');
+type GlobalWithTripAvailSupabase = typeof globalThis & {
+    __tripavail_supabase__?: SupabaseClient;
+};
+
+const globalWithSupabase = globalThis as GlobalWithTripAvailSupabase;
+
+// Create a proper client if env vars exist, otherwise create a mock client.
+// IMPORTANT: Use a global singleton to prevent multiple client instances in cases
+// where bundlers accidentally duplicate the module (which can trigger auth lock AbortErrors).
+export const supabase = globalWithSupabase.__tripavail_supabase__
+    ?? (globalWithSupabase.__tripavail_supabase__ = (supabaseUrl && supabaseAnonKey)
+        ? createClient(supabaseUrl, supabaseAnonKey)
+        : createClient('https://placeholder.supabase.co', 'placeholder-key'));
 
