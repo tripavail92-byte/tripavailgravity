@@ -161,6 +161,18 @@ export default function TourDetailsPage() {
   }[cancellationPolicy]
 
   const CancellationPolicyIcon = cancellationMeta.icon
+  const includedItems =
+    (Array.isArray(tour.inclusions) && tour.inclusions.length > 0
+      ? tour.inclusions
+      : Array.isArray((tour as any).included)
+        ? ((tour as any).included as string[])
+        : []) || []
+  const excludedItems =
+    (Array.isArray(tour.exclusions) && tour.exclusions.length > 0
+      ? tour.exclusions
+      : Array.isArray((tour as any).excluded)
+        ? ((tour as any).excluded as string[])
+        : []) || []
   const basePrice = tour.price || 0
   const depositPercentage = Math.max(0, Math.min(50, tour.deposit_percentage || 0))
   const requiresDeposit = Boolean(tour.deposit_required)
@@ -342,6 +354,22 @@ export default function TourDetailsPage() {
               </GlassContent>
             </GlassCard>
 
+            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+              <GlassHeader>
+                <GlassTitle className="text-2xl font-bold">Experience level</GlassTitle>
+              </GlassHeader>
+              <GlassContent>
+                <div className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Difficulty
+                  </span>
+                  <span className="text-sm font-bold text-foreground capitalize">
+                    {tour.difficulty_level || 'Not specified'}
+                  </span>
+                </div>
+              </GlassContent>
+            </GlassCard>
+
             {/* Experience highlights */}
             {tour.highlights?.length ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
@@ -414,22 +442,26 @@ export default function TourDetailsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
                       <h4 className="text-base font-semibold text-foreground">Included</h4>
-                      {tour.inclusions?.map((inc, i) => (
+                      {includedItems.length > 0 ? includedItems.map((inc, i) => (
                         <div key={i} className="flex items-center gap-3 text-muted-foreground">
                           <Check className="w-5 h-5 text-success" />
                           <span>{inc}</span>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-sm text-muted-foreground">Not specified</p>
+                      )}
                     </div>
 
                     <div className="space-y-3">
                       <h4 className="text-base font-semibold text-foreground">Excluded</h4>
-                      {tour.exclusions?.map((exc, i) => (
+                      {excludedItems.length > 0 ? excludedItems.map((exc, i) => (
                         <div key={i} className="flex items-center gap-3 text-muted-foreground">
                           <X className="w-5 h-5 text-destructive" />
                           <span>{exc}</span>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-sm text-muted-foreground">Not specified</p>
+                      )}
                     </div>
                   </div>
                 </div>

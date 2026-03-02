@@ -120,7 +120,16 @@ export default function TourCheckoutPage() {
 
   // Calculate totals
   const totalPrice = (tour?.price || 0) * guestCount
-  const maxGuests = Math.min(availableSlots || 0, tour?.max_participants || 20)
+  const scheduleCapacity = schedule?.capacity || null
+  const liveAvailableSeats = availableSlots ?? scheduleCapacity ?? 0
+  const maxGuests = Math.max(
+    1,
+    Math.min(liveAvailableSeats, scheduleCapacity ?? liveAvailableSeats),
+  )
+
+  useEffect(() => {
+    setGuestCount((prev) => Math.min(prev, maxGuests))
+  }, [maxGuests])
 
   // Create Stripe PaymentIntent when booking is created
   useEffect(() => {
@@ -238,7 +247,7 @@ export default function TourCheckoutPage() {
       return
     }
 
-    if (guestCount > (availableSlots || 0)) {
+    if (guestCount > liveAvailableSeats) {
       setBookingError('Not enough seats available')
       return
     }
@@ -389,7 +398,7 @@ export default function TourCheckoutPage() {
                 <div className="space-y-4">
                   <p className="text-sm text-muted-foreground font-medium">
                     Available seats:{' '}
-                    <span className="text-foreground font-bold">{availableSlots}</span>
+                    <span className="text-foreground font-bold">{liveAvailableSeats}</span>
                   </p>
 
                   {/* Guest Counter */}
@@ -416,11 +425,11 @@ export default function TourCheckoutPage() {
                     </button>
                   </div>
 
-                  {availableSlots !== null && availableSlots < 5 && availableSlots > 0 && (
+                  {liveAvailableSeats < 5 && liveAvailableSeats > 0 && (
                     <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                       <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
                       <p className="text-sm text-warning font-medium">
-                        Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left
+                        Only {liveAvailableSeats} seat{liveAvailableSeats > 1 ? 's' : ''} left
                       </p>
                     </div>
                   )}
