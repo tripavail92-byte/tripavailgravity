@@ -17,7 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,58 @@ import {
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
+
+function useCountUp(target: number, duration = 320) {
+  const safeTarget = Number.isFinite(target) ? target : 0
+  const [value, setValue] = useState(safeTarget)
+  const currentValueRef = useRef(safeTarget)
+
+  useEffect(() => {
+    const startValue = currentValueRef.current
+    const delta = safeTarget - startValue
+
+    if (delta === 0) {
+      setValue(safeTarget)
+      return
+    }
+
+    let rafId = 0
+    const startTime = performance.now()
+
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      const nextValue = Math.round(startValue + delta * eased)
+      currentValueRef.current = nextValue
+      setValue(nextValue)
+
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick)
+      }
+    }
+
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [safeTarget, duration])
+
+  useEffect(() => {
+    currentValueRef.current = value
+  }, [value])
+
+  return value
+}
+
+function useValuePulse(value: number, duration = 260) {
+  const [pulsing, setPulsing] = useState(false)
+
+  useEffect(() => {
+    setPulsing(true)
+    const timer = setTimeout(() => setPulsing(false), duration)
+    return () => clearTimeout(timer)
+  }, [value, duration])
+
+  return pulsing
+}
 
 export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -207,15 +259,37 @@ export default function TourDetailsPage() {
         .filter((tier: any) => tier.pricePerPerson > 0)
         .sort((a: any, b: any) => a.minPeople - b.minPeople)
     : []
-  const activeGroupTier = groupPricingTiers
+  const rangeMatchedTier = groupPricingTiers
     .filter((tier: any) => {
       const meetsMin = selectedSeats >= tier.minPeople
       const withinMax = tier.maxPeople > 0 ? selectedSeats <= tier.maxPeople : true
       return meetsMin && withinMax
     })
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+  const fallbackThresholdTier = groupPricingTiers
+    .filter((tier: any) => selectedSeats >= tier.minPeople)
+    .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+  const activeGroupTier = rangeMatchedTier || fallbackThresholdTier
   const effectiveUnitPrice = activeGroupTier?.pricePerPerson || basePrice
   const liveTotalPrice = effectiveUnitPrice * selectedSeats
+  const standardTotalPrice = basePrice * selectedSeats
+  const currentSavingsPerPerson = Math.max(0, basePrice - effectiveUnitPrice)
+  const currentTotalSavings = Math.max(0, standardTotalPrice - liveTotalPrice)
+  const nextGroupTier = groupPricingTiers
+    .filter((tier: any) => tier.minPeople > selectedSeats)
+    .sort((a: any, b: any) => a.minPeople - b.minPeople)[0]
+  const seatsToNextTier = nextGroupTier ? Math.max(0, nextGroupTier.minPeople - selectedSeats) : 0
+  const nextTierExtraSavingsPerPerson = nextGroupTier
+    ? Math.max(0, effectiveUnitPrice - nextGroupTier.pricePerPerson)
+    : 0
+  const nextTierTotalSavingsAtUnlock = nextGroupTier
+    ? Math.max(0, (basePrice - nextGroupTier.pricePerPerson) * nextGroupTier.minPeople)
+    : 0
+  const animatedLiveTotalPrice = useCountUp(liveTotalPrice)
+  const animatedCurrentTotalSavings = useCountUp(currentTotalSavings)
+  const animatedCurrentSavingsPerPerson = useCountUp(currentSavingsPerPerson)
+  const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
+  const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
 
   const tourImages = [
     tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
@@ -337,7 +411,7 @@ export default function TourDetailsPage() {
                     </GlassBadge>
                   </div>
 
-                  <h1 className="text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tight leading-tight break-words">
+                  <h1 className="type-display text-foreground mb-4 break-words">
                     {tour.title}
                   </h1>
 
@@ -662,9 +736,9 @@ export default function TourDetailsPage() {
             <div className="sticky top-20 z-30 space-y-6">
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
-                  <GlassTitle className="text-2xl font-black">
+                  <GlassTitle className="type-h2 text-foreground">
                     {tour.currency} {formatMoney(effectiveUnitPrice)}
-                    <span className="text-sm font-semibold text-muted-foreground"> / person</span>
+                    <span className="type-body-sm text-muted-foreground"> / person</span>
                   </GlassTitle>
                 </GlassHeader>
                 <GlassContent className="space-y-4">
@@ -722,7 +796,7 @@ export default function TourDetailsPage() {
                   </div>
 
                   <div className="p-4 bg-background/70 rounded-2xl border border-border/50 space-y-3">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    <p className="type-overline text-muted-foreground">
                       Number of Seats
                     </p>
                     <div className="flex items-center gap-3">
@@ -735,7 +809,7 @@ export default function TourDetailsPage() {
                       </button>
                       <div className="flex-1 text-center">
                         <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
-                        <p className="text-xs text-muted-foreground font-medium">
+                        <p className="type-caption text-muted-foreground">
                           {selectedSeats === 1 ? 'Seat' : 'Seats'}
                         </p>
                       </div>
@@ -749,12 +823,12 @@ export default function TourDetailsPage() {
                     </div>
                     <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
                       {activeGroupTier ? (
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                        <p className="type-overline text-primary">
                           {activeGroupTier.name} applied for {selectedSeats}{' '}
                           {selectedSeats === 1 ? 'seat' : 'seats'}
                         </p>
                       ) : (
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <p className="type-overline text-muted-foreground">
                           Standard rate
                         </p>
                       )}
@@ -762,10 +836,41 @@ export default function TourDetailsPage() {
                         <span className="text-muted-foreground font-medium">
                           {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
                         </span>
-                        <span className="text-foreground font-black">
-                          {tour.currency} {formatMoney(liveTotalPrice)}
+                        <span
+                          className={`text-foreground font-black tabular-nums transition-all duration-200 ${
+                            isTotalPulsing ? 'scale-[1.03] text-primary' : ''
+                          }`}
+                        >
+                          {tour.currency} {formatMoney(animatedLiveTotalPrice)}
                         </span>
                       </div>
+                      {currentTotalSavings > 0 ? (
+                        <div className="rounded-lg border border-success/30 bg-success/10 p-2.5">
+                          <p
+                            className={`type-overline tabular-nums text-success transition-all duration-200 ${
+                              isSavingsPulsing ? 'scale-[1.02]' : ''
+                            }`}
+                          >
+                            Discount Applied · You save {tour.currency} {formatMoney(animatedCurrentTotalSavings)}
+                          </p>
+                          <p className="type-caption text-success/90 mt-1 tabular-nums">
+                            {tour.currency} {formatMoney(animatedCurrentSavingsPerPerson)} saved per person vs standard rate
+                          </p>
+                        </div>
+                      ) : null}
+                      {nextGroupTier && seatsToNextTier > 0 ? (
+                        <div className="rounded-lg border border-primary/25 bg-primary/10 p-2.5">
+                          <p className="type-overline text-primary">
+                            Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
+                          </p>
+                          <p className="type-caption text-muted-foreground mt-1">
+                            Save up to {tour.currency} {formatMoney(nextTierTotalSavingsAtUnlock)} at {nextGroupTier.minPeople} people
+                            {nextTierExtraSavingsPerPerson > 0
+                              ? ` (${tour.currency} ${formatMoney(nextTierExtraSavingsPerPerson)} more per person)`
+                              : ''}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
@@ -773,7 +878,7 @@ export default function TourDetailsPage() {
                     <Button
                       onClick={handleBookNow}
                       disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
-                      className="w-full h-16 text-lg font-black bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl tracking-widest uppercase transition-all duration-300"
+                      className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
                     >
                       {!schedule
                         ? 'No Dates Available'
@@ -783,7 +888,7 @@ export default function TourDetailsPage() {
                     </Button>
                   </motion.div>
 
-                  <p className="text-center text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest">
+                  <p className="text-center type-overline text-muted-foreground/70">
                     {cancellationMeta.title}
                   </p>
                 </GlassContent>

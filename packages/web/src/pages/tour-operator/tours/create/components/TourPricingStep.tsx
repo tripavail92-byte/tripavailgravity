@@ -96,8 +96,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       name: `Tier ${pricingTiers.length + 1}`,
       minPeople:
         pricingTiers.length === 0 ? 5 : pricingTiers[pricingTiers.length - 1].minPeople + 1,
-      maxPeople:
-        pricingTiers.length === 0 ? 5 : pricingTiers[pricingTiers.length - 1].minPeople + 1,
+      maxPeople: 0,
       pricePerPerson: discountedPrice,
       discountPercentage: defaultDiscount,
     }

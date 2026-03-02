@@ -9,7 +9,9 @@ export const typographyTokens = {
   // Font Families
   fontFamily: {
     sans: [
+      'Inter Variable',
       'Inter',
+      'system-ui',
       '-apple-system',
       'BlinkMacSystemFont',
       '"Segoe UI"',
@@ -39,6 +41,15 @@ export const typographyTokens = {
     '7xl': ['4.5rem', { lineHeight: '1' }], // 72px
     '8xl': ['6rem', { lineHeight: '1' }], // 96px
     '9xl': ['8rem', { lineHeight: '1' }], // 128px
+
+    // Semantic aliases for universal enterprise typography
+    overline: ['0.6875rem', { lineHeight: '1rem' }], // 11px
+    caption: ['0.75rem', { lineHeight: '1rem' }], // 12px
+    'body-sm': ['0.875rem', { lineHeight: '1.375rem' }], // 14px
+    'body-md': ['1rem', { lineHeight: '1.5rem' }], // 16px
+    'title-sm': ['1.125rem', { lineHeight: '1.5rem' }], // 18px
+    'title-md': ['1.25rem', { lineHeight: '1.75rem' }], // 20px
+    'title-lg': ['1.5rem', { lineHeight: '2rem' }], // 24px
   },
 
   // Font Weights

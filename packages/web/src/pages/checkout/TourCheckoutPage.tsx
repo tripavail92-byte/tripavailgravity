@@ -134,13 +134,17 @@ export default function TourCheckoutPage() {
         .filter((tier: any) => tier.minPeople > 0 && tier.pricePerPerson > 0)
     : []
 
-  const applicableTier = normalizedPricingTiers
+  const rangeMatchedTier = normalizedPricingTiers
     .filter((tier: any) => {
       const meetsMin = guestCount >= tier.minPeople
       const withinMax = tier.maxPeople > 0 ? guestCount <= tier.maxPeople : true
       return meetsMin && withinMax
     })
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+  const fallbackThresholdTier = normalizedPricingTiers
+    .filter((tier: any) => guestCount >= tier.minPeople)
+    .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+  const applicableTier = rangeMatchedTier || fallbackThresholdTier
 
   const effectiveUnitPrice = applicableTier ? applicableTier.pricePerPerson : baseUnitPrice
   const totalPrice = effectiveUnitPrice * guestCount
