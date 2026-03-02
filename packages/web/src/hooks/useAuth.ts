@@ -177,6 +177,46 @@ export const useAuth = create<AuthState>((set, get) => ({
             }
             set({ user: session.user, activeRole, partnerType, isLoading: false })
           } catch (listenerError) {
+            if (isAbortError(listenerError) || isTimeoutError(listenerError)) {
+              console.warn('[useAuth] SIGNED_IN listener interrupted; retrying role resolution shortly')
+              set({ user: session.user, isLoading: false })
+
+              setTimeout(async () => {
+                try {
+                  const currentUserId = get().user?.id
+                  if (!currentUserId || currentUserId !== session.user.id) return
+
+                  let activeRole = await roleService.getActiveRole(session.user.id)
+                  if (!activeRole) {
+                    activeRole = {
+                      id: session.user.id,
+                      user_id: session.user.id,
+                      role_type: 'traveller',
+                      is_active: true,
+                      profile_completion: 20,
+                      verification_status: 'incomplete',
+                    }
+                  }
+
+                  let partnerType: 'hotel_manager' | 'tour_operator' | null = null
+                  try {
+                    const roles = await roleService.getUserRoles(session.user.id)
+                    const partnerRole = roles.find(
+                      (r) => r.role_type === 'hotel_manager' || r.role_type === 'tour_operator',
+                    )
+                    partnerType = (partnerRole?.role_type as any) ?? null
+                  } catch {
+                    // ignore
+                  }
+
+                  set({ activeRole, partnerType })
+                } catch {
+                  // ignore
+                }
+              }, 500)
+              return
+            }
+
             console.error('[useAuth] SIGNED_IN listener failed:', listenerError)
             set({ user: session.user, isLoading: false })
           }

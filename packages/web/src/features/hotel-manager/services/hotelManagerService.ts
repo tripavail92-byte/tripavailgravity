@@ -1,4 +1,4 @@
-import { supabase } from '../../../../../shared/src/core/client'
+import { supabase } from '@/lib/supabase'
 
 export interface HotelManagerOnboardingData {
   personalInfo?: {

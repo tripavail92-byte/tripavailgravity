@@ -1,6 +1,7 @@
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
-import { supabase } from '@tripavail/shared/core/client'
 import { useEffect } from 'react'
+
+import { supabase } from '@/lib/supabase'
 
 type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*'
 

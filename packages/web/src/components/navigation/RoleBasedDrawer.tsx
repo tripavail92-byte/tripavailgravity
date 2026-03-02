@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { ROLE_NAVIGATION } from '@/config/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 
 export function RoleBasedDrawer() {
   const { user, activeRole, partnerType, signOut, initialized, switchRole } = useAuth()

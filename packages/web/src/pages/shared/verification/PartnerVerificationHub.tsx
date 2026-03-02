@@ -17,7 +17,7 @@ import { hotelManagerService } from '@/features/hotel-manager/services/hotelMana
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
 
-import { supabase } from '../../../../../shared/src/core/client'
+import { supabase } from '@/lib/supabase'
 import { PropertyOwnershipSubFlow } from '../../hotel-manager/setup/components/verification/PropertyOwnershipSubFlow'
 import { BusinessDocsSubFlow } from '../../tour-operator/setup/components/verification/BusinessDocsSubFlow'
 import { IdentitySubFlow } from './IdentitySubFlow'

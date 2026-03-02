@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { CompletePackageCreationFlow } from '@/features/package-creation/components/CompletePackageCreationFlow'
 import { useAuth } from '@/hooks/useAuth'

@@ -1,4 +1,4 @@
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 import { AlertCircle, Building2, Check, Loader2, MapPin, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'

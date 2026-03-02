@@ -22,7 +22,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 
 import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'

@@ -10,9 +10,20 @@ export function isTimeoutError(error: unknown): error is TimeoutError {
 }
 
 export function isAbortError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false
-  const message = error.message?.toLowerCase?.() || ''
-  return error.name === 'AbortError' || message.includes('signal is aborted') || message.includes('aborted')
+  if (!error) return false
+
+  const anyErr = error as any
+  const name: string = typeof anyErr?.name === 'string' ? anyErr.name : ''
+  const message: string = typeof anyErr?.message === 'string' ? anyErr.message : ''
+  const details: string = typeof anyErr?.details === 'string' ? anyErr.details : ''
+
+  const haystack = `${name} ${message} ${details}`.toLowerCase()
+  return (
+    name === 'AbortError' ||
+    haystack.includes('aborterror') ||
+    haystack.includes('signal is aborted') ||
+    haystack.includes('aborted')
+  )
 }
 
 export async function withTimeout<T>(

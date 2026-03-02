@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 
 import { useAuth } from '@/hooks/useAuth'
 import { withTimeout } from '@/lib/withTimeout'

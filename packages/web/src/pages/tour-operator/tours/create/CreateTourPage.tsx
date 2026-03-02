@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
-import { supabase } from '@tripavail/shared/core/client'
+import { supabase } from '@/lib/supabase'
 import {
   Tour,
   calculateCompletionPercentage,
