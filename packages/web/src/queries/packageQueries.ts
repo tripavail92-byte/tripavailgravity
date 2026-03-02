@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 
+import { isAbortError } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database.types'
 import type { UnifiedExperience } from '@/types/experience'
@@ -245,6 +246,9 @@ async function fetchHomepageMergePackages(take: number): Promise<UnifiedExperien
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[packageQueries] Error fetching homepage merge packages:', error)
     throw error
   }
@@ -297,6 +301,9 @@ async function fetchHomepageMixPackages(take: number): Promise<HomepageMixPackag
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[packageQueries] Error fetching homepage mix packages:', error)
     throw error
   }
@@ -375,6 +382,9 @@ async function fetchCuratedPackages(
   const { data, error } = await query
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[packageQueries] Error fetching curated packages:', { kind, error })
     throw error
   }

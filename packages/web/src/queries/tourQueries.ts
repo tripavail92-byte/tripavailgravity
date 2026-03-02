@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 
+import { isAbortError } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/types/database.types'
 import type { UnifiedExperience } from '@/types/experience'
@@ -115,6 +116,9 @@ async function fetchHomepageMergeTours(take: number): Promise<UnifiedExperience[
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[tourQueries] Error fetching homepage merge tours:', error)
     throw error
   }
@@ -149,6 +153,9 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[tourQueries] Error fetching homepage mix tours:', error)
     throw error
   }
@@ -218,6 +225,9 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
     .limit(10)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[tourQueries] Error fetching featured tours:', error)
     throw error
   }
@@ -269,6 +279,9 @@ async function fetchToursByCategory(
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[tourQueries] Error fetching tours by category:', { category, error })
     throw error
   }
@@ -315,6 +328,9 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
     .limit(take)
 
   if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
     console.error('[tourQueries] Error fetching Pakistan northern tours:', error)
     throw error
   }

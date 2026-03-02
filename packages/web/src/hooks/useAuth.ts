@@ -4,7 +4,7 @@ import { roleService } from '@tripavail/shared/roles/service'
 import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
 
-import { withTimeout } from '@/lib/withTimeout'
+import { isTimeoutError, withTimeout } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
 
 let initializeInFlight: Promise<void> | null = null
@@ -41,7 +41,16 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     const initializePromise = (async () => {
       try {
-      const session = await withTimeout(authService.getSession(), 8000, 'auth.getSession')
+      const session = await (async () => {
+        try {
+          return await withTimeout(authService.getSession(), 8000, 'auth.getSession')
+        } catch (sessionError) {
+          if (!isTimeoutError(sessionError)) throw sessionError
+
+          console.warn('[useAuth] auth.getSession timed out; retrying once with longer timeout')
+          return withTimeout(authService.getSession(), 15000, 'auth.getSession.retry')
+        }
+      })()
 
       if (session?.user) {
         // Admin override: admin accounts should land in Admin UI, not traveller.
@@ -183,6 +192,9 @@ export const useAuth = create<AuthState>((set, get) => ({
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('[useAuth] Initialization aborted (expected in dev mode)')
         set({ isLoading: false, initialized: true })
+      } else if (isTimeoutError(error)) {
+        console.warn('[useAuth] Initialization timed out. Continuing in signed-out fallback mode.')
+        set({ user: null, activeRole: null, partnerType: null, isLoading: false, initialized: true })
       } else {
         console.error('Auth initialization failed:', error)
         set({ isLoading: false, initialized: true })

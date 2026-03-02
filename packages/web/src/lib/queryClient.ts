@@ -1,5 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
+import { isAbortError, isTimeoutError } from '@/lib/withTimeout'
+
 /**
  * Enterprise-grade Query Client configuration
  * Following best practices from Airbnb/Stripe architecture
@@ -18,6 +20,14 @@ import { QueryClient } from '@tanstack/react-query'
 function shouldRetry(failureCount: number, error: unknown): boolean {
   // Max 1 retry for any error
   if (failureCount >= 1) return false
+
+  if (isAbortError(error)) {
+    return false
+  }
+
+  if (isTimeoutError(error)) {
+    return false
+  }
 
   // Extract error details
   const err = error as any
