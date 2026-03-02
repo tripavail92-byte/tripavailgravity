@@ -4,7 +4,7 @@ import { roleService } from '@tripavail/shared/roles/service'
 import type { RoleType, UserRole } from '@tripavail/shared/roles/types'
 import { create } from 'zustand'
 
-import { isTimeoutError, withTimeout } from '@/lib/withTimeout'
+import { isAbortError, isTimeoutError, withTimeout } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
 
 let initializeInFlight: Promise<void> | null = null
@@ -43,12 +43,13 @@ export const useAuth = create<AuthState>((set, get) => ({
       try {
       const session = await (async () => {
         try {
-          return await withTimeout(authService.getSession(), 8000, 'auth.getSession')
+          return await withTimeout(authService.getSession(), 12000, 'auth.getSession')
         } catch (sessionError) {
-          if (!isTimeoutError(sessionError)) throw sessionError
-
-          console.warn('[useAuth] auth.getSession timed out; retrying once with longer timeout')
-          return withTimeout(authService.getSession(), 15000, 'auth.getSession.retry')
+          if (isTimeoutError(sessionError) || isAbortError(sessionError)) {
+            console.warn('[useAuth] auth.getSession unavailable during bootstrap; continuing signed-out')
+            return null
+          }
+          throw sessionError
         }
       })()
 
@@ -188,9 +189,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       })
       authListenerUnsubscribe = () => listener?.data?.subscription?.unsubscribe?.()
     } catch (error) {
-      // Ignore AbortErrors - they're expected in React Strict Mode
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[useAuth] Initialization aborted (expected in dev mode)')
+      if (isAbortError(error)) {
+        console.warn('[useAuth] Initialization aborted; continuing signed-out fallback mode.')
         set({ isLoading: false, initialized: true })
       } else if (isTimeoutError(error)) {
         console.warn('[useAuth] Initialization timed out. Continuing in signed-out fallback mode.')
