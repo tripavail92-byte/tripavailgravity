@@ -58,7 +58,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
       const dateText = schedule?.date ? formatDateDisplay(schedule.date) : 'No date'
       const timeText = schedule?.time || 'No time'
       const capacityText = schedule?.capacity ? `${schedule.capacity} seats` : 'No capacity'
-      return `${dateText} · ${timeText} · ${capacityText}`
+      return { dateText, timeText, capacityText }
     })
 
   return (
@@ -108,10 +108,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
             <ReviewRow label="Highlights" value={`${highlights.length} selected`} />
             <ReviewRow label="Itinerary Days" value={`${itinerary.length} day entries`} />
             <ReviewRow label="Difficulty" value={data.difficulty_level || '—'} />
-            <ReviewRow
-              label="Participants"
-              value={`${data.min_participants || 1} - ${data.max_participants || 10}`}
-            />
+            <ReviewRow label="Capacity / Seats" value={`${data.max_participants || 1} seats`} />
             <ReviewRow
               label="Age Range"
               value={`${data.min_age || 0} - ${data.max_age || 100}`}
@@ -162,10 +159,12 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
             />
             {schedulePreview.length > 0 ? (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
-                {schedulePreview.map((line, index) => (
-                  <p key={`${line}-${index}`} className="text-xs text-foreground font-semibold">
-                    {line}
-                  </p>
+                {schedulePreview.map((schedule, index) => (
+                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-3 gap-2">
+                    <span>{schedule.dateText}</span>
+                    <span>{schedule.timeText}</span>
+                    <span className="text-right">{schedule.capacityText}</span>
+                  </div>
                 ))}
                 {schedules.length > 3 && (
                   <p className="text-xs text-muted-foreground font-medium">

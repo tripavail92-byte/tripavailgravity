@@ -1,4 +1,4 @@
-import { Activity, Check, Minus, Plus } from 'lucide-react'
+import { Activity, Check } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -181,102 +181,30 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="space-y-5">
-            <div className="flex items-center justify-between pl-1">
-              <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
-                Age Range
-              </Label>
-              <div className="px-3 py-1 bg-[#FFF0ED] text-[#FF7167] rounded-full text-[11px] font-bold tracking-wide">
-                {data.min_age || 0} - {data.max_age || 100} years
-              </div>
-            </div>
-            <div className="px-2 pt-2">
-              <Slider
-                defaultValue={[data.min_age || 0, data.max_age || 100]}
-                max={100}
-                min={0}
-                step={1}
-                onValueChange={(vals) => {
-                  onUpdate({ min_age: vals[0], max_age: vals[1] })
-                }}
-                className="w-full [&_[role=slider]]:border-[#FF7167] [&_[role=slider]]:border-2 [&_[role=slider]]:bg-white [&_.bg-primary]:bg-[#FF7167]"
-              />
-            </div>
-            <div className="flex justify-between text-xs text-slate-500 font-bold px-1 tracking-wide">
-              <span>0 yrs</span>
-              <span>100 yrs</span>
+        <div className="space-y-5">
+          <div className="flex items-center justify-between pl-1">
+            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+              Age Range
+            </Label>
+            <div className="px-3 py-1 bg-[#FFF0ED] text-[#FF7167] rounded-full text-[11px] font-bold tracking-wide">
+              {data.min_age || 0} - {data.max_age || 100} years
             </div>
           </div>
-
-          <div className="space-y-5">
-            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-              Participants Count
-            </Label>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">
-                  Min
-                </Label>
-                <div className="flex items-center justify-between bg-white border border-gray-100 rounded-[20px] p-1.5 shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full hover:bg-slate-50"
-                    onClick={() =>
-                      onUpdate({
-                        min_participants: Math.max(1, (data.min_participants || 1) - 1),
-                      })
-                    }
-                  >
-                    <Minus className="w-4 h-4 text-slate-400 hover:text-slate-900" />
-                  </Button>
-                  <div className="text-center font-bold text-[19px] text-gray-900 w-10">
-                    {data.min_participants || 1}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full hover:bg-slate-50"
-                    onClick={() => onUpdate({ min_participants: (data.min_participants || 1) + 1 })}
-                  >
-                    <Plus className="w-4 h-4 text-slate-400 hover:text-slate-900" />
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pl-1">
-                  Max People
-                </Label>
-                <div className="flex items-center justify-between bg-white border border-gray-100 rounded-[20px] p-1.5 shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full hover:bg-slate-50"
-                    onClick={() =>
-                      onUpdate({
-                        max_participants: Math.max(1, (data.max_participants || 10) - 1),
-                      })
-                    }
-                  >
-                    <Minus className="w-4 h-4 text-slate-400 hover:text-slate-900" />
-                  </Button>
-                  <div className="text-center font-bold text-[19px] text-gray-900 w-10">
-                    {data.max_participants || 10}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full hover:bg-slate-50"
-                    onClick={() =>
-                      onUpdate({ max_participants: (data.max_participants || 10) + 1 })
-                    }
-                  >
-                    <Plus className="w-4 h-4 text-slate-400 hover:text-slate-900" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="px-2 pt-2">
+            <Slider
+              defaultValue={[data.min_age || 0, data.max_age || 100]}
+              max={100}
+              min={0}
+              step={1}
+              onValueChange={(vals) => {
+                onUpdate({ min_age: vals[0], max_age: vals[1] })
+              }}
+              className="w-full [&_[role=slider]]:border-[#FF7167] [&_[role=slider]]:border-2 [&_[role=slider]]:bg-white [&_.bg-primary]:bg-[#FF7167]"
+            />
+          </div>
+          <div className="flex justify-between text-xs text-slate-500 font-bold px-1 tracking-wide">
+            <span>0 yrs</span>
+            <span>100 yrs</span>
           </div>
         </div>
 
