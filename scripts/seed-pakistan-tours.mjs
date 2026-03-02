@@ -71,6 +71,16 @@ async function resolveOperatorUserId() {
 }
 
 async function upsertTourBySlug(tour) {
+  const payload = {
+    ...tour,
+    base_price: tour.price,
+    require_deposit: Boolean(tour.deposit_required),
+    cancellation_policy_type: tour.cancellation_policy || 'flexible',
+    included: Array.isArray(tour.inclusions) ? tour.inclusions : [],
+    excluded: Array.isArray(tour.exclusions) ? tour.exclusions : [],
+    deposit_percentage: tour.deposit_required ? tour.deposit_percentage : 0,
+  }
+
   const { data: existing, error: findError } = await supabase
     .from('tours')
     .select('id,slug')
@@ -81,14 +91,17 @@ async function upsertTourBySlug(tour) {
   if (findError) throw findError
 
   if (existing?.id) {
-    const { error: updateError } = await supabase.from('tours').update(tour).eq('id', existing.id)
+    const { error: updateError } = await supabase
+      .from('tours')
+      .update(payload)
+      .eq('id', existing.id)
     if (updateError) throw updateError
     return { id: existing.id, updated: true }
   }
 
   const { data: created, error: insertError } = await supabase
     .from('tours')
-    .insert(tour)
+    .insert(payload)
     .select('id')
     .single()
 

@@ -1255,7 +1255,9 @@ export type Database = {
       }
       tours: {
         Row: {
+          base_price: number | null
           cancellation_policy: string | null
+          cancellation_policy_type: Database['public']['Enums']['cancellation_policy_type_enum'] | null
           created_at: string | null
           currency: string
           deleted_at: string | null
@@ -1265,10 +1267,12 @@ export type Database = {
           difficulty_level: string | null
           draft_data: Json | null
           duration: string
+          excluded: string[] | null
           exclusions: string[] | null
           group_discounts: boolean | null
           highlights: string[] | null
           id: string
+          included: string[] | null
           images: Json | null
           inclusions: string[] | null
           is_active: boolean | null
@@ -1290,6 +1294,7 @@ export type Database = {
           peak_season_multiplier: number | null
           price: number
           pricing_tiers: Json | null
+          require_deposit: boolean | null
           rating: number | null
           requirements: string[] | null
           review_count: number | null
@@ -1303,7 +1308,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          base_price?: number | null
           cancellation_policy?: string | null
+          cancellation_policy_type?: Database['public']['Enums']['cancellation_policy_type_enum'] | null
           created_at?: string | null
           currency?: string
           deleted_at?: string | null
@@ -1313,10 +1320,12 @@ export type Database = {
           difficulty_level?: string | null
           draft_data?: Json | null
           duration: string
+          excluded?: string[] | null
           exclusions?: string[] | null
           group_discounts?: boolean | null
           highlights?: string[] | null
           id?: string
+          included?: string[] | null
           images?: Json | null
           inclusions?: string[] | null
           is_active?: boolean | null
@@ -1338,6 +1347,7 @@ export type Database = {
           peak_season_multiplier?: number | null
           price?: number
           pricing_tiers?: Json | null
+          require_deposit?: boolean | null
           rating?: number | null
           requirements?: string[] | null
           review_count?: number | null
@@ -1351,7 +1361,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          base_price?: number | null
           cancellation_policy?: string | null
+          cancellation_policy_type?: Database['public']['Enums']['cancellation_policy_type_enum'] | null
           created_at?: string | null
           currency?: string
           deleted_at?: string | null
@@ -1361,10 +1373,12 @@ export type Database = {
           difficulty_level?: string | null
           draft_data?: Json | null
           duration?: string
+          excluded?: string[] | null
           exclusions?: string[] | null
           group_discounts?: boolean | null
           highlights?: string[] | null
           id?: string
+          included?: string[] | null
           images?: Json | null
           inclusions?: string[] | null
           is_active?: boolean | null
@@ -1386,6 +1400,7 @@ export type Database = {
           peak_season_multiplier?: number | null
           price?: number
           pricing_tiers?: Json | null
+          require_deposit?: boolean | null
           rating?: number | null
           requirements?: string[] | null
           review_count?: number | null
@@ -1691,7 +1706,9 @@ export type Database = {
           p_tour_id: string
         }
         Returns: {
+          base_price: number | null
           cancellation_policy: string | null
+          cancellation_policy_type: Database['public']['Enums']['cancellation_policy_type_enum'] | null
           created_at: string | null
           currency: string
           deleted_at: string | null
@@ -1701,10 +1718,12 @@ export type Database = {
           difficulty_level: string | null
           draft_data: Json | null
           duration: string
+          excluded: string[] | null
           exclusions: string[] | null
           group_discounts: boolean | null
           highlights: string[] | null
           id: string
+          included: string[] | null
           images: Json | null
           inclusions: string[] | null
           is_active: boolean | null
@@ -1726,6 +1745,7 @@ export type Database = {
           peak_season_multiplier: number | null
           price: number
           pricing_tiers: Json | null
+          require_deposit: boolean | null
           rating: number | null
           requirements: string[] | null
           review_count: number | null
@@ -1942,6 +1962,7 @@ export type Database = {
     Enums: {
       account_status_enum: 'active' | 'suspended' | 'deleted'
       admin_role_enum: 'super_admin' | 'moderator' | 'support'
+      cancellation_policy_type_enum: 'flexible' | 'moderate' | 'strict' | 'non-refundable'
       moderation_status_enum: 'live' | 'hidden' | 'suspended' | 'deleted'
       report_status_enum: 'open' | 'in_review' | 'resolved' | 'dismissed'
     }
@@ -2071,6 +2092,7 @@ export const Constants = {
     Enums: {
       account_status_enum: ['active', 'suspended', 'deleted'],
       admin_role_enum: ['super_admin', 'moderator', 'support'],
+      cancellation_policy_type_enum: ['flexible', 'moderate', 'strict', 'non-refundable'],
       moderation_status_enum: ['live', 'hidden', 'suspended', 'deleted'],
       report_status_enum: ['open', 'in_review', 'resolved', 'dismissed'],
     },

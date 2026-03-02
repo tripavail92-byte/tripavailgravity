@@ -5,6 +5,18 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+function toCanonicalTourPayload(tour) {
+  return {
+    ...tour,
+    base_price: tour.price,
+    require_deposit: Boolean(tour.deposit_required),
+    cancellation_policy_type: tour.cancellation_policy || 'flexible',
+    included: Array.isArray(tour.inclusions) ? tour.inclusions : [],
+    excluded: Array.isArray(tour.exclusions) ? tour.exclusions : [],
+    deposit_percentage: tour.deposit_required ? tour.deposit_percentage : 0,
+  };
+}
+
 async function checkTours() {
   console.log('🔍 Checking tours in database...\n');
   
@@ -263,9 +275,10 @@ async function seedTours() {
   ];
   
   for (const tour of sampleTours) {
+    const payload = toCanonicalTourPayload(tour);
     const { data: newTour, error } = await supabase
       .from('tours')
-      .insert(tour)
+      .insert(payload)
       .select()
       .single();
       

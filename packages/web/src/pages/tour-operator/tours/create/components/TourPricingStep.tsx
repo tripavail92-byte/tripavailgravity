@@ -3,6 +3,7 @@ import {
   Bed,
   Bus,
   Camera,
+  Clock3,
   Coins,
   DollarSign,
   FileText,
@@ -13,6 +14,7 @@ import {
   Plane,
   Plus,
   Receipt,
+  Shield,
   ShieldCheck,
   ShoppingBag,
   Ticket,
@@ -21,12 +23,14 @@ import {
   Utensils,
   Wallet,
   Wine,
+  XCircle,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -68,6 +72,33 @@ const COMMON_EXCLUDES = [
 ]
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED']
+
+const CANCELLATION_POLICIES = [
+  {
+    value: 'flexible',
+    title: 'Free Cancellation',
+    description: 'Cancel up to 48 hours before departure.',
+    icon: Shield,
+  },
+  {
+    value: 'moderate',
+    title: 'Moderate Policy',
+    description: 'Cancel up to 5 days before departure for free.',
+    icon: Clock3,
+  },
+  {
+    value: 'strict',
+    title: 'Strict Policy',
+    description: '50% refund when cancelled at least 14 days before departure.',
+    icon: Percent,
+  },
+  {
+    value: 'non-refundable',
+    title: 'Non-Refundable',
+    description: 'No refund after booking confirmation.',
+    icon: XCircle,
+  },
+] as const
 
 export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
@@ -163,12 +194,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               Base Price Per Person *
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
-                {data.currency || '$'}
-              </span>
+              <div className="absolute left-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-lg bg-muted text-muted-foreground border border-border flex items-center justify-center text-xs font-bold pointer-events-none">
+                {data.currency || 'PKR'}
+              </div>
               <Input
                 type="number"
-                className="pl-10 h-12 rounded-xl border-gray-200 bg-slate-50 focus:border-[#FF7167] focus:ring-[#FF7167]/20 text-lg font-medium"
+                className="pl-16 h-12 rounded-xl border-gray-200 bg-slate-50 focus:border-[#FF7167] focus:ring-[#FF7167]/20 text-lg font-medium"
                 placeholder="0.00"
                 value={data.price || ''}
                 onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
@@ -435,24 +466,28 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden p-4 rounded-2xl border border-[#FF7167]/30 bg-[#FFF8F7] space-y-2"
+                className="overflow-hidden p-5 rounded-2xl border border-primary/30 bg-primary/10 space-y-4"
               >
-                <label className="text-[11px] uppercase font-bold text-[#FF7167] tracking-wider block pl-2">
-                  Deposit Percentage
-                </label>
-                <Select
-                  value={String(data.deposit_percentage || 25)}
-                  onValueChange={(v) => handleInputChange('deposit_percentage', parseInt(v))}
-                >
-                  <SelectTrigger className="h-12 rounded-xl bg-white border-white shadow-sm text-[#FF7167] font-bold focus:ring-[#FF7167]/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10% Deposit</SelectItem>
-                    <SelectItem value="25">25% Deposit</SelectItem>
-                    <SelectItem value="50">50% Deposit</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[11px] uppercase font-bold text-primary tracking-wider block">
+                    Deposit Percentage
+                  </label>
+                  <div className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-md">
+                    {Math.max(0, Math.min(50, data.deposit_percentage || 25))}%
+                  </div>
+                </div>
+                <Slider
+                  min={0}
+                  max={50}
+                  step={1}
+                  value={[Math.max(0, Math.min(50, data.deposit_percentage || 25))]}
+                  onValueChange={(value) => handleInputChange('deposit_percentage', value[0] ?? 25)}
+                  className="[&_[data-slot=slider-track]]:h-3 [&_[data-slot=slider-track]]:bg-primary/20 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-primary [&_[data-slot=slider-thumb]]:shadow-lg"
+                />
+                <p className="text-xs text-muted-foreground font-medium">
+                  Travelers pay {Math.round(((data.price || 0) * (data.deposit_percentage || 25)) / 100)}{' '}
+                  {data.currency || 'PKR'} today per person.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -463,22 +498,37 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
               Cancellation Policy
             </label>
-            <Select
-              value={data.cancellation_policy || 'flexible'}
-              onValueChange={(v: string) => handleInputChange('cancellation_policy', v)}
-            >
-              <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-slate-50 focus:border-[#FF7167] focus:ring-[#FF7167]/20 text-sm font-medium">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="flexible">Flexible (Free cancellation 24h before)</SelectItem>
-                <SelectItem value="moderate">Moderate (Free cancellation 5 days before)</SelectItem>
-                <SelectItem value="strict">
-                  Strict (50% refund if cancelled 14 days before)
-                </SelectItem>
-                <SelectItem value="non-refundable">Non-refundable</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-3">
+              {CANCELLATION_POLICIES.map((policy) => {
+                const Icon = policy.icon
+                const isSelected = (data.cancellation_policy || 'flexible') === policy.value
+
+                return (
+                  <button
+                    key={policy.value}
+                    type="button"
+                    onClick={() => handleInputChange('cancellation_policy', policy.value)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ease-out flex items-start gap-4 ${
+                      isSelected
+                        ? 'bg-primary/10 border-primary shadow-lg scale-[1.02]'
+                        : 'bg-background border-border hover:border-primary/40 hover:bg-primary/5'
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{policy.title}</p>
+                      <p className="text-sm text-muted-foreground">{policy.description}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -497,10 +547,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50'
-                      : 'border-gray-200 bg-white hover:border-gray-500'
+                      ? 'scale-105 shadow-md border-primary bg-primary/10'
+                      : 'border-gray-200 bg-white hover:border-primary/50'
                   }`}
                 >
                   <input
@@ -510,12 +560,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleInclude(item.id)}
                   />
                   <Icon
-                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'}`}
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
                     strokeWidth={1.5}
                   />
                   <span
                     className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
-                      isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                      isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
                     }`}
                   >
                     {item.id}
@@ -538,10 +588,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               return (
                 <label
                   key={item.id}
-                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ${
+                  className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
-                      ? 'border-gray-900 bg-slate-50'
-                      : 'border-gray-200 bg-white hover:border-gray-500'
+                      ? 'scale-105 shadow-md border-primary bg-primary/10'
+                      : 'border-gray-200 bg-white hover:border-primary/50'
                   }`}
                 >
                   <input
@@ -551,12 +601,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleExclude(item.id)}
                   />
                   <Icon
-                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-gray-900' : 'text-gray-400 group-hover:text-gray-900'}`}
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
                     strokeWidth={1.5}
                   />
                   <span
                     className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
-                      isSelected ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                      isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
                     }`}
                   >
                     {item.id}

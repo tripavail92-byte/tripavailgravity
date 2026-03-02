@@ -4,15 +4,18 @@ import {
   Calendar,
   Camera,
   Check,
+  Clock3,
   Heart,
   Loader2,
   MapPin,
+  Percent,
   Share2,
   Shield,
   Sparkles,
   Star,
   Users,
   X,
+  XCircle,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -97,6 +100,11 @@ export default function TourDetailsPage() {
     })
   }
 
+  const formatMoney = (value: number) => {
+    const normalized = Number.isFinite(value) ? value : 0
+    return new Intl.NumberFormat('en-PK').format(normalized)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -122,6 +130,41 @@ export default function TourDetailsPage() {
       </div>
     )
   }
+
+  const cancellationPolicy = (tour.cancellation_policy || 'flexible') as
+    | 'flexible'
+    | 'moderate'
+    | 'strict'
+    | 'non-refundable'
+
+  const cancellationMeta = {
+    flexible: {
+      icon: Shield,
+      title: 'Free Cancellation',
+      description: 'Cancel up to 48 hours before departure.',
+    },
+    moderate: {
+      icon: Clock3,
+      title: 'Moderate Cancellation',
+      description: 'Cancel up to 5 days before departure for free.',
+    },
+    strict: {
+      icon: Percent,
+      title: 'Strict Cancellation',
+      description: '50% refund if cancelled 14 days before departure.',
+    },
+    'non-refundable': {
+      icon: XCircle,
+      title: 'Non-Refundable',
+      description: 'No refund after booking confirmation.',
+    },
+  }[cancellationPolicy]
+
+  const CancellationPolicyIcon = cancellationMeta.icon
+  const basePrice = tour.price || 0
+  const depositPercentage = Math.max(0, Math.min(50, tour.deposit_percentage || 0))
+  const requiresDeposit = Boolean(tour.deposit_required)
+  const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
 
   const tourImages = [
     tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
@@ -318,32 +361,76 @@ export default function TourDetailsPage() {
               </GlassCard>
             ) : null}
 
-            {/* Inclusions / Exclusions */}
+            {/* Pricing, Cancellation, Inclusions / Exclusions */}
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">What&apos;s included</GlassTitle>
+                <GlassTitle className="text-2xl font-bold">Pricing & Policies</GlassTitle>
               </GlassHeader>
               <GlassContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-8">
                   <div className="space-y-3">
-                    {tour.inclusions?.map((inc, i) => (
-                      <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                        <Check className="w-5 h-5 text-muted-foreground" />
-                        <span>{inc}</span>
+                    <h4 className="text-base font-semibold text-foreground">Pricing</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                          Starting From
+                        </p>
+                        <p className="text-lg font-black text-foreground">
+                          {tour.currency} {formatMoney(basePrice)}
+                        </p>
                       </div>
-                    ))}
+                      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                          Deposit Required
+                        </p>
+                        <p className="text-lg font-black text-foreground">
+                          {requiresDeposit ? `${depositPercentage}%` : 'No'}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl border border-border/60 bg-primary/10 p-4">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                          Pay Today
+                        </p>
+                        <p className="text-lg font-black text-foreground">
+                          {tour.currency} {formatMoney(payToday)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
+
                   <div className="space-y-3">
-                    <h4 className="text-base font-semibold text-foreground">Exclusions</h4>
-                    {tour.exclusions?.map((exc, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 text-muted-foreground line-through"
-                      >
-                        <X className="w-5 h-5" />
-                        <span>{exc}</span>
+                    <h4 className="text-base font-semibold text-foreground">Cancellation Policy</h4>
+                    <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
+                        <CancellationPolicyIcon className="w-5 h-5" />
                       </div>
-                    ))}
+                      <div>
+                        <p className="font-semibold text-foreground">{cancellationMeta.title}</p>
+                        <p className="text-sm text-muted-foreground">{cancellationMeta.description}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <h4 className="text-base font-semibold text-foreground">Included</h4>
+                      {tour.inclusions?.map((inc, i) => (
+                        <div key={i} className="flex items-center gap-3 text-muted-foreground">
+                          <Check className="w-5 h-5 text-success" />
+                          <span>{inc}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-3">
+                      <h4 className="text-base font-semibold text-foreground">Excluded</h4>
+                      {tour.exclusions?.map((exc, i) => (
+                        <div key={i} className="flex items-center gap-3 text-muted-foreground">
+                          <X className="w-5 h-5 text-destructive" />
+                          <span>{exc}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </GlassContent>
@@ -480,7 +567,7 @@ export default function TourDetailsPage() {
                   </motion.div>
 
                   <p className="text-center text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest">
-                    Free cancellation up to 48h before
+                    {cancellationMeta.title}
                   </p>
                 </GlassContent>
               </GlassCard>
