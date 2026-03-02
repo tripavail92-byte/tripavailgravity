@@ -124,7 +124,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* ── Header ── */}
-      <div className="relative p-6 rounded-2xl bg-primary text-white shadow-xl overflow-hidden">
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">

@@ -63,7 +63,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
 
   return (
     <div className="space-y-6">
-      <div className="relative p-6 rounded-2xl bg-primary text-white border-none shadow-xl overflow-hidden">
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">

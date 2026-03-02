@@ -168,15 +168,15 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <div className="relative p-8 rounded-[24px] bg-gradient-to-r from-[#FF7A70] to-[#FF6B60] text-white border-none shadow-sm overflow-hidden">
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg shrink-0">
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
             <DollarSign className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Tour Pricing</h2>
-            <p className="text-white/90 text-sm font-medium mt-1">
+            <h2 className="text-xl font-bold">Tour Pricing</h2>
+            <p className="text-white/90 text-sm font-medium">
               Set competitive pricing and booking policies for your tour.
             </p>
           </div>

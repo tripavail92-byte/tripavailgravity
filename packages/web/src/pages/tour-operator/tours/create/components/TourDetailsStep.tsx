@@ -104,14 +104,15 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      <Card className="p-6 bg-gradient-to-r from-[#FF7A70] to-[#FF6B60] text-white border-none shadow-sm rounded-[24px] overflow-hidden relative">
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
         <div className="relative flex items-center gap-5">
-          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
-            <Activity className="w-7 h-7 text-white" />
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
+            <Activity className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-[22px] font-bold tracking-tight">Requirements &amp; Logistics</h2>
-            <p className="text-white/90 text-[15px] font-medium mt-0.5">
+            <h2 className="text-xl font-bold">Requirements &amp; Logistics</h2>
+            <p className="text-white/90 text-sm font-medium">
               Define who can participate and the physical demands.
             </p>
           </div>
