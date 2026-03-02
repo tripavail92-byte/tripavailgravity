@@ -13,6 +13,7 @@ interface TourSchedulingStepProps {
 }
 
 const WHEEL_ITEM_HEIGHT = 40
+const MAX_SCHEDULE_CAPACITY = 300
 
 const MONTH_OPTIONS = [
   { value: 1, label: 'Jan' },
@@ -223,6 +224,17 @@ function DateWheelPicker({ value, onChange }: DateWheelPickerProps) {
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-3 px-1">
+        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+          Month
+        </span>
+        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+          Day
+        </span>
+        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+          Year
+        </span>
+      </div>
       <div className="grid grid-cols-3 gap-3">
         <WheelColumn
           options={MONTH_OPTIONS}
@@ -243,9 +255,9 @@ function DateWheelPicker({ value, onChange }: DateWheelPickerProps) {
           ariaLabel="Select year"
         />
       </div>
-      <p className="text-xs text-muted-foreground font-medium px-1">
+      <div className="px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-sm font-bold text-foreground shadow-sm">
         Selected: {MONTH_OPTIONS[parsed.month - 1]?.label} {parsed.day}, {parsed.year}
-      </p>
+      </div>
     </div>
   )
 }
@@ -288,6 +300,14 @@ function TimeWheelPicker({ value, onChange }: TimeWheelPickerProps) {
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 px-1">
+        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+          Hour
+        </span>
+        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+          Minute
+        </span>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <WheelColumn
           options={hourOptions}
@@ -302,20 +322,20 @@ function TimeWheelPicker({ value, onChange }: TimeWheelPickerProps) {
           ariaLabel="Select minute"
         />
       </div>
-      <p className="text-xs text-muted-foreground font-medium px-1">
+      <div className="px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-sm font-bold text-foreground shadow-sm">
         Selected: {formatHourLabel(parsed.hour)} : {pad(snappedMinute)}
-      </p>
+      </div>
     </div>
   )
 }
 
 interface CapacityWheelPickerProps {
   value: number
-  maxValue: number
+  maxValue?: number
   onChange: (value: number) => void
 }
 
-function CapacityWheelPicker({ value, maxValue, onChange }: CapacityWheelPickerProps) {
+function CapacityWheelPicker({ value, maxValue = MAX_SCHEDULE_CAPACITY, onChange }: CapacityWheelPickerProps) {
   const options = useMemo(
     () =>
       Array.from({ length: maxValue }, (_, index) => {
@@ -329,13 +349,18 @@ function CapacityWheelPicker({ value, maxValue, onChange }: CapacityWheelPickerP
 
   return (
     <div className="space-y-3">
+      <div className="px-1 text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
+        Seats
+      </div>
       <WheelColumn
         options={options}
         selectedValue={selected}
         onSelect={onChange}
         ariaLabel="Select capacity"
       />
-      <p className="text-xs text-muted-foreground font-medium px-1">Selected: {selected} seats</p>
+      <div className="px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-sm font-bold text-foreground shadow-sm">
+        Selected: {selected} seats
+      </div>
     </div>
   )
 }
@@ -392,7 +417,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
               <div className="md:col-span-4 space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
                   Departure Date
                 </label>
                 <DateWheelPicker
@@ -401,7 +426,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                 />
               </div>
               <div className="md:col-span-4 space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
                   Start Time
                 </label>
                 <TimeWheelPicker
@@ -410,12 +435,12 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
                 />
               </div>
               <div className="md:col-span-3 space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <label className="text-[11px] font-black text-foreground uppercase tracking-wider">
                   Capacity
                 </label>
                 <CapacityWheelPicker
                   value={schedule.capacity || 1}
-                  maxValue={Math.max(Number(data.max_participants) || 10, 50)}
+                  maxValue={MAX_SCHEDULE_CAPACITY}
                   onChange={(capacity) => updateSchedule(schedule.id, 'capacity', capacity)}
                 />
               </div>
