@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
@@ -29,14 +29,17 @@ interface CountdownTimer {
 
 export default function TourCheckoutPage() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const requestedGuests = Math.max(1, Number(searchParams.get('guests') || '1') || 1)
+  const autoStartPayment = searchParams.get('autostart') === '1'
 
   // State
   const [tour, setTour] = useState<Tour | null>(null)
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
-  const [guestCount, setGuestCount] = useState(1)
+  const [guestCount, setGuestCount] = useState(requestedGuests)
   const [loading, setLoading] = useState(true)
   const [processingBooking, setProcessingBooking] = useState(false)
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -284,6 +287,29 @@ export default function TourCheckoutPage() {
     }
   }
 
+  const [autoStartAttempted, setAutoStartAttempted] = useState(false)
+
+  useEffect(() => {
+    if (!autoStartPayment || autoStartAttempted) return
+    if (loading || !tour || !schedule || !user?.id) return
+    if (pendingBooking || processingBooking || clientSecret) return
+    if (liveAvailableSeats <= 0) return
+
+    setAutoStartAttempted(true)
+    handleCreatePendingBooking()
+  }, [
+    autoStartPayment,
+    autoStartAttempted,
+    loading,
+    tour,
+    schedule,
+    user?.id,
+    pendingBooking,
+    processingBooking,
+    clientSecret,
+    liveAvailableSeats,
+  ])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -387,7 +413,7 @@ export default function TourCheckoutPage() {
             </GlassCard>
 
             {/* Guest Selector */}
-            {!pendingBooking && (
+            {!pendingBooking && !autoStartPayment && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -440,7 +466,6 @@ export default function TourCheckoutPage() {
             {/* Pending Booking / Payment State */}
             {pendingBooking && (
               <GlassCard
-                asMotion
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 variant="card"
@@ -580,11 +605,11 @@ export default function TourCheckoutPage() {
                       {processingBooking ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Creating Booking...
+                          Starting Payment...
                         </>
                       ) : (
                         <>
-                          Continue
+                          Pay Now
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </>
                       )}
@@ -598,21 +623,15 @@ export default function TourCheckoutPage() {
                 <GlassContent className="p-6 space-y-3">
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">
-                      Secure Payment
-                    </span>
+                    <span className="text-sm text-muted-foreground font-medium">Secure Payment</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Lock className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">
-                      Data Protected
-                    </span>
+                    <span className="text-sm text-muted-foreground font-medium">Data Protected</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-success" />
-                    <span className="text-sm text-muted-foreground font-medium">
-                      Instant Confirmation
-                    </span>
+                    <span className="text-sm text-muted-foreground font-medium">Instant Confirmation</span>
                   </div>
                 </GlassContent>
               </GlassCard>

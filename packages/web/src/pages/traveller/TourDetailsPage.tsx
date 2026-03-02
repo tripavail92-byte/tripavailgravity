@@ -7,10 +7,12 @@ import {
   Heart,
   Loader2,
   MapPin,
+  Minus,
   Share2,
   Shield,
   Sparkles,
   Star,
+  Plus,
   Users,
   X,
 } from 'lucide-react'
@@ -41,6 +43,7 @@ export default function TourDetailsPage() {
   const [tour, setTour] = useState<Tour | null>(null)
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
+  const [selectedSeats, setSelectedSeats] = useState(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -82,10 +85,15 @@ export default function TourDetailsPage() {
 
   const handleBookNow = () => {
     if (!tour?.id) return
-    // Navigate using the ID/Slug from URL is fine, but for consistency let's use the actual tour ID if we have it
-    // Checkout page also handles both ID and Slug, but it's safer to use the UUID if possible
-    navigate(`/checkout/tour/${tour.id || id}`)
+    const guests = Math.max(1, selectedSeats)
+    navigate(`/checkout/tour/${tour.id || id}?guests=${guests}&autostart=1`)
   }
+
+  const maxSelectableSeats = Math.max(1, availableSlots ?? schedule?.capacity ?? 1)
+
+  useEffect(() => {
+    setSelectedSeats((prev) => Math.min(prev, maxSelectableSeats))
+  }, [maxSelectableSeats])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -434,6 +442,28 @@ export default function TourDetailsPage() {
                         </p>
                       </div>
                     </div>
+                    {tour.group_discounts && (tour.pricing_tiers?.length ?? 0) > 0 ? (
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                          Group Pricing Tiers
+                        </p>
+                        <div className="space-y-2">
+                          {(tour.pricing_tiers || []).map((tier: any, index: number) => (
+                            <div
+                              key={`${tier?.id || tier?.name || 'tier'}-${index}`}
+                              className="flex items-center justify-between rounded-xl border border-border/50 bg-background/60 px-3 py-2"
+                            >
+                              <span className="text-sm font-semibold text-foreground">
+                                {tier?.name || `Tier ${index + 1}`} • {tier?.minPeople || 1}+
+                              </span>
+                              <span className="text-sm font-black text-primary">
+                                {tour.currency} {formatMoney(Number(tier?.pricePerPerson || 0))}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="space-y-3">
@@ -621,6 +651,34 @@ export default function TourDetailsPage() {
                     )}
                   </div>
 
+                  <div className="p-4 bg-background/70 rounded-2xl border border-border/50 space-y-3">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                      Number of Seats
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
+                        disabled={selectedSeats <= 1}
+                        className="w-10 h-10 rounded-xl border border-border/60 bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <div className="flex-1 text-center">
+                        <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          {selectedSeats === 1 ? 'Seat' : 'Seats'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
+                        disabled={selectedSeats >= maxSelectableSeats}
+                        className="w-10 h-10 rounded-xl border border-border/60 bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
                       onClick={handleBookNow}
@@ -631,7 +689,7 @@ export default function TourDetailsPage() {
                         ? 'No Dates Available'
                         : schedule && availableSlots === 0
                           ? 'Sold Out'
-                          : 'Continue to Booking'}
+                          : 'Pay Now'}
                     </Button>
                   </motion.div>
 
