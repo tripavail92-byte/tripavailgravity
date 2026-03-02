@@ -214,6 +214,8 @@ export default function TourDetailsPage() {
       return meetsMin && withinMax
     })
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
+  const effectiveUnitPrice = activeGroupTier?.pricePerPerson || basePrice
+  const liveTotalPrice = effectiveUnitPrice * selectedSeats
 
   const tourImages = [
     tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
@@ -661,7 +663,7 @@ export default function TourDetailsPage() {
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-black">
-                    {tour.currency} {formatMoney(basePrice)}
+                    {tour.currency} {formatMoney(effectiveUnitPrice)}
                     <span className="text-sm font-semibold text-muted-foreground"> / person</span>
                   </GlassTitle>
                 </GlassHeader>
@@ -744,6 +746,26 @@ export default function TourDetailsPage() {
                       >
                         <Plus className="w-4 h-4" />
                       </button>
+                    </div>
+                    <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
+                      {activeGroupTier ? (
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                          {activeGroupTier.name} applied for {selectedSeats}{' '}
+                          {selectedSeats === 1 ? 'seat' : 'seats'}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                          Standard rate
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">
+                          {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
+                        </span>
+                        <span className="text-foreground font-black">
+                          {tour.currency} {formatMoney(liveTotalPrice)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
