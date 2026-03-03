@@ -60,6 +60,7 @@ interface TourPickupLocationsStepProps {
 }
 
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || ''
+const GOOGLE_MAPS_MAP_ID = (import.meta as any).env.VITE_GOOGLE_MAPS_MAP_ID || ''
 const DEFAULT_CENTER = { lat: 31.5204, lng: 74.3587 }
 
 function shouldToastAgain(lastAtMs: number, windowMs: number) {
@@ -91,6 +92,7 @@ function PickupMapSection({
   active,
   setActive,
   setMarkerPosition,
+  mapId,
 }: {
   center: { lat: number; lng: number }
   markerPosition: { lat: number; lng: number } | null
@@ -100,13 +102,32 @@ function PickupMapSection({
   active: { latitude: number | null; longitude: number | null }
   setActive: React.Dispatch<React.SetStateAction<any>>
   setMarkerPosition: React.Dispatch<React.SetStateAction<{ lat: number; lng: number } | null>>
+  mapId?: string
 }) {
   const status = useApiLoadingStatus()
   const [retryNonce, setRetryNonce] = useState(0)
+  const [gmAuthFailed, setGmAuthFailed] = useState(false)
+
+  useEffect(() => {
+    const prev = (window as any).gm_authFailure
+    ;(window as any).gm_authFailure = () => {
+      setGmAuthFailed(true)
+      if (typeof prev === 'function') {
+        try {
+          prev()
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return () => {
+      ;(window as any).gm_authFailure = prev
+    }
+  }, [])
 
   const isAuthFailure = status === APILoadingStatus.AUTH_FAILURE
   const isFailed = status === APILoadingStatus.FAILED
-  const isMapUnavailable = !GOOGLE_MAPS_API_KEY || isAuthFailure || isFailed
+  const isMapUnavailable = !GOOGLE_MAPS_API_KEY || isAuthFailure || isFailed || gmAuthFailed
 
   const canUseCoords =
     typeof active.latitude === 'number' &&
@@ -116,6 +137,8 @@ function PickupMapSection({
   if (isMapUnavailable) {
     const reason = !GOOGLE_MAPS_API_KEY
       ? 'Missing Google Maps API key (VITE_GOOGLE_MAPS_API_KEY).'
+      : gmAuthFailed
+        ? 'Google Maps reported an auth failure (check billing, key restrictions, enabled APIs, and quota).'
       : isAuthFailure
         ? 'Google Maps authorization failed (check key restrictions, billing, or quota).'
         : 'Google Maps failed to load.'
@@ -231,9 +254,34 @@ function PickupMapSection({
         markerPosition={markerPosition}
         onMapClick={onMapClick}
         onMarkerDragEnd={onMarkerDragEnd}
+        mapId={mapId}
       />
     </div>
   )
+}
+
+type SelectedPlaceLike = {
+  formatted_address?: string
+  formattedAddress?: string
+  name?: string
+  displayName?: string
+  place_id?: string
+  id?: string
+  geometry?: { location?: any }
+  location?: any
+  address_components?: Array<{ long_name: string; types: string[] }>
+  addressComponents?: Array<{ longText?: string; types?: string[] }>
+}
+
+function getLatLngFromPlace(place: SelectedPlaceLike): { lat: number; lng: number } | null {
+  const location = place.geometry?.location ?? place.location
+  if (!location) return null
+
+  const lat = typeof location.lat === 'function' ? location.lat() : location.lat
+  const lng = typeof location.lng === 'function' ? location.lng() : location.lng
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { lat, lng }
 }
 
 function normalizeDraftPickup(pickup: DraftPickup) {
@@ -263,14 +311,17 @@ function PlacesAutocomplete({
 }: {
   value: string
   onChange: (next: string) => void
-  onPlaceSelect: (place: google.maps.places.PlaceResult) => void
+  onPlaceSelect: (place: SelectedPlaceLike) => void
   disabled?: boolean
 }) {
   const map = useMap()
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [predictions, setPredictions] = useState<
+    Array<{ key: string; placeId?: string; label: string; secondary?: string; placePrediction?: any }>
+  >([])
   const [open, setOpen] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const sessionTokenRef = useRef<any>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -283,7 +334,7 @@ function PlacesAutocomplete({
   }, [])
 
   useEffect(() => {
-    if (!open || !value.trim() || !map) {
+    if (!open || !value.trim()) {
       setPredictions([])
       return
     }
@@ -293,9 +344,70 @@ function PlacesAutocomplete({
     setIsSearching(true)
     const t = setTimeout(async () => {
       try {
+        // Prefer Autocomplete (New) if available; fall back to legacy for existing projects.
+        const hasNewAutocomplete =
+          typeof (google.maps as any).importLibrary === 'function' &&
+          (google.maps as any).places?.AutocompleteSuggestion
+
+        if (hasNewAutocomplete) {
+          const lib = (await (google.maps as any).importLibrary('places')) as any
+          const AutocompleteSuggestion = lib?.AutocompleteSuggestion
+          const AutocompleteSessionToken = lib?.AutocompleteSessionToken
+
+          if (!AutocompleteSuggestion) {
+            setPredictions([])
+            return
+          }
+
+          if (!sessionTokenRef.current && AutocompleteSessionToken) {
+            sessionTokenRef.current = new AutocompleteSessionToken()
+          }
+
+          const request: any = {
+            input: value,
+          }
+
+          const bounds = map?.getBounds?.()
+          if (bounds) {
+            request.locationRestriction = bounds
+          }
+          const center = map?.getCenter?.()
+          if (center) {
+            request.origin = center
+          }
+          if (sessionTokenRef.current) {
+            request.sessionToken = sessionTokenRef.current
+          }
+
+          const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
+          const next = (suggestions ?? [])
+            .map((s: any) => s?.placePrediction)
+            .filter(Boolean)
+            .map((placePrediction: any) => {
+              const text = placePrediction?.text?.toString?.() ?? ''
+              const id = placePrediction?.placeId
+              return {
+                key: id || text,
+                placeId: id,
+                label: text,
+                secondary: '',
+                placePrediction,
+              }
+            })
+
+          setPredictions(next)
+          return
+        }
+
         const service = new google.maps.places.AutocompleteService()
         const response = await service.getPlacePredictions({ input: value })
-        setPredictions(response.predictions || [])
+        const next = (response.predictions || []).map((p) => ({
+          key: p.place_id,
+          placeId: p.place_id,
+          label: p.structured_formatting.main_text,
+          secondary: p.structured_formatting.secondary_text,
+        }))
+        setPredictions(next)
       } catch (e) {
         console.error('[PickupLocations] autocomplete failed', e)
         setPredictions([])
@@ -308,13 +420,34 @@ function PlacesAutocomplete({
   }, [value, open, map])
 
   const handlePredictionClick = useCallback(
-    (placeId: string) => {
-      if (!map || !window.google) return
+    async (item: { placeId?: string; placePrediction?: any }) => {
+      if (!window.google) return
 
-      const service = new google.maps.places.PlacesService(map)
+      // If we have a PlacePrediction (new API), use it to fetch fields.
+      if (item.placePrediction?.toPlace) {
+        try {
+          const place = item.placePrediction.toPlace()
+          await place.fetchFields({
+            fields: ['displayName', 'formattedAddress', 'location', 'addressComponents', 'id'],
+          })
+          onPlaceSelect(place as any)
+          setOpen(false)
+          // Conclude session; new token next search session.
+          sessionTokenRef.current = null
+          return
+        } catch (e) {
+          console.error('[PickupLocations] place details (new) failed', e)
+          return
+        }
+      }
+
+      if (!item.placeId) return
+
+      // Legacy details lookup.
+      const service = new google.maps.places.PlacesService(document.createElement('div'))
       service.getDetails(
         {
-          placeId,
+          placeId: item.placeId,
           fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id'],
         },
         (place, status) => {
@@ -355,17 +488,17 @@ function PlacesAutocomplete({
         <div className="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden max-h-72 overflow-y-auto">
           {predictions.map((prediction) => (
             <button
-              key={prediction.place_id}
+              key={prediction.key}
               type="button"
-              onClick={() => handlePredictionClick(prediction.place_id)}
+              onClick={() => handlePredictionClick(prediction)}
               className="w-full px-4 py-3 text-left hover:bg-muted/60 transition-colors border-b border-border/50 last:border-b-0"
             >
               <div className="text-sm font-semibold text-foreground truncate">
-                {prediction.structured_formatting.main_text}
+                {prediction.label}
               </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {prediction.structured_formatting.secondary_text}
-              </div>
+              {prediction.secondary ? (
+                <div className="text-xs text-muted-foreground truncate">{prediction.secondary}</div>
+              ) : null}
             </button>
           ))}
         </div>
@@ -374,7 +507,7 @@ function PlacesAutocomplete({
   )
 }
 
-function extractCityCountry(place: google.maps.places.PlaceResult): { city: string | null; country: string | null } {
+function extractCityCountry(place: SelectedPlaceLike): { city: string | null; country: string | null } {
   let city: string | null = null
   let country: string | null = null
 
@@ -382,6 +515,15 @@ function extractCityCountry(place: google.maps.places.PlaceResult): { city: stri
     if (component.types.includes('locality')) city = component.long_name
     if (component.types.includes('administrative_area_level_1') && !city) city = component.long_name
     if (component.types.includes('country')) country = component.long_name
+  })
+
+  ;(place.addressComponents as any)?.forEach?.((component: any) => {
+    const types = component?.types ?? []
+    const longText = component?.longText
+    if (!longText || !Array.isArray(types)) return
+    if (types.includes('locality')) city = longText
+    if (types.includes('administrative_area_level_1') && !city) city = longText
+    if (types.includes('country')) country = longText
   })
 
   return { city, country }
@@ -521,26 +663,28 @@ export function TourPickupLocationsStep({
   }, [])
 
   const handlePlaceSelect = useCallback(
-    (place: google.maps.places.PlaceResult) => {
-      if (!place.geometry?.location) return
+    (place: SelectedPlaceLike) => {
+      const coords = getLatLngFromPlace(place)
+      if (!coords) return
 
-      const lat = place.geometry.location.lat()
-      const lng = place.geometry.location.lng()
+      const lat = coords.lat
+      const lng = coords.lng
       const { city, country } = extractCityCountry(place)
 
       setMarkerPosition({ lat, lng })
       setActive((prev) => ({
         ...prev,
-        formatted_address: place.formatted_address || prev.formatted_address,
+        formatted_address:
+          (place.formatted_address || place.formattedAddress) ?? prev.formatted_address,
         city,
         country,
         latitude: lat,
         longitude: lng,
-        google_place_id: place.place_id || prev.google_place_id,
-        title: prev.title || place.name || 'Pickup',
+        google_place_id: (place.place_id || place.id) ?? prev.google_place_id,
+        title: prev.title || place.name || place.displayName || 'Pickup',
       }))
 
-      setSearchQuery(place.formatted_address || '')
+      setSearchQuery(place.formatted_address || place.formattedAddress || '')
     },
     [],
   )
@@ -966,6 +1110,7 @@ export function TourPickupLocationsStep({
                 active={{ latitude: active.latitude, longitude: active.longitude }}
                 setActive={setActive}
                 setMarkerPosition={setMarkerPosition}
+                mapId={GOOGLE_MAPS_MAP_ID || undefined}
               />
 
               <div className="flex items-center justify-between gap-3">

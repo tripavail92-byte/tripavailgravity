@@ -21,10 +21,13 @@ export function CityAutocomplete({
 }: CityAutocompleteProps) {
   // const map = useMap();
   const [searchQuery, setSearchQuery] = useState(value)
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([])
+  const [predictions, setPredictions] = useState<
+    Array<{ key: string; label: string; secondary?: string; placePrediction?: any }>
+  >([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const sessionTokenRef = useRef<any>(null)
 
   // Close on outside click
   useEffect(() => {
@@ -51,15 +54,65 @@ export function CityAutocomplete({
     setIsSearching(true)
     const timeoutId = setTimeout(async () => {
       if (!window.google) return
-      const service = new google.maps.places.AutocompleteService()
-
       try {
+        // Prefer Autocomplete (New) if available; fall back to legacy for older projects.
+        const hasNewAutocomplete =
+          typeof (google.maps as any).importLibrary === 'function' &&
+          (google.maps as any).places?.AutocompleteSuggestion
+
+        if (hasNewAutocomplete) {
+          const lib = (await (google.maps as any).importLibrary('places')) as any
+          const AutocompleteSuggestion = lib?.AutocompleteSuggestion
+          const AutocompleteSessionToken = lib?.AutocompleteSessionToken
+
+          if (!AutocompleteSuggestion) {
+            setPredictions([])
+            return
+          }
+
+          if (!sessionTokenRef.current && AutocompleteSessionToken) {
+            sessionTokenRef.current = new AutocompleteSessionToken()
+          }
+
+          const request: any = {
+            input: searchQuery,
+            includedPrimaryTypes: ['locality'],
+          }
+          if (sessionTokenRef.current) {
+            request.sessionToken = sessionTokenRef.current
+          }
+
+          const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
+          const next = (suggestions ?? [])
+            .map((s: any) => s?.placePrediction)
+            .filter(Boolean)
+            .map((placePrediction: any) => {
+              const text = placePrediction?.text?.toString?.() ?? ''
+              return {
+                key: placePrediction?.placeId || text,
+                label: text,
+                secondary: '',
+                placePrediction,
+              }
+            })
+
+          setPredictions(next)
+          return
+        }
+
+        const service = new google.maps.places.AutocompleteService()
         const response = await service.getPlacePredictions({
           input: searchQuery,
           types: ['(cities)'],
         })
 
-        setPredictions(response.predictions || [])
+        const next = (response.predictions || []).map((p) => ({
+          key: p.place_id,
+          label: p.structured_formatting.main_text,
+          secondary: p.structured_formatting.secondary_text,
+        }))
+
+        setPredictions(next)
       } catch (error) {
         console.error('Error fetching predictions:', error)
         setPredictions([])
@@ -72,8 +125,8 @@ export function CityAutocomplete({
   }, [searchQuery, value])
 
   const handlePredictionClick = useCallback(
-    (prediction: google.maps.places.AutocompletePrediction) => {
-      const cityName = prediction.description
+    (prediction: { label: string }) => {
+      const cityName = prediction.label
       setSearchQuery(cityName)
       onCitySelect(cityName)
       setShowSuggestions(false)
@@ -172,7 +225,7 @@ export function CityAutocomplete({
           >
             {predictions.map((prediction) => (
               <button
-                key={prediction.place_id}
+                key={prediction.key}
                 onClick={() => handlePredictionClick(prediction)}
                 className="w-full px-4 py-3.5 text-left hover:bg-muted/60 flex items-center gap-3 transition-colors group border-b border-border/50 last:border-b-0"
               >
@@ -181,11 +234,13 @@ export function CityAutocomplete({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-foreground truncate text-sm">
-                    {prediction.structured_formatting.main_text}
+                    {prediction.label}
                   </p>
-                  <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest truncate">
-                    {prediction.structured_formatting.secondary_text}
-                  </p>
+                  {prediction.secondary ? (
+                    <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-widest truncate">
+                      {prediction.secondary}
+                    </p>
+                  ) : null}
                 </div>
               </button>
             ))}
