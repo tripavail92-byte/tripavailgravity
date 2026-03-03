@@ -830,8 +830,32 @@ export function TourPickupLocationsStep({
   }, [pickups, syncDraftCounts])
 
   const handleSavePickups = useCallback(async () => {
-    if (pickups.length < 1) {
-      toast.error('Add at least 1 pickup location')
+    const hasAnyPickups = pickups.length > 0
+    const activeTitle = active.title.trim()
+    const activeLat = active.latitude
+    const activeLng = active.longitude
+
+    const canPromoteActive =
+      !!activeTitle &&
+      typeof activeLat === 'number' &&
+      typeof activeLng === 'number' &&
+      isValidLatLng(activeLat, activeLng)
+
+    const pickupsToSave = hasAnyPickups
+      ? pickups
+      : canPromoteActive
+        ? [
+            {
+              ...active,
+              title: activeTitle,
+              formatted_address:
+                active.formatted_address.trim() || formatLatLngAddress(activeLat as number, activeLng as number),
+            },
+          ]
+        : []
+
+    if (pickupsToSave.length < 1) {
+      toast.error('Add at least 1 pickup location (click “Add / Update in list”, or enter title + coordinates)')
       return
     }
 
@@ -844,13 +868,13 @@ export function TourPickupLocationsStep({
       }
 
       // Hard enforce max-one primary
-      const primaryCount = pickups.filter((p) => p.is_primary).length
+      const primaryCount = pickupsToSave.filter((p) => p.is_primary).length
       if (primaryCount > 1) {
         toast.error('Only one primary pickup is allowed')
         return
       }
 
-      const rows = pickups.map((p) => {
+      const rows = pickupsToSave.map((p) => {
         if (typeof p.latitude !== 'number' || typeof p.longitude !== 'number') {
           throw new Error('All pickups must have coordinates')
         }
