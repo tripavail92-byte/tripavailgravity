@@ -8,7 +8,9 @@ import { TourCard } from '@/components/traveller/TourCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
+import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useFeaturedPackages, useHomepageMixPackages } from '@/queries/packageQueries'
+import { useNearestToursByPickup } from '@/queries/pickupQueries'
 import { useFeaturedTours, useHomepageMixTours } from '@/queries/tourQueries'
 
 export default function Homepage() {
@@ -35,6 +37,39 @@ export default function Homepage() {
     error: packagesError,
   } = useFeaturedPackages()
   const { data: tours = [], isLoading: toursLoading, error: toursError } = useFeaturedTours()
+
+  const { coords } = useTravellerCoords()
+  const nearYouBaseToursQuery = useHomepageMixTours(48)
+  const nearestQuery = useNearestToursByPickup(
+    {
+      userLat: coords?.latitude ?? 0,
+      userLng: coords?.longitude ?? 0,
+      radiusKm: 250,
+      limit: 12,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(coords),
+    },
+  )
+
+  const nearYouTours = useMemo(() => {
+    if (!coords) return [] as any[]
+
+    const base = nearYouBaseToursQuery.data ?? []
+    const orderedIds = (nearestQuery.data ?? []).map((r) => String(r.tour_id))
+    if (base.length === 0 || orderedIds.length === 0) return [] as any[]
+
+    const byId = new Map(base.map((t: any) => [String(t.id), t]))
+    const picked: any[] = []
+
+    for (const id of orderedIds) {
+      const found = byId.get(id)
+      if (found) picked.push(found)
+    }
+
+    return picked
+  }, [coords, nearYouBaseToursQuery.data, nearestQuery.data])
 
   const loading = packagesLoading || toursLoading
 
@@ -237,6 +272,45 @@ export default function Homepage() {
           </div>
         </div>
       </div>
+
+      {/* Near You - Tours */}
+      {nearYouTours.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 mb-20">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <Badge className="bg-primary/10 text-primary border-none mb-3 px-3 py-1 type-overline">
+                Near You
+              </Badge>
+              <h2 className="type-h1 text-foreground mb-2">Tours near you</h2>
+              <p className="type-body-sm text-muted-foreground">
+                Ranked by distance to the nearest pickup location
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {nearYouTours.slice(0, 8).map((tour: any) => (
+              <TourCard
+                key={tour.id}
+                id={tour.id}
+                slug={tour.slug ?? undefined}
+                image={
+                  tour.images?.[0] ||
+                  'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'
+                }
+                title={tour.title}
+                location={tour.location}
+                duration={'Multi-day'}
+                rating={tour.rating}
+                price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                currency="USD"
+                type={'Tour Experience'}
+                isFeatured={Boolean(tour.isFeatured)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Featured Section - Packages */}
       <main className="max-w-7xl mx-auto px-4 mb-20">

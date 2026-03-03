@@ -20,6 +20,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
+import { useTravellerCityStore } from '@/store/travellerCityStore'
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -27,6 +28,9 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [priceRange, setPriceRange] = useState<{ min?: number; max?: number }>({})
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+
+  const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
+  const clearSelectedCity = useTravellerCityStore((s) => s.clearSelectedCity)
 
   const parsedCriteria = useMemo(() => {
     const q = searchParams.get('q') || ''
@@ -98,6 +102,18 @@ export default function SearchPage() {
     performSearch()
   }, [performSearch])
 
+  // Keep traveller city selection in sync with current search location.
+  useEffect(() => {
+    const loc = parsedCriteria.location
+    if (!loc) {
+      clearSelectedCity()
+      return
+    }
+
+    const ok = setSelectedCityByName(loc)
+    if (!ok) clearSelectedCity()
+  }, [clearSelectedCity, parsedCriteria.location, setSelectedCityByName])
+
   // Real-time updates: Refetch if any hotel is updated (e.g. price change)
   useRealtimeSubscription({
     table: 'hotels',
@@ -108,6 +124,14 @@ export default function SearchPage() {
   })
 
   const handleAdvancedSearch = (filters: SearchFilters) => {
+    const citySeed = filters.location || filters.query
+    if (citySeed) {
+      const ok = setSelectedCityByName(citySeed)
+      if (!ok) clearSelectedCity()
+    } else {
+      clearSelectedCity()
+    }
+
     // Update URL params based on filters
     const params = new URLSearchParams()
     if (filters.query) params.set('q', filters.query)

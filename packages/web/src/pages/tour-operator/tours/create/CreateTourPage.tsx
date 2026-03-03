@@ -1,6 +1,6 @@
 import { AlertCircle, AlertTriangle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -21,8 +21,15 @@ import { TourPricingStep } from './components/TourPricingStep'
 import { TourReviewStep } from './components/TourReviewStep'
 import { deriveStepWorkflow, StepId } from './stepWorkflow'
 
+const LazyTourPickupLocationsStep = lazy(() =>
+  import('./components/TourPickupLocationsStep').then((m) => ({
+    default: m.TourPickupLocationsStep,
+  })),
+)
+
 const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },
+  { id: 'pickup', title: 'Pickup Locations', component: LazyTourPickupLocationsStep },
   { id: 'itinerary', title: 'Itinerary', component: TourItineraryStep },
   { id: 'pricing', title: 'Pricing & Policies', component: TourPricingStep },
   { id: 'details', title: 'Requirements', component: TourDetailsStep },
@@ -98,6 +105,28 @@ export default function CreateTourPage() {
         const existing = await tourService.getOperatorTourById(user.id, tourIdToEdit)
         setTourData(existing)
 
+        // Load pickup locations into draft_data for the Pickup step
+        try {
+          const { data: pickups, error: pickupError } = await supabase
+            .from('tour_pickup_locations')
+            .select('*')
+            .eq('tour_id', tourIdToEdit)
+            .order('created_at', { ascending: true })
+
+          if (pickupError) throw pickupError
+
+          setTourData((prev) => ({
+            ...prev,
+            draft_data: {
+              ...((prev as any)?.draft_data ?? {}),
+              pickup_locations: pickups ?? [],
+              pickup_locations_count: (pickups ?? []).length,
+            },
+          }))
+        } catch (e) {
+          console.error('[CreateTourPage] Failed to load pickup locations', e)
+        }
+
         const workflow = (existing as any)?.draft_data?._workflow
         if (workflow && typeof workflow === 'object') {
           const savedCurrentStep = Number(workflow.currentStep)
@@ -143,6 +172,7 @@ export default function CreateTourPage() {
     () => ({
       version: 1,
       currentStep,
+      currentStepId: STEPS[currentStep]?.id,
       visitedSteps: Array.from(visitedSteps),
       stepStatuses: stepWorkflow.map((step) => ({
         id: step.id,
@@ -286,6 +316,8 @@ export default function CreateTourPage() {
     const missing = REQUIRED_FOR_SUBMIT.filter(
       ({ field }) => !(tourData as any)[field]
     )
+    const pickupCount = Number((tourData as any)?.draft_data?.pickup_locations_count ?? 0)
+    if (pickupCount <= 0) missing.push({ field: 'pickup_locations', label: 'Pickup locations' })
     if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
     if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
@@ -574,15 +606,26 @@ export default function CreateTourPage() {
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="glass-card rounded-3xl border border-white/40 shadow-2xl p-8"
           >
-            <CurrentStepComponent
-              data={tourData}
-              onUpdate={handleUpdate}
-              onNext={handleNext}
-              onBack={handleBack}
-              onPublish={handlePublish}
-              tourId={currentTourId}
-              ensureTourDraft={ensureTourDraftForMedia}
-            />
+            <Suspense
+              fallback={
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <div className="mt-3 text-sm font-medium text-muted-foreground">
+                    Loading step…
+                  </div>
+                </div>
+              }
+            >
+              <CurrentStepComponent
+                data={tourData}
+                onUpdate={handleUpdate}
+                onNext={handleNext}
+                onBack={handleBack}
+                onPublish={handlePublish}
+                tourId={currentTourId}
+                ensureTourDraft={ensureTourDraftForMedia}
+              />
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </div>

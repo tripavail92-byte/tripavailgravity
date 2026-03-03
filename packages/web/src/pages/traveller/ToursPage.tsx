@@ -1,10 +1,20 @@
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTravellerCoords } from '@/hooks/useTravellerCoords'
+import { useNearestToursByPickup } from '@/queries/pickupQueries'
 import {
   useFeaturedTours,
   useHomepageMixTours,
@@ -13,11 +23,27 @@ import {
 } from '@/queries/tourQueries'
 
 export default function ToursPage() {
+  const [sortMode, setSortMode] = useState<'newest' | 'nearest_pickup'>('newest')
+  const { coords } = useTravellerCoords()
+
   const featuredQuery = useFeaturedTours()
   const allToursQuery = useHomepageMixTours(96)
   const adventureQuery = useToursByCategory('adventure-trips')
   const hikingQuery = useToursByCategory('hiking-trips')
   const pakistanNorthernQuery = usePakistanNorthernTours()
+
+  const nearestQuery = useNearestToursByPickup(
+    {
+      userLat: coords?.latitude ?? 0,
+      userLng: coords?.longitude ?? 0,
+      radiusKm: 250,
+      limit: 96,
+      offset: 0,
+    },
+    {
+      enabled: Boolean(coords) && sortMode === 'nearest_pickup',
+    },
+  )
 
   const isLoading =
     featuredQuery.isLoading ||
@@ -35,6 +61,30 @@ export default function ToursPage() {
 
   const featured = featuredQuery.data ?? []
   const allTours = allToursQuery.data ?? []
+
+  const sortedAllTours = useMemo(() => {
+    if (sortMode !== 'nearest_pickup') return allTours
+
+    const orderedIds = (nearestQuery.data ?? []).map((r) => String(r.tour_id))
+    if (orderedIds.length === 0) return allTours
+
+    const byId = new Map(allTours.map((t: any) => [String(t.id), t]))
+    const picked: any[] = []
+
+    for (const id of orderedIds) {
+      const found = byId.get(id)
+      if (found) {
+        picked.push(found)
+        byId.delete(id)
+      }
+    }
+
+    // Tours without pickups (or outside radius) remain included at the end,
+    // preserving the existing default ordering for those items.
+    const remainder = allTours.filter((t: any) => byId.has(String(t.id)))
+    return [...picked, ...remainder]
+  }, [allTours, nearestQuery.data, sortMode])
+
   const topRated = allTours
     .slice()
     .filter((t: any) => typeof t.rating === 'number' && t.rating > 0)
@@ -135,6 +185,43 @@ export default function ToursPage() {
           </Card>
         ) : (
           <div className="space-y-10">
+            <section className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">All Tours</h2>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Browse all live tour experiences
+                  </p>
+                </div>
+                <div className="w-full sm:w-[240px]">
+                  <Select
+                    value={sortMode}
+                    onValueChange={(v) => setSortMode(v as typeof sortMode)}
+                  >
+                    <SelectTrigger className="rounded-xl border-border/60">
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest</SelectItem>
+                      <SelectItem value="nearest_pickup" disabled={!coords}>
+                        Nearest Pickup
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {isLoading ? (
+                renderSkeletonGrid()
+              ) : sortedAllTours.length > 0 ? (
+                renderToursGrid(sortedAllTours, 'mix')
+              ) : (
+                <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
+                  No tours available right now.
+                </Card>
+              )}
+            </section>
+
             {renderSection('Featured', 'Hand-picked tours from live listings', featured, 'mapped')}
             {renderSection('Top Rated', 'Highest rated experiences', topRated, 'mix')}
             {renderSection(

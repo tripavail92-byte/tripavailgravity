@@ -2,6 +2,7 @@ import { Tour } from '@/features/tour-operator/services/tourService'
 
 export type StepId =
   | 'basics'
+  | 'pickup'
   | 'media'
   | 'itinerary'
   | 'details'
@@ -67,6 +68,19 @@ function evaluateMedia(data: Partial<Tour>) {
     filledCount: imageCount > 0 ? 1 : 0,
     isComplete: imageCount > 0,
     hasAnyInput: imageCount > 0,
+  }
+}
+
+function evaluatePickup(data: Partial<Tour>) {
+  const raw = (data.draft_data as any)?.pickup_locations_count
+  const count = typeof raw === 'number' ? raw : Number(raw ?? 0)
+  const hasAnyInput = count > 0
+
+  return {
+    requiredCount: 1,
+    filledCount: count > 0 ? 1 : 0,
+    isComplete: count > 0,
+    hasAnyInput,
   }
 }
 
@@ -153,6 +167,7 @@ function evaluateScheduling(data: Partial<Tour>) {
 
 function evaluateStepData(id: StepId, data: Partial<Tour>) {
   if (id === 'basics') return evaluateBasics(data)
+  if (id === 'pickup') return evaluatePickup(data)
   if (id === 'media') return evaluateMedia(data)
   if (id === 'itinerary') return evaluateItinerary(data)
   if (id === 'details') return evaluateDetails(data)

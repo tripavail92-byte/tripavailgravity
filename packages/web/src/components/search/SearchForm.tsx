@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
+import { useTravellerCityStore } from '@/store/travellerCityStore'
 
 import { SearchOverlay } from './SearchOverlay'
 import { type SearchFilters, TripAvailSearchBar } from './TripAvailSearchBar'
@@ -40,6 +41,9 @@ export function SearchForm({
 }) {
   const navigate = useNavigate()
 
+  const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
+  const clearSelectedCity = useTravellerCityStore((s) => s.clearSelectedCity)
+
   // State
   const [location, setLocation] = useState('')
   const [date, setDate] = useState<DateRange | undefined>()
@@ -49,6 +53,13 @@ export function SearchForm({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (location) {
+      const ok = setSelectedCityByName(location)
+      if (!ok) clearSelectedCity()
+    } else {
+      clearSelectedCity()
+    }
 
     const params = new URLSearchParams()
     if (location) params.set('q', location)
@@ -60,6 +71,14 @@ export function SearchForm({
   }
 
   const handleAdvancedSearch = (filters: SearchFilters) => {
+    const citySeed = filters.location || filters.query
+    if (citySeed) {
+      const ok = setSelectedCityByName(citySeed)
+      if (!ok) clearSelectedCity()
+    } else {
+      clearSelectedCity()
+    }
+
     const params = new URLSearchParams()
     if (filters.query) params.set('q', filters.query)
     if (filters.location) params.set('location', filters.location)
@@ -128,6 +147,8 @@ export function SearchForm({
                         value={loc}
                         onSelect={(currentValue) => {
                           setLocation(currentValue)
+                          const ok = setSelectedCityByName(currentValue)
+                          if (!ok) clearSelectedCity()
                           setOpenLocation(false)
                         }}
                       >
