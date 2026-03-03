@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
+import { DateWheelPicker } from './DateWheelPicker'
 import { TimeWheelPicker } from './TimeWheelPicker'
 
 interface TourSchedulingStepProps {
@@ -14,232 +15,16 @@ interface TourSchedulingStepProps {
   onBack: () => void
 }
 
-const WHEEL_ITEM_HEIGHT = 40
-
-const MONTH_OPTIONS = [
-  { value: 1, label: 'Jan' },
-  { value: 2, label: 'Feb' },
-  { value: 3, label: 'Mar' },
-  { value: 4, label: 'Apr' },
-  { value: 5, label: 'May' },
-  { value: 6, label: 'Jun' },
-  { value: 7, label: 'Jul' },
-  { value: 8, label: 'Aug' },
-  { value: 9, label: 'Sep' },
-  { value: 10, label: 'Oct' },
-  { value: 11, label: 'Nov' },
-  { value: 12, label: 'Dec' },
-]
-
 const pad = (value: number) => String(value).padStart(2, '0')
 
 const formatIsoDate = (year: number, month: number, day: number) =>
   `${year}-${pad(month)}-${pad(day)}`
-
-const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate()
 
 const getTodayIsoDate = () => {
   const now = new Date()
   return formatIsoDate(now.getFullYear(), now.getMonth() + 1, now.getDate())
 }
 
- 
-
-const parseIsoDate = (dateString?: string) => {
-  const fallback = new Date()
-
-  if (!dateString) {
-    return {
-      year: fallback.getFullYear(),
-      month: fallback.getMonth() + 1,
-      day: fallback.getDate(),
-    }
-  }
-
-  const [year, month, day] = dateString.split('-').map(Number)
-
-  if (!year || !month || !day) {
-    return {
-      year: fallback.getFullYear(),
-      month: fallback.getMonth() + 1,
-      day: fallback.getDate(),
-    }
-  }
-
-  return { year, month, day }
-}
-
-interface WheelColumnProps {
-  options: Array<{ value: number; label: string }>
-  selectedValue: number
-  onSelect: (value: number) => void
-  ariaLabel: string
-}
-
-function WheelColumn({ options, selectedValue, onSelect, ariaLabel }: WheelColumnProps) {
-  const scrollRef = useRef<HTMLDivElement | null>(null)
-  const snapTimeoutRef = useRef<number | null>(null)
-
-  const selectedIndex = Math.max(
-    0,
-    options.findIndex((option) => option.value === selectedValue),
-  )
-
-  const snapToNearest = useCallback(() => {
-    if (!scrollRef.current) return
-
-    const rawIndex = Math.round(scrollRef.current.scrollTop / WHEEL_ITEM_HEIGHT)
-    const boundedIndex = Math.max(0, Math.min(options.length - 1, rawIndex))
-    const boundedOption = options[boundedIndex]
-
-    if (!boundedOption) return
-
-    if (boundedOption.value !== selectedValue) {
-      onSelect(boundedOption.value)
-    }
-
-    scrollRef.current.scrollTo({
-      top: boundedIndex * WHEEL_ITEM_HEIGHT,
-      behavior: 'smooth',
-    })
-  }, [onSelect, options, selectedValue])
-
-  useEffect(() => {
-    if (!scrollRef.current) return
-
-    scrollRef.current.scrollTo({
-      top: selectedIndex * WHEEL_ITEM_HEIGHT,
-      behavior: 'smooth',
-    })
-  }, [selectedIndex, options.length])
-
-  useEffect(() => {
-    return () => {
-      if (snapTimeoutRef.current) {
-        window.clearTimeout(snapTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  return (
-    <div className="relative h-44 rounded-xl border border-primary/20 bg-background/80 shadow-inner overflow-hidden">
-      <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-10 rounded-lg bg-primary/10 border border-primary/25 shadow-sm pointer-events-none" />
-
-      <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-background via-background/85 to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-background via-background/85 to-transparent pointer-events-none z-10" />
-
-      <div
-        ref={scrollRef}
-        role="listbox"
-        aria-label={ariaLabel}
-        onScroll={() => {
-          if (snapTimeoutRef.current) {
-            window.clearTimeout(snapTimeoutRef.current)
-          }
-          snapTimeoutRef.current = window.setTimeout(snapToNearest, 80)
-        }}
-        className="h-full overflow-y-auto snap-y snap-mandatory py-16 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {options.map((option) => {
-          const isSelected = option.value === selectedValue
-
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onSelect(option.value)}
-              className={`block w-full h-10 snap-center text-center transition-all duration-200 ${
-                isSelected
-                  ? 'text-primary font-bold text-base scale-[1.03]'
-                  : 'text-muted-foreground text-sm hover:text-foreground'
-              }`}
-            >
-              {option.label}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-interface DateWheelPickerProps {
-  value?: string
-  onChange: (value: string) => void
-}
-
-function DateWheelPicker({ value, onChange }: DateWheelPickerProps) {
-  const parsed = useMemo(() => parseIsoDate(value), [value])
-
-  const yearOptions = useMemo(() => {
-    const baseYear = new Date().getFullYear()
-    return Array.from({ length: 13 }, (_, index) => {
-      const nextYear = baseYear - 1 + index
-      return { value: nextYear, label: String(nextYear) }
-    })
-  }, [])
-
-  const dayOptions = useMemo(() => {
-    const count = getDaysInMonth(parsed.year, parsed.month)
-    return Array.from({ length: count }, (_, index) => {
-      const day = index + 1
-      return { value: day, label: String(day) }
-    })
-  }, [parsed.year, parsed.month])
-
-  const handleMonthSelect = (month: number) => {
-    const adjustedDay = Math.min(parsed.day, getDaysInMonth(parsed.year, month))
-    onChange(formatIsoDate(parsed.year, month, adjustedDay))
-  }
-
-  const handleDaySelect = (day: number) => {
-    onChange(formatIsoDate(parsed.year, parsed.month, day))
-  }
-
-  const handleYearSelect = (year: number) => {
-    const adjustedDay = Math.min(parsed.day, getDaysInMonth(year, parsed.month))
-    onChange(formatIsoDate(year, parsed.month, adjustedDay))
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3 px-1">
-        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
-          Month
-        </span>
-        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
-          Day
-        </span>
-        <span className="text-[11px] font-black uppercase tracking-wider text-foreground/90 text-center">
-          Year
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <WheelColumn
-          options={MONTH_OPTIONS}
-          selectedValue={parsed.month}
-          onSelect={handleMonthSelect}
-          ariaLabel="Select month"
-        />
-        <WheelColumn
-          options={dayOptions}
-          selectedValue={parsed.day}
-          onSelect={handleDaySelect}
-          ariaLabel="Select day"
-        />
-        <WheelColumn
-          options={yearOptions}
-          selectedValue={parsed.year}
-          onSelect={handleYearSelect}
-          ariaLabel="Select year"
-        />
-      </div>
-      <div className="px-3 py-2 rounded-xl border border-primary/25 bg-primary/10 text-sm font-bold text-foreground shadow-sm">
-        Selected: {MONTH_OPTIONS[parsed.month - 1]?.label} {parsed.day}, {parsed.year}
-      </div>
-    </div>
-  )
-}
 
 
 
