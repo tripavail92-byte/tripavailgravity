@@ -915,19 +915,62 @@ export function TourPickupLocationsStep({
 
       if (insError) throw insError
 
-      const insertedSorted = [...(inserted ?? [])].sort((a: any, b: any) =>
-        String(a?.created_at ?? '').localeCompare(String(b?.created_at ?? '')),
-      )
+      const sortByCreatedAtAsc = (list: any[]) =>
+        [...list].sort((a: any, b: any) =>
+          String(a?.created_at ?? '').localeCompare(String(b?.created_at ?? '')),
+        )
 
-      const nextPickups = insertedSorted.map(toDraftPickupFromRow)
+      let sourceRows: any[] = Array.isArray(inserted) ? sortByCreatedAtAsc(inserted) : []
+
+      // Some Supabase/RLS setups allow INSERT but prevent RETURNING/SELECT representation.
+      // In that case, immediately refetch for UI consistency.
+      if (sourceRows.length < rows.length) {
+        const { data: fetched, error: fetchError } = await supabase
+          .from('tour_pickup_locations')
+          .select('*')
+          .eq('tour_id', resolvedTourId)
+          .order('created_at', { ascending: true })
+
+        if (!fetchError && Array.isArray(fetched) && fetched.length > 0) {
+          sourceRows = fetched
+        }
+      }
+
+      // Final fallback: keep the locally-saved pickups visible even if we can't read them back.
+      if (sourceRows.length === 0) {
+        sourceRows = pickupsToSave.map((p) => {
+          if (typeof p.latitude !== 'number' || typeof p.longitude !== 'number') {
+            throw new Error('All pickups must have coordinates')
+          }
+
+          return {
+            id: p.key,
+            tour_id: resolvedTourId,
+            title: p.title.trim(),
+            formatted_address: p.formatted_address.trim() || formatLatLngAddress(p.latitude, p.longitude),
+            city: p.city,
+            country: p.country,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            google_place_id: p.google_place_id,
+            pickup_time: p.pickup_time,
+            notes: p.notes,
+            is_primary: p.is_primary,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }
+        })
+      }
+
+      const nextPickups = sourceRows.map(toDraftPickupFromRow)
       setPickups(nextPickups)
       setLastSavedHash(pickupsHash(nextPickups))
 
       onUpdate({
         draft_data: {
           ...((data as any)?.draft_data ?? {}),
-          pickup_locations: insertedSorted,
-          pickup_locations_count: insertedSorted.length,
+          pickup_locations: sourceRows,
+          pickup_locations_count: nextPickups.length,
         },
       } as any)
 
@@ -1069,7 +1112,7 @@ export function TourPickupLocationsStep({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
                     Title
