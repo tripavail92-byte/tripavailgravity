@@ -66,6 +66,22 @@ function shouldToastAgain(lastAtMs: number, windowMs: number) {
   return Date.now() - lastAtMs > windowMs
 }
 
+function isValidLatitude(lat: number) {
+  return Number.isFinite(lat) && lat >= -90 && lat <= 90
+}
+
+function isValidLongitude(lng: number) {
+  return Number.isFinite(lng) && lng >= -180 && lng <= 180
+}
+
+function isValidLatLng(lat: number, lng: number) {
+  return isValidLatitude(lat) && isValidLongitude(lng)
+}
+
+function formatLatLngAddress(lat: number, lng: number) {
+  return `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`
+}
+
 function PickupMapSection({
   center,
   markerPosition,
@@ -91,6 +107,11 @@ function PickupMapSection({
   const isAuthFailure = status === APILoadingStatus.AUTH_FAILURE
   const isFailed = status === APILoadingStatus.FAILED
   const isMapUnavailable = !GOOGLE_MAPS_API_KEY || isAuthFailure || isFailed
+
+  const canUseCoords =
+    typeof active.latitude === 'number' &&
+    typeof active.longitude === 'number' &&
+    isValidLatLng(active.latitude, active.longitude)
 
   if (isMapUnavailable) {
     const reason = !GOOGLE_MAPS_API_KEY
@@ -130,6 +151,9 @@ function PickupMapSection({
               className="rounded-2xl"
               disabled={isSaving}
             />
+            {typeof active.latitude === 'number' && !isValidLatitude(active.latitude) && (
+              <div className="text-xs text-destructive">Latitude must be between -90 and 90.</div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -152,6 +176,9 @@ function PickupMapSection({
               className="rounded-2xl"
               disabled={isSaving}
             />
+            {typeof active.longitude === 'number' && !isValidLongitude(active.longitude) && (
+              <div className="text-xs text-destructive">Longitude must be between -180 and 180.</div>
+            )}
           </div>
         </div>
 
@@ -161,11 +188,22 @@ function PickupMapSection({
             variant="outline"
             className="bg-white/60 border-white/60"
             onClick={() => {
-              if (typeof active.latitude === 'number' && typeof active.longitude === 'number') {
-                setMarkerPosition({ lat: active.latitude, lng: active.longitude })
-              }
+              if (!canUseCoords) return
+
+              const lat = active.latitude as number
+              const lng = active.longitude as number
+              setMarkerPosition({ lat, lng })
+
+              // Ensure list doesn't show a blank address when map/reverse-geocode isn't available.
+              setActive((prev: any) => ({
+                ...prev,
+                formatted_address:
+                  typeof prev.formatted_address === 'string' && prev.formatted_address.trim().length > 0
+                    ? prev.formatted_address
+                    : formatLatLngAddress(lat, lng),
+              }))
             }}
-            disabled={isSaving || typeof active.latitude !== 'number' || typeof active.longitude !== 'number'}
+            disabled={isSaving || !canUseCoords}
           >
             Use coordinates
           </Button>
@@ -597,7 +635,12 @@ export function TourPickupLocationsStep({
       return
     }
 
-    const formatted = active.formatted_address.trim() || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+    if (!isValidLatLng(lat, lng)) {
+      toast.error('Coordinates are invalid. Latitude must be -90..90 and longitude must be -180..180.')
+      return
+    }
+
+    const formatted = active.formatted_address.trim() || formatLatLngAddress(lat, lng)
 
     setPickups((prev) => {
       const next = prev.some((p) => p.key === active.key)
@@ -668,10 +711,16 @@ export function TourPickupLocationsStep({
           throw new Error('All pickups must have coordinates')
         }
 
+        if (!isValidLatLng(p.latitude, p.longitude)) {
+          throw new Error('Pickup coordinates are invalid (latitude -90..90, longitude -180..180)')
+        }
+
+        const formatted = p.formatted_address.trim() || formatLatLngAddress(p.latitude, p.longitude)
+
         return {
           tour_id: resolvedTourId,
           title: p.title.trim(),
-          formatted_address: p.formatted_address.trim(),
+          formatted_address: formatted,
           city: p.city,
           country: p.country,
           latitude: p.latitude,
