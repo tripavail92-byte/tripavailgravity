@@ -9,6 +9,7 @@ import {
   Heart,
   Loader2,
   MapPin,
+  Navigation,
   Minus,
   Share2,
   Shield,
@@ -21,6 +22,7 @@ import {
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -39,6 +41,48 @@ import {
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+
+function isValidLatLng(lat: number, lng: number) {
+  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+}
+
+function buildStaticMapPreviewUrl(lat: number, lng: number) {
+  if (!GOOGLE_MAPS_API_KEY || !isValidLatLng(lat, lng)) return null
+
+  const params = new URLSearchParams({
+    center: `${lat},${lng}`,
+    zoom: '14',
+    size: '640x320',
+    scale: '2',
+    maptype: 'roadmap',
+    markers: `color:0x0f766e|${lat},${lng}`,
+    key: GOOGLE_MAPS_API_KEY,
+  })
+
+  return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`
+}
+
+function buildGoogleDirectionsUrl(lat: number, lng: number) {
+  if (!isValidLatLng(lat, lng)) return null
+
+  const params = new URLSearchParams({
+    api: '1',
+    destination: `${lat},${lng}`,
+    travelmode: 'driving',
+  })
+
+  return `https://www.google.com/maps/dir/?${params.toString()}`
+}
+
+function formatPickupTime(value: string | null | undefined) {
+  if (!value) return null
+  const normalized = value.length === 5 ? `${value}:00` : value
+  const parsed = new Date(`1970-01-01T${normalized}`)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
 
 function useCountUp(target: number, duration = 320) {
   const safeTarget = Number.isFinite(target) ? target : 0
@@ -301,6 +345,7 @@ export default function TourDetailsPage() {
     tour.images?.[3] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800',
     tour.images?.[4] || 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800',
   ]
+  const pickupLocations = Array.isArray(tour.pickup_locations) ? tour.pickup_locations : []
 
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
@@ -534,12 +579,16 @@ export default function TourDetailsPage() {
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {group.items.map((item) => (
-                                <span
+                                <motion.span
                                   key={item.id}
-                                  className="inline-flex items-center rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground"
+                                  whileHover={{ y: -1, scale: 1.01 }}
+                                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground"
                                 >
+                                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-background/80 text-primary shadow-sm">
+                                    <item.icon />
+                                  </span>
                                   {item.label}
-                                </span>
+                                </motion.span>
                               ))}
                             </div>
                           </div>
@@ -552,6 +601,110 @@ export default function TourDetailsPage() {
                 </div>
               </GlassContent>
             </GlassCard>
+
+            {pickupLocations.length > 0 ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">Pickup points</GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <div className="space-y-4">
+                    {pickupLocations.map((pickup: TourPickupLocation, index: number) => {
+                      const previewUrl = buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
+                      const directionsUrl = buildGoogleDirectionsUrl(pickup.latitude, pickup.longitude)
+                      const pickupTime = formatPickupTime(pickup.pickup_time)
+
+                      return (
+                        <div
+                          key={pickup.id}
+                          className="overflow-hidden rounded-3xl border border-border/60 bg-background/70 shadow-sm"
+                        >
+                          <div className="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
+                            <div className="relative min-h-[180px] bg-muted/40">
+                              {previewUrl ? (
+                                <img
+                                  src={previewUrl}
+                                  alt={pickup.title}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-full min-h-[180px] items-center justify-center bg-gradient-to-br from-muted to-muted/60 text-muted-foreground">
+                                  <MapPin className="h-8 w-8" />
+                                </div>
+                              )}
+                              <div className="absolute left-4 top-4 flex items-center gap-2">
+                                <GlassBadge variant={pickup.is_primary ? 'primary' : 'light'} size="sm">
+                                  {pickup.is_primary ? 'Primary pickup' : `Stop ${index + 1}`}
+                                </GlassBadge>
+                              </div>
+                            </div>
+
+                            <div className="space-y-4 p-5 md:p-6">
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <h4 className="text-lg font-bold text-foreground">{pickup.title}</h4>
+                                    <p className="text-sm leading-6 text-muted-foreground">{pickup.formatted_address}</p>
+                                  </div>
+                                  {directionsUrl ? (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="gap-2 rounded-2xl"
+                                      onClick={() => window.open(directionsUrl, '_blank', 'noopener,noreferrer')}
+                                    >
+                                      <Navigation className="h-4 w-4" />
+                                      Directions
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                                    Pickup time
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {pickupTime || 'Not specified'}
+                                  </p>
+                                </div>
+                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                                    City
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {pickup.city || tour.location.city || 'Not specified'}
+                                  </p>
+                                </div>
+                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                                    Coordinates
+                                  </p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {pickup.latitude.toFixed(4)}, {pickup.longitude.toFixed(4)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {pickup.notes?.trim() ? (
+                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-4">
+                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                                    Pickup notes
+                                  </p>
+                                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{pickup.notes}</p>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
 
             {/* Experience highlights */}
             {tour.highlights?.length ? (

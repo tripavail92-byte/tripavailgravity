@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 import {
   buildStructuredFeaturesFromLabels,
   EXCLUDED_FEATURE_OPTIONS,
@@ -73,6 +74,7 @@ export interface Tour {
   approved_at?: string | null
   draft_data?: Record<string, any> | null
   theme_color?: string | null
+  pickup_locations?: TourPickupLocation[]
   created_at: string
   updated_at: string
 }
@@ -350,7 +352,23 @@ export const tourService = {
       throw error
     }
 
-    return data as unknown as Tour
+    const { data: pickups, error: pickupError } = await supabase
+      .from('tour_pickup_locations')
+      .select('*')
+      .eq('tour_id', data.id)
+      .order('is_primary', { ascending: false })
+      .order('pickup_time', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: true })
+
+    if (pickupError) {
+      console.error(`Error fetching pickup locations for tour ${data.id}:`, pickupError)
+      throw pickupError
+    }
+
+    return {
+      ...(data as unknown as Tour),
+      pickup_locations: (pickups ?? []) as TourPickupLocation[],
+    }
   },
 
   async getOperatorTourById(operatorId: string, tourId: string) {
