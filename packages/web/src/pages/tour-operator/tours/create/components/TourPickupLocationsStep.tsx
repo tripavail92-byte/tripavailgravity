@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Tour } from '@/features/tour-operator/services/tourService'
@@ -82,6 +83,87 @@ function isValidLatLng(lat: number, lng: number) {
 
 function formatLatLngAddress(lat: number, lng: number) {
   return `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`
+}
+
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  ae: 'ae',
+  'united arab emirates': 'ae',
+  uae: 'ae',
+  au: 'au',
+  australia: 'au',
+  bd: 'bd',
+  bangladesh: 'bd',
+  ca: 'ca',
+  canada: 'ca',
+  de: 'de',
+  germany: 'de',
+  eg: 'eg',
+  egypt: 'eg',
+  es: 'es',
+  spain: 'es',
+  fr: 'fr',
+  france: 'fr',
+  gb: 'gb',
+  uk: 'gb',
+  'united kingdom': 'gb',
+  in: 'in',
+  india: 'in',
+  it: 'it',
+  italy: 'it',
+  lk: 'lk',
+  'sri lanka': 'lk',
+  my: 'my',
+  malaysia: 'my',
+  np: 'np',
+  nepal: 'np',
+  om: 'om',
+  oman: 'om',
+  pk: 'pk',
+  pakistan: 'pk',
+  qa: 'qa',
+  qatar: 'qa',
+  sa: 'sa',
+  'saudi arabia': 'sa',
+  sg: 'sg',
+  singapore: 'sg',
+  th: 'th',
+  thailand: 'th',
+  tr: 'tr',
+  turkey: 'tr',
+  us: 'us',
+  usa: 'us',
+  'united states': 'us',
+}
+
+function normalizeCountryValue(value: string | null | undefined) {
+  return value?.trim().toLowerCase() ?? ''
+}
+
+function getCountryRestrictionCode(value: string | null | undefined) {
+  const normalized = normalizeCountryValue(value)
+  if (!normalized) return null
+  return COUNTRY_NAME_TO_CODE[normalized] ?? (normalized.length === 2 ? normalized : null)
+}
+
+function matchesCountryRestriction(placeCountry: string | null | undefined, countryCode: string | null) {
+  if (!countryCode) return true
+  return getCountryRestrictionCode(placeCountry) === countryCode
+}
+
+function buildStaticMapPreviewUrl(lat: number, lng: number) {
+  if (!GOOGLE_MAPS_API_KEY || !isValidLatLng(lat, lng)) return null
+
+  const params = new URLSearchParams({
+    center: `${lat},${lng}`,
+    zoom: '14',
+    size: '640x320',
+    scale: '2',
+    maptype: 'roadmap',
+    markers: `color:0x0f766e|${lat},${lng}`,
+    key: GOOGLE_MAPS_API_KEY,
+  })
+
+  return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`
 }
 
 function PickupMapSection({
@@ -308,11 +390,13 @@ function PlacesAutocomplete({
   value,
   onChange,
   onPlaceSelect,
+  countryRestriction,
   disabled,
 }: {
   value: string
   onChange: (next: string) => void
   onPlaceSelect: (place: SelectedPlaceLike) => void
+  countryRestriction?: string | null
   disabled?: boolean
 }) {
   const map = useMap()
@@ -365,6 +449,10 @@ function PlacesAutocomplete({
                 input: value,
               }
 
+              if (countryRestriction) {
+                request.includedRegionCodes = [countryRestriction]
+              }
+
               const bounds = map?.getBounds?.()
               if (bounds) {
                 request.locationRestriction = bounds
@@ -407,7 +495,10 @@ function PlacesAutocomplete({
         }
 
         const service = new google.maps.places.AutocompleteService()
-        const response = await service.getPlacePredictions({ input: value })
+        const response = await service.getPlacePredictions({
+          input: value,
+          ...(countryRestriction ? { componentRestrictions: { country: countryRestriction } } : {}),
+        })
         const next = (response.predictions || []).map((p) => ({
           key: p.place_id,
           placeId: p.place_id,
@@ -424,7 +515,7 @@ function PlacesAutocomplete({
     }, 250)
 
     return () => clearTimeout(t)
-  }, [value, open, map])
+  }, [value, open, map, countryRestriction])
 
   const handlePredictionClick = useCallback(
     async (item: { placeId?: string; placePrediction?: any }) => {
@@ -576,6 +667,7 @@ export function TourPickupLocationsStep({
   tourId,
   ensureTourDraft,
 }: TourPickupLocationsStepProps) {
+  const { user } = useAuth()
   const initialFromDraft = Array.isArray((data as any)?.draft_data?.pickup_locations)
     ? ((data as any).draft_data.pickup_locations as PickupRow[])
     : null
@@ -588,6 +680,7 @@ export function TourPickupLocationsStep({
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingRemote, setIsLoadingRemote] = useState(false)
+  const [profileCountry, setProfileCountry] = useState<string | null>(null)
 
   const lastReverseGeocodeToastAt = useRef(0)
   const draftDataRef = useRef<any>(((data as any)?.draft_data ?? {}))
@@ -595,6 +688,33 @@ export function TourPickupLocationsStep({
   const [lastSavedHash, setLastSavedHash] = useState(() => pickupsHash(pickups))
 
   const isDirty = useMemo(() => pickupsHash(pickups) !== lastSavedHash, [pickups, lastSavedHash])
+
+  const primaryPickup = useMemo(() => pickups.find((pickup) => pickup.is_primary) ?? pickups[0] ?? null, [pickups])
+
+  const hasActiveDraft = useMemo(
+    () =>
+      Boolean(
+        active.title.trim() ||
+          active.formatted_address.trim() ||
+          active.notes?.trim() ||
+          typeof active.latitude === 'number' ||
+          typeof active.longitude === 'number',
+      ),
+    [active],
+  )
+
+  const activeExistsInList = useMemo(() => pickups.some((pickup) => pickup.key === active.key), [pickups, active.key])
+
+  const currentWorkspacePickup = hasActiveDraft ? active : primaryPickup
+
+  const countryRestriction = useMemo(
+    () =>
+      getCountryRestrictionCode(data.location?.country) ??
+      getCountryRestrictionCode(profileCountry) ??
+      getCountryRestrictionCode(primaryPickup?.country) ??
+      null,
+    [data.location?.country, profileCountry, primaryPickup?.country],
+  )
 
   const center = useMemo(() => {
     const p0 = pickups.find((p) => typeof p.latitude === 'number' && typeof p.longitude === 'number')
@@ -610,6 +730,32 @@ export function TourPickupLocationsStep({
   useEffect(() => {
     draftDataRef.current = (data as any)?.draft_data ?? {}
   }, [data])
+
+  useEffect(() => {
+    if (!user?.id) {
+      setProfileCountry(null)
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data: profile, error } = await (supabase.from('profiles' as any) as any)
+          .select('country')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (cancelled || error) return
+        setProfileCountry((profile?.country as string | null) ?? null)
+      } catch {
+        if (!cancelled) setProfileCountry(null)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
 
   const updateDraftData = useCallback(
     (partialDraftData: Record<string, unknown>) => {
@@ -689,6 +835,11 @@ export function TourPickupLocationsStep({
       const lng = coords.lng
       const { city, country } = extractCityCountry(place)
 
+      if (!matchesCountryRestriction(country, countryRestriction)) {
+        toast.error('Select a pickup inside the configured tour country.')
+        return
+      }
+
       setMarkerPosition({ lat, lng })
       setActive((prev) => ({
         ...prev,
@@ -704,7 +855,7 @@ export function TourPickupLocationsStep({
 
       setSearchQuery(place.formatted_address || place.formattedAddress || '')
     },
-    [],
+    [countryRestriction],
   )
 
   const reverseGeocode = useCallback(
@@ -843,6 +994,12 @@ export function TourPickupLocationsStep({
     }
   }, [active.key])
 
+  const resetEditor = useCallback(() => {
+    setActive(newEmptyPickup())
+    setMarkerPosition(null)
+    setSearchQuery('')
+  }, [])
+
   useEffect(() => {
     syncDraftCounts(pickups)
   }, [pickups, syncDraftCounts])
@@ -873,7 +1030,7 @@ export function TourPickupLocationsStep({
         : []
 
     if (pickupsToSave.length < 1) {
-      toast.error('Add at least 1 pickup location (click “Add / Update in list”, or enter title + coordinates)')
+      toast.error('Add at least 1 pickup location (click "Add / Update in list", or enter title + coordinates)')
       return
     }
 
@@ -1019,225 +1176,368 @@ export function TourPickupLocationsStep({
           </p>
         </div>
 
-        <Card className="p-8 bg-white/60 backdrop-blur-xl border-white/40 shadow-2xl rounded-3xl space-y-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Saved pickups</h3>
-              <p className="text-xs text-muted-foreground">{pickups.length} pickup(s)</p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="bg-white/60 border-white/60"
-              onClick={() => {
-                setActive(newEmptyPickup())
-                setMarkerPosition(null)
-                setSearchQuery('')
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New pickup
-            </Button>
-          </div>
-
-          {isLoadingRemote ? (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Loading pickup locations…
-            </div>
-          ) : pickups.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No pickups yet. Add one below and save.</div>
-          ) : (
-            <div className="space-y-3">
-              {pickups.map((p) => (
-                <div
-                  key={p.key}
-                  className={cn(
-                    'rounded-2xl border p-4 flex items-start justify-between gap-4 bg-white/50',
-                    p.is_primary ? 'border-primary/40' : 'border-border/60',
-                  )}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="font-semibold text-foreground truncate">{p.title}</div>
-                      {p.is_primary && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary">
-                          <Star className="w-3 h-3" /> Primary
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">{p.formatted_address}</div>
-                    <div className="text-[11px] text-muted-foreground/80 mt-1">
-                      {typeof p.latitude === 'number' && typeof p.longitude === 'number'
-                        ? `${p.latitude.toFixed(5)}, ${p.longitude.toFixed(5)}`
-                        : 'No coordinates'}
-                    </div>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.25fr)_360px]">
+          <Card className="rounded-[28px] border-white/40 bg-white/65 p-4 shadow-2xl backdrop-blur-xl sm:p-6 xl:p-8">
+            <div className="space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+                    Current Pickup Workspace
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      type="button"
-                      variant={p.is_primary ? 'default' : 'outline'}
-                      className={cn(
-                        'rounded-xl',
-                        p.is_primary ? 'bg-primary text-white' : 'bg-white/60 border-white/60',
-                      )}
-                      onClick={() => applyPrimary(p.key)}
-                      title="Toggle primary"
-                    >
-                      <Star className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl bg-white/60 border-white/60"
-                      onClick={() => handleEdit(p.key)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl bg-white/60 border-white/60"
-                      onClick={() => handleDelete(p.key)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Search, pin the exact map point, then keep building the pickup plan one stop at a time.
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
 
-          <div className="border-t border-white/30 pt-6 space-y-4">
-            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-              Add / edit pickup
-            </Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {countryRestriction ? (
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                      Restricted to {countryRestriction.toUpperCase()}
+                    </span>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-white/70 border-white/60"
+                    onClick={resetEditor}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    New pickup
+                  </Button>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-                  Search
-                </Label>
-                <PlacesAutocomplete
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  onPlaceSelect={handlePlaceSelect}
-                  disabled={isSaving}
-                />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+                <div className="rounded-[24px] border border-border/60 bg-slate-950 p-5 text-white shadow-inner sm:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-3 min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">
+                        {hasActiveDraft ? 'Editor focus' : primaryPickup ? 'Primary pickup snapshot' : 'No pickup selected'}
+                      </div>
+                      <div className="text-xl font-semibold leading-tight text-white sm:text-2xl">
+                        {currentWorkspacePickup?.title?.trim() || 'Choose a pickup point to start the route'}
+                      </div>
+                      <div className="text-sm leading-6 text-white/70">
+                        {currentWorkspacePickup?.formatted_address?.trim() || 'Search an address or drop the pin directly on the map to lock the boarding point.'}
+                      </div>
+                    </div>
+
+                    {currentWorkspacePickup?.is_primary ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200">
+                        <Star className="h-3.5 w-3.5" />
+                        Primary
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Country</div>
+                      <div className="mt-2 text-sm font-medium text-white">
+                        {currentWorkspacePickup?.country || data.location?.country || profileCountry || 'Not set yet'}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Pickup time</div>
+                      <div className="mt-2 text-sm font-medium text-white">
+                        {currentWorkspacePickup?.pickup_time || 'Optional'}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Coordinates</div>
+                      <div className="mt-2 text-sm font-medium text-white">
+                        {typeof currentWorkspacePickup?.latitude === 'number' && typeof currentWorkspacePickup?.longitude === 'number'
+                          ? `${currentWorkspacePickup.latitude.toFixed(5)}, ${currentWorkspacePickup.longitude.toFixed(5)}`
+                          : 'Awaiting map pin'}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Status</div>
+                      <div className="mt-2 text-sm font-medium text-white">
+                        {activeExistsInList ? 'Editing existing stop' : hasActiveDraft ? 'Draft in progress' : pickups.length > 0 ? 'Ready for next stop' : 'Waiting for first stop'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-border/60 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 shadow-sm sm:p-6">
+                  <div className="space-y-3">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+                      Workflow
+                    </div>
+                    <ol className="space-y-3 text-sm text-foreground/85">
+                      <li className="flex gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">1</span>
+                        Search the pickup or place the marker manually on the map.
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">2</span>
+                        Confirm the title, time, address, and traveller instructions.
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">3</span>
+                        Add it to the route list, then save the full pickup plan before continuing.
+                      </li>
+                    </ol>
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-                    Title
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Search
+                  </Label>
+                  <PlacesAutocomplete
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onPlaceSelect={handlePlaceSelect}
+                    countryRestriction={countryRestriction}
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                      Title
+                    </Label>
+                    <Input
+                      value={active.title}
+                      onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Marina Gate pickup"
+                      className="rounded-2xl"
+                      disabled={isSaving}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                        Pickup time
+                      </Label>
+                      {active.pickup_time ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                          onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
+                          disabled={isSaving}
+                          title="Clear pickup time"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    <TimeWheelPicker
+                      value={active.pickup_time ?? undefined}
+                      onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Address
                   </Label>
                   <Input
-                    value={active.title}
-                    onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Main Pickup"
+                    value={active.formatted_address}
+                    onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
+                    placeholder="Formatted address"
                     className="rounded-2xl"
                     disabled={isSaving}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-                      Pickup time (optional)
-                    </Label>
-                    {active.pickup_time ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                        onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
-                        disabled={isSaving}
-                        title="Clear pickup time"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  <TimeWheelPicker
-                    value={active.pickup_time ?? undefined}
-                    onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Notes
+                  </Label>
+                  <Textarea
+                    value={active.notes ?? ''}
+                    onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
+                    placeholder="Add instructions like landmark, entrance, waiting rules, or vehicle access notes"
+                    rows={3}
+                    className="rounded-2xl resize-none"
                     disabled={isSaving}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-                  Address
-                </Label>
-                <Input
-                  value={active.formatted_address}
-                  onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
-                  placeholder="Formatted address (auto-filled from map)"
-                  className="rounded-2xl"
-                  disabled={isSaving}
+                <PickupMapSection
+                  center={center}
+                  markerPosition={markerPosition}
+                  onMapClick={handleMapClick}
+                  onMarkerDragEnd={handleMarkerDrag}
+                  isSaving={isSaving}
+                  active={{ latitude: active.latitude, longitude: active.longitude }}
+                  setActive={setActive}
+                  setMarkerPosition={setMarkerPosition}
+                  mapId={GOOGLE_MAPS_MAP_ID || undefined}
                 />
+
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-white/70 border-white/60"
+                    onClick={handleAddOrUpdate}
+                    disabled={isSaving}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {activeExistsInList ? 'Update pickup in plan' : 'Add pickup to plan'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleSavePickups}
+                    disabled={isSaving}
+                    className="bg-primary text-white font-bold shadow-lg border-0 hover:bg-primary/90"
+                  >
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save pickups
+                  </Button>
+                </div>
+
+                {isDirty ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+                    You have unsaved changes. Save the pickup plan before continuing.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-[28px] border-white/40 bg-white/60 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
+            <div className="space-y-5 xl:sticky xl:top-6">
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Saved pickup plan</h3>
+                <p className="text-sm text-muted-foreground">
+                  {pickups.length} stop{pickups.length === 1 ? '' : 's'} ready for travellers.
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
-                  Notes (optional)
-                </Label>
-                <Textarea
-                  value={active.notes ?? ''}
-                  onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
-                  placeholder="Anything travellers should know about this pickup"
-                  rows={3}
-                  className="rounded-2xl resize-none"
-                  disabled={isSaving}
-                />
-              </div>
+              {isLoadingRemote ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading pickup locations...
+                </div>
+              ) : pickups.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-5 py-8 text-center text-sm text-muted-foreground">
+                  No pickups saved yet. Build the first stop in the workspace and add it to the plan.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pickups.map((pickup, index) => {
+                    const mapPreview =
+                      typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
+                        ? buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
+                        : null
 
-              <PickupMapSection
-                center={center}
-                markerPosition={markerPosition}
-                onMapClick={handleMapClick}
-                onMarkerDragEnd={handleMarkerDrag}
-                isSaving={isSaving}
-                active={{ latitude: active.latitude, longitude: active.longitude }}
-                setActive={setActive}
-                setMarkerPosition={setMarkerPosition}
-                mapId={GOOGLE_MAPS_MAP_ID || undefined}
-              />
+                    return (
+                      <article
+                        key={pickup.key}
+                        className={cn(
+                          'overflow-hidden rounded-[24px] border bg-white/75 shadow-sm transition-colors',
+                          pickup.is_primary ? 'border-primary/35 ring-1 ring-primary/10' : 'border-border/60',
+                        )}
+                      >
+                        <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-white">
+                          {mapPreview ? (
+                            <img
+                              src={mapPreview}
+                              alt={pickup.title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                              Map preview unavailable
+                            </div>
+                          )}
 
-              <div className="flex items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="bg-white/60 border-white/60"
-                  onClick={handleAddOrUpdate}
-                  disabled={isSaving}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add / Update in list
-                </Button>
+                          <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-slate-950/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-white">
+                            Stop {index + 1}
+                          </div>
 
-                <Button
-                  type="button"
-                  onClick={handleSavePickups}
-                  disabled={isSaving}
-                  className="bg-primary hover:bg-primary/90 text-white font-bold shadow-lg border-0"
-                >
-                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  Save pickups
-                </Button>
-              </div>
+                          {pickup.is_primary ? (
+                            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-300/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-950">
+                              <Star className="h-3.5 w-3.5" />
+                              Primary
+                            </div>
+                          ) : null}
+                        </div>
 
-              {isDirty && (
-                <div className="text-xs text-muted-foreground">
-                  You have unsaved changes. Save pickups before continuing.
+                        <div className="space-y-4 p-4">
+                          <div className="space-y-2">
+                            <div className="text-base font-semibold text-foreground">{pickup.title}</div>
+                            <div className="text-sm leading-6 text-muted-foreground">{pickup.formatted_address}</div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                            <div className="rounded-2xl bg-muted/35 px-3 py-2">
+                              <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Pickup time</div>
+                              <div className="mt-1 text-sm text-foreground">{pickup.pickup_time || 'Not set'}</div>
+                            </div>
+                            <div className="rounded-2xl bg-muted/35 px-3 py-2">
+                              <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Location</div>
+                              <div className="mt-1 text-sm text-foreground">{pickup.city || pickup.country || 'Coordinates only'}</div>
+                            </div>
+                          </div>
+
+                          {pickup.notes?.trim() ? (
+                            <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-3 text-sm text-muted-foreground">
+                              {pickup.notes}
+                            </div>
+                          ) : null}
+
+                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <Button
+                              type="button"
+                              variant={pickup.is_primary ? 'default' : 'outline'}
+                              className={cn(
+                                'rounded-xl sm:flex-1',
+                                pickup.is_primary ? 'bg-primary text-white' : 'bg-white/70 border-white/60',
+                              )}
+                              onClick={() => applyPrimary(pickup.key)}
+                            >
+                              <Star className="mr-2 h-4 w-4" />
+                              {pickup.is_primary ? 'Primary stop' : 'Make primary'}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="rounded-xl bg-white/70 border-white/60 sm:flex-1"
+                              onClick={() => handleEdit(pickup.key)}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="rounded-xl bg-white/70 border-white/60"
+                              onClick={() => handleDelete(pickup.key)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
                 </div>
               )}
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         <div className="flex items-center justify-between pt-6 border-t border-white/30">
           <Button
