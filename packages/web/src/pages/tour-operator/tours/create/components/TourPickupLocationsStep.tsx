@@ -628,6 +628,18 @@ export function TourPickupLocationsStep({
   const [lastSavedHash, setLastSavedHash] = useState(() => pickupsHash(pickups))
 
   const isDirty = useMemo(() => pickupsHash(pickups) !== lastSavedHash, [pickups, lastSavedHash])
+  const hasActiveDraft = useMemo(
+    () =>
+      Boolean(
+        active.title.trim() ||
+          active.formatted_address.trim() ||
+          active.notes?.trim() ||
+          typeof active.latitude === 'number' ||
+          typeof active.longitude === 'number' ||
+          active.pickup_time,
+      ),
+    [active],
+  )
 
   const activeExistsInList = useMemo(() => pickups.some((pickup) => pickup.key === active.key), [pickups, active.key])
 
@@ -847,48 +859,6 @@ export function TourPickupLocationsStep({
     [reverseGeocode],
   )
 
-  const handleAddOrUpdate = useCallback(() => {
-    const title = active.title.trim()
-    const lat = active.latitude
-    const lng = active.longitude
-
-    if (!title) {
-      toast.error('Title is required')
-      return
-    }
-
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      toast.error('Please select a pickup point on the map')
-      return
-    }
-
-    if (!isValidLatLng(lat, lng)) {
-      toast.error('Coordinates are invalid. Latitude must be -90..90 and longitude must be -180..180.')
-      return
-    }
-
-    const formatted = active.formatted_address.trim() || formatLatLngAddress(lat, lng)
-
-    setPickups((prev) => {
-      const next = prev.some((p) => p.key === active.key)
-        ? prev.map((p) => (p.key === active.key ? { ...active, formatted_address: formatted } : p))
-        : [...prev, { ...active, formatted_address: formatted }]
-
-      const primaryKeys = next.filter((p) => p.is_primary).map((p) => p.key)
-      if (primaryKeys.length > 1) {
-        const keep = primaryKeys[0]
-        return next.map((p) => ({ ...p, is_primary: p.key === keep }))
-      }
-
-      return next
-    })
-
-    const nextActive = newEmptyPickup()
-    setActive(nextActive)
-    setMarkerPosition(null)
-    setSearchQuery('')
-  }, [active])
-
   const handleEdit = useCallback((key: string) => {
     const found = pickups.find((p) => p.key === key)
     if (!found) return
@@ -919,32 +889,38 @@ export function TourPickupLocationsStep({
   }, [pickups, syncDraftCounts])
 
   const handleSavePickups = useCallback(async () => {
-    const hasAnyPickups = pickups.length > 0
     const activeTitle = active.title.trim()
     const activeLat = active.latitude
     const activeLng = active.longitude
 
-    const canPromoteActive =
+    const hasValidActivePickup =
       !!activeTitle &&
       typeof activeLat === 'number' &&
       typeof activeLng === 'number' &&
       isValidLatLng(activeLat, activeLng)
 
-    const pickupsToSave = hasAnyPickups
-      ? pickups
-      : canPromoteActive
-        ? [
-            {
-              ...active,
-              title: activeTitle,
-              formatted_address:
-                active.formatted_address.trim() || formatLatLngAddress(activeLat as number, activeLng as number),
-            },
-          ]
-        : []
+    if (hasActiveDraft && !hasValidActivePickup) {
+      toast.error('Complete the current pickup before saving the plan')
+      return
+    }
+
+    const draftPickup = hasValidActivePickup
+      ? {
+          ...active,
+          title: activeTitle,
+          formatted_address:
+            active.formatted_address.trim() || formatLatLngAddress(activeLat as number, activeLng as number),
+        }
+      : null
+
+    const pickupsToSave = draftPickup
+      ? pickups.some((pickup) => pickup.key === draftPickup.key)
+        ? pickups.map((pickup) => (pickup.key === draftPickup.key ? draftPickup : pickup))
+        : [...pickups, draftPickup]
+      : pickups
 
     if (pickupsToSave.length < 1) {
-      toast.error('Add at least 1 pickup location (click "Add / Update in list", or enter title + coordinates)')
+      toast.error('Add at least 1 pickup location before saving')
       return
     }
 
@@ -1053,6 +1029,7 @@ export function TourPickupLocationsStep({
       const nextPickups = sourceRows.map(toDraftPickupFromRow)
       setPickups(nextPickups)
       setLastSavedHash(pickupsHash(nextPickups))
+      resetEditor()
 
       updateDraftData({
         pickup_locations: sourceRows,
@@ -1066,7 +1043,7 @@ export function TourPickupLocationsStep({
     } finally {
       setIsSaving(false)
     }
-  }, [pickups, active, tourId, ensureTourDraft, updateDraftData])
+  }, [pickups, active, hasActiveDraft, tourId, ensureTourDraft, updateDraftData, resetEditor])
 
   const handleNextStep = useCallback(async () => {
     if (pickups.length < 1) {
@@ -1092,156 +1069,6 @@ export function TourPickupLocationsStep({
 
         <Card className="rounded-[28px] border border-border/50 bg-background/70 p-4 shadow-xl backdrop-blur-xl sm:p-6 xl:p-8">
           <div className="space-y-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
-                  </h3>
-                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Search, pin the exact map point, confirm the details, then save the route once the pickup plan is ready.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-border/60 bg-background/80"
-                  onClick={resetEditor}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  New pickup
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Search
-                  </Label>
-                  <PlacesAutocomplete
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    onPlaceSelect={handlePlaceSelect}
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                      Title
-                    </Label>
-                    <Input
-                      value={active.title}
-                      onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g. Marina Gate pickup"
-                      className="rounded-2xl"
-                      disabled={isSaving}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                        Pickup time
-                      </Label>
-                      {active.pickup_time ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
-                          disabled={isSaving}
-                          title="Clear pickup time"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      ) : null}
-                    </div>
-
-                    <TimeWheelPicker
-                      value={active.pickup_time ?? undefined}
-                      onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Address
-                  </Label>
-                  <Input
-                    value={active.formatted_address}
-                    onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
-                    placeholder="Formatted address"
-                    className="rounded-2xl"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Notes
-                  </Label>
-                  <Textarea
-                    value={active.notes ?? ''}
-                    onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
-                    placeholder="Add instructions like landmark, entrance, waiting rules, or vehicle access notes"
-                    rows={3}
-                    className="rounded-2xl resize-none"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <PickupMapSection
-                  center={mapCenter}
-                  zoom={mapZoom}
-                  markerPosition={markerPosition}
-                  onMapClick={handleMapClick}
-                  onMarkerDragEnd={handleMarkerDrag}
-                  isSaving={isSaving}
-                  active={{ latitude: active.latitude, longitude: active.longitude }}
-                  setActive={setActive}
-                  setMarkerPosition={setMarkerPosition}
-                  mapId={GOOGLE_MAPS_MAP_ID || undefined}
-                />
-
-                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-border/60 bg-background/80"
-                    onClick={handleAddOrUpdate}
-                    disabled={isSaving}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {activeExistsInList ? 'Update pickup in plan' : 'Add pickup to plan'}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={handleSavePickups}
-                    disabled={isSaving}
-                    className="border-0 bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90"
-                  >
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save pickups
-                  </Button>
-                </div>
-
-                {isDirty ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
-                    You have unsaved changes. Save the pickup plan before continuing.
-                  </div>
-                ) : null}
-              </div>
-
             <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-6">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Saved pickup plan</h3>
@@ -1257,7 +1084,7 @@ export function TourPickupLocationsStep({
                 </div>
               ) : pickups.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-5 py-8 text-center text-sm text-muted-foreground">
-                  No pickups saved yet. Build the first stop in the workspace and add it to the plan.
+                  No pickups saved yet. Build the first stop in the workspace and save it to the plan.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -1378,6 +1205,145 @@ export function TourPickupLocationsStep({
                 </div>
               )}
             </div>
+
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-2">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Search, pin the exact map point, confirm the details, then save the route once the pickup plan is ready.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <Button
+                  type="button"
+                  className="border-0 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+                  onClick={resetEditor}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  New pickup
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Search
+                  </Label>
+                  <PlacesAutocomplete
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onPlaceSelect={handlePlaceSelect}
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                      Title
+                    </Label>
+                    <Input
+                      value={active.title}
+                      onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. Marina Gate pickup"
+                      className="rounded-2xl"
+                      disabled={isSaving}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                        Pickup time
+                      </Label>
+                      {active.pickup_time ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                          onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
+                          disabled={isSaving}
+                          title="Clear pickup time"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    <TimeWheelPicker
+                      value={active.pickup_time ?? undefined}
+                      onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Address
+                  </Label>
+                  <Input
+                    value={active.formatted_address}
+                    onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
+                    placeholder="Formatted address"
+                    className="rounded-2xl"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                    Notes
+                  </Label>
+                  <Textarea
+                    value={active.notes ?? ''}
+                    onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
+                    placeholder="Add instructions like landmark, entrance, waiting rules, or vehicle access notes"
+                    rows={3}
+                    className="rounded-2xl resize-none"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                <PickupMapSection
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  markerPosition={markerPosition}
+                  onMapClick={handleMapClick}
+                  onMarkerDragEnd={handleMarkerDrag}
+                  isSaving={isSaving}
+                  active={{ latitude: active.latitude, longitude: active.longitude }}
+                  setActive={setActive}
+                  setMarkerPosition={setMarkerPosition}
+                  mapId={GOOGLE_MAPS_MAP_ID || undefined}
+                />
+
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    type="button"
+                    onClick={handleSavePickups}
+                    disabled={isSaving}
+                    className="w-full border-0 bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 sm:w-auto"
+                  >
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save pickup
+                  </Button>
+                </div>
+
+                {isDirty ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+                    You have unsaved changes. Save the pickup plan before continuing.
+                  </div>
+                ) : null}
+              </div>
+
           </div>
         </Card>
 
