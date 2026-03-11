@@ -6,12 +6,14 @@ export type LatLng = { lat: number; lng: number }
 
 export const PickupMap = memo(function PickupMap({
   center,
+  zoom,
   markerPosition,
   onMapClick,
   onMarkerDragEnd,
   mapId,
 }: {
   center: LatLng
+  zoom: number
   markerPosition: LatLng | null
   onMapClick: (event: any) => void
   onMarkerDragEnd: (event: any) => void
@@ -19,8 +21,8 @@ export const PickupMap = memo(function PickupMap({
 }) {
   return (
     <Map
-      defaultCenter={center}
-      defaultZoom={12}
+      center={center}
+      zoom={zoom}
       mapId={mapId}
       gestureHandling="greedy"
       disableDefaultUI={true}
