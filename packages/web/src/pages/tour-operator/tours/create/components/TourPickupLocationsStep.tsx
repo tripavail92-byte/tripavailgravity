@@ -13,7 +13,6 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Tour } from '@/features/tour-operator/services/tourService'
@@ -85,71 +84,6 @@ function formatLatLngAddress(lat: number, lng: number) {
   return `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`
 }
 
-const COUNTRY_NAME_TO_CODE: Record<string, string> = {
-  ae: 'ae',
-  'united arab emirates': 'ae',
-  uae: 'ae',
-  au: 'au',
-  australia: 'au',
-  bd: 'bd',
-  bangladesh: 'bd',
-  ca: 'ca',
-  canada: 'ca',
-  de: 'de',
-  germany: 'de',
-  eg: 'eg',
-  egypt: 'eg',
-  es: 'es',
-  spain: 'es',
-  fr: 'fr',
-  france: 'fr',
-  gb: 'gb',
-  uk: 'gb',
-  'united kingdom': 'gb',
-  in: 'in',
-  india: 'in',
-  it: 'it',
-  italy: 'it',
-  lk: 'lk',
-  'sri lanka': 'lk',
-  my: 'my',
-  malaysia: 'my',
-  np: 'np',
-  nepal: 'np',
-  om: 'om',
-  oman: 'om',
-  pk: 'pk',
-  pakistan: 'pk',
-  qa: 'qa',
-  qatar: 'qa',
-  sa: 'sa',
-  'saudi arabia': 'sa',
-  sg: 'sg',
-  singapore: 'sg',
-  th: 'th',
-  thailand: 'th',
-  tr: 'tr',
-  turkey: 'tr',
-  us: 'us',
-  usa: 'us',
-  'united states': 'us',
-}
-
-function normalizeCountryValue(value: string | null | undefined) {
-  return value?.trim().toLowerCase() ?? ''
-}
-
-function getCountryRestrictionCode(value: string | null | undefined) {
-  const normalized = normalizeCountryValue(value)
-  if (!normalized) return null
-  return COUNTRY_NAME_TO_CODE[normalized] ?? (normalized.length === 2 ? normalized : null)
-}
-
-function matchesCountryRestriction(placeCountry: string | null | undefined, countryCode: string | null) {
-  if (!countryCode) return true
-  return getCountryRestrictionCode(placeCountry) === countryCode
-}
-
 function buildStaticMapPreviewUrl(lat: number, lng: number) {
   if (!GOOGLE_MAPS_API_KEY || !isValidLatLng(lat, lng)) return null
 
@@ -164,6 +98,16 @@ function buildStaticMapPreviewUrl(lat: number, lng: number) {
   })
 
   return `https://maps.googleapis.com/maps/api/staticmap?${params.toString()}`
+}
+
+function buildGoogleDirectionsUrl(lat: number, lng: number) {
+  if (!isValidLatLng(lat, lng)) return null
+  const params = new URLSearchParams({
+    api: '1',
+    destination: `${lat},${lng}`,
+    travelmode: 'driving',
+  })
+  return `https://www.google.com/maps/dir/?${params.toString()}`
 }
 
 function PickupMapSection({
@@ -390,13 +334,11 @@ function PlacesAutocomplete({
   value,
   onChange,
   onPlaceSelect,
-  countryRestriction,
   disabled,
 }: {
   value: string
   onChange: (next: string) => void
   onPlaceSelect: (place: SelectedPlaceLike) => void
-  countryRestriction?: string | null
   disabled?: boolean
 }) {
   const map = useMap()
@@ -449,10 +391,6 @@ function PlacesAutocomplete({
                 input: value,
               }
 
-              if (countryRestriction) {
-                request.includedRegionCodes = [countryRestriction]
-              }
-
               const bounds = map?.getBounds?.()
               if (bounds) {
                 request.locationRestriction = bounds
@@ -495,10 +433,7 @@ function PlacesAutocomplete({
         }
 
         const service = new google.maps.places.AutocompleteService()
-        const response = await service.getPlacePredictions({
-          input: value,
-          ...(countryRestriction ? { componentRestrictions: { country: countryRestriction } } : {}),
-        })
+        const response = await service.getPlacePredictions({ input: value })
         const next = (response.predictions || []).map((p) => ({
           key: p.place_id,
           placeId: p.place_id,
@@ -515,7 +450,7 @@ function PlacesAutocomplete({
     }, 250)
 
     return () => clearTimeout(t)
-  }, [value, open, map, countryRestriction])
+  }, [value, open, map])
 
   const handlePredictionClick = useCallback(
     async (item: { placeId?: string; placePrediction?: any }) => {
@@ -667,23 +602,26 @@ export function TourPickupLocationsStep({
   tourId,
   ensureTourDraft,
 }: TourPickupLocationsStepProps) {
-  const { user } = useAuth()
-  const initialFromDraft = Array.isArray((data as any)?.draft_data?.pickup_locations)
+  const draftPickupRows = Array.isArray((data as any)?.draft_data?.pickup_locations)
     ? ((data as any).draft_data.pickup_locations as PickupRow[])
     : null
+  const draftPickups = useMemo(() => draftPickupRows?.map(toDraftPickupFromRow) ?? null, [draftPickupRows])
+  const draftPickupsHash = useMemo(() => (draftPickups ? pickupsHash(draftPickups) : null), [draftPickups])
 
   const [pickups, setPickups] = useState<DraftPickup[]>(
-    () => initialFromDraft?.map(toDraftPickupFromRow) ?? [],
+    () => draftPickups ?? [],
   )
   const [active, setActive] = useState<DraftPickup>(() => newEmptyPickup())
   const [searchQuery, setSearchQuery] = useState('')
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingRemote, setIsLoadingRemote] = useState(false)
-  const [profileCountry, setProfileCountry] = useState<string | null>(null)
 
   const lastReverseGeocodeToastAt = useRef(0)
   const draftDataRef = useRef<any>(((data as any)?.draft_data ?? {}))
+  const onUpdateRef = useRef(onUpdate)
+  const lastAppliedDraftHashRef = useRef<string | null>(draftPickupsHash)
+  const loadedTourIdRef = useRef<string | null>(null)
 
   const [lastSavedHash, setLastSavedHash] = useState(() => pickupsHash(pickups))
 
@@ -707,14 +645,16 @@ export function TourPickupLocationsStep({
 
   const currentWorkspacePickup = hasActiveDraft ? active : primaryPickup
 
-  const countryRestriction = useMemo(
-    () =>
-      getCountryRestrictionCode(data.location?.country) ??
-      getCountryRestrictionCode(profileCountry) ??
-      getCountryRestrictionCode(primaryPickup?.country) ??
-      null,
-    [data.location?.country, profileCountry, primaryPickup?.country],
-  )
+  const currentDirectionsUrl = useMemo(() => {
+    if (
+      typeof currentWorkspacePickup?.latitude !== 'number' ||
+      typeof currentWorkspacePickup?.longitude !== 'number'
+    ) {
+      return null
+    }
+
+    return buildGoogleDirectionsUrl(currentWorkspacePickup.latitude, currentWorkspacePickup.longitude)
+  }, [currentWorkspacePickup])
 
   const center = useMemo(() => {
     const p0 = pickups.find((p) => typeof p.latitude === 'number' && typeof p.longitude === 'number')
@@ -732,41 +672,19 @@ export function TourPickupLocationsStep({
   }, [data])
 
   useEffect(() => {
-    if (!user?.id) {
-      setProfileCountry(null)
-      return
-    }
-
-    let cancelled = false
-    ;(async () => {
-      try {
-        const { data: profile, error } = await (supabase.from('profiles' as any) as any)
-          .select('country')
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (cancelled || error) return
-        setProfileCountry((profile?.country as string | null) ?? null)
-      } catch {
-        if (!cancelled) setProfileCountry(null)
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [user?.id])
+    onUpdateRef.current = onUpdate
+  }, [onUpdate])
 
   const updateDraftData = useCallback(
     (partialDraftData: Record<string, unknown>) => {
-      onUpdate({
+      onUpdateRef.current({
         draft_data: {
           ...draftDataRef.current,
           ...partialDraftData,
         },
       } as any)
     },
-    [onUpdate],
+    [],
   )
 
   const syncDraftCounts = useCallback(
@@ -777,18 +695,23 @@ export function TourPickupLocationsStep({
   )
 
   useEffect(() => {
-    // If CreateTourPage already injected pickups into draft_data, keep local state aligned.
-    if (initialFromDraft) {
-      const next = initialFromDraft.map(toDraftPickupFromRow)
-      setPickups(next)
-      setLastSavedHash(pickupsHash(next))
-      syncDraftCounts(next)
-      return
-    }
+    if (!draftPickups || !draftPickupsHash) return
+    if (lastAppliedDraftHashRef.current === draftPickupsHash) return
 
+    lastAppliedDraftHashRef.current = draftPickupsHash
+    setPickups(draftPickups)
+    setLastSavedHash(draftPickupsHash)
+    syncDraftCounts(draftPickups)
+  }, [draftPickups, draftPickupsHash, syncDraftCounts])
+
+  useEffect(() => {
+    if (draftPickupsHash) return
     if (!tourId) return
+    if (loadedTourIdRef.current === tourId) return
 
     let cancelled = false
+    loadedTourIdRef.current = tourId
+
     ;(async () => {
       setIsLoadingRemote(true)
       try {
@@ -802,11 +725,16 @@ export function TourPickupLocationsStep({
         if (error) throw error
 
         const next = (rows ?? []).map(toDraftPickupFromRow)
+        const nextHash = pickupsHash(next)
+        lastAppliedDraftHashRef.current = nextHash
         setPickups(next)
-        setLastSavedHash(pickupsHash(next))
+        setLastSavedHash(nextHash)
         syncDraftCounts(next)
       } catch (e: unknown) {
-        if (!cancelled) console.error('[PickupLocations] failed to load', e)
+        if (!cancelled) {
+          console.error('[PickupLocations] failed to load', e)
+          loadedTourIdRef.current = null
+        }
       } finally {
         if (!cancelled) setIsLoadingRemote(false)
       }
@@ -815,7 +743,7 @@ export function TourPickupLocationsStep({
     return () => {
       cancelled = true
     }
-  }, [tourId, initialFromDraft, syncDraftCounts])
+  }, [tourId, draftPickupsHash, syncDraftCounts])
 
   const applyPrimary = useCallback((targetKey: string) => {
     setPickups((prev) =>
@@ -835,11 +763,6 @@ export function TourPickupLocationsStep({
       const lng = coords.lng
       const { city, country } = extractCityCountry(place)
 
-      if (!matchesCountryRestriction(country, countryRestriction)) {
-        toast.error('Select a pickup inside the configured tour country.')
-        return
-      }
-
       setMarkerPosition({ lat, lng })
       setActive((prev) => ({
         ...prev,
@@ -855,7 +778,7 @@ export function TourPickupLocationsStep({
 
       setSearchQuery(place.formatted_address || place.formattedAddress || '')
     },
-    [countryRestriction],
+    [],
   )
 
   const reverseGeocode = useCallback(
@@ -1176,119 +1099,126 @@ export function TourPickupLocationsStep({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.25fr)_360px]">
-          <Card className="rounded-[28px] border-white/40 bg-white/65 p-4 shadow-2xl backdrop-blur-xl sm:p-6 xl:p-8">
-            <div className="space-y-6">
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
-                    Current Pickup Workspace
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Search, pin the exact map point, then keep building the pickup plan one stop at a time.
-                    </p>
-                  </div>
+        <Card className="rounded-[28px] border border-border/50 bg-background/70 p-4 shadow-xl backdrop-blur-xl sm:p-6 xl:p-8">
+          <div className="space-y-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-2">
+                <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+                  Pickup Workspace
                 </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
+                  </h3>
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Search, pin the exact map point, confirm the details, then save the route once the pickup plan is ready.
+                  </p>
+                </div>
+              </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {countryRestriction ? (
-                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                      Restricted to {countryRestriction.toUpperCase()}
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-border/60 bg-background/80"
+                  onClick={resetEditor}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  New pickup
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)]">
+              <div className="rounded-[24px] border border-border/60 bg-foreground p-5 text-background shadow-inner sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-background/60">
+                      {hasActiveDraft ? 'Editor focus' : primaryPickup ? 'Primary pickup snapshot' : 'No pickup selected'}
+                    </div>
+                    <div className="text-xl font-semibold leading-tight text-background sm:text-2xl">
+                      {currentWorkspacePickup?.title?.trim() || 'Choose a pickup point to start the route'}
+                    </div>
+                    <div className="text-sm leading-6 text-background/70">
+                      {currentWorkspacePickup?.formatted_address?.trim() || 'Search an address or drop the pin directly on the map to lock the boarding point.'}
+                    </div>
+                  </div>
+
+                  {currentWorkspacePickup?.is_primary ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-background/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-background">
+                      <Star className="h-3.5 w-3.5" />
+                      Primary
                     </span>
                   ) : null}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="bg-white/70 border-white/60"
-                    onClick={resetEditor}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    New pickup
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
-                <div className="rounded-[24px] border border-border/60 bg-slate-950 p-5 text-white shadow-inner sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-3 min-w-0">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/60">
-                        {hasActiveDraft ? 'Editor focus' : primaryPickup ? 'Primary pickup snapshot' : 'No pickup selected'}
-                      </div>
-                      <div className="text-xl font-semibold leading-tight text-white sm:text-2xl">
-                        {currentWorkspacePickup?.title?.trim() || 'Choose a pickup point to start the route'}
-                      </div>
-                      <div className="text-sm leading-6 text-white/70">
-                        {currentWorkspacePickup?.formatted_address?.trim() || 'Search an address or drop the pin directly on the map to lock the boarding point.'}
-                      </div>
-                    </div>
-
-                    {currentWorkspacePickup?.is_primary ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200">
-                        <Star className="h-3.5 w-3.5" />
-                        Primary
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Country</div>
-                      <div className="mt-2 text-sm font-medium text-white">
-                        {currentWorkspacePickup?.country || data.location?.country || profileCountry || 'Not set yet'}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Pickup time</div>
-                      <div className="mt-2 text-sm font-medium text-white">
-                        {currentWorkspacePickup?.pickup_time || 'Optional'}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Coordinates</div>
-                      <div className="mt-2 text-sm font-medium text-white">
-                        {typeof currentWorkspacePickup?.latitude === 'number' && typeof currentWorkspacePickup?.longitude === 'number'
-                          ? `${currentWorkspacePickup.latitude.toFixed(5)}, ${currentWorkspacePickup.longitude.toFixed(5)}`
-                          : 'Awaiting map pin'}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/45">Status</div>
-                      <div className="mt-2 text-sm font-medium text-white">
-                        {activeExistsInList ? 'Editing existing stop' : hasActiveDraft ? 'Draft in progress' : pickups.length > 0 ? 'Ready for next stop' : 'Waiting for first stop'}
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="rounded-[24px] border border-border/60 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 shadow-sm sm:p-6">
-                  <div className="space-y-3">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
-                      Workflow
+                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-2xl border border-background/10 bg-background/5 p-4">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-background/45">Pickup time</div>
+                    <div className="mt-2 text-sm font-medium text-background">
+                      {currentWorkspacePickup?.pickup_time || 'Optional'}
                     </div>
-                    <ol className="space-y-3 text-sm text-foreground/85">
-                      <li className="flex gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">1</span>
-                        Search the pickup or place the marker manually on the map.
-                      </li>
-                      <li className="flex gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">2</span>
-                        Confirm the title, time, address, and traveller instructions.
-                      </li>
-                      <li className="flex gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">3</span>
-                        Add it to the route list, then save the full pickup plan before continuing.
-                      </li>
-                    </ol>
+                  </div>
+                  <div className="rounded-2xl border border-background/10 bg-background/5 p-4">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-background/45">Coordinates</div>
+                    <div className="mt-2 text-sm font-medium text-background">
+                      {typeof currentWorkspacePickup?.latitude === 'number' && typeof currentWorkspacePickup?.longitude === 'number'
+                        ? `${currentWorkspacePickup.latitude.toFixed(5)}, ${currentWorkspacePickup.longitude.toFixed(5)}`
+                        : 'Awaiting map pin'}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-background/10 bg-background/5 p-4">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-background/45">Status</div>
+                    <div className="mt-2 text-sm font-medium text-background">
+                      {activeExistsInList ? 'Editing existing stop' : hasActiveDraft ? 'Draft in progress' : pickups.length > 0 ? 'Ready for next stop' : 'Waiting for first stop'}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-background/10 bg-background/5 p-4">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-background/45">Directions</div>
+                    <div className="mt-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full border-background/20 bg-background/10 text-background hover:bg-background/15"
+                        disabled={!currentDirectionsUrl}
+                        onClick={() => {
+                          if (currentDirectionsUrl) {
+                            window.open(currentDirectionsUrl, '_blank', 'noopener,noreferrer')
+                          }
+                        }}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Google Directions
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="rounded-[24px] border border-border/60 bg-muted/35 p-5 shadow-sm backdrop-blur-sm sm:p-6">
+                <div className="space-y-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+                    Workflow
+                  </div>
+                  <ol className="space-y-3 text-sm text-foreground/85">
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">1</span>
+                      Search the pickup or place the marker manually on the map.
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">2</span>
+                      Confirm the title, time, address, and traveller instructions.
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">3</span>
+                      Add it to the route list, then save the full pickup plan before continuing.
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
                     Search
@@ -1297,7 +1227,6 @@ export function TourPickupLocationsStep({
                     value={searchQuery}
                     onChange={setSearchQuery}
                     onPlaceSelect={handlePlaceSelect}
-                    countryRestriction={countryRestriction}
                     disabled={isSaving}
                   />
                 </div>
@@ -1387,7 +1316,7 @@ export function TourPickupLocationsStep({
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white/70 border-white/60"
+                    className="border-border/60 bg-background/80"
                     onClick={handleAddOrUpdate}
                     disabled={isSaving}
                   >
@@ -1399,7 +1328,7 @@ export function TourPickupLocationsStep({
                     type="button"
                     onClick={handleSavePickups}
                     disabled={isSaving}
-                    className="bg-primary text-white font-bold shadow-lg border-0 hover:bg-primary/90"
+                    className="border-0 bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90"
                   >
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save pickups
@@ -1412,13 +1341,10 @@ export function TourPickupLocationsStep({
                   </div>
                 ) : null}
               </div>
-            </div>
-          </Card>
 
-          <Card className="rounded-[28px] border-white/40 bg-white/60 p-4 shadow-2xl backdrop-blur-xl sm:p-6">
-            <div className="space-y-5 xl:sticky xl:top-6">
+            <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-6">
               <div className="space-y-1">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Saved pickup plan</h3>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Saved pickup plan</h3>
                 <p className="text-sm text-muted-foreground">
                   {pickups.length} stop{pickups.length === 1 ? '' : 's'} ready for travellers.
                 </p>
@@ -1434,7 +1360,7 @@ export function TourPickupLocationsStep({
                   No pickups saved yet. Build the first stop in the workspace and add it to the plan.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                   {pickups.map((pickup, index) => {
                     const mapPreview =
                       typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
@@ -1445,11 +1371,11 @@ export function TourPickupLocationsStep({
                       <article
                         key={pickup.key}
                         className={cn(
-                          'overflow-hidden rounded-[24px] border bg-white/75 shadow-sm transition-colors',
+                          'overflow-hidden rounded-[24px] border bg-background/80 shadow-sm backdrop-blur-sm transition-colors',
                           pickup.is_primary ? 'border-primary/35 ring-1 ring-primary/10' : 'border-border/60',
                         )}
                       >
-                        <div className="relative h-32 w-full overflow-hidden bg-gradient-to-br from-slate-200 via-slate-100 to-white">
+                        <div className="relative h-32 w-full overflow-hidden bg-muted/40">
                           {mapPreview ? (
                             <img
                               src={mapPreview}
@@ -1463,12 +1389,12 @@ export function TourPickupLocationsStep({
                             </div>
                           )}
 
-                          <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-slate-950/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-white">
+                          <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-background backdrop-blur-sm">
                             Stop {index + 1}
                           </div>
 
                           {pickup.is_primary ? (
-                            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-300/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-950">
+                            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-primary-foreground backdrop-blur-sm">
                               <Star className="h-3.5 w-3.5" />
                               Primary
                             </div>
@@ -1488,7 +1414,7 @@ export function TourPickupLocationsStep({
                             </div>
                             <div className="rounded-2xl bg-muted/35 px-3 py-2">
                               <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Location</div>
-                              <div className="mt-1 text-sm text-foreground">{pickup.city || pickup.country || 'Coordinates only'}</div>
+                              <div className="mt-1 text-sm text-foreground">{pickup.city || 'Coordinates only'}</div>
                             </div>
                           </div>
 
@@ -1501,10 +1427,26 @@ export function TourPickupLocationsStep({
                           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Button
                               type="button"
+                              variant="outline"
+                              className="rounded-xl border-border/60 bg-background/80 sm:flex-1"
+                              disabled={typeof pickup.latitude !== 'number' || typeof pickup.longitude !== 'number'}
+                              onClick={() => {
+                                if (typeof pickup.latitude !== 'number' || typeof pickup.longitude !== 'number') return
+                                const directionsUrl = buildGoogleDirectionsUrl(pickup.latitude, pickup.longitude)
+                                if (directionsUrl) {
+                                  window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+                                }
+                              }}
+                            >
+                              <MapPin className="mr-2 h-4 w-4" />
+                              Directions
+                            </Button>
+                            <Button
+                              type="button"
                               variant={pickup.is_primary ? 'default' : 'outline'}
                               className={cn(
                                 'rounded-xl sm:flex-1',
-                                pickup.is_primary ? 'bg-primary text-white' : 'bg-white/70 border-white/60',
+                                pickup.is_primary ? 'bg-primary text-primary-foreground' : 'border-border/60 bg-background/80',
                               )}
                               onClick={() => applyPrimary(pickup.key)}
                             >
@@ -1514,7 +1456,7 @@ export function TourPickupLocationsStep({
                             <Button
                               type="button"
                               variant="outline"
-                              className="rounded-xl bg-white/70 border-white/60 sm:flex-1"
+                              className="rounded-xl border-border/60 bg-background/80 sm:flex-1"
                               onClick={() => handleEdit(pickup.key)}
                             >
                               <Pencil className="mr-2 h-4 w-4" />
@@ -1523,7 +1465,7 @@ export function TourPickupLocationsStep({
                             <Button
                               type="button"
                               variant="outline"
-                              className="rounded-xl bg-white/70 border-white/60"
+                              className="rounded-xl border-border/60 bg-background/80"
                               onClick={() => handleDelete(pickup.key)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
@@ -1536,8 +1478,8 @@ export function TourPickupLocationsStep({
                 </div>
               )}
             </div>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
         <div className="flex items-center justify-between pt-6 border-t border-white/30">
           <Button
