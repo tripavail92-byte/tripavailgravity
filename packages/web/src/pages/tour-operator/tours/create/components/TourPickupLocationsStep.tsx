@@ -351,52 +351,58 @@ function PlacesAutocomplete({
           (google.maps as any).places?.AutocompleteSuggestion
 
         if (hasNewAutocomplete) {
-          const lib = (await (google.maps as any).importLibrary('places')) as any
-          const AutocompleteSuggestion = lib?.AutocompleteSuggestion
-          const AutocompleteSessionToken = lib?.AutocompleteSessionToken
+          try {
+            const lib = (await (google.maps as any).importLibrary('places')) as any
+            const AutocompleteSuggestion = lib?.AutocompleteSuggestion
+            const AutocompleteSessionToken = lib?.AutocompleteSessionToken
 
-          if (!AutocompleteSuggestion) {
-            setPredictions([])
-            return
-          }
-
-          if (!sessionTokenRef.current && AutocompleteSessionToken) {
-            sessionTokenRef.current = new AutocompleteSessionToken()
-          }
-
-          const request: any = {
-            input: value,
-          }
-
-          const bounds = map?.getBounds?.()
-          if (bounds) {
-            request.locationRestriction = bounds
-          }
-          const center = map?.getCenter?.()
-          if (center) {
-            request.origin = center
-          }
-          if (sessionTokenRef.current) {
-            request.sessionToken = sessionTokenRef.current
-          }
-
-          const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
-          const next = (suggestions ?? [])
-            .map((s: any) => s?.placePrediction)
-            .filter(Boolean)
-            .map((placePrediction: any) => {
-              const text = placePrediction?.text?.toString?.() ?? ''
-              const id = placePrediction?.placeId
-              return {
-                key: id || text,
-                placeId: id,
-                label: text,
-                secondary: '',
-                placePrediction,
+            if (AutocompleteSuggestion) {
+              if (!sessionTokenRef.current && AutocompleteSessionToken) {
+                sessionTokenRef.current = new AutocompleteSessionToken()
               }
-            })
 
-          setPredictions(next)
+              const request: any = {
+                input: value,
+              }
+
+              const bounds = map?.getBounds?.()
+              if (bounds) {
+                request.locationRestriction = bounds
+              }
+              const center = map?.getCenter?.()
+              if (center) {
+                request.origin = center
+              }
+              if (sessionTokenRef.current) {
+                request.sessionToken = sessionTokenRef.current
+              }
+
+              const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
+              const next = (suggestions ?? [])
+                .map((s: any) => s?.placePrediction)
+                .filter(Boolean)
+                .map((placePrediction: any) => {
+                  const text = placePrediction?.text?.toString?.() ?? ''
+                  const id = placePrediction?.placeId
+                  return {
+                    key: id || text,
+                    placeId: id,
+                    label: text,
+                    secondary: '',
+                    placePrediction,
+                  }
+                })
+
+              setPredictions(next)
+              return
+            }
+          } catch (e) {
+            console.warn('[PickupLocations] autocomplete(new) failed; falling back to legacy autocomplete', e)
+          }
+        }
+
+        if (!google.maps.places?.AutocompleteService) {
+          setPredictions([])
           return
         }
 
@@ -437,8 +443,7 @@ function PlacesAutocomplete({
           sessionTokenRef.current = null
           return
         } catch (e) {
-          console.error('[PickupLocations] place details (new) failed', e)
-          return
+          console.warn('[PickupLocations] place details (new) failed; falling back to legacy details lookup', e)
         }
       }
 
@@ -585,6 +590,7 @@ export function TourPickupLocationsStep({
   const [isLoadingRemote, setIsLoadingRemote] = useState(false)
 
   const lastReverseGeocodeToastAt = useRef(0)
+  const draftDataRef = useRef<any>(((data as any)?.draft_data ?? {}))
 
   const [lastSavedHash, setLastSavedHash] = useState(() => pickupsHash(pickups))
 
@@ -601,16 +607,27 @@ export function TourPickupLocationsStep({
     return DEFAULT_CENTER
   }, [pickups, data.location])
 
-  const syncDraftCounts = useCallback(
-    (nextPickups: DraftPickup[]) => {
+  useEffect(() => {
+    draftDataRef.current = (data as any)?.draft_data ?? {}
+  }, [data])
+
+  const updateDraftData = useCallback(
+    (partialDraftData: Record<string, unknown>) => {
       onUpdate({
         draft_data: {
-          ...((data as any)?.draft_data ?? {}),
-          pickup_locations_count: nextPickups.length,
+          ...draftDataRef.current,
+          ...partialDraftData,
         },
       } as any)
     },
-    [data, onUpdate],
+    [onUpdate],
+  )
+
+  const syncDraftCounts = useCallback(
+    (nextPickups: DraftPickup[]) => {
+      updateDraftData({ pickup_locations_count: nextPickups.length })
+    },
+    [updateDraftData],
   )
 
   useEffect(() => {
@@ -966,13 +983,10 @@ export function TourPickupLocationsStep({
       setPickups(nextPickups)
       setLastSavedHash(pickupsHash(nextPickups))
 
-      onUpdate({
-        draft_data: {
-          ...((data as any)?.draft_data ?? {}),
-          pickup_locations: sourceRows,
-          pickup_locations_count: nextPickups.length,
-        },
-      } as any)
+      updateDraftData({
+        pickup_locations: sourceRows,
+        pickup_locations_count: nextPickups.length,
+      })
 
       toast.success('Pickup locations saved')
     } catch (e: any) {
@@ -981,7 +995,7 @@ export function TourPickupLocationsStep({
     } finally {
       setIsSaving(false)
     }
-  }, [pickups, tourId, ensureTourDraft, data, onUpdate])
+  }, [pickups, active, tourId, ensureTourDraft, updateDraftData])
 
   const handleNextStep = useCallback(async () => {
     if (pickups.length < 1) {
