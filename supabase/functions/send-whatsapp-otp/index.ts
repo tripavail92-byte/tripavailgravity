@@ -126,6 +126,19 @@ async function sendOtpTemplate(params: {
   templateLang: string
 }): Promise<{ ok: boolean; status: number; body: any }>{
   const { accessToken, phoneNumberId, to, otp, templateName, templateLang } = params
+
+  // The 'mian' template has 4 body variables:
+  //   {{1}} = name, {{2}} = context phrase, {{3}} = service label, {{4}} = confirmation number (OTP)
+  // Other single-variable templates use just {{1}} = OTP.
+  const bodyParameters = templateName === 'mian'
+    ? [
+        { type: 'text', text: 'there' },
+        { type: 'text', text: 'just now' },
+        { type: 'text', text: 'Account Verification' },
+        { type: 'text', text: otp },
+      ]
+    : [{ type: 'text', text: otp }]
+
   const res = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
     method: 'POST',
     headers: {
@@ -142,7 +155,7 @@ async function sendOtpTemplate(params: {
         components: [
           {
             type: 'body',
-            parameters: [{ type: 'text', text: otp }],
+            parameters: bodyParameters,
           },
         ],
       },

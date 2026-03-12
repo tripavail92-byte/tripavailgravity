@@ -6,72 +6,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+type RoleKey = 'traveller' | 'hotel_manager' | 'tour_operator'
+
+const ROLE_BUTTONS: Array<{ id: string; title: string; role: RoleKey }> = [
+  { id: 'role_traveller', title: 'Traveller', role: 'traveller' },
+  { id: 'role_hotel_manager', title: 'Hotel Manager', role: 'hotel_manager' },
+  { id: 'role_tour_operator', title: 'Tour Operator', role: 'tour_operator' },
+]
+
+const ROLE_LABEL: Record<RoleKey, string> = {
+  traveller: 'Traveller',
+  hotel_manager: 'Hotel Manager',
+  tour_operator: 'Tour Operator',
+}
+
 const SYSTEM_PROMPT = `
-You are the official WhatsApp AI Assistant for TripAvail.
+You are the official WhatsApp assistant for TripAvail.
 
-About TripAvail:
-TripAvail is a premium travel and hospitality booking platform that connects:
-• Travelers looking for curated hotel stays and tour packages
-• Hotel Managers who want to list and sell hotel packages
-• Tour Operators who want to offer guided travel experiences
+Mission:
+Help people quickly based on their role and journey phase. Be accurate, practical, and concise.
 
-TripAvail offers:
-• Hotel Packages (romantic escapes, weekend getaways, family stays, luxury retreats)
-• Tour Packages (adventure tours, cultural tours, city tours, custom trips)
-• Secure booking system
-• Real-time availability
-• Transparent pricing
-• Professional dashboard for partners (hotels & tour operators)
+TripAvail roles:
+- Traveller
+- Hotel Manager (partner)
+- Tour Operator (partner)
 
-Your Role:
-1. Greet users politely and professionally.
-2. Identify whether the user is:
-   - A Traveler
-   - A Hotel Manager
-   - A Tour Operator
-3. Provide clear and concise answers.
-4. Encourage users to visit the website or app for full experience.
-5. If unsure about an answer, say:
-   "Let me connect you with our support team for detailed assistance."
-6. Never provide false information.
-7. Keep responses short, friendly, and helpful.
+Critical product rule:
+- Every user starts as Traveller.
+- A user can choose ONLY ONE partner role: Hotel Manager OR Tour Operator.
+- That partner choice is permanent.
+- They can switch between Traveller view and their chosen partner view.
 
-If a Traveler asks:
-Explain how to browse packages, book stays, and use the platform.
-Highlight features like:
-• Curated packages
-• Easy booking
-• Secure payments
-• Exclusive deals
+Known product reality (do not misstate):
+- Traveller booking checkout/confirmation flow may be incomplete in parts.
+- Hotel Manager and Tour Operator onboarding flows are implemented.
+- Verification can gate publishing and payouts for partners.
 
-If a Hotel Manager asks:
-Explain how they can:
-• Register as a partner
-• Create hotel packages
-• Manage room types
-• Track bookings
-• View analytics
+Phase-aware guidance:
+1) Discovery phase (new users): explain what TripAvail does, role choices, and where to start.
+2) Setup phase (partners): provide next-step onboarding guidance.
+3) Verification phase: explain statuses (incomplete, pending, under_review, approved, rejected, expired) and what to do next.
+4) Publish/manage phase: explain package/tour creation, calendar, bookings, and settings.
+5) Issue phase: troubleshoot with short steps and request the minimum missing detail.
 
-If a Tour Operator asks:
-Explain how they can:
-• List tour packages
-• Add itineraries
-• Set pricing
-• Manage availability
-• Receive bookings
+Role playbooks:
+- Traveller: discovery, search, package/hotel details, trips, wishlist, settings, support.
+- Hotel Manager: dashboard, 10-step hotel listing flow, 10-step package flow, calendar, verification.
+- Tour Operator: dashboard, tours, 7-step tour creation flow, calendar, bookings, verification.
 
-If someone asks “What is TripAvail?”:
-Respond:
-“TripAvail is a modern travel booking platform where you can discover curated hotel stays and tour packages, book securely, and connect directly with trusted hotels and tour operators.”
+Response policy:
+- Keep replies under 420 characters.
+- Start with a direct answer.
+- Give 1-3 actionable next steps.
+- Ask one short clarifying question when needed.
+- If uncertain, say: "I can connect you with TripAvail support for exact account-level help."
+- Never claim you completed backend actions.
+- Never invent prices, availability, or policy details.
 
-Tone:
-Professional, modern, friendly, premium brand voice.
+Style:
+Professional, warm, confident, non-salesy.
 
-Constraint:
-KEEP RESPONSE UNDER 250 CHARACTERS.
-
-Always end conversations with:
-“Would you like help with booking, partnership registration, or package details?”
+If asked "What is TripAvail?" use this base answer and adapt briefly:
+"TripAvail is a travel platform where travellers discover curated hotel stays and tour packages, while hotel managers and tour operators manage listings, availability, and bookings."
 `
 
 serve(async (req) => {
@@ -104,49 +100,72 @@ serve(async (req) => {
       const payload = await req.json()
       console.log('Received WhatsApp Webhook:', JSON.stringify(payload, null, 2))
 
-      // 1. Log to Supabase
       const supabaseUrl = Deno.env.get('SUPABASE_URL')
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-      
-      if (supabaseUrl && supabaseServiceKey) {
-          const supabase = createClient(supabaseUrl, supabaseServiceKey)
-          const entry = payload.entry?.[0]
-          const changes = entry?.changes?.[0]
-          const value = changes?.value
-          const messages = value?.messages
-          
-          const meta_info = {
-            business_id: entry?.id,
-            sender: messages?.[0]?.from,
-            message_body: messages?.[0]?.text?.body,
-            display_phone_number: value?.metadata?.display_phone_number
-          }
+      const supabase = supabaseUrl && supabaseServiceKey
+        ? createClient(supabaseUrl, supabaseServiceKey)
+        : null
 
-          await supabase.from('whatsapp_logs').insert({ payload, meta_info })
-      }
-
-      // 2. Process Messages with OpenAI
       const entry = payload.entry?.[0]
       const changes = entry?.changes?.[0]
       const value = changes?.value
       const messages = value?.messages
 
+      // 1. Log to Supabase
+      if (supabase) {
+        const firstMessage = messages?.[0]
+        const messageBody =
+          firstMessage?.text?.body
+          ?? firstMessage?.interactive?.button_reply?.title
+          ?? null
+
+        const meta_info = {
+          business_id: entry?.id,
+          sender: firstMessage?.from,
+          message_body: messageBody,
+          display_phone_number: value?.metadata?.display_phone_number,
+        }
+
+        await supabase.from('whatsapp_logs').insert({ payload, meta_info })
+      }
+      
+      // 2. Process Messages with OpenAI
       if (messages?.length > 0) {
-        const message = messages[0];
-        
-        // Only reply to text messages for now
-        if (message.type === 'text') {
-            const userText = message.text.body;
-            const from = message.from; // User's phone number
-            const phoneId = value?.metadata?.phone_number_id; 
+        const message = messages[0]
+        const from = message.from
+        const phoneId = value?.metadata?.phone_number_id
 
-            // Get AI Response
-            const aiResponse = await callOpenAI(userText);
+        if (!from || !phoneId) {
+          console.warn('Missing sender or phone number id in webhook payload.')
+        } else {
+          // Role selected via button tap
+          const roleFromButton = roleFromButtonReplyId(message?.interactive?.button_reply?.id)
+          if (roleFromButton) {
+            if (supabase) await upsertUserRole(supabase, from, roleFromButton)
+            await sendWhatsAppMessage(phoneId, from, roleWelcomeMessage(roleFromButton))
+          } else if (message.type === 'text') {
+            const userText = (message.text?.body || '').trim()
+            const wantsRoleSwitch = /(^|\b)(switch role|change role|start over|restart)(\b|$)/i.test(userText)
 
-            // Send Response back to WhatsApp
-            if (phoneId && from && aiResponse) {
-                await sendWhatsAppMessage(phoneId, from, aiResponse);
+            if (wantsRoleSwitch) {
+              await sendRoleSelectionButtons(phoneId, from)
+            } else {
+              const selectedRole = supabase ? await getUserRole(supabase, from) : null
+
+              // First touch: ask role before AI answers so guidance is role-specific.
+              if (!selectedRole) {
+                await sendRoleSelectionButtons(phoneId, from)
+              } else {
+                const aiResponse = await callOpenAI(userText, selectedRole)
+                if (aiResponse) await sendWhatsAppMessage(phoneId, from, aiResponse)
+              }
             }
+          } else {
+            // Non-text/non-button input: nudge back to role flow.
+            const selectedRole = supabase ? await getUserRole(supabase, from) : null
+            if (!selectedRole) await sendRoleSelectionButtons(phoneId, from)
+            else await sendWhatsAppMessage(phoneId, from, 'Please send a text message and I will help right away.')
+          }
         }
       }
 
@@ -166,7 +185,66 @@ serve(async (req) => {
   return new Response('Method Not Allowed', { status: 405 })
 })
 
-async function callOpenAI(text: string): Promise<string | null> {
+function roleFromButtonReplyId(id?: string): RoleKey | null {
+  if (!id) return null
+  const button = ROLE_BUTTONS.find((b) => b.id === id)
+  return button?.role ?? null
+}
+
+async function getUserRole(supabase: ReturnType<typeof createClient>, waPhone: string): Promise<RoleKey | null> {
+  try {
+    const { data, error } = await supabase
+      .from('whatsapp_user_state')
+      .select('selected_role')
+      .eq('wa_phone', waPhone)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('Failed to load whatsapp_user_state:', error.message)
+      return null
+    }
+
+    const role = data?.selected_role
+    if (role === 'traveller' || role === 'hotel_manager' || role === 'tour_operator') return role
+    return null
+  } catch (err) {
+    console.warn('Error reading whatsapp_user_state:', err)
+    return null
+  }
+}
+
+async function upsertUserRole(supabase: ReturnType<typeof createClient>, waPhone: string, role: RoleKey): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('whatsapp_user_state')
+      .upsert(
+        {
+          wa_phone: waPhone,
+          selected_role: role,
+          selected_role_label: ROLE_LABEL[role],
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'wa_phone' },
+      )
+
+    if (error) console.warn('Failed to upsert whatsapp_user_state:', error.message)
+  } catch (err) {
+    console.warn('Error upserting whatsapp_user_state:', err)
+  }
+}
+
+function roleWelcomeMessage(role: RoleKey): string {
+  switch (role) {
+    case 'traveller':
+      return 'Great, I will guide you as a Traveller. I can help with destinations, package options, and booking guidance. What destination are you planning for?'
+    case 'hotel_manager':
+      return 'Great, I will guide you as a Hotel Manager. I can help with hotel onboarding, package setup, calendar, and verification. Which step do you need right now?'
+    case 'tour_operator':
+      return 'Great, I will guide you as a Tour Operator. I can help with 7-step tour creation, pricing, itinerary, calendar, and verification. What do you want to set up first?'
+  }
+}
+
+async function callOpenAI(text: string, role: RoleKey): Promise<string | null> {
     const apiKey = Deno.env.get('OPENAI_API_KEY');
     if (!apiKey) {
         console.error("Missing OPENAI_API_KEY. Cannot generate response.");
@@ -184,9 +262,11 @@ async function callOpenAI(text: string): Promise<string | null> {
                 model: "gpt-4o-mini",
                 messages: [
                     { role: "system", content: SYSTEM_PROMPT },
+                    { role: "system", content: `User role is fixed for this chat: ${ROLE_LABEL[role]}. Tailor guidance strictly to this role.` },
                     { role: "user", content: text }
                 ],
-                temperature: 0.7,
+              temperature: 0.4,
+              max_tokens: 180,
             }),
         });
 
@@ -203,6 +283,54 @@ async function callOpenAI(text: string): Promise<string | null> {
         console.error('Failed to call OpenAI:', err);
         return null; // Return null so we don't crash or send garbage
     }
+}
+
+async function sendRoleSelectionButtons(phoneId: string, to: string) {
+  const accessToken = Deno.env.get('WHATSAPP_ACCESS_TOKEN')
+  if (!accessToken) {
+    console.error('Missing WHATSAPP_ACCESS_TOKEN. Cannot send role buttons.')
+    return
+  }
+
+  try {
+    const response = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to,
+        type: 'interactive',
+        interactive: {
+          type: 'button',
+          body: {
+            text: 'Welcome to TripAvail. Choose your profile so I can guide you better.',
+          },
+          action: {
+            buttons: ROLE_BUTTONS.map((b) => ({
+              type: 'reply',
+              reply: {
+                id: b.id,
+                title: b.title,
+              },
+            })),
+          },
+        },
+      }),
+    })
+
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      console.error('WhatsApp API Error (role buttons):', data)
+    } else {
+      console.log('Role buttons sent successfully:', data)
+    }
+  } catch (err) {
+    console.error('Failed to send role buttons:', err)
+  }
 }
 
 async function sendWhatsAppMessage(phoneId: string, to: string, text: string) {
