@@ -443,8 +443,10 @@ export default function TourDetailsPage() {
   }) => (
     <GlassCard
       variant="card"
-      className={inDialog ? 'rounded-[2rem] border-none shadow-2xl' : 'rounded-3xl border-none shadow-xl'}
+      className={inDialog ? 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10' : 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10'}
     >
+      <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 -translate-y-8 translate-x-8 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-primary/5 blur-3xl" />
       <GlassHeader>
         <GlassTitle className="type-h2 text-foreground">
           {tour.currency} {formatMoney(effectiveUnitPrice)}
@@ -459,13 +461,13 @@ export default function TourDetailsPage() {
           </span>
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/40 p-4">
+        <div className="space-y-3 rounded-3xl border border-primary/10 bg-primary/5 p-4 backdrop-blur-sm">
           {schedule ? (
             <>
               <div className="flex items-start gap-3">
-                <Calendar className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                <Calendar className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary/80" />
                 <div className="min-w-0 flex-1">
-                  <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  <p className="mb-1 text-xs font-bold uppercase tracking-widest text-primary/75">
                     Departure
                   </p>
                   <p className="text-sm font-bold text-foreground">
@@ -476,9 +478,9 @@ export default function TourDetailsPage() {
                   </p>
                 </div>
               </div>
-              <div className="h-px bg-border/60" />
+              <div className="h-px bg-primary/10" />
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary/75">
                   <Users className="h-4 w-4" />
                   Seats Available
                 </span>
@@ -503,14 +505,14 @@ export default function TourDetailsPage() {
           )}
         </div>
 
-        <div className="space-y-3 rounded-2xl border border-border/50 bg-background/70 p-4">
-          <p className="type-overline text-muted-foreground">Number of Seats</p>
+        <div className="space-y-3 rounded-3xl border border-primary/10 bg-background/80 p-4 backdrop-blur-sm">
+          <p className="type-overline text-primary/75">Number of Seats</p>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
               disabled={selectedSeats <= 1}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Minus className="h-4 w-4" />
             </button>
@@ -524,20 +526,27 @@ export default function TourDetailsPage() {
               type="button"
               onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
               disabled={selectedSeats >= maxSelectableSeats}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Plus className="h-4 w-4" />
             </button>
           </div>
-          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/20 p-3">
-            {activeGroupTier ? (
-              <p className="type-overline text-primary">
-                {activeGroupTier.name} applied for {selectedSeats}{' '}
-                {selectedSeats === 1 ? 'seat' : 'seats'}
-              </p>
-            ) : (
-              <p className="type-overline text-muted-foreground">Standard rate</p>
-            )}
+          <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {activeGroupTier ? (
+                <p className="type-overline text-primary">
+                  {activeGroupTier.name} applied for {selectedSeats}{' '}
+                  {selectedSeats === 1 ? 'seat' : 'seats'}
+                </p>
+              ) : (
+                <p className="type-overline text-primary/75">Standard rate</p>
+              )}
+              {currentTotalSavings > 0 ? (
+                <GlassBadge variant="light" size="sm" className="border-primary/15 bg-primary/10 text-primary">
+                  Traveller rate live
+                </GlassBadge>
+              ) : null}
+            </div>
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-muted-foreground">
                 {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
@@ -565,7 +574,7 @@ export default function TourDetailsPage() {
               </div>
             ) : null}
             {nextGroupTier && seatsToNextTier > 0 ? (
-              <div className="rounded-lg border border-primary/25 bg-primary/10 p-2.5">
+              <div className="rounded-2xl border border-primary/20 bg-primary/8 p-2.5">
                 <p className="type-overline text-primary">
                   Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
                 </p>
