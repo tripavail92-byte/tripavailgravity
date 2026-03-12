@@ -28,10 +28,6 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui/dialog'
 import {
   GlassBadge,
@@ -204,7 +200,7 @@ export default function TourDetailsPage() {
     setIsBookingDialogOpen(true)
   }
 
-  const handleConfirmPayment = () => {
+  const handleBookFromDialog = () => {
     setIsBookingDialogOpen(false)
     handleBookNow()
   }
@@ -431,6 +427,167 @@ export default function TourDetailsPage() {
             )}
           </div>
         </div>
+      </GlassContent>
+    </GlassCard>
+  )
+
+  const renderBookingCard = ({
+    onPayNow,
+    inDialog = false,
+  }: {
+    onPayNow: () => void
+    inDialog?: boolean
+  }) => (
+    <GlassCard
+      variant="card"
+      className={inDialog ? 'rounded-[2rem] border-none shadow-2xl' : 'rounded-3xl border-none shadow-xl'}
+    >
+      <GlassHeader>
+        <GlassTitle className="type-h2 text-foreground">
+          {tour.currency} {formatMoney(effectiveUnitPrice)}
+          <span className="type-body-sm text-muted-foreground"> / person</span>
+        </GlassTitle>
+      </GlassHeader>
+      <GlassContent className="space-y-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Star size={16} className="text-warning fill-current" />
+          <span className="font-bold text-foreground">
+            {tour.rating} ({tour.review_count})
+          </span>
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/40 p-4">
+          {schedule ? (
+            <>
+              <div className="flex items-start gap-3">
+                <Calendar className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Departure
+                  </p>
+                  <p className="text-sm font-bold text-foreground">
+                    {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-muted-foreground">
+                    Returns: {formatDate(schedule.end_time)}
+                  </p>
+                </div>
+              </div>
+              <div className="h-px bg-border/60" />
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  Seats Available
+                </span>
+                <span className="text-lg font-black text-foreground">
+                  {availableSlots !== null ? availableSlots : '—'}
+                </span>
+              </div>
+              {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
+                <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 text-warning" />
+                  <p className="text-xs font-medium text-warning">
+                    Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3">
+              <AlertCircle className="h-5 w-5 text-warning" />
+              <p className="text-sm font-medium text-warning">No departure dates available</p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-border/50 bg-background/70 p-4">
+          <p className="type-overline text-muted-foreground">Number of Seats</p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
+              disabled={selectedSeats <= 1}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <div className="flex-1 text-center">
+              <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
+              <p className="type-caption text-muted-foreground">
+                {selectedSeats === 1 ? 'Seat' : 'Seats'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
+              disabled={selectedSeats >= maxSelectableSeats}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-2 rounded-xl border border-border/50 bg-muted/20 p-3">
+            {activeGroupTier ? (
+              <p className="type-overline text-primary">
+                {activeGroupTier.name} applied for {selectedSeats}{' '}
+                {selectedSeats === 1 ? 'seat' : 'seats'}
+              </p>
+            ) : (
+              <p className="type-overline text-muted-foreground">Standard rate</p>
+            )}
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-muted-foreground">
+                {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
+              </span>
+              <span
+                className={`font-black tabular-nums text-foreground transition-all duration-200 ${
+                  isTotalPulsing ? 'scale-[1.03] text-primary' : ''
+                }`}
+              >
+                {tour.currency} {formatMoney(animatedLiveTotalPrice)}
+              </span>
+            </div>
+            {currentTotalSavings > 0 ? (
+              <div className="rounded-lg border border-success/30 bg-success/10 p-2.5">
+                <p
+                  className={`type-overline tabular-nums text-success transition-all duration-200 ${
+                    isSavingsPulsing ? 'scale-[1.02]' : ''
+                  }`}
+                >
+                  Discount Applied · You save {tour.currency} {formatMoney(animatedCurrentTotalSavings)}
+                </p>
+                <p className="mt-1 type-caption tabular-nums text-success/90">
+                  {tour.currency} {formatMoney(animatedCurrentSavingsPerPerson)} saved per person vs standard rate
+                </p>
+              </div>
+            ) : null}
+            {nextGroupTier && seatsToNextTier > 0 ? (
+              <div className="rounded-lg border border-primary/25 bg-primary/10 p-2.5">
+                <p className="type-overline text-primary">
+                  Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
+                </p>
+                <p className="mt-1 type-caption text-muted-foreground">
+                  Save up to {tour.currency} {formatMoney(nextTierTotalSavingsAtUnlock)} at {nextGroupTier.minPeople} people
+                  {nextTierExtraSavingsPerPerson > 0
+                    ? ` (${tour.currency} ${formatMoney(nextTierExtraSavingsPerPerson)} more per person)`
+                    : ''}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            onClick={onPayNow}
+            disabled={!canBookNow}
+            className="h-16 w-full rounded-3xl bg-primary text-primary-foreground shadow-xl shadow-primary/25 transition-all duration-300 hover:bg-primary/90"
+          >
+            {!schedule ? 'No Dates Available' : schedule && availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
+          </Button>
+        </motion.div>
+
+        <p className="text-center type-overline text-muted-foreground/70">{cancellationMeta.title}</p>
       </GlassContent>
     </GlassCard>
   )
@@ -1015,165 +1172,7 @@ export default function TourDetailsPage() {
           {/* Booking Card */}
           <div className="lg:col-span-1">
             <div className="sticky top-20 z-30 space-y-6">
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-                <GlassHeader>
-                  <GlassTitle className="type-h2 text-foreground">
-                    {tour.currency} {formatMoney(effectiveUnitPrice)}
-                    <span className="type-body-sm text-muted-foreground"> / person</span>
-                  </GlassTitle>
-                </GlassHeader>
-                <GlassContent className="space-y-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Star size={16} className="text-warning fill-current" />
-                    <span className="font-bold text-foreground">
-                      {tour.rating} ({tour.review_count})
-                    </span>
-                  </div>
-
-                  <div className="p-4 bg-muted/40 rounded-2xl border border-border/50 space-y-3">
-                    {schedule ? (
-                      <>
-                        <div className="flex items-start gap-3">
-                          <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                              Departure
-                            </p>
-                            <p className="text-foreground font-bold text-sm">
-                              {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
-                            </p>
-                            <p className="text-xs text-muted-foreground font-medium mt-1">
-                              Returns: {formatDate(schedule.end_time)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="h-px bg-border/60" />
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2 text-muted-foreground font-bold uppercase text-[10px] tracking-wider">
-                            <Users className="w-4 h-4" />
-                            Seats Available
-                          </span>
-                          <span className="text-foreground font-black text-lg">
-                            {availableSlots !== null ? availableSlots : '—'}
-                          </span>
-                        </div>
-                        {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
-                          <div className="flex items-center gap-2 p-2 bg-warning/10 rounded-lg border border-warning/20">
-                            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0" />
-                            <p className="text-xs text-warning font-medium">
-                              Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
-                        <AlertCircle className="w-5 h-5 text-warning" />
-                        <p className="text-sm text-warning font-medium">
-                          No departure dates available
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4 bg-background/70 rounded-2xl border border-border/50 space-y-3">
-                    <p className="type-overline text-muted-foreground">
-                      Number of Seats
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
-                        disabled={selectedSeats <= 1}
-                        className="w-10 h-10 rounded-xl border border-border/60 bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <div className="flex-1 text-center">
-                        <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
-                        <p className="type-caption text-muted-foreground">
-                          {selectedSeats === 1 ? 'Seat' : 'Seats'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
-                        disabled={selectedSeats >= maxSelectableSeats}
-                        className="w-10 h-10 rounded-xl border border-border/60 bg-background flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="rounded-xl border border-border/50 bg-muted/20 p-3 space-y-2">
-                      {activeGroupTier ? (
-                        <p className="type-overline text-primary">
-                          {activeGroupTier.name} applied for {selectedSeats}{' '}
-                          {selectedSeats === 1 ? 'seat' : 'seats'}
-                        </p>
-                      ) : (
-                        <p className="type-overline text-muted-foreground">
-                          Standard rate
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground font-medium">
-                          {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
-                        </span>
-                        <span
-                          className={`text-foreground font-black tabular-nums transition-all duration-200 ${
-                            isTotalPulsing ? 'scale-[1.03] text-primary' : ''
-                          }`}
-                        >
-                          {tour.currency} {formatMoney(animatedLiveTotalPrice)}
-                        </span>
-                      </div>
-                      {currentTotalSavings > 0 ? (
-                        <div className="rounded-lg border border-success/30 bg-success/10 p-2.5">
-                          <p
-                            className={`type-overline tabular-nums text-success transition-all duration-200 ${
-                              isSavingsPulsing ? 'scale-[1.02]' : ''
-                            }`}
-                          >
-                            Discount Applied · You save {tour.currency} {formatMoney(animatedCurrentTotalSavings)}
-                          </p>
-                          <p className="type-caption text-success/90 mt-1 tabular-nums">
-                            {tour.currency} {formatMoney(animatedCurrentSavingsPerPerson)} saved per person vs standard rate
-                          </p>
-                        </div>
-                      ) : null}
-                      {nextGroupTier && seatsToNextTier > 0 ? (
-                        <div className="rounded-lg border border-primary/25 bg-primary/10 p-2.5">
-                          <p className="type-overline text-primary">
-                            Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
-                          </p>
-                          <p className="type-caption text-muted-foreground mt-1">
-                            Save up to {tour.currency} {formatMoney(nextTierTotalSavingsAtUnlock)} at {nextGroupTier.minPeople} people
-                            {nextTierExtraSavingsPerPerson > 0
-                              ? ` (${tour.currency} ${formatMoney(nextTierExtraSavingsPerPerson)} more per person)`
-                              : ''}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button
-                      onClick={handleOpenBookingDialog}
-                      disabled={!canBookNow}
-                      className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
-                    >
-                      {!schedule
-                        ? 'No Dates Available'
-                        : schedule && availableSlots === 0
-                          ? 'Sold Out'
-                          : 'Pay Now'}
-                    </Button>
-                  </motion.div>
-
-                  <p className="text-center type-overline text-muted-foreground/70">
-                    {cancellationMeta.title}
-                  </p>
-                </GlassContent>
-              </GlassCard>
+              {renderBookingCard({ onPayNow: handleBookNow })}
             </div>
           </div>
         </div>
@@ -1211,88 +1210,8 @@ export default function TourDetailsPage() {
       </div>
 
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-xl rounded-3xl border-border/60 bg-background p-0 shadow-2xl">
-          <div className="overflow-hidden rounded-3xl">
-            <DialogHeader className="border-b border-border/60 bg-muted/20 px-6 py-5">
-              <DialogTitle className="text-xl font-bold text-foreground">Confirm payment</DialogTitle>
-              <DialogDescription>
-                Review seats, departure, and total before continuing to checkout.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 px-6 py-6">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Departure</p>
-                <p className="mt-2 text-base font-bold text-foreground">
-                  {schedule ? `${formatDate(schedule.start_time)} at ${formatTime(schedule.start_time)}` : 'No departure dates available'}
-                </p>
-                {schedule ? (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Returns {formatDate(schedule.end_time)}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-background p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Seats</p>
-                    <p className="mt-1 text-sm text-foreground">
-                      {availableSlots !== null ? `${availableSlots} available right now` : 'Availability updating'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
-                      disabled={selectedSeats <= 1}
-                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <div className="min-w-[4rem] text-center">
-                      <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
-                      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{selectedSeats === 1 ? 'Seat' : 'Seats'}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
-                      disabled={selectedSeats >= maxSelectableSeats}
-                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount today</p>
-                  <p className="mt-2 text-xl font-black text-foreground">{tour.currency} {formatMoney(animatedLiveTotalPrice)}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{tour.currency} {formatMoney(effectiveUnitPrice)} x {selectedSeats}</p>
-                </div>
-                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Booking status</p>
-                  <p className="mt-2 text-xl font-black text-foreground">{canBookNow ? 'Ready to pay' : 'Unavailable'}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{cancellationMeta.title}</p>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="border-t border-border/60 px-6 py-5 sm:justify-between">
-              <Button variant="outline" className="rounded-2xl" onClick={() => setIsBookingDialogOpen(false)}>
-                Keep browsing
-              </Button>
-              <Button
-                onClick={handleConfirmPayment}
-                disabled={!canBookNow}
-                className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                Confirm payment
-              </Button>
-            </DialogFooter>
-          </div>
+        <DialogContent className="max-w-xl border-none bg-transparent p-0 shadow-none sm:rounded-[2rem]">
+          {renderBookingCard({ onPayNow: handleBookFromDialog, inDialog: true })}
         </DialogContent>
       </Dialog>
     </div>
