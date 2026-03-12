@@ -26,6 +26,14 @@ import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 
 import { Button } from '@/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   GlassBadge,
   GlassButton,
   GlassCard,
@@ -143,6 +151,7 @@ export default function TourDetailsPage() {
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
   const [selectedSeats, setSelectedSeats] = useState(1)
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -186,6 +195,18 @@ export default function TourDetailsPage() {
     if (!tour?.id) return
     const guests = Math.max(1, selectedSeats)
     navigate(`/checkout/tour/${tour.id || id}?guests=${guests}&autostart=1`)
+  }
+
+  const handleOpenBookingDialog = () => {
+    if (!tour?.id) return
+    if (schedule && availableSlots === 0) return
+    if (!schedule) return
+    setIsBookingDialogOpen(true)
+  }
+
+  const handleConfirmPayment = () => {
+    setIsBookingDialogOpen(false)
+    handleBookNow()
   }
 
   const maxSelectableSeats = Math.max(1, availableSlots ?? schedule?.capacity ?? 1)
@@ -311,6 +332,7 @@ export default function TourDetailsPage() {
   const animatedCurrentSavingsPerPerson = useCountUp(currentSavingsPerPerson)
   const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
   const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
+  const canBookNow = Boolean(schedule) && (availableSlots === null || availableSlots > 0)
 
   if (loading) {
     return (
@@ -346,9 +368,75 @@ export default function TourDetailsPage() {
     tour.images?.[4] || 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800',
   ]
   const pickupLocations = Array.isArray(tour.pickup_locations) ? tour.pickup_locations : []
+  const includedExcludedSection = (
+    <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+      <GlassHeader>
+        <GlassTitle className="text-2xl font-bold">Included & Excluded</GlassTitle>
+      </GlassHeader>
+      <GlassContent>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="space-y-4">
+            <h4 className="text-base font-semibold text-foreground">Included</h4>
+            {includedFeatures.length > 0 ? includedFeatures.map((item, i) => {
+              const Icon = getTourIconComponent(item.icon_key)
+              return (
+                <motion.div
+                  key={`${item.label}-${i}`}
+                  whileHover={{ x: 4 }}
+                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-success/20 hover:bg-success/5"
+                >
+                  <Icon className="h-5 w-5 text-success" />
+                  <span>{item.label}</span>
+                </motion.div>
+              )
+            }) : includedItems.length > 0 ? includedItems.map((inc, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ x: 4 }}
+                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-success/20 hover:bg-success/5"
+              >
+                <Check className="h-5 w-5 text-success" />
+                <span>{inc}</span>
+              </motion.div>
+            )) : (
+              <p className="text-sm text-muted-foreground">Not specified</p>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-base font-semibold text-foreground">Excluded</h4>
+            {excludedFeatures.length > 0 ? excludedFeatures.map((item, i) => {
+              const Icon = getTourIconComponent(item.icon_key)
+              return (
+                <motion.div
+                  key={`${item.label}-${i}`}
+                  whileHover={{ x: 4 }}
+                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-destructive/20 hover:bg-destructive/5"
+                >
+                  <Icon className="h-5 w-5 text-destructive" />
+                  <span>{item.label}</span>
+                </motion.div>
+              )
+            }) : excludedItems.length > 0 ? excludedItems.map((exc, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ x: 4 }}
+                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-destructive/20 hover:bg-destructive/5"
+              >
+                <X className="h-5 w-5 text-destructive" />
+                <span>{exc}</span>
+              </motion.div>
+            )) : (
+              <p className="text-sm text-muted-foreground">Not specified</p>
+            )}
+          </div>
+        </div>
+      </GlassContent>
+    </GlassCard>
+  )
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-36">
       {/* Header / Nav (match PackageDetailsPage) */}
       <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -514,6 +602,8 @@ export default function TourDetailsPage() {
                 <p className="text-muted-foreground">Verified Operator • Small groups</p>
               </GlassContent>
             </GlassCard>
+
+            {includedExcludedSection}
 
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
@@ -855,47 +945,6 @@ export default function TourDetailsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                      <h4 className="text-base font-semibold text-foreground">Included</h4>
-                      {includedFeatures.length > 0 ? includedFeatures.map((item, i) => {
-                        const Icon = getTourIconComponent(item.icon_key)
-                        return (
-                          <div key={`${item.label}-${i}`} className="flex items-center gap-3 text-muted-foreground">
-                            <Icon className="w-5 h-5 text-success" />
-                            <span>{item.label}</span>
-                          </div>
-                        )
-                      }) : includedItems.length > 0 ? includedItems.map((inc, i) => (
-                        <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                          <Check className="w-5 h-5 text-success" />
-                          <span>{inc}</span>
-                        </div>
-                      )) : (
-                        <p className="text-sm text-muted-foreground">Not specified</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-3">
-                      <h4 className="text-base font-semibold text-foreground">Excluded</h4>
-                      {excludedFeatures.length > 0 ? excludedFeatures.map((item, i) => {
-                        const Icon = getTourIconComponent(item.icon_key)
-                        return (
-                          <div key={`${item.label}-${i}`} className="flex items-center gap-3 text-muted-foreground">
-                            <Icon className="w-5 h-5 text-destructive" />
-                            <span>{item.label}</span>
-                          </div>
-                        )
-                      }) : excludedItems.length > 0 ? excludedItems.map((exc, i) => (
-                        <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                          <X className="w-5 h-5 text-destructive" />
-                          <span>{exc}</span>
-                        </div>
-                      )) : (
-                        <p className="text-sm text-muted-foreground">Not specified</p>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </GlassContent>
             </GlassCard>
@@ -1108,8 +1157,8 @@ export default function TourDetailsPage() {
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                     <Button
-                      onClick={handleBookNow}
-                      disabled={!schedule || (availableSlots !== null && availableSlots <= 0)}
+                      onClick={handleOpenBookingDialog}
+                      disabled={!canBookNow}
                       className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
                     >
                       {!schedule
@@ -1129,6 +1178,123 @@ export default function TourDetailsPage() {
           </div>
         </div>
       </main>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            type="button"
+            onClick={handleOpenBookingDialog}
+            disabled={!canBookNow}
+            className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ready to book</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
+                {schedule ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${tour.currency} ${formatMoney(animatedLiveTotalPrice)}` : 'No departure dates available'}
+              </p>
+            </div>
+            {schedule ? (
+              <p className="text-xs font-medium text-muted-foreground">
+                {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+              </p>
+            ) : null}
+          </button>
+
+          <Button
+            onClick={handleOpenBookingDialog}
+            disabled={!canBookNow}
+            className="h-14 min-w-[220px] rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
+          >
+            {!schedule ? 'No Dates Available' : availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+        <DialogContent className="max-w-xl rounded-3xl border-border/60 bg-background p-0 shadow-2xl">
+          <div className="overflow-hidden rounded-3xl">
+            <DialogHeader className="border-b border-border/60 bg-muted/20 px-6 py-5">
+              <DialogTitle className="text-xl font-bold text-foreground">Confirm payment</DialogTitle>
+              <DialogDescription>
+                Review seats, departure, and total before continuing to checkout.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 px-6 py-6">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Departure</p>
+                <p className="mt-2 text-base font-bold text-foreground">
+                  {schedule ? `${formatDate(schedule.start_time)} at ${formatTime(schedule.start_time)}` : 'No departure dates available'}
+                </p>
+                {schedule ? (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Returns {formatDate(schedule.end_time)}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-border/60 bg-background p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Seats</p>
+                    <p className="mt-1 text-sm text-foreground">
+                      {availableSlots !== null ? `${availableSlots} available right now` : 'Availability updating'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
+                      disabled={selectedSeats <= 1}
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <div className="min-w-[4rem] text-center">
+                      <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
+                      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{selectedSeats === 1 ? 'Seat' : 'Seats'}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
+                      disabled={selectedSeats >= maxSelectableSeats}
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-background disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount today</p>
+                  <p className="mt-2 text-xl font-black text-foreground">{tour.currency} {formatMoney(animatedLiveTotalPrice)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{tour.currency} {formatMoney(effectiveUnitPrice)} x {selectedSeats}</p>
+                </div>
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Booking status</p>
+                  <p className="mt-2 text-xl font-black text-foreground">{canBookNow ? 'Ready to pay' : 'Unavailable'}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{cancellationMeta.title}</p>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-border/60 px-6 py-5 sm:justify-between">
+              <Button variant="outline" className="rounded-2xl" onClick={() => setIsBookingDialogOpen(false)}>
+                Keep browsing
+              </Button>
+              <Button
+                onClick={handleConfirmPayment}
+                disabled={!canBookNow}
+                className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Confirm payment
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
