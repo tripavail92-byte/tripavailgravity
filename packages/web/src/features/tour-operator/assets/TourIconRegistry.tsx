@@ -1,24 +1,31 @@
 import {
+  BadgeCheck,
   Bed,
+  Briefcase,
   Bus,
   Camera,
   Circle,
+  ClipboardList,
   Check,
   Clock3,
   Coins,
   FileText,
   HeartPulse,
+  Luggage,
   Map as MapIcon,
+  Mountain,
   Percent,
   Plane,
   Receipt,
   Shield,
+  ShieldAlert,
   ShieldCheck,
   ShoppingBag,
   Ticket,
   UserCheck,
   Utensils,
   Wallet,
+  Waves,
   Wine,
   XCircle,
   type LucideIcon,
@@ -46,6 +53,17 @@ export type TourIconKey =
   | 'moderate_policy'
   | 'partial_refund'
   | 'non_refundable'
+  | 'requirement_fitness'
+  | 'requirement_altitude'
+  | 'requirement_health'
+  | 'requirement_restriction'
+  | 'requirement_accessibility'
+  | 'requirement_boots'
+  | 'requirement_swim'
+  | 'requirement_warm'
+  | 'requirement_id'
+  | 'requirement_age'
+  | 'requirement_luggage'
   | 'generic'
 
 export interface TourFeatureItem {
@@ -75,6 +93,17 @@ export const TOUR_ICON_REGISTRY: Record<TourIconKey, LucideIcon> = {
   moderate_policy: Clock3,
   partial_refund: Percent,
   non_refundable: XCircle,
+  requirement_fitness: Mountain,
+  requirement_altitude: Mountain,
+  requirement_health: HeartPulse,
+  requirement_restriction: ShieldAlert,
+  requirement_accessibility: Circle,
+  requirement_boots: MapIcon,
+  requirement_swim: Waves,
+  requirement_warm: Briefcase,
+  requirement_id: ClipboardList,
+  requirement_age: BadgeCheck,
+  requirement_luggage: Luggage,
   generic: Circle,
 }
 

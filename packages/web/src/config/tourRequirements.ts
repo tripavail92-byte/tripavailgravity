@@ -1,10 +1,11 @@
 import { RequirementCategory, RequirementOption, TOUR_REQUIREMENTS } from '@/pages/tour-operator/tours/create/components/RequirementsData'
+import type { TourIconKey } from '@/features/tour-operator/assets/TourIconRegistry'
 
 export type TourRequirementInfo = {
   id: string
   label: string
   category: RequirementCategory
-  icon: RequirementOption['icon']
+  icon_key: TourIconKey
 }
 
 const REQUIREMENT_BY_ID: Record<string, TourRequirementInfo> = Object.fromEntries(
@@ -15,7 +16,7 @@ const REQUIREMENT_BY_ID: Record<string, TourRequirementInfo> = Object.fromEntrie
         id: option.id,
         label: option.label,
         category,
-        icon: option.icon,
+        icon_key: option.icon_key,
       } satisfies TourRequirementInfo,
     ]),
   ),

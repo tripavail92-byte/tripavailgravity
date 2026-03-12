@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { getTourIconComponent } from '@/features/tour-operator/assets/TourIconRegistry'
 
 import { RequirementCategory, TOUR_REQUIREMENTS } from './RequirementsData'
 
@@ -307,6 +308,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {options.map((req) => {
                         const isSelected = selectedRequirements.includes(req.id)
+                        const RequirementIcon = getTourIconComponent(req.icon_key)
                         return (
                           <motion.button
                             key={req.id}
@@ -329,7 +331,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                                     : 'bg-slate-50 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary'
                                 }`}
                               >
-                                <req.icon />
+                                <RequirementIcon />
                               </div>
                               <span
                                 className={`font-bold text-[13px] leading-snug ${

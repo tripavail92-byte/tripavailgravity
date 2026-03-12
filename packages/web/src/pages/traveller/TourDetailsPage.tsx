@@ -547,14 +547,15 @@ export default function TourDetailsPage() {
                     </div>
 
                     {tour.languages?.length ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3">
                         {tour.languages.map((lang) => (
-                          <span
+                          <motion.span
                             key={lang}
-                            className="inline-flex items-center rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-bold text-foreground"
+                            whileHover={{ y: -2, scale: 1.03 }}
+                            className="inline-flex items-center rounded-xl border border-border/60 bg-background px-3 py-2 text-sm font-bold text-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-lg"
                           >
                             {lang}
-                          </span>
+                          </motion.span>
                         ))}
                       </div>
                     ) : (
@@ -573,23 +574,29 @@ export default function TourDetailsPage() {
                     {tour.requirements?.length ? (
                       <div className="space-y-5">
                         {groupTourRequirementsByCategory(tour.requirements).map((group) => (
-                          <div key={group.category} className="space-y-2">
+                          <div
+                            key={group.category}
+                            className="rounded-2xl border border-border/60 bg-muted/20 p-4"
+                          >
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                               {group.category}
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                              {group.items.map((item) => (
-                                <motion.span
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              {group.items.map((item) => {
+                                const RequirementIcon = getTourIconComponent(item.icon_key)
+
+                                return (
+                                <motion.div
                                   key={item.id}
-                                  whileHover={{ y: -1, scale: 1.01 }}
-                                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2 text-sm font-semibold text-foreground"
+                                  whileHover={{ y: -3, scale: 1.03 }}
+                                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background px-3.5 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-lg"
                                 >
-                                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-background/80 text-primary shadow-sm">
-                                    <item.icon />
+                                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                    <RequirementIcon className="h-4 w-4" />
                                   </span>
-                                  {item.label}
-                                </motion.span>
-                              ))}
+                                  <span>{item.label}</span>
+                                </motion.div>
+                              )})}
                             </div>
                           </div>
                         ))}
@@ -615,9 +622,11 @@ export default function TourDetailsPage() {
                       const pickupTime = formatPickupTime(pickup.pickup_time)
 
                       return (
-                        <div
+                        <motion.div
                           key={pickup.id}
-                          className="overflow-hidden rounded-3xl border border-border/60 bg-background/70 shadow-sm"
+                          whileHover={{ y: -4, scale: 1.01 }}
+                          transition={{ duration: 0.22 }}
+                          className="group overflow-hidden rounded-3xl border border-border/60 bg-background shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10"
                         >
                           <div className="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
                             <div className="relative min-h-[180px] bg-muted/40">
@@ -625,11 +634,11 @@ export default function TourDetailsPage() {
                                 <img
                                   src={previewUrl}
                                   alt={pickup.title}
-                                  className="h-full w-full object-cover"
+                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                   loading="lazy"
                                 />
                               ) : (
-                                <div className="flex h-full min-h-[180px] items-center justify-center bg-gradient-to-br from-muted to-muted/60 text-muted-foreground">
+                                <div className="flex h-full min-h-[180px] items-center justify-center bg-muted/40 text-muted-foreground">
                                   <MapPin className="h-8 w-8" />
                                 </div>
                               )}
@@ -651,7 +660,7 @@ export default function TourDetailsPage() {
                                     <Button
                                       type="button"
                                       variant="outline"
-                                      className="gap-2 rounded-2xl"
+                                      className="gap-2 rounded-2xl border-border/60 bg-background hover:border-primary/20 hover:bg-muted/30"
                                       onClick={() => window.open(directionsUrl, '_blank', 'noopener,noreferrer')}
                                     >
                                       <Navigation className="h-4 w-4" />
@@ -662,7 +671,7 @@ export default function TourDetailsPage() {
                               </div>
 
                               <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
                                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Pickup time
                                   </p>
@@ -670,7 +679,7 @@ export default function TourDetailsPage() {
                                     {pickupTime || 'Not specified'}
                                   </p>
                                 </div>
-                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
                                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                                     City
                                   </p>
@@ -678,7 +687,7 @@ export default function TourDetailsPage() {
                                     {pickup.city || tour.location.city || 'Not specified'}
                                   </p>
                                 </div>
-                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
                                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Coordinates
                                   </p>
@@ -689,7 +698,7 @@ export default function TourDetailsPage() {
                               </div>
 
                               {pickup.notes?.trim() ? (
-                                <div className="rounded-2xl border border-border/50 bg-muted/20 p-4">
+                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Pickup notes
                                   </p>
@@ -698,7 +707,7 @@ export default function TourDetailsPage() {
                               ) : null}
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       )
                     })}
                   </div>
