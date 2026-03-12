@@ -317,6 +317,9 @@ export default function TourDetailsPage() {
     .filter((tier: any) => tier.minPeople > selectedSeats)
     .sort((a: any, b: any) => a.minPeople - b.minPeople)[0]
   const seatsToNextTier = nextGroupTier ? Math.max(0, nextGroupTier.minPeople - selectedSeats) : 0
+  const seatsCountedTowardNextTier = nextGroupTier
+    ? Math.min(selectedSeats, nextGroupTier.minPeople)
+    : selectedSeats
   const nextTierExtraSavingsPerPerson = nextGroupTier
     ? Math.max(0, effectiveUnitPrice - nextGroupTier.pricePerPerson)
     : 0
