@@ -302,6 +302,32 @@ export function TourOperatorDashboard() {
             </motion.div>
           )}
 
+          {verificationStatus === 'rejected' && !isKycProcessing && !isKycPendingAdminReview && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.18 }}
+              className="glass-card-dark border border-red-500/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">Verification rejected</p>
+                  <p className="text-xs text-white/50 font-medium">Your documents could not be verified. Please re-upload clearer photos of your CNIC front and back.</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-red-500 text-white hover:bg-red-400 uppercase tracking-wide"
+                onClick={() => navigate('/operator/verification')}
+              >
+                Re-upload <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          )}
+
           {setupCompleted === false && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
               className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"

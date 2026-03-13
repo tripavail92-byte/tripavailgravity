@@ -687,11 +687,33 @@ export default function AdminKYCPage() {
         .update(patch)
         .eq('id', row.id) as any)
       if (error) throw error
+
+      // ── Notify the operator immediately via in-app notification (triggers email webhook) ──
+      if (nextStatus === 'rejected') {
+        await (supabase.from('notifications' as any).insert({
+          user_id: row.user_id,
+          type: 'verification_rejected',
+          title: 'KYC Verification Rejected',
+          body: notes?.trim()
+            ? `Your identity documents were reviewed and could not be approved. Reason: ${notes.trim()}. Please re-upload clearer photos of your CNIC.`
+            : 'Your identity documents were reviewed and could not be approved. Please re-upload clearer photos of your CNIC.',
+          read: false,
+        }) as any)
+      } else if (nextStatus === 'approved') {
+        await (supabase.from('notifications' as any).insert({
+          user_id: row.user_id,
+          type: 'verification_approved',
+          title: 'KYC Verification Approved',
+          body: 'Congratulations! Your identity has been verified. You can now publish tour packages.',
+          read: false,
+        }) as any)
+      }
+
       // DB trigger handles: audit log + profile promotion + user_roles update
       toast.success(
         nextStatus === 'approved'
-          ? '✅ KYC approved — operator profile updated'
-          : '❌ KYC rejected — reason logged',
+          ? '✅ KYC approved — operator notified'
+          : '❌ KYC rejected — operator notified',
       )
       await load()
     } catch (err: any) {
