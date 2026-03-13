@@ -1,5 +1,5 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Calendar, Check, ChevronDown, Clock3, Info, Sparkles, X } from 'lucide-react'
+import { Calendar, Check, ChevronDown, Clock3, Info, Plus, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -134,10 +134,18 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     })
   }, [hasPrimarySchedule, primarySchedule?.date, primarySchedule?.time])
 
+  // Fix 1-day trip: initialize duration_days to 1 on mount if not already set
+  useEffect(() => {
+    if (data.duration_days == null) {
+      onUpdate({ duration_days: 1, duration: '1 day' })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const isValid =
     !!data.title &&
     !!(data.tour_type || data.custom_category_label) &&
-    !!data.duration_days &&
+    (data.duration_days != null && data.duration_days >= 1) &&
     !!data.location?.city &&
     !!data.max_participants &&
     data.max_participants > 0 &&
@@ -346,22 +354,82 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-                        Location (City) *
-                      </Label>
+                      <div>
+                        <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                          Tour Destination *
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          City or region where travellers will experience this tour
+                        </p>
+                      </div>
+
+                      {/* Primary city */}
                       <CityAutocomplete
                         value={data.location?.city || ''}
-                        onCitySelect={(city) =>
+                        onCitySelect={(city) => {
+                          const existing = Array.isArray(data.destination_cities)
+                            ? data.destination_cities.slice(1)
+                            : []
                           onUpdate({
                             location: {
                               ...data.location,
                               city,
                               country: data.location?.country || '',
                             },
+                            destination_cities: [city, ...existing].filter(Boolean),
                           })
-                        }
-                        placeholder="Search for a city..."
+                        }}
+                        placeholder="Primary city or region…"
                       />
+
+                      {/* Additional cities */}
+                      {Array.isArray(data.destination_cities) &&
+                        data.destination_cities.slice(1).map((extraCity, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <CityAutocomplete
+                                value={extraCity}
+                                onCitySelect={(city) => {
+                                  const cities = Array.isArray(data.destination_cities)
+                                    ? [...data.destination_cities]
+                                    : [data.location?.city || '']
+                                  cities[idx + 1] = city
+                                  onUpdate({ destination_cities: cities.filter(Boolean) })
+                                }}
+                                placeholder={`Additional city ${idx + 2}…`}
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cities = Array.isArray(data.destination_cities)
+                                  ? [...data.destination_cities]
+                                  : []
+                                cities.splice(idx + 1, 1)
+                                onUpdate({ destination_cities: cities.filter(Boolean) })
+                              }}
+                              className="shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+
+                      {/* Add city button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const primary = data.location?.city || ''
+                          const existing = Array.isArray(data.destination_cities)
+                            ? data.destination_cities
+                            : primary ? [primary] : []
+                          onUpdate({ destination_cities: [...existing, ''] })
+                        }}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add another city
+                      </button>
                     </div>
 
                     <div className="space-y-2">

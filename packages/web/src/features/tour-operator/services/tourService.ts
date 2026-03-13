@@ -27,6 +27,7 @@ export interface Tour {
   description: string | null
   short_description: string | null
   custom_category_label?: string | null
+  destination_cities?: string[]
   images: string[]
   highlights: string[]
   inclusions: string[]
@@ -511,8 +512,15 @@ export const tourService = {
       title: data.title || 'Untitled Tour',
       slug: data.slug || null,
       tour_type: data.tour_type || 'Adventure',
+      custom_category_label: data.custom_category_label ?? null,
       location: data.location || {},
+      destination_cities: Array.isArray(data.destination_cities) && data.destination_cities.length > 0
+        ? data.destination_cities.filter(Boolean)
+        : data.location?.city ? [data.location.city] : [],
       duration: data.duration || '1 day',
+      duration_days: data.duration_days ?? null,
+      short_description: data.short_description ?? null,
+      description: (data as any).description ?? null,
       price: normalizedPrice,
       base_price: normalizedPrice,
       currency: data.currency || 'USD',

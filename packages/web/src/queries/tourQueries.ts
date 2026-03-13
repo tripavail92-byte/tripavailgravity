@@ -60,6 +60,7 @@ export interface MappedTour {
   rating: number
   images: string[]
   badge: string
+  shortDescription?: string | null
 }
 
 export interface HomepageMixTour {
@@ -74,6 +75,7 @@ export interface HomepageMixTour {
   created_at: string
   isFeatured: boolean
   badge: string
+  shortDescription?: string | null
 }
 
 function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
@@ -144,7 +146,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
   const { data, error } = await supabase
     .from('tours')
     .select(
-      'id,slug,title,location,price,rating,review_count,is_featured,images,created_at,updated_at',
+      'id,slug,title,location,destination_cities,short_description,price,rating,review_count,is_featured,images,created_at,updated_at',
     )
     .eq('is_active', true)
     .eq('is_published', true)
@@ -164,10 +166,15 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
 
   return (data as any[]).map((tour: any) => {
     const locationObj = tour.location || {}
-    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-      .replace(/^, /, '')
-      .replace(/, $/, '')
-      .trim()
+    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+      ? tour.destination_cities
+      : locationObj.city ? [locationObj.city] : []
+    const location = destinationCities.length > 1
+      ? destinationCities.join(' · ')
+      : (`${locationObj.city || ''}, ${locationObj.country || ''}`
+          .replace(/^, /, '')
+          .replace(/, $/, '')
+          .trim())
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -193,6 +200,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
       created_at: tour.created_at ?? tour.updated_at ?? '1970-01-01T00:00:00.000Z',
       isFeatured,
       badge: 'Tour Experience',
+      shortDescription: tour.short_description ?? null,
     }
   })
 }
@@ -217,7 +225,7 @@ export function useHomepageMixTours(
 async function fetchFeaturedTours(): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -237,10 +245,11 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
   // Map to UI-friendly format
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-      .replace(/^, /, '')
-      .replace(/, $/, '')
-      .trim()
+    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
+    const location = destinationCities.length > 1
+      ? destinationCities.join(' · ')
+      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -257,6 +266,7 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
+      shortDescription: tour.short_description ?? null,
     }
   })
 }
@@ -269,7 +279,7 @@ async function fetchToursByCategory(
 
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -290,10 +300,11 @@ async function fetchToursByCategory(
 
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-      .replace(/^, /, '')
-      .replace(/, $/, '')
-      .trim()
+    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
+    const location = destinationCities.length > 1
+      ? destinationCities.join(' · ')
+      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -310,6 +321,7 @@ async function fetchToursByCategory(
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
+      shortDescription: tour.short_description ?? null,
     }
   })
 }
@@ -317,7 +329,7 @@ async function fetchToursByCategory(
 async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -339,10 +351,11 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
 
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const location = `${locationObj.city || ''}, ${locationObj.country || ''}`
-      .replace(/^, /, '')
-      .replace(/, $/, '')
-      .trim()
+    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
+    const location = destinationCities.length > 1
+      ? destinationCities.join(' · ')
+      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -359,6 +372,7 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
+      shortDescription: tour.short_description ?? null,
     }
   })
 }

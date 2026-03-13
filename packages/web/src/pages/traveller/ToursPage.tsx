@@ -141,6 +141,7 @@ export default function ToursPage() {
           currency="USD"
           type={tour.badge || 'Tour Experience'}
           isFeatured={Boolean(tour.isFeatured)}
+          shortDescription={tour.shortDescription ?? undefined}
         />
       ))}
     </div>

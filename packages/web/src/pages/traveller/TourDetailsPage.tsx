@@ -716,9 +716,16 @@ export default function TourDetailsPage() {
                     </GlassBadge>
                   </div>
 
-                  <h1 className="type-display text-foreground mb-4 break-words">
+                  <h1 className="type-display text-foreground mb-2 break-words">
                     {tour.title}
                   </h1>
+
+                  {/* Short description teaser */}
+                  {tour.short_description && (
+                    <p className="text-base text-muted-foreground italic mb-4 leading-relaxed">
+                      {tour.short_description}
+                    </p>
+                  )}
 
                   <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
                     <div className="flex items-center gap-2">
@@ -734,7 +741,14 @@ export default function TourDetailsPage() {
                         <MapPin size={16} className="text-info" />
                       </div>
                       <span className="font-bold text-foreground">
-                        {tour.location.city}, {tour.location.country}
+                        {(() => {
+                          const cities: string[] = Array.isArray((tour as any).destination_cities) && (tour as any).destination_cities.length > 0
+                            ? (tour as any).destination_cities
+                            : [tour.location.city].filter(Boolean)
+                          return cities.length > 1
+                            ? cities.join(' · ')
+                            : `${tour.location.city}, ${tour.location.country}`
+                        })()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

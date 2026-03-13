@@ -19,6 +19,7 @@ interface TourCardProps {
   currency: string
   type: string
   isFeatured?: boolean
+  shortDescription?: string | null
 }
 
 export function TourCard({
@@ -33,6 +34,7 @@ export function TourCard({
   currency,
   type,
   isFeatured,
+  shortDescription,
 }: Omit<TourCardProps, 'reviewCount'>) {
   return (
     <motion.div
@@ -107,6 +109,13 @@ export function TourCard({
                 Verified operator
               </Badge>
             </div>
+
+            {/* Short description teaser */}
+            {shortDescription && (
+              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                {shortDescription}
+              </p>
+            )}
 
             {/* Thin divider before price (align baseline with PackageCard) */}
             <div className="pt-3 flex items-center justify-between border-t border-border/60">
