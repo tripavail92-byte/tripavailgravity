@@ -473,6 +473,12 @@ function AllPartnersTab() {
     [],
   )
   const [usersById, setUsersById] = useState<Record<string, ProfileIdentity>>({})
+  const [verifyDialog, setVerifyDialog] = useState<{
+    partnerId: string
+    roleType: string
+    partnerName: string
+  } | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
   const [verificationByUserId, setVerificationByUserId] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   // Status filter: null = all
@@ -543,6 +549,25 @@ function AllPartnersTab() {
   useEffect(() => {
     load(statusFilter)
   }, [statusFilter])
+
+  const handleVerifyConfirm = async () => {
+    if (!verifyDialog) return
+    setIsVerifying(true)
+    try {
+      const { error } = await (supabase as any).rpc('admin_verify_partner_direct', {
+        p_user_id:      verifyDialog.partnerId,
+        p_partner_type: verifyDialog.roleType,
+      })
+      if (error) throw error
+      toast.success(`${verifyDialog.partnerName} verified — partner notified`)
+      setVerifyDialog(null)
+      await load(statusFilter)
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to verify partner')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
 
   const handleActionConfirm = async () => {
     if (!actionDialog) return
@@ -758,9 +783,34 @@ function AllPartnersTab() {
                               <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[180px]">
-                            <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="w-[200px]">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
+                            {/* Verify — only shown for non-approved partners */}
+                            {verificationStatus !== 'approved' && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const u2 = usersById[row.user_id]
+                                  const pname =
+                                    row.business_name ||
+                                    row.company_name ||
+                                    [u2?.first_name, u2?.last_name].filter(Boolean).join(' ') ||
+                                    u2?.email ||
+                                    row.user_id
+                                  setVerifyDialog({
+                                    partnerId: row.user_id,
+                                    roleType: row.roleType,
+                                    partnerName: pname,
+                                  })
+                                }}
+                                className="gap-2 cursor-pointer text-green-700 focus:text-green-700"
+                              >
+                                <ShieldCheck className="h-4 w-4" />
+                                <span>Verify Partner</span>
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Account Status</DropdownMenuLabel>
                             {STATUS_OPTIONS.map((opt) => {
                               const Icon = opt.icon
                               const isActive = (row.account_status || 'active') === opt.value
@@ -795,7 +845,38 @@ function AllPartnersTab() {
         </div>
       </Card>
 
-      {/* Action Confirmation Dialog */}
+      {/* Verify Partner Dialog */}
+      <Dialog open={!!verifyDialog} onOpenChange={(open) => { if (!open && !isVerifying) setVerifyDialog(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Partner</DialogTitle>
+            <DialogDescription>
+              This will mark{' '}
+              <span className="font-semibold text-foreground">{verifyDialog?.partnerName}</span>{' '}
+              as verified and grant them full platform access. They will be notified instantly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-start gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3 border border-green-200">
+            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>Verification is logged to the audit trail. The partner will be able to list tours and packages immediately.</span>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVerifyDialog(null)} disabled={isVerifying}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+              onClick={handleVerifyConfirm}
+              disabled={isVerifying}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {isVerifying ? 'Verifying…' : 'Confirm Verify'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Account Status Confirmation Dialog */}
       <Dialog
         open={actionDialog?.isOpen || false}
         onOpenChange={(open) => {
