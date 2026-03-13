@@ -330,8 +330,14 @@ export default function VerificationStatusPage() {
   const [resubmitting, setResubmitting] = useState(false)
   const handleResubmit = () => setResubmitting(true)
 
-  // Open hub for re-submission OR to upload missing docs on an approved account
-  if ((showHub && resubmitting) || resubmitting) {
+  // For rejected users: go straight to the re-upload hub immediately.
+  // The hub shows the rejection reason banner + fresh upload widgets.
+  // No extra "Re-submit Application" click needed.
+  const isRejected =
+    verificationStatus === 'rejected' ||
+    latestRequest?.status === 'rejected'
+
+  if (isRejected || resubmitting) {
     return <PartnerVerificationHub />
   }
 
