@@ -1,9 +1,11 @@
 import {
+  AlertTriangle,
   CheckCircle2,
   Clock,
   FileText,
   History,
   Loader2,
+  RotateCcw,
   ShieldCheck,
   UserCheck,
 } from 'lucide-react'
@@ -40,6 +42,7 @@ export function PartnerVerificationHub() {
   })
 
   const [activityLogs, setActivityLogs] = useState<any[]>([])
+  const [rejectedKycNotes, setRejectedKycNotes] = useState<string | null>(null)
 
   const role = activeRole?.role_type
   const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService
@@ -140,9 +143,30 @@ export function PartnerVerificationHub() {
 
         setVerificationData(merged)
 
+        // When rejected or failed, always stay on identity step so the user can re-upload.
+        const isRejectedOrFailed = ['rejected', 'failed'].includes(merged?.kycStatus || '')
+
+        if (isRejectedOrFailed && (merged?.kycStatus || '') === 'rejected') {
+          const { data: rejSess } = await supabase
+            .from('kyc_sessions')
+            .select('review_notes, failure_reason')
+            .eq('user_id', user.id)
+            .eq('role', sessionRole)
+            .eq('status', 'rejected')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (rejSess) {
+            setRejectedKycNotes(
+              (rejSess as any).review_notes || (rejSess as any).failure_reason || null,
+            )
+          }
+        }
+
         const identitySubmitted =
-          ['processing', 'pending_admin_review', 'approved'].includes((merged?.kycStatus || '').toString()) ||
-          (Boolean(merged?.idCardUrl) && Boolean(merged?.idBackUrl))
+          !isRejectedOrFailed &&
+          (['processing', 'pending_admin_review', 'approved'].includes((merged?.kycStatus || '').toString()) ||
+            (Boolean(merged?.idCardUrl) && Boolean(merged?.idBackUrl)))
 
         if (identitySubmitted) {
           if (role === 'hotel_manager' && !merged?.ownershipDocs?.titleDeedUrl) {
@@ -338,11 +362,44 @@ export function PartnerVerificationHub() {
           transition={{ duration: 0.3 }}
         >
           {step === 'identity' && (
-            <IdentitySubFlow
-              onComplete={handleIdentityComplete}
-              initialData={verificationData}
-              role={role === 'tour_operator' ? 'tour_operator' : 'hotel_manager'}
-            />
+            <div className="space-y-6">
+              {verificationData?.kycStatus === 'rejected' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-red-500/40 bg-red-500/5 p-6"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-red-500/10 text-red-500 shrink-0">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black uppercase tracking-widest text-red-500 mb-1">
+                        Verification Rejected
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                        {rejectedKycNotes
+                          ? rejectedKycNotes
+                          : 'Your documents did not pass review. Please re-upload clearer, well-lit photos of your CNIC.'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-3 text-xs text-red-400 font-bold uppercase tracking-wider">
+                        <RotateCcw className="w-3 h-3" />
+                        Upload new documents below to re-submit for review
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              <IdentitySubFlow
+                onComplete={handleIdentityComplete}
+                initialData={
+                  verificationData?.kycStatus === 'rejected'
+                    ? { ...verificationData, idCardUrl: '', idBackUrl: '', kycStatus: '' }
+                    : verificationData
+                }
+                role={role === 'tour_operator' ? 'tour_operator' : 'hotel_manager'}
+              />
+            </div>
           )}
 
           {step === 'docs' && (
