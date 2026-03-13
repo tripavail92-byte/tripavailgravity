@@ -329,6 +329,7 @@ serve(async (req: Request) => {
           message_id: waMessageId,
           message_status: waMessageStatus,
           to: waNumber,
+          requested_phone: phone,
           template: { name: OTP_TEMPLATE_NAME, lang: attemptLang },
         },
       }),

@@ -45,6 +45,17 @@ export function PartnerVerificationHub() {
   const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService
   const dashboardPath = role === 'tour_operator' ? '/operator/dashboard' : '/manager/dashboard'
 
+  const kycStatusRank: Record<string, number> = {
+    pending: 0,
+    uploading: 1,
+    processing: 2,
+    pending_admin_review: 3,
+    approved: 4,
+    rejected: 4,
+    failed: 4,
+    expired: 4,
+  }
+
   const persistVerificationProgress = async (nextVerification: any) => {
     if (!user?.id || !role) return
 
@@ -115,7 +126,12 @@ export function PartnerVerificationHub() {
             ? {
                 idCardUrl: mergedBase?.idCardUrl || fromSession.idCardUrl,
                 idBackUrl: mergedBase?.idBackUrl || fromSession.idBackUrl,
-                kycStatus: mergedBase?.kycStatus || fromSession.kycStatus,
+                // Prevent stale profile status (e.g. "processing") from masking a newer session state.
+                kycStatus:
+                  (kycStatusRank[fromSession.kycStatus || ''] ?? -1) >=
+                  (kycStatusRank[mergedBase?.kycStatus || ''] ?? -1)
+                    ? fromSession.kycStatus
+                    : mergedBase?.kycStatus,
                 cnicNumber: mergedBase?.cnicNumber ?? fromSession.cnicNumber ?? null,
                 expiryDate: mergedBase?.expiryDate ?? fromSession.expiryDate ?? null,
               }

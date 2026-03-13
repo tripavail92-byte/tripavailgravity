@@ -183,6 +183,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
 
   const [phoneVerified, setPhoneVerified] = useState(false)
   const [verifiedPhone, setVerifiedPhone]  = useState('')
+  const [otpPhone, setOtpPhone]            = useState('')
   const [otpStage, setOtpStage]            = useState<'idle' | 'sending' | 'sent' | 'verifying'>('idle')
   const [devOtp, setDevOtp]                = useState<string | null>(null)
 
@@ -223,6 +224,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
     const updated = { ...formData, phone }
     setFormData(updated)
     emitUpdate(updated, phoneVerified)
+    setOtpPhone('')
     if (phoneVerified) { setPhoneVerified(false); setVerifiedPhone('') }
   }
 
@@ -234,6 +236,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
     const updated = { ...formData, phone }
     setFormData(updated)
     emitUpdate(updated, phoneVerified)
+    setOtpPhone('')
     if (phoneVerified && phone !== verifiedPhone) { setPhoneVerified(false); setVerifiedPhone('') }
   }
 
@@ -252,17 +255,26 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
       if (error) throw error
-      if (res?.dev && res?.otp) { setDevOtp(res.otp); toast('Dev mode: OTP shown below', { icon: '🔧' }) }
-      else { setDevOtp(null); toast.success('OTP sent to your WhatsApp!') }
+      const sentToPhone = res?._wa?.to ? `+${String(res._wa.to).replace(/^\+/, '')}` : phone
+      setOtpPhone(sentToPhone)
+
+      if (res?.dev && res?.otp) {
+        setDevOtp(res.otp)
+        toast('Dev mode: OTP shown below', { icon: '🔧' })
+      } else {
+        setDevOtp(null)
+        toast.success(`OTP sent to ${sentToPhone}`)
+      }
       setOtpStage('sent')
     } catch (e: any) {
       toast.error(e.message || 'Failed to send OTP')
+      setOtpPhone('')
       setOtpStage('idle')
     }
   }
 
   const handleVerifyOtp = async (code: string) => {
-    const phone = normalizePhone(countryCode, nationalNumber)
+    const phone = otpPhone || normalizePhone(countryCode, nationalNumber)
     setOtpStage('verifying')
     try {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -278,6 +290,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
       setVerifiedPhone(phone)
       setOtpStage('idle')
       setDevOtp(null)
+      setOtpPhone('')
       const updated = { ...formData, phone }
       setFormData(updated)
       emitUpdate(updated, true)
@@ -376,7 +389,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
                 <div className="border-t border-red-500/20 bg-background/50 p-4 space-y-4">
                   <div className="text-center">
                     <p className="text-sm font-bold text-foreground">Enter the 6-digit code</p>
-                    <p className="text-xs text-muted-foreground font-medium mt-1">Sent to your WhatsApp: <span className="font-bold">{countryCode} {nationalNumber}</span></p>
+                    <p className="text-xs text-muted-foreground font-medium mt-1">Sent to your WhatsApp: <span className="font-bold">{otpPhone || `${countryCode} ${nationalNumber}`}</span></p>
                     {devOtp && (
                       <p className="text-xs font-black text-amber-700 bg-amber-500/10 rounded-lg px-3 py-2 mt-2 border border-amber-500/30">
                         🔧 Dev OTP: <span className="tracking-widest">{devOtp}</span>
@@ -391,7 +404,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
                   )}
                   <div className="text-center">
                     <button type="button" className="text-xs font-bold text-primary underline underline-offset-4"
-                      onClick={() => { setOtpStage('idle'); setDevOtp(null) }}>
+                      onClick={() => { setOtpStage('idle'); setDevOtp(null); setOtpPhone('') }}>
                       Didn't receive it? Try again
                     </button>
                   </div>
