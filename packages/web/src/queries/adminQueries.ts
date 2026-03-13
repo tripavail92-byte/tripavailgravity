@@ -177,12 +177,10 @@ export function useAuditLogs(
  * Fetch admin reports (Admin Reports Page)
  */
 async function fetchReports(): Promise<any> {
-  // This would fetch aggregated data for reports
-  // For now, return a placeholder structure
   const { data: bookings, error: bookingsError } = await supabase
-    .from('bookings')
-    .select('id, total_price, status, created_at')
-    .order('created_at', { ascending: false })
+    .from('tour_bookings')
+    .select('id, total_price, status, booking_date')
+    .order('booking_date', { ascending: false })
     .limit(100)
 
   if (bookingsError) {
