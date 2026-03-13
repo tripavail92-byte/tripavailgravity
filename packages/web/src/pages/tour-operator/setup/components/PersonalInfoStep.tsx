@@ -188,7 +188,7 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
 
   useEffect(() => {
     if (!user?.id) return
-    supabase.from('profiles').select('phone_verified, phone').eq('id', user.id).single()
+    supabase.from('profiles').select('phone_verified, phone').eq('id', user.id).maybeSingle()
       .then(({ data: prof }) => {
         if (prof?.phone_verified) {
           setPhoneVerified(true)
@@ -240,9 +240,17 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
   const handleSendOtp = async () => {
     const phone = normalizePhone(countryCode, nationalNumber)
     if (!nationalNumber || nationalNumber.length < 7) { toast.error('Enter a valid phone number first'); return }
+    if (!user?.id) { toast.error('Please sign in again to verify your phone.'); return }
     setOtpStage('sending')
     try {
-      const { data: res, error } = await supabase.functions.invoke('send-whatsapp-otp', { body: { phone } })
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      if (!accessToken) throw new Error('Session expired. Please sign in again.')
+
+      const { data: res, error } = await supabase.functions.invoke('send-whatsapp-otp', {
+        body: { phone },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
       if (error) throw error
       if (res?.dev && res?.otp) { setDevOtp(res.otp); toast('Dev mode: OTP shown below', { icon: '🔧' }) }
       else { setDevOtp(null); toast.success('OTP sent to your WhatsApp!') }
@@ -257,7 +265,14 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
     const phone = normalizePhone(countryCode, nationalNumber)
     setOtpStage('verifying')
     try {
-      const { error } = await supabase.functions.invoke('verify-phone-otp', { body: { phone, otp: code } })
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      if (!accessToken) throw new Error('Session expired. Please sign in again.')
+
+      const { error } = await supabase.functions.invoke('verify-phone-otp', {
+        body: { phone, otp: code },
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
       if (error) throw error
       setPhoneVerified(true)
       setVerifiedPhone(phone)
