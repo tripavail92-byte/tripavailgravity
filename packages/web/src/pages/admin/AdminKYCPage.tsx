@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronUp, Download, Pencil, RefreshCw, RotateCcw, ShieldCheck, ShieldOff, ShieldX, UserX } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, Download, Pencil, RefreshCw, RotateCcw, ShieldCheck, ShieldOff, ShieldX, Upload, UserX } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -81,7 +81,7 @@ function statusPill(status: string) {
 
 // ─── Single KYC session card ──────────────────────────────────────────────────
 
-type EnforceAction = 'revoke' | 're_review' | 'suspend_account' | 'reinstate_account'
+type EnforceAction = 'revoke' | 're_review' | 'suspend_account' | 'reinstate_account' | 'request_reupload'
 
 const ENFORCE_ACTIONS: Record<EnforceAction, {
   label: string
@@ -117,6 +117,13 @@ const ENFORCE_ACTIONS: Record<EnforceAction, {
     className: 'border-green-300 text-green-700 hover:bg-green-50',
     placeholder: 'Reason for reinstatement…',
     availableFor: ['approved', 'rejected', 'revoked', 'failed', 'pending_admin_review'],
+  },
+  request_reupload: {
+    label: 'Request Re-upload',
+    icon: Upload,
+    className: 'border-blue-300 text-blue-700 hover:bg-blue-50',
+    placeholder: 'Tell the user what to fix — they will see this message (min 10 chars)…',
+    availableFor: ['pending_admin_review', 'approved', 'revoked', 'failed', 'expired'],
   },
 }
 
@@ -764,19 +771,30 @@ export default function AdminKYCPage() {
   const enforce = async (row: KycRow, action: EnforceAction, reason: string) => {
     setBusyId(row.id)
     try {
-      const { error } = await (supabase.rpc('admin_enforce_kyc_action' as any, {
-        p_session_id: row.id,
-        p_action: action,
-        p_reason: reason,
-      }) as any)
-      if (error) throw error
-      const messages: Record<EnforceAction, string> = {
-        revoke: '🚫 KYC revoked — operator must re-submit',
-        re_review: '🔄 Session re-opened for review',
-        suspend_account: '⚠️ Account suspended',
-        reinstate_account: '✅ Account reinstated',
+      if (action === 'request_reupload') {
+        // Separate RPC — marks session rejected with admin's message → PartnerVerificationHub
+        // shows the red appeal banner + review_notes so user knows exactly what to fix.
+        const { error } = await (supabase.rpc('admin_request_kyc_reupload' as any, {
+          p_session_id: row.id,
+          p_message: reason,
+        }) as any)
+        if (error) throw error
+        toast.success('📤 Re-upload requested — user will be notified to re-upload their documents')
+      } else {
+        const { error } = await (supabase.rpc('admin_enforce_kyc_action' as any, {
+          p_session_id: row.id,
+          p_action: action,
+          p_reason: reason,
+        }) as any)
+        if (error) throw error
+        const messages: Record<Exclude<EnforceAction, 'request_reupload'>, string> = {
+          revoke: '🚫 KYC revoked — operator must re-submit',
+          re_review: '🔄 Session re-opened for review',
+          suspend_account: '⚠️ Account suspended',
+          reinstate_account: '✅ Account reinstated',
+        }
+        toast.success(messages[action as Exclude<EnforceAction, 'request_reupload'>])
       }
-      toast.success(messages[action])
       await load()
     } catch (err: any) {
       toast.error(err?.message || `Failed to ${action}`)
