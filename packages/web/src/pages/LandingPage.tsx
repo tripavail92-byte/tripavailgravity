@@ -65,22 +65,22 @@ export default function LandingPage() {
       {/* Airbnb Header (Fixed) */}
       <AirbnbHeader />
 
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-6">
+      <div className="container mx-auto max-w-7xl px-4 pt-32 md:pt-24 pb-6">
         <div className="space-y-10 pb-20">
           {/* Conversion Hero */}
           <section className="pt-2">
             <div className="max-w-3xl">
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
                 Premium travel packages, curated for real moments.
               </h1>
-              <p className="mt-4 text-lg text-muted-foreground">
+              <p className="mt-4 text-base sm:text-lg text-muted-foreground">
                 Book boutique stays, romantic escapes, and family getaways with transparent pricing
                 and instant confirmation.
               </p>
               <div className="mt-6">
                 <Button
                   onClick={() => navigate('/explore')}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
                 >
                   Explore Packages
                 </Button>
@@ -91,36 +91,36 @@ export default function LandingPage() {
           {/* Trust Strip */}
           <section className="-mt-2">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Card className="border border-border/60 rounded-2xl p-4">
+              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                     <ShieldCheck className="w-5 h-5 text-foreground" />
                   </div>
-                  <div className="text-sm font-semibold">Verified partners</div>
+                  <div className="text-xs sm:text-sm font-semibold">Verified partners</div>
                 </div>
               </Card>
-              <Card className="border border-border/60 rounded-2xl p-4">
+              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                     <Zap className="w-5 h-5 text-foreground" />
                   </div>
-                  <div className="text-sm font-semibold">Instant confirmation</div>
+                  <div className="text-xs sm:text-sm font-semibold">Instant confirmation</div>
                 </div>
               </Card>
-              <Card className="border border-border/60 rounded-2xl p-4">
+              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5 text-foreground" />
                   </div>
-                  <div className="text-sm font-semibold">Secure checkout</div>
+                  <div className="text-xs sm:text-sm font-semibold">Secure checkout</div>
                 </div>
               </Card>
-              <Card className="border border-border/60 rounded-2xl p-4">
+              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                     <Star className="w-5 h-5 text-foreground" />
                   </div>
-                  <div className="text-sm font-semibold">Top-rated stays</div>
+                  <div className="text-xs sm:text-sm font-semibold">Top-rated stays</div>
                 </div>
               </Card>
             </div>
@@ -243,7 +243,7 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
 
   return (
     <section>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
           <p className="text-muted-foreground mt-1">Curated from live listings</p>
@@ -339,7 +339,7 @@ function CuratedPackagesRow({ kind, title }: { kind: CuratedPackageKind; title: 
 
   return (
     <section>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
           <p className="text-muted-foreground mt-1">Curated from live listings</p>
@@ -426,7 +426,7 @@ function CuratedToursRow({
 
   return (
     <section>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
           <p className="text-muted-foreground mt-1">{subtitle}</p>
@@ -498,7 +498,7 @@ function PakistanNorthernToursRow() {
 
   return (
     <section>
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Northern Pakistan Tours
@@ -591,10 +591,10 @@ function AirbnbHeader() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 h-20 bg-background border-b z-50">
-        <div className="container mx-auto max-w-7xl h-full px-4 md:px-6 lg:px-10 flex items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
+      <header className="fixed top-0 left-0 right-0 bg-background border-b z-50">
+        <div className="container mx-auto max-w-7xl min-h-20 px-4 py-3 md:py-0 md:h-20 md:px-6 lg:px-10 flex flex-wrap items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
           {/* Logo */}
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0 order-1">
             <div className="flex items-center gap-1 cursor-pointer">
               {/* TripAvail Logo Icon (Rose) */}
               <svg
@@ -651,8 +651,8 @@ function AirbnbHeader() {
           </div>
 
           {/* Right User Menu */}
-          <div className="flex items-center justify-end gap-2 shrink-0">
-            <div className="md:hidden min-w-0">
+          <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
+            <div className="order-3 basis-full md:hidden min-w-0">
               <GlassCard
                 variant="light"
                 className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full max-w-[360px] flex flex-row items-center gap-2 border border-white/30"
