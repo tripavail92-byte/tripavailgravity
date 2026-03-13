@@ -9,6 +9,8 @@ import re
 from datetime import date, datetime
 import hashlib
 
+import cv2
+import numpy as np
 import easyocr
 
 # Configure logging
@@ -37,6 +39,44 @@ logger.info("EasyOCR initialized.")
 KYC_BUCKET    = "kyc"
 LEGACY_BUCKET = os.getenv("KYC_BUCKET", "tour-operator-assets")
 CNIC_HASH_PEPPER = os.getenv("KYC_CNIC_HASH_PEPPER", "")
+
+
+def _preprocess_for_ocr(path: str) -> str:
+    """
+    Preprocess a CNIC photo to maximise EasyOCR accuracy.
+
+    Steps:
+      1. Grayscale — removes colour noise, halves data size
+      2. Upscale to minimum 1800px wide — EasyOCR accuracy drops below ~1000px
+      3. CLAHE contrast normalization — handles uneven flash / dark corners
+      4. Gaussian denoise — removes JPEG block artefacts
+      5. Write as high-quality JPEG to a new temp file
+
+    This costs zero API calls and runs on CPU in <1 second.
+    """
+    img = cv2.imread(path)
+    if img is None:
+        return path  # fallback: use original if OpenCV can't read it
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    # Upscale: target minimum width 1800px for legible CNIC text
+    h, w = gray.shape
+    if w < 1800:
+        scale = 1800 / w
+        gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+
+    # CLAHE — locally adaptive contrast, works far better than global equalize
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(gray)
+
+    # Denoise (removes JPEG compression noise without blurring text strokes)
+    denoised = cv2.fastNlMeansDenoising(enhanced, h=10, templateWindowSize=7, searchWindowSize=21)
+
+    fd, out_path = tempfile.mkstemp(suffix="_proc.jpg")
+    os.close(fd)
+    cv2.imwrite(out_path, denoised, [cv2.IMWRITE_JPEG_QUALITY, 97])
+    return out_path
 
 
 def _infer_bucket(path: str) -> str:
@@ -251,16 +291,22 @@ def process_session(session):
 
     front_path = None
     back_path  = None
+    front_proc = None
+    back_proc  = None
 
     try:
         logger.info(f"Downloading images for session {session_token}...")
         front_path = _download_storage_path(id_front_path, "_front.jpg")
         back_path  = _download_storage_path(id_back_path,  "_back.jpg")
 
+        logger.info("Preprocessing images for OCR quality improvement...")
+        front_proc = _preprocess_for_ocr(front_path)
+        back_proc  = _preprocess_for_ocr(back_path)
+
         logger.info("Running EasyOCR (English + Urdu)...")
         # Use detail=0 for both sides, combine
-        front_components = reader.readtext(front_path, detail=0, paragraph=False)
-        back_components  = reader.readtext(back_path,  detail=0, paragraph=False)
+        front_components = reader.readtext(front_proc, detail=0, paragraph=False)
+        back_components  = reader.readtext(back_proc,  detail=0, paragraph=False)
         combined_components = [*front_components, *back_components]
         raw_text = "\n".join(combined_components)
 
@@ -404,11 +450,12 @@ def process_session(session):
         })
         
     finally:
-        # Cleanup temp files
-        if front_path and os.path.exists(front_path):
-            os.remove(front_path)
-        if back_path and os.path.exists(back_path):
-            os.remove(back_path)
+        # Cleanup temp files (both originals and preprocessed copies)
+        for p in (front_path, back_path, front_proc, back_proc):
+            if p and os.path.exists(p):
+                os.remove(p)
+
+POLLING_INTERVAL = int(os.environ.get("POLLING_INTERVAL_SECONDS", "3"))
 
 def main():
     logger.info("Starting background KYC verification worker...")
@@ -426,7 +473,8 @@ def main():
             logger.error(f"Error polling database: {e}")
         
         # Wait before next poll
-        time.sleep(3)
+        logger.debug(f"Sleeping for {POLLING_INTERVAL} seconds...")
+        time.sleep(POLLING_INTERVAL)
 
 if __name__ == "__main__":
     main()
