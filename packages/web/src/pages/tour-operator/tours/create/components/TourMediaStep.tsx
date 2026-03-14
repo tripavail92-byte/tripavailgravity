@@ -200,8 +200,8 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <ImageIcon className="w-6 h-6 text-white" />
@@ -253,10 +253,10 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
         {...getRootProps()}
         className={cn(
           'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300',
-          'bg-white/40 hover:bg-white/60 backdrop-blur-sm',
+          'bg-background/70 hover:bg-background/85 backdrop-blur-sm',
           isDragActive
-            ? 'border-violet-400 bg-violet-50/60 ring-4 ring-violet-200/50 shadow-lg'
-            : 'border-white/60 hover:border-violet-300',
+            ? 'border-primary/50 bg-primary/10 ring-4 ring-primary/20 shadow-lg'
+            : 'border-border/70 hover:border-primary/40',
         )}
       >
         <input {...getInputProps()} />
@@ -378,7 +378,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
           <Button
             onClick={onNext}
             size="lg"
-            className="px-12 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-violet-500/25"
+            className="px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex-1 sm:flex-none shadow-lg shadow-primary/25"
             disabled={!canProceed}
           >
             Next Step

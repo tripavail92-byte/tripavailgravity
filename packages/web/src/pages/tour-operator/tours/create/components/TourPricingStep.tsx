@@ -149,11 +149,11 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   return (
     <div className="space-y-6">
       {/* Legend Header */}
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl overflow-hidden">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl overflow-hidden">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
-            <DollarSign className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
+            <DollarSign className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Pricing</h2>
@@ -165,13 +165,13 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Base Pricing */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
-        <h3 className="text-[14px] font-bold text-gray-900 uppercase tracking-widest pl-1 mb-6 flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-[#FF7167]" /> Base Pricing
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
+        <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-6 flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-primary" /> Base Pricing
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
               Base Price Per Person *
             </label>
             <div className="relative">
@@ -180,7 +180,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               </div>
               <Input
                 type="number"
-                className="pl-16 h-12 rounded-xl border-gray-200 bg-slate-50 focus:border-[#FF7167] focus:ring-[#FF7167]/20 text-lg font-medium"
+                className="pl-16 h-12 rounded-xl border-border bg-muted/40 focus:border-primary focus:ring-primary/20 text-lg font-medium"
                 placeholder="0.00"
                 value={data.price || ''}
                 onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
@@ -188,14 +188,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
               Currency
             </label>
             <Select
               value={data.currency || 'PKR'}
               onValueChange={(v) => handleInputChange('currency', v)}
             >
-              <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-slate-50 text-base font-medium focus:ring-[#FF7167]/20">
+              <SelectTrigger className="h-12 rounded-xl border-border bg-muted/40 text-base font-medium focus:ring-primary/20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -211,20 +211,20 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Group Discounts */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h3 className="text-[14px] font-bold text-gray-900 uppercase tracking-widest pl-1 mb-1 flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#FF7167]" /> Group Discounts
+            <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-1 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" /> Group Discounts
             </h3>
-            <p className="text-sm text-gray-500 pl-8">
+            <p className="text-sm text-muted-foreground pl-8">
               Offer percentage-based lower rates for larger groups.
             </p>
           </div>
           <Switch
             checked={data.group_discounts}
             onCheckedChange={(v) => handleInputChange('group_discounts', v)}
-            className="data-[state=checked]:bg-[#FF7167]"
+            className="data-[state=checked]:bg-primary"
           />
         </div>
 
@@ -241,14 +241,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 <Button
                   variant="outline"
                   onClick={addPricingTier}
-                  className="rounded-xl border-gray-200 text-gray-700 hover:text-[#FF7167] hover:border-[#FF7167] hover:bg-[#FFF8F7] font-semibold gap-2 transition-all shadow-sm"
+                  className="rounded-xl border-border text-foreground/80 hover:text-primary hover:border-primary hover:bg-primary/10 font-semibold gap-2 transition-all shadow-sm"
                 >
                   <Plus className="w-4 h-4" /> Add Discount Tier
                 </Button>
               </div>
 
               {pricingTiers.length === 0 && (
-                <div className="text-center p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-slate-50 text-gray-500 text-sm">
+                <div className="text-center p-8 border-2 border-dashed border-border rounded-2xl bg-muted/30 text-muted-foreground text-sm">
                   Click &apos;Add Discount Tier&apos; to start offering group rates.
                 </div>
               )}
@@ -263,19 +263,19 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 return (
                   <div
                     key={tier.id}
-                    className="flex flex-col md:flex-row items-center gap-4 p-5 bg-white border border-gray-200 rounded-2xl shadow-sm relative group hover:border-[#FF7167]/30 transition-all"
+                    className="flex flex-col md:flex-row items-center gap-4 p-5 bg-background border border-border rounded-2xl shadow-sm relative group hover:border-primary/30 transition-all"
                   >
                     <div className="w-full md:w-24 flex-shrink-0 space-y-1">
-                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
                         Tier Name
                       </label>
-                      <div className="h-11 flex items-center font-bold text-gray-900 text-base">
+                      <div className="h-11 flex items-center font-bold text-foreground text-base">
                         {tier.name}
                       </div>
                     </div>
 
                     <div className="w-full md:w-32 flex-shrink-0 space-y-1">
-                      <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block whitespace-nowrap">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block whitespace-nowrap">
                         Group Size
                       </label>
                       <div className="relative">
@@ -286,9 +286,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                           onChange={(e) => {
                             updatePricingTier(tier.id, 'minPeople', parseInt(e.target.value) || 1)
                           }}
-                          className="h-11 w-full pr-12 rounded-xl bg-slate-50 border-gray-200 focus:border-[#FF7167] font-bold text-base"
+                          className="h-11 w-full pr-12 rounded-xl bg-muted/40 border-border focus:border-primary font-bold text-base"
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">
                           pax
                         </div>
                       </div>
@@ -296,7 +296,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
 
                     <div className="w-full flex-1 flex items-end gap-4">
                       <div className="space-y-1 w-28 flex-shrink-0">
-                        <label className="text-[11px] uppercase font-bold text-[#FF7167] tracking-wider block">
+                        <label className="text-[11px] uppercase font-bold text-primary tracking-wider block">
                           Discount %
                         </label>
                         <div className="relative">
@@ -309,14 +309,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                               const val = e.target.value
                               updateTierDiscount(tier.id, val === '' ? 0 : parseInt(val))
                             }}
-                            className="h-11 pl-4 pr-8 rounded-xl border-[#FF7167]/40 bg-[#FFF8F7] text-[#FF7167] focus:border-[#FF7167] focus:ring-[#FF7167]/20 font-bold text-lg"
+                            className="h-11 pl-4 pr-8 rounded-xl border-primary/40 bg-primary/10 text-primary focus:border-primary focus:ring-primary/20 font-bold text-lg"
                           />
-                          <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF7167]" />
+                          <Percent className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                         </div>
                       </div>
 
                       <div className="flex-1 min-w-[120px] mb-[2px]">
-                        <div className="text-[11px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+                        <div className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider mb-1">
                           Preview
                         </div>
                         <div className="h-11 flex items-center text-lg font-bold text-emerald-600 bg-emerald-50/50 px-3 rounded-xl border border-emerald-100/50 flex-shrink-0 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -330,7 +330,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                         variant="ghost"
                         size="icon"
                         onClick={() => removePricingTier(tier.id)}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl h-10 w-10 transition-colors"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl h-10 w-10 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -344,7 +344,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   <Button
                     variant="outline"
                     onClick={addPricingTier}
-                    className="rounded-xl border-dashed border-gray-300 text-gray-500 hover:text-[#FF7167] hover:border-[#FF7167] hover:bg-[#FFF8F7] font-semibold gap-2 transition-all shadow-sm w-full h-14"
+                    className="rounded-xl border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary hover:bg-primary/10 font-semibold gap-2 transition-all shadow-sm w-full h-14"
                   >
                     <Plus className="w-5 h-5" /> Add Another Discount Tier
                   </Button>
@@ -356,20 +356,20 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Seasonal Pricing */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-[14px] font-bold text-gray-900 uppercase tracking-widest pl-1 mb-1 flex items-center gap-2">
-              <Percent className="w-5 h-5 text-[#FF7167]" /> Seasonal Pricing
+            <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-1 flex items-center gap-2">
+              <Percent className="w-5 h-5 text-primary" /> Seasonal Pricing
             </h3>
-            <p className="text-sm text-gray-500 pl-8">
+            <p className="text-sm text-muted-foreground pl-8">
               Dynamically adjust rates for peak or off-peak seasons.
             </p>
           </div>
           <Switch
             checked={data.seasonal_pricing}
             onCheckedChange={(v) => handleInputChange('seasonal_pricing', v)}
-            className="data-[state=checked]:bg-[#FF7167]"
+            className="data-[state=checked]:bg-primary"
           />
         </div>
 
@@ -381,8 +381,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden grid grid-cols-2 gap-4 mt-4"
             >
-              <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-gray-100">
-                <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
+              <div className="space-y-2 p-4 rounded-2xl bg-muted/30 border border-border/60">
+                <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
                   Peak Multiplier
                 </label>
                 <Input
@@ -392,14 +392,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   onChange={(e) =>
                     handleInputChange('peak_season_multiplier', parseFloat(e.target.value))
                   }
-                  className="h-11 rounded-xl bg-white border-gray-200 focus:border-[#FF7167] font-medium"
+                  className="h-11 rounded-xl bg-background border-border focus:border-primary font-medium"
                 />
-                <p className="text-[11px] text-gray-400 font-medium">
+                <p className="text-[11px] text-muted-foreground font-medium">
                   e.g. 1.2 = 20% increase during peak season
                 </p>
               </div>
-              <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-gray-100">
-                <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
+              <div className="space-y-2 p-4 rounded-2xl bg-muted/30 border border-border/60">
+                <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
                   Off-Season Multiplier
                 </label>
                 <Input
@@ -409,9 +409,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   onChange={(e) =>
                     handleInputChange('off_season_multiplier', parseFloat(e.target.value))
                   }
-                  className="h-11 rounded-xl bg-white border-gray-200 focus:border-[#FF7167] font-medium"
+                  className="h-11 rounded-xl bg-background border-border focus:border-primary font-medium"
                 />
-                <p className="text-[11px] text-gray-400 font-medium">
+                <p className="text-[11px] text-muted-foreground font-medium">
                   e.g. 0.8 = 20% decrease during off-season
                 </p>
               </div>
@@ -421,23 +421,23 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Booking Terms */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-gray-100 bg-white">
-        <h3 className="text-[14px] font-bold text-gray-900 uppercase tracking-widest pl-1 mb-8 flex items-center gap-2">
-          <Info className="w-5 h-5 text-[#FF7167]" /> Booking Terms
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
+        <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-8 flex items-center gap-2">
+          <Info className="w-5 h-5 text-primary" /> Booking Terms
         </h3>
 
         <div className="space-y-8">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-gray-100">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/60">
             <div className="pl-2">
-              <label className="text-sm font-bold text-gray-900">Require Deposit</label>
-              <p className="text-xs text-gray-500 font-medium">
+              <label className="text-sm font-bold text-foreground">Require Deposit</label>
+              <p className="text-xs text-muted-foreground font-medium">
                 Require partial payment upfront to secure the booking.
               </p>
             </div>
             <Switch
               checked={data.deposit_required}
               onCheckedChange={(v) => handleInputChange('deposit_required', v)}
-              className="data-[state=checked]:bg-[#FF7167]"
+              className="data-[state=checked]:bg-primary"
             />
           </div>
 
@@ -473,10 +473,10 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
             )}
           </AnimatePresence>
 
-          <Separator className="bg-gray-100" />
+          <Separator className="bg-border/60" />
 
           <div className="space-y-3 px-2">
-            <label className="text-[11px] uppercase font-bold text-gray-500 tracking-wider block">
+            <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
               Cancellation Policy
             </label>
             <div className="space-y-3">
@@ -517,8 +517,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       {/* Inclusions & Exclusions - Vertically Stacked Sections */}
       <div className="space-y-8">
         {/* What's Included */}
-        <div className="rounded-[24px] p-8 border border-gray-200 bg-white">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">
+        <div className="rounded-[24px] p-8 border border-border/60 bg-background">
+          <h3 className="text-xl font-bold text-foreground mb-6 font-display">
             What&apos;s Included
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -531,7 +531,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
                       ? 'scale-105 shadow-md border-primary bg-primary/10'
-                      : 'border-gray-200 bg-white hover:border-primary/50'
+                      : 'border-border bg-background hover:border-primary/50'
                   }`}
                 >
                   <input
@@ -541,12 +541,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleInclude(item.label)}
                   />
                   <Icon
-                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`}
                     strokeWidth={1.5}
                   />
                   <span
                     className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
-                      isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
+                      isSelected ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
                     }`}
                   >
                       {item.label}
@@ -558,8 +558,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </div>
 
         {/* What's Excluded */}
-        <div className="rounded-[24px] p-8 border border-gray-200 bg-white">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 font-display">
+        <div className="rounded-[24px] p-8 border border-border/60 bg-background">
+          <h3 className="text-xl font-bold text-foreground mb-6 font-display">
             What&apos;s Excluded
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -572,7 +572,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   className={`flex items-center gap-3 cursor-pointer group p-4 rounded-[16px] border-2 transition-all duration-200 ease-out ${
                     isSelected
                       ? 'scale-105 shadow-md border-primary bg-primary/10'
-                      : 'border-gray-200 bg-white hover:border-primary/50'
+                      : 'border-border bg-background hover:border-primary/50'
                   }`}
                 >
                   <input
@@ -582,12 +582,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     onChange={() => toggleExclude(item.label)}
                   />
                   <Icon
-                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}`}
+                    className={`w-6 h-6 flex-shrink-0 transition-colors duration-200 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`}
                     strokeWidth={1.5}
                   />
                   <span
                     className={`block text-[15px] font-medium leading-snug transition-colors duration-200 ${
-                      isSelected ? 'text-foreground' : 'text-gray-600 group-hover:text-foreground'
+                      isSelected ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
                     }`}
                   >
                       {item.label}
@@ -600,17 +600,17 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-8 border-t border-gray-200">
+      <div className="flex items-center justify-between pt-8 border-t border-border/60">
         <Button
           variant="outline"
           onClick={onBack}
-          className="px-8 h-12 rounded-xl text-gray-600 font-bold border-gray-200 hover:bg-slate-50 transition-all shadow-sm"
+          className="px-8 h-12 rounded-xl text-muted-foreground font-bold border-border hover:bg-muted/30 transition-all shadow-sm"
         >
           Back
         </Button>
         <Button
           onClick={onNext}
-          className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold transition-all shadow-lg shadow-primary/25 border-0"
+          className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all shadow-lg shadow-primary/25 border-0"
         >
           Continue
         </Button>

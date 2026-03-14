@@ -118,11 +118,11 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-5">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
-            <Activity className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
+            <Activity className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Requirements &amp; Logistics</h2>
@@ -133,9 +133,9 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
         </div>
       </Card>
 
-      <Card className="p-8 bg-white border-none shadow-sm rounded-[24px] space-y-10">
+      <Card className="p-8 bg-background border-none shadow-sm rounded-[24px] space-y-10">
         <div className="space-y-4">
-          <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1">
             Difficulty Level
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -156,7 +156,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                   className={`relative flex items-center p-4 rounded-2xl border-2 transition-all duration-300 text-left group ${
                     isSelected
                       ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-gray-100 bg-white hover:border-gray-200'
+                      : 'border-border/60 bg-background hover:border-border'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -164,7 +164,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                       className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-4 [&_svg]:!h-4 ${
                         isSelected
                           ? 'bg-primary text-primary-foreground'
-                          : 'bg-slate-50 text-gray-600 group-hover:bg-slate-100'
+                          : 'bg-muted/50 text-muted-foreground group-hover:bg-muted'
                       }`}
                     >
                       <level.icon />
@@ -172,12 +172,12 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                     <div>
                       <h4
                         className={`font-bold text-[17px] leading-tight ${
-                          isSelected ? 'text-primary' : 'text-gray-900'
+                          isSelected ? 'text-primary' : 'text-foreground'
                         }`}
                       >
                         {level.label}
                       </h4>
-                      <span className="text-[13px] text-gray-500 font-medium tracking-tight mt-0.5 block">
+                      <span className="text-[13px] text-muted-foreground font-medium tracking-tight mt-0.5 block">
                         {level.description}
                       </span>
                     </div>
@@ -186,7 +186,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                   {isSelected && (
                     <motion.div
                       layoutId="selected-difficulty"
-                      className="absolute -top-3 -right-3 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[3px] border-white shadow-sm"
+                      className="absolute -top-3 -right-3 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[3px] border-background shadow-sm"
                     >
                       <Check className="w-3.5 h-3.5" strokeWidth={3} />
                     </motion.div>
@@ -199,7 +199,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
 
         <div className="space-y-5">
           <div className="flex items-center justify-between pl-1">
-            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+            <Label className="text-xs font-bold text-foreground uppercase tracking-widest">
               Age Range
             </Label>
             <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold tracking-wide">
@@ -215,17 +215,17 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
               onValueChange={(vals) => {
                 onUpdate({ min_age: vals[0], max_age: vals[1] })
               }}
-              className="w-full [&_[role=slider]]:border-primary [&_[role=slider]]:border-2 [&_[role=slider]]:bg-white [&_.bg-primary]:bg-primary"
+              className="w-full [&_[role=slider]]:border-primary [&_[role=slider]]:border-2 [&_[role=slider]]:bg-background [&_.bg-primary]:bg-primary"
             />
           </div>
-          <div className="flex justify-between text-xs text-slate-500 font-bold px-1 tracking-wide">
+          <div className="flex justify-between text-xs text-muted-foreground font-bold px-1 tracking-wide">
             <span>0 yrs</span>
             <span>100 yrs</span>
           </div>
         </div>
 
         <div className="space-y-4 pt-4">
-          <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1">
             Languages Provided
           </Label>
           <div className="flex flex-wrap gap-2.5">
@@ -242,7 +242,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                     className={`px-5 py-2 rounded-2xl text-[14px] font-bold transition-all duration-300 border ${
                       isSelected
                         ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 shadow-sm'
+                        : 'bg-background border-border text-muted-foreground hover:border-border/90 shadow-sm'
                     }`}
                   >
                     {lang}
@@ -253,8 +253,8 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           </div>
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-gray-100">
-          <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
+        <div className="space-y-4 pt-4 border-t border-border/60">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
             Tour-Specific Requirements
           </Label>
           <div className="space-y-3">
@@ -320,7 +320,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                             className={`relative flex items-center p-3 rounded-2xl border transition-all duration-300 text-left group min-h-[4.25rem] ${
                               isSelected
                                 ? 'border-primary bg-primary/5 shadow-sm'
-                                : 'border-gray-200 bg-white hover:border-primary/40 hover:shadow-sm'
+                                : 'border-border bg-background hover:border-primary/40 hover:shadow-sm'
                             }`}
                           >
                             <div className="flex items-center gap-3 w-full pr-6">
@@ -328,14 +328,14 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                                 className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-4 [&_svg]:!h-4 ${
                                   isSelected
                                     ? 'bg-primary text-primary-foreground'
-                                    : 'bg-slate-50 text-gray-500 group-hover:bg-primary/10 group-hover:text-primary'
+                                    : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                                 }`}
                               >
                                 <RequirementIcon />
                               </div>
                               <span
                                 className={`font-bold text-[13px] leading-snug ${
-                                  isSelected ? 'text-primary' : 'text-gray-700 group-hover:text-gray-900'
+                                  isSelected ? 'text-primary' : 'text-foreground/80 group-hover:text-foreground'
                                 }`}
                               >
                                 {req.label}
@@ -345,7 +345,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                             {isSelected && (
                               <motion.div
                                 layoutId={`selected-req-${req.id}`}
-                                className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[2px] border-white shadow-sm"
+                                className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center border-[2px] border-background shadow-sm"
                               >
                                 <Check className="w-3 h-3" strokeWidth={3} />
                               </motion.div>
@@ -361,8 +361,8 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           </div>
         </div>
 
-        <div className="space-y-4 pt-8 border-t border-gray-100">
-          <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
+        <div className="space-y-4 pt-8 border-t border-border/60">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
             Additional Physical Requirements / Logistics
           </Label>
           <Textarea
@@ -370,24 +370,24 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             value={data.description || ''}
             onChange={(e) => onUpdate({ description: e.target.value })}
             rows={4}
-            className="border-gray-200 focus:border-primary focus:ring-primary/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-gray-400"
+            className="border-border focus:border-primary focus:ring-primary/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-muted-foreground"
           />
         </div>
       </Card>
 
-      <div className="flex items-center justify-between pt-6 border-t border-white/30">
+      <div className="flex items-center justify-between pt-6 border-t border-border/60">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 bg-white/50 border-white/60 hover:bg-white/70"
+          className="px-8 bg-background/75 border-border/60 hover:bg-background"
         >
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold shadow-lg border-0"
+          className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg border-0"
         >
           Next Step
         </Button>

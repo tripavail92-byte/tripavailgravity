@@ -42,18 +42,18 @@ interface ItineraryDay {
 
 // ─── Activity Type Config ─────────────────────────────────────────────────────
 const ACTIVITY_TYPES: { type: ActivityType; emoji: string; label: string; color: string }[] = [
-  { type: 'transport', emoji: '🚐', label: 'Transport', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  { type: 'departure_arrival', emoji: '✈️', label: 'Departure/Arrival', color: 'bg-sky-100 text-sky-700 border-sky-200' },
-  { type: 'meal', emoji: '🍽️', label: 'Meal', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-  { type: 'tea_break', emoji: '🍵', label: 'Tea/Snack Break', color: 'bg-amber-100 text-amber-700 border-amber-200' },
-  { type: 'sightseeing', emoji: '🏞️', label: 'Sightseeing', color: 'bg-green-100 text-green-700 border-green-200' },
-  { type: 'guided_tour', emoji: '🧭', label: 'Guided Tour', color: 'bg-teal-100 text-teal-700 border-teal-200' },
-  { type: 'adventure', emoji: '🏄', label: 'Adventure', color: 'bg-red-100 text-red-700 border-red-200' },
-  { type: 'photo_stop', emoji: '📸', label: 'Photo Stop', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-  { type: 'shopping', emoji: '🛍️', label: 'Shopping', color: 'bg-pink-100 text-pink-700 border-pink-200' },
-  { type: 'cultural', emoji: '🎭', label: 'Cultural', color: 'bg-violet-100 text-violet-700 border-violet-200' },
-  { type: 'free_time', emoji: '⏳', label: 'Free Time', color: 'bg-gray-100 text-gray-600 border-gray-200' },
-  { type: 'accommodation', emoji: '🏨', label: 'Hotel/Stay', color: 'bg-cyan-100 text-cyan-700 border-cyan-200' },
+  { type: 'transport', emoji: '🚐', label: 'Transport', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'departure_arrival', emoji: '✈️', label: 'Departure/Arrival', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'meal', emoji: '🍽️', label: 'Meal', color: 'bg-muted text-foreground border-border' },
+  { type: 'tea_break', emoji: '🍵', label: 'Tea/Snack Break', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'sightseeing', emoji: '🏞️', label: 'Sightseeing', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'guided_tour', emoji: '🧭', label: 'Guided Tour', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'adventure', emoji: '🏄', label: 'Adventure', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'photo_stop', emoji: '📸', label: 'Photo Stop', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'shopping', emoji: '🛍️', label: 'Shopping', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'cultural', emoji: '🎭', label: 'Cultural', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'free_time', emoji: '⏳', label: 'Free Time', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'accommodation', emoji: '🏨', label: 'Hotel/Stay', color: 'bg-primary/10 text-primary border-primary/25' },
   { type: 'custom', emoji: '✏️', label: 'Custom', color: 'bg-muted text-muted-foreground border-border' },
 ]
 
@@ -253,12 +253,12 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* ── Header ── */}
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white shadow-xl overflow-hidden">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl overflow-hidden">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg flex-shrink-0">
-              <CalendarDays className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg flex-shrink-0">
+              <CalendarDays className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-xl font-bold">Day-by-Day Itinerary</h2>
@@ -272,7 +272,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
             size="sm"
             onClick={handleAISuggest}
             disabled={suggesting}
-            className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm font-bold gap-2 rounded-xl transition-all"
+            className="bg-background/20 hover:bg-background/30 text-primary-foreground border border-border/40 backdrop-blur-sm font-bold gap-2 rounded-xl transition-all"
           >
             <Sparkles className={`w-4 h-4 ${suggesting ? 'animate-spin' : ''}`} />
             {suggesting ? 'Generating…' : '✨ Suggest Plan'}
@@ -297,7 +297,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               key={day.day}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl overflow-hidden border border-white/40"
+              className="glass-card rounded-2xl overflow-hidden border border-border/60"
             >
               {/* Collapsible day header */}
               <button
@@ -341,7 +341,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                           value={day.title ?? ''}
                           onChange={(e) => updateDayTitle(day.day, e.target.value)}
                           placeholder="e.g. Arrival Day, Siran Valley Exploration…"
-                          className="bg-white/60 backdrop-blur-sm border-white/60 font-medium"
+                          className="bg-background/80 backdrop-blur-sm border-border/60 font-medium"
                         />
                       </div>
 
@@ -353,7 +353,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                             return (
                               <div
                                 key={act.id}
-                                className="flex items-start gap-3 p-3 rounded-xl bg-white/50 border border-white/60"
+                                className="flex items-start gap-3 p-3 rounded-xl bg-background/75 border border-border/60"
                               >
                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-lg border text-xs font-bold flex-shrink-0 ${cfg.color}`}>
                                   {cfg.emoji}
@@ -412,7 +412,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                                   className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
                                     draft.type === t.type
                                       ? t.color + ' ring-2 ring-primary/40 scale-105'
-                                      : 'bg-white/60 border-white/60 text-muted-foreground hover:border-primary/30'
+                                      : 'bg-background/80 border-border/60 text-muted-foreground hover:border-primary/30'
                                   }`}
                                 >
                                   <span>{t.emoji}</span>
@@ -422,7 +422,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                             </div>
                             {draft.type === 'custom' && (
                               <Input
-                                className="mt-2 bg-white/60 border-white/60"
+                                className="mt-2 bg-background/80 border-border/60"
                                 placeholder="Enter custom activity type name…"
                                 value={draft.custom_type_label ?? ''}
                                 onChange={(e) => setDraft((prev) => ({ ...prev, custom_type_label: e.target.value }))}
@@ -439,7 +439,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               value={draft.title ?? ''}
                               onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
                               placeholder="e.g. Drive to Siran Valley, Welcome Lunch…"
-                              className="bg-white/60 backdrop-blur-sm border-white/60 font-medium"
+                              className="bg-background/80 backdrop-blur-sm border-border/60 font-medium"
                             />
                           </div>
 
@@ -466,7 +466,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               )}
                             </div>
                             {showTimePicker && (
-                              <div className="p-3 rounded-xl bg-white/60 border border-white/60">
+                              <div className="p-3 rounded-xl bg-background/80 border border-border/60">
                                 <TimeWheelPicker
                                   value={draft.time}
                                   onChange={(t) => setDraft((prev) => ({ ...prev, time: t }))}
@@ -486,7 +486,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
                               placeholder="Brief details — scenic route, what's included, highlights…"
                               rows={2}
-                              className="bg-white/60 backdrop-blur-sm border-white/60 resize-none text-sm"
+                              className="bg-background/80 backdrop-blur-sm border-border/60 resize-none text-sm"
                             />
                           </div>
 
@@ -497,7 +497,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               variant="outline"
                               size="sm"
                               onClick={cancelAdd}
-                              className="bg-white/50 border-white/60"
+                              className="bg-background/75 border-border/60"
                             >
                               Cancel
                             </Button>
@@ -506,7 +506,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               size="sm"
                               onClick={() => commitActivity(day.day)}
                               disabled={!draft.title?.trim()}
-                              className="bg-primary text-white font-bold"
+                              className="bg-primary text-primary-foreground font-bold"
                             >
                               Add Activity
                             </Button>
@@ -532,19 +532,19 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       </div>
 
       {/* ── Navigation Footer ── */}
-      <div className="flex justify-between pt-4 border-t border-white/30">
+      <div className="flex justify-between pt-4 border-t border-border/60">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm"
+          className="px-8 bg-background/75 border-border/60 hover:bg-background backdrop-blur-sm"
         >
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/25"
+          className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
         >
           Next Step
         </Button>

@@ -57,8 +57,8 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
             <Calendar className="w-6 h-6 text-white" />
@@ -76,7 +76,7 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         {schedules.map((schedule) => (
           <div
             key={schedule.id}
-            className="glass-card p-6 rounded-2xl border border-white/50 shadow-lg hover:border-primary/30 transition-all duration-200"
+            className="glass-card p-6 rounded-2xl border border-border/60 shadow-lg hover:border-primary/30 transition-all duration-200"
           >
             <div className="flex items-center justify-between mb-5">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
@@ -127,8 +127,8 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         ))}
 
         {schedules.length === 0 && (
-          <div className="text-center py-16 rounded-2xl border-2 border-dashed border-primary/20 bg-white/30 backdrop-blur-sm">
-            <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="text-center py-16 rounded-2xl border-2 border-dashed border-primary/20 bg-background/70 backdrop-blur-sm">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Calendar className="w-8 h-8 text-primary" />
             </div>
             <h3 className="text-foreground font-bold text-lg">No dates scheduled yet</h3>
@@ -141,21 +141,21 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         <Button
           onClick={addSchedule}
           variant="outline"
-          className="w-full h-14 border-dashed border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary bg-white/40 text-muted-foreground transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
+          className="w-full h-14 border-dashed border-2 border-primary/20 hover:border-primary/40 hover:bg-primary/5 hover:text-primary bg-background/75 text-muted-foreground transition-all rounded-2xl flex items-center justify-center gap-2 font-bold"
         >
           <Plus className="w-5 h-5" />
           Add Departure Date
         </Button>
       </div>
 
-      <div className="flex items-center justify-between pt-6 border-t border-white/30">
-        <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm">
+      <div className="flex items-center justify-between pt-6 border-t border-border/60">
+        <Button variant="outline" onClick={onBack} size="lg" className="px-8 flex-1 sm:flex-none bg-background/75 border-border/60 hover:bg-background backdrop-blur-sm">
           Back
         </Button>
         <Button
           onClick={onNext}
           size="lg"
-          className="px-8 bg-primary hover:bg-primary/90 text-white font-bold flex-1 sm:flex-none shadow-lg shadow-primary/25"
+          className="px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex-1 sm:flex-none shadow-lg shadow-primary/25"
           disabled={schedules.length === 0}
         >
           Next Step

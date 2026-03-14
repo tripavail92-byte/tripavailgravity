@@ -26,7 +26,7 @@ function ReviewRow({
   highlight?: boolean
 }) {
   return (
-    <div className="flex justify-between items-start gap-4 py-2 border-b border-white/40 last:border-b-0">
+    <div className="flex justify-between items-start gap-4 py-2 border-b border-border/60 last:border-b-0">
       <span className="text-muted-foreground text-sm font-medium">{label}</span>
       <span className={highlight ? 'text-primary font-bold text-lg text-right' : 'text-foreground font-bold text-right'}>
         {value}
@@ -63,11 +63,11 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
 
   return (
     <div className="space-y-6">
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl overflow-hidden">
-        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl overflow-hidden">
+        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
-            <CheckCircle className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
+            <CheckCircle className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Review & Publish</h2>
@@ -179,19 +179,19 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
         </div>
       </div>
 
-      <div className="flex justify-between pt-6 border-t border-white/30">
+      <div className="flex justify-between pt-6 border-t border-border/60">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 font-bold bg-white/50 border-white/60 hover:bg-white/70 backdrop-blur-sm"
+          className="px-8 font-bold bg-background/75 border-border/60 hover:bg-background backdrop-blur-sm"
         >
           Back
         </Button>
         <Button
           onClick={onPublish}
           size="lg"
-          className="px-10 bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/25"
+          className="px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
         >
           🚀 Publish Tour
         </Button>

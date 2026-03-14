@@ -183,8 +183,8 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <div className="space-y-6">
         {/* Header card */}
-        <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-white border-none shadow-xl rounded-2xl overflow-hidden relative">
-          <div className="absolute inset-0 bg-white/5 backdrop-blur-sm" />
+        <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+          <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
           <div className="relative flex items-center gap-4">
             <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
               <Info className="w-6 h-6 text-white" />
@@ -212,11 +212,11 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             />
           </div>
 
-          <div className="glass-card rounded-2xl border border-white/50 overflow-hidden">
+          <div className="glass-card rounded-2xl border border-border/60 overflow-hidden">
             <button
               type="button"
               onClick={() => setIsCategoryOpen((prev) => !prev)}
-              className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
+              className="w-full p-4 flex items-center justify-between bg-background/70 backdrop-blur-md hover:bg-background/85 transition-colors"
             >
               <div className="text-left">
                 <h3 className="text-base font-bold text-foreground">Tour Category *</h3>
@@ -311,11 +311,11 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
             </AnimatePresence>
           </div>
 
-          <div className="glass-card rounded-2xl border border-white/50 overflow-hidden">
+          <div className="glass-card rounded-2xl border border-border/60 overflow-hidden">
             <button
               type="button"
               onClick={() => setIsDatesAvailabilityOpen((prev) => !prev)}
-              className="w-full p-4 flex items-center justify-between bg-white/40 backdrop-blur-md hover:bg-white/60 transition-colors"
+              className="w-full p-4 flex items-center justify-between bg-background/70 backdrop-blur-md hover:bg-background/85 transition-colors"
             >
               <div className="text-left">
                 <h3 className="text-base font-bold text-foreground">Dates & Availability *</h3>
