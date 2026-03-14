@@ -112,6 +112,17 @@ function buildGoogleDirectionsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/dir/?${params.toString()}`
 }
 
+function getPickupSubtitle(pickup: DraftPickup) {
+  if (pickup.city?.trim()) return pickup.city
+  if (pickup.country?.trim()) return pickup.country
+
+  if (typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number') {
+    return formatLatLngAddress(pickup.latitude, pickup.longitude)
+  }
+
+  return 'Coordinates pending'
+}
+
 function PickupMapSection({
   center,
   zoom,
@@ -642,6 +653,10 @@ export function TourPickupLocationsStep({
   )
 
   const activeExistsInList = useMemo(() => pickups.some((pickup) => pickup.key === active.key), [pickups, active.key])
+  const activeHasCoordinates = useMemo(
+    () => typeof active.latitude === 'number' && typeof active.longitude === 'number' && isValidLatLng(active.latitude, active.longitude),
+    [active.latitude, active.longitude],
+  )
 
   const mapCenter = useMemo(() => {
     if (markerPosition) return markerPosition
@@ -1063,12 +1078,27 @@ export function TourPickupLocationsStep({
         <div>
           <h2 className="text-xl font-bold text-foreground tracking-tight">Pickup Locations</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Add at least one exact map pin. Travellers will be ranked by distance to the nearest pickup.
+            Add at least one exact pickup point. Travellers will be ranked by distance to the nearest stop.
           </p>
         </div>
 
         <Card className="rounded-[28px] border border-border/50 bg-background/70 p-4 shadow-xl backdrop-blur-xl sm:p-6 xl:p-8">
           <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-3 rounded-[24px] border border-border/60 bg-background/65 p-4 sm:grid-cols-3 sm:p-5">
+              <div className="rounded-2xl bg-muted/35 px-4 py-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">1. Search</div>
+                <p className="mt-1 text-sm text-muted-foreground">Find the hotel, landmark, or meeting point.</p>
+              </div>
+              <div className="rounded-2xl bg-muted/35 px-4 py-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">2. Confirm</div>
+                <p className="mt-1 text-sm text-muted-foreground">Map appears only after a pickup is selected so the form stays clear.</p>
+              </div>
+              <div className="rounded-2xl bg-muted/35 px-4 py-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">3. Save</div>
+                <p className="mt-1 text-sm text-muted-foreground">Save each pickup plan before moving to the next step.</p>
+              </div>
+            </div>
+
             <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-6">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Saved pickup plan</h3>
@@ -1087,7 +1117,7 @@ export function TourPickupLocationsStep({
                   No pickups saved yet. Build the first stop in the workspace and save it to the plan.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                   {pickups.map((pickup, index) => {
                     const mapPreview =
                       typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
@@ -1102,56 +1132,62 @@ export function TourPickupLocationsStep({
                           pickup.is_primary ? 'border-primary/35 ring-1 ring-primary/10' : 'border-border/60',
                         )}
                       >
-                        <div className="relative h-32 w-full overflow-hidden bg-muted/40">
-                          {mapPreview ? (
-                            <img
-                              src={mapPreview}
-                              alt={pickup.title}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                              Map preview unavailable
-                            </div>
-                          )}
+                        <div className="flex flex-col md:flex-row">
+                          <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/40 md:h-auto md:w-[220px]">
+                            {mapPreview ? (
+                              <img
+                                src={mapPreview}
+                                alt={pickup.title}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="flex h-full min-h-[160px] w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                                Map preview unavailable
+                              </div>
+                            )}
 
-                          <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-background backdrop-blur-sm">
-                            Stop {index + 1}
+                            <div className="absolute left-3 top-3 inline-flex items-center rounded-full bg-foreground/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.25em] text-background backdrop-blur-sm">
+                              Stop {index + 1}
+                            </div>
+
+                            {pickup.is_primary ? (
+                              <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-primary-foreground backdrop-blur-sm">
+                                <Star className="h-3.5 w-3.5" />
+                                Primary
+                              </div>
+                            ) : null}
                           </div>
 
-                          {pickup.is_primary ? (
-                            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-primary-foreground backdrop-blur-sm">
-                              <Star className="h-3.5 w-3.5" />
-                              Primary
-                            </div>
-                          ) : null}
-                        </div>
+                          <div className="flex min-w-0 flex-1 flex-col justify-between space-y-4 p-4">
+                            <div className="space-y-3">
+                              <div className="space-y-1">
+                                <div className="text-base font-semibold text-foreground">{pickup.title}</div>
+                                <div className="text-sm font-medium text-foreground/70">{getPickupSubtitle(pickup)}</div>
+                                <div className="text-sm leading-6 text-muted-foreground line-clamp-2">{pickup.formatted_address}</div>
+                              </div>
 
-                        <div className="space-y-4 p-4">
-                          <div className="space-y-2">
-                            <div className="text-base font-semibold text-foreground">{pickup.title}</div>
-                            <div className="text-sm leading-6 text-muted-foreground">{pickup.formatted_address}</div>
-                          </div>
+                              <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                                <div className="rounded-2xl bg-muted/35 px-3 py-2">
+                                  <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Pickup time</div>
+                                  <div className="mt-1 text-sm text-foreground">{pickup.pickup_time || 'Not set'}</div>
+                                </div>
+                                <div className="rounded-2xl bg-muted/35 px-3 py-2">
+                                  <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Map pin</div>
+                                  <div className="mt-1 text-sm text-foreground">
+                                    {typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number' ? 'Ready' : 'Missing'}
+                                  </div>
+                                </div>
+                              </div>
 
-                          <div className="grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                            <div className="rounded-2xl bg-muted/35 px-3 py-2">
-                              <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Pickup time</div>
-                              <div className="mt-1 text-sm text-foreground">{pickup.pickup_time || 'Not set'}</div>
+                              {pickup.notes?.trim() ? (
+                                <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-3 text-sm text-muted-foreground line-clamp-2">
+                                  {pickup.notes}
+                                </div>
+                              ) : null}
                             </div>
-                            <div className="rounded-2xl bg-muted/35 px-3 py-2">
-                              <div className="font-semibold uppercase tracking-[0.18em] text-[10px] text-foreground/60">Location</div>
-                              <div className="mt-1 text-sm text-foreground">{pickup.city || 'Coordinates only'}</div>
-                            </div>
-                          </div>
 
-                          {pickup.notes?.trim() ? (
-                            <div className="rounded-2xl border border-border/60 bg-background/70 px-3 py-3 text-sm text-muted-foreground">
-                              {pickup.notes}
-                            </div>
-                          ) : null}
-
-                          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                             <Button
                               type="button"
                               variant="outline"
@@ -1198,6 +1234,7 @@ export function TourPickupLocationsStep({
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
+                          </div>
                         </div>
                       </article>
                     )
@@ -1213,7 +1250,7 @@ export function TourPickupLocationsStep({
                     {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
                   </h3>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Search, pin the exact map point, confirm the details, then save the route once the pickup plan is ready.
+                    Search first, then review the selected stop. The live map only appears once a pickup has coordinates.
                   </p>
                 </div>
               </div>
@@ -1230,7 +1267,8 @@ export function TourPickupLocationsStep({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-start">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
                     Search
@@ -1312,19 +1350,6 @@ export function TourPickupLocationsStep({
                   />
                 </div>
 
-                <PickupMapSection
-                  center={mapCenter}
-                  zoom={mapZoom}
-                  markerPosition={markerPosition}
-                  onMapClick={handleMapClick}
-                  onMarkerDragEnd={handleMarkerDrag}
-                  isSaving={isSaving}
-                  active={{ latitude: active.latitude, longitude: active.longitude }}
-                  setActive={setActive}
-                  setMarkerPosition={setMarkerPosition}
-                  mapId={GOOGLE_MAPS_MAP_ID || undefined}
-                />
-
                 <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                   <Button
                     type="button"
@@ -1344,6 +1369,44 @@ export function TourPickupLocationsStep({
                 ) : null}
               </div>
 
+              <div className="space-y-4 xl:sticky xl:top-28">
+                <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Selected pickup map</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {activeHasCoordinates
+                        ? 'Drag the pin if the exact meeting point needs adjustment.'
+                        : 'Pick a place from search or edit a saved stop to show the map.'}
+                    </p>
+                  </div>
+
+                  <div className="mt-4">
+                    {activeHasCoordinates ? (
+                      <PickupMapSection
+                        center={mapCenter}
+                        zoom={mapZoom}
+                        markerPosition={markerPosition}
+                        onMapClick={handleMapClick}
+                        onMarkerDragEnd={handleMarkerDrag}
+                        isSaving={isSaving}
+                        active={{ latitude: active.latitude, longitude: active.longitude }}
+                        setActive={setActive}
+                        setMarkerPosition={setMarkerPosition}
+                        mapId={GOOGLE_MAPS_MAP_ID || undefined}
+                      />
+                    ) : (
+                      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 text-center">
+                        <MapPin className="h-8 w-8 text-primary/70" />
+                        <div className="mt-4 text-sm font-semibold text-foreground">Map stays hidden until a pickup is selected</div>
+                        <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                          Search for a location or open one of the saved pickups to display the exact map pin here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
 

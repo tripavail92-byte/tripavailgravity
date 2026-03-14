@@ -55,7 +55,10 @@ export default function CreateTourPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]))
-  const isFirstLoad = useRef(true)
+  const ignoreDirtyRef = useRef(false)
+  const didMountDirtyRef = useRef(false)
+  const autosaveDebounceRef = useRef<number | null>(null)
+  const saveInFlightRef = useRef<Promise<boolean> | null>(null)
 
   // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
@@ -101,6 +104,7 @@ export default function CreateTourPage() {
     const loadTourForEdit = async () => {
       if (!user?.id || !tourIdToEdit) return
       try {
+        ignoreDirtyRef.current = true
         setIsSaving(true)
         const existing = await tourService.getOperatorTourById(user.id, tourIdToEdit)
         setTourData(existing)
@@ -149,6 +153,7 @@ export default function CreateTourPage() {
         toast.error('Failed to load tour for editing')
       } finally {
         setIsSaving(false)
+        ignoreDirtyRef.current = false
       }
     }
 
@@ -190,41 +195,101 @@ export default function CreateTourPage() {
     if (tourIdToEdit) setCurrentTourId(tourIdToEdit)
   }, [tourIdToEdit])
 
-  // Mark unsaved whenever tourData changes (skip the very first setState from loadTourForEdit)
+  const saveDraft = useCallback(
+    async (options?: { redirectAfter?: string; showOverlay?: boolean; source?: 'manual' | 'auto' }): Promise<boolean> => {
+      if (!user) return false
+
+      if (saveInFlightRef.current) return saveInFlightRef.current
+
+      const promise = (async (): Promise<boolean> => {
+        const showOverlay = options?.showOverlay === true
+        const source = options?.source ?? 'auto'
+
+        if (showOverlay) setIsSaving(true)
+        setAutosaveStatus('saving')
+
+        try {
+          const pct = calculateCompletionPercentage(tourData)
+          const result = await tourService.saveWorkflowDraft(
+            tourData,
+            user.id,
+            currentTourId,
+            pct,
+            createWorkflowSnapshot(),
+          )
+
+          const savedId = result.tourId
+          if (!currentTourId) setCurrentTourId(savedId)
+          setLastSavedAt(new Date())
+          setHasUnsaved(false)
+          setAutosaveStatus('saved')
+          setTimeout(() => setAutosaveStatus('idle'), 3000)
+
+          if (options?.redirectAfter) navigate(options.redirectAfter)
+          return true
+        } catch (error) {
+          console.error('Error saving draft:', error)
+          setAutosaveStatus('error')
+          if (source === 'manual') {
+            toast.error('Failed to save. Please try again.')
+          }
+          return false
+        } finally {
+          if (showOverlay) setIsSaving(false)
+        }
+      })()
+
+      saveInFlightRef.current = promise
+      try {
+        return await promise
+      } finally {
+        saveInFlightRef.current = null
+      }
+    },
+    [user, tourData, currentTourId, navigate, createWorkflowSnapshot],
+  )
+
+  // Mark unsaved whenever tour data or workflow navigation changes
   useEffect(() => {
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false
+    if (!didMountDirtyRef.current) {
+      didMountDirtyRef.current = true
       return
     }
+    if (ignoreDirtyRef.current) return
     setHasUnsaved(true)
-  }, [tourData])
+  }, [tourData, currentStep, visitedSteps])
+
+  // Debounced autosave shortly after changes (prevents refresh restoring old step)
+  useEffect(() => {
+    if (!user?.id) return
+    if (!hasUnsaved) return
+
+    if (autosaveDebounceRef.current) {
+      window.clearTimeout(autosaveDebounceRef.current)
+      autosaveDebounceRef.current = null
+    }
+
+    autosaveDebounceRef.current = window.setTimeout(() => {
+      void saveDraft({ source: 'auto', showOverlay: false })
+    }, 2000)
+
+    return () => {
+      if (autosaveDebounceRef.current) {
+        window.clearTimeout(autosaveDebounceRef.current)
+        autosaveDebounceRef.current = null
+      }
+    }
+  }, [user?.id, hasUnsaved, tourData, currentStep, visitedSteps, saveDraft])
 
   // Autosave: every 30s when there are unsaved changes
   useEffect(() => {
     if (!user?.id) return
     const interval = setInterval(async () => {
       if (!hasUnsaved) return
-      setAutosaveStatus('saving')
-      try {
-        const pct = calculateCompletionPercentage(tourData)
-        const result = await tourService.saveWorkflowDraft(
-          tourData,
-          user.id,
-          currentTourId,
-          pct,
-          createWorkflowSnapshot(),
-        )
-        if (!currentTourId) setCurrentTourId(result.tourId)
-        setLastSavedAt(new Date())
-        setHasUnsaved(false)
-        setAutosaveStatus('saved')
-        setTimeout(() => setAutosaveStatus('idle'), 3000)
-      } catch {
-        setAutosaveStatus('error')
-      }
+      await saveDraft({ source: 'auto', showOverlay: false })
     }, 30_000)
     return () => clearInterval(interval)
-  }, [user?.id, hasUnsaved, tourData, currentTourId, createWorkflowSnapshot])
+  }, [user?.id, hasUnsaved, saveDraft])
 
   // Warn before unload if there are unsaved changes
   useEffect(() => {
@@ -237,36 +302,19 @@ export default function CreateTourPage() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [hasUnsaved])
 
-  const performSave = useCallback(async (redirectAfter?: string): Promise<boolean> => {
-    if (!user) return false
-    setIsSaving(true)
-    setAutosaveStatus('saving')
-    try {
-      const pct = calculateCompletionPercentage(tourData)
-      const result = await tourService.saveWorkflowDraft(
-        tourData,
-        user.id,
-        currentTourId,
-        pct,
-        createWorkflowSnapshot(),
-      )
-      const savedId = result.tourId
-      if (!currentTourId) setCurrentTourId(savedId)
-      setLastSavedAt(new Date())
-      setHasUnsaved(false)
-      setAutosaveStatus('saved')
-      setTimeout(() => setAutosaveStatus('idle'), 3000)
-      if (redirectAfter) navigate(redirectAfter)
-      return true
-    } catch (error) {
-      console.error('Error saving draft:', error)
-      setAutosaveStatus('error')
-      toast.error('Failed to save. Please try again.')
-      return false
-    } finally {
-      setIsSaving(false)
-    }
-  }, [user, tourData, currentTourId, navigate, createWorkflowSnapshot])
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [currentStep])
+
+  const performSave = useCallback(
+    async (redirectAfter?: string): Promise<boolean> =>
+      saveDraft({ redirectAfter, showOverlay: true, source: 'manual' }),
+    [saveDraft],
+  )
 
   if (gateLoading) {
     return (
