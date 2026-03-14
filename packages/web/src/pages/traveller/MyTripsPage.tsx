@@ -185,7 +185,9 @@ export default function MyTripsPage() {
                             </div>
 
                             <h3 className="text-xl font-black text-foreground mb-4 group-hover:text-primary transition-colors">
-                              {details?.title || details?.name}
+                              <Link to={`/trips/${trip.id}`} className="hover:underline">
+                                {details?.title || details?.name}
+                              </Link>
                             </h3>
 
                             <div className="grid grid-cols-2 gap-y-4 gap-x-8">
@@ -221,7 +223,7 @@ export default function MyTripsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between">
+                          <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between gap-3">
                             <div className="flex flex-col">
                               <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest leading-none mb-1">
                                 Total Paid
@@ -230,15 +232,22 @@ export default function MyTripsPage() {
                                 ${trip.total_price?.toLocaleString()}
                               </span>
                             </div>
-                            <Button asChild variant="outline" className="rounded-full px-6 group/btn">
-                              <Link
-                                to={`/messages?scope=${trip.tours ? 'tour_booking' : 'package_booking'}&bookingId=${trip.id}`}
-                              >
-                                <MessageSquare className="w-4 h-4 mr-2" />
-                                Open thread
-                                <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-                              </Link>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button asChild variant="outline" className="rounded-full px-5 group/btn">
+                                <Link to={`/trips/${trip.id}`}>
+                                  Manage booking
+                                  <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+                                </Link>
+                              </Button>
+                              <Button asChild variant="outline" className="rounded-full px-5">
+                                <Link
+                                  to={`/messages?scope=${trip.tours ? 'tour_booking' : 'package_booking'}&bookingId=${trip.id}`}
+                                >
+                                  <MessageSquare className="w-4 h-4 mr-2" />
+                                  Thread
+                                </Link>
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>

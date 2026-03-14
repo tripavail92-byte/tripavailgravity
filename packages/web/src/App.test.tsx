@@ -9,6 +9,7 @@ import { ROLE_NAVIGATION } from '@/config/navigation'
 import App from './App'
 
 const OPERATOR_CONSOLE_ROUTES = ['/operator/calendar', '/operator/bookings', '/help', '/legal', '/messages']
+const TRAVELLER_BOOKING_ROUTES = ['/trips', '/trips/:bookingId']
 
 describe('App', () => {
   it('renders without crashing', () => {
@@ -30,6 +31,14 @@ describe('App', () => {
     const appSource = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8')
 
     for (const route of OPERATOR_CONSOLE_ROUTES) {
+      expect(appSource).toContain(`path="${route}"`)
+    }
+  })
+
+  it('keeps traveller booking workspace routes wired in App routing', () => {
+    const appSource = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8')
+
+    for (const route of TRAVELLER_BOOKING_ROUTES) {
       expect(appSource).toContain(`path="${route}"`)
     }
   })

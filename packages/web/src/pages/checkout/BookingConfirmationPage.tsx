@@ -8,7 +8,7 @@
 import { AlertCircle, Calendar, Check, Download, Loader2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
@@ -273,12 +273,23 @@ export default function BookingConfirmationPage() {
 
           {/* Actions */}
           <div className="flex flex-col gap-3 pt-4 border-t border-border">
-            <Button
-              onClick={() => navigate('/')}
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-            >
-              Back to Home
-            </Button>
+            {confirmedBooking ? (
+              <Button asChild className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                <Link to={`/trips/${confirmedBooking.id}`}>Open Booking Workspace</Link>
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate('/')}
+                className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
+              >
+                Back to Home
+              </Button>
+            )}
+            {confirmedBooking ? (
+              <Button asChild variant="outline" className="w-full h-12 rounded-xl">
+                <Link to={`/trips/${confirmedBooking.id}?tab=messages`}>Message Tour Operator</Link>
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               onClick={() => window.print()}

@@ -171,7 +171,7 @@ export default function TravelerDashboardPage() {
                         size="sm"
                         className="mt-6 rounded-full px-6"
                       >
-                        <Link to="/trips">Manage Booking</Link>
+                        <Link to={`/trips/${nextTrip.id}`}>Manage Booking</Link>
                       </Button>
                     </div>
                   </div>

@@ -80,6 +80,18 @@ export const tourBookingService = {
     return data
   },
 
+  async getTravelerBookingById(travelerId: string, bookingId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('tour_bookings')
+      .select('*, tours(id, title, images, duration, location)')
+      .eq('traveler_id', travelerId)
+      .eq('id', bookingId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
   async getOperatorBookings(operatorId: string): Promise<TourBooking[]> {
     const { data, error } = await supabase
       .from('tour_bookings')
@@ -245,6 +257,18 @@ export const packageBookingService = {
       .select('*, packages(id, name, cover_image, package_type)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false })
+
+    if (error) throw error
+    return data
+  },
+
+  async getTravelerBookingById(travelerId: string, bookingId: string): Promise<any | null> {
+    const { data, error } = await supabase
+      .from('package_bookings')
+      .select('*, packages(id, name, cover_image, package_type)')
+      .eq('traveler_id', travelerId)
+      .eq('id', bookingId)
+      .maybeSingle()
 
     if (error) throw error
     return data
@@ -490,6 +514,14 @@ export const bookingService = {
     return [...tours, ...packages].sort(
       (a, b) => new Date(b.booking_date).getTime() - new Date(a.booking_date).getTime(),
     )
+  },
+  getTravelerBookingById: async (travelerId: string, bookingId: string): Promise<any | null> => {
+    const [tourBooking, packageBooking] = await Promise.all([
+      tourBookingService.getTravelerBookingById(travelerId, bookingId),
+      packageBookingService.getTravelerBookingById(travelerId, bookingId),
+    ])
+
+    return tourBooking ?? packageBooking ?? null
   },
   tour: tourBookingService,
   package: packageBookingService,

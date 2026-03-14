@@ -1,7 +1,7 @@
 import { AlertCircle, Check, Loader2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { handlePackagePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
@@ -146,9 +146,22 @@ export default function PackageBookingConfirmationPage() {
             </div>
           </div>
 
-          <Button onClick={() => navigate('/')} className="w-full h-12 rounded-2xl font-bold">
-            Done
-          </Button>
+          <div className="space-y-3">
+            {booking ? (
+              <Button asChild className="w-full h-12 rounded-2xl font-bold">
+                <Link to={`/trips/${booking.id}`}>Open Booking Workspace</Link>
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/')} className="w-full h-12 rounded-2xl font-bold">
+                Done
+              </Button>
+            )}
+            {booking ? (
+              <Button asChild variant="outline" className="w-full h-12 rounded-2xl font-bold">
+                <Link to={`/trips/${booking.id}?tab=messages`}>Message Host</Link>
+              </Button>
+            ) : null}
+          </div>
         </motion.div>
       </div>
     </div>
