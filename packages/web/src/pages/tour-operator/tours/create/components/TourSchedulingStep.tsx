@@ -61,11 +61,11 @@ export function TourSchedulingStep({ data, onUpdate, onNext, onBack }: TourSched
         <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <Calendar className="w-6 h-6 text-white" />
+            <Calendar className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Departure Dates</h2>
-            <p className="text-white/80 text-sm">
+            <p className="text-primary-foreground/80 text-sm">
               Add the specific dates and times when this tour will run.
             </p>
           </div>

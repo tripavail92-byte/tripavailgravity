@@ -145,13 +145,13 @@ export function TourOperatorDashboard() {
   ]
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-950">
+    <div className="min-h-screen relative overflow-hidden bg-background">
 
       {/* ── Ambient gradient background ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
         <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] rounded-full bg-primary/15 blur-[100px] opacity-50" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] rounded-full bg-orange-600/10 blur-[80px]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] rounded-full bg-accent/15 blur-[80px]" />
       </div>
 
       <div className="relative z-10">
@@ -165,7 +165,7 @@ export function TourOperatorDashboard() {
             className="rounded-3xl overflow-hidden relative"
           >
             {/* glass hero panel */}
-            <div className="glass-card-dark border border-white/10 rounded-3xl p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="glass-card-dark border border-border/50 rounded-3xl p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
               {/* left: identity */}
               <div className="flex items-center gap-5">
                 <div className="relative flex-shrink-0">
@@ -173,14 +173,14 @@ export function TourOperatorDashboard() {
                     <Compass className="w-8 h-8 text-primary" />
                   </div>
                   {verificationStatus === 'approved' && (
-                    <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-slate-950">
-                      <ShieldCheck className="w-3 h-3 text-white" />
+                    <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 bg-success rounded-full flex items-center justify-center border-2 border-background">
+                      <ShieldCheck className="w-3 h-3 text-success-foreground" />
                     </div>
                   )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-2xl font-black text-white tracking-tight">
+                    <h1 className="text-2xl font-black text-foreground tracking-tight">
                       Welcome back, {operatorName}
                     </h1>
                     <span className="text-2xl">🎒</span>
@@ -191,7 +191,7 @@ export function TourOperatorDashboard() {
                       Tour Operator
                     </span>
                     {isKycProcessing && (
-                      <Badge className="bg-amber-500/20 text-amber-200 border border-amber-500/30 rounded-full px-3 py-1 font-black uppercase tracking-widest text-[10px]">
+                      <Badge className="bg-warning/20 text-warning border border-warning/30 rounded-full px-3 py-1 font-black uppercase tracking-widest text-[10px]">
                         <span className="inline-flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" /> Processing
                         </span>
@@ -204,8 +204,8 @@ export function TourOperatorDashboard() {
                         </span>
                       </Badge>
                     )}
-                    <span className="text-white/20">·</span>
-                    <span className="text-xs text-white/40 font-medium">{user?.email}</span>
+                    <span className="text-muted-foreground/50">·</span>
+                    <span className="text-xs text-muted-foreground font-medium">{user?.email}</span>
                   </div>
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function TourOperatorDashboard() {
                 data-tour="add-tour"
                 onClick={handleCreateTour}
                 disabled={setupCompleted !== true}
-                className="bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/30 h-12 px-8 rounded-2xl font-black gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide text-sm flex-shrink-0 disabled:opacity-50"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/30 h-12 px-8 rounded-2xl font-black gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide text-sm flex-shrink-0 disabled:opacity-50"
               >
                 <Plus className="w-5 h-5" />
                 Create Tour Package
@@ -236,15 +236,15 @@ export function TourOperatorDashboard() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.07 }}
-                className={`glass-card-dark border border-white/10 rounded-2xl p-5 shadow-xl ${stat.glow}`}
+                className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-white/40">{stat.label}</p>
-                  <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
-                    <stat.icon className="w-4 h-4 text-white/50" />
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">{stat.label}</p>
+                  <div className="w-8 h-8 rounded-xl bg-background/40 flex items-center justify-center">
+                    <stat.icon className="w-4 h-4 text-muted-foreground" />
                   </div>
                 </div>
-                <p className="text-3xl font-black text-white">{loading ? '—' : stat.value}</p>
+                <p className="text-3xl font-black text-foreground">{loading ? '—' : stat.value}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -255,20 +255,20 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
-              className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-warning animate-pulse" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">Verification processing</p>
-                  <p className="text-xs text-white/50 font-medium">We’re running OCR on your CNIC. This usually takes a few minutes — you can keep using the dashboard.</p>
+                  <p className="font-bold text-foreground text-sm">Verification processing</p>
+                  <p className="text-xs text-muted-foreground font-medium">We’re running OCR on your CNIC. This usually takes a few minutes — you can keep using the dashboard.</p>
                 </div>
               </div>
               <Button
                 size="sm"
-                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-amber-500 text-white hover:bg-amber-400"
+                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-warning text-warning-foreground hover:bg-warning/90"
                 onClick={() => navigate('/operator/verification')}
               >
                 View Status <ArrowRight className="w-4 h-4" />
@@ -288,13 +288,13 @@ export function TourOperatorDashboard() {
                   <ShieldCheck className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">Verification pending review</p>
-                  <p className="text-xs text-white/50 font-medium">Your CNIC was processed successfully and is now queued for admin approval.</p>
+                  <p className="font-bold text-foreground text-sm">Verification pending review</p>
+                  <p className="text-xs text-muted-foreground font-medium">Your CNIC was processed successfully and is now queued for admin approval.</p>
                 </div>
               </div>
               <Button
                 size="sm"
-                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-white hover:bg-primary/90 uppercase tracking-wide"
+                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide"
                 onClick={() => navigate('/operator/verification')}
               >
                 View Details <ArrowRight className="w-4 h-4" />
@@ -307,20 +307,20 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
-              className="glass-card-dark border border-red-500/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card-dark border border-destructive/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                  <XCircle className="w-5 h-5 text-red-400" />
+                <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-5 h-5 text-destructive" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">Verification rejected</p>
-                  <p className="text-xs text-white/50 font-medium">Your documents could not be verified. Please re-upload clearer photos of your CNIC front and back.</p>
+                  <p className="font-bold text-foreground text-sm">Verification rejected</p>
+                  <p className="text-xs text-muted-foreground font-medium">Your documents could not be verified. Please re-upload clearer photos of your CNIC front and back.</p>
                 </div>
               </div>
               <Button
                 size="sm"
-                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-red-500 text-white hover:bg-red-400 uppercase tracking-wide"
+                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-destructive text-destructive-foreground hover:bg-destructive/90 uppercase tracking-wide"
                 onClick={() => navigate('/operator/verification')}
               >
                 Re-upload <ArrowRight className="w-4 h-4" />
@@ -330,19 +330,19 @@ export function TourOperatorDashboard() {
 
           {setupCompleted === false && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">Setup incomplete</p>
-                  <p className="text-xs text-white/50 font-medium">Complete your profile to start listing tour packages.</p>
+                  <p className="font-bold text-foreground text-sm">Setup incomplete</p>
+                  <p className="text-xs text-muted-foreground font-medium">Complete your profile to start listing tour packages.</p>
                 </div>
               </div>
               <Button size="sm"
-                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-amber-500 text-white hover:bg-amber-400"
+                className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-warning text-warning-foreground hover:bg-warning/90"
                 onClick={() => navigate(setupCurrentStep > 0 ? `/operator/setup?step=${STEP_SLUGS[setupCurrentStep] ?? 'welcome'}` : '/operator/setup')}
               >
                 Resume Setup <ArrowRight className="w-4 h-4" />
@@ -359,12 +359,12 @@ export function TourOperatorDashboard() {
                   <ShieldAlert className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">Identity verification required</p>
-                  <p className="text-xs text-white/50 font-medium">Upload your CNIC (front &amp; back) to activate your account.</p>
+                  <p className="font-bold text-foreground text-sm">Identity verification required</p>
+                  <p className="text-xs text-muted-foreground font-medium">Upload your CNIC (front &amp; back) to activate your account.</p>
                 </div>
               </div>
               <Button size="sm"
-                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-white hover:bg-primary/90 uppercase tracking-wide"
+                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide"
                 onClick={() => navigate('/operator/verification')}
               >
                 Verify Now <ArrowRight className="w-4 h-4" />
@@ -374,14 +374,14 @@ export function TourOperatorDashboard() {
 
           {setupCompleted === true && verificationStatus === 'pending' && !isKycProcessing && !isKycPendingAdminReview && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              className="glass-card-dark border border-amber-500/30 rounded-2xl px-6 py-5 flex items-center gap-4"
+              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center gap-4"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-amber-400 animate-pulse" />
+              <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-warning animate-pulse" />
               </div>
               <div>
-                <p className="font-bold text-white text-sm">Verification under review</p>
-                <p className="text-xs text-white/50 font-medium">Our compliance team is reviewing your documents. Typical review time: 1–3 business days.</p>
+                <p className="font-bold text-foreground text-sm">Verification under review</p>
+                <p className="text-xs text-muted-foreground font-medium">Our compliance team is reviewing your documents. Typical review time: 1–3 business days.</p>
               </div>
             </motion.div>
           )}
@@ -397,26 +397,26 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.22 }}
-              className="glass-card-dark border border-white/10 rounded-3xl p-6 space-y-4"
+              className="glass-card-dark border border-border/50 rounded-3xl p-6 space-y-4"
             >
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wide">
+                <h2 className="text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-wide">
                   <Edit3 className="w-5 h-5 text-primary" />
                   Continue Editing
                   <Badge className="bg-primary/20 text-primary border-primary/30 font-bold">
                     {continuableTours.length}
                   </Badge>
                 </h2>
-                <p className="text-xs text-white/40 font-medium">Pick up where you left off</p>
+                <p className="text-xs text-muted-foreground font-medium">Pick up where you left off</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {continuableTours.map((tour) => {
                   const statusConfig = {
-                    draft:       { label: 'Draft',       bg: 'bg-slate-700/60',   text: 'text-slate-300',  border: 'border-slate-600/40', icon: Clock },
+                    draft:       { label: 'Draft',       bg: 'bg-muted/50',       text: 'text-muted-foreground',  border: 'border-border/50', icon: Clock },
                     in_progress: { label: 'In Progress', bg: 'bg-primary/20',     text: 'text-primary',    border: 'border-primary/40',   icon: Edit3 },
-                    rejected:    { label: 'Rejected',    bg: 'bg-red-500/20',     text: 'text-red-400',    border: 'border-red-500/40',   icon: XCircle },
-                  }[tour.workflow_status as string] ?? { label: tour.workflow_status ?? 'Draft', bg: 'bg-slate-700/60', text: 'text-slate-300', border: 'border-slate-600/40', icon: Clock }
+                    rejected:    { label: 'Rejected',    bg: 'bg-destructive/20', text: 'text-destructive', border: 'border-destructive/40', icon: XCircle },
+                  }[tour.workflow_status as string] ?? { label: tour.workflow_status ?? 'Draft', bg: 'bg-muted/50', text: 'text-muted-foreground', border: 'border-border/50', icon: Clock }
 
                   const completionPct = tour.completion_percentage ?? 0
                   const lastEdited = tour.last_edited_at
@@ -436,11 +436,11 @@ export function TourOperatorDashboard() {
                   return (
                     <div
                       key={tour.id}
-                      className={`rounded-2xl border ${statusConfig.border} bg-white/5 p-4 flex flex-col gap-3 hover:bg-white/8 transition-all`}
+                      className={`rounded-2xl border ${statusConfig.border} bg-background/40 p-4 flex flex-col gap-3 hover:bg-background/60 transition-all`}
                     >
                       {/* Tour name + status */}
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-bold text-white text-sm leading-snug line-clamp-2 flex-1">
+                        <h3 className="font-bold text-foreground text-sm leading-snug line-clamp-2 flex-1">
                           {tour.title || 'Untitled Tour'}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${statusConfig.bg} ${statusConfig.text}`}>
@@ -451,7 +451,7 @@ export function TourOperatorDashboard() {
 
                       {/* Rejection reason */}
                       {tour.workflow_status === 'rejected' && tour.rejection_reason && (
-                        <p className="text-xs text-red-400/80 bg-red-500/10 rounded-xl px-3 py-2 border border-red-500/20">
+                        <p className="text-xs text-destructive/90 bg-destructive/10 rounded-xl px-3 py-2 border border-destructive/20">
                           {tour.rejection_reason}
                         </p>
                       )}
@@ -459,10 +459,10 @@ export function TourOperatorDashboard() {
                       {/* Completion bar */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-white/40 font-medium">Completion</span>
-                          <span className="text-xs font-bold text-white/70">{completionPct}%</span>
+                          <span className="text-xs text-muted-foreground font-medium">Completion</span>
+                          <span className="text-xs font-bold text-foreground/80">{completionPct}%</span>
                         </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-muted/40 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all duration-500"
                             style={{ width: `${completionPct}%` }}
@@ -472,7 +472,7 @@ export function TourOperatorDashboard() {
 
                       {/* Footer: last edited + button */}
                       <div className="flex items-center justify-between mt-auto pt-1">
-                        <span className="text-xs text-white/30 font-medium flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground/80 font-medium flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           {lastEdited}
                         </span>
@@ -502,7 +502,7 @@ export function TourOperatorDashboard() {
             {/* Left: Tour Packages */}
             <div className="lg:col-span-2 space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wide">
+                <h2 className="text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-wide">
                   <Package className="w-5 h-5 text-primary" />
                   Active Tour Packages
                   {publishedTours.length > 0 && (
@@ -519,9 +519,9 @@ export function TourOperatorDashboard() {
               </div>
 
               {loading ? (
-                <div className="glass-card-dark border border-white/10 rounded-3xl p-20 flex flex-col items-center justify-center gap-4">
+                <div className="glass-card-dark border border-border/50 rounded-3xl p-20 flex flex-col items-center justify-center gap-4">
                   <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                  <p className="text-white/50 font-medium text-sm">Loading your tours…</p>
+                  <p className="text-muted-foreground font-medium text-sm">Loading your tours…</p>
                 </div>
               ) : publishedTours.length > 0 ? (
                 <ActiveToursGrid
@@ -531,12 +531,12 @@ export function TourOperatorDashboard() {
                   onView={handleViewTour}
                 />
               ) : (
-                <div className="glass-card-dark border border-white/10 rounded-3xl p-12 text-center">
+                <div className="glass-card-dark border border-border/50 rounded-3xl p-12 text-center">
                   <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
                     <span className="text-4xl">🗺️</span>
                   </div>
-                  <h3 className="text-xl font-black text-white mb-2">No active tours yet</h3>
-                  <p className="text-white/40 max-w-sm mx-auto mb-8 font-medium text-sm">
+                  <h3 className="text-xl font-black text-foreground mb-2">No active tours yet</h3>
+                  <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium text-sm">
                     Create your first tour package to start reaching travellers worldwide.
                   </p>
                   <Button
@@ -553,7 +553,7 @@ export function TourOperatorDashboard() {
 
             {/* Right: Recent Activity */}
             <div className="lg:col-span-1">
-              <div className="glass-card-dark border border-white/10 rounded-3xl p-6">
+              <div className="glass-card-dark border border-border/50 rounded-3xl p-6">
                 <RecentBookings />
               </div>
             </div>

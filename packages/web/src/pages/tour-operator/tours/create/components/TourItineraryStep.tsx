@@ -262,7 +262,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
             </div>
             <div>
               <h2 className="text-xl font-bold">Day-by-Day Itinerary</h2>
-              <p className="text-white/80 text-sm font-medium">
+              <p className="text-primary-foreground/80 text-sm font-medium">
                 {durationDays} day{durationDays !== 1 ? 's' : ''} &middot; {filledDays}/{durationDays} filled &middot; {totalActivities} activities
               </p>
             </div>
@@ -279,7 +279,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
           </Button>
         </div>
         {destination && (
-          <div className="relative mt-3 flex items-center gap-1.5 text-white/70 text-xs font-medium">
+          <div className="relative mt-3 flex items-center gap-1.5 text-primary-foreground/70 text-xs font-medium">
             <MapPin className="w-3.5 h-3.5" />
             {destination}
           </div>
@@ -306,7 +306,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                 className="w-full flex items-center gap-3 px-5 py-3.5 bg-primary/10 border-b border-primary/20 hover:bg-primary/15 transition-colors text-left"
               >
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-sm shadow-primary/30">
-                  <span className="text-xs font-black text-white">{day.day}</span>
+                  <span className="text-xs font-black text-primary-foreground">{day.day}</span>
                 </div>
                 <span className="text-sm font-black text-primary uppercase tracking-wide flex-1">
                   Day {day.day}{day.title ? ` — ${day.title}` : ''}

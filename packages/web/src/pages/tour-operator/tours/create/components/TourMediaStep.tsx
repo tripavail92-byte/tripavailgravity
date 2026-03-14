@@ -204,11 +204,11 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
         <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <ImageIcon className="w-6 h-6 text-white" />
+            <ImageIcon className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Media</h2>
-            <p className="text-white/80 text-sm">
+            <p className="text-primary-foreground/80 text-sm">
               Upload gallery photos and choose one clear Cover Image. You can change it anytime.
             </p>
           </div>
@@ -296,7 +296,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
               className="relative group aspect-square rounded-2xl overflow-hidden border border-border shadow-sm"
             >
               {item.is_main && (
-                <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-[10px] font-bold bg-primary text-white">
+                <div className="absolute top-2 left-2 z-10 px-2 py-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
                   Cover Image
                 </div>
               )}

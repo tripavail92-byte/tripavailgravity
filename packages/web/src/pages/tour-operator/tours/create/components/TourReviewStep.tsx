@@ -71,7 +71,7 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
           </div>
           <div>
             <h2 className="text-xl font-bold">Review & Publish</h2>
-            <p className="text-white/90 text-sm font-medium">One last look before your tour goes live.</p>
+            <p className="text-primary-foreground/90 text-sm font-medium">One last look before your tour goes live.</p>
           </div>
         </div>
       </div>

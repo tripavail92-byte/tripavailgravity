@@ -1,7 +1,7 @@
 import { AlignJustify, Briefcase, LayoutDashboard, LogOut, MapPin, RefreshCcw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 
-export function RoleBasedDrawer() {
+export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
   const { user, activeRole, partnerType, signOut, initialized, switchRole } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -68,11 +68,6 @@ export function RoleBasedDrawer() {
     }
   }, [activeRole?.role_type, user?.id])
 
-  const handleNavigation = (path: string) => {
-    setIsOpen(false)
-    navigate(path)
-  }
-
   const handleSignOut = async () => {
     setIsOpen(false)
     await signOut()
@@ -99,40 +94,6 @@ export function RoleBasedDrawer() {
       default:
         return 'Traveler'
     }
-  }
-
-  const getRoleBadgeGradient = (role: string) => {
-    switch (role) {
-      case 'hotel_manager':
-        return 'from-blue-500 to-indigo-600'
-      case 'tour_operator':
-        return 'from-emerald-500 to-teal-600'
-      case 'admin':
-        return 'from-red-500 to-rose-600'
-      case 'traveller':
-        return 'from-primary to-primary/80'
-      default:
-        return 'from-gray-500 to-slate-600'
-    }
-  }
-
-  // Helper to get gradient color based on label (Image 2 Style)
-  const getBadgeColor = (label: string): string => {
-    const l = label.toLowerCase()
-    if (l.includes('dashboard')) return 'from-blue-500 to-indigo-600'
-    if (l.includes('profile')) return 'from-purple-500 to-violet-600'
-    if (l.includes('trip') || l.includes('tour')) return 'from-cyan-400 to-blue-500'
-    if (l.includes('wishlist')) return 'from-pink-500 to-rose-500'
-    if (l.includes('payment') || l.includes('wallet')) return 'from-emerald-400 to-teal-500'
-    if (l.includes('booking')) return 'from-emerald-500 to-teal-600'
-    if (l.includes('setting')) return 'from-gray-500 to-slate-600'
-    if (l.includes('help')) return 'from-amber-500 to-orange-600'
-    if (l.includes('legal') || l.includes('policy')) return 'from-slate-500 to-gray-600'
-    if (l.includes('list')) return 'from-indigo-500 to-purple-600'
-    if (l.includes('verification')) return 'from-rose-500 to-red-600'
-    if (l.includes('calendar')) return 'from-orange-400 to-amber-500'
-
-    return 'from-blue-500 to-indigo-600' // Default
   }
 
   // Custom Icon Animation Logic
@@ -164,7 +125,7 @@ export function RoleBasedDrawer() {
       }
     }
     if (l.includes('wishlist') || l.includes('heart')) {
-      return { ...base, hover: { scale: 1.2, color: '#f472b6' } }
+      return { ...base, hover: { scale: 1.2 } }
     }
     if (l.includes('payment') || l.includes('card')) {
       return { ...base, hover: { rotateY: 180, transition: { duration: 0.4 } } }
@@ -188,7 +149,6 @@ export function RoleBasedDrawer() {
   if (!user || !activeRole) return null
 
   const roleLabel = getRoleLabel(activeRole.role_type)
-  const roleGradient = getRoleBadgeGradient(activeRole.role_type)
   const navItems = ROLE_NAVIGATION[activeRole.role_type] || []
 
   const isTraveller = activeRole.role_type === 'traveller'
@@ -197,7 +157,6 @@ export function RoleBasedDrawer() {
     ? {
         label: partnerType === 'hotel_manager' ? 'Hotel Manager Dashboard' : 'Tour Operator Dashboard',
         icon: LayoutDashboard,
-        gradient: partnerType === 'hotel_manager' ? 'from-blue-500 to-indigo-600' : 'from-emerald-500 to-teal-600',
         onClick: async () => {
           setIsOpen(false)
           try {
@@ -229,12 +188,20 @@ export function RoleBasedDrawer() {
       <button
         data-tour="profile-menu"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 border border-border bg-background/50 backdrop-blur-sm rounded-full p-1 pl-3 hover:shadow-md transition-shadow group shrink-0"
+        className={cn(
+          'group shrink-0 rounded-full border p-1 pl-3 backdrop-blur-sm transition-shadow flex items-center gap-2',
+          inverted
+            ? 'border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)]'
+            : 'border-border bg-background/50 hover:shadow-md',
+        )}
       >
-        <AlignJustify className="w-4 h-4 text-foreground group-hover:text-primary" />
-        <Avatar className="h-7 w-7 border border-border">
+        <AlignJustify className={cn('h-4 w-4 group-hover:text-primary', inverted ? 'text-white/72' : 'text-foreground')} />
+        <Avatar className={cn('h-7 w-7 border', inverted ? 'border-white/10' : 'border-border')}>
           <AvatarImage src={user?.user_metadata?.avatar_url} alt="Traveler" />
-          <AvatarFallback aria-label="Traveler" className="bg-muted text-muted-foreground">
+          <AvatarFallback
+            aria-label="Traveler"
+            className={cn(inverted ? 'bg-white/10 text-white/72' : 'bg-muted text-muted-foreground')}
+          >
             {user?.email ? user.email.charAt(0).toUpperCase() : <MapPin className="h-4 w-4" />}
           </AvatarFallback>
         </Avatar>
@@ -248,7 +215,7 @@ export function RoleBasedDrawer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1400]"
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[1400]"
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -285,7 +252,7 @@ export function RoleBasedDrawer() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setIsOpen(false)}
-                    className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 flex items-center justify-center transition-colors text-foreground dark:text-white"
+                    className="w-8 h-8 rounded-full bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center transition-colors text-foreground"
                   >
                     <X size={16} />
                   </motion.button>
@@ -298,10 +265,7 @@ export function RoleBasedDrawer() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={spring}
-                      className={cn(
-                        'w-12 h-12 rounded-[16px] flex-shrink-0 bg-gradient-to-br flex items-center justify-center shadow-lg p-[2px] [@media(max-height:740px)]:w-11 [@media(max-height:740px)]:h-11 [@media(max-height:740px)]:rounded-[14px]',
-                        roleGradient
-                      )}
+                      className="w-12 h-12 rounded-[16px] flex-shrink-0 flex items-center justify-center shadow-lg p-[2px] bg-primary/15 border border-primary/30 [@media(max-height:740px)]:w-11 [@media(max-height:740px)]:h-11 [@media(max-height:740px)]:rounded-[14px]"
                     >
                       <div className="w-full h-full rounded-[16px] overflow-hidden bg-background [@media(max-height:740px)]:rounded-[14px]">
                         <Avatar className="w-full h-full">
@@ -333,7 +297,7 @@ export function RoleBasedDrawer() {
                             'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm'
                           )}
                         >
-                          <MapPin className="w-2.5 h-2.5 text-muted-foreground/70 dark:text-white/70" />
+                          <MapPin className="w-2.5 h-2.5 text-muted-foreground/70" />
                           <span>{roleLabel}</span>
                         </div>
                       </div>
@@ -352,7 +316,6 @@ export function RoleBasedDrawer() {
                   <div className="space-y-1.5 [@media(max-height:740px)]:space-y-1">
                     {navItems.map((item) => {
                       const isActive = location.pathname === item.href
-                      const badgeColor = getBadgeColor(item.label)
                       const animation = getIconAnimation(item.label, isActive)
 
                       const isTourCreateBlocked =
@@ -373,73 +336,82 @@ export function RoleBasedDrawer() {
                           : item.href
 
                       return (
-                        <motion.button
+                        <motion.div
                           key={item.href}
                           whileHover={isBlocked ? undefined : { x: 4 }}
                           whileTap={isBlocked ? undefined : { scale: 0.98 }}
-                          onClick={() => handleNavigation(blockedTarget)}
-                          aria-disabled={isBlocked}
-                          title={
-                            isTourCreateBlocked
-                              ? 'Complete Tour Operator Setup to create tours'
-                              : isHotelPackagesBlocked
-                                ? 'Create a hotel listing before listing packages'
-                                : undefined
-                          }
-                          className="w-full group"
+                          className="w-full"
                         >
-                          <div
-                            className={cn(
-                              'flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all [@media(max-height:740px)]:py-1.5',
-                              isActive
-                                ? 'bg-muted/80 border border-border/50'
-                                : 'hover:bg-muted/50 border border-transparent'
-                              ,
-                              isBlocked && 'opacity-60 cursor-not-allowed hover:bg-transparent'
-                            )}
+                          <Link
+                            to={blockedTarget}
+                            onClick={() => setIsOpen(false)}
+                            aria-disabled={isBlocked}
+                            title={
+                              isTourCreateBlocked
+                                ? 'Complete Tour Operator Setup to create tours'
+                                : isHotelPackagesBlocked
+                                  ? 'Create a hotel listing before listing packages'
+                                  : undefined
+                            }
+                            className="block w-full group"
                           >
                             <div
-                              className={`w-8 h-8 rounded-lg bg-gradient-to-br ${badgeColor} flex items-center justify-center flex-shrink-0 shadow-lg [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8`}
+                              className={cn(
+                                'flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all [@media(max-height:740px)]:py-1.5',
+                                isActive
+                                  ? 'bg-muted/80 border border-border/50'
+                                  : 'hover:bg-muted/50 border border-transparent',
+                                isBlocked && 'opacity-60'
+                              )}
                             >
-                              <motion.div
-                                variants={{
-                                  hover: animation.hover,
-                                  initial: { rotate: 0, scale: 1, x: 0, y: 0 },
-                                }}
-                                initial="initial"
-                                whileHover="hover"
-                              >
-                                <item.icon
-                                  size={15}
-                                  className="text-primary-foreground"
-                                  strokeWidth={2}
-                                />
-                              </motion.div>
-                            </div>
-
-                            <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
-                              <span
+                              <div
                                 className={cn(
-                                  'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5 [@media(max-height:740px)]:text-[13px]',
+                                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8',
                                   isActive
-                                    ? 'text-foreground font-bold'
-                                    : 'text-muted-foreground group-hover:text-foreground'
+                                    ? 'bg-primary/15 border-primary/30 text-primary shadow-sm'
+                                    : 'bg-muted border-border text-muted-foreground'
                                 )}
                               >
-                                {item.label}
-                              </span>
-                              {item.subtext && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate [@media(max-height:740px)]:hidden">
-                                  {item.subtext}
-                                </span>
-                              )}
-                            </div>
+                                <motion.div
+                                  variants={{
+                                    hover: animation.hover,
+                                    initial: { rotate: 0, scale: 1, x: 0, y: 0 },
+                                  }}
+                                  initial="initial"
+                                  whileHover="hover"
+                                >
+                                  <item.icon
+                                    size={15}
+                                    className="text-current"
+                                    strokeWidth={2}
+                                  />
+                                </motion.div>
+                              </div>
 
-                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
-                              ›
-                            </span>
-                          </div>
-                        </motion.button>
+                              <div className="flex flex-col items-start gap-0 flex-1 min-w-0">
+                                <span
+                                  className={cn(
+                                    'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5 [@media(max-height:740px)]:text-[13px]',
+                                    isActive
+                                      ? 'text-foreground font-bold'
+                                      : 'text-muted-foreground group-hover:text-foreground'
+                                  )}
+                                >
+                                  {item.label}
+                                </span>
+                                {item.subtext && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate [@media(max-height:740px)]:hidden">
+                                    {item.subtext}
+                                  </span>
+                                )}
+                              </div>
+
+                              <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
+                                ›
+                              </span>
+                            </div>
+                          </Link>
+                        </motion.div>
                       )
                     })}
 
@@ -453,13 +425,8 @@ export function RoleBasedDrawer() {
                           className="w-full group"
                         >
                           <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
-                            <div
-                              className={cn(
-                                'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg',
-                                partnerDashboardAction.gradient
-                              )}
-                            >
-                              <partnerDashboardAction.icon size={15} className="text-primary-foreground" strokeWidth={2} />
+                            <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-sm">
+                              <partnerDashboardAction.icon size={15} className="text-primary" strokeWidth={2} />
                             </div>
                             <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
                               {partnerDashboardAction.label}
@@ -481,8 +448,8 @@ export function RoleBasedDrawer() {
                           className="w-full group"
                         >
                           <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <Briefcase size={15} className="text-primary-foreground" strokeWidth={2} />
+                            <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-sm">
+                              <Briefcase size={15} className="text-primary" strokeWidth={2} />
                             </div>
                             <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
                               Become a Partner
@@ -503,8 +470,8 @@ export function RoleBasedDrawer() {
                           className="w-full group"
                         >
                           <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-500 to-gray-600 flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <RefreshCcw size={15} className="text-primary-foreground" strokeWidth={2} />
+                            <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center flex-shrink-0 shadow-sm">
+                              <RefreshCcw size={15} className="text-muted-foreground" strokeWidth={2} />
                             </div>
                             <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
                               Switch to Traveler

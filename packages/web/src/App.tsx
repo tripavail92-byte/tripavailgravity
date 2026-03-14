@@ -25,6 +25,8 @@ const ListHotelPage = lazy(() => import('@/pages/manager/ListHotelPage'))
 const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
 const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
 const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
+const OperatorCalendarPage = lazy(() => import('@/pages/tour-operator/OperatorCalendarPage'))
+const OperatorBookingsPage = lazy(() => import('@/pages/tour-operator/OperatorBookingsPage'))
 const TourOperatorSetupPage = lazy(
   () => import('@/pages/tour-operator/setup/TourOperatorSetupPage'),
 )
@@ -59,6 +61,10 @@ const TourOperatorSettingsPage = lazy(
   () => import('@/pages/tour-operator/TourOperatorSettingsPage'),
 )
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
+const HelpSupportHubPage = lazy(() => import('@/pages/shared/HelpSupportHubPage'))
+const LegalPoliciesHubPage = lazy(() => import('@/pages/shared/LegalPoliciesHubPage'))
+const MessagesInboxPage = lazy(() => import('@/pages/shared/MessagesInboxPage'))
+const MessageThreadPage = lazy(() => import('@/pages/shared/MessageThreadPage'))
 const MobileKYCPage = lazy(() => import('@/pages/shared/verification/MobileKYCPage'))
 
 // Admin (Phase 2 skeleton)
@@ -220,6 +226,24 @@ function App() {
               />
 
               <Route
+                path="/operator/calendar"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorCalendarPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/bookings"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorBookingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
                 path="/operator/tours/new"
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
@@ -243,6 +267,42 @@ function App() {
                 element={
                   <RoleGuard allowedRoles={['hotel_manager']}>
                     <HotelManagerSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/messages"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator', 'hotel_manager', 'traveller']}>
+                    <MessagesInboxPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/messages/:conversationId"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator', 'hotel_manager', 'traveller']}>
+                    <MessageThreadPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/help"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator', 'hotel_manager', 'traveller']}>
+                    <HelpSupportHubPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/legal"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator', 'hotel_manager', 'traveller']}>
+                    <LegalPoliciesHubPage />
                   </RoleGuard>
                 }
               />

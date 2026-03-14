@@ -34,7 +34,7 @@ export const PickupMap = memo(function PickupMap({
         mapId ? (
           <AdvancedMarker position={markerPosition} draggable={true} onDragEnd={onMarkerDragEnd}>
             <div className="w-10 h-10 bg-primary rounded-full border-4 border-background shadow-xl flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-white" fill="currentColor" />
+              <MapPin className="w-5 h-5 text-primary-foreground" fill="currentColor" />
             </div>
           </AdvancedMarker>
         ) : (

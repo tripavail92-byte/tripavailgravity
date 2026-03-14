@@ -193,32 +193,56 @@ export function deriveStepWorkflow(
   const allPrimaryComplete = statusByStep.every((step) => step.isComplete)
 
   return stepIds.map((id, index) => {
+    const isCurrent = currentStepIndex === index
+    const wasVisited = visitedSteps.has(index)
+
     if (id === 'review') {
       return {
         id,
         requiredCount: 1,
         filledCount: allPrimaryComplete ? 1 : 0,
         hasAnyInput: true,
-        status: allPrimaryComplete
-          ? 'complete'
-          : submitAttempted
-            ? 'needs_attention'
-            : currentStepIndex === index
+        status: submitAttempted
+          ? allPrimaryComplete
+            ? 'complete'
+            : 'needs_attention'
+          : allPrimaryComplete && (isCurrent || wasVisited)
+            ? 'complete'
+            : isCurrent
               ? 'in_progress'
               : 'not_started',
       }
     }
 
     const evaluated = statusByStep[index]
-    const isCurrent = currentStepIndex === index
-    const wasVisited = visitedSteps.has(index)
+
+    // If the user attempted submission, show attention/complete based on actual data
+    if (submitAttempted) {
+      const status: StepStatus = evaluated.isComplete
+        ? 'complete'
+        : evaluated.hasAnyInput || wasVisited || isCurrent
+          ? 'needs_attention'
+          : 'not_started'
+
+      return {
+        id,
+        requiredCount: evaluated.requiredCount,
+        filledCount: evaluated.filledCount,
+        hasAnyInput: evaluated.hasAnyInput,
+        status: isCurrent && status === 'not_started' ? 'in_progress' : status,
+      }
+    }
 
     let status: StepStatus = 'not_started'
-    if (evaluated.isComplete) {
+    if (isCurrent) {
+      status = evaluated.isComplete ? 'complete' : 'in_progress'
+    } else if (!wasVisited) {
+      status = 'not_started'
+    } else if (evaluated.isComplete) {
       status = 'complete'
-    } else if ((submitAttempted || wasVisited) && evaluated.hasAnyInput && !isCurrent) {
+    } else if (evaluated.hasAnyInput) {
       status = 'needs_attention'
-    } else if (isCurrent || evaluated.hasAnyInput) {
+    } else {
       status = 'in_progress'
     }
 

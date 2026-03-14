@@ -37,6 +37,13 @@ const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'review', title: 'Review', component: TourReviewStep },
 ]
 
+const DEFAULT_OPERATOR_RETURN_PATH = '/operator/dashboard'
+const OPERATOR_RETURN_PATHS = new Set([
+  DEFAULT_OPERATOR_RETURN_PATH,
+  '/operator/calendar',
+  '/operator/bookings',
+])
+
 export default function CreateTourPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -66,6 +73,11 @@ export default function CreateTourPage() {
     const raw = searchParams.get('tour_id')
     return raw && raw.trim().length > 0 ? raw.trim() : null
   }, [searchParams, routeTourId])
+
+  const returnPath = useMemo(() => {
+    const raw = searchParams.get('returnTo')
+    return raw && OPERATOR_RETURN_PATHS.has(raw) ? raw : DEFAULT_OPERATOR_RETURN_PATH
+  }, [searchParams])
 
   useEffect(() => {
     const checkSetup = async () => {
@@ -340,7 +352,7 @@ export default function CreateTourPage() {
 
   const handleSaveExit = async () => {
     setShowExitModal(false)
-    await performSave('/operator/dashboard')
+    await performSave(returnPath)
   }
 
   const REQUIRED_FOR_SUBMIT = [
@@ -390,7 +402,7 @@ export default function CreateTourPage() {
       await tourService.submitForReview(savedId, user.id)
       setHasUnsaved(false)
       toast.success('Tour submitted for review! We\'ll notify you once approved.')
-      navigate('/operator/dashboard')
+      navigate(returnPath)
     } catch (error) {
       console.error('Error submitting for review:', error)
       toast.error('Submission failed. Please try again.')
@@ -422,7 +434,7 @@ export default function CreateTourPage() {
       })
       setCurrentStep(previousStep)
     } else {
-      navigate('/operator/dashboard')
+      navigate(returnPath)
     }
   }
 
@@ -451,7 +463,7 @@ export default function CreateTourPage() {
         toast.success('Tour published successfully!')
       }
       setHasUnsaved(false)
-      navigate('/operator/dashboard')
+      navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
       toast.error('Failed to publish tour. Please check all fields.')
@@ -533,7 +545,7 @@ export default function CreateTourPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => hasUnsaved ? setShowExitModal(true) : navigate('/operator/dashboard')}
+                onClick={() => hasUnsaved ? setShowExitModal(true) : navigate(returnPath)}
                 disabled={isSaving || isSubmitting}
                 className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
               >
@@ -726,7 +738,7 @@ export default function CreateTourPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => { setHasUnsaved(false); setShowExitModal(false); navigate('/operator/dashboard') }}
+                  onClick={() => { setHasUnsaved(false); setShowExitModal(false); navigate(returnPath) }}
                   className="w-full"
                 >
                   Discard Changes

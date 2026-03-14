@@ -9,6 +9,7 @@ interface PageHeaderProps {
   subtitle?: string
   backPath?: string
   onBack?: () => void
+  showBackButton?: boolean
   actions?: React.ReactNode
   className?: string
 }
@@ -18,10 +19,12 @@ export function PageHeader({
   subtitle,
   backPath,
   onBack,
+  showBackButton,
   actions,
   className,
 }: PageHeaderProps) {
   const navigate = useNavigate()
+  const shouldShowBackButton = showBackButton ?? Boolean(backPath || onBack)
 
   const handleBack = () => {
     if (onBack) {
@@ -36,14 +39,16 @@ export function PageHeader({
   return (
     <div className={cn('flex items-center justify-between gap-4 mb-6', className)}>
       <div className="flex items-center gap-4 min-w-0 flex-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-          className="shrink-0 h-10 w-10 rounded-full hover:bg-muted"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+        {shouldShowBackButton ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="shrink-0 h-10 w-10 rounded-full hover:bg-muted"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        ) : null}
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-bold text-foreground truncate">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}

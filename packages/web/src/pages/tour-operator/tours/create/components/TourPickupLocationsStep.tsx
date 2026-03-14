@@ -197,7 +197,7 @@ function PickupMapSection({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
+            <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
               Latitude
             </Label>
             <Input
@@ -222,7 +222,7 @@ function PickupMapSection({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-bold text-gray-900 uppercase tracking-widest pl-1 block">
+            <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
               Longitude
             </Label>
             <Input
@@ -251,7 +251,7 @@ function PickupMapSection({
           <Button
             type="button"
             variant="outline"
-            className="bg-white/60 border-white/60"
+            className="bg-background border-border"
             onClick={() => {
               if (!canUseCoords) return
 
@@ -276,7 +276,7 @@ function PickupMapSection({
           <Button
             type="button"
             variant="outline"
-            className="bg-white/60 border-white/60"
+            className="bg-background border-border"
             onClick={() => setRetryNonce((n) => n + 1)}
             disabled={isSaving}
             title="Retry rendering the map"
@@ -289,7 +289,7 @@ function PickupMapSection({
   }
 
   return (
-    <div className="h-[320px] rounded-3xl overflow-hidden border border-white/40 bg-muted">
+    <div className="h-[320px] rounded-3xl overflow-hidden border border-border/40 bg-muted">
       <PickupMap
         key={retryNonce}
         center={center}
@@ -1135,7 +1135,7 @@ export function TourPickupLocationsStep({
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="flex h-full min-h-[160px] w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                              <div className="flex h-full min-h-[160px] w-full items-center justify-center text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                                 Map preview unavailable
                               </div>
                             )}
@@ -1273,7 +1273,7 @@ export function TourPickupLocationsStep({
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                          <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                             Search
                           </Label>
                           <PlacesAutocomplete
@@ -1297,7 +1297,7 @@ export function TourPickupLocationsStep({
 
                         <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(220px,0.9fr)_minmax(320px,1.1fr)]">
                           <div className="space-y-2">
-                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                               Title
                             </Label>
                             <Input
@@ -1311,7 +1311,7 @@ export function TourPickupLocationsStep({
 
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-3">
-                              <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                              <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                                 Pickup time
                               </Label>
                               {active.pickup_time ? (
@@ -1339,7 +1339,7 @@ export function TourPickupLocationsStep({
 
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                               Address
                             </Label>
                             <Input
@@ -1352,7 +1352,7 @@ export function TourPickupLocationsStep({
                           </div>
 
                           <div className="space-y-2">
-                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                               Notes
                             </Label>
                             <Textarea
@@ -1397,7 +1397,7 @@ export function TourPickupLocationsStep({
                 </div>
 
                 {isDirty ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+                  <div className="rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-xs font-medium text-foreground">
                     You have unsaved changes. Save the pickup plan before continuing.
                   </div>
                 ) : null}
@@ -1485,19 +1485,19 @@ export function TourPickupLocationsStep({
           </div>
         </Card>
 
-        <div className="flex items-center justify-between pt-6 border-t border-white/30">
+        <div className="flex items-center justify-between pt-6 border-t border-border/40">
           <Button
             variant="outline"
             onClick={onBack}
             size="lg"
-            className="px-8 bg-white/50 border-white/60 hover:bg-white/70"
+            className="px-8 bg-background border-border hover:bg-accent"
           >
             Back
           </Button>
           <Button
             onClick={handleNextStep}
             size="lg"
-            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold shadow-lg border-0"
+            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg border-0"
           >
             Next Step
           </Button>

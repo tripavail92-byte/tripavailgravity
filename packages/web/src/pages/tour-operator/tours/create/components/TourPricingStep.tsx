@@ -157,7 +157,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
           </div>
           <div>
             <h2 className="text-xl font-bold">Tour Pricing</h2>
-            <p className="text-white/90 text-sm font-medium">
+            <p className="text-primary-foreground/90 text-sm font-medium">
               Set competitive pricing and booking policies for your tour.
             </p>
           </div>

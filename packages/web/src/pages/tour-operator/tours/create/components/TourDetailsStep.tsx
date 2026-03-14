@@ -126,7 +126,7 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           </div>
           <div>
             <h2 className="text-xl font-bold">Requirements &amp; Logistics</h2>
-            <p className="text-white/90 text-sm font-medium">
+            <p className="text-primary-foreground/90 text-sm font-medium">
               Define who can participate and the physical demands.
             </p>
           </div>

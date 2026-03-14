@@ -22,6 +22,36 @@ export async function fetchReports(limit = 50) {
   return data || []
 }
 
+export async function fetchMessagingReports(limit = 100, status: string | null = null) {
+  const { data, error } = await (supabase as any).rpc('admin_list_messaging_reports', {
+    p_status: status,
+    p_limit: limit,
+  })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function fetchSupportEscalations(limit = 100, status: string | null = null) {
+  const { data, error } = await (supabase as any).rpc('admin_list_support_escalations', {
+    p_status: status,
+    p_limit: limit,
+  })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function fetchAdminConversationMessages(conversationId: string, limit = 100) {
+  const { data, error } = await (supabase as any).rpc('admin_get_booking_conversation_messages', {
+    p_conversation_id: conversationId,
+    p_limit: limit,
+  })
+
+  if (error) throw error
+  return data || []
+}
+
 /**
  * Fetch packages for listing moderation
  */

@@ -1,8 +1,9 @@
 import { format } from 'date-fns'
-import { BadgeCheck, Calendar, ChevronRight, Clock, Loader2, Luggage, MapPin } from 'lucide-react'
+import { BadgeCheck, Calendar, ChevronRight, Clock, Loader2, Luggage, MapPin, MessageSquare } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -229,9 +230,14 @@ export default function MyTripsPage() {
                                 ${trip.total_price?.toLocaleString()}
                               </span>
                             </div>
-                            <Button variant="outline" className="rounded-full px-6 group/btn">
-                              Details
-                              <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+                            <Button asChild variant="outline" className="rounded-full px-6 group/btn">
+                              <Link
+                                to={`/messages?scope=${trip.tours ? 'tour_booking' : 'package_booking'}&bookingId=${trip.id}`}
+                              >
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Open thread
+                                <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+                              </Link>
                             </Button>
                           </div>
                         </div>

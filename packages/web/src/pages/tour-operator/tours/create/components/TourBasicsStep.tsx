@@ -187,11 +187,11 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
           <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
           <div className="relative flex items-center gap-4">
             <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Info className="w-6 h-6 text-white" />
+              <Info className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-xl font-bold">Tour Basics</h2>
-              <p className="text-white/80 text-sm">
+              <p className="text-primary-foreground/80 text-sm">
                 Start with the fundamental details of your tour package.
               </p>
             </div>
@@ -273,7 +273,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                           {data.tour_type === cat.id && (
                             <motion.div
                               layoutId="selected-category"
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shadow-md"
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-md"
                             >
                               <Check className="w-3 h-3" />
                             </motion.div>
@@ -408,7 +408,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                                 cities.splice(idx + 1, 1)
                                 onUpdate({ destination_cities: cities.filter(Boolean) })
                               }}
-                              className="shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                              className="shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -615,7 +615,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
           <Button
             onClick={onNext}
             size="lg"
-            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/30 border-0"
+            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/30 border-0"
             disabled={!isValid}
           >
             Next Step
