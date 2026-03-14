@@ -246,21 +246,20 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                   scrollbarColor: 'var(--border) transparent',
                 }}
               >
-                {/* Close Button - Top Left */}
-                <div className="absolute top-5 left-5 z-20 [@media(max-height:740px)]:top-4 [@media(max-height:740px)]:left-4">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => setIsOpen(false)}
-                    className="w-8 h-8 rounded-full bg-foreground/5 hover:bg-foreground/10 flex items-center justify-center transition-colors text-foreground"
-                  >
-                    <X size={16} />
-                  </motion.button>
-                </div>
-
                 {/* Profile Header - Horizontal */}
                 <div className="p-4 pb-0 [@media(max-height:820px)]:p-3 [@media(max-height:820px)]:pb-0">
-                  <div className="flex items-center gap-4 mt-7 mb-3 [@media(max-height:740px)]:mt-6 [@media(max-height:740px)]:mb-2.5">
+                  <div className="flex justify-start">
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setIsOpen(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5 text-foreground transition-colors hover:bg-foreground/10"
+                    >
+                      <X size={16} />
+                    </motion.button>
+                  </div>
+
+                  <div className="mt-3 mb-3 flex items-center gap-4 [@media(max-height:740px)]:mt-2.5 [@media(max-height:740px)]:mb-2.5">
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
