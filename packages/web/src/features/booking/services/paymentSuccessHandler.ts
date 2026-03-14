@@ -86,16 +86,16 @@ export async function handlePaymentSuccess(
       }
     }
 
-    // STEP 5: Confirm the pending booking (transition to confirmed)
-    await tourBookingService.confirmBooking(bookingId)
-
-    // STEP 6: Update payment status to paid and persist the intent ID.
-    const finalBooking = await tourBookingService.updatePaymentStatus(
+    // STEP 5: Persist the Stripe fields while the row is still pending.
+    await tourBookingService.updatePaymentStatus(
       bookingId,
       'paid',
       paymentIntentId,
       'stripe_card', // payment_method
     )
+
+    // STEP 6: Confirm the pending booking (transition to confirmed).
+    const finalBooking = await tourBookingService.confirmBooking(bookingId)
 
     return {
       success: true,
@@ -151,14 +151,14 @@ export async function handlePackagePaymentSuccess(
       }
     }
 
-    await packageBookingService.confirmBooking(bookingId)
-
-    const finalBooking = await packageBookingService.updatePaymentStatus(
+    await packageBookingService.updatePaymentStatus(
       bookingId,
       'paid',
       paymentIntentId,
       'stripe_card',
     )
+
+    const finalBooking = await packageBookingService.confirmBooking(bookingId)
 
     return {
       success: true,
