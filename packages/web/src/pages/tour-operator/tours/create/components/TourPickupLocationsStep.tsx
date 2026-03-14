@@ -1084,21 +1084,6 @@ export function TourPickupLocationsStep({
 
         <Card className="rounded-[28px] border border-border/50 bg-background/70 p-4 shadow-xl backdrop-blur-xl sm:p-6 xl:p-8">
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-3 rounded-[24px] border border-border/60 bg-background/65 p-4 sm:grid-cols-3 sm:p-5">
-              <div className="rounded-2xl bg-muted/35 px-4 py-3">
-                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">1. Search</div>
-                <p className="mt-1 text-sm text-muted-foreground">Find the hotel, landmark, or meeting point.</p>
-              </div>
-              <div className="rounded-2xl bg-muted/35 px-4 py-3">
-                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">2. Confirm</div>
-                <p className="mt-1 text-sm text-muted-foreground">Map appears only after a pickup is selected so the form stays clear.</p>
-              </div>
-              <div className="rounded-2xl bg-muted/35 px-4 py-3">
-                <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground/65">3. Save</div>
-                <p className="mt-1 text-sm text-muted-foreground">Save each pickup plan before moving to the next step.</p>
-              </div>
-            </div>
-
             <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-6">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Saved pickup plan</h3>
@@ -1250,7 +1235,7 @@ export function TourPickupLocationsStep({
                     {activeExistsInList ? 'Refining selected pickup' : pickups.length > 0 ? 'Add the next pickup' : 'Create the first pickup'}
                   </h3>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Search first, then review the selected stop. The live map only appears once a pickup has coordinates.
+                    Use the steps below: search the stop, complete its details, then save the pickup.
                   </p>
                 </div>
               </div>
@@ -1269,97 +1254,139 @@ export function TourPickupLocationsStep({
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-start">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Search
-                  </Label>
-                  <PlacesAutocomplete
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    onPlaceSelect={handlePlaceSelect}
-                    disabled={isSaving}
-                  />
-                </div>
+                <div className="rounded-[28px] border border-border/60 bg-background/70 p-4 shadow-sm sm:p-6">
+                  <div className="space-y-6">
+                    <div className="relative pl-14">
+                      <div className="absolute left-4 top-10 bottom-[-32px] w-px bg-border/70" />
+                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</div>
+                      <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
+                        <div>
+                          <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Search Pickup</div>
+                          <p className="mt-1 text-sm text-muted-foreground">Choose the hotel, landmark, or meeting point first.</p>
+                        </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                      Title
-                    </Label>
-                    <Input
-                      value={active.title}
-                      onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g. Marina Gate pickup"
-                      className="rounded-2xl"
-                      disabled={isSaving}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                        Pickup time
-                      </Label>
-                      {active.pickup_time ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
-                          disabled={isSaving}
-                          title="Clear pickup time"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      ) : null}
+                        <div className="space-y-2">
+                          <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                            Search
+                          </Label>
+                          <PlacesAutocomplete
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            onPlaceSelect={handlePlaceSelect}
+                            disabled={isSaving}
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <TimeWheelPicker
-                      value={active.pickup_time ?? undefined}
-                      onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
-                      disabled={isSaving}
-                    />
+                    <div className="relative pl-14">
+                      <div className="absolute left-4 top-10 bottom-[-32px] w-px bg-border/70" />
+                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">2</div>
+                      <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
+                        <div>
+                          <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Pickup Details</div>
+                          <p className="mt-1 text-sm text-muted-foreground">Fill in the title, pickup time, address, and any special notes.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(220px,0.9fr)_minmax(320px,1.1fr)]">
+                          <div className="space-y-2">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                              Title
+                            </Label>
+                            <Input
+                              value={active.title}
+                              onChange={(e) => setActive((prev) => ({ ...prev, title: e.target.value }))}
+                              placeholder="e.g. Marina Gate pickup"
+                              className="rounded-2xl"
+                              disabled={isSaving}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                                Pickup time
+                              </Label>
+                              {active.pickup_time ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                                  onClick={() => setActive((prev) => ({ ...prev, pickup_time: null }))}
+                                  disabled={isSaving}
+                                  title="Clear pickup time"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                            </div>
+
+                            <TimeWheelPicker
+                              value={active.pickup_time ?? undefined}
+                              onChange={(value) => setActive((prev) => ({ ...prev, pickup_time: value }))}
+                              disabled={isSaving}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                              Address
+                            </Label>
+                            <Input
+                              value={active.formatted_address}
+                              onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
+                              placeholder="Formatted address"
+                              className="rounded-2xl"
+                              disabled={isSaving}
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
+                              Notes
+                            </Label>
+                            <Textarea
+                              value={active.notes ?? ''}
+                              onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
+                              placeholder="Add instructions like landmark, entrance, waiting rules, or vehicle access notes"
+                              rows={3}
+                              className="rounded-2xl resize-none"
+                              disabled={isSaving}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative pl-14">
+                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">3</div>
+                      <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
+                        <div>
+                          <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Save Pickup</div>
+                          <p className="mt-1 text-sm text-muted-foreground">Save this stop to add it to the pickup plan below.</p>
+                        </div>
+
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <Button
+                            type="button"
+                            onClick={handleSavePickups}
+                            disabled={isSaving}
+                            className="w-full border-0 bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 sm:w-auto"
+                          >
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save pickup
+                          </Button>
+
+                          <div className="text-sm text-muted-foreground sm:text-right">
+                            {activeExistsInList ? 'Editing an existing pickup.' : 'Saving creates a new pickup stop.'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Address
-                  </Label>
-                  <Input
-                    value={active.formatted_address}
-                    onChange={(e) => setActive((prev) => ({ ...prev, formatted_address: e.target.value }))}
-                    placeholder="Formatted address"
-                    className="rounded-2xl"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-gray-900">
-                    Notes
-                  </Label>
-                  <Textarea
-                    value={active.notes ?? ''}
-                    onChange={(e) => setActive((prev) => ({ ...prev, notes: e.target.value || null }))}
-                    placeholder="Add instructions like landmark, entrance, waiting rules, or vehicle access notes"
-                    rows={3}
-                    className="rounded-2xl resize-none"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                  <Button
-                    type="button"
-                    onClick={handleSavePickups}
-                    disabled={isSaving}
-                    className="w-full border-0 bg-primary text-primary-foreground font-bold shadow-lg hover:bg-primary/90 sm:w-auto"
-                  >
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save pickup
-                  </Button>
                 </div>
 
                 {isDirty ? (
