@@ -523,7 +523,7 @@ export const tourService = {
       description: (data as any).description ?? null,
       price: normalizedPrice,
       base_price: normalizedPrice,
-      currency: data.currency || 'USD',
+      currency: data.currency || 'PKR',
       is_published: false,
       images: data.images || [],
       highlights: data.highlights || [],
@@ -628,7 +628,7 @@ export const tourService = {
       duration: data.duration || '1 day',
       price: normalizedPrice,
       base_price: normalizedPrice,
-      currency: data.currency || 'USD',
+      currency: data.currency || 'PKR',
       is_published: false,
       // Provide defaults for required fields to satisfy DB constraints for drafts
       images: data.images || [],

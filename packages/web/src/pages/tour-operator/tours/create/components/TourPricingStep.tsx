@@ -192,7 +192,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               Currency
             </label>
             <Select
-              value={data.currency || 'USD'}
+              value={data.currency || 'PKR'}
               onValueChange={(v) => handleInputChange('currency', v)}
             >
               <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-slate-50 text-base font-medium focus:ring-[#FF7167]/20">
