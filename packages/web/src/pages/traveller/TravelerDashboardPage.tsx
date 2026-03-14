@@ -44,11 +44,20 @@ export default function TravelerDashboardPage() {
       const upcoming = bookings
         .filter((b) => b.status === 'confirmed')
         .sort((a, b) => {
-          const dateA = new Date(a.booking_date || a.start_time || a.check_in_date).getTime()
-          const dateB = new Date(b.booking_date || b.start_time || b.check_in_date).getTime()
+          const dateA = new Date(
+            a.tour_schedules?.start_time || a.booking_date || a.start_time || a.check_in_date,
+          ).getTime()
+          const dateB = new Date(
+            b.tour_schedules?.start_time || b.booking_date || b.start_time || b.check_in_date,
+          ).getTime()
           return dateA - dateB
         })
-        .find((b) => new Date(b.booking_date || b.start_time || b.check_in_date) >= new Date())
+        .find(
+          (b) =>
+            new Date(
+              b.tour_schedules?.start_time || b.booking_date || b.start_time || b.check_in_date,
+            ) >= new Date(),
+        )
 
       setNextTrip(upcoming)
 
@@ -151,6 +160,7 @@ export default function TravelerDashboardPage() {
                           <Calendar className="w-4 h-4 text-muted-foreground/70" />
                           {format(
                             new Date(
+                              nextTrip.tour_schedules?.start_time ||
                               nextTrip.booking_date ||
                                 nextTrip.start_time ||
                                 nextTrip.check_in_date,

@@ -39,12 +39,12 @@ export default function MyTripsPage() {
   }
 
   const upcomingTrips = bookings.filter((b) => {
-    const date = b.booking_date || b.start_time || b.check_in_date
+    const date = b.tour_schedules?.start_time || b.booking_date || b.start_time || b.check_in_date
     return new Date(date) >= new Date() && b.status !== 'cancelled'
   })
 
   const pastTrips = bookings.filter((b) => {
-    const date = b.booking_date || b.start_time || b.check_in_date
+    const date = b.tour_schedules?.start_time || b.booking_date || b.start_time || b.check_in_date
     return new Date(date) < new Date() || b.status === 'cancelled'
   })
 
@@ -136,7 +136,8 @@ export default function MyTripsPage() {
             <div className="space-y-6">
               {displayedTrips.map((trip, idx) => {
                 const details = trip.tours || trip.packages
-                const date = trip.booking_date || trip.start_time || trip.check_in_date
+                const date =
+                  trip.tour_schedules?.start_time || trip.booking_date || trip.start_time || trip.check_in_date
 
                 return (
                   <motion.div
