@@ -229,14 +229,19 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={spring}
-            className="fixed right-3 top-3 bottom-3 w-[75vw] max-w-[260px] z-[1401] [@media(max-height:740px)]:right-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:bottom-2"
+            className="fixed right-3 top-3 z-[1401] h-[calc(100vh-1.5rem)] w-[min(320px,calc(100vw-1.5rem))] pointer-events-auto [@media(max-height:740px)]:right-2 [@media(max-height:740px)]:top-2 [@media(max-height:740px)]:h-[calc(100vh-1rem)] [@media(max-width:420px)]:w-[calc(100vw-1rem)]"
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
               transition={spring}
-              className="h-full rounded-[32px] glass-card dark:glass-card-dark shadow-2xl overflow-hidden flex flex-col"
+              className={cn(
+                'flex h-full flex-col overflow-hidden rounded-[32px] shadow-2xl',
+                inverted
+                  ? 'border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,29,0.98)_0%,rgba(12,18,35,0.96)_100%)] text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl'
+                  : 'glass-card border border-border/60',
+              )}
             >
               {/* Scrollable Content Area */}
               <div
@@ -253,7 +258,12 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setIsOpen(false)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5 text-foreground transition-colors hover:bg-foreground/10"
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+                        inverted
+                          ? 'bg-white/8 text-white hover:bg-white/12'
+                          : 'bg-foreground/5 text-foreground hover:bg-foreground/10',
+                      )}
                     >
                       <X size={16} />
                     </motion.button>
@@ -266,13 +276,13 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                       transition={spring}
                       className="w-12 h-12 rounded-[16px] flex-shrink-0 flex items-center justify-center shadow-lg p-[2px] bg-primary/15 border border-primary/30 [@media(max-height:740px)]:w-11 [@media(max-height:740px)]:h-11 [@media(max-height:740px)]:rounded-[14px]"
                     >
-                      <div className="w-full h-full rounded-[16px] overflow-hidden bg-background [@media(max-height:740px)]:rounded-[14px]">
+                      <div className={cn('w-full h-full overflow-hidden rounded-[16px] [@media(max-height:740px)]:rounded-[14px]', inverted ? 'bg-white/5' : 'bg-background')}>
                         <Avatar className="w-full h-full">
                           <AvatarImage
                             src={user.user_metadata?.avatar_url}
                             className="object-cover"
                           />
-                          <AvatarFallback className="bg-muted text-foreground text-xl font-black">
+                          <AvatarFallback className={cn('text-xl font-black', inverted ? 'bg-white/10 text-white' : 'bg-muted text-foreground')}>
                             {user.user_metadata?.full_name?.charAt(0) ||
                               user.email?.charAt(0).toUpperCase()}
                           </AvatarFallback>
@@ -280,23 +290,26 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                       </div>
                     </motion.div>
 
-                    <div className="flex flex-col min-w-0 pr-8">
-                      <h3 className="font-bold text-[13px] truncate text-foreground tracking-tight mb-0.5">
+                    <div className="flex min-w-0 flex-col pr-8">
+                      <h3 className={cn('mb-0.5 truncate text-[13px] font-bold tracking-tight', inverted ? 'text-white' : 'text-foreground')}>
                         {user.user_metadata?.full_name?.split(' ')[0] ||
                           user.email?.split('@')[0] ||
                           'Traveler'}
                       </h3>
-                      <p className="text-[10px] text-muted-foreground truncate mb-1.5 [@media(max-height:820px)]:hidden">
+                      <p className={cn('mb-1.5 truncate text-[10px] [@media(max-height:820px)]:hidden', inverted ? 'text-white/55' : 'text-muted-foreground')}>
                         {user.email}
                       </p>
 
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/50 border border-border text-[9px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm'
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider shadow-sm',
+                            inverted
+                              ? 'border border-white/10 bg-white/8 text-white/72'
+                              : 'border border-border bg-muted/50 text-muted-foreground'
                           )}
                         >
-                          <MapPin className="w-2.5 h-2.5 text-muted-foreground/70" />
+                          <MapPin className={cn('w-2.5 h-2.5', inverted ? 'text-white/55' : 'text-muted-foreground/70')} />
                           <span>{roleLabel}</span>
                         </div>
                       </div>
@@ -308,7 +321,7 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
 
                 {/* Navigation Items */}
                 <div className="px-4 py-3 [@media(max-height:740px)]:px-3 [@media(max-height:740px)]:py-2.5">
-                  <h3 className="text-muted-foreground/70 text-[9px] font-bold uppercase tracking-widest mb-2 pl-2">
+                  <h3 className={cn('mb-2 pl-2 text-[9px] font-bold uppercase tracking-widest', inverted ? 'text-white/40' : 'text-muted-foreground/70')}>
                     Navigation
                   </h3>
 
@@ -358,8 +371,12 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                               className={cn(
                                 'flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all [@media(max-height:740px)]:py-1.5',
                                 isActive
-                                  ? 'bg-muted/80 border border-border/50'
-                                  : 'hover:bg-muted/50 border border-transparent',
+                                  ? inverted
+                                    ? 'border border-white/10 bg-white/8'
+                                    : 'bg-muted/80 border border-border/50'
+                                  : inverted
+                                    ? 'border border-transparent hover:bg-white/6'
+                                    : 'hover:bg-muted/50 border border-transparent',
                                 isBlocked && 'opacity-60'
                               )}
                             >
@@ -368,7 +385,9 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                                   'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border [@media(max-height:740px)]:w-8 [@media(max-height:740px)]:h-8',
                                   isActive
                                     ? 'bg-primary/15 border-primary/30 text-primary shadow-sm'
-                                    : 'bg-muted border-border text-muted-foreground'
+                                    : inverted
+                                      ? 'bg-white/8 border-white/10 text-white/70'
+                                      : 'bg-muted border-border text-muted-foreground'
                                 )}
                               >
                                 <motion.div
@@ -392,20 +411,24 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                                   className={cn(
                                     'text-sm font-medium leading-none transition-colors truncate w-full text-left py-0.5 [@media(max-height:740px)]:text-[13px]',
                                     isActive
-                                      ? 'text-foreground font-bold'
-                                      : 'text-muted-foreground group-hover:text-foreground'
+                                      ? inverted
+                                        ? 'font-bold text-white'
+                                        : 'text-foreground font-bold'
+                                      : inverted
+                                        ? 'text-white/72 group-hover:text-white'
+                                        : 'text-muted-foreground group-hover:text-foreground'
                                   )}
                                 >
                                   {item.label}
                                 </span>
                                 {item.subtext && (
-                                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60 group-hover:text-muted-foreground transition-colors w-full text-left truncate [@media(max-height:740px)]:hidden">
+                                  <span className={cn('w-full truncate text-left text-[9px] font-bold uppercase tracking-wider transition-colors [@media(max-height:740px)]:hidden', inverted ? 'text-white/40 group-hover:text-white/60' : 'text-muted-foreground/60 group-hover:text-muted-foreground')}>
                                     {item.subtext}
                                   </span>
                                 )}
                               </div>
 
-                              <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">
+                              <span className={cn('text-base transition-colors', inverted ? 'text-white/35 group-hover:text-white/65' : 'text-muted-foreground/40 group-hover:text-foreground/60')}>
                                 ›
                               </span>
                             </div>
@@ -416,21 +439,21 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
 
                     {/* Partner dashboard shortcut (only for travellers with existing partner role) */}
                     {partnerDashboardAction && (
-                      <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                      <div className={cn('pt-2 mt-2 border-t [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', inverted ? 'border-white/10' : 'border-border/50')}>
                         <motion.button
                           whileHover={{ x: 4 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={partnerDashboardAction.onClick}
                           className="w-full group"
                         >
-                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                          <div className={cn('flex items-center gap-3 px-3 py-1.5 rounded-xl border border-transparent transition-all [@media(max-height:740px)]:py-1.5', inverted ? 'hover:bg-white/6' : 'hover:bg-muted/50')}>
                             <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-sm">
                               <partnerDashboardAction.icon size={15} className="text-primary" strokeWidth={2} />
                             </div>
-                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                            <span className={cn('flex-1 text-left text-sm font-medium transition-colors [@media(max-height:740px)]:text-[13px]', inverted ? 'text-white/72 group-hover:text-white' : 'text-muted-foreground group-hover:text-foreground')}>
                               {partnerDashboardAction.label}
                             </span>
-                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
+                            <span className={cn('text-base transition-colors', inverted ? 'text-white/35 group-hover:text-white/65' : 'text-muted-foreground/40 group-hover:text-foreground/60')}>›</span>
                           </div>
                         </motion.button>
                       </div>
@@ -438,7 +461,7 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
 
                     {/* Become a Partner — always visible to travellers */}
                     {isTraveller && (
-                      <div className={cn('[@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', !partnerDashboardAction && 'pt-2 mt-2 border-t border-border/50')}>
+                      <div className={cn('[@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', !partnerDashboardAction && (inverted ? 'pt-2 mt-2 border-t border-white/10' : 'pt-2 mt-2 border-t border-border/50'))}>
                         <motion.button
                           whileHover={{ x: 4 }}
                           whileTap={{ scale: 0.98 }}
@@ -446,14 +469,14 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                           data-tour="partner-switch"
                           className="w-full group"
                         >
-                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                          <div className={cn('flex items-center gap-3 px-3 py-1.5 rounded-xl border border-transparent transition-all [@media(max-height:740px)]:py-1.5', inverted ? 'hover:bg-white/6' : 'hover:bg-muted/50')}>
                             <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center flex-shrink-0 shadow-sm">
                               <Briefcase size={15} className="text-primary" strokeWidth={2} />
                             </div>
-                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                            <span className={cn('flex-1 text-left text-sm font-medium transition-colors [@media(max-height:740px)]:text-[13px]', inverted ? 'text-white/72 group-hover:text-white' : 'text-muted-foreground group-hover:text-foreground')}>
                               Become a Partner
                             </span>
-                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
+                            <span className={cn('text-base transition-colors', inverted ? 'text-white/35 group-hover:text-white/65' : 'text-muted-foreground/40 group-hover:text-foreground/60')}>›</span>
                           </div>
                         </motion.button>
                       </div>
@@ -461,28 +484,28 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
 
                     {/* Switch to Traveler — for hotel/tour operator roles */}
                     {switchToTravelerAction && (
-                      <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                      <div className={cn('pt-2 mt-2 border-t [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', inverted ? 'border-white/10' : 'border-border/50')}>
                         <motion.button
                           whileHover={{ x: 4 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={switchToTravelerAction.onClick}
                           className="w-full group"
                         >
-                          <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-all hover:bg-muted/50 border border-transparent [@media(max-height:740px)]:py-1.5">
+                          <div className={cn('flex items-center gap-3 px-3 py-1.5 rounded-xl border border-transparent transition-all [@media(max-height:740px)]:py-1.5', inverted ? 'hover:bg-white/6' : 'hover:bg-muted/50')}>
                             <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center flex-shrink-0 shadow-sm">
                               <RefreshCcw size={15} className="text-muted-foreground" strokeWidth={2} />
                             </div>
-                            <span className="text-sm font-medium flex-1 text-left transition-colors text-muted-foreground group-hover:text-foreground [@media(max-height:740px)]:text-[13px]">
+                            <span className={cn('flex-1 text-left text-sm font-medium transition-colors [@media(max-height:740px)]:text-[13px]', inverted ? 'text-white/72 group-hover:text-white' : 'text-muted-foreground group-hover:text-foreground')}>
                               Switch to Traveler
                             </span>
-                            <span className="text-muted-foreground/40 text-base group-hover:text-foreground/60 transition-colors">›</span>
+                            <span className={cn('text-base transition-colors', inverted ? 'text-white/35 group-hover:text-white/65' : 'text-muted-foreground/40 group-hover:text-foreground/60')}>›</span>
                           </div>
                         </motion.button>
                       </div>
                     )}
 
                     {/* Sign out inside the menu so it's never out of view */}
-                    <div className="pt-2 mt-2 border-t border-border/50 [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5">
+                    <div className={cn('pt-2 mt-2 border-t [@media(max-height:740px)]:pt-1.5 [@media(max-height:740px)]:mt-1.5', inverted ? 'border-white/10' : 'border-border/50')}>
                       <motion.button
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
