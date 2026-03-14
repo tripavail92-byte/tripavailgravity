@@ -10,6 +10,7 @@ import {
   calculateCompletionPercentage,
   tourService,
 } from '@/features/tour-operator/services/tourService'
+import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 
@@ -46,7 +47,7 @@ const OPERATOR_RETURN_PATHS = new Set([
 
 export default function CreateTourPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, activeRole } = useAuth()
   const [searchParams] = useSearchParams()
   const { id: routeTourId } = useParams() // Capture path param
   const [currentStep, setCurrentStep] = useState(0)
@@ -88,13 +89,15 @@ export default function CreateTourPage() {
       try {
         const { data, error } = await supabase
           .from('tour_operator_profiles')
-          .select('setup_completed')
+          .select(
+            'setup_completed, account_status, company_name, contact_person, phone_number, primary_city, categories, verification_documents',
+          )
           .eq('user_id', user.id)
           .maybeSingle()
 
         if (error) throw error
 
-        if (data?.setup_completed !== true) {
+        if (!hasCompletedTourOperatorSetup(data, activeRole?.verification_status)) {
           toast.error('Complete Tour Operator Setup before creating tours')
           navigate('/operator/setup', { replace: true })
           return
@@ -110,7 +113,7 @@ export default function CreateTourPage() {
     }
 
     checkSetup()
-  }, [navigate, user?.id])
+  }, [activeRole?.verification_status, navigate, user?.id])
 
   useEffect(() => {
     const loadTourForEdit = async () => {

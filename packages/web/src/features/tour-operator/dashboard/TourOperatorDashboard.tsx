@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
@@ -99,12 +100,14 @@ export function TourOperatorDashboard() {
       try {
         const { data: profile, error: profileError } = await supabase
           .from('tour_operator_profiles')
-          .select('setup_completed, setup_current_step')
+          .select(
+            'setup_completed, setup_current_step, account_status, company_name, contact_person, phone_number, primary_city, categories, verification_documents',
+          )
           .eq('user_id', user.id)
           .maybeSingle()
 
         if (profileError) throw profileError
-        setSetupCompleted(profile?.setup_completed === true)
+        setSetupCompleted(hasCompletedTourOperatorSetup(profile, verificationStatus))
         setSetupCurrentStep(profile?.setup_current_step ?? 0)
 
         const [pub, drf, cont] = await Promise.all([

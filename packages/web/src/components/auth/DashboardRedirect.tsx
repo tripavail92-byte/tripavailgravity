@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { supabase } from '@/lib/supabase'
 
 import { useAuth } from '@/hooks/useAuth'
@@ -68,7 +69,9 @@ export function DashboardRedirect() {
           const { data, error } = await withTimeout<any>(
             supabase
               .from('tour_operator_profiles')
-              .select('setup_completed')
+              .select(
+                'setup_completed, account_status, company_name, contact_person, phone_number, primary_city, categories, verification_documents',
+              )
               .eq('user_id', userId)
               .maybeSingle(),
             8000,
@@ -77,7 +80,10 @@ export function DashboardRedirect() {
 
           if (error) throw error
 
-          const setupCompleted = data?.setup_completed === true
+          const setupCompleted = hasCompletedTourOperatorSetup(
+            data,
+            activeRole?.verification_status,
+          )
           if (!cancelled) applyTarget(setupCompleted ? '/operator/dashboard' : '/operator/setup')
           return
         }

@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ROLE_NAVIGATION } from '@/config/navigation'
+import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -31,12 +32,16 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
         if (activeRole.role_type === 'tour_operator') {
           const { data, error } = await supabase
             .from('tour_operator_profiles')
-            .select('setup_completed')
+            .select(
+              'setup_completed, account_status, company_name, contact_person, phone_number, primary_city, categories, verification_documents',
+            )
             .eq('user_id', user.id)
             .maybeSingle()
 
           if (error) throw error
-          if (!cancelled) setTourSetupCompleted(data?.setup_completed === true)
+          if (!cancelled) {
+            setTourSetupCompleted(hasCompletedTourOperatorSetup(data, activeRole.verification_status))
+          }
         } else {
           if (!cancelled) setTourSetupCompleted(null)
         }
