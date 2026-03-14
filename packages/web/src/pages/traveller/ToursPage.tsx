@@ -139,6 +139,8 @@ export default function ToursPage() {
                 : 0
           }
           currency={tour.currency || 'PKR'}
+          depositRequired={Boolean((tour as any).deposit_required ?? (tour as any).depositRequired)}
+          depositPercentage={Number((tour as any).deposit_percentage ?? (tour as any).depositPercentage ?? 0)}
           type={tour.badge || 'Tour Experience'}
           isFeatured={Boolean(tour.isFeatured)}
           shortDescription={tour.shortDescription ?? undefined}

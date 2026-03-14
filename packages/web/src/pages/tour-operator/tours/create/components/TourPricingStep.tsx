@@ -7,11 +7,18 @@ import {
   Users,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -29,6 +36,7 @@ import {
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { clampDepositPercentage, getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 
 interface TourPricingStepProps {
   data: Partial<Tour>
@@ -66,8 +74,13 @@ const CANCELLATION_POLICIES = [
   },
 ] as const
 
+const DEPOSIT_OPTIONS = [10, 20, 30, 40, 50]
+
 export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
+  const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
+  const [depositPolicyAcknowledged, setDepositPolicyAcknowledged] = useState(false)
+  const [depositPolicyConfirmed, setDepositPolicyConfirmed] = useState(false)
   const selectedInclusionLabels = new Set([
     ...(Array.isArray(data.inclusions) ? data.inclusions : []),
     ...((Array.isArray((data as any).included_features)
@@ -85,6 +98,30 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   const handleInputChange = (field: keyof Tour, value: any) => {
     onUpdate({ [field]: value })
   }
+
+  const basePrice = Number(data.price || 0)
+  const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 50))
+  const standardDepositPreview = getTourPaymentTerms({
+    basePrice,
+    guestCount: 1,
+    depositRequired: data.deposit_required,
+    depositPercentage: normalizedDepositPercentage,
+  })
+  const tierDepositPreviews = pricingTiers.map((tier) => ({
+    tier,
+    payment: getTourPaymentTerms({
+      basePrice,
+      guestCount: Math.max(1, Number(tier.minPeople || 1)),
+      pricingTiers,
+      depositRequired: data.deposit_required,
+      depositPercentage: normalizedDepositPercentage,
+    }),
+  }))
+
+  useEffect(() => {
+    setDepositPolicyConfirmed(false)
+    setDepositPolicyAcknowledged(false)
+  }, [data.deposit_required, normalizedDepositPercentage, basePrice, pricingTiers])
 
   const addPricingTier = () => {
     const defaultDiscount = 10 // 10% default
@@ -144,6 +181,33 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
       next.includes(feature.label),
     )
     onUpdate({ exclusions: next, excluded_features: excludedFeatures } as Partial<Tour>)
+  }
+
+  const handleDepositRequiredChange = (value: boolean) => {
+    handleInputChange('deposit_required', value)
+    if (!value) {
+      setDepositPolicyConfirmed(false)
+      setDepositPolicyAcknowledged(false)
+    }
+  }
+
+  const handleDepositPercentageChange = (value: number) => {
+    handleInputChange('deposit_percentage', clampDepositPercentage(value))
+  }
+
+  const handleContinue = () => {
+    if (data.deposit_required && !depositPolicyConfirmed) {
+      setIsDepositDialogOpen(true)
+      return
+    }
+
+    onNext()
+  }
+
+  const formatMoney = (value: number) => {
+    return new Intl.NumberFormat('en-PK', {
+      maximumFractionDigits: 2,
+    }).format(value)
   }
 
   return (
@@ -206,6 +270,185 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
+        <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-8 flex items-center gap-2">
+          <Info className="w-5 h-5 text-primary" /> Booking Terms
+        </h3>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/30 p-4">
+            <div className="pl-2">
+              <label className="text-sm font-bold text-foreground">Require Deposit</label>
+              <p className="text-xs text-muted-foreground font-medium">
+                Require partial payment upfront to confirm the booking.
+              </p>
+            </div>
+            <Switch
+              checked={data.deposit_required}
+              onCheckedChange={handleDepositRequiredChange}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+
+          <AnimatePresence>
+            {data.deposit_required && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden space-y-5"
+              >
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase font-bold tracking-wider text-primary">Deposit Percentage</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Choose what percentage the traveler must pay now.
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
+                      {normalizedDepositPercentage}%
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {DEPOSIT_OPTIONS.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => handleDepositPercentageChange(option)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                          normalizedDepositPercentage === option
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background text-foreground hover:border-primary/50'
+                        }`}
+                      >
+                        {option}%
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2">
+                      <span className="text-sm font-semibold text-muted-foreground">Custom</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={90}
+                        value={normalizedDepositPercentage}
+                        onChange={(event) => handleDepositPercentageChange(Number(event.target.value || 0))}
+                        className="h-7 w-20 border-0 bg-transparent p-0 text-right font-semibold shadow-none focus-visible:ring-0"
+                      />
+                      <span className="text-sm font-semibold text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border/60 bg-background p-5">
+                  <p className="text-[11px] uppercase font-bold tracking-wider text-primary">Payment Preview</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Pay now</p>
+                      <p className="mt-2 text-xl font-black text-foreground">
+                        {data.currency || 'PKR'} {formatMoney(standardDepositPreview.upfrontAmount)} per traveler
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Pay later</p>
+                      <p className="mt-2 text-xl font-black text-foreground">
+                        {data.currency || 'PKR'} {formatMoney(standardDepositPreview.remainingAmount)} per traveler
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Collection timing: Remaining balance will be paid directly to the tour operator before departure.
+                  </p>
+                </div>
+
+                {data.group_discounts && tierDepositPreviews.length > 0 ? (
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-5">
+                    <p className="text-[11px] uppercase font-bold tracking-wider text-primary">Group discount perspective</p>
+                    <div className="mt-4 space-y-3">
+                      {tierDepositPreviews.map(({ tier, payment }) => (
+                        <div key={tier.id} className="rounded-2xl border border-border/60 bg-background p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-foreground">{tier.name}</p>
+                              <p className="text-xs text-muted-foreground">{tier.minPeople}+ travelers · {data.currency || 'PKR'} {formatMoney(payment.effectiveUnitPrice)} per traveler</p>
+                            </div>
+                            <div className="text-right text-sm">
+                              <p className="font-semibold text-foreground">Pay now: {data.currency || 'PKR'} {formatMoney(payment.upfrontAmount)}</p>
+                              <p className="text-muted-foreground">Pay later: {data.currency || 'PKR'} {formatMoney(payment.remainingAmount)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="rounded-2xl border border-info/20 bg-info/10 p-4 text-sm text-info">
+                  Only the upfront amount will be charged online. The remaining amount must be collected from the traveler before departure.
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant={depositPolicyConfirmed ? 'outline' : 'default'}
+                    className="rounded-2xl"
+                    onClick={() => setIsDepositDialogOpen(true)}
+                    disabled={basePrice <= 0}
+                  >
+                    {depositPolicyConfirmed ? 'Deposit Policy Confirmed' : 'Confirm Deposit Policy'}
+                  </Button>
+                  {depositPolicyConfirmed ? (
+                    <p className="text-sm font-medium text-success">
+                      Deposit policy confirmed for {normalizedDepositPercentage}% upfront collection.
+                    </p>
+                  ) : null}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Separator className="bg-border/60" />
+
+          <div className="space-y-3 px-2">
+            <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+              Cancellation Policy
+            </label>
+            <div className="space-y-3">
+              {CANCELLATION_POLICIES.map((policy) => {
+                const Icon = getTourIconComponent(policy.iconKey)
+                const isSelected = (data.cancellation_policy || 'flexible') === policy.value
+
+                return (
+                  <button
+                    key={policy.value}
+                    type="button"
+                    onClick={() => handleInputChange('cancellation_policy', policy.value)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ease-out flex items-start gap-4 ${
+                      isSelected
+                        ? 'bg-primary/10 border-primary shadow-lg scale-[1.02]'
+                        : 'bg-background border-border hover:border-primary/40 hover:bg-primary/5'
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">{policy.title}</p>
+                      <p className="text-sm text-muted-foreground">{policy.description}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -420,100 +663,6 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </AnimatePresence>
       </div>
 
-      {/* Booking Terms */}
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
-        <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-8 flex items-center gap-2">
-          <Info className="w-5 h-5 text-primary" /> Booking Terms
-        </h3>
-
-        <div className="space-y-8">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/60">
-            <div className="pl-2">
-              <label className="text-sm font-bold text-foreground">Require Deposit</label>
-              <p className="text-xs text-muted-foreground font-medium">
-                Require partial payment upfront to secure the booking.
-              </p>
-            </div>
-            <Switch
-              checked={data.deposit_required}
-              onCheckedChange={(v) => handleInputChange('deposit_required', v)}
-              className="data-[state=checked]:bg-primary"
-            />
-          </div>
-
-          <AnimatePresence>
-            {data.deposit_required && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden p-5 rounded-2xl border border-primary/30 bg-primary/10 space-y-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-[11px] uppercase font-bold text-primary tracking-wider block">
-                    Deposit Percentage
-                  </label>
-                  <div className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-md">
-                    {Math.max(0, Math.min(50, data.deposit_percentage || 25))}%
-                  </div>
-                </div>
-                <Slider
-                  min={0}
-                  max={50}
-                  step={1}
-                  value={[Math.max(0, Math.min(50, data.deposit_percentage || 25))]}
-                  onValueChange={(value) => handleInputChange('deposit_percentage', value[0] ?? 25)}
-                  className="[&_[data-slot=slider-track]]:h-3 [&_[data-slot=slider-track]]:bg-primary/20 [&_[data-slot=slider-range]]:bg-primary [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-primary [&_[data-slot=slider-thumb]]:shadow-lg"
-                />
-                <p className="text-xs text-muted-foreground font-medium">
-                  Travelers pay {Math.round(((data.price || 0) * (data.deposit_percentage || 25)) / 100)}{' '}
-                  {data.currency || 'PKR'} today per person.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <Separator className="bg-border/60" />
-
-          <div className="space-y-3 px-2">
-            <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-              Cancellation Policy
-            </label>
-            <div className="space-y-3">
-              {CANCELLATION_POLICIES.map((policy) => {
-                const Icon = getTourIconComponent(policy.iconKey)
-                const isSelected = (data.cancellation_policy || 'flexible') === policy.value
-
-                return (
-                  <button
-                    key={policy.value}
-                    type="button"
-                    onClick={() => handleInputChange('cancellation_policy', policy.value)}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 ease-out flex items-start gap-4 ${
-                      isSelected
-                        ? 'bg-primary/10 border-primary shadow-lg scale-[1.02]'
-                        : 'bg-background border-border hover:border-primary/40 hover:bg-primary/5'
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{policy.title}</p>
-                      <p className="text-sm text-muted-foreground">{policy.description}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Inclusions & Exclusions - Vertically Stacked Sections */}
       <div className="space-y-8">
         {/* What's Included */}
@@ -609,12 +758,65 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
           Back
         </Button>
         <Button
-          onClick={onNext}
+          onClick={handleContinue}
           className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all shadow-lg shadow-primary/25 border-0"
         >
           Continue
         </Button>
       </div>
+
+      <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+        <DialogContent className="rounded-3xl border-border/60 bg-background/95 sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Confirm deposit policy</DialogTitle>
+            <DialogDescription>
+              Only {normalizedDepositPercentage}% of the booking amount will be charged online at the time of booking confirmation. The remaining {100 - normalizedDepositPercentage}% must be collected from the traveler by the tour operator before departure.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Charged now per traveler</span>
+                <span className="font-bold text-foreground">{data.currency || 'PKR'} {formatMoney(standardDepositPreview.upfrontAmount)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Remaining per traveler</span>
+                <span className="font-bold text-foreground">{data.currency || 'PKR'} {formatMoney(standardDepositPreview.remainingAmount)}</span>
+              </div>
+            </div>
+
+            <label className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={depositPolicyAcknowledged}
+                onChange={(event) => setDepositPolicyAcknowledged(event.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border"
+              />
+              <span className="text-sm text-foreground">
+                I understand that only the upfront percentage will be collected online.
+              </span>
+            </label>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setIsDepositDialogOpen(false)}>
+              Back
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              disabled={!depositPolicyAcknowledged}
+              onClick={() => {
+                setDepositPolicyConfirmed(true)
+                setIsDepositDialogOpen(false)
+              }}
+            >
+              Confirm policy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

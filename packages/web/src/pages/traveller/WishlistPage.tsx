@@ -164,6 +164,8 @@ export default function WishlistPage() {
                     rating={item.rating || 0}
                     price={item.price}
                     currency={item.currency || 'USD'}
+                    depositRequired={Boolean((item as any).deposit_required ?? (item as any).depositRequired)}
+                    depositPercentage={Number((item as any).deposit_percentage ?? (item as any).depositPercentage ?? 0)}
                     type={item.tour_type}
                   />
                 ) : (

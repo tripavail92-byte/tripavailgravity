@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
-import { Archive, BellOff, Inbox, Loader2, MessageSquare, Search } from 'lucide-react'
+import { BellOff, Inbox, Loader2, MessageSquare, Search } from 'lucide-react'
 
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/hooks/useAuth'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { cn } from '@/lib/utils'
@@ -29,13 +28,11 @@ export default function MessagesInboxPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
-  const [showArchived, setShowArchived] = useState(false)
   const deferredSearchTerm = useDeferredValue(searchTerm)
   const scope = searchParams.get('scope')
   const bookingId = searchParams.get('bookingId')
 
   const conversationsQuery = useBookingConversations({
-    includeArchived: showArchived,
     limit: 100,
   })
 
@@ -98,7 +95,7 @@ export default function MessagesInboxPage() {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="Messages"
-          subtitle="Reservation-scoped inbox with unread state, archive and mute controls, and direct booking context for every conversation."
+          subtitle="Reservation-scoped inbox with unread state, mute controls, and direct booking context for every conversation."
           showBackButton={false}
           actions={
             <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
@@ -119,21 +116,13 @@ export default function MessagesInboxPage() {
               />
             </div>
 
-            <div className="mt-4 flex items-center justify-between rounded-2xl bg-muted/50 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Show archived</p>
-                <p className="text-xs text-muted-foreground">Keep active threads front and center.</p>
-              </div>
-              <Switch checked={showArchived} onCheckedChange={setShowArchived} />
-            </div>
-
             <Separator className="my-5" />
 
             <div className="space-y-3">
               <SummaryTile
                 icon={MessageSquare}
-                label="Active threads"
-                value={String((conversationsQuery.data ?? []).filter((item) => !item.is_archived).length)}
+                label="Open threads"
+                value={String((conversationsQuery.data ?? []).length)}
               />
               <SummaryTile
                 icon={Inbox}
@@ -144,11 +133,6 @@ export default function MessagesInboxPage() {
                 icon={BellOff}
                 label="Muted"
                 value={String((conversationsQuery.data ?? []).filter((item) => item.is_muted).length)}
-              />
-              <SummaryTile
-                icon={Archive}
-                label="Archived"
-                value={String((conversationsQuery.data ?? []).filter((item) => item.is_archived).length)}
               />
             </div>
           </GlassCard>
@@ -267,11 +251,6 @@ function ConversationRow({ conversation }: { conversation: BookingConversationSu
           {conversation.is_muted ? (
             <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[11px]">
               Muted
-            </Badge>
-          ) : null}
-          {conversation.is_archived ? (
-            <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[11px]">
-              Archived
             </Badge>
           ) : null}
           <Badge

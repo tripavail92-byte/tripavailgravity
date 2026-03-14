@@ -75,8 +75,8 @@ serve(async (req) => {
     }
 
     const bookingSelect = isTour
-      ? 'id, traveler_id, status, payment_status, expires_at, total_price, tour_id, schedule_id'
-      : 'id, traveler_id, status, payment_status, expires_at, total_price, package_id';
+      ? 'id, traveler_id, status, payment_status, expires_at, total_price, upfront_amount, remaining_amount, payment_collection_mode, tour_id, schedule_id'
+      : 'id, traveler_id, status, payment_status, expires_at, total_price, upfront_amount, remaining_amount, payment_collection_mode, package_id';
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from(tableName)
@@ -112,8 +112,8 @@ serve(async (req) => {
       });
     }
 
-    const totalPrice = Number(booking.total_price);
-    if (!Number.isFinite(totalPrice) || totalPrice <= 0) {
+    const chargeAmount = Number(booking.upfront_amount ?? booking.total_price);
+    if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
       return new Response(JSON.stringify({ ok: false, error: 'Invalid booking total' }), {
         status: 400,
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
@@ -148,7 +148,7 @@ serve(async (req) => {
     }
 
     // Stripe amount is in the smallest currency unit.
-    const amountCents = Math.round(totalPrice * 100);
+    const amountCents = Math.round(chargeAmount * 100);
 
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2024-06-20',
@@ -164,6 +164,10 @@ serve(async (req) => {
           booking_id,
           booking_type: normalizedType,
           traveler_id: userId,
+          total_amount: String(booking.total_price ?? ''),
+          upfront_amount: String(booking.upfront_amount ?? booking.total_price ?? ''),
+          remaining_amount: String(booking.remaining_amount ?? 0),
+          payment_collection_mode: String(booking.payment_collection_mode ?? 'full_online'),
           ...(isTour
             ? {
                 tour_id: booking.tour_id ?? '',

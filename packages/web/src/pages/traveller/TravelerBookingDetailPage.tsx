@@ -87,7 +87,9 @@ export default function TravelerBookingDetailPage() {
   const locationLabel = details?.location?.city || details?.location || 'Location confirmed after booking'
   const dateLabel = booking?.check_in_date || schedule?.start_time || booking?.booking_date || null
   const totalGuests = booking?.pax_count ?? booking?.guest_count ?? 0
-  const totalPaid = Number(booking?.total_price || 0)
+  const totalAmount = Number(booking?.total_price || 0)
+  const paidOnline = Number((booking?.amount_paid_online ?? booking?.upfront_amount ?? booking?.total_price) || 0)
+  const remainingAmount = Number(booking?.remaining_amount || 0)
   const counterpartLabel = scope === 'tour_booking' ? 'tour operator' : 'host'
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
@@ -180,7 +182,7 @@ export default function TravelerBookingDetailPage() {
                 />
                 <SummaryTile icon={MapPin} label="Location" value={locationLabel} />
                 <SummaryTile icon={Users} label="Guests" value={String(totalGuests)} />
-                <SummaryTile icon={CreditCard} label="Paid" value={`PKR ${totalPaid.toLocaleString()}`} />
+                <SummaryTile icon={CreditCard} label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
               </div>
 
               <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
@@ -234,7 +236,11 @@ export default function TravelerBookingDetailPage() {
                     <InfoRow label="Booked on" value={format(new Date(booking.booking_date), 'MMM d, yyyy')} />
                     <InfoRow label="Payment status" value={booking.payment_status || 'paid'} />
                     <InfoRow label="Guests" value={String(totalGuests)} />
-                    <InfoRow label="Total" value={`PKR ${totalPaid.toLocaleString()}`} />
+                    <InfoRow label="Total" value={`PKR ${totalAmount.toLocaleString()}`} />
+                    <InfoRow label="Upfront paid" value={`PKR ${paidOnline.toLocaleString()}`} />
+                    <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+                    <InfoRow label="Balance payment method" value={remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online'} />
+                    <InfoRow label="Due timing" value={remainingAmount > 0 ? 'Before departure' : 'Paid in full'} />
                     {schedule?.start_time ? (
                       <InfoRow label="Start time" value={format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a')} />
                     ) : null}

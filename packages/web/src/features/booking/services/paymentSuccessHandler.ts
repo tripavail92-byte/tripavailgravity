@@ -67,7 +67,10 @@ export async function handlePaymentSuccess(
     }
 
     // STEP 3: Make confirmation idempotent for return-page reloads.
-    if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+    if (
+      booking.status === 'confirmed' &&
+      ['paid', 'partially_paid', 'balance_pending'].includes(booking.payment_status || '')
+    ) {
       return {
         success: true,
         booking,
@@ -89,9 +92,9 @@ export async function handlePaymentSuccess(
     // STEP 5: Persist the Stripe fields while the row is still pending.
     await tourBookingService.updatePaymentStatus(
       bookingId,
-      'paid',
+      booking.remaining_amount && booking.remaining_amount > 0 ? 'balance_pending' : 'paid',
       paymentIntentId,
-      'stripe_card', // payment_method
+      'stripe_card',
     )
 
     // STEP 6: Confirm the pending booking (transition to confirmed).
@@ -135,7 +138,10 @@ export async function handlePackagePaymentSuccess(
       }
     }
 
-    if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+    if (
+      booking.status === 'confirmed' &&
+      ['paid', 'partially_paid', 'balance_pending'].includes(booking.payment_status || '')
+    ) {
       return {
         success: true,
         booking,

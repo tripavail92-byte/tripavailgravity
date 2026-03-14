@@ -3,7 +3,6 @@ import toast from 'react-hot-toast'
 import { Link, useParams } from 'react-router-dom'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
-  Archive,
   Bell,
   BellOff,
   CornerUpLeft,
@@ -74,7 +73,7 @@ export default function MessageThreadPage() {
   const [showEscalationDialog, setShowEscalationDialog] = useState(false)
   const [escalationReason, setEscalationReason] = useState('')
 
-  const conversationsQuery = useBookingConversations({ includeArchived: true, limit: 200 })
+  const conversationsQuery = useBookingConversations({ limit: 200 })
   const messagesQuery = useBookingConversationMessages(conversationId)
 
   const sendMessage = useSendBookingMessage({
@@ -88,8 +87,8 @@ export default function MessageThreadPage() {
   })
   const markRead = useMarkConversationRead()
   const updatePreferences = useUpdateConversationPreferences({
-    onSuccess: (data) => {
-      toast.success(data.isArchived ? 'Conversation archived' : 'Conversation updated')
+    onSuccess: () => {
+      toast.success('Conversation updated')
     },
     onError: (error) => toast.error(error.message || 'Conversation preference update failed'),
   })
@@ -242,13 +241,6 @@ export default function MessageThreadPage() {
             <GlassCard variant="card" className="rounded-3xl border border-border/60 p-0 overflow-hidden">
               <ThreadToolbar
                 conversation={conversation}
-                onToggleArchived={() => {
-                  if (!conversationId || !conversation) return
-                  updatePreferences.mutate({
-                    conversationId,
-                    isArchived: !conversation.is_archived,
-                  })
-                }}
                 onToggleMuted={() => {
                   if (!conversationId || !conversation) return
                   updatePreferences.mutate({
@@ -393,21 +385,6 @@ export default function MessageThreadPage() {
                   variant="outline"
                   className="w-full justify-start rounded-2xl border-border/60 bg-background/80"
                   onClick={() => {
-                    if (!conversationId || !conversation) return
-                    updatePreferences.mutate({
-                      conversationId,
-                      isArchived: !conversation.is_archived,
-                    })
-                  }}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  {conversation?.is_archived ? 'Move back to inbox' : 'Archive conversation'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start rounded-2xl border-border/60 bg-background/80"
-                  onClick={() => {
                     setReportTarget(null)
                     setReportReason('')
                     setReportDetails('')
@@ -519,12 +496,10 @@ export default function MessageThreadPage() {
 
 function ThreadToolbar({
   conversation,
-  onToggleArchived,
   onToggleMuted,
   onReportConversation,
 }: {
   conversation?: BookingConversationSummary
-  onToggleArchived: () => void
   onToggleMuted: () => void
   onReportConversation: () => void
 }) {
@@ -537,19 +512,12 @@ function ThreadToolbar({
         {conversation?.is_muted ? (
           <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">Muted</Badge>
         ) : null}
-        {conversation?.is_archived ? (
-          <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">Archived</Badge>
-        ) : null}
       </div>
 
       <div className="flex items-center gap-2">
         <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={onToggleMuted}>
           {conversation?.is_muted ? <Bell className="mr-2 h-4 w-4" /> : <BellOff className="mr-2 h-4 w-4" />}
           {conversation?.is_muted ? 'Unmute' : 'Mute'}
-        </Button>
-        <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={onToggleArchived}>
-          <Archive className="mr-2 h-4 w-4" />
-          {conversation?.is_archived ? 'Unarchive' : 'Archive'}
         </Button>
         <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={onReportConversation}>
           <ShieldAlert className="mr-2 h-4 w-4" />

@@ -317,6 +317,8 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
                     rating={item.tour.rating}
                     price={typeof item.tour.tourPrice === 'number' ? item.tour.tourPrice : 0}
                     currency={item.tour.currency || 'PKR'}
+                    depositRequired={Boolean((item.tour as any).deposit_required ?? (item.tour as any).depositRequired)}
+                    depositPercentage={Number((item.tour as any).deposit_percentage ?? (item.tour as any).depositPercentage ?? 0)}
                     type={'Tour Experience'}
                     isFeatured={Boolean(item.tour.isFeatured)}
                   />
@@ -479,6 +481,8 @@ function CuratedToursRow({
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency={tour.currency || 'PKR'}
+                  depositRequired={Boolean((tour as any).deposit_required ?? (tour as any).depositRequired)}
+                  depositPercentage={Number((tour as any).deposit_percentage ?? (tour as any).depositPercentage ?? 0)}
                   type={tour.badge}
                   isFeatured={tour.badge === 'Featured'}
                 />
@@ -553,6 +557,8 @@ function PakistanNorthernToursRow() {
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency={tour.currency || 'PKR'}
+                  depositRequired={Boolean((tour as any).deposit_required ?? (tour as any).depositRequired)}
+                  depositPercentage={Number((tour as any).deposit_percentage ?? (tour as any).depositPercentage ?? 0)}
                   type={tour.badge}
                   isFeatured={tour.badge === 'Featured'}
                 />

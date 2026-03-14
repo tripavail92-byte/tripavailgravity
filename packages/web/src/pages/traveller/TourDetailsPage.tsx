@@ -38,6 +38,7 @@ import {
   GlassTitle,
 } from '@/components/ui/glass'
 import { tourBookingService } from '@/features/booking'
+import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import {
   CANCELLATION_ICON_BY_POLICY,
   getTourIconComponent,
@@ -205,7 +206,8 @@ export default function TourDetailsPage() {
     handleBookNow()
   }
 
-  const maxSelectableSeats = Math.max(1, availableSlots ?? schedule?.capacity ?? 1)
+  const liveAvailableSeats = Math.max(0, availableSlots ?? schedule?.capacity ?? 0)
+  const maxSelectableSeats = Math.max(1, liveAvailableSeats || 1)
 
   useEffect(() => {
     setSelectedSeats((prev) => Math.min(prev, maxSelectableSeats))
@@ -282,7 +284,7 @@ export default function TourDetailsPage() {
         ? (((tour as any)?.excluded as string[]) || [])
         : []) || []
   const basePrice = Number((tour as any)?.base_price ?? tour?.price ?? 0) || 0
-  const depositPercentage = Math.max(0, Math.min(50, tour?.deposit_percentage || 0))
+  const depositPercentage = Math.max(0, Math.min(90, tour?.deposit_percentage || 0))
   const requiresDeposit = Boolean(tour?.deposit_required)
   const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
   const groupPricingTiers = Array.isArray(tour?.pricing_tiers)
@@ -308,8 +310,15 @@ export default function TourDetailsPage() {
     .filter((tier: any) => selectedSeats >= tier.minPeople)
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
   const activeGroupTier = rangeMatchedTier || fallbackThresholdTier
-  const effectiveUnitPrice = activeGroupTier?.pricePerPerson || basePrice
-  const liveTotalPrice = effectiveUnitPrice * selectedSeats
+  const paymentTerms = getTourPaymentTerms({
+    basePrice,
+    guestCount: selectedSeats,
+    pricingTiers: tour?.pricing_tiers,
+    depositRequired: requiresDeposit,
+    depositPercentage,
+  })
+  const effectiveUnitPrice = paymentTerms.effectiveUnitPrice
+  const liveTotalPrice = paymentTerms.totalAmount
   const standardTotalPrice = basePrice * selectedSeats
   const currentSavingsPerPerson = Math.max(0, basePrice - effectiveUnitPrice)
   const currentTotalSavings = Math.max(0, standardTotalPrice - liveTotalPrice)
@@ -326,12 +335,18 @@ export default function TourDetailsPage() {
   const nextTierTotalSavingsAtUnlock = nextGroupTier
     ? Math.max(0, (basePrice - nextGroupTier.pricePerPerson) * nextGroupTier.minPeople)
     : 0
+  const payNowPerTraveler = requiresDeposit ? paymentTerms.upfrontAmount / Math.max(selectedSeats, 1) : effectiveUnitPrice
+  const payLaterPerTraveler = requiresDeposit ? paymentTerms.remainingAmount / Math.max(selectedSeats, 1) : 0
+  const seatsRemainingAfterSelection = schedule ? Math.max(0, liveAvailableSeats - selectedSeats) : 0
+  const canReachNextTierOnThisDeparture = nextGroupTier
+    ? selectedSeats + seatsRemainingAfterSelection >= nextGroupTier.minPeople
+    : false
   const animatedLiveTotalPrice = useCountUp(liveTotalPrice)
   const animatedCurrentTotalSavings = useCountUp(currentTotalSavings)
   const animatedCurrentSavingsPerPerson = useCountUp(currentSavingsPerPerson)
   const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
   const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
-  const canBookNow = Boolean(schedule) && (availableSlots === null || availableSlots > 0)
+  const canBookNow = Boolean(schedule) && liveAvailableSeats > 0
 
   if (loading) {
     return (
@@ -482,17 +497,22 @@ export default function TourDetailsPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary/75">
                   <Users className="h-4 w-4" />
-                  Seats Available
+                  Seats Remaining
                 </span>
                 <span className="text-lg font-black text-foreground">
-                  {availableSlots !== null ? availableSlots : '—'}
+                  {schedule ? seatsRemainingAfterSelection : '—'}
                 </span>
               </div>
-              {availableSlots !== null && availableSlots < 3 && availableSlots > 0 && (
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Live capacity {liveAvailableSeats} seat{liveAvailableSeats === 1 ? '' : 's'} before this booking.
+              </p>
+              {schedule && seatsRemainingAfterSelection < 3 && liveAvailableSeats > 0 && (
                 <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-2">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 text-warning" />
                   <p className="text-xs font-medium text-warning">
-                    Only {availableSlots} seat{availableSlots > 1 ? 's' : ''} left!
+                    {seatsRemainingAfterSelection === 0
+                      ? 'Your selection fills the last available seats.'
+                      : `Only ${seatsRemainingAfterSelection} seat${seatsRemainingAfterSelection > 1 ? 's' : ''} will remain after this selection!`}
                   </p>
                 </div>
               )}
@@ -532,6 +552,10 @@ export default function TourDetailsPage() {
             </button>
           </div>
           <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
+            <p className="type-caption text-muted-foreground">
+              Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves {seatsRemainingAfterSelection}{' '}
+              seat{seatsRemainingAfterSelection === 1 ? '' : 's'} available on this departure.
+            </p>
             <div className="flex flex-wrap items-center justify-between gap-2">
               {activeGroupTier ? (
                 <p className="type-overline text-primary">
@@ -573,7 +597,7 @@ export default function TourDetailsPage() {
                 </p>
               </div>
             ) : null}
-            {nextGroupTier && seatsToNextTier > 0 ? (
+            {nextGroupTier && seatsToNextTier > 0 && canReachNextTierOnThisDeparture ? (
               <div className="rounded-2xl border border-primary/20 bg-primary/8 p-2.5">
                 <p className="type-overline text-primary">
                   Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
@@ -589,15 +613,48 @@ export default function TourDetailsPage() {
           </div>
         </div>
 
+        {requiresDeposit ? (
+          <div className="space-y-3 rounded-3xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm">
+            <p className="type-overline text-primary">Booking payment terms</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Upfront payment</p>
+                <p className="mt-1 text-lg font-black text-foreground">{paymentTerms.upfrontPercentage}%</p>
+                <p className="text-xs text-muted-foreground">Pay now: {tour.currency} {formatMoney(payNowPerTraveler)} per traveler</p>
+              </div>
+              <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Pay later</p>
+                <p className="mt-1 text-lg font-black text-foreground">{tour.currency} {formatMoney(payLaterPerTraveler)} per traveler</p>
+                <p className="text-xs text-muted-foreground">Paid directly to operator before departure</p>
+              </div>
+            </div>
+            <p className="type-caption text-muted-foreground">
+              Pay {tour.currency} {formatMoney(paymentTerms.upfrontAmount)} now to confirm your booking. Remaining {tour.currency} {formatMoney(paymentTerms.remainingAmount)} will be paid directly to the tour operator before departure.
+            </p>
+          </div>
+        ) : null}
+
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             onClick={onPayNow}
             disabled={!canBookNow}
             className="h-16 w-full rounded-3xl bg-primary text-primary-foreground shadow-xl shadow-primary/25 transition-all duration-300 hover:bg-primary/90"
           >
-            {!schedule ? 'No Dates Available' : schedule && availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
+            {!schedule
+              ? 'No Dates Available'
+              : schedule && availableSlots === 0
+                ? 'Sold Out'
+                : requiresDeposit
+                  ? `Pay ${tour.currency} ${formatMoney(paymentTerms.upfrontAmount)} & Confirm Booking`
+                  : `Pay ${tour.currency} ${formatMoney(paymentTerms.totalAmount)} & Confirm Booking`}
           </Button>
         </motion.div>
+
+        {requiresDeposit && canBookNow ? (
+          <p className="text-center type-caption text-muted-foreground">
+            Remaining {tour.currency} {formatMoney(paymentTerms.remainingAmount)} will be paid to the operator before departure.
+          </p>
+        ) : null}
 
         <p className="text-center type-overline text-muted-foreground/70">{cancellationMeta.title}</p>
       </GlassContent>

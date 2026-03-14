@@ -366,9 +366,16 @@ export default function OperatorBookingsPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <CreditCard className={`h-4 w-4 ${paymentTone(booking.payment_status)}`} />
-                            <span className={`text-sm font-medium ${paymentTone(booking.payment_status)}`}>
-                              {booking.payment_status || 'unpaid'}
-                            </span>
+                            <div>
+                              <span className={`text-sm font-medium ${paymentTone(booking.payment_status)}`}>
+                                {booking.payment_status || 'unpaid'}
+                              </span>
+                              {Number(booking.remaining_amount || 0) > 0 ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Balance due: PKR {Number(booking.remaining_amount || 0).toLocaleString()}
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -427,7 +434,12 @@ export default function OperatorBookingsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-semibold text-foreground">
-                          PKR {booking.total_price.toLocaleString()}
+                          <div>
+                            <p>PKR {booking.total_price.toLocaleString()}</p>
+                            <p className="mt-1 text-xs font-medium text-muted-foreground">
+                              Paid online: PKR {Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0).toLocaleString()}
+                            </p>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

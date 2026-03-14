@@ -43,7 +43,7 @@ export function BookingConversationPanel({
   const [conversationId, setConversationId] = useState<string | undefined>(undefined)
   const [composerValue, setComposerValue] = useState('')
 
-  const conversationsQuery = useBookingConversations({ includeArchived: true, limit: 200 })
+  const conversationsQuery = useBookingConversations({ limit: 200 })
 
   const conversation = useMemo(
     () =>

@@ -175,7 +175,9 @@ export default function BookingConfirmationPage() {
           </motion.div>
           <h1 className="text-4xl font-black text-foreground mb-2">Booking Confirmed!</h1>
           <p className="text-lg text-muted-foreground font-medium">
-            Your tour is booked. Get ready for an amazing adventure!
+            {confirmedBooking?.remaining_amount > 0
+              ? 'Your deposit booking is confirmed. The remaining balance will be paid directly to the operator before departure.'
+              : 'Your tour is booked. Get ready for an amazing adventure!'}
           </p>
         </div>
       </div>
@@ -265,12 +267,45 @@ export default function BookingConfirmationPage() {
                   <span className="text-foreground font-bold">{confirmedBooking.pax_count}</span>
                 </div>
                 <div className="h-px bg-border" />
-                <div className="flex items-center justify-between text-lg">
-                  <span className="text-foreground font-bold">Total Paid</span>
-                  <span className="font-black text-primary">
-                    {tour?.currency} {confirmedBooking.total_price.toFixed(2)}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground font-medium">Booking status</span>
+                  <span className="text-foreground font-bold">Confirmed</span>
+                </div>
+                <div className="h-px bg-border" />
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground font-medium">Total booking amount</span>
+                  <span className="text-foreground font-bold">
+                    {tour?.currency} {Number(confirmedBooking.total_price || 0).toFixed(2)}
                   </span>
                 </div>
+                <div className="h-px bg-border" />
+                <div className="flex items-center justify-between text-lg">
+                  <span className="text-foreground font-bold">Upfront paid</span>
+                  <span className="font-black text-primary">
+                    {tour?.currency} {Number((confirmedBooking.amount_paid_online ?? confirmedBooking.upfront_amount ?? confirmedBooking.total_price) || 0).toFixed(2)}
+                  </span>
+                </div>
+                {Number(confirmedBooking.remaining_amount || 0) > 0 ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Remaining balance</span>
+                      <span className="text-foreground font-bold">
+                        {tour?.currency} {Number(confirmedBooking.remaining_amount || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Payment method for balance</span>
+                      <span className="text-foreground font-bold">Direct to operator</span>
+                    </div>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Due timing</span>
+                      <span className="text-foreground font-bold">Before departure</span>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
           )}
@@ -285,6 +320,9 @@ export default function BookingConfirmationPage() {
               <li>✓ Check your email for booking confirmation and tour details</li>
               <li>✓ Save your confirmation number for check-in</li>
               <li>✓ Review the tour itinerary and packing list</li>
+              {Number(confirmedBooking?.remaining_amount || 0) > 0 ? (
+                <li>✓ Balance due later: {tour?.currency} {Number(confirmedBooking?.remaining_amount || 0).toFixed(2)} paid directly to the operator before departure</li>
+              ) : null}
               <li>✓ Follow the tour operator's pre-departure instructions</li>
             </ul>
           </div>

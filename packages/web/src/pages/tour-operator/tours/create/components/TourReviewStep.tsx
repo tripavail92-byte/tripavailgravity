@@ -8,6 +8,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { Tour } from '@/features/tour-operator/services/tourService'
 
 interface TourReviewStepProps {
@@ -51,6 +52,13 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
   const languages = Array.isArray(data.languages) ? data.languages : []
   const inclusions = Array.isArray(data.inclusions) ? data.inclusions : []
   const exclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+  const paymentTerms = getTourPaymentTerms({
+    basePrice: Number(data.price || 0),
+    guestCount: 1,
+    pricingTiers: data.pricing_tiers,
+    depositRequired: data.deposit_required,
+    depositPercentage: Number(data.deposit_percentage || 0),
+  })
 
   const schedulePreview = schedules
     .slice(0, 3)
@@ -135,6 +143,19 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
               label="Deposit Required"
               value={data.deposit_required ? `Yes (${data.deposit_percentage || 0}%)` : 'No'}
             />
+            {data.deposit_required ? (
+              <>
+                <ReviewRow
+                  label="Pay Now"
+                  value={`${data.currency || 'PKR'} ${paymentTerms.upfrontAmount.toLocaleString() || 0} per traveler`}
+                />
+                <ReviewRow
+                  label="Pay Later"
+                  value={`${data.currency || 'PKR'} ${paymentTerms.remainingAmount.toLocaleString() || 0} per traveler`}
+                />
+                <ReviewRow label="Payment Policy" value={paymentTerms.paymentPolicyText} />
+              </>
+            ) : null}
             <ReviewRow label="Cancellation Policy" value={data.cancellation_policy || '—'} />
             <ReviewRow
               label="Inclusions"

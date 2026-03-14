@@ -74,7 +74,7 @@ serve(async (req) => {
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from(tableName)
-      .select('id, traveler_id, stripe_payment_intent_id, total_price')
+      .select('id, traveler_id, stripe_payment_intent_id, total_price, upfront_amount')
       .eq('id', booking_id)
       .single();
 
@@ -99,8 +99,7 @@ serve(async (req) => {
       });
     }
 
-    const totalPrice = Number(booking.total_price);
-    const expectedAmount = Math.round(totalPrice * 100);
+    const expectedAmount = Math.round(Number(booking.upfront_amount ?? booking.total_price) * 100);
 
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2024-06-20',

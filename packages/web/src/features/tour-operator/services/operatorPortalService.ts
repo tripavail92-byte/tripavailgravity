@@ -34,8 +34,14 @@ export interface OperatorBookingRecord {
   pax_count: number
   booking_date: string
   expires_at?: string | null
-  payment_status?: 'unpaid' | 'processing' | 'paid' | 'failed' | 'refunded' | null
+  payment_status?: 'unpaid' | 'processing' | 'partially_paid' | 'balance_pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded' | null
+  payment_collection_mode?: 'full_online' | 'partial_online' | null
   payment_method?: string | null
+  upfront_amount?: number | null
+  remaining_amount?: number | null
+  amount_paid_online?: number | null
+  amount_due_to_operator?: number | null
+  payment_policy_text?: string | null
   metadata?: Record<string, any> | null
   paid_at?: string | null
   tours: {
@@ -112,7 +118,13 @@ function mapBookingRow(row: any): OperatorBookingRecord {
     booking_date: row.booking_date,
     expires_at: row.expires_at ?? null,
     payment_status: row.payment_status ?? null,
+    payment_collection_mode: row.payment_collection_mode ?? null,
     payment_method: row.payment_method ?? null,
+    upfront_amount: row.upfront_amount ?? null,
+    remaining_amount: row.remaining_amount ?? null,
+    amount_paid_online: row.amount_paid_online ?? null,
+    amount_due_to_operator: row.amount_due_to_operator ?? null,
+    payment_policy_text: row.payment_policy_text ?? null,
     metadata: row.metadata ?? null,
     paid_at: row.paid_at ?? null,
     tours: {

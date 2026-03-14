@@ -17,6 +17,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
 import { createBookingWithValidation, TourBooking, tourBookingService } from '@/features/booking'
+import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { getSessionCached } from '@/lib/authCache'
@@ -152,10 +153,21 @@ export default function TourCheckoutPage() {
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
   const applicableTier = rangeMatchedTier || fallbackThresholdTier
 
-  const effectiveUnitPrice = applicableTier ? applicableTier.pricePerPerson : baseUnitPrice
-  const totalPrice = effectiveUnitPrice * guestCount
+  const paymentTerms = getTourPaymentTerms({
+    basePrice: baseUnitPrice,
+    guestCount,
+    pricingTiers: tour?.pricing_tiers,
+    depositRequired: tour?.deposit_required,
+    depositPercentage: Number(tour?.deposit_percentage || 0),
+  })
+  const effectiveUnitPrice = paymentTerms.effectiveUnitPrice
+  const totalPrice = paymentTerms.totalAmount
+  const payNowAmount = paymentTerms.upfrontAmount
+  const payLaterAmount = paymentTerms.remainingAmount
+  const usesDeposit = paymentTerms.paymentCollectionMode === 'partial_online'
   const scheduleCapacity = schedule?.capacity || null
   const liveAvailableSeats = availableSlots ?? scheduleCapacity ?? 0
+  const seatsRemainingAfterSelection = Math.max(0, liveAvailableSeats - guestCount)
   const maxGuests = Math.max(
     1,
     Math.min(liveAvailableSeats, scheduleCapacity ?? liveAvailableSeats),
@@ -302,6 +314,9 @@ export default function TourCheckoutPage() {
           tour_name: tour.title,
           schedule_start: schedule.start_time,
           guest_count: guestCount,
+          payment_collection_mode: paymentTerms.paymentCollectionMode,
+          upfront_amount: payNowAmount,
+          remaining_amount: payLaterAmount,
         },
       })
 
@@ -454,8 +469,12 @@ export default function TourCheckoutPage() {
                 <h2 className="type-h2 text-foreground mb-4">Select Number of Guests</h2>
                 <div className="space-y-4">
                   <p className="type-body-sm text-muted-foreground">
-                    Available seats:{' '}
+                    Live seats available:{' '}
                     <span className="text-foreground font-bold">{liveAvailableSeats}</span>
+                  </p>
+                  <p className="type-body-sm text-muted-foreground">
+                    Remaining after this booking:{' '}
+                    <span className="text-foreground font-bold">{seatsRemainingAfterSelection}</span>
                   </p>
 
                   {/* Guest Counter */}
@@ -482,11 +501,13 @@ export default function TourCheckoutPage() {
                     </button>
                   </div>
 
-                  {liveAvailableSeats < 5 && liveAvailableSeats > 0 && (
+                  {seatsRemainingAfterSelection < 5 && liveAvailableSeats > 0 && (
                     <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">
                       <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
                       <p className="type-body-sm text-warning">
-                        Only {liveAvailableSeats} seat{liveAvailableSeats > 1 ? 's' : ''} left
+                        {seatsRemainingAfterSelection === 0
+                          ? 'This selection will use the last available seats.'
+                          : `Only ${seatsRemainingAfterSelection} seat${seatsRemainingAfterSelection > 1 ? 's' : ''} will remain after this booking`}
                       </p>
                     </div>
                   )}
@@ -543,12 +564,32 @@ export default function TourCheckoutPage() {
                       </div>
                       <div className="h-px bg-border/60" />
                       <div className="flex items-center justify-between text-lg">
-                        <span className="text-foreground font-bold">Total Price</span>
+                        <span className="text-foreground font-bold">Total booking amount</span>
                         <span className="font-black text-primary">
                           {tour.currency} {totalPrice.toFixed(2)}
                         </span>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-medium">
+                          Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
+                        </span>
+                        <span className="font-bold text-foreground">
+                          {tour.currency} {Number(pendingBooking.upfront_amount ?? payNowAmount).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-medium">Pay later to operator</span>
+                        <span className="font-bold text-foreground">
+                          {tour.currency} {Number(pendingBooking.remaining_amount ?? payLaterAmount).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
+
+                    {usesDeposit ? (
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+                        You are paying only {tour.currency} {Number(pendingBooking.upfront_amount ?? payNowAmount).toFixed(2)} now to confirm your booking. The remaining {tour.currency} {Number(pendingBooking.remaining_amount ?? payLaterAmount).toFixed(2)} will be paid directly to the tour operator before departure.
+                      </div>
+                    ) : null}
 
                     {/* Stripe Payment Form */}
                     <div className="space-y-4">
@@ -572,7 +613,8 @@ export default function TourCheckoutPage() {
                           <Elements stripe={stripePromise} options={{ clientSecret }}>
                             <TourPaymentForm
                               bookingId={pendingBooking.id}
-                              total={totalPrice}
+                              chargeAmount={Number(pendingBooking.upfront_amount ?? payNowAmount)}
+                              remainingAmount={Number(pendingBooking.remaining_amount ?? payLaterAmount)}
                               currency={tour.currency}
                             />
                           </Elements>
@@ -610,13 +652,14 @@ export default function TourCheckoutPage() {
                 <GlassContent className="p-6 pt-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">
-                        {tour.currency} {effectiveUnitPrice.toFixed(2)} × {guestCount}{' '}
-                        {guestCount === 1 ? 'Guest' : 'Guests'}
-                      </span>
+                      <span className="text-muted-foreground font-medium">Tour price</span>
                       <span className="text-foreground font-bold">
-                        {tour.currency} {totalPrice.toFixed(2)}
+                        {tour.currency} {effectiveUnitPrice.toFixed(2)} per person
                       </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-medium">Travelers</span>
+                      <span className="text-foreground font-bold">{guestCount}</span>
                     </div>
                     {applicableTier ? (
                       <div className="type-caption text-success font-semibold">
@@ -624,12 +667,37 @@ export default function TourCheckoutPage() {
                       </div>
                     ) : null}
                     <div className="h-px bg-border/60" />
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground font-bold">Total</span>
-                      <span className="type-h2 text-primary">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-medium">Total booking amount</span>
+                      <span className="text-foreground font-bold">
                         {tour.currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-medium">
+                        Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
+                      </span>
+                      <span className="text-foreground font-bold">
+                        {tour.currency} {payNowAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground font-medium">Pay later to operator</span>
+                      <span className="text-foreground font-bold">
+                        {tour.currency} {payLaterAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-foreground font-bold">Payment Summary</span>
+                      <span className="type-h2 text-primary">
+                        {tour.currency} {payNowAmount.toFixed(2)}
+                      </span>
+                    </div>
+                    {usesDeposit ? (
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                        You pay {tour.currency} {payNowAmount.toFixed(2)} now. Remaining {tour.currency} {payLaterAmount.toFixed(2)} will be paid directly to the tour operator before departure.
+                      </div>
+                    ) : null}
                   </div>
 
                   {!pendingBooking && (
@@ -648,7 +716,7 @@ export default function TourCheckoutPage() {
                         </>
                       ) : (
                         <>
-                          Pay Now
+                          Pay {tour.currency} {payNowAmount.toFixed(2)} & Confirm Booking
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </>
                       )}
@@ -690,7 +758,7 @@ export default function TourCheckoutPage() {
   )
 }
 
-function TourPaymentForm(props: { bookingId: string; total: number; currency: string }) {
+function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remainingAmount: number; currency: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -758,8 +826,13 @@ function TourPaymentForm(props: { bookingId: string; total: number; currency: st
       >
         {submitting
           ? 'Processing...'
-          : `Pay ${props.currency} ${Number(props.total || 0).toFixed(2)}`}
+          : `Pay ${props.currency} ${Number(props.chargeAmount || 0).toFixed(2)} & Confirm Booking`}
       </Button>
+      {props.remainingAmount > 0 ? (
+        <p className="text-center text-xs text-muted-foreground">
+          Remaining {props.currency} {Number(props.remainingAmount || 0).toFixed(2)} will be paid directly to the tour operator before departure.
+        </p>
+      ) : null}
     </div>
   )
 }

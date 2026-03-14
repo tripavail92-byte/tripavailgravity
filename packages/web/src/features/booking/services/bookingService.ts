@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 
 function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
   if (error instanceof Error) return error
@@ -37,9 +38,17 @@ export interface TourBooking {
   booking_date: string
   expires_at?: string // 10-minute hold expiration timestamp
   stripe_payment_intent_id?: string
-  payment_status?: 'unpaid' | 'processing' | 'paid' | 'failed' | 'refunded'
+  payment_status?: 'unpaid' | 'processing' | 'partially_paid' | 'balance_pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
+  payment_collection_mode?: 'full_online' | 'partial_online'
   payment_method?: string
   paid_at?: string
+  deposit_required?: boolean
+  deposit_percentage?: number
+  upfront_amount?: number
+  remaining_amount?: number
+  amount_paid_online?: number
+  amount_due_to_operator?: number
+  payment_policy_text?: string | null
   payment_metadata?: any
   metadata?: any
 }
@@ -58,9 +67,17 @@ export interface PackageBooking {
   number_of_nights?: number
   price_per_night?: number
   stripe_payment_intent_id?: string
-  payment_status?: 'unpaid' | 'processing' | 'paid' | 'failed' | 'refunded'
+  payment_status?: 'unpaid' | 'processing' | 'partially_paid' | 'balance_pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
+  payment_collection_mode?: 'full_online' | 'partial_online'
   payment_method?: string
   paid_at?: string
+  deposit_required?: boolean
+  deposit_percentage?: number
+  upfront_amount?: number
+  remaining_amount?: number
+  amount_paid_online?: number
+  amount_due_to_operator?: number
+  payment_policy_text?: string | null
   payment_metadata?: any
   metadata?: any
 }
@@ -131,9 +148,21 @@ export const tourBookingService = {
     stripePaymentIntentId?: string,
     paymentMethod?: string,
   ): Promise<TourBooking> {
+    const booking = await this.getBookingById(bookingId)
+    if (!booking) {
+      throw new Error('Booking not found')
+    }
+
+    const hasOnlinePayment = ['paid', 'partially_paid', 'balance_pending'].includes(paymentStatus)
     const updates: any = {
       payment_status: paymentStatus,
-      paid_at: paymentStatus === 'paid' ? new Date().toISOString() : null,
+      paid_at: hasOnlinePayment ? new Date().toISOString() : null,
+      amount_paid_online: hasOnlinePayment
+        ? Number(booking.upfront_amount ?? booking.total_price ?? 0)
+        : Number(booking.amount_paid_online ?? 0),
+      amount_due_to_operator: paymentStatus === 'balance_pending'
+        ? Number(booking.remaining_amount ?? 0)
+        : 0,
     }
 
     if (stripePaymentIntentId) updates.stripe_payment_intent_id = stripePaymentIntentId
@@ -189,6 +218,21 @@ export const tourBookingService = {
     metadata?: any
   }): Promise<TourBooking> {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // NOW + 10 minutes
+    const { data: tourRow, error: tourError } = await supabase
+      .from('tours')
+      .select('price, pricing_tiers, deposit_required, deposit_percentage')
+      .eq('id', params.tour_id)
+      .single()
+
+    if (tourError) throw tourError
+
+    const paymentTerms = getTourPaymentTerms({
+      basePrice: Number(tourRow?.price || 0),
+      guestCount: params.pax_count,
+      pricingTiers: tourRow?.pricing_tiers,
+      depositRequired: tourRow?.deposit_required,
+      depositPercentage: Number(tourRow?.deposit_percentage || 0),
+    })
 
     const booking: Omit<TourBooking, 'id' | 'booking_date'> = {
       tour_id: params.tour_id,
@@ -199,6 +243,14 @@ export const tourBookingService = {
       status: 'pending',
       expires_at: expiresAt.toISOString(),
       payment_status: 'unpaid',
+      payment_collection_mode: paymentTerms.paymentCollectionMode,
+      deposit_required: paymentTerms.paymentCollectionMode === 'partial_online',
+      deposit_percentage: paymentTerms.paymentCollectionMode === 'partial_online' ? paymentTerms.upfrontPercentage : 0,
+      upfront_amount: paymentTerms.upfrontAmount,
+      remaining_amount: paymentTerms.remainingAmount,
+      amount_paid_online: 0,
+      amount_due_to_operator: paymentTerms.remainingAmount,
+      payment_policy_text: paymentTerms.paymentPolicyText,
       metadata: params.metadata || {},
     }
 
@@ -218,7 +270,6 @@ export const tourBookingService = {
       .from('tour_bookings')
       .update({
         status: 'confirmed',
-        payment_status: 'paid',
       })
       .eq('id', bookingId)
       .eq('status', 'pending') // Only confirm if currently pending
@@ -396,7 +447,6 @@ export const packageBookingService = {
       .from('package_bookings')
       .update({
         status: 'confirmed',
-        payment_status: 'paid',
       })
       .eq('id', bookingId)
       .eq('status', 'pending')
