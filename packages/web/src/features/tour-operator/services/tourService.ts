@@ -128,6 +128,22 @@ export interface NormalizedTourScheduleRow {
 const DEFAULT_SCHEDULE_START = '09:00'
 const DEFAULT_SCHEDULE_DURATION_HOURS = 2
 
+function isSlugConstraintError(error: any, constraintName: string) {
+  return error?.code === '23505' && String(error?.message || '').includes(constraintName)
+}
+
+function buildFallbackSlug(title: string | null | undefined) {
+  const base = String(title || 'tour')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+
+  const normalizedBase = base.length > 0 ? base : 'tour'
+  return `${normalizedBase}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+}
+
 const toIsoOrNull = (value: unknown): string | null => {
   if (typeof value !== 'string' || value.trim().length === 0) return null
   const parsed = new Date(value)
@@ -257,11 +273,21 @@ export const tourService = {
     }
 
     // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
-    const { data, error } = await supabase
+    let createResponse = await supabase
       .from('tours')
       .insert(payload as any)
       .select()
       .single()
+
+    if (createResponse.error && isSlugConstraintError(createResponse.error, 'tours_slug_key')) {
+      createResponse = await supabase
+        .from('tours')
+        .insert({ ...payload, slug: buildFallbackSlug(payload.title) } as any)
+        .select()
+        .single()
+    }
+
+    const { data, error } = createResponse
 
     if (error) {
       console.error('Error creating tour:', error)
@@ -571,11 +597,25 @@ export const tourService = {
       await syncTourSchedulesFromJson(tour.id as string, payload.schedules, payload.max_participants)
       return { success: true, tourId: tour.id as string }
     } else {
-      const { data: tour, error } = await supabase
+      let insertResponse = await supabase
         .from('tours')
         .insert({ ...payload, workflow_status: 'draft' } as any)
         .select('id')
         .single()
+
+      if (insertResponse.error && isSlugConstraintError(insertResponse.error, 'tours_slug_key')) {
+        insertResponse = await supabase
+          .from('tours')
+          .insert({
+            ...payload,
+            workflow_status: 'draft',
+            slug: buildFallbackSlug(payload.title),
+          } as any)
+          .select('id')
+          .single()
+      }
+
+      const { data: tour, error } = insertResponse
       if (error) throw error
       await syncTourSchedulesFromJson(tour.id as string, payload.schedules, payload.max_participants)
       return { success: true, tourId: tour.id as string }
