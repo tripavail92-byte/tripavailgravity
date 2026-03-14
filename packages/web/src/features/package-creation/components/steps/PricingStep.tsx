@@ -90,7 +90,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
         amenities: Array.isArray(room.amenities) ? room.amenities : [],
         pricing: {
           basePrice: room.price_override || 0,
-          currency: room.currency || 'USD',
+          currency: room.currency || existingData?.currency || 'PKR',
         },
       }))
 
@@ -148,7 +148,10 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
 
     // Update package data
     const roomsObject = Object.fromEntries(newSelected)
-    onUpdate({ selectedRooms: roomsObject })
+    onUpdate({
+      selectedRooms: roomsObject,
+      currency: Array.from(newSelected.values())[0]?.currency || existingData?.currency || 'PKR',
+    })
   }
 
   const updateRoomPrice = (roomId: string, newPrice: number) => {
@@ -162,7 +165,10 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
 
       // Update package data
       const roomsObject = Object.fromEntries(newSelected)
-      onUpdate({ selectedRooms: roomsObject })
+      onUpdate({
+        selectedRooms: roomsObject,
+        currency: Array.from(newSelected.values())[0]?.currency || existingData?.currency || 'PKR',
+      })
     }
   }
 
@@ -201,7 +207,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
     return {
       min: Math.min(...prices),
       max: Math.max(...prices),
-      currency: Array.from(selectedRooms.values())[0]?.currency || 'USD',
+      currency: Array.from(selectedRooms.values())[0]?.currency || existingData?.currency || 'PKR',
     }
   }
 
@@ -212,9 +218,11 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
     }
 
     const roomsObject = Object.fromEntries(selectedRooms)
+    const priceRange = getPriceRange()
     onComplete({
       selectedRooms: roomsObject,
-      priceRange: getPriceRange(),
+      priceRange,
+      currency: priceRange?.currency || existingData?.currency || 'PKR',
     })
   }
 

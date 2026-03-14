@@ -53,6 +53,7 @@ export default function HotelsPage() {
           rating={pkg.rating}
           reviewCount={pkg.reviewCount}
           priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+          currency={pkg.currency || 'PKR'}
           totalOriginal={pkg.totalOriginal}
           totalDiscounted={pkg.totalDiscounted}
           badge={pkg.badge || 'Hotel Stay'}

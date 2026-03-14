@@ -574,6 +574,7 @@ export type Database = {
           highlights: string[] | null
           hotel_id: string | null
           id: string
+          currency: string | null
           inclusions: string[] | null
           is_published: boolean | null
           max_guests: number | null
@@ -608,6 +609,7 @@ export type Database = {
           hotel_id?: string | null
           id?: string
           inclusions?: string[] | null
+          currency?: string | null
           is_published?: boolean | null
           max_guests?: number | null
           maximum_nights?: number | null
@@ -641,6 +643,7 @@ export type Database = {
           hotel_id?: string | null
           id?: string
           inclusions?: string[] | null
+          currency?: string | null
           is_published?: boolean | null
           max_guests?: number | null
           maximum_nights?: number | null

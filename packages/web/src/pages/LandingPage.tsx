@@ -298,6 +298,7 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
                     priceFrom={
                       typeof item.pkg.packagePrice === 'number' ? item.pkg.packagePrice : null
                     }
+                    currency={item.pkg.currency || 'PKR'}
                     totalOriginal={item.pkg.totalOriginal}
                     totalDiscounted={item.pkg.totalDiscounted}
                     badge={'Hotel Stay'}
@@ -395,6 +396,7 @@ function CuratedPackagesRow({ kind, title }: { kind: CuratedPackageKind; title: 
                   rating={pkg.rating}
                   reviewCount={pkg.reviewCount}
                   priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+                  currency={pkg.currency || 'PKR'}
                   totalOriginal={pkg.totalOriginal}
                   totalDiscounted={pkg.totalDiscounted}
                   badge={pkg.badge}
@@ -1016,7 +1018,7 @@ function FeaturedHotelsSection({
                   <div className="flex items-baseline gap-1 mt-1">
                     <span className="font-bold text-base text-foreground">
                       {typeof hotel.packagePrice === 'number'
-                        ? `$${hotel.packagePrice}`
+                        ? `${hotel.currency || 'PKR'} ${hotel.packagePrice}`
                         : hotel.packagePrice}
                     </span>
                     {typeof hotel.packagePrice === 'number' && (

@@ -6,8 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { UnifiedExperience } from '@/types/experience'
 
-const DISPLAY_CURRENCY = 'PKR'
-
 export function UnifiedExperienceCard({
   experience,
   className,
@@ -31,6 +29,7 @@ export function UnifiedExperienceCard({
     hasSavings && experience.originalPrice
       ? Math.round((savingsAmount / experience.originalPrice) * 100)
       : 0
+  const displayCurrency = experience.currency || 'PKR'
 
   const rating = typeof experience.rating === 'number' ? experience.rating : null
   const reviewCount = typeof experience.reviewCount === 'number' ? experience.reviewCount : null
@@ -94,21 +93,21 @@ export function UnifiedExperienceCard({
                 <>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-muted-foreground line-through">
-                      {DISPLAY_CURRENCY} {Math.round(experience.originalPrice!).toLocaleString()}
+                      {displayCurrency} {Math.round(experience.originalPrice!).toLocaleString()}
                     </span>
                     <span className="font-bold text-lg text-foreground">
-                      {DISPLAY_CURRENCY} {Math.round(experience.price!).toLocaleString()}
+                      {displayCurrency} {Math.round(experience.price!).toLocaleString()}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Save {DISPLAY_CURRENCY} {savingsAmount.toLocaleString()}
+                    Save {displayCurrency} {savingsAmount.toLocaleString()}
                     {savingsPercent > 0 ? ` (${savingsPercent}%)` : ''}
                   </div>
                 </>
               ) : typeof experience.price === 'number' && experience.price > 0 ? (
                 <div className="flex items-baseline gap-2">
                   <span className="font-bold text-lg text-foreground">
-                    {DISPLAY_CURRENCY} {Math.round(experience.price).toLocaleString()}
+                    {displayCurrency} {Math.round(experience.price).toLocaleString()}
                   </span>
                 </div>
               ) : (

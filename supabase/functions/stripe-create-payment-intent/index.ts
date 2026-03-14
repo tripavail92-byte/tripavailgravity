@@ -76,7 +76,7 @@ serve(async (req) => {
 
     const bookingSelect = isTour
       ? 'id, traveler_id, status, payment_status, expires_at, total_price, tour_id, schedule_id'
-      : 'id, traveler_id, status, payment_status, expires_at, total_price';
+      : 'id, traveler_id, status, payment_status, expires_at, total_price, package_id';
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from(tableName)
@@ -131,6 +131,18 @@ serve(async (req) => {
           .maybeSingle();
 
         const found = String(tourRow?.currency || '').trim();
+        if (found) currency = found.toLowerCase();
+      }
+    } else {
+      const packageId = booking.package_id;
+      if (packageId) {
+        const { data: packageRow } = await supabaseAdmin
+          .from('packages')
+          .select('currency')
+          .eq('id', packageId)
+          .maybeSingle();
+
+        const found = String(packageRow?.currency || '').trim();
         if (found) currency = found.toLowerCase();
       }
     }

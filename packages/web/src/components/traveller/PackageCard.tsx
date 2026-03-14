@@ -8,8 +8,6 @@ import { GlassBadge } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
-const DISPLAY_CURRENCY = 'PKR'
-
 interface PackageCardProps {
   id: string
   slug?: string
@@ -21,6 +19,7 @@ interface PackageCardProps {
   rating?: number
   reviewCount?: number
   priceFrom?: number | null
+  currency?: string | null
   totalOriginal?: number
   totalDiscounted?: number
 
@@ -40,12 +39,14 @@ export function PackageCard({
   rating,
   reviewCount,
   priceFrom,
+  currency,
   totalOriginal,
   totalDiscounted,
   badge,
   instantConfirmation = true,
   className,
 }: PackageCardProps) {
+  const displayCurrency = currency || 'PKR'
   const primaryImage = images?.[0]
   const hasSavings =
     typeof totalOriginal === 'number' &&
@@ -150,7 +151,7 @@ export function PackageCard({
             {typeof priceFrom === 'number' && priceFrom > 0 ? (
               <Badge variant="secondary" className="rounded-full">
                 <DollarSign className="w-3.5 h-3.5 mr-1" />
-                From {DISPLAY_CURRENCY} {Math.round(priceFrom).toLocaleString()}
+                From {displayCurrency} {Math.round(priceFrom).toLocaleString()}
               </Badge>
             ) : null}
 
@@ -169,10 +170,10 @@ export function PackageCard({
                   <span className="text-xs text-muted-foreground">Total</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-muted-foreground line-through">
-                      {DISPLAY_CURRENCY} {Math.round(totalOriginal).toLocaleString()}
+                        {displayCurrency} {Math.round(totalOriginal).toLocaleString()}
                     </span>
                     <span className="font-bold text-lg text-foreground">
-                      {DISPLAY_CURRENCY} {Math.round(totalDiscounted).toLocaleString()}
+                        {displayCurrency} {Math.round(totalDiscounted).toLocaleString()}
                     </span>
                   </div>
                 </>
@@ -180,7 +181,7 @@ export function PackageCard({
                 <>
                   <span className="text-xs text-muted-foreground">From</span>
                   <span className="font-bold text-lg text-foreground">
-                    {DISPLAY_CURRENCY} {Math.round(priceFrom).toLocaleString()}
+                      {displayCurrency} {Math.round(priceFrom).toLocaleString()}
                   </span>
                 </>
               ) : (

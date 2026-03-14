@@ -58,6 +58,7 @@ export interface MappedPackage {
   hotelName: string
   location: string
   packagePrice: number | 'Contact'
+  currency: string
   rating: number
   reviewCount?: number
   images: string[]
@@ -127,6 +128,11 @@ function inferDurationDays(minimumNights: unknown): number | undefined {
   return Math.max(1, Math.round(nights) + 1)
 }
 
+function resolvePackageCurrency(pkg: any): string {
+  const value = String(pkg?.currency || '').trim()
+  return value || 'PKR'
+}
+
 function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
   const hotel = pkg?.hotels
   const location =
@@ -169,6 +175,7 @@ function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
     hotelName: hotel?.name || 'Partner Hotel',
     location,
     packagePrice: price ?? 'Contact',
+    currency: resolvePackageCurrency(pkg),
     rating: rating || 0,
     reviewCount,
     images,
@@ -211,6 +218,7 @@ function mapPackageRowToUnifiedExperience(pkg: any): UnifiedExperience {
     id: pkg.id,
     title: pkg.name || 'Unnamed Package',
     price: typeof totalDiscounted === 'number' ? totalDiscounted : price,
+    currency: resolvePackageCurrency(pkg),
     originalPrice: typeof totalOriginal === 'number' ? totalOriginal : undefined,
     images,
     rating,
@@ -227,6 +235,7 @@ async function fetchHomepageMergePackages(take: number): Promise<UnifiedExperien
       `
       id,
       name,
+      currency,
       cover_image,
       media_urls,
       rooms_config,
@@ -278,6 +287,7 @@ async function fetchHomepageMixPackages(take: number): Promise<HomepageMixPackag
       id,
       slug,
       name,
+      currency,
       cover_image,
       media_urls,
       rooms_config,
@@ -343,6 +353,7 @@ async function fetchCuratedPackages(
       id,
       slug,
       name,
+      currency,
       cover_image,
       media_urls,
       rooms_config,
@@ -451,6 +462,7 @@ async function fetchFeaturedPackages(): Promise<MappedPackage[]> {
       id,
       slug,
       name,
+      currency,
       cover_image,
       media_urls,
       rooms_config,

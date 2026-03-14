@@ -5,6 +5,7 @@ export interface UnifiedExperience {
   title: string
   price: number | null
   originalPrice?: number
+  currency?: string | null
   images: string[]
   rating?: number | null
   reviewCount?: number | null

@@ -184,6 +184,7 @@ export default function WishlistPage() {
                     rating={item.rating}
                     reviewCount={item.review_count}
                     priceFrom={item.base_price_per_night || null}
+                    currency={item.currency || 'PKR'}
                     badge={item.package_type}
                   />
                 )}

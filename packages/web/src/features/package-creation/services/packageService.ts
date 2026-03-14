@@ -96,6 +96,12 @@ export async function publishPackage(packageData: PackageData, userId: string) {
   }
 
   try {
+    const packageCurrency =
+      packageData.currency ||
+      packageData.priceRange?.currency ||
+      Object.values(packageData.selectedRooms || {})[0]?.currency ||
+      'PKR'
+
     // Step 1: Upload media files if they exist
     let mediaUrls: string[] = []
     if (packageData.photos && packageData.photos.length > 0) {
@@ -143,6 +149,7 @@ export async function publishPackage(packageData: PackageData, userId: string) {
 
       // Pricing and booking rules
       base_price_per_night: packageData.basePricePerNight || null,
+      currency: packageCurrency,
       minimum_nights: packageData.minimumNights || 1,
       maximum_nights: packageData.maximumNights || 30,
       max_guests: packageData.maxGuests || 4,

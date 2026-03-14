@@ -37,6 +37,7 @@ export interface PackageData {
   roomIds?: string[] // IDs of selected rooms
   selectedRooms?: Record<string, any> // Full configuration of selected rooms (prices, etc.)
   priceRange?: { min: number; max: number; currency: string } | null
+  currency?: string
 
   // Media (Flat structure preferred)
   photos?: string[]

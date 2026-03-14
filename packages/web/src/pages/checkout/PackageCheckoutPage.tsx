@@ -19,7 +19,6 @@ import { getSessionCached } from '@/lib/authCache'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
-const PACKAGE_DISPLAY_CURRENCY = 'PKR'
 const STRIPE_TEST_CARD_HINT = 'Sandbox card: 4242 4242 4242 4242 · any future date · any CVC.'
 
 interface CountdownTimer {
@@ -301,6 +300,7 @@ export default function PackageCheckoutPage() {
 
   const minNights = Number(packageData?.minimum_nights ?? 1)
   const maxNights = Number(packageData?.maximum_nights ?? 30)
+  const packageCurrency = String(packageData?.currency || 'PKR')
   const computedNights = Math.round(
     (new Date(checkoutCheckOut).getTime() - new Date(checkoutCheckIn).getTime()) /
       (1000 * 60 * 60 * 24),
@@ -403,13 +403,13 @@ export default function PackageCheckoutPage() {
                 <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>
-                      {PACKAGE_DISPLAY_CURRENCY} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
+                      {packageCurrency} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
                     </span>
-                    <span>{PACKAGE_DISPLAY_CURRENCY} {(pricing?.total_price || 0).toLocaleString()}</span>
+                    <span>{packageCurrency} {(pricing?.total_price || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
                     <span>Total</span>
-                    <span>{PACKAGE_DISPLAY_CURRENCY} {(pricing?.total_price || 0).toLocaleString()}</span>
+                    <span>{packageCurrency} {(pricing?.total_price || 0).toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -447,6 +447,7 @@ export default function PackageCheckoutPage() {
                             <PackagePaymentForm
                               bookingId={pendingBooking.id}
                               total={Number(pricing?.total_price || 0)}
+                              currency={packageCurrency}
                             />
                           </Elements>
                           {isTestStripe ? (
@@ -471,7 +472,7 @@ export default function PackageCheckoutPage() {
   )
 }
 
-function PackagePaymentForm(props: { bookingId: string; total: number }) {
+function PackagePaymentForm(props: { bookingId: string; total: number; currency: string }) {
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -539,7 +540,7 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
       >
         {submitting
           ? 'Processing...'
-          : `Pay ${PACKAGE_DISPLAY_CURRENCY} ${Number(props.total || 0).toLocaleString()}`}
+          : `Pay ${props.currency} ${Number(props.total || 0).toLocaleString()}`}
       </Button>
     </div>
   )

@@ -8,8 +8,6 @@ import { handlePackagePaymentSuccess } from '@/features/booking/services/payment
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { supabase } from '@/lib/supabase'
 
-const PACKAGE_DISPLAY_CURRENCY = 'PKR'
-
 export default function PackageBookingConfirmationPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -21,6 +19,7 @@ export default function PackageBookingConfirmationPage() {
   const [error, setError] = useState<string | null>(null)
   const [booking, setBooking] = useState<any | null>(null)
   const [pkg, setPkg] = useState<any | null>(null)
+  const packageCurrency = String(pkg?.currency || 'PKR')
 
   useEffect(() => {
     const run = async () => {
@@ -137,7 +136,7 @@ export default function PackageBookingConfirmationPage() {
             <div className="flex items-center justify-between">
               <span className="text-gray-600 font-medium">Total</span>
               <span className="text-gray-900 font-bold">
-                {PACKAGE_DISPLAY_CURRENCY} {Number(booking?.total_price || 0).toLocaleString()}
+                {packageCurrency} {Number(booking?.total_price || 0).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
