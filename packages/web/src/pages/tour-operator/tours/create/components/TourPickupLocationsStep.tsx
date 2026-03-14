@@ -1252,8 +1252,7 @@ export function TourPickupLocationsStep({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-start">
-              <div className="space-y-4">
+            <div className="space-y-4">
                 <div className="rounded-[28px] border border-border/60 bg-background/70 p-4 shadow-sm sm:p-6">
                   <div className="space-y-6">
                     <div className="relative pl-14">
@@ -1394,44 +1393,41 @@ export function TourPickupLocationsStep({
                     You have unsaved changes. Save the pickup plan before continuing.
                   </div>
                 ) : null}
+            </div>
+
+            <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Selected pickup map</h4>
+                <p className="text-sm text-muted-foreground">
+                  {activeHasCoordinates
+                    ? 'Drag the pin if the exact meeting point needs adjustment.'
+                    : 'Pick a place from search or edit a saved stop to show the map.'}
+                </p>
               </div>
 
-              <div className="space-y-4 xl:sticky xl:top-28">
-                <div className="rounded-[24px] border border-border/60 bg-background/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Selected pickup map</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {activeHasCoordinates
-                        ? 'Drag the pin if the exact meeting point needs adjustment.'
-                        : 'Pick a place from search or edit a saved stop to show the map.'}
+              <div className="mt-4">
+                {activeHasCoordinates ? (
+                  <PickupMapSection
+                    center={mapCenter}
+                    zoom={mapZoom}
+                    markerPosition={markerPosition}
+                    onMapClick={handleMapClick}
+                    onMarkerDragEnd={handleMarkerDrag}
+                    isSaving={isSaving}
+                    active={{ latitude: active.latitude, longitude: active.longitude }}
+                    setActive={setActive}
+                    setMarkerPosition={setMarkerPosition}
+                    mapId={GOOGLE_MAPS_MAP_ID || undefined}
+                  />
+                ) : (
+                  <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 text-center">
+                    <MapPin className="h-8 w-8 text-primary/70" />
+                    <div className="mt-4 text-sm font-semibold text-foreground">Map stays hidden until a pickup is selected</div>
+                    <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                      Search for a location or open one of the saved pickups to display the exact map pin here.
                     </p>
                   </div>
-
-                  <div className="mt-4">
-                    {activeHasCoordinates ? (
-                      <PickupMapSection
-                        center={mapCenter}
-                        zoom={mapZoom}
-                        markerPosition={markerPosition}
-                        onMapClick={handleMapClick}
-                        onMarkerDragEnd={handleMarkerDrag}
-                        isSaving={isSaving}
-                        active={{ latitude: active.latitude, longitude: active.longitude }}
-                        setActive={setActive}
-                        setMarkerPosition={setMarkerPosition}
-                        mapId={GOOGLE_MAPS_MAP_ID || undefined}
-                      />
-                    ) : (
-                      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 text-center">
-                        <MapPin className="h-8 w-8 text-primary/70" />
-                        <div className="mt-4 text-sm font-semibold text-foreground">Map stays hidden until a pickup is selected</div>
-                        <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                          Search for a location or open one of the saved pickups to display the exact map pin here.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
