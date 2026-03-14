@@ -120,7 +120,7 @@ serve(async (req) => {
       });
     }
 
-    let currency = 'usd';
+    let currency = 'pkr';
     if (isTour) {
       const tourId = booking.tour_id;
       if (tourId) {

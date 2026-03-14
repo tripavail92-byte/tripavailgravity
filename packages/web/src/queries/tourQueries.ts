@@ -57,6 +57,7 @@ export interface MappedTour {
   title: string
   location: string
   tourPrice: number | 'Contact'
+  currency: string
   rating: number
   images: string[]
   badge: string
@@ -69,6 +70,7 @@ export interface HomepageMixTour {
   title: string
   location: string
   tourPrice: number | 'Contact'
+  currency: string
   rating: number
   reviewCount?: number
   images: string[]
@@ -146,7 +148,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
   const { data, error } = await supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,rating,review_count,is_featured,images,created_at,updated_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,images,created_at,updated_at',
     )
     .eq('is_active', true)
     .eq('is_published', true)
@@ -194,6 +196,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
       title: tour.title || 'Unnamed Tour',
       location: location || 'Global',
       tourPrice: Number.isFinite(price) && price > 0 ? price : 'Contact',
+      currency: String(tour.currency || 'PKR'),
       rating,
       reviewCount,
       images,
@@ -263,6 +266,7 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
       title: tour.title || 'Unnamed Tour',
       location: location || 'Global',
       tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+      currency: String(tour.currency || 'PKR'),
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
@@ -318,6 +322,7 @@ async function fetchToursByCategory(
       title: tour.title || 'Unnamed Tour',
       location: location || 'Global',
       tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+      currency: String(tour.currency || 'PKR'),
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
@@ -369,6 +374,7 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
       title: tour.title || 'Unnamed Tour',
       location: location || 'Pakistan',
       tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+      currency: String(tour.currency || 'PKR'),
       rating: Number(tour.rating) || 0,
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',

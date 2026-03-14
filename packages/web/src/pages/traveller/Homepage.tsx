@@ -180,7 +180,7 @@ export default function Homepage() {
                     duration={'Multi-day'}
                     rating={item.payload.rating}
                     price={typeof item.payload.tourPrice === 'number' ? item.payload.tourPrice : 0}
-                    currency="USD"
+                    currency={item.payload.currency || 'PKR'}
                     type={'Tour Experience'}
                     isFeatured={Boolean(item.payload.isFeatured)}
                   />
@@ -303,7 +303,7 @@ export default function Homepage() {
                 duration={'Multi-day'}
                 rating={tour.rating}
                 price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                currency="USD"
+                currency={tour.currency || 'PKR'}
                 type={'Tour Experience'}
                 isFeatured={Boolean(tour.isFeatured)}
               />
@@ -405,7 +405,7 @@ export default function Homepage() {
                   duration={'5 days'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                  currency="USD"
+                  currency={tour.currency || 'PKR'}
                   type={tour.badge}
                   isFeatured={tour.badge === 'Featured'}
                 />

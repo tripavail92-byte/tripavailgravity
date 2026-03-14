@@ -8,6 +8,8 @@ import { GlassBadge } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
+const DISPLAY_CURRENCY = 'PKR'
+
 interface PackageCardProps {
   id: string
   slug?: string
@@ -148,7 +150,7 @@ export function PackageCard({
             {typeof priceFrom === 'number' && priceFrom > 0 ? (
               <Badge variant="secondary" className="rounded-full">
                 <DollarSign className="w-3.5 h-3.5 mr-1" />
-                From ${Math.round(priceFrom)}
+                From {DISPLAY_CURRENCY} {Math.round(priceFrom).toLocaleString()}
               </Badge>
             ) : null}
 
@@ -167,10 +169,10 @@ export function PackageCard({
                   <span className="text-xs text-muted-foreground">Total</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-muted-foreground line-through">
-                      ${Math.round(totalOriginal)}
+                      {DISPLAY_CURRENCY} {Math.round(totalOriginal).toLocaleString()}
                     </span>
                     <span className="font-bold text-lg text-foreground">
-                      ${Math.round(totalDiscounted)}
+                      {DISPLAY_CURRENCY} {Math.round(totalDiscounted).toLocaleString()}
                     </span>
                   </div>
                 </>
@@ -178,7 +180,7 @@ export function PackageCard({
                 <>
                   <span className="text-xs text-muted-foreground">From</span>
                   <span className="font-bold text-lg text-foreground">
-                    ${Math.round(priceFrom)}
+                    {DISPLAY_CURRENCY} {Math.round(priceFrom).toLocaleString()}
                   </span>
                 </>
               ) : (

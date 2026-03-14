@@ -19,6 +19,9 @@ import { getSessionCached } from '@/lib/authCache'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
+const PACKAGE_DISPLAY_CURRENCY = 'PKR'
+const STRIPE_TEST_CARD_HINT = 'Sandbox card: 4242 4242 4242 4242 · any future date · any CVC.'
+
 interface CountdownTimer {
   minutes: number
   seconds: number
@@ -68,6 +71,9 @@ export default function PackageCheckoutPage() {
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
   const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null)
   const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false)
+  const isTestStripe = Boolean(
+    (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined)?.startsWith('pk_test_'),
+  )
 
   useEffect(() => {
     if (!id) return
@@ -397,13 +403,13 @@ export default function PackageCheckoutPage() {
                 <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>
-                      ${pricing?.price_per_night || 0} × {nights} night{nights !== 1 ? 's' : ''}
+                      {PACKAGE_DISPLAY_CURRENCY} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
                     </span>
-                    <span>${pricing?.total_price || 0}</span>
+                    <span>{PACKAGE_DISPLAY_CURRENCY} {(pricing?.total_price || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
                     <span>Total</span>
-                    <span>${pricing?.total_price || 0}</span>
+                    <span>{PACKAGE_DISPLAY_CURRENCY} {(pricing?.total_price || 0).toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -436,12 +442,17 @@ export default function PackageCheckoutPage() {
                             : 'Preparing secure payment...'}
                         </div>
                       ) : (
-                        <Elements stripe={stripePromise} options={{ clientSecret }}>
-                          <PackagePaymentForm
-                            bookingId={pendingBooking.id}
-                            total={Number(pricing?.total_price || 0)}
-                          />
-                        </Elements>
+                        <>
+                          <Elements stripe={stripePromise} options={{ clientSecret }}>
+                            <PackagePaymentForm
+                              bookingId={pendingBooking.id}
+                              total={Number(pricing?.total_price || 0)}
+                            />
+                          </Elements>
+                          {isTestStripe ? (
+                            <p className="mt-3 text-xs text-gray-500">{STRIPE_TEST_CARD_HINT}</p>
+                          ) : null}
+                        </>
                       )}
                     </div>
 
@@ -526,7 +537,9 @@ function PackagePaymentForm(props: { bookingId: string; total: number }) {
         onClick={handlePay}
         disabled={!stripe || !elements || !paymentReady || submitting}
       >
-        {submitting ? 'Processing...' : `Pay $${Number(props.total || 0).toLocaleString()}`}
+        {submitting
+          ? 'Processing...'
+          : `Pay ${PACKAGE_DISPLAY_CURRENCY} ${Number(props.total || 0).toLocaleString()}`}
       </Button>
     </div>
   )

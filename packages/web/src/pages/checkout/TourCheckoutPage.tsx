@@ -23,6 +23,8 @@ import { getSessionCached } from '@/lib/authCache'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
+const STRIPE_TEST_CARD_HINT = 'Sandbox card: 4242 4242 4242 4242 · any future date · any CVC.'
+
 interface CountdownTimer {
   minutes: number
   seconds: number
@@ -50,6 +52,9 @@ export default function TourCheckoutPage() {
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
   const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null)
   const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false)
+  const isTestStripe = Boolean(
+    (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined)?.startsWith('pk_test_'),
+  )
 
   // Fetch tour and schedule details
   useEffect(() => {
@@ -571,6 +576,9 @@ export default function TourCheckoutPage() {
                               currency={tour.currency}
                             />
                           </Elements>
+                          {isTestStripe ? (
+                            <p className="mt-3 text-xs text-muted-foreground">{STRIPE_TEST_CARD_HINT}</p>
+                          ) : null}
                         </div>
                       )}
                     </div>

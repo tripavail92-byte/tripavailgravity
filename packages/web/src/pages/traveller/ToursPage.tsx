@@ -138,7 +138,7 @@ export default function ToursPage() {
                 ? tour.tourPrice
                 : 0
           }
-          currency="USD"
+          currency={tour.currency || 'PKR'}
           type={tour.badge || 'Tour Experience'}
           isFeatured={Boolean(tour.isFeatured)}
           shortDescription={tour.shortDescription ?? undefined}

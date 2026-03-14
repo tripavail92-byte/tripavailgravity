@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { handlePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
+import { supabase } from '@/lib/supabase'
 
 export default function BookingConfirmationPage() {
   const navigate = useNavigate()
@@ -40,6 +41,23 @@ export default function BookingConfirmationPage() {
       }
 
       try {
+        try {
+          const { data, error: verifyError } = await supabase.functions.invoke(
+            'stripe-verify-payment-intent',
+            { body: { booking_id: bookingId, payment_intent_id: paymentIntentId, booking_type: 'tour' } },
+          )
+
+          if (verifyError) {
+            throw verifyError
+          }
+
+          if (data && data.ok === false) {
+            throw new Error(data.error || 'Payment not verified')
+          }
+        } catch {
+          // Ignore verification failures for now; confirmation below will still run.
+        }
+
         const result = await handlePaymentSuccess(paymentIntentId, bookingId)
 
         const booking = result.booking

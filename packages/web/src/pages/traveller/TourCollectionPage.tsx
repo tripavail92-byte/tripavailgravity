@@ -96,7 +96,7 @@ export default function TourCollectionPage() {
                   duration={'Multi-day'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                  currency="USD"
+                  currency={tour.currency || 'PKR'}
                   type={tour.badge}
                   isFeatured={tour.badge === 'Featured'}
                 />
