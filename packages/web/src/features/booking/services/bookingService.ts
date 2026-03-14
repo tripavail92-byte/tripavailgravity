@@ -92,6 +92,17 @@ export const tourBookingService = {
     return data
   },
 
+  async getBookingById(bookingId: string): Promise<TourBooking | null> {
+    const { data, error } = await supabase
+      .from('tour_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .maybeSingle()
+
+    if (error) throw error
+    return (data as TourBooking) || null
+  },
+
   async getOperatorBookings(operatorId: string): Promise<TourBooking[]> {
     const { data, error } = await supabase
       .from('tour_bookings')
@@ -272,6 +283,17 @@ export const packageBookingService = {
 
     if (error) throw error
     return data
+  },
+
+  async getBookingById(bookingId: string): Promise<PackageBooking | null> {
+    const { data, error } = await supabase
+      .from('package_bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .maybeSingle()
+
+    if (error) throw error
+    return (data as PackageBooking) || null
   },
 
   async getOwnerBookings(ownerId: string): Promise<PackageBooking[]> {

@@ -47,25 +47,34 @@ export async function handlePaymentSuccess(
   bookingId: string,
 ): Promise<PaymentSuccessResult> {
   try {
-    // STEP 1: Find the booking by payment intent ID to verify it exists
-    const booking = await tourBookingService.getBookingByPaymentIntent(paymentIntentId)
+    // STEP 1: Load the booking directly from the return URL booking_id.
+    // The payment intent can be written slightly later than the redirect/navigation.
+    const booking = await tourBookingService.getBookingById(bookingId)
 
     if (!booking) {
       return {
         success: false,
-        error: 'Booking not found for this payment',
+        error: 'Booking not found',
       }
     }
 
-    // STEP 2: Verify the booking ID matches (extra safety check)
-    if (booking.id !== bookingId) {
+    // STEP 2: Reject mismatched payment intents when one is already stored.
+    if (booking.stripe_payment_intent_id && booking.stripe_payment_intent_id !== paymentIntentId) {
       return {
         success: false,
-        error: 'Booking ID mismatch - possible security issue',
+        error: 'Payment intent mismatch - possible security issue',
       }
     }
 
-    // STEP 3: VALIDATE booking state before confirming
+    // STEP 3: Make confirmation idempotent for return-page reloads.
+    if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+      return {
+        success: true,
+        booking,
+      }
+    }
+
+    // STEP 4: VALIDATE booking state before confirming
     // This checks: exists, status=pending, NOT expired
     const validation = await validateBookingBeforePayment(bookingId)
 
@@ -77,10 +86,10 @@ export async function handlePaymentSuccess(
       }
     }
 
-    // STEP 4: Confirm the pending booking (transition to confirmed)
+    // STEP 5: Confirm the pending booking (transition to confirmed)
     await tourBookingService.confirmBooking(bookingId)
 
-    // STEP 5: Update payment status to paid
+    // STEP 6: Update payment status to paid and persist the intent ID.
     const finalBooking = await tourBookingService.updatePaymentStatus(
       bookingId,
       'paid',
@@ -110,19 +119,26 @@ export async function handlePackagePaymentSuccess(
   bookingId: string,
 ): Promise<PackagePaymentSuccessResult> {
   try {
-    const booking = await packageBookingService.getBookingByPaymentIntent(paymentIntentId)
+    const booking = await packageBookingService.getBookingById(bookingId)
 
     if (!booking) {
       return {
         success: false,
-        error: 'Booking not found for this payment',
+        error: 'Booking not found',
       }
     }
 
-    if (booking.id !== bookingId) {
+    if (booking.stripe_payment_intent_id && booking.stripe_payment_intent_id !== paymentIntentId) {
       return {
         success: false,
-        error: 'Booking ID mismatch - possible security issue',
+        error: 'Payment intent mismatch - possible security issue',
+      }
+    }
+
+    if (booking.status === 'confirmed' && booking.payment_status === 'paid') {
+      return {
+        success: true,
+        booking,
       }
     }
 
