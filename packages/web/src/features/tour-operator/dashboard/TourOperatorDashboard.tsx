@@ -19,6 +19,7 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
@@ -214,15 +215,20 @@ export function TourOperatorDashboard() {
               </div>
 
               {/* right: CTA */}
-              <Button
-                data-tour="add-tour"
-                onClick={handleCreateTour}
-                disabled={setupCompleted !== true}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/30 h-12 px-8 rounded-2xl font-black gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide text-sm flex-shrink-0 disabled:opacity-50"
-              >
-                <Plus className="w-5 h-5" />
-                Create Tour Package
-              </Button>
+              <div className="flex items-center gap-3 self-start md:self-center">
+                <div className="rounded-2xl border border-border/50 bg-background/50 p-1">
+                  <NotificationBell />
+                </div>
+                <Button
+                  data-tour="add-tour"
+                  onClick={handleCreateTour}
+                  disabled={setupCompleted !== true}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/30 h-12 px-8 rounded-2xl font-black gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wide text-sm flex-shrink-0 disabled:opacity-50"
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Tour Package
+                </Button>
+              </div>
             </div>
           </motion.div>
 

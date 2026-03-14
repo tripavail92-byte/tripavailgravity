@@ -195,3 +195,71 @@ export function renderAccountStatusChanged(title: string, body: string): EmailTe
     `),
   }
 }
+
+export function renderBookingConfirmed(title: string, body: string): EmailTemplate {
+  return {
+    subject: `Booking confirmed on TripAvail`,
+    html: base(title, 'Your booking is confirmed.', `
+      <div style="text-align:center;margin-bottom:24px;">
+        ${badge('#d1fae5', 'Confirmed')}
+        ${heading(title || 'Your booking is confirmed')}
+      </div>
+      ${bodyText(body || 'Your reservation has been confirmed and is now active in your TripAvail account.')}
+      ${divider()}
+      <div style="text-align:center;">
+        ${ctaButton('https://tripavail-web-production.up.railway.app/trips', 'View My Trips', '#10b981')}
+      </div>
+    `),
+  }
+}
+
+export function renderBookingReceived(title: string, body: string): EmailTemplate {
+  return {
+    subject: `New confirmed booking on TripAvail`,
+    html: base(title, 'A traveler completed a booking.', `
+      <div style="text-align:center;margin-bottom:24px;">
+        ${badge('#e0f2fe', 'New Booking')}
+        ${heading(title || 'A new booking was confirmed')}
+      </div>
+      ${bodyText(body || 'A traveler confirmed a booking. Open your dashboard to review details and prepare the experience.')}
+      ${divider()}
+      <div style="text-align:center;">
+        ${ctaButton('https://tripavail-web-production.up.railway.app/operator/dashboard', 'Open Dashboard', '#0f766e')}
+      </div>
+    `),
+  }
+}
+
+export function renderBookingMessageReceived(title: string, body: string): EmailTemplate {
+  return {
+    subject: `New booking message on TripAvail`,
+    html: base(title, 'A traveler sent a new booking message.', `
+      <div style="text-align:center;margin-bottom:24px;">
+        ${badge('#fee2e2', 'New Message')}
+        ${heading(title || 'You have a new message')}
+      </div>
+      ${bodyText(body || 'A new booking message is waiting in your TripAvail inbox.')}
+      ${divider()}
+      <div style="text-align:center;">
+        ${ctaButton('https://tripavail-web-production.up.railway.app/messages', 'Open Messages', '#e11d48')}
+      </div>
+    `),
+  }
+}
+
+export function renderGenericNotification(title: string, body: string): EmailTemplate {
+  return {
+    subject: title || 'TripAvail notification',
+    html: base(title || 'TripAvail notification', 'You have a new update from TripAvail.', `
+      <div style="text-align:center;margin-bottom:24px;">
+        ${badge('#f3f4f6', 'Update')}
+        ${heading(title || 'TripAvail notification')}
+      </div>
+      ${bodyText(body || 'There is a new update waiting in your TripAvail dashboard.')}
+      ${divider()}
+      <div style="text-align:center;">
+        ${ctaButton('https://tripavail-web-production.up.railway.app', 'Open TripAvail', '#111827')}
+      </div>
+    `),
+  }
+}

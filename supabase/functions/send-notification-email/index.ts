@@ -21,6 +21,10 @@ import {
   renderVerificationRejected,
   renderVerificationInfoRequested,
   renderAccountStatusChanged,
+  renderBookingConfirmed,
+  renderBookingReceived,
+  renderBookingMessageReceived,
+  renderGenericNotification,
 } from './templates.ts'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -93,7 +97,18 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Cannot fetch email for user ${notification.user_id}: ${userError?.message ?? 'no email'}`)
     }
 
-    const toEmail = userData.user.email
+    const [{ data: accountSettings }, { data: operatorSettings }, { data: hotelSettings }] = await Promise.all([
+      admin.from('account_settings').select('email_notifications_enabled').eq('user_id', notification.user_id).maybeSingle(),
+      admin.from('tour_operator_settings').select('business_email').eq('operator_id', notification.user_id).maybeSingle(),
+      admin.from('hotel_manager_settings').select('business_email').eq('manager_id', notification.user_id).maybeSingle(),
+    ])
+
+    if (accountSettings?.email_notifications_enabled === false) {
+      console.log(`[send-notification-email] User ${notification.user_id} has email notifications disabled.`)
+      return ok('User disabled email notifications')
+    }
+
+    const toEmail = operatorSettings?.business_email || hotelSettings?.business_email || userData.user.email
 
     // ── 5. Build email from template ─────────────────────────────────────
     const template = selectTemplate(notification)
@@ -159,8 +174,11 @@ function selectTemplate(n: NotificationRow): EmailTemplate | null {
     case 'verification_rejected':       return renderVerificationRejected(n.title, body)
     case 'verification_info_requested': return renderVerificationInfoRequested(n.title, body)
     case 'account_status_changed':      return renderAccountStatusChanged(n.title, body)
+    case 'booking_confirmed':           return renderBookingConfirmed(n.title, body)
+    case 'booking_received':            return renderBookingReceived(n.title, body)
+    case 'booking_message_received':    return renderBookingMessageReceived(n.title, body)
     default:
-      return null // unknown type — no email, safe default
+      return renderGenericNotification(n.title, body)
   }
 }
 

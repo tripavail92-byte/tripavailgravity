@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { bookingService } from '@/features/booking/services/bookingService'
 import { getPackagesByIds } from '@/features/package-creation/services/packageService'
 import { tourService } from '@/features/tour-operator/services/tourService'
@@ -91,17 +92,22 @@ export default function TravelerDashboardPage() {
       {/* Hero Welcome */}
       <div className="bg-background border-b border-border/50 pt-12 pb-20 px-4">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">
-              Welcome back,{' '}
-              <span className="text-primary">
-                {user?.user_metadata?.full_name?.split(' ')[0] || 'Traveler'}
-              </span>
-              !
-            </h1>
-            <p className="text-muted-foreground font-medium">
-              Ready for your next adventure? Here's what's happening.
-            </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black text-foreground mb-2">
+                Welcome back,{' '}
+                <span className="text-primary">
+                  {user?.user_metadata?.full_name?.split(' ')[0] || 'Traveler'}
+                </span>
+                !
+              </h1>
+              <p className="text-muted-foreground font-medium">
+                Ready for your next adventure? Here's what's happening.
+              </p>
+            </div>
+            <div className="self-start rounded-2xl border border-border/60 bg-background/80 p-1 shadow-sm">
+              <NotificationBell />
+            </div>
           </motion.div>
         </div>
       </div>

@@ -16,6 +16,9 @@ const TYPE_ICONS: Record<string, string> = {
   verification_approved: '🎉',
   verification_rejected: '❌',
   verification_info_requested: '📋',
+  booking_confirmed: '✅',
+  booking_received: '🧳',
+  booking_message_received: '💬',
   default: '🔔',
 }
 
