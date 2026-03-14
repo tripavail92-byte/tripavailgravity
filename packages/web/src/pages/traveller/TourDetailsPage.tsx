@@ -1147,45 +1147,60 @@ export default function TourDetailsPage() {
                       >
                         <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between gap-3 flex-wrap">
-                            <h4 className="text-lg font-bold text-foreground">
-                              Day {day.day}: {day.title}
-                            </h4>
-                            <GlassBadge variant="info" size="sm">
-                              {Array.isArray(day.activities)
-                                ? `${day.activities.length} Activities`
-                                : day.description
-                                  ? 'Overview'
-                                  : 'Not specified'}
-                            </GlassBadge>
-                          </div>
-                          {typeof day.description === 'string' && day.description.trim().length > 0 ? (
+                          <h4 className="text-lg font-bold text-foreground">
+                            Day {day.day}{day.title ? `: ${day.title}` : ''}
+                          </h4>
+                          {/* Activity-based itinerary */}
+                          {Array.isArray(day.activities) && day.activities.length > 0 ? (
+                            <div className="space-y-2">
+                              {day.activities.map((act: any, ai: number) => (
+                                <div
+                                  key={ai}
+                                  className="flex items-start gap-3 p-3 rounded-xl bg-background/40 border border-border/40"
+                                >
+                                  <span className="text-lg flex-shrink-0 leading-tight mt-0.5">
+                                    {act.type === 'transport' ? '🚐'
+                                      : act.type === 'departure_arrival' ? '✈️'
+                                      : act.type === 'meal' ? '🍽️'
+                                      : act.type === 'tea_break' ? '🍵'
+                                      : act.type === 'sightseeing' ? '🏞️'
+                                      : act.type === 'guided_tour' ? '🧭'
+                                      : act.type === 'adventure' ? '🏄'
+                                      : act.type === 'photo_stop' ? '📸'
+                                      : act.type === 'shopping' ? '🛍️'
+                                      : act.type === 'cultural' ? '🎭'
+                                      : act.type === 'free_time' ? '⏳'
+                                      : act.type === 'accommodation' ? '🏨'
+                                      : '✏️'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-bold text-sm text-foreground">
+                                        {act.title ?? act.activity}
+                                      </span>
+                                      {act.time && (
+                                        <span className="text-xs font-semibold text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                                          {act.time}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {(act.description) && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                        {act.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : typeof day.description === 'string' && day.description.trim().length > 0 ? (
+                            /* Fallback: legacy plain-text description */
                             <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
                               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                                 {day.description}
                               </p>
                             </div>
                           ) : null}
-                          <div className="grid grid-cols-1 gap-4">
-                            {day.activities?.map((act: any, ai: number) => (
-                              <div
-                                key={ai}
-                                className="bg-background/40 border border-border/40 p-4 rounded-2xl"
-                              >
-                                <div className="flex items-start gap-4">
-                                  <div className="bg-muted/40 p-3 rounded-xl text-foreground font-bold text-xs">
-                                    {act.time}
-                                  </div>
-                                  <div className="flex-1 space-y-1 min-w-0">
-                                    <p className="font-bold text-foreground">{act.activity}</p>
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                      {act.description}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
                         </div>
                       </div>
                     ))}
