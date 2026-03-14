@@ -318,7 +318,7 @@ export default function CreateTourPage() {
 
   if (gateLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           <p className="text-muted-foreground font-medium tracking-tight">
@@ -481,16 +481,17 @@ export default function CreateTourPage() {
   const CurrentStepComponent = STEPS[currentStep].component
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #fff5f0 0%, #fff0eb 30%, #fde8e0 60%, #fce7e0 100%)' }}>
+    <div className="min-h-screen flex flex-col bg-card">
       {/* Decorative orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -top-20 right-20 w-72 h-72 bg-purple-300/15 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 -right-20 w-80 h-80 bg-pink-200/20 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-card" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/8 rounded-full blur-3xl" />
+        <div className="absolute -top-20 right-20 w-72 h-72 bg-secondary/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
-      <div className="glass-nav border-b border-white/30 px-6 py-4 sticky top-0 z-10">
+      <div className="sticky top-0 z-10 border-b border-border/60 bg-background/85 px-6 py-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
         <div className="max-w-5xl mx-auto space-y-3">
           {/* Title row */}
           <div className="flex justify-between items-center gap-3">
@@ -516,7 +517,7 @@ export default function CreateTourPage() {
                 </span>
               )}
               {hasUnsaved && autosaveStatus === 'idle' && (
-                <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" title="Unsaved changes" />
+                <span className="w-2 h-2 rounded-full bg-primary/70 shrink-0" title="Unsaved changes" />
               )}
             </div>
             {/* Action buttons */}
@@ -525,7 +526,7 @@ export default function CreateTourPage() {
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm text-sm font-semibold gap-2"
+                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
               >
                 <BookmarkCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save Draft</span>
@@ -534,7 +535,7 @@ export default function CreateTourPage() {
                 variant="outline"
                 onClick={() => hasUnsaved ? setShowExitModal(true) : navigate('/operator/dashboard')}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-sm text-sm font-semibold gap-2"
+                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save & Exit</span>
@@ -542,7 +543,7 @@ export default function CreateTourPage() {
               <Button
                 onClick={handleSubmitForReview}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white text-sm font-semibold gap-2 shadow-md shadow-primary/25"
+                className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold gap-2 shadow-md shadow-primary/25"
               >
                 {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">Submit for Review</span>
@@ -644,7 +645,7 @@ export default function CreateTourPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 max-w-3xl mx-auto w-full p-6 relative">
+      <div className="relative mx-auto flex-1 w-full max-w-5xl p-6 md:p-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -652,7 +653,7 @@ export default function CreateTourPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="glass-card rounded-3xl border border-white/40 shadow-2xl p-8"
+            className="rounded-3xl border border-border/60 bg-background/80 p-6 shadow-xl backdrop-blur-xl md:p-8"
           >
             <Suspense
               fallback={
@@ -705,10 +706,10 @@ export default function CreateTourPage() {
               initial={{ scale: 0.95, opacity: 0, y: 12 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 12 }}
-              className="relative glass-card rounded-2xl p-8 max-w-sm w-full z-10 text-center shadow-2xl"
+              className="relative z-10 w-full max-w-sm rounded-2xl border border-border/60 bg-background/85 p-8 text-center shadow-2xl backdrop-blur-xl"
             >
-              <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-7 h-7 text-orange-500" />
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-7 h-7 text-primary" />
               </div>
               <h2 className="text-lg font-bold text-foreground mb-2">Unsaved Changes</h2>
               <p className="text-sm text-muted-foreground mb-6">
@@ -718,7 +719,7 @@ export default function CreateTourPage() {
                 <Button
                   onClick={handleSaveExit}
                   disabled={isSaving}
-                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold shadow-md shadow-primary/25"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/25"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Save & Exit
@@ -726,7 +727,7 @@ export default function CreateTourPage() {
                 <Button
                   variant="outline"
                   onClick={() => { setHasUnsaved(false); setShowExitModal(false); navigate('/operator/dashboard') }}
-                  className="w-full bg-white/50 border-white/60"
+                  className="w-full"
                 >
                   Discard Changes
                 </Button>
