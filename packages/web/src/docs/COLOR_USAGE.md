@@ -188,6 +188,48 @@ const STATUS_STYLES = {
 
 ---
 
+## 🧊 Glassmorphism (Enterprise Pattern)
+
+Shared glass styles are tokenized and centrally maintained in one place:
+
+- Glass tokens: `src/index.css` in `:root` and `.dark`
+- Shared utilities: `src/index.css` under `@layer utilities` (`.glass*` classes)
+
+### Glass Token Contract
+
+Use these variables only when changing global glass look:
+
+- `--glass-light`
+- `--glass-strong`
+- `--glass-dark`
+- `--glass-border`
+- `--glass-shadow`
+- `--glass-overlay`
+
+### Rule for Contributors
+
+- Keep component code role-agnostic: use `.glass-card`, `.glass-nav`, `.glass-button`, etc.
+- Do not hardcode RGBA colors inside components for glass behavior.
+- Tune intensity by changing the token values once in `index.css`, not per screen.
+
+### Safe Update Workflow
+
+1. Adjust glass token values in `:root` and `.dark`.
+2. Verify key shared utilities: `.glass`, `.glass-card`, `.glass-nav`, `.glass-overlay`, `.glass-search`.
+3. Validate in at least one light and one dark screen using the same utility class.
+
+### Example
+
+```tsx
+// ✅ Preferred: consume shared utility
+<div className="glass-card rounded-2xl border border-border/60 p-6" />
+
+// ❌ Avoid: inline one-off glass color math
+<div className="backdrop-blur-xl" style={{ background: 'rgba(255,255,255,0.7)' }} />
+```
+
+---
+
 ## ❌ Forbidden Patterns
 
 ### Never Use Hardcoded Colors
@@ -256,6 +298,6 @@ rg "(text|bg|border)-(red|blue|green|yellow|purple|pink|indigo|orange|amber)-(\\
 ## 📚 See Also
 
 - Design Tokens: `src/config/design-tokens.ts`
-- CSS Variables: `src/index.css` (lines 70-111)
+- CSS Variables and Glass Tokens: `src/index.css`
 - Tailwind Config: `tailwind.config.ts`
 - Implementation Plan: `centralized_color_system_plan.md`

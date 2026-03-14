@@ -82,6 +82,21 @@ module.exports = {
 }
 ```
 
+### **Shared Glassmorphism Policy (Enterprise)**
+
+- Glass visual language is centralized in `packages/web/src/index.css`.
+- Shared utilities (`.glass`, `.glass-card`, `.glass-nav`, `.glass-overlay`, `.glass-search`) must use CSS variables only.
+- Do not hardcode RGBA/HEX inside feature components for glass surfaces.
+- When changing glass look, update token values in `:root` and `.dark` first:
+  - `--glass-light`
+  - `--glass-strong`
+  - `--glass-dark`
+  - `--glass-border`
+  - `--glass-shadow`
+  - `--glass-overlay`
+
+This keeps role branding and dark mode behavior consistent without per-screen overrides.
+
 ---
 
 ## 2️⃣.1 ROLE-BASED BRAND THEMING (TripAvail-Specific) 🔒
