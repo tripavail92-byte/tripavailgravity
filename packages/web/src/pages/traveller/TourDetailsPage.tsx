@@ -778,11 +778,19 @@ export default function TourDetailsPage() {
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">
-                  Hosted by Premium Tour Operator
+                  Hosted by {tour.operator_display_name || 'Tour Operator'}
                 </GlassTitle>
               </GlassHeader>
               <GlassContent>
-                <p className="text-muted-foreground">Verified Operator • Small groups</p>
+                <p className="text-muted-foreground">
+                  {(tour.operator_is_verified ?? tour.is_verified) ? 'Verified Operator' : 'Tour Operator'}
+                  {' • '}
+                  {tour.max_participants && tour.max_participants > 0
+                    ? tour.max_participants <= 12
+                      ? 'Small groups'
+                      : `Up to ${tour.max_participants} guests`
+                    : 'Group tours'}
+                </p>
               </GlassContent>
             </GlassCard>
 

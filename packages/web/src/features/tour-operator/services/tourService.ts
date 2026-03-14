@@ -11,6 +11,8 @@ export interface Tour {
   id: string
   slug?: string
   operator_id: string
+  operator_display_name?: string
+  operator_is_verified?: boolean
   title: string
   tour_type: string
   location: {
@@ -379,21 +381,64 @@ export const tourService = {
       throw error
     }
 
-    const { data: pickups, error: pickupError } = await supabase
-      .from('tour_pickup_locations')
-      .select('*')
-      .eq('tour_id', data.id)
-      .order('is_primary', { ascending: false })
-      .order('pickup_time', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: true })
+    const [pickupResult, operatorSettingsResult, operatorProfileResult] = await Promise.all([
+      supabase
+        .from('tour_pickup_locations')
+        .select('*')
+        .eq('tour_id', data.id)
+        .order('is_primary', { ascending: false })
+        .order('pickup_time', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: true }),
+      (supabase.from('tour_operator_settings' as any) as any)
+        .select('business_name')
+        .eq('operator_id', data.operator_id)
+        .maybeSingle(),
+      supabase
+        .from('tour_operator_profiles')
+        .select('company_name, first_name, last_name, account_status')
+        .eq('user_id', data.operator_id)
+        .maybeSingle(),
+    ])
+
+    const { data: pickups, error: pickupError } = pickupResult
 
     if (pickupError) {
       console.error(`Error fetching pickup locations for tour ${data.id}:`, pickupError)
       throw pickupError
     }
 
+    if (operatorSettingsResult.error) {
+      console.error(`Error fetching operator settings for tour ${data.id}:`, operatorSettingsResult.error)
+    }
+
+    if (operatorProfileResult.error) {
+      console.error(`Error fetching operator profile for tour ${data.id}:`, operatorProfileResult.error)
+    }
+
+    const operatorSettings = operatorSettingsResult.data as { business_name?: string | null } | null
+    const operatorProfile = operatorProfileResult.data as {
+      company_name?: string | null
+      first_name?: string | null
+      last_name?: string | null
+      account_status?: string | null
+    } | null
+
+    const contactName = [operatorProfile?.first_name, operatorProfile?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+    const operatorDisplayName =
+      String(operatorSettings?.business_name || '').trim() ||
+      String(operatorProfile?.company_name || '').trim() ||
+      contactName ||
+      'Tour Operator'
+    const operatorIsVerified =
+      Boolean((data as any).is_verified) || operatorProfile?.account_status === 'active'
+
     return {
       ...(data as unknown as Tour),
+      operator_display_name: operatorDisplayName,
+      operator_is_verified: operatorIsVerified,
       pickup_locations: (pickups ?? []) as TourPickupLocation[],
     }
   },
