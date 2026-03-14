@@ -1110,7 +1110,7 @@ export function TourPickupLocationsStep({
                   No pickups saved yet. Build the first stop in the workspace and save it to the plan.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4">
                   {pickups.map((pickup, index) => {
                     const mapPreview =
                       typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
