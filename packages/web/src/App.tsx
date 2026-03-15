@@ -27,6 +27,7 @@ const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
 const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
 const OperatorCalendarPage = lazy(() => import('@/pages/tour-operator/OperatorCalendarPage'))
 const OperatorBookingsPage = lazy(() => import('@/pages/tour-operator/OperatorBookingsPage'))
+const OperatorCommercialPage = lazy(() => import('@/pages/tour-operator/OperatorCommercialPage'))
 const TourOperatorSetupPage = lazy(
   () => import('@/pages/tour-operator/setup/TourOperatorSetupPage'),
 )
@@ -78,6 +79,7 @@ const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'))
 const AdminAuditLogsPage = lazy(() => import('@/pages/admin/AdminAuditLogsPage'))
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'))
 const AdminKYCPage = lazy(() => import('@/pages/admin/AdminKYCPage'))
+const AdminCommercialPage = lazy(() => import('@/pages/admin/AdminCommercialPage'))
 
 // Legal (public)
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
@@ -246,6 +248,15 @@ function App() {
               />
 
               <Route
+                path="/operator/commercial"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorCommercialPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
                 path="/operator/tours/new"
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
@@ -355,6 +366,7 @@ function App() {
               <Route path="kyc" element={<AdminKYCPage />} />
               <Route path="listings" element={<AdminListingsPage />} />
               <Route path="bookings" element={<AdminBookingsPage />} />
+              <Route path="commercial" element={<AdminCommercialPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />

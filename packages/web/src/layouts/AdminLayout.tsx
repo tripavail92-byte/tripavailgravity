@@ -16,6 +16,7 @@ const navItems = [
   { label: 'KYC', to: '/admin/kyc' },
   { label: 'Listings', to: '/admin/listings' },
   { label: 'Bookings', to: '/admin/bookings' },
+  { label: 'Commercial', to: '/admin/commercial' },
   { label: 'Reports', to: '/admin/reports' },
   { label: 'Audit Logs', to: '/admin/audit-logs' },
   { label: 'Settings', to: '/admin/settings' },

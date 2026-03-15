@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { getMembershipTierConfig, type MembershipTierCode } from '@tripavail/shared/commercial/engine'
 
 import { supabase } from '@/lib/supabase'
 import {
@@ -45,6 +46,35 @@ const OPERATOR_RETURN_PATHS = new Set([
   '/operator/bookings',
 ])
 
+function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
+  const details =
+    typeof error === 'object' && error !== null
+      ? [
+          (error as { message?: string }).message,
+          (error as { details?: string }).details,
+          (error as { hint?: string }).hint,
+        ].filter((value): value is string => Boolean(value))
+      : []
+
+  const normalizedMessage = details.join(' ').toLowerCase()
+
+  if (
+    normalizedMessage.includes('publish_limit_reached')
+    || normalizedMessage.includes('publish limit')
+  ) {
+    return 'You have reached the maximum number of published trips for your membership tier.'
+  }
+
+  if (
+    normalizedMessage.includes('minimum_deposit_not_met')
+    || (normalizedMessage.includes('deposit') && normalizedMessage.includes('membership'))
+  ) {
+    return details[1] || details[2] || 'Deposit percentage is below the minimum required for your membership tier.'
+  }
+
+  return fallbackMessage
+}
+
 export default function CreateTourPage() {
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
@@ -63,6 +93,14 @@ export default function CreateTourPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]))
+  const [depositTierPolicy, setDepositTierPolicy] = useState(() => {
+    const fallback = getMembershipTierConfig('gold')
+    return {
+      tierCode: fallback.code,
+      tierLabel: fallback.label,
+      minimumDepositPercent: fallback.minimumDepositPercent,
+    }
+  })
   const ignoreDirtyRef = useRef(false)
   const didMountDirtyRef = useRef(false)
   const autosaveDebounceRef = useRef<number | null>(null)
@@ -114,6 +152,50 @@ export default function CreateTourPage() {
 
     checkSetup()
   }, [activeRole?.verification_status, navigate, user?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    let cancelled = false
+
+    const loadDepositTierPolicy = async () => {
+      try {
+        const { data, error } = await (supabase.from('operator_commercial_profiles' as any) as any)
+          .select('membership_tier_code')
+          .eq('operator_user_id', user.id)
+          .maybeSingle()
+
+        if (error) throw error
+
+        const tierCode = (data?.membership_tier_code ?? 'gold') as MembershipTierCode
+        const tierConfig = getMembershipTierConfig(tierCode)
+
+        if (!cancelled) {
+          setDepositTierPolicy({
+            tierCode,
+            tierLabel: tierConfig.label,
+            minimumDepositPercent: tierConfig.minimumDepositPercent,
+          })
+        }
+      } catch (error) {
+        console.error('[CreateTourPage] Failed to load commercial tier for deposit policy', error)
+        if (!cancelled) {
+          const fallback = getMembershipTierConfig('gold')
+          setDepositTierPolicy({
+            tierCode: fallback.code,
+            tierLabel: fallback.label,
+            minimumDepositPercent: fallback.minimumDepositPercent,
+          })
+        }
+      }
+    }
+
+    void loadDepositTierPolicy()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id])
 
   useEffect(() => {
     const loadTourForEdit = async () => {
@@ -246,7 +328,7 @@ export default function CreateTourPage() {
           console.error('Error saving draft:', error)
           setAutosaveStatus('error')
           if (source === 'manual') {
-            toast.error('Failed to save. Please try again.')
+            toast.error(getTourMutationErrorMessage(error, 'Failed to save. Please try again.'))
           }
           return false
         } finally {
@@ -408,7 +490,7 @@ export default function CreateTourPage() {
       navigate(returnPath)
     } catch (error) {
       console.error('Error submitting for review:', error)
-      toast.error('Submission failed. Please try again.')
+      toast.error(getTourMutationErrorMessage(error, 'Submission failed. Please try again.'))
     } finally {
       setIsSubmitting(false)
     }
@@ -469,7 +551,7 @@ export default function CreateTourPage() {
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
-      toast.error('Failed to publish tour. Please check all fields.')
+      toast.error(getTourMutationErrorMessage(error, 'Failed to publish tour. Please check all fields.'))
     } finally {
       setIsSaving(false)
     }
@@ -686,6 +768,8 @@ export default function CreateTourPage() {
                 onNext={handleNext}
                 onBack={handleBack}
                 onPublish={handlePublish}
+                membershipTierLabel={depositTierPolicy.tierLabel}
+                minimumDepositPercent={depositTierPolicy.minimumDepositPercent}
                 tourId={currentTourId}
                 ensureTourDraft={ensureTourDraftForMedia}
               />

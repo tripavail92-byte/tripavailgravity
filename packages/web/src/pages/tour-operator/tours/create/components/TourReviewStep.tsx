@@ -15,6 +15,8 @@ interface TourReviewStepProps {
   data: Partial<Tour>
   onBack: () => void
   onPublish: () => void
+  membershipTierLabel?: string
+  minimumDepositPercent?: number
 }
 
 function ReviewRow({
@@ -56,7 +58,13 @@ const deriveArrivalDate = (departureDate: string, durationDays: number) => {
   return `${year}-${month}-${day}`
 }
 
-export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps) {
+export function TourReviewStep({
+  data,
+  onBack,
+  onPublish,
+  membershipTierLabel = 'Gold',
+  minimumDepositPercent = 0,
+}: TourReviewStepProps) {
   const schedules = Array.isArray(data.schedules) ? data.schedules : []
   const durationDays = Math.max(1, data.duration_days ?? 1)
   const itinerary = Array.isArray(data.itinerary) ? data.itinerary : []
@@ -159,6 +167,10 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
             <ReviewRow
               label="Deposit Required"
               value={data.deposit_required ? `Yes (${data.deposit_percentage || 0}%)` : 'No'}
+            />
+            <ReviewRow
+              label="Tier Deposit Floor"
+              value={`${minimumDepositPercent}% minimum for ${membershipTierLabel} membership`}
             />
             {data.deposit_required ? (
               <>

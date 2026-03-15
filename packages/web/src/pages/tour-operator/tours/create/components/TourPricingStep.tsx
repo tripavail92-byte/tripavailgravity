@@ -43,6 +43,8 @@ interface TourPricingStepProps {
   onUpdate: (data: Partial<Tour>) => void
   onNext: () => void
   onBack: () => void
+  membershipTierLabel?: string
+  minimumDepositPercent?: number
 }
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED']
@@ -76,7 +78,14 @@ const CANCELLATION_POLICIES = [
 
 const DEPOSIT_OPTIONS = [10, 20, 30, 40, 50]
 
-export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingStepProps) {
+export function TourPricingStep({
+  data,
+  onUpdate,
+  onNext,
+  onBack,
+  membershipTierLabel = 'Gold',
+  minimumDepositPercent = 0,
+}: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
   const [depositPolicyAcknowledged, setDepositPolicyAcknowledged] = useState(false)
@@ -100,7 +109,21 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   }
 
   const basePrice = Number(data.price || 0)
-  const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 50))
+  const effectiveMinimumDeposit = clampDepositPercentage(Number(minimumDepositPercent || 0))
+  const rawDepositPercentage = Number(data.deposit_percentage)
+  const hasSavedDepositPercentage = Number.isFinite(rawDepositPercentage) && rawDepositPercentage > 0
+  const normalizedDepositPercentage = clampDepositPercentage(
+    hasSavedDepositPercentage ? rawDepositPercentage : effectiveMinimumDeposit,
+  )
+  const isDepositBelowTierMinimum = Boolean(data.deposit_required)
+    && normalizedDepositPercentage < effectiveMinimumDeposit
+  const availableDepositOptions = Array.from(
+    new Set(
+      [...DEPOSIT_OPTIONS, effectiveMinimumDeposit].filter(
+        (option) => option >= effectiveMinimumDeposit && option > 0 && option <= 50,
+      ),
+    ),
+  ).sort((left, right) => left - right)
   const standardDepositPreview = getTourPaymentTerms({
     basePrice,
     guestCount: 1,
@@ -122,6 +145,20 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
     setDepositPolicyConfirmed(false)
     setDepositPolicyAcknowledged(false)
   }, [data.deposit_required, normalizedDepositPercentage, basePrice, pricingTiers])
+
+  useEffect(() => {
+    if (!data.deposit_required) return
+
+    if (!hasSavedDepositPercentage || rawDepositPercentage < effectiveMinimumDeposit) {
+      handleInputChange('deposit_percentage', normalizedDepositPercentage)
+    }
+  }, [
+    data.deposit_required,
+    effectiveMinimumDeposit,
+    hasSavedDepositPercentage,
+    normalizedDepositPercentage,
+    rawDepositPercentage,
+  ])
 
   const addPricingTier = () => {
     const defaultDiscount = 10 // 10% default
@@ -185,6 +222,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
 
   const handleDepositRequiredChange = (value: boolean) => {
     handleInputChange('deposit_required', value)
+    if (value) {
+      handleInputChange(
+        'deposit_percentage',
+        Math.max(normalizedDepositPercentage, effectiveMinimumDeposit),
+      )
+    }
     if (!value) {
       setDepositPolicyConfirmed(false)
       setDepositPolicyAcknowledged(false)
@@ -192,10 +235,14 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
   }
 
   const handleDepositPercentageChange = (value: number) => {
-    handleInputChange('deposit_percentage', clampDepositPercentage(value))
+    handleInputChange('deposit_percentage', Math.max(effectiveMinimumDeposit, clampDepositPercentage(value)))
   }
 
   const handleContinue = () => {
+    if (data.deposit_required && isDepositBelowTierMinimum) {
+      return
+    }
+
     if (data.deposit_required && !depositPolicyConfirmed) {
       setIsDepositDialogOpen(true)
       return
@@ -286,6 +333,9 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
               <p className="text-xs text-muted-foreground font-medium">
                 Require partial payment upfront to confirm the booking.
               </p>
+              <p className="mt-1 text-xs text-primary font-semibold">
+                {membershipTierLabel} tier minimum when deposits are enabled: {effectiveMinimumDeposit}%
+              </p>
             </div>
             <Switch
               checked={data.deposit_required}
@@ -307,7 +357,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     <div>
                       <p className="text-[11px] uppercase font-bold tracking-wider text-primary">Deposit Percentage</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Choose what percentage the traveler must pay now.
+                        Choose what percentage the traveler must pay now. {membershipTierLabel} requires at least {effectiveMinimumDeposit}%.
                       </p>
                     </div>
                     <div className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
@@ -316,7 +366,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {DEPOSIT_OPTIONS.map((option) => (
+                    {availableDepositOptions.map((option) => (
                       <button
                         key={option}
                         type="button"
@@ -334,8 +384,8 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                       <span className="text-sm font-semibold text-muted-foreground">Custom</span>
                       <Input
                         type="number"
-                        min={1}
-                        max={90}
+                        min={effectiveMinimumDeposit}
+                        max={50}
                         value={normalizedDepositPercentage}
                         onChange={(event) => handleDepositPercentageChange(Number(event.target.value || 0))}
                         className="h-7 w-20 border-0 bg-transparent p-0 text-right font-semibold shadow-none focus-visible:ring-0"
@@ -344,6 +394,12 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
                     </div>
                   </div>
                 </div>
+
+                {isDepositBelowTierMinimum ? (
+                  <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+                    {membershipTierLabel} membership requires at least {effectiveMinimumDeposit}% upfront. Increase the deposit percentage or upgrade tiers before continuing.
+                  </div>
+                ) : null}
 
                 <div className="rounded-2xl border border-border/60 bg-background p-5">
                   <p className="text-[11px] uppercase font-bold tracking-wider text-primary">Payment Preview</p>
@@ -759,6 +815,7 @@ export function TourPricingStep({ data, onUpdate, onNext, onBack }: TourPricingS
         </Button>
         <Button
           onClick={handleContinue}
+          disabled={Boolean(data.deposit_required) && isDepositBelowTierMinimum}
           className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all shadow-lg shadow-primary/25 border-0"
         >
           Continue

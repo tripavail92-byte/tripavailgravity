@@ -71,3 +71,12 @@ Optional hardening:
 - `KYC_CNIC_HASH_PEPPER` (default: empty)
 	- If set, the worker checks `public.blocked_cnic_registry(cnic_hash)` where `cnic_hash = sha256(pepper + normalized_cnic)`.
 	- This supports blocking CNICs without storing them in cleartext.
+
+Payout automation:
+
+- `PAYOUT_AUTOMATION_ENABLED` (default: `true`)
+	- Enables the same Railway worker to refresh operator payout eligibility and create payout batches automatically.
+- `PAYOUT_AUTOMATION_INTERVAL_SECONDS` (default: `300`)
+	- Controls how often the worker runs the payout automation cycle.
+- `PAYOUT_AUTOMATION_AUTO_SETTLE` (default: `false`)
+	- If enabled, newly created payout batches are immediately marked paid after batch creation.

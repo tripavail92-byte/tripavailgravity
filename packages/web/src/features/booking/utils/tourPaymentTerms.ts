@@ -29,7 +29,7 @@ export function clampDepositPercentage(value: number): number {
     return 0
   }
 
-  return Math.max(0, Math.min(90, Math.round(value)))
+  return Math.max(0, Math.min(50, Math.round(value)))
 }
 
 export function normalizeTourPricingTiers(pricingTiers: unknown): TourPricingTierPreview[] {

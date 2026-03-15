@@ -1,0 +1,1 @@
+SELECT current_database() AS current_database, current_user AS current_user;

@@ -8,7 +8,15 @@
     "build": "turbo run build --force",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "db:run-remote": "node scripts/run-remote-sql-file.mjs",
+    "db:sql:remote": "node scripts/run-remote-sql-file.mjs",
+    "db:finance:health": "node scripts/finance-health-report.mjs",
+    "db:test:deposit-policy:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_tour_deposit_policy_test.sql",
+    "db:test:payout-cycle": "node scripts/test-payout-cycle.mjs",
+    "db:test:payouts:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_payout_batch_rpc_test.sql",
+    "worker:payouts": "node scripts/run-operator-payout-worker.mjs",
+    "worker:payouts:auto-settle": "node scripts/run-operator-payout-worker.mjs --auto-settle"
   },
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.7.1",

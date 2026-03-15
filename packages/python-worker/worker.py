@@ -456,22 +456,83 @@ def process_session(session):
                 os.remove(p)
 
 POLLING_INTERVAL = int(os.environ.get("POLLING_INTERVAL_SECONDS", "3"))
+PAYOUT_AUTOMATION_ENABLED = os.environ.get("PAYOUT_AUTOMATION_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+PAYOUT_AUTOMATION_INTERVAL = max(int(os.environ.get("PAYOUT_AUTOMATION_INTERVAL_SECONDS", "300")), 10)
+PAYOUT_AUTOMATION_AUTO_SETTLE = os.environ.get("PAYOUT_AUTOMATION_AUTO_SETTLE", "false").lower() in {"1", "true", "yes", "on"}
+
+
+def poll_kyc_sessions_once():
+    response = supabase.table("kyc_sessions").select("*").eq("status", "processing").execute()
+    sessions = response.data
+
+    if sessions:
+        logger.info(f"Found {len(sessions)} session(s) to process.")
+        for session in sessions:
+            process_session(session)
+
+
+def run_payout_automation_once():
+    if not PAYOUT_AUTOMATION_ENABLED:
+        return
+
+    logger.info("Running payout automation cycle...")
+    refresh_response = supabase.rpc("refresh_all_operator_payout_eligibility").execute()
+    refreshed_profiles = refresh_response.data
+    logger.info(f"Refreshed payout eligibility for {refreshed_profiles or 0} operator commercial profile(s).")
+
+    batch_response = supabase.rpc("create_operator_payout_batch", {
+        "p_scheduled_for": datetime.utcnow().isoformat() + "Z"
+    }).execute()
+    batch_rows = batch_response.data or []
+    batch = batch_rows[0] if isinstance(batch_rows, list) and batch_rows else batch_rows
+
+    if not batch:
+        logger.info("No eligible payout items were ready for batching.")
+        return
+
+    logger.info(
+        "Created payout batch %s for %s item(s).",
+        batch.get("batch_reference"),
+        batch.get("items_scheduled"),
+    )
+
+    if not PAYOUT_AUTOMATION_AUTO_SETTLE:
+        return
+
+    paid_response = supabase.rpc("mark_operator_payout_batch_paid", {
+        "p_batch_id": batch.get("batch_id")
+    }).execute()
+    paid_rows = paid_response.data or []
+    paid_batch = paid_rows[0] if isinstance(paid_rows, list) and paid_rows else paid_rows
+    logger.info(
+        "Auto-settled payout batch %s for %s paid item(s).",
+        paid_batch.get("batch_reference") if paid_batch else batch.get("batch_reference"),
+        paid_batch.get("items_paid") if paid_batch else 0,
+    )
 
 def main():
     logger.info("Starting background KYC verification worker...")
+    logger.info(
+        "Payout automation enabled=%s interval=%ss auto_settle=%s",
+        PAYOUT_AUTOMATION_ENABLED,
+        PAYOUT_AUTOMATION_INTERVAL,
+        PAYOUT_AUTOMATION_AUTO_SETTLE,
+    )
+    next_payout_run_at = 0.0
     while True:
         try:
-            # Poll for processing sessions
-            response = supabase.table("kyc_sessions").select("*").eq("status", "processing").execute()
-            sessions = response.data
-            
-            if sessions:
-                logger.info(f"Found {len(sessions)} session(s) to process.")
-                for session in sessions:
-                    process_session(session)
+            poll_kyc_sessions_once()
         except Exception as e:
-            logger.error(f"Error polling database: {e}")
-        
+            logger.error(f"Error polling KYC sessions: {e}")
+
+        try:
+            if PAYOUT_AUTOMATION_ENABLED and time.monotonic() >= next_payout_run_at:
+                run_payout_automation_once()
+                next_payout_run_at = time.monotonic() + PAYOUT_AUTOMATION_INTERVAL
+        except Exception as e:
+            logger.error(f"Error running payout automation: {e}")
+            next_payout_run_at = time.monotonic() + PAYOUT_AUTOMATION_INTERVAL
+
         # Wait before next poll
         logger.debug(f"Sleeping for {POLLING_INTERVAL} seconds...")
         time.sleep(POLLING_INTERVAL)
