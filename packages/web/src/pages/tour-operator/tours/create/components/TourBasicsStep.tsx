@@ -80,6 +80,28 @@ const getTodayIsoDate = () => {
   return `${year}-${month}-${day}`
 }
 
+const formatDisplayDate = (value: string) => {
+  const parsed = new Date(`${value}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return 'Not set'
+  return parsed.toLocaleDateString('en-PK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+const deriveArrivalDate = (departureDate: string | undefined, durationDays: number | null | undefined) => {
+  if (!departureDate) return ''
+  const parsed = new Date(`${departureDate}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return ''
+
+  parsed.setDate(parsed.getDate() + Math.max(0, (durationDays ?? 1) - 1))
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 
  
 
@@ -124,6 +146,8 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     primarySchedule.date.trim().length > 0 &&
     typeof primarySchedule?.time === 'string' &&
     primarySchedule.time.trim().length > 0
+  const durationDays = Math.max(1, data.duration_days ?? 1)
+  const calculatedArrivalDate = deriveArrivalDate(primarySchedule?.date, durationDays)
 
   useEffect(() => {
     if (hasPrimarySchedule) return
@@ -343,7 +367,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                         Duration *
                       </Label>
                       <DurationScroller
-                        value={data.duration_days ?? 1}
+                        value={durationDays}
                         onChange={(days) =>
                           onUpdate({
                             duration_days: days,
@@ -481,6 +505,24 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                           value={primarySchedule?.date}
                           onChange={(date) => updatePrimarySchedule({ date })}
                         />
+                        <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 text-sm md:grid-cols-2">
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Departure
+                            </p>
+                            <p className="mt-1 font-semibold text-foreground">
+                              {formatDisplayDate(primarySchedule?.date || '')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Arrival / Return
+                            </p>
+                            <p className="mt-1 font-semibold text-foreground">
+                              {formatDisplayDate(calculatedArrivalDate)}
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -498,7 +540,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                     </div>
 
                     <p className="text-xs text-muted-foreground font-medium">
-                      Add your primary departure slot here. You can extend multi-date support later.
+                      Arrival date is calculated automatically from the departure date and {durationDays} day{durationDays !== 1 ? 's' : ''} of trip duration.
                     </p>
                   </div>
                 </motion.div>

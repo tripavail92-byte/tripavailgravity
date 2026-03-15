@@ -43,8 +43,22 @@ const formatDateDisplay = (date: string) => {
   return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+const deriveArrivalDate = (departureDate: string, durationDays: number) => {
+  if (!departureDate) return '—'
+  const parsed = new Date(`${departureDate}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return '—'
+
+  parsed.setDate(parsed.getDate() + Math.max(0, durationDays - 1))
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps) {
   const schedules = Array.isArray(data.schedules) ? data.schedules : []
+  const durationDays = Math.max(1, data.duration_days ?? 1)
   const itinerary = Array.isArray(data.itinerary) ? data.itinerary : []
   const images = Array.isArray(data.images) ? data.images : []
   const highlights = Array.isArray(data.highlights) ? data.highlights : []
@@ -64,9 +78,12 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
     .slice(0, 3)
     .map((schedule: any) => {
       const dateText = schedule?.date ? formatDateDisplay(schedule.date) : 'No date'
+      const arrivalText = schedule?.date
+        ? formatDateDisplay(deriveArrivalDate(schedule.date, durationDays))
+        : 'No arrival date'
       const timeText = schedule?.time || 'No time'
       const capacityText = schedule?.capacity ? `${schedule.capacity} seats` : 'No capacity'
-      return { dateText, timeText, capacityText }
+      return { dateText, arrivalText, timeText, capacityText }
     })
 
   return (
@@ -178,11 +195,22 @@ export function TourReviewStep({ data, onBack, onPublish }: TourReviewStepProps)
               label="Departure Dates"
               value={`${schedules.length} configured`}
             />
+            <ReviewRow
+              label="Calculated Arrival"
+              value={schedules[0]?.date ? formatDateDisplay(deriveArrivalDate(schedules[0].date, durationDays)) : '—'}
+            />
             {schedulePreview.length > 0 ? (
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground grid grid-cols-4 gap-2 pb-1">
+                  <span>Departure</span>
+                  <span>Arrival</span>
+                  <span>Time</span>
+                  <span className="text-right">Capacity</span>
+                </div>
                 {schedulePreview.map((schedule, index) => (
-                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-3 gap-2">
+                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-4 gap-2">
                     <span>{schedule.dateText}</span>
+                    <span>{schedule.arrivalText}</span>
                     <span>{schedule.timeText}</span>
                     <span className="text-right">{schedule.capacityText}</span>
                   </div>

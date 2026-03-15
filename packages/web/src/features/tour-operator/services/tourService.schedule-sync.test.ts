@@ -36,6 +36,7 @@ describe('tour schedule sync', () => {
     const rows = normalizeTourSchedules(
       [{ date: '2030-07-18', time: '10:30', capacity: 22 }],
       10,
+      4,
     )
 
     expect(rows).toHaveLength(1)
@@ -43,6 +44,9 @@ describe('tour schedule sync', () => {
     expect(rows[0]?.status).toBe('scheduled')
     expect(typeof rows[0]?.start_time).toBe('string')
     expect(typeof rows[0]?.end_time).toBe('string')
+    const startMs = new Date(rows[0]!.start_time).getTime()
+    const endMs = new Date(rows[0]!.end_time).getTime()
+    expect(endMs - startMs).toBe(3 * 24 * 60 * 60 * 1000)
   })
 
   it('syncs schedules via rpc when saving a draft', async () => {
@@ -56,6 +60,7 @@ describe('tour schedule sync', () => {
     const result = await tourService.saveWorkflowDraft(
       {
         title: 'My Tour',
+        duration_days: 3,
         schedules: [{ date: '2030-08-12', time: '09:00', capacity: 18 }],
         max_participants: 18,
       },
@@ -72,5 +77,8 @@ describe('tour schedule sync', () => {
     expect(payload.p_default_capacity).toBe(18)
     expect(Array.isArray(payload.p_schedules)).toBe(true)
     expect(payload.p_schedules[0].capacity).toBe(18)
+    const startMs = new Date(payload.p_schedules[0].start_time).getTime()
+    const endMs = new Date(payload.p_schedules[0].end_time).getTime()
+    expect(endMs - startMs).toBe(2 * 24 * 60 * 60 * 1000)
   })
 })
