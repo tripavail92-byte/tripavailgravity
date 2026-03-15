@@ -141,58 +141,161 @@ async function main() {
 
     await client.query(
       `
-        UPDATE public.operator_booking_finance_snapshots
-        SET
-          operator_user_id = $1,
-          booking_total = 10000,
-          payment_collected = 10000,
-          refund_amount = 0,
-          commission_rate = 20,
-          commission_amount = 2000,
-          operator_receivable_estimate = 8000,
-          settlement_state = 'eligible_for_payout'::public.settlement_state_enum,
-          payout_status = 'eligible'::public.payout_status_enum,
-          payout_available_at = TIMEZONE('UTC', NOW()) - INTERVAL '1 day',
-          notes = '{}'::JSONB,
+        INSERT INTO public.operator_booking_finance_snapshots (
+          booking_id,
+          operator_user_id,
+          traveler_id,
+          membership_tier_code,
+          membership_status,
+          booking_total,
+          payment_collected,
+          refund_amount,
+          commission_rate,
+          commission_amount,
+          commission_total,
+          commission_collected,
+          commission_remaining,
+          operator_receivable_estimate,
+          settlement_state,
+          payout_status,
+          payout_available_at,
+          notes
+        )
+        VALUES (
+          $2,
+          $1,
+          (SELECT val FROM _payout_cycle_ids WHERE key = 'traveler'),
+          'gold'::public.membership_tier_code_enum,
+          'active'::public.membership_status_enum,
+          10000,
+          10000,
+          0,
+          20,
+          2000,
+          2000,
+          2000,
+          0,
+          8000,
+          'eligible_for_payout'::public.settlement_state_enum,
+          'eligible'::public.payout_status_enum,
+          TIMEZONE('UTC', NOW()) - INTERVAL '1 day',
+          '{}'::JSONB
+        )
+        ON CONFLICT (booking_id) DO UPDATE SET
+          operator_user_id = EXCLUDED.operator_user_id,
+          traveler_id = EXCLUDED.traveler_id,
+          membership_tier_code = EXCLUDED.membership_tier_code,
+          membership_status = EXCLUDED.membership_status,
+          booking_total = EXCLUDED.booking_total,
+          payment_collected = EXCLUDED.payment_collected,
+          refund_amount = EXCLUDED.refund_amount,
+          commission_rate = EXCLUDED.commission_rate,
+          commission_amount = EXCLUDED.commission_amount,
+          commission_total = EXCLUDED.commission_total,
+          commission_collected = EXCLUDED.commission_collected,
+          commission_remaining = EXCLUDED.commission_remaining,
+          operator_receivable_estimate = EXCLUDED.operator_receivable_estimate,
+          settlement_state = EXCLUDED.settlement_state,
+          payout_status = EXCLUDED.payout_status,
+          payout_available_at = EXCLUDED.payout_available_at,
+          notes = EXCLUDED.notes,
           updated_at = TIMEZONE('UTC', NOW())
-        WHERE booking_id = $2
       `,
       [identifiers.operator_id, identifiers.booking_id],
     )
 
     await client.query(
       `
-        UPDATE public.operator_commission_ledger
-        SET
-          operator_user_id = $1,
-          membership_tier_code = 'gold'::public.membership_tier_code_enum,
-          booking_total = 10000,
-          commission_rate = 20,
-          commission_amount = 2000,
-          operator_receivable_estimate = 8000,
-          settlement_state = 'eligible_for_payout'::public.settlement_state_enum,
-          payout_status = 'eligible'::public.payout_status_enum,
-          available_for_payout_at = TIMEZONE('UTC', NOW()) - INTERVAL '1 day',
+        INSERT INTO public.operator_commission_ledger (
+          operator_user_id,
+          booking_id,
+          entry_type,
+          membership_tier_code,
+          booking_total,
+          commission_rate,
+          commission_amount,
+          commission_total,
+          commission_collected,
+          commission_remaining,
+          operator_receivable_estimate,
+          settlement_state,
+          payout_status,
+          available_for_payout_at
+        )
+        VALUES (
+          $1,
+          $2,
+          'commission_snapshot'::public.ledger_entry_type_enum,
+          'gold'::public.membership_tier_code_enum,
+          10000,
+          20,
+          2000,
+          2000,
+          2000,
+          0,
+          8000,
+          'eligible_for_payout'::public.settlement_state_enum,
+          'eligible'::public.payout_status_enum,
+          TIMEZONE('UTC', NOW()) - INTERVAL '1 day'
+        )
+        ON CONFLICT (booking_id) DO UPDATE SET
+          operator_user_id = EXCLUDED.operator_user_id,
+          membership_tier_code = EXCLUDED.membership_tier_code,
+          booking_total = EXCLUDED.booking_total,
+          commission_rate = EXCLUDED.commission_rate,
+          commission_amount = EXCLUDED.commission_amount,
+          commission_total = EXCLUDED.commission_total,
+          commission_collected = EXCLUDED.commission_collected,
+          commission_remaining = EXCLUDED.commission_remaining,
+          operator_receivable_estimate = EXCLUDED.operator_receivable_estimate,
+          settlement_state = EXCLUDED.settlement_state,
+          payout_status = EXCLUDED.payout_status,
+          available_for_payout_at = EXCLUDED.available_for_payout_at,
           updated_at = TIMEZONE('UTC', NOW())
-        WHERE booking_id = $2
       `,
       [identifiers.operator_id, identifiers.booking_id],
     )
 
     await client.query(
       `
-        UPDATE public.operator_payout_items
-        SET
-          operator_user_id = $1,
-          gross_amount = 10000,
-          commission_amount = 2000,
-          refund_amount = 0,
-          operator_payable_amount = 8000,
-          payout_status = 'eligible'::public.payout_status_enum,
-          payout_due_at = TIMEZONE('UTC', NOW()) - INTERVAL '1 day',
-          recovery_amount = 0,
+        INSERT INTO public.operator_payout_items (
+          booking_id,
+          operator_user_id,
+          gross_amount,
+          commission_amount,
+          refund_amount,
+          operator_payable_amount,
+          recovery_deduction_amount,
+          net_operator_payable_amount,
+          payout_status,
+          payout_due_at,
+          recovery_amount
+        )
+        VALUES (
+          $2,
+          $1,
+          10000,
+          2000,
+          0,
+          8000,
+          0,
+          8000,
+          'eligible'::public.payout_status_enum,
+          TIMEZONE('UTC', NOW()) - INTERVAL '1 day',
+          0
+        )
+        ON CONFLICT (booking_id) DO UPDATE SET
+          operator_user_id = EXCLUDED.operator_user_id,
+          gross_amount = EXCLUDED.gross_amount,
+          commission_amount = EXCLUDED.commission_amount,
+          refund_amount = EXCLUDED.refund_amount,
+          operator_payable_amount = EXCLUDED.operator_payable_amount,
+          recovery_deduction_amount = EXCLUDED.recovery_deduction_amount,
+          net_operator_payable_amount = EXCLUDED.net_operator_payable_amount,
+          payout_status = EXCLUDED.payout_status,
+          payout_due_at = EXCLUDED.payout_due_at,
+          recovery_amount = EXCLUDED.recovery_amount,
           updated_at = TIMEZONE('UTC', NOW())
-        WHERE booking_id = $2
       `,
       [identifiers.operator_id, identifiers.booking_id],
     )

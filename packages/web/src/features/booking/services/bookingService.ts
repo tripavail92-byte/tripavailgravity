@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase'
-import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  buildTourPaymentTermsFromTotal,
+  getTourPaymentTerms,
+  type ResolvedTourPromotion,
+} from '@/features/booking/utils/tourPaymentTerms'
 
 function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
   if (error instanceof Error) return error
@@ -49,6 +53,11 @@ export interface TourBooking {
   amount_paid_online?: number
   amount_due_to_operator?: number
   payment_policy_text?: string | null
+  promo_campaign_id?: string | null
+  promo_owner?: string | null
+  promo_funding_source?: 'operator' | 'platform' | null
+  promo_discount_value?: number
+  price_before_promo?: number
   payment_metadata?: any
   metadata?: any
 }
@@ -86,6 +95,36 @@ export interface PackageBooking {
  * Tour Booking Service
  */
 export const tourBookingService = {
+  async resolvePromotionPreview(params: {
+    tourId: string
+    bookingTotal: number
+    promoCode: string
+  }): Promise<ResolvedTourPromotion | null> {
+    const { data, error } = await supabase.rpc('resolve_tour_promotion' as any, {
+      p_tour_id: params.tourId,
+      p_promo_code: params.promoCode,
+      p_booking_total: params.bookingTotal,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] ?? null : data ?? null
+
+    if (!row) return null
+
+    return {
+      promotionId: row.promotion_id,
+      title: row.title,
+      code: row.code,
+      ownerLabel: row.owner_label,
+      fundingSource: row.funding_source,
+      discountType: row.discount_type,
+      discountValue: Number(row.discount_value || 0),
+      appliedDiscountValue: Number(row.applied_discount_value || 0),
+      discountedBookingTotal: Number(row.discounted_booking_total || 0),
+    }
+  },
+
   async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('tour_bookings')
@@ -190,6 +229,33 @@ export const tourBookingService = {
     return (data as TourBooking) || null
   },
 
+  async confirmTravelerCompletion(bookingId: string, reason?: string): Promise<{
+    bookingId: string
+    status: TourBooking['status']
+    action: string
+    notificationCount: number
+  }> {
+    const { data, error } = await supabase.rpc('traveler_confirm_tour_booking_completion' as any, {
+      p_booking_id: bookingId,
+      p_reason: reason?.trim() || null,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+
+    if (!row) {
+      throw new Error('No completion confirmation result returned')
+    }
+
+    return {
+      bookingId: row.booking_id,
+      status: row.status,
+      action: row.action,
+      notificationCount: Number(row.notification_count || 0),
+    }
+  },
+
   /**
    * Calculate available slots for a schedule
    * Formula: total_capacity - SUM(confirmed pax_count) - SUM(active pending pax_count)
@@ -215,6 +281,7 @@ export const tourBookingService = {
     traveler_id: string
     pax_count: number
     total_price: number
+    promoCode?: string
     metadata?: any
   }): Promise<TourBooking> {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // NOW + 10 minutes
@@ -226,7 +293,7 @@ export const tourBookingService = {
 
     if (tourError) throw tourError
 
-    const paymentTerms = getTourPaymentTerms({
+    const basePaymentTerms = getTourPaymentTerms({
       basePrice: Number(tourRow?.price || 0),
       guestCount: params.pax_count,
       pricingTiers: tourRow?.pricing_tiers,
@@ -234,12 +301,34 @@ export const tourBookingService = {
       depositPercentage: Number(tourRow?.deposit_percentage || 0),
     })
 
+    const resolvedPromotion = params.promoCode?.trim()
+      ? await this.resolvePromotionPreview({
+          tourId: params.tour_id,
+          bookingTotal: basePaymentTerms.totalAmount,
+          promoCode: params.promoCode,
+        })
+      : null
+
+    if (params.promoCode?.trim() && !resolvedPromotion) {
+      throw new Error('Promo code is invalid or inactive for this tour')
+    }
+
+    const paymentTerms = resolvedPromotion
+      ? buildTourPaymentTermsFromTotal({
+          totalAmount: resolvedPromotion.discountedBookingTotal,
+          guestCount: params.pax_count,
+          depositRequired: tourRow?.deposit_required,
+          depositPercentage: Number(tourRow?.deposit_percentage || 0),
+          activeTier: basePaymentTerms.activeTier,
+        })
+      : basePaymentTerms
+
     const booking: Omit<TourBooking, 'id' | 'booking_date'> = {
       tour_id: params.tour_id,
       schedule_id: params.schedule_id,
       traveler_id: params.traveler_id,
       pax_count: params.pax_count,
-      total_price: params.total_price,
+      total_price: paymentTerms.totalAmount,
       status: 'pending',
       expires_at: expiresAt.toISOString(),
       payment_status: 'unpaid',
@@ -251,7 +340,15 @@ export const tourBookingService = {
       amount_paid_online: 0,
       amount_due_to_operator: paymentTerms.remainingAmount,
       payment_policy_text: paymentTerms.paymentPolicyText,
-      metadata: params.metadata || {},
+      promo_campaign_id: resolvedPromotion?.promotionId ?? null,
+      promo_owner: resolvedPromotion?.ownerLabel ?? null,
+      promo_funding_source: resolvedPromotion?.fundingSource ?? null,
+      promo_discount_value: resolvedPromotion?.appliedDiscountValue ?? 0,
+      price_before_promo: basePaymentTerms.totalAmount,
+      metadata: {
+        ...(params.metadata || {}),
+        promo_code: resolvedPromotion?.code ?? (params.promoCode?.trim() || null),
+      },
     }
 
     const { data, error } = await supabase.from('tour_bookings').insert(booking).select().single()
@@ -598,6 +695,9 @@ export const bookingService = {
     ])
 
     return tourBooking ?? packageBooking ?? null
+  },
+  confirmTravelerTourCompletion: async (bookingId: string, reason?: string) => {
+    return tourBookingService.confirmTravelerCompletion(bookingId, reason)
   },
   tour: tourBookingService,
   package: packageBookingService,

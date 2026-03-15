@@ -89,6 +89,7 @@ export async function createBookingWithValidation(params: {
   traveler_id: string
   pax_count: number
   total_price: number
+  promoCode?: string
   metadata?: any
 }) {
   // Step 1: Validate capacity before attempting creation

@@ -1,9 +1,11 @@
 import {
   buildBookingFinanceSnapshot,
   calculateCommissionAmount,
+  calculateCommissionCollection,
   calculateMembershipAdjustment,
   calculateNextBusinessDay,
   calculatePayoutReleaseDate,
+  evaluateOperatorCancellationPenalty,
   canPublishAnotherTrip,
   getMinimumDepositForTier,
   resolveFeatureGate,
@@ -65,7 +67,40 @@ describe('commercial engine', () => {
       depositRemainingAmount: 0,
       commissionRate: 13,
       commissionAmount: 13000,
+      commissionTotal: 13000,
+      commissionCollected: 13000,
+      commissionRemaining: 0,
       operatorReceivableEstimate: 87000,
+    })
+  })
+
+  it('splits commission between collected and remaining amounts for deposit bookings', () => {
+    expect(
+      calculateCommissionCollection({
+        bookingTotal: 50000,
+        paymentCollected: 10000,
+        commissionRate: 20,
+      }),
+    ).toEqual({
+      commissionTotal: 10000,
+      commissionCollected: 10000,
+      commissionRemaining: 0,
+      collectedBasisAmount: 10000,
+    })
+  })
+
+  it('caps collected commission at total commission when deposit exceeds the fee due', () => {
+    expect(
+      calculateCommissionCollection({
+        bookingTotal: 100000,
+        paymentCollected: 20000,
+        commissionRate: 13,
+      }),
+    ).toEqual({
+      commissionTotal: 13000,
+      commissionCollected: 13000,
+      commissionRemaining: 0,
+      collectedBasisAmount: 20000,
     })
   })
 
@@ -107,6 +142,25 @@ describe('commercial engine', () => {
       depositUpfrontAmount: 10000,
       depositRemainingAmount: 40000,
       paymentCollected: 10000,
+      commissionTotal: 10000,
+      commissionCollected: 10000,
+      commissionRemaining: 0,
+    })
+  })
+
+  it('activates operator cancellation penalties at the threshold', () => {
+    expect(
+      evaluateOperatorCancellationPenalty({
+        recentOperatorFaultCancellations: 3,
+      }),
+    ).toEqual({
+      recentOperatorFaultCancellations: 3,
+      threshold: 3,
+      windowDays: 30,
+      penaltyActive: true,
+      restrictOperator: true,
+      applyPayoutHold: true,
+      reason: '3 operator-fault cancellations in 30 days reached the safeguard threshold of 3',
     })
   })
 

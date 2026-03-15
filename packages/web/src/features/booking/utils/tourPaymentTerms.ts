@@ -16,6 +16,18 @@ export interface TourPaymentTerms {
   paymentPolicyText: string
 }
 
+export interface ResolvedTourPromotion {
+  promotionId: string
+  title: string
+  code: string
+  ownerLabel: string
+  fundingSource: 'operator' | 'platform'
+  discountType: 'fixed_amount' | 'percentage'
+  discountValue: number
+  appliedDiscountValue: number
+  discountedBookingTotal: number
+}
+
 export function normalizeCurrencyAmount(value: number): number {
   if (!Number.isFinite(value)) {
     return 0
@@ -97,6 +109,38 @@ export function getTourPaymentTerms(params: {
     remainingAmount,
     upfrontPercentage,
     activeTier,
+    paymentCollectionMode,
+    paymentPolicyText,
+  }
+}
+
+export function buildTourPaymentTermsFromTotal(params: {
+  totalAmount: number
+  guestCount: number
+  depositRequired?: boolean | null
+  depositPercentage?: number | null
+  activeTier?: TourPricingTierPreview | null
+}): TourPaymentTerms {
+  const guestCount = Math.max(1, Number(params.guestCount || 1))
+  const totalAmount = normalizeCurrencyAmount(Number(params.totalAmount || 0))
+  const depositRequired = Boolean(params.depositRequired)
+  const upfrontPercentage = depositRequired ? clampDepositPercentage(Number(params.depositPercentage || 0)) : 100
+  const upfrontAmount = depositRequired
+    ? normalizeCurrencyAmount((totalAmount * upfrontPercentage) / 100)
+    : totalAmount
+  const remainingAmount = normalizeCurrencyAmount(Math.max(0, totalAmount - upfrontAmount))
+  const paymentCollectionMode = depositRequired && remainingAmount > 0 ? 'partial_online' : 'full_online'
+  const paymentPolicyText = paymentCollectionMode === 'partial_online'
+    ? `Pay ${upfrontPercentage}% now to confirm your booking. Remaining balance will be paid directly to the tour operator before departure.`
+    : 'Full amount is charged online at the time of booking confirmation.'
+
+  return {
+    effectiveUnitPrice: normalizeCurrencyAmount(totalAmount / guestCount),
+    totalAmount,
+    upfrontAmount,
+    remainingAmount,
+    upfrontPercentage,
+    activeTier: params.activeTier ?? null,
     paymentCollectionMode,
     paymentPolicyText,
   }

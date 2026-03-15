@@ -28,6 +28,13 @@ export interface OperatorCommercialProfile {
   next_billing_date: string
   payout_hold: boolean
   payout_hold_reason: string | null
+  operator_fault_cancellation_count: number
+  operator_fault_cancellation_window_started_at: string | null
+  cancellation_penalty_active: boolean
+  cancellation_penalty_triggered_at: string | null
+  fraud_review_required: boolean
+  fraud_review_reason: string | null
+  fraud_review_triggered_at: string | null
   monthly_published_tours_count: number
   ai_credits_used_current_cycle: number
   feature_overrides: Record<string, unknown>
@@ -82,12 +89,20 @@ export interface OperatorPayoutReportRow {
   gross_amount: number
   refund_amount: number
   commission_retained_by_tripavail: number
+  commission_total: number
+  commission_collected: number
+  commission_remaining: number
   operator_payable_amount: number
+  recovery_deduction_amount: number
+  net_operator_payable_amount: number
   payout_status: string
   payout_due_at: string | null
   paid_at: string | null
   hold_reason: string | null
   recovery_amount: number
+  promo_owner: string | null
+  promo_funding_source: string | null
+  promo_discount_value: number
   batch_reference: string | null
   payout_batch_scheduled_for: string | null
 }
@@ -100,7 +115,53 @@ export interface OperatorPayoutBatch {
   total_gross_amount: number
   total_commission_amount: number
   total_operator_payable: number
+  total_recovery_deduction_amount: number
   created_at: string
+}
+
+export interface CommercialPromotion {
+  id: string
+  operator_user_id: string
+  applicable_tour_id: string | null
+  title: string
+  code: string
+  description: string | null
+  owner_label: string
+  funding_source: 'operator' | 'platform'
+  discount_type: 'fixed_amount' | 'percentage'
+  discount_value: number
+  max_discount_value: number | null
+  is_active: boolean
+  starts_at: string | null
+  ends_at: string | null
+  created_at: string
+  updated_at: string
+  applicable_tour?: {
+    id: string
+    title: string
+  } | null
+}
+
+export interface CommercialTourOption {
+  id: string
+  title: string
+  operator_id: string
+}
+
+export interface CommercialPromotionUpsert {
+  operator_user_id: string
+  applicable_tour_id?: string | null
+  title: string
+  code: string
+  description?: string | null
+  owner_label: string
+  funding_source: 'operator' | 'platform'
+  discount_type: 'fixed_amount' | 'percentage'
+  discount_value: number
+  max_discount_value?: number | null
+  is_active: boolean
+  starts_at?: string | null
+  ends_at?: string | null
 }
 
 export interface PayoutBatchActionResult {
@@ -132,7 +193,25 @@ export interface AdminFinanceSummary {
   total_held_amounts: number
   total_refunds: number
   total_recovery_pending: number
+  total_recovery_deductions: number
   total_chargebacks_disputes: number
+}
+
+export interface AdminFinanceHealth {
+  total_customer_payments_collected: number
+  total_commission_earned: number
+  total_commission_collected: number
+  total_commission_remaining: number
+  total_operator_liability_not_ready: number
+  total_payouts_scheduled: number
+  total_payouts_completed: number
+  total_payouts_on_hold: number
+  total_payouts_eligible_unbatched: number
+  total_payouts_recovery_pending: number
+  total_refunds: number
+  outstanding_recovery_balances: number
+  reconciliation_rhs: number
+  reconciliation_delta: number
 }
 
 export interface MembershipTierReportRow {
@@ -165,6 +244,13 @@ function mapProfile(row: any): OperatorCommercialProfile {
     next_billing_date: row.next_billing_date,
     payout_hold: Boolean(row.payout_hold),
     payout_hold_reason: row.payout_hold_reason ?? null,
+    operator_fault_cancellation_count: toNumber(row.operator_fault_cancellation_count),
+    operator_fault_cancellation_window_started_at: row.operator_fault_cancellation_window_started_at ?? null,
+    cancellation_penalty_active: Boolean(row.cancellation_penalty_active),
+    cancellation_penalty_triggered_at: row.cancellation_penalty_triggered_at ?? null,
+    fraud_review_required: Boolean(row.fraud_review_required),
+    fraud_review_reason: row.fraud_review_reason ?? null,
+    fraud_review_triggered_at: row.fraud_review_triggered_at ?? null,
     monthly_published_tours_count: toNumber(row.monthly_published_tours_count),
     ai_credits_used_current_cycle: toNumber(row.ai_credits_used_current_cycle),
     feature_overrides: row.feature_overrides ?? {},
@@ -227,12 +313,20 @@ function mapPayoutRow(row: any): OperatorPayoutReportRow {
     gross_amount: toNumber(row.gross_amount),
     refund_amount: toNumber(row.refund_amount),
     commission_retained_by_tripavail: toNumber(row.commission_retained_by_tripavail),
+    commission_total: toNumber(row.commission_total),
+    commission_collected: toNumber(row.commission_collected),
+    commission_remaining: toNumber(row.commission_remaining),
     operator_payable_amount: toNumber(row.operator_payable_amount),
+    recovery_deduction_amount: toNumber(row.recovery_deduction_amount),
+    net_operator_payable_amount: toNumber(row.net_operator_payable_amount),
     payout_status: row.payout_status,
     payout_due_at: row.payout_due_at ?? null,
     paid_at: row.paid_at ?? null,
     hold_reason: row.hold_reason ?? null,
     recovery_amount: toNumber(row.recovery_amount),
+    promo_owner: row.promo_owner ?? null,
+    promo_funding_source: row.promo_funding_source ?? null,
+    promo_discount_value: toNumber(row.promo_discount_value),
     batch_reference: row.batch_reference ?? null,
     payout_batch_scheduled_for: row.payout_batch_scheduled_for ?? null,
   }
@@ -247,7 +341,45 @@ function mapBatch(row: any): OperatorPayoutBatch {
     total_gross_amount: toNumber(row.total_gross_amount),
     total_commission_amount: toNumber(row.total_commission_amount),
     total_operator_payable: toNumber(row.total_operator_payable),
+    total_recovery_deduction_amount: toNumber(row.total_recovery_deduction_amount),
     created_at: row.created_at,
+  }
+}
+
+function mapPromotion(row: any): CommercialPromotion {
+  return {
+    id: row.id,
+    operator_user_id: row.operator_user_id,
+    applicable_tour_id: row.applicable_tour_id ?? null,
+    title: row.title,
+    code: row.code,
+    description: row.description ?? null,
+    owner_label: row.owner_label,
+    funding_source: row.funding_source,
+    discount_type: row.discount_type,
+    discount_value: toNumber(row.discount_value),
+    max_discount_value: row.max_discount_value === null || row.max_discount_value === undefined
+      ? null
+      : toNumber(row.max_discount_value),
+    is_active: Boolean(row.is_active),
+    starts_at: row.starts_at ?? null,
+    ends_at: row.ends_at ?? null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    applicable_tour: row.applicable_tour
+      ? {
+          id: row.applicable_tour.id,
+          title: row.applicable_tour.title,
+        }
+      : null,
+  }
+}
+
+function mapCommercialTour(row: any): CommercialTourOption {
+  return {
+    id: row.id,
+    title: row.title,
+    operator_id: row.operator_id,
   }
 }
 
@@ -285,6 +417,7 @@ function mapSummary(row: any): AdminFinanceSummary {
     total_held_amounts: toNumber(row.total_held_amounts),
     total_refunds: toNumber(row.total_refunds),
     total_recovery_pending: toNumber(row.total_recovery_pending),
+    total_recovery_deductions: toNumber(row.total_recovery_deductions),
     total_chargebacks_disputes: toNumber(row.total_chargebacks_disputes),
   }
 }
@@ -299,6 +432,25 @@ function mapTierReportRow(row: any): MembershipTierReportRow {
     average_ai_usage: toNumber(row.average_ai_usage),
     average_pickup_usage: toNumber(row.average_pickup_usage),
     average_map_usage: toNumber(row.average_map_usage),
+  }
+}
+
+function mapFinanceHealth(row: any): AdminFinanceHealth {
+  return {
+    total_customer_payments_collected: toNumber(row.total_customer_payments_collected),
+    total_commission_earned: toNumber(row.total_commission_earned),
+    total_commission_collected: toNumber(row.total_commission_collected),
+    total_commission_remaining: toNumber(row.total_commission_remaining),
+    total_operator_liability_not_ready: toNumber(row.total_operator_liability_not_ready),
+    total_payouts_scheduled: toNumber(row.total_payouts_scheduled),
+    total_payouts_completed: toNumber(row.total_payouts_completed),
+    total_payouts_on_hold: toNumber(row.total_payouts_on_hold),
+    total_payouts_eligible_unbatched: toNumber(row.total_payouts_eligible_unbatched),
+    total_payouts_recovery_pending: toNumber(row.total_payouts_recovery_pending),
+    total_refunds: toNumber(row.total_refunds),
+    outstanding_recovery_balances: toNumber(row.outstanding_recovery_balances),
+    reconciliation_rhs: toNumber(row.reconciliation_rhs),
+    reconciliation_delta: toNumber(row.reconciliation_delta),
   }
 }
 
@@ -326,6 +478,13 @@ export const commercialService = {
           next_billing_date,
           payout_hold,
           payout_hold_reason,
+          operator_fault_cancellation_count,
+          operator_fault_cancellation_window_started_at,
+          cancellation_penalty_active,
+          cancellation_penalty_triggered_at,
+          fraud_review_required,
+          fraud_review_reason,
+          fraud_review_triggered_at,
           monthly_published_tours_count,
           ai_credits_used_current_cycle,
           feature_overrides,
@@ -359,6 +518,7 @@ export const commercialService = {
           total_gross_amount,
           total_commission_amount,
           total_operator_payable,
+          total_recovery_deduction_amount,
           created_at
         `)
         .order('scheduled_for', { ascending: false })
@@ -409,14 +569,16 @@ export const commercialService = {
 
   async getAdminCommercialOverview(): Promise<{
     financeSummary: AdminFinanceSummary | null
+    financeHealth: AdminFinanceHealth | null
     tierReportRows: MembershipTierReportRow[]
     operatorProfiles: OperatorCommercialProfile[]
     billingRows: OperatorBillingReportRow[]
     payoutRows: OperatorPayoutReportRow[]
     payoutBatches: OperatorPayoutBatch[]
   }> {
-    const [summaryResult, tierReportResult, profileResult, billingResult, payoutResult, batchResult] = await Promise.all([
+    const [summaryResult, healthResult, tierReportResult, profileResult, billingResult, payoutResult, batchResult] = await Promise.all([
       (supabase.from('admin_finance_summary_v' as any) as any).select('*').maybeSingle(),
+      (supabase.from('admin_finance_health_v' as any) as any).select('*').maybeSingle(),
       (supabase.from('membership_tier_report_v' as any) as any).select('*').order('display_name', { ascending: true }),
       (supabase.from('operator_commercial_profiles' as any) as any)
         .select(`
@@ -432,6 +594,13 @@ export const commercialService = {
           next_billing_date,
           payout_hold,
           payout_hold_reason,
+          operator_fault_cancellation_count,
+          operator_fault_cancellation_window_started_at,
+          cancellation_penalty_active,
+          cancellation_penalty_triggered_at,
+          fraud_review_required,
+          fraud_review_reason,
+          fraud_review_triggered_at,
           monthly_published_tours_count,
           ai_credits_used_current_cycle,
           feature_overrides,
@@ -460,6 +629,7 @@ export const commercialService = {
           total_gross_amount,
           total_commission_amount,
           total_operator_payable,
+          total_recovery_deduction_amount,
           created_at
         `)
         .order('scheduled_for', { ascending: false })
@@ -467,6 +637,7 @@ export const commercialService = {
     ])
 
     if (summaryResult.error) throw summaryResult.error
+  if (healthResult.error) throw healthResult.error
     if (tierReportResult.error) throw tierReportResult.error
     if (profileResult.error) throw profileResult.error
     if (billingResult.error) throw billingResult.error
@@ -475,12 +646,183 @@ export const commercialService = {
 
     return {
       financeSummary: summaryResult.data ? mapSummary(summaryResult.data) : null,
+      financeHealth: healthResult.data ? mapFinanceHealth(healthResult.data) : null,
       tierReportRows: (tierReportResult.data ?? []).map(mapTierReportRow),
       operatorProfiles: (profileResult.data ?? []).map(mapProfile),
       billingRows: (billingResult.data ?? []).map(mapBillingRow),
       payoutRows: (payoutResult.data ?? []).map(mapPayoutRow),
       payoutBatches: (batchResult.data ?? []).map(mapBatch),
     }
+  },
+
+  async listCommercialTours(operatorUserId?: string): Promise<CommercialTourOption[]> {
+    let query = (supabase.from('tours' as any) as any)
+      .select('id, title, operator_id')
+      .order('title', { ascending: true })
+
+    if (operatorUserId) {
+      query = query.eq('operator_id', operatorUserId)
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+    return (data ?? []).map(mapCommercialTour)
+  },
+
+  async listOperatorPromotions(operatorUserId: string): Promise<CommercialPromotion[]> {
+    const { data, error } = await (supabase.from('operator_promotions' as any) as any)
+      .select(`
+        id,
+        operator_user_id,
+        applicable_tour_id,
+        title,
+        code,
+        description,
+        owner_label,
+        funding_source,
+        discount_type,
+        discount_value,
+        max_discount_value,
+        is_active,
+        starts_at,
+        ends_at,
+        created_at,
+        updated_at,
+        applicable_tour:tours!operator_promotions_applicable_tour_id_fkey (
+          id,
+          title
+        )
+      `)
+      .eq('operator_user_id', operatorUserId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data ?? []).map(mapPromotion)
+  },
+
+  async listAdminPromotions(): Promise<CommercialPromotion[]> {
+    const { data, error } = await (supabase.from('operator_promotions' as any) as any)
+      .select(`
+        id,
+        operator_user_id,
+        applicable_tour_id,
+        title,
+        code,
+        description,
+        owner_label,
+        funding_source,
+        discount_type,
+        discount_value,
+        max_discount_value,
+        is_active,
+        starts_at,
+        ends_at,
+        created_at,
+        updated_at,
+        applicable_tour:tours!operator_promotions_applicable_tour_id_fkey (
+          id,
+          title
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data ?? []).map(mapPromotion)
+  },
+
+  async createPromotion(payload: CommercialPromotionUpsert) {
+    const normalizedCode = payload.code.trim().toUpperCase()
+    const { data, error } = await (supabase.from('operator_promotions' as any) as any)
+      .insert({
+        operator_user_id: payload.operator_user_id,
+        applicable_tour_id: payload.applicable_tour_id ?? null,
+        title: payload.title.trim(),
+        code: normalizedCode,
+        description: payload.description?.trim() || null,
+        owner_label: payload.owner_label.trim(),
+        funding_source: payload.funding_source,
+        discount_type: payload.discount_type,
+        discount_value: payload.discount_value,
+        max_discount_value: payload.max_discount_value ?? null,
+        is_active: payload.is_active,
+        starts_at: payload.starts_at ?? null,
+        ends_at: payload.ends_at ?? null,
+      })
+      .select(`
+        id,
+        operator_user_id,
+        applicable_tour_id,
+        title,
+        code,
+        description,
+        owner_label,
+        funding_source,
+        discount_type,
+        discount_value,
+        max_discount_value,
+        is_active,
+        starts_at,
+        ends_at,
+        created_at,
+        updated_at,
+        applicable_tour:tours!operator_promotions_applicable_tour_id_fkey (
+          id,
+          title
+        )
+      `)
+      .single()
+
+    if (error) throw error
+    return mapPromotion(data)
+  },
+
+  async updatePromotion(promotionId: string, payload: CommercialPromotionUpsert) {
+    const normalizedCode = payload.code.trim().toUpperCase()
+    const { data, error } = await (supabase.from('operator_promotions' as any) as any)
+      .update({
+        operator_user_id: payload.operator_user_id,
+        applicable_tour_id: payload.applicable_tour_id ?? null,
+        title: payload.title.trim(),
+        code: normalizedCode,
+        description: payload.description?.trim() || null,
+        owner_label: payload.owner_label.trim(),
+        funding_source: payload.funding_source,
+        discount_type: payload.discount_type,
+        discount_value: payload.discount_value,
+        max_discount_value: payload.max_discount_value ?? null,
+        is_active: payload.is_active,
+        starts_at: payload.starts_at ?? null,
+        ends_at: payload.ends_at ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', promotionId)
+      .select(`
+        id,
+        operator_user_id,
+        applicable_tour_id,
+        title,
+        code,
+        description,
+        owner_label,
+        funding_source,
+        discount_type,
+        discount_value,
+        max_discount_value,
+        is_active,
+        starts_at,
+        ends_at,
+        created_at,
+        updated_at,
+        applicable_tour:tours!operator_promotions_applicable_tour_id_fkey (
+          id,
+          title
+        )
+      `)
+      .single()
+
+    if (error) throw error
+    return mapPromotion(data)
   },
 
   async assignOperatorTier(operatorUserId: string, tierCode: MembershipTierCode, reason: string) {

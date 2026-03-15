@@ -15,7 +15,13 @@ import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 
-import { operatorPortalService, type OperatorBookingRecord } from '@/features/tour-operator/services/operatorPortalService'
+import {
+  isAwaitingTravelerCompletionConfirmation,
+  isCancellationLocked,
+  isTravelerCompletionConfirmed,
+  operatorPortalService,
+  type OperatorBookingRecord,
+} from '@/features/tour-operator/services/operatorPortalService'
 import { useAuth } from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -362,6 +368,16 @@ export default function OperatorBookingsPage() {
                           >
                             {booking.status}
                           </Badge>
+                          {isAwaitingTravelerCompletionConfirmation(booking) ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Awaiting traveler completion confirmation
+                            </p>
+                          ) : null}
+                          {booking.status === 'completed' && isTravelerCompletionConfirmed(booking) ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Completion confirmed by traveler
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -428,7 +444,9 @@ export default function OperatorBookingsPage() {
                             !canCompleteBooking(booking) &&
                             !canResendConfirmation(booking) ? (
                               <span className="text-xs text-muted-foreground">
-                                No action available
+                                {isCancellationLocked(booking)
+                                  ? 'Cancellation locked within 24 hours of departure'
+                                  : 'No action available'}
                               </span>
                             ) : null}
                           </div>
@@ -523,7 +541,8 @@ function StatCard({ icon: Icon, label, value }: { icon: typeof Ticket; label: st
 }
 
 function canCancelBooking(booking: OperatorBookingRecord) {
-  return booking.status === 'pending' || booking.status === 'confirmed'
+  if (booking.status === 'pending') return true
+  return booking.status === 'confirmed' && !isCancellationLocked(booking)
 }
 
 function canCompleteBooking(booking: OperatorBookingRecord) {
@@ -542,10 +561,10 @@ function actionDialogTitle(action: BookingAction) {
 
 function actionDialogDescription(action: BookingAction) {
   if (action === 'cancel') {
-    return 'This will cancel the reservation for the traveler and create an in-app notification with your note.'
+    return 'This will cancel the reservation for the traveler and create an in-app notification with your note. Confirmed bookings are locked from operator cancellation inside the last 24 hours before departure.'
   }
   if (action === 'complete') {
-    return 'Use this after the departure has started to move the booking into completed state and notify the traveler.'
+    return 'Use this after departure starts to request traveler completion confirmation. The booking moves to completed, but payout remains blocked until the traveler confirms.'
   }
   return 'This reissues the confirmation notification without changing payment status or reservation state.'
 }
@@ -558,12 +577,12 @@ function actionDialogConfirmLabel(action: BookingAction) {
 
 function actionNotePlaceholder(action: BookingAction) {
   if (action === 'cancel') return 'Optional cancellation reason for the traveler'
-  if (action === 'complete') return 'Optional completion note for support context'
+  if (action === 'complete') return 'Optional completion note shown in audit context'
   return 'Optional note for the resend event'
 }
 
 function actionSuccessMessage(action: BookingAction) {
   if (action === 'cancel') return 'Booking cancelled and traveler notified'
-  if (action === 'complete') return 'Booking completed and traveler notified'
+  if (action === 'complete') return 'Completion request sent to the traveler for confirmation'
   return 'Confirmation resent to the traveler notification center'
 }

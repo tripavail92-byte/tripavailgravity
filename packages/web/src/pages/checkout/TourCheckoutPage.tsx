@@ -16,8 +16,13 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
+import { Input } from '@/components/ui/input'
 import { createBookingWithValidation, TourBooking, tourBookingService } from '@/features/booking'
-import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  buildTourPaymentTermsFromTotal,
+  getTourPaymentTerms,
+  type ResolvedTourPromotion,
+} from '@/features/booking/utils/tourPaymentTerms'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { getSessionCached } from '@/lib/authCache'
@@ -50,6 +55,10 @@ export default function TourCheckoutPage() {
   const [pendingBooking, setPendingBooking] = useState<TourBooking | null>(null)
   const [countdown, setCountdown] = useState<CountdownTimer>({ minutes: 10, seconds: 0 })
   const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState('')
+  const [appliedPromotion, setAppliedPromotion] = useState<ResolvedTourPromotion | null>(null)
+  const [promoLoading, setPromoLoading] = useState(false)
+  const [promoError, setPromoError] = useState<string | null>(null)
   const [creatingPaymentIntent, setCreatingPaymentIntent] = useState(false)
   const [stripeAvailable, setStripeAvailable] = useState<boolean | null>(null)
   const [paymentIntentAttempted, setPaymentIntentAttempted] = useState(false)
@@ -153,13 +162,22 @@ export default function TourCheckoutPage() {
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
   const applicableTier = rangeMatchedTier || fallbackThresholdTier
 
-  const paymentTerms = getTourPaymentTerms({
+  const basePaymentTerms = getTourPaymentTerms({
     basePrice: baseUnitPrice,
     guestCount,
     pricingTiers: tour?.pricing_tiers,
     depositRequired: tour?.deposit_required,
     depositPercentage: Number(tour?.deposit_percentage || 0),
   })
+  const paymentTerms = appliedPromotion
+    ? buildTourPaymentTermsFromTotal({
+        totalAmount: appliedPromotion.discountedBookingTotal,
+        guestCount,
+        depositRequired: tour?.deposit_required,
+        depositPercentage: Number(tour?.deposit_percentage || 0),
+        activeTier: basePaymentTerms.activeTier,
+      })
+    : basePaymentTerms
   const effectiveUnitPrice = paymentTerms.effectiveUnitPrice
   const totalPrice = paymentTerms.totalAmount
   const payNowAmount = paymentTerms.upfrontAmount
@@ -176,6 +194,11 @@ export default function TourCheckoutPage() {
   useEffect(() => {
     setGuestCount((prev) => Math.min(prev, maxGuests))
   }, [maxGuests])
+
+  useEffect(() => {
+    setAppliedPromotion(null)
+    setPromoError(null)
+  }, [guestCount, tour?.id])
 
   // Create Stripe PaymentIntent when booking is created
   useEffect(() => {
@@ -270,6 +293,40 @@ export default function TourCheckoutPage() {
     }
   }, [pendingBooking?.id])
 
+  const handleApplyPromo = async () => {
+    if (!tour?.id) return
+
+    const normalizedCode = promoCode.trim().toUpperCase()
+    if (!normalizedCode) {
+      setAppliedPromotion(null)
+      setPromoError('Enter a promo code to apply a discount')
+      return
+    }
+
+    try {
+      setPromoLoading(true)
+      const promotion = await tourBookingService.resolvePromotionPreview({
+        tourId: tour.id,
+        bookingTotal: basePaymentTerms.totalAmount,
+        promoCode: normalizedCode,
+      })
+
+      if (!promotion) {
+        setAppliedPromotion(null)
+        setPromoError('This promo code is not active for the selected trip')
+        return
+      }
+
+      setAppliedPromotion(promotion)
+      setPromoError(null)
+    } catch (error) {
+      setAppliedPromotion(null)
+      setPromoError(error instanceof Error ? error.message : 'Failed to apply promo code')
+    } finally {
+      setPromoLoading(false)
+    }
+  }
+
   // Check Stripe availability
   const stripePromise = getStripe()
   useEffect(() => {
@@ -310,6 +367,7 @@ export default function TourCheckoutPage() {
         traveler_id: user.id,
         pax_count: guestCount,
         total_price: totalPrice,
+        promoCode: promoCode.trim() || undefined,
         metadata: {
           tour_name: tour.title,
           schedule_start: schedule.start_time,
@@ -317,6 +375,7 @@ export default function TourCheckoutPage() {
           payment_collection_mode: paymentTerms.paymentCollectionMode,
           upfront_amount: payNowAmount,
           remaining_amount: payLaterAmount,
+          promo_code: promoCode.trim().toUpperCase() || null,
         },
       })
 
@@ -566,7 +625,7 @@ export default function TourCheckoutPage() {
                       <div className="flex items-center justify-between text-lg">
                         <span className="text-foreground font-bold">Total booking amount</span>
                         <span className="font-black text-primary">
-                          {tour.currency} {totalPrice.toFixed(2)}
+                          {tour.currency} {Number(pendingBooking.total_price || totalPrice).toFixed(2)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -650,6 +709,48 @@ export default function TourCheckoutPage() {
                   <GlassTitle>Price Summary</GlassTitle>
                 </GlassHeader>
                 <GlassContent className="p-6 pt-4">
+                  <div className="space-y-4">
+                    {!pendingBooking ? (
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Promo code</p>
+                          <p className="text-xs text-muted-foreground">
+                            Apply an operator or TripAvail promo before payment.
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            value={promoCode}
+                            onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+                            placeholder="Enter promo code"
+                            className="h-11 rounded-xl"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11 rounded-xl"
+                            onClick={handleApplyPromo}
+                            disabled={promoLoading}
+                          >
+                            {promoLoading ? 'Applying...' : 'Apply'}
+                          </Button>
+                        </div>
+                        {promoError ? (
+                          <p className="text-xs text-destructive">{promoError}</p>
+                        ) : null}
+                        {appliedPromotion ? (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                            <p className="font-semibold">
+                              {appliedPromotion.code} applied: {tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)} off
+                            </p>
+                            <p className="mt-1 text-xs text-emerald-800">
+                              {appliedPromotion.ownerLabel} · {appliedPromotion.fundingSource}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground font-medium">Tour price</span>
@@ -665,6 +766,22 @@ export default function TourCheckoutPage() {
                       <div className="type-caption text-success font-semibold">
                         Tier applied: {applicableTier.name || `${applicableTier.minPeople}+ guests`}
                       </div>
+                    ) : null}
+                    {appliedPromotion ? (
+                      <>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">Original booking total</span>
+                          <span className="text-foreground font-bold">
+                            {tour.currency} {basePaymentTerms.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground font-medium">Promo discount</span>
+                          <span className="font-bold text-emerald-700">
+                            -{tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)}
+                          </span>
+                        </div>
+                      </>
                     ) : null}
                     <div className="h-px bg-border/60" />
                     <div className="flex items-center justify-between text-sm">

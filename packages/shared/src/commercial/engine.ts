@@ -55,8 +55,38 @@ export interface BookingFinanceSnapshotResult {
   depositRemainingAmount: number
   commissionRate: number
   commissionAmount: number
+  commissionTotal: number
+  commissionCollected: number
+  commissionRemaining: number
   operatorReceivableEstimate: number
 }
+
+export interface CommissionCollectionInput {
+  bookingTotal: number
+  commissionRate: number
+  paymentCollected?: number
+  refundAmount?: number
+}
+
+export interface CommissionCollectionResult {
+  commissionTotal: number
+  commissionCollected: number
+  commissionRemaining: number
+  collectedBasisAmount: number
+}
+
+export interface OperatorCancellationPenaltyResult {
+  recentOperatorFaultCancellations: number
+  threshold: number
+  windowDays: number
+  penaltyActive: boolean
+  restrictOperator: boolean
+  applyPayoutHold: boolean
+  reason: string | null
+}
+
+export const DEFAULT_OPERATOR_CANCELLATION_THRESHOLD = 3
+export const DEFAULT_OPERATOR_CANCELLATION_WINDOW_DAYS = 30
 
 export interface FeatureGateResult {
   allowed: boolean
@@ -125,6 +155,26 @@ export function getMembershipTierConfig(tier: MembershipTierCode): MembershipTie
 
 export function calculateCommissionAmount(grossAmount: number, commissionRate: number): number {
   return normalizeMoney(Math.max(0, grossAmount) * Math.max(0, commissionRate) / 100)
+}
+
+export function calculateCommissionCollection(
+  input: CommissionCollectionInput,
+): CommissionCollectionResult {
+  const bookingTotal = normalizeMoney(Math.max(0, input.bookingTotal))
+  const paymentCollected = normalizeMoney(Math.max(0, input.paymentCollected ?? bookingTotal))
+  const refundAmount = normalizeMoney(Math.max(0, input.refundAmount ?? 0))
+  const commissionTotal = calculateCommissionAmount(bookingTotal, input.commissionRate)
+  const collectedBasisAmount = normalizeMoney(
+    Math.max(0, Math.min(bookingTotal, paymentCollected - refundAmount)),
+  )
+  const commissionCollected = normalizeMoney(Math.min(commissionTotal, collectedBasisAmount))
+
+  return {
+    commissionTotal,
+    commissionCollected,
+    commissionRemaining: normalizeMoney(Math.max(0, commissionTotal - commissionCollected)),
+    collectedBasisAmount,
+  }
 }
 
 export function getMinimumDepositForTier(tier: MembershipTierCode): number {
@@ -202,7 +252,13 @@ export function buildBookingFinanceSnapshot(
   )
   const paymentCollected = normalizeMoney(Math.max(0, input.paymentCollected ?? depositUpfrontAmount))
   const commissionRate = Math.max(0, input.commissionRate)
-  const commissionAmount = calculateCommissionAmount(bookingTotal, commissionRate)
+  const commissionCollection = calculateCommissionCollection({
+    bookingTotal,
+    commissionRate,
+    paymentCollected,
+    refundAmount,
+  })
+  const commissionAmount = commissionCollection.commissionTotal
   const operatorReceivableEstimate = normalizeMoney(
     Math.max(0, bookingTotal - commissionAmount - refundAmount),
   )
@@ -218,7 +274,36 @@ export function buildBookingFinanceSnapshot(
     depositRemainingAmount,
     commissionRate,
     commissionAmount,
+    commissionTotal: commissionCollection.commissionTotal,
+    commissionCollected: commissionCollection.commissionCollected,
+    commissionRemaining: commissionCollection.commissionRemaining,
     operatorReceivableEstimate,
+  }
+}
+
+export function evaluateOperatorCancellationPenalty(input: {
+  recentOperatorFaultCancellations: number
+  threshold?: number
+  windowDays?: number
+}): OperatorCancellationPenaltyResult {
+  const threshold = Math.max(1, Math.round(input.threshold ?? DEFAULT_OPERATOR_CANCELLATION_THRESHOLD))
+  const windowDays = Math.max(1, Math.round(input.windowDays ?? DEFAULT_OPERATOR_CANCELLATION_WINDOW_DAYS))
+  const recentOperatorFaultCancellations = Math.max(
+    0,
+    Math.round(input.recentOperatorFaultCancellations),
+  )
+  const penaltyActive = recentOperatorFaultCancellations >= threshold
+
+  return {
+    recentOperatorFaultCancellations,
+    threshold,
+    windowDays,
+    penaltyActive,
+    restrictOperator: penaltyActive,
+    applyPayoutHold: penaltyActive,
+    reason: penaltyActive
+      ? `${recentOperatorFaultCancellations} operator-fault cancellations in ${windowDays} days reached the safeguard threshold of ${threshold}`
+      : null,
   }
 }
 

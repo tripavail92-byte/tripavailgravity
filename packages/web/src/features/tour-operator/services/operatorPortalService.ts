@@ -262,3 +262,23 @@ export const operatorPortalService = {
     }
   },
 }
+
+function bookingMetadataValue(booking: OperatorBookingRecord, key: string) {
+  const value = booking.metadata?.[key]
+  return typeof value === 'string' && value.trim().length > 0 ? value : null
+}
+
+export function isCancellationLocked(booking: OperatorBookingRecord) {
+  if (booking.status !== 'confirmed') return false
+  return new Date(booking.tour_schedules.start_time) <= new Date(Date.now() + 24 * 60 * 60 * 1000)
+}
+
+export function isAwaitingTravelerCompletionConfirmation(booking: OperatorBookingRecord) {
+  return booking.status === 'completed'
+    && Boolean(bookingMetadataValue(booking, 'operator_completion_confirmed_at'))
+    && !Boolean(bookingMetadataValue(booking, 'traveler_completion_confirmed_at'))
+}
+
+export function isTravelerCompletionConfirmed(booking: OperatorBookingRecord) {
+  return Boolean(bookingMetadataValue(booking, 'traveler_completion_confirmed_at'))
+}

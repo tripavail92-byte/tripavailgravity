@@ -10,6 +10,7 @@ import {
   Users,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { BookingConversationPanel } from '@/components/messaging/BookingConversationPanel'
@@ -35,6 +36,7 @@ export default function TravelerBookingDetailPage() {
   const [schedule, setSchedule] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [confirmingCompletion, setConfirmingCompletion] = useState(false)
 
   const activeTab = (searchParams.get('tab') as BookingTab) || 'overview'
   const safeActiveTab = BOOKING_TABS.includes(activeTab) ? activeTab : 'overview'
@@ -93,11 +95,41 @@ export default function TravelerBookingDetailPage() {
   const counterpartLabel = scope === 'tour_booking' ? 'tour operator' : 'host'
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
+  const operatorCompletionConfirmedAt =
+    typeof booking?.metadata?.operator_completion_confirmed_at === 'string'
+      ? booking.metadata.operator_completion_confirmed_at
+      : null
+  const travelerCompletionConfirmedAt =
+    typeof booking?.metadata?.traveler_completion_confirmed_at === 'string'
+      ? booking.metadata.traveler_completion_confirmed_at
+      : null
+  const showCompletionConfirmationAction =
+    scope === 'tour_booking'
+    && booking?.status === 'completed'
+    && Boolean(operatorCompletionConfirmedAt)
+    && !travelerCompletionConfirmedAt
 
   const setTab = (value: string) => {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.set('tab', value)
     setSearchParams(nextParams, { replace: true })
+  }
+
+  const handleConfirmCompletion = async () => {
+    if (!booking?.id) return
+
+    try {
+      setConfirmingCompletion(true)
+      await bookingService.confirmTravelerTourCompletion(booking.id)
+      const reloadedBooking = await bookingService.getTravelerBookingById(user!.id, booking.id)
+      setBooking(reloadedBooking)
+      toast.success('Trip completion confirmed')
+    } catch (confirmError) {
+      console.error('Failed to confirm trip completion:', confirmError)
+      toast.error(confirmError instanceof Error ? confirmError.message : 'Unable to confirm trip completion')
+    } finally {
+      setConfirmingCompletion(false)
+    }
   }
 
   if (loading) {
@@ -205,6 +237,42 @@ export default function TravelerBookingDetailPage() {
                   </Badge>
                 </div>
               </div>
+
+              {scope === 'tour_booking' && operatorCompletionConfirmedAt ? (
+                <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Completion confirmation
+                      </p>
+                      <h2 className="mt-1 text-xl font-semibold text-foreground">
+                        {travelerCompletionConfirmedAt
+                          ? 'Trip completion confirmed'
+                          : 'Operator marked the trip complete'}
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                        {travelerCompletionConfirmedAt
+                          ? 'Both sides have confirmed completion. TripAvail can continue payout processing for this booking.'
+                          : 'Confirm completion here after the tour is actually finished. TripAvail will keep operator payout blocked until you confirm.'}
+                      </p>
+                    </div>
+                    {showCompletionConfirmationAction ? (
+                      <Button
+                        type="button"
+                        className="rounded-2xl"
+                        onClick={handleConfirmCompletion}
+                        disabled={confirmingCompletion}
+                      >
+                        {confirmingCompletion ? 'Confirming...' : 'Confirm trip completion'}
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        {travelerCompletionConfirmedAt ? 'Confirmed by both sides' : 'Awaiting your confirmation'}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </GlassCard>

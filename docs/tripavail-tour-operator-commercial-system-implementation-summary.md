@@ -2,17 +2,18 @@
 
 ## Purpose
 
-This document records what was implemented for the first production foundation of the TripAvail Tour Operator Commercial System.
+This document records what is now implemented for the current production-ready TripAvail Tour Operator Commercial System slice.
 
-The goal of this pass was not to build every operator/admin screen immediately. The goal was to establish the commercial domain model, persistent finance structures, reusable business rules, reporting primitives, and database automation so the rest of the product can attach to one stable commercial backbone.
+The work no longer stops at the original schema foundation. The system now includes the initial commercial backbone, the phase 1 finance safeguards, the phase 2 recovery-deduction logic, and the finance health/reconciliation reporting surface used by both the CLI and the admin UI.
 
 ## What Was Delivered
 
-This implementation delivered three core pieces:
+This implementation delivered four connected pieces:
 
 1. A detailed implementation blueprint adapted to the current repo.
 2. A reusable shared commercial rules engine for tiers, commission, billing adjustment, and payout timing.
-3. A deployed Supabase schema foundation covering membership tiers, operator commercial profiles, billing cycles, invoices, finance snapshots, ledgers, payouts, admin controls, and reporting views.
+3. A deployed Supabase schema and automation foundation covering membership tiers, operator commercial profiles, billing cycles, invoices, finance snapshots, ledgers, payouts, admin controls, and reporting views.
+4. Follow-on safeguard and reporting slices covering commission collection splits, operator cancellation penalties, automatic recovery deductions, and finance health reconciliation visibility.
 
 ## Files Added Or Updated
 
@@ -29,12 +30,45 @@ This implementation delivered three core pieces:
 ### Test coverage
 
 - `packages/web/src/features/commercial/commercialEngine.test.ts`
+- `packages/web/src/features/commercial/commercialScenarios.test.ts`
 
 ### Database foundation
 
 - `supabase/migrations/20260315000021_operator_commercial_foundation.sql`
+- `supabase/migrations/20260316000027_operator_finance_safeguards_phase1.sql`
+- `supabase/migrations/20260316000028_operator_payout_recovery_deductions.sql`
+- `supabase/migrations/20260316000029_admin_finance_health_view.sql`
+- `supabase/migrations/20260316000030_admin_finance_health_cash_reconciliation.sql`
+- `supabase/migrations/20260316000031_admin_finance_health_not_ready_cash_liability.sql`
+
+### Database regression coverage
+
+- `supabase/tests/operator_finance_safeguards_phase1_test.sql`
+- `supabase/tests/operator_payout_recovery_deduction_test.sql`
+- `supabase/tests/admin_finance_health_cash_reconciliation_test.sql`
+
+### Admin and operator surfaces
+
+- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+- `packages/web/src/pages/admin/AdminCommercialPage.tsx`
+- `packages/web/src/features/commercial/services/commercialService.ts`
+
+### Finance tooling
+
+- `scripts/finance-health-report.mjs`
 
 ## Detailed Breakdown
+
+## 0. Delivery Status Snapshot
+
+The commercial system is now implemented in four layers:
+
+- Foundation: shared commercial engine, tier configuration, finance tables, reporting views, and admin RPCs
+- Phase 1 safeguards: commission collection split tracking plus operator-fault cancellation penalties and automatic payout holds
+- Phase 2 payout recovery: automatic deduction of prior recovery balances from future payout batches plus operator/admin visibility
+- Finance health reporting: shared reconciliation view consumed by the CLI and the admin commercial overview
+
+This means the operator/admin commercial pages are no longer only planned surfaces. They exist and have already been extended to expose live safeguard and payout state.
 
 ## 1. Commercial System Plan Document
 
@@ -63,6 +97,7 @@ This shared engine now contains:
 - default configuration for each tier
 - monthly membership fee per tier
 - commission rate per tier
+- commission collection split logic for partial-payment bookings
 - publish limit per tier
 - feature entitlements for:
   - multi-city pickup
@@ -79,8 +114,12 @@ This shared engine now contains:
   - calculates TripAvail commission from gross booking amount and commission percent
 - `calculateMembershipAdjustment(...)`
   - applies the business rule `max(0, membership_fee - prior_cycle_commission_credit)`
+- `calculateCommissionCollection(...)`
+  - splits commission into total, collected, and remaining portions based on cash collected so far
 - `buildBookingFinanceSnapshot(...)`
-  - produces a normalized booking finance snapshot with commission amount and operator receivable estimate
+  - produces a normalized booking finance snapshot with deposit metadata, commission split values, and operator receivable estimate
+- `evaluateOperatorCancellationPenalty(...)`
+  - determines when recent operator-fault cancellations trigger automatic restrictions and payout holds
 - `getPublishLimitForTier(...)`
   - returns the tour publish limit for the current tier
 - `canPublishAnotherTrip(...)`
@@ -109,9 +148,11 @@ The file `packages/web/src/features/commercial/commercialEngine.test.ts` was add
 The test suite covers:
 
 - commission calculation examples across tier rates
+- commission collection split examples for deposit bookings
 - full membership fee waiver by prior-cycle commission credit
 - partial membership adjustment when credit does not cover the entire fee
 - booking finance snapshot generation
+- operator cancellation safeguard threshold activation
 - premium feature gating
 - publish limit enforcement
 - next-business-day payout timing
@@ -269,6 +310,7 @@ It captures:
 - refund amount
 - commission rate
 - commission amount
+- commission total / collected / remaining
 - operator receivable estimate
 - settlement state
 - payout status
@@ -284,6 +326,7 @@ It captures:
 - booking total
 - commission rate
 - commission amount
+- commission total / collected / remaining
 - operator receivable estimate
 - settlement state
 - payout state
@@ -299,7 +342,7 @@ It captures:
 - batch reference
 - scheduled date
 - status
-- gross / commission / payable totals
+- gross / commission / recovery deduction / net payable totals
 - processing admin
 
 ### `operator_payout_items`
@@ -313,12 +356,26 @@ It captures:
 - operator linkage
 - gross amount
 - commission amount
+- commission total / collected / remaining via joined reporting views
 - refund amount
 - payable amount
+- recovery deduction amount
+- net operator payable amount
 - payout due date
 - payout paid timestamp
 - hold reason
 - recovery amount
+
+### `operator_cancellation_penalty_events`
+
+Stores the audit trail for operator-fault cancellation safeguard events.
+
+It captures:
+
+- operator and booking linkage
+- event timestamps
+- cancellation reason metadata
+- whether the event currently counts inside the rolling safeguard window
 
 ## 7. RLS and Access Control
 
@@ -482,6 +539,12 @@ Provides billing cycle plus invoice visibility in one reporting surface.
 
 Provides payout item reporting joined with booking, trip, schedule, and payout batch information.
 
+It now also exposes:
+
+- recovery deduction amount
+- net operator payable amount
+- commission total / collected / remaining
+
 ### `operator_performance_report_v`
 
 Provides per-operator rollups for:
@@ -498,14 +561,96 @@ Provides per-operator rollups for:
 Provides platform-level finance summary for:
 
 - customer payments collected
-- commission earned
+- commission accrued
 - membership fees charged
 - membership adjustments / waivers
 - operator payouts
 - held payouts
 - refunds
 - recovery pending
+- recovery deductions applied
 - chargebacks / disputes count
+
+### `admin_finance_health_v`
+
+Provides the shared finance health and reconciliation dataset used by both:
+
+- the admin commercial page
+- the `pnpm db:finance:health` CLI
+
+The health view now reconciles on a cash basis instead of an accrual basis. That means it distinguishes between:
+
+- commission accrued versus commission actually collected
+- operator cash liability that is collected but not yet ready for payout
+- eligible, scheduled, paid, and on-hold payout buckets
+- recovery exposure that remains outstanding
+
+This corrected an earlier reconciliation mismatch where uncollected commission and not-yet-bucketed operator cash were being compared incorrectly against collected customer payments.
+
+## 14. Phase 1 Safeguards Delivered
+
+Phase 1 added the first live financial safeguards on top of the commercial foundation.
+
+Delivered behavior:
+
+- booking finance snapshots persist commission total, commission collected, and commission remaining
+- deposit bookings only recognize the collected portion of commission until more cash is received
+- operator-fault cancellations are tracked inside a rolling 30-day window
+- the third recent operator-fault cancellation automatically:
+  - activates the cancellation penalty
+  - places the operator on payout hold
+  - restricts the operator operationally
+
+Validation completed:
+
+- shared commercial engine unit tests
+- remote SQL regression in `supabase/tests/operator_finance_safeguards_phase1_test.sql`
+
+## 15. Phase 2 Recovery Deductions Delivered
+
+Phase 2 extended the payout system so previously reversed or recovery-pending amounts are automatically clawed back from future payouts.
+
+Delivered behavior:
+
+- payout batches automatically net recovery balances before scheduling payment
+- payout items store both recovery deductions and the resulting net operator payable amount
+- payout payment and reversal flows operate on the net amount actually scheduled for disbursement
+- operator and admin commercial pages expose recovery offsets, commission splits, and cancellation-penalty state
+
+Validation completed:
+
+- remote SQL regression in `supabase/tests/operator_payout_recovery_deduction_test.sql`
+- existing payout RPC regression coverage remained green after the migration changes
+
+## 16. Finance Health UI Slice Delivered
+
+The finance health slice added a single shared reporting definition for reconciliation and surfaced it in both tooling and UI.
+
+Delivered behavior:
+
+- `scripts/finance-health-report.mjs` now reads the shared finance health view rather than embedding its own SQL
+- the admin commercial overview renders finance health cards, reconciliation status, and bucket breakdowns from the same dataset
+- reconciliation now operates on marketplace cash actually collected, not on total commission accrual
+
+Validation completed:
+
+- web typecheck after service/UI updates
+- remote migration deployment for the finance health views
+- remote SQL regression in `supabase/tests/admin_finance_health_cash_reconciliation_test.sql`
+
+## 17. Current Outcome
+
+At this point, the commercial system includes:
+
+- tier-aware commercial configuration
+- billing-cycle automation
+- booking-level finance snapshots and commission ledgering
+- payout batch creation, payment, reversal, and recovery deduction flows
+- operator cancellation safeguards
+- operator and admin commercial dashboards
+- shared finance health and reconciliation reporting
+
+The next work should build on this foundation rather than recreate it.
 
 ### `membership_tier_report_v`
 
