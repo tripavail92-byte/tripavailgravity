@@ -14,6 +14,7 @@ import {
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { commercialService } from '@/features/commercial/services/commercialService'
 
 import { TourBasicsStep } from './components/TourBasicsStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
@@ -21,6 +22,7 @@ import { TourItineraryStep } from './components/TourItineraryStep'
 import { TourMediaStep } from './components/TourMediaStep'
 import { TourPricingStep } from './components/TourPricingStep'
 import { TourReviewStep } from './components/TourReviewStep'
+import { getTourPricingPromoDraft, validateTourPricingPromoDraft } from './promoDraft'
 import { deriveStepWorkflow, StepId } from './stepWorkflow'
 
 const LazyTourPickupLocationsStep = lazy(() =>
@@ -525,11 +527,22 @@ export default function CreateTourPage() {
 
   const handlePublish = async () => {
     if (!user) return
+    const promoDraft = getTourPricingPromoDraft(tourData.draft_data)
+    const promoValidationError = validateTourPricingPromoDraft(promoDraft)
+
+    if (promoValidationError) {
+      toast.error(promoValidationError)
+      setVisitedSteps((prev) => new Set(prev).add(3))
+      setCurrentStep(3)
+      return
+    }
+
     setIsSaving(true)
     try {
       const dataToSave: any = {
         ...tourData,
         operator_id: user.id,
+        deposit_required: true,
         is_active: true,
         is_published: true,
         is_verified: false,
@@ -540,14 +553,67 @@ export default function CreateTourPage() {
       delete dataToSave.id
       if ((dataToSave as any).difficulty) delete (dataToSave as any).difficulty
 
+      let savedTour: Tour
       if (currentTourId) {
-        await tourService.updateTour(currentTourId, dataToSave)
-        toast.success('Tour updated successfully!')
+        savedTour = await tourService.updateTour(currentTourId, dataToSave)
       } else {
-        await tourService.createTour(dataToSave)
-        toast.success('Tour published successfully!')
+        savedTour = await tourService.createTour(dataToSave)
+        setCurrentTourId(savedTour.id)
+        setTourData((prev) => ({ ...prev, id: savedTour.id }))
       }
+
+      if (promoDraft.enabled) {
+        const promoPayload = {
+          operator_user_id: user.id,
+          applicable_tour_id: savedTour.id,
+          title: promoDraft.title.trim(),
+          code: promoDraft.code.trim().toUpperCase(),
+          description: promoDraft.description.trim() || null,
+          owner_label: promoDraft.code.trim().toUpperCase(),
+          funding_source: 'operator' as const,
+          discount_type: promoDraft.discountType,
+          discount_value: Number(promoDraft.discountValue),
+          max_discount_value:
+            promoDraft.discountType === 'percentage' && promoDraft.maxDiscountValue.trim().length > 0
+              ? Number(promoDraft.maxDiscountValue)
+              : null,
+          is_active: promoDraft.isActive,
+        }
+
+        let promotionId = promoDraft.promotionId
+
+        if (promotionId) {
+          await commercialService.updatePromotion(promotionId, promoPayload)
+        } else {
+          const createdPromotion = await commercialService.createPromotion(promoPayload)
+          promotionId = createdPromotion.id
+        }
+
+        const nextDraftData = {
+          ...(tourData.draft_data && typeof tourData.draft_data === 'object' ? tourData.draft_data : {}),
+          pricing_promo: {
+            ...promoDraft,
+            promotionId,
+          },
+        }
+
+        const { error: draftUpdateError } = await supabase
+          .from('tours')
+          .update({
+            draft_data: nextDraftData,
+            updated_at: new Date().toISOString(),
+            last_edited_at: new Date().toISOString(),
+          } as any)
+          .eq('id', savedTour.id)
+          .eq('operator_id', user.id)
+
+        if (draftUpdateError) {
+          throw draftUpdateError
+        }
+      }
+
       setHasUnsaved(false)
+      toast.success(promoDraft.enabled ? 'Tour and promo published successfully!' : currentTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)

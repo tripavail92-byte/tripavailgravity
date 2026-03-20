@@ -37,6 +37,11 @@ import {
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour } from '@/features/tour-operator/services/tourService'
 import { clampDepositPercentage, getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  DEFAULT_TOUR_PRICING_PROMO_DRAFT,
+  getTourPricingPromoDraft,
+  validateTourPricingPromoDraft,
+} from '../promoDraft'
 
 interface TourPricingStepProps {
   data: Partial<Tour>
@@ -90,6 +95,7 @@ export function TourPricingStep({
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
   const [depositPolicyAcknowledged, setDepositPolicyAcknowledged] = useState(false)
   const [depositPolicyConfirmed, setDepositPolicyConfirmed] = useState(false)
+  const promoDraft = getTourPricingPromoDraft(data.draft_data)
   const selectedInclusionLabels = new Set([
     ...(Array.isArray(data.inclusions) ? data.inclusions : []),
     ...((Array.isArray((data as any).included_features)
@@ -109,14 +115,15 @@ export function TourPricingStep({
   }
 
   const basePrice = Number(data.price || 0)
+  const depositRequired = true
   const effectiveMinimumDeposit = clampDepositPercentage(Number(minimumDepositPercent || 0))
   const rawDepositPercentage = Number(data.deposit_percentage)
   const hasSavedDepositPercentage = Number.isFinite(rawDepositPercentage) && rawDepositPercentage > 0
   const normalizedDepositPercentage = clampDepositPercentage(
     hasSavedDepositPercentage ? rawDepositPercentage : effectiveMinimumDeposit,
   )
-  const isDepositBelowTierMinimum = Boolean(data.deposit_required)
-    && normalizedDepositPercentage < effectiveMinimumDeposit
+  const isDepositBelowTierMinimum = normalizedDepositPercentage < effectiveMinimumDeposit
+  const promoValidationError = validateTourPricingPromoDraft(promoDraft)
   const availableDepositOptions = Array.from(
     new Set(
       [...DEPOSIT_OPTIONS, effectiveMinimumDeposit].filter(
@@ -127,7 +134,7 @@ export function TourPricingStep({
   const standardDepositPreview = getTourPaymentTerms({
     basePrice,
     guestCount: 1,
-    depositRequired: data.deposit_required,
+    depositRequired,
     depositPercentage: normalizedDepositPercentage,
   })
   const tierDepositPreviews = pricingTiers.map((tier) => ({
@@ -136,7 +143,7 @@ export function TourPricingStep({
       basePrice,
       guestCount: Math.max(1, Number(tier.minPeople || 1)),
       pricingTiers,
-      depositRequired: data.deposit_required,
+      depositRequired,
       depositPercentage: normalizedDepositPercentage,
     }),
   }))
@@ -144,10 +151,12 @@ export function TourPricingStep({
   useEffect(() => {
     setDepositPolicyConfirmed(false)
     setDepositPolicyAcknowledged(false)
-  }, [data.deposit_required, normalizedDepositPercentage, basePrice, pricingTiers])
+  }, [normalizedDepositPercentage, basePrice, pricingTiers])
 
   useEffect(() => {
-    if (!data.deposit_required) return
+    if (data.deposit_required !== true) {
+      handleInputChange('deposit_required', true)
+    }
 
     if (!hasSavedDepositPercentage || rawDepositPercentage < effectiveMinimumDeposit) {
       handleInputChange('deposit_percentage', normalizedDepositPercentage)
@@ -159,6 +168,18 @@ export function TourPricingStep({
     normalizedDepositPercentage,
     rawDepositPercentage,
   ])
+
+  const updatePromoDraft = (updates: Partial<typeof DEFAULT_TOUR_PRICING_PROMO_DRAFT>) => {
+    onUpdate({
+      draft_data: {
+        ...(data.draft_data && typeof data.draft_data === 'object' ? data.draft_data : {}),
+        pricing_promo: {
+          ...promoDraft,
+          ...updates,
+        },
+      },
+    } as Partial<Tour>)
+  }
 
   const addPricingTier = () => {
     const defaultDiscount = 10 // 10% default
@@ -220,31 +241,21 @@ export function TourPricingStep({
     onUpdate({ exclusions: next, excluded_features: excludedFeatures } as Partial<Tour>)
   }
 
-  const handleDepositRequiredChange = (value: boolean) => {
-    handleInputChange('deposit_required', value)
-    if (value) {
-      handleInputChange(
-        'deposit_percentage',
-        Math.max(normalizedDepositPercentage, effectiveMinimumDeposit),
-      )
-    }
-    if (!value) {
-      setDepositPolicyConfirmed(false)
-      setDepositPolicyAcknowledged(false)
-    }
-  }
-
   const handleDepositPercentageChange = (value: number) => {
     handleInputChange('deposit_percentage', Math.max(effectiveMinimumDeposit, clampDepositPercentage(value)))
   }
 
   const handleContinue = () => {
-    if (data.deposit_required && isDepositBelowTierMinimum) {
+    if (isDepositBelowTierMinimum) {
       return
     }
 
-    if (data.deposit_required && !depositPolicyConfirmed) {
+    if (!depositPolicyConfirmed) {
       setIsDepositDialogOpen(true)
+      return
+    }
+
+    if (promoValidationError) {
       return
     }
 
@@ -327,31 +338,19 @@ export function TourPricingStep({
         </h3>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/30 p-4">
+          <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
             <div className="pl-2">
-              <label className="text-sm font-bold text-foreground">Require Deposit</label>
+              <label className="text-sm font-bold text-foreground">Deposit Collection</label>
               <p className="text-xs text-muted-foreground font-medium">
-                Require partial payment upfront to confirm the booking.
+                Partial payment upfront is always required to confirm the booking.
               </p>
               <p className="mt-1 text-xs text-primary font-semibold">
-                {membershipTierLabel} tier minimum when deposits are enabled: {effectiveMinimumDeposit}%
+                {membershipTierLabel} tier minimum upfront collection: {effectiveMinimumDeposit}%
               </p>
             </div>
-            <Switch
-              checked={data.deposit_required}
-              onCheckedChange={handleDepositRequiredChange}
-              className="data-[state=checked]:bg-primary"
-            />
           </div>
 
-          <AnimatePresence>
-            {data.deposit_required && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden space-y-5"
-              >
+          <div className="space-y-5">
                 <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -464,9 +463,132 @@ export function TourPricingStep({
                     </p>
                   ) : null}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+
+          <Separator className="bg-border/60" />
+
+          <div className="space-y-5 px-2">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
+              <div>
+                <label className="text-sm font-bold text-foreground">Launch Promo</label>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Create an operator-funded promo for this tour as part of publish.
+                </p>
+              </div>
+              <Switch
+                checked={promoDraft.enabled}
+                onCheckedChange={(enabled) => updatePromoDraft({ enabled })}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+
+            <AnimatePresence>
+              {promoDraft.enabled ? (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden space-y-4"
+                >
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Promo Title
+                      </label>
+                      <Input
+                        value={promoDraft.title}
+                        onChange={(event) => updatePromoDraft({ title: event.target.value })}
+                        placeholder="Summer launch discount"
+                        className="h-11 rounded-xl border-border bg-muted/40"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Promo Code
+                      </label>
+                      <Input
+                        value={promoDraft.code}
+                        onChange={(event) => updatePromoDraft({ code: event.target.value.toUpperCase() })}
+                        placeholder="SUMMER25"
+                        className="h-11 rounded-xl border-border bg-muted/40"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Discount Type
+                      </label>
+                      <Select
+                        value={promoDraft.discountType}
+                        onValueChange={(value) => updatePromoDraft({ discountType: value as 'fixed_amount' | 'percentage' })}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl border-border bg-muted/40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">Percentage</SelectItem>
+                          <SelectItem value="fixed_amount">Fixed amount</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Discount Value
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min="0"
+                          value={promoDraft.discountValue}
+                          onChange={(event) => updatePromoDraft({ discountValue: event.target.value })}
+                          placeholder={promoDraft.discountType === 'percentage' ? '15' : '5000'}
+                          className="h-11 rounded-xl border-border bg-muted/40 pr-10"
+                        />
+                        {promoDraft.discountType === 'percentage' ? (
+                          <Percent className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        ) : null}
+                      </div>
+                    </div>
+                    {promoDraft.discountType === 'percentage' ? (
+                      <div className="space-y-2">
+                        <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                          Max Discount
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          value={promoDraft.maxDiscountValue}
+                          onChange={(event) => updatePromoDraft({ maxDiscountValue: event.target.value })}
+                          placeholder="Optional PKR cap"
+                          className="h-11 rounded-xl border-border bg-muted/40"
+                        />
+                      </div>
+                    ) : null}
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
+                        Description
+                      </label>
+                      <Input
+                        value={promoDraft.description}
+                        onChange={(event) => updatePromoDraft({ description: event.target.value })}
+                        placeholder="Explain the traveler-facing offer for this tour."
+                        className="h-11 rounded-xl border-border bg-muted/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/60 bg-background p-4 text-sm text-muted-foreground">
+                    This promo will be created as an operator-funded campaign and scoped to this tour when you publish.
+                  </div>
+
+                  {promoValidationError ? (
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+                      {promoValidationError}
+                    </div>
+                  ) : null}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
 
           <Separator className="bg-border/60" />
 
@@ -815,7 +937,7 @@ export function TourPricingStep({
         </Button>
         <Button
           onClick={handleContinue}
-          disabled={Boolean(data.deposit_required) && isDepositBelowTierMinimum}
+          disabled={isDepositBelowTierMinimum || Boolean(promoValidationError)}
           className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all shadow-lg shadow-primary/25 border-0"
         >
           Continue

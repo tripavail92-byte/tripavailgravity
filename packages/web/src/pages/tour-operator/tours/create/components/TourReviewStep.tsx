@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { getTourPricingPromoDraft } from '../promoDraft'
 
 interface TourReviewStepProps {
   data: Partial<Tour>
@@ -74,11 +75,12 @@ export function TourReviewStep({
   const languages = Array.isArray(data.languages) ? data.languages : []
   const inclusions = Array.isArray(data.inclusions) ? data.inclusions : []
   const exclusions = Array.isArray(data.exclusions) ? data.exclusions : []
+  const promoDraft = getTourPricingPromoDraft(data.draft_data)
   const paymentTerms = getTourPaymentTerms({
     basePrice: Number(data.price || 0),
     guestCount: 1,
     pricingTiers: data.pricing_tiers,
-    depositRequired: data.deposit_required,
+    depositRequired: true,
     depositPercentage: Number(data.deposit_percentage || 0),
   })
 
@@ -165,26 +167,28 @@ export function TourReviewStep({
           <div className="space-y-3">
             <ReviewRow label="Base Price" value={`${data.currency || 'USD'} ${data.price ?? 0}`} highlight />
             <ReviewRow
-              label="Deposit Required"
-              value={data.deposit_required ? `Yes (${data.deposit_percentage || 0}%)` : 'No'}
+              label="Deposit Collection"
+              value={`${data.deposit_percentage || 0}% upfront required`}
             />
             <ReviewRow
               label="Tier Deposit Floor"
               value={`${minimumDepositPercent}% minimum for ${membershipTierLabel} membership`}
             />
-            {data.deposit_required ? (
-              <>
-                <ReviewRow
-                  label="Pay Now"
-                  value={`${data.currency || 'PKR'} ${paymentTerms.upfrontAmount.toLocaleString() || 0} per traveler`}
-                />
-                <ReviewRow
-                  label="Pay Later"
-                  value={`${data.currency || 'PKR'} ${paymentTerms.remainingAmount.toLocaleString() || 0} per traveler`}
-                />
-                <ReviewRow label="Payment Policy" value={paymentTerms.paymentPolicyText} />
-              </>
-            ) : null}
+            <ReviewRow
+              label="Pay Now"
+              value={`${data.currency || 'PKR'} ${paymentTerms.upfrontAmount.toLocaleString() || 0} per traveler`}
+            />
+            <ReviewRow
+              label="Pay Later"
+              value={`${data.currency || 'PKR'} ${paymentTerms.remainingAmount.toLocaleString() || 0} per traveler`}
+            />
+            <ReviewRow label="Payment Policy" value={paymentTerms.paymentPolicyText} />
+            <ReviewRow
+              label="Launch Promo"
+              value={promoDraft.enabled
+                ? `${promoDraft.code || 'Draft promo'} · ${promoDraft.discountType === 'percentage' ? `${promoDraft.discountValue || 0}%` : `${data.currency || 'PKR'} ${promoDraft.discountValue || 0}`}`
+                : 'Not configured'}
+            />
             <ReviewRow label="Cancellation Policy" value={data.cancellation_policy || '—'} />
             <ReviewRow
               label="Inclusions"

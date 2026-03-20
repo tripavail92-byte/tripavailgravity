@@ -257,7 +257,8 @@ export const tourService = {
   async createTour(tourData: Partial<Tour>) {
     console.log('Creating tour with data:', tourData)
     const normalizedPrice = Number.isFinite(Number(tourData.price)) ? Number(tourData.price) : 0
-    const normalizedDepositRequired = Boolean(tourData.deposit_required)
+    const normalizedDepositRequired = true
+    const normalizedDepositPercentage = Math.max(20, Number(tourData.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (tourData.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -281,6 +282,7 @@ export const tourService = {
       base_price: normalizedPrice,
       deposit_required: normalizedDepositRequired,
       require_deposit: normalizedDepositRequired,
+      deposit_percentage: normalizedDepositPercentage,
       cancellation_policy: normalizedCancellationPolicy,
       cancellation_policy_type: normalizedCancellationPolicy,
       inclusions: normalizedInclusions,
@@ -327,7 +329,8 @@ export const tourService = {
   async updateTour(id: string, updates: Partial<Tour>) {
     console.log(`Updating tour ${id}:`, updates)
     const normalizedPrice = Number.isFinite(Number(updates.price)) ? Number(updates.price) : 0
-    const normalizedDepositRequired = Boolean(updates.deposit_required)
+    const normalizedDepositRequired = true
+    const normalizedDepositPercentage = Math.max(20, Number(updates.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (updates.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -351,6 +354,7 @@ export const tourService = {
       base_price: normalizedPrice,
       deposit_required: normalizedDepositRequired,
       require_deposit: normalizedDepositRequired,
+      deposit_percentage: normalizedDepositPercentage,
       cancellation_policy: normalizedCancellationPolicy,
       cancellation_policy_type: normalizedCancellationPolicy,
       inclusions: normalizedInclusions,
@@ -583,7 +587,8 @@ export const tourService = {
     }
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
-    const normalizedDepositRequired = Boolean(data.deposit_required)
+    const normalizedDepositRequired = true
+    const normalizedDepositPercentage = Math.max(20, Number(data.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -638,7 +643,7 @@ export const tourService = {
       cancellation_policy_type: normalizedCancellationPolicy,
       deposit_required: normalizedDepositRequired,
       require_deposit: normalizedDepositRequired,
-      deposit_percentage: data.deposit_percentage || 0,
+      deposit_percentage: normalizedDepositPercentage,
       group_discounts: data.group_discounts ?? false,
       seasonal_pricing: data.seasonal_pricing ?? false,
       peak_season_multiplier: data.peak_season_multiplier || 1.2,
@@ -719,7 +724,8 @@ export const tourService = {
     if (!operatorId) throw new Error('Operator ID required')
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
-    const normalizedDepositRequired = Boolean(data.deposit_required)
+    const normalizedDepositRequired = true
+    const normalizedDepositPercentage = Math.max(20, Number(data.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -768,7 +774,7 @@ export const tourService = {
       cancellation_policy_type: normalizedCancellationPolicy,
       deposit_required: normalizedDepositRequired,
       require_deposit: normalizedDepositRequired,
-      deposit_percentage: data.deposit_percentage || 0,
+      deposit_percentage: normalizedDepositPercentage,
       group_discounts: data.group_discounts ?? false,
       seasonal_pricing: data.seasonal_pricing ?? false,
       peak_season_multiplier: data.peak_season_multiplier || 1.2,
