@@ -6,6 +6,25 @@
 
 import { supabase } from '@/lib/supabase'
 
+export type AdminBookingRow = {
+  id: string
+  tour_id: string | null
+  traveler_id: string | null
+  status: string | null
+  total_price: number | null
+  pax_count: number | null
+  booking_date: string | null
+  payment_status: string | null
+  payment_method: string | null
+  stripe_payment_intent_id: string | null
+  expires_at: string | null
+  paid_at: string | null
+  tour_title: string | null
+  traveler_email: string | null
+  traveler_first_name: string | null
+  traveler_last_name: string | null
+}
+
 /**
  * Fetch reports for moderation
  */
@@ -45,6 +64,15 @@ export async function fetchSupportEscalations(limit = 100, status: string | null
 export async function fetchAdminConversationMessages(conversationId: string, limit = 100) {
   const { data, error } = await (supabase as any).rpc('admin_get_booking_conversation_messages', {
     p_conversation_id: conversationId,
+    p_limit: limit,
+  })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function fetchAdminBookings(limit = 100): Promise<AdminBookingRow[]> {
+  const { data, error } = await (supabase as any).rpc('admin_list_tour_bookings', {
     p_limit: limit,
   })
 

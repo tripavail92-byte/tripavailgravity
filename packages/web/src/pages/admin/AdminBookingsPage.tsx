@@ -3,21 +3,9 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { supabase } from '@/lib/supabase'
+import { fetchAdminBookings, type AdminBookingRow } from '@/features/admin/services/adminService'
 
-type BookingRow = {
-  id: string
-  tour_id: string | null
-  traveler_id: string | null
-  status: string
-  total_price: number | null
-  pax_count: number | null
-  booking_date: string | null
-  payment_status: string | null
-  payment_method: string | null
-  stripe_payment_intent_id: string | null
-  expires_at: string | null
-}
+type BookingRow = AdminBookingRow
 
 const STATUS_COLORS: Record<string, string> = {
   confirmed:  'bg-green-100 text-green-800 border-green-200',
@@ -42,6 +30,13 @@ function fmtPrice(v: number | null) {
   return `PKR ${v.toLocaleString()}`
 }
 
+function travelerLabel(row: BookingRow) {
+  const fullName = [row.traveler_first_name, row.traveler_last_name].filter(Boolean).join(' ').trim()
+  if (fullName) return fullName
+  if (row.traveler_email) return row.traveler_email
+  return shortId(row.traveler_id)
+}
+
 export default function AdminBookingsPage() {
   const [rows, setRows]       = useState<BookingRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,17 +47,15 @@ export default function AdminBookingsPage() {
     setLoading(true)
     setError(null)
 
-    supabase
-      .from('tour_bookings')
-      .select(
-        'id, tour_id, traveler_id, status, total_price, pax_count, booking_date, payment_status, payment_method, stripe_payment_intent_id, expires_at',
-      )
-      .order('booking_date', { ascending: false })
-      .limit(100)
-      .then(({ data, error: err }) => {
+    fetchAdminBookings(100)
+      .then((data) => {
         if (cancelled) return
-        if (err) { setError(err.message); setLoading(false); return }
         setRows(data || [])
+        setLoading(false)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Failed to load bookings')
         setLoading(false)
       })
 
@@ -111,14 +104,16 @@ export default function AdminBookingsPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="space-y-0.5 min-w-0">
                   <CardTitle className="text-base font-mono">{shortId(row.id)}</CardTitle>
-                  <p className="text-xs text-muted-foreground">Tour: {shortId(row.tour_id)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tour: {row.tour_title ?? shortId(row.tour_id)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge
                     variant="outline"
-                    className={STATUS_COLORS[row.status] ?? ''}
+                    className={STATUS_COLORS[row.status ?? ''] ?? ''}
                   >
-                    {row.status}
+                    {row.status ?? 'unknown'}
                   </Badge>
                   {row.payment_status && (
                     <Badge variant="outline" className="text-xs">
@@ -131,7 +126,7 @@ export default function AdminBookingsPage() {
             <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1 text-sm">
               <div>
                 <span className="text-muted-foreground">Traveller</span>
-                <p className="font-mono text-xs">{shortId(row.traveler_id)}</p>
+                <p className="text-xs">{travelerLabel(row)}</p>
               </div>
               <div>
                 <span className="text-muted-foreground">Price</span>
@@ -148,6 +143,10 @@ export default function AdminBookingsPage() {
               <div>
                 <span className="text-muted-foreground">Payment</span>
                 <p>{row.payment_method ?? '—'}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Paid at</span>
+                <p className="text-xs">{fmt(row.paid_at)}</p>
               </div>
               {row.stripe_payment_intent_id && (
                 <div>
