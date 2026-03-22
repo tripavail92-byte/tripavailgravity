@@ -375,7 +375,7 @@ export default function OperatorCommercialPage() {
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <Metric label="Confirmed bookings" value={String(performance?.confirmed_bookings ?? 0)} />
-                  <Metric label="Commission earned" value={formatMoney(performance?.commission_paid ?? 0)} />
+                  <Metric label="TripAvail commission deducted" value={formatMoney(performance?.commission_paid ?? 0)} />
                   <Metric label="Payouts received" value={formatMoney(performance?.payouts_received ?? 0)} />
                   <Metric label="AI credits used" value={`${profile?.ai_credits_used_current_cycle ?? 0}/${tier?.ai_monthly_credits ?? 0}`} />
                 </CardContent>
@@ -462,11 +462,11 @@ export default function OperatorCommercialPage() {
 
               <Card className="rounded-3xl border-border/60">
                 <CardHeader>
-                  <CardTitle className="text-lg">Recent commission collection</CardTitle>
+                  <CardTitle className="text-lg">TripAvail commission status</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <Metric label="Collected commission" value={formatMoney(recentCommissionCollected)} />
-                  <Metric label="Remaining commission" value={formatMoney(recentCommissionRemaining)} />
+                  <Metric label="Commission already deducted" value={formatMoney(recentCommissionCollected)} />
+                  <Metric label="Commission still pending" value={formatMoney(recentCommissionRemaining)} />
                 </CardContent>
               </Card>
             </div>
