@@ -77,6 +77,14 @@ function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): s
   return fallbackMessage
 }
 
+function createDraftClientId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return `draft-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
 export default function CreateTourPage() {
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
@@ -108,6 +116,7 @@ export default function CreateTourPage() {
   const autosaveDebounceRef = useRef<number | null>(null)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const currentTourIdRef = useRef<string | null>(null)
+  const draftClientIdRef = useRef<string>(createDraftClientId())
 
   // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
@@ -207,6 +216,15 @@ export default function CreateTourPage() {
         ignoreDirtyRef.current = true
         setIsSaving(true)
         const existing = await tourService.getOperatorTourById(user.id, tourIdToEdit)
+        const existingDraftClientId =
+          existing.draft_data && typeof existing.draft_data === 'object'
+            ? (existing.draft_data as Record<string, unknown>)._clientDraftId
+            : null
+
+        if (typeof existingDraftClientId === 'string' && existingDraftClientId.trim().length > 0) {
+          draftClientIdRef.current = existingDraftClientId
+        }
+
         setTourData(existing)
 
         // Load pickup locations into draft_data for the Pickup step
@@ -300,8 +318,41 @@ export default function CreateTourPage() {
   const rememberTourId = useCallback((tourId: string) => {
     currentTourIdRef.current = tourId
     setCurrentTourId(tourId)
-    setTourData((prev) => (prev.id === tourId ? prev : ({ ...prev, id: tourId } as Partial<Tour>)))
-  }, [])
+    setTourData((prev) => {
+      const previousDraftData =
+        prev.draft_data && typeof prev.draft_data === 'object'
+          ? (prev.draft_data as Record<string, unknown>)
+          : {}
+
+      return {
+        ...prev,
+        id: tourId,
+        draft_data: {
+          ...previousDraftData,
+          _clientDraftId: draftClientIdRef.current,
+        },
+      } as Partial<Tour>
+    })
+
+    if (!routeTourId) {
+      const nextSearchParams = new URLSearchParams(searchParams)
+      nextSearchParams.set('tour_id', tourId)
+      navigate({ search: `?${nextSearchParams.toString()}` }, { replace: true })
+    }
+  }, [navigate, routeTourId, searchParams])
+
+  const buildDraftPayload = useCallback(
+    (sourceData: Partial<Tour>): Partial<Tour> => ({
+      ...sourceData,
+      draft_data: {
+        ...(sourceData.draft_data && typeof sourceData.draft_data === 'object'
+          ? sourceData.draft_data
+          : {}),
+        _clientDraftId: draftClientIdRef.current,
+      },
+    }),
+    [],
+  )
 
   const saveDraft = useCallback(
     async (options?: { redirectAfter?: string; showOverlay?: boolean; source?: 'manual' | 'auto' }): Promise<boolean> => {
@@ -317,9 +368,10 @@ export default function CreateTourPage() {
         setAutosaveStatus('saving')
 
         try {
-          const pct = calculateCompletionPercentage(tourData)
+          const draftPayload = buildDraftPayload(tourData)
+          const pct = calculateCompletionPercentage(draftPayload)
           const result = await tourService.saveWorkflowDraft(
-            tourData,
+            draftPayload,
             user.id,
             currentTourIdRef.current,
             pct,
@@ -354,7 +406,7 @@ export default function CreateTourPage() {
         saveInFlightRef.current = null
       }
     },
-    [user, tourData, navigate, createWorkflowSnapshot, rememberTourId],
+    [user, tourData, navigate, createWorkflowSnapshot, rememberTourId, buildDraftPayload],
   )
 
   // Mark unsaved whenever tour data or workflow navigation changes
@@ -484,9 +536,10 @@ export default function CreateTourPage() {
     setIsSubmitting(true)
     try {
       // First save everything
-      const pct = calculateCompletionPercentage(tourData)
+      const draftPayload = buildDraftPayload(tourData)
+      const pct = calculateCompletionPercentage(draftPayload)
       const result = await tourService.saveWorkflowDraft(
-        tourData,
+        draftPayload,
         user.id,
         currentTourIdRef.current,
         pct,
@@ -636,9 +689,10 @@ export default function CreateTourPage() {
     if (!user) throw new Error('Authentication required')
     if (currentTourIdRef.current) return currentTourIdRef.current
 
-    const pct = calculateCompletionPercentage(tourData)
+    const draftPayload = buildDraftPayload(tourData)
+    const pct = calculateCompletionPercentage(draftPayload)
     const result = await tourService.saveWorkflowDraft(
-      tourData,
+      draftPayload,
       user.id,
       null,
       pct,

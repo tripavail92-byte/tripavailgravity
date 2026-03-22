@@ -586,6 +586,10 @@ export const tourService = {
       ...restData,
       _workflow: workflowSnapshot ?? (existingDraftData as any)?._workflow ?? null,
     }
+    const clientDraftId =
+      typeof (normalizedDraftData as Record<string, unknown>)._clientDraftId === 'string'
+        ? String((normalizedDraftData as Record<string, unknown>)._clientDraftId)
+        : null
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
     const normalizedDepositRequired = true
@@ -676,6 +680,39 @@ export const tourService = {
       )
       return { success: true, tourId: tour.id as string }
     } else {
+      if (clientDraftId) {
+        const { data: existingDraft } = await supabase
+          .from('tours')
+          .select('id')
+          .eq('operator_id', operatorId)
+          .contains('draft_data', { _clientDraftId: clientDraftId })
+          .in('workflow_status', ['draft', 'in_progress', 'rejected'])
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (existingDraft?.id) {
+          const { data: updatedDraft, error: updateExistingError } = await supabase
+            .from('tours')
+            .update(payload as any)
+            .eq('id', existingDraft.id)
+            .eq('operator_id', operatorId)
+            .select('id')
+            .single()
+
+          if (updateExistingError) throw updateExistingError
+
+          await syncTourSchedulesFromJson(
+            updatedDraft.id as string,
+            payload.schedules,
+            payload.max_participants,
+            payload.duration_days || 1,
+          )
+
+          return { success: true, tourId: updatedDraft.id as string }
+        }
+      }
+
       let insertResponse = await supabase
         .from('tours')
         .insert({
@@ -687,15 +724,44 @@ export const tourService = {
         .single()
 
       if (insertResponse.error && isSlugConstraintError(insertResponse.error, 'tours_slug_key')) {
-        insertResponse = await supabase
-          .from('tours')
-          .insert({
-            ...payload,
-            workflow_status: 'draft',
-            slug: buildFallbackSlug(payload.title),
-          } as any)
-          .select('id')
-          .single()
+        if (clientDraftId) {
+          const { data: racedDraft } = await supabase
+            .from('tours')
+            .select('id')
+            .eq('operator_id', operatorId)
+            .contains('draft_data', { _clientDraftId: clientDraftId })
+            .in('workflow_status', ['draft', 'in_progress', 'rejected'])
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+          if (racedDraft?.id) {
+            insertResponse = {
+              data: racedDraft,
+              error: null,
+            } as typeof insertResponse
+          } else {
+            insertResponse = await supabase
+              .from('tours')
+              .insert({
+                ...payload,
+                workflow_status: 'draft',
+                slug: buildFallbackSlug(payload.title),
+              } as any)
+              .select('id')
+              .single()
+          }
+        } else {
+          insertResponse = await supabase
+            .from('tours')
+            .insert({
+              ...payload,
+              workflow_status: 'draft',
+              slug: buildFallbackSlug(payload.title),
+            } as any)
+            .select('id')
+            .single()
+        }
       }
 
       const { data: tour, error } = insertResponse
