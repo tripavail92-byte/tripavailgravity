@@ -266,16 +266,6 @@ export default function OperatorCommercialPage() {
     [payoutRows],
   )
 
-  const recentCommissionCollected = useMemo(
-    () => payoutRows.slice(0, 5).reduce((sum, row) => sum + row.commission_collected, 0),
-    [payoutRows],
-  )
-
-  const recentCommissionRemaining = useMemo(
-    () => payoutRows.slice(0, 5).reduce((sum, row) => sum + row.commission_remaining, 0),
-    [payoutRows],
-  )
-
   const resolvedTierName =
     tier?.display_name
     ?? formatTierName(profile?.membership_tier_code)
@@ -375,7 +365,6 @@ export default function OperatorCommercialPage() {
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
                   <Metric label="Confirmed bookings" value={String(performance?.confirmed_bookings ?? 0)} />
-                  <Metric label="TripAvail commission deducted" value={formatMoney(performance?.commission_paid ?? 0)} />
                   <Metric label="Payouts received" value={formatMoney(performance?.payouts_received ?? 0)} />
                   <Metric label="AI credits used" value={`${profile?.ai_credits_used_current_cycle ?? 0}/${tier?.ai_monthly_credits ?? 0}`} />
                 </CardContent>
@@ -460,15 +449,6 @@ export default function OperatorCommercialPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-border/60">
-                <CardHeader>
-                  <CardTitle className="text-lg">TripAvail commission status</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <Metric label="Commission already deducted" value={formatMoney(recentCommissionCollected)} />
-                  <Metric label="Commission still pending" value={formatMoney(recentCommissionRemaining)} />
-                </CardContent>
-              </Card>
             </div>
 
             <Card className="rounded-3xl border-border/60">
@@ -560,7 +540,6 @@ export default function OperatorCommercialPage() {
                       <TableHead>Status</TableHead>
                       <TableHead>Batch</TableHead>
                       <TableHead>Promo</TableHead>
-                      <TableHead className="text-right">Commission split</TableHead>
                       <TableHead className="text-right">Recovery offset</TableHead>
                       <TableHead className="text-right">Net payable</TableHead>
                     </TableRow>
@@ -568,7 +547,7 @@ export default function OperatorCommercialPage() {
                   <TableBody>
                     {payoutRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground">No payout items found.</TableCell>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">No payout items found.</TableCell>
                       </TableRow>
                     ) : (
                       payoutRows.map((row) => (
@@ -584,9 +563,6 @@ export default function OperatorCommercialPage() {
                           <TableCell>{row.batch_reference ?? 'Unbatched'}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
                             {formatPromoAttribution(row.promo_owner, row.promo_funding_source, row.promo_discount_value)}
-                          </TableCell>
-                          <TableCell className="text-right text-xs text-muted-foreground">
-                            {formatMoney(row.commission_collected)} / {formatMoney(row.commission_remaining)}
                           </TableCell>
                           <TableCell className="text-right">{formatMoney(row.recovery_deduction_amount)}</TableCell>
                           <TableCell className="text-right">{formatMoney(row.net_operator_payable_amount)}</TableCell>
