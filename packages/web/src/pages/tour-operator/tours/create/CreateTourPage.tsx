@@ -107,6 +107,7 @@ export default function CreateTourPage() {
   const didMountDirtyRef = useRef(false)
   const autosaveDebounceRef = useRef<number | null>(null)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const currentTourIdRef = useRef<string | null>(null)
 
   // Support both ?tour_id= and /edit/:id
   const tourIdToEdit = useMemo(() => {
@@ -291,8 +292,16 @@ export default function CreateTourPage() {
 
   // Initialise currentTourId from route/param
   useEffect(() => {
-    if (tourIdToEdit) setCurrentTourId(tourIdToEdit)
+    if (!tourIdToEdit) return
+    currentTourIdRef.current = tourIdToEdit
+    setCurrentTourId(tourIdToEdit)
   }, [tourIdToEdit])
+
+  const rememberTourId = useCallback((tourId: string) => {
+    currentTourIdRef.current = tourId
+    setCurrentTourId(tourId)
+    setTourData((prev) => (prev.id === tourId ? prev : ({ ...prev, id: tourId } as Partial<Tour>)))
+  }, [])
 
   const saveDraft = useCallback(
     async (options?: { redirectAfter?: string; showOverlay?: boolean; source?: 'manual' | 'auto' }): Promise<boolean> => {
@@ -312,13 +321,13 @@ export default function CreateTourPage() {
           const result = await tourService.saveWorkflowDraft(
             tourData,
             user.id,
-            currentTourId,
+            currentTourIdRef.current,
             pct,
             createWorkflowSnapshot(),
           )
 
           const savedId = result.tourId
-          if (!currentTourId) setCurrentTourId(savedId)
+          if (currentTourIdRef.current !== savedId) rememberTourId(savedId)
           setLastSavedAt(new Date())
           setHasUnsaved(false)
           setAutosaveStatus('saved')
@@ -345,7 +354,7 @@ export default function CreateTourPage() {
         saveInFlightRef.current = null
       }
     },
-    [user, tourData, currentTourId, navigate, createWorkflowSnapshot],
+    [user, tourData, navigate, createWorkflowSnapshot, rememberTourId],
   )
 
   // Mark unsaved whenever tour data or workflow navigation changes
@@ -479,12 +488,12 @@ export default function CreateTourPage() {
       const result = await tourService.saveWorkflowDraft(
         tourData,
         user.id,
-        currentTourId,
+        currentTourIdRef.current,
         pct,
         createWorkflowSnapshot(),
       )
-      const savedId = currentTourId ?? result.tourId
-      if (!currentTourId) setCurrentTourId(savedId)
+      const savedId = currentTourIdRef.current ?? result.tourId
+      if (currentTourIdRef.current !== savedId) rememberTourId(savedId)
       // Then flip status
       await tourService.submitForReview(savedId, user.id)
       setHasUnsaved(false)
@@ -539,6 +548,7 @@ export default function CreateTourPage() {
 
     setIsSaving(true)
     try {
+      const hadExistingTourId = Boolean(currentTourIdRef.current)
       const dataToSave: any = {
         ...tourData,
         operator_id: user.id,
@@ -554,12 +564,11 @@ export default function CreateTourPage() {
       if ((dataToSave as any).difficulty) delete (dataToSave as any).difficulty
 
       let savedTour: Tour
-      if (currentTourId) {
-        savedTour = await tourService.updateTour(currentTourId, dataToSave)
+      if (currentTourIdRef.current) {
+        savedTour = await tourService.updateTour(currentTourIdRef.current, dataToSave)
       } else {
         savedTour = await tourService.createTour(dataToSave)
-        setCurrentTourId(savedTour.id)
-        setTourData((prev) => ({ ...prev, id: savedTour.id }))
+        rememberTourId(savedTour.id)
       }
 
       if (promoDraft.enabled) {
@@ -613,7 +622,7 @@ export default function CreateTourPage() {
       }
 
       setHasUnsaved(false)
-      toast.success(promoDraft.enabled ? 'Tour and promo published successfully!' : currentTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
+  toast.success(promoDraft.enabled ? 'Tour and promo published successfully!' : hadExistingTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
@@ -625,7 +634,7 @@ export default function CreateTourPage() {
 
   const ensureTourDraftForMedia = async (): Promise<string> => {
     if (!user) throw new Error('Authentication required')
-    if (currentTourId) return currentTourId
+    if (currentTourIdRef.current) return currentTourIdRef.current
 
     const pct = calculateCompletionPercentage(tourData)
     const result = await tourService.saveWorkflowDraft(
@@ -636,8 +645,7 @@ export default function CreateTourPage() {
       createWorkflowSnapshot(),
     )
 
-    setCurrentTourId(result.tourId)
-    setTourData((prev) => ({ ...prev, id: result.tourId } as Partial<Tour>))
+    rememberTourId(result.tourId)
     return result.tourId
   }
 

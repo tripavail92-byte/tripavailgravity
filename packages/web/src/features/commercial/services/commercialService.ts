@@ -513,6 +513,7 @@ export const commercialService = {
         .select(`
           id,
           batch_reference,
+          operator_user_id,
           scheduled_for,
           status,
           total_gross_amount,
@@ -521,6 +522,7 @@ export const commercialService = {
           total_recovery_deduction_amount,
           created_at
         `)
+        .eq('operator_user_id', operatorUserId)
         .order('scheduled_for', { ascending: false })
         .limit(10),
     ])

@@ -575,6 +575,7 @@ export const tourService = {
       updatedAt: string
     },
   ) {
+    const effectiveTourId = tourId || data.id || null
     const now = new Date().toISOString()
     const { draft_data: existingDraftData, ...restData } = data as Partial<Tour> & {
       draft_data?: Record<string, any> | null
@@ -658,11 +659,11 @@ export const tourService = {
       updated_at: now,
     }
 
-    if (tourId) {
+    if (effectiveTourId) {
       const { data: tour, error } = await supabase
         .from('tours')
         .update(payload as any)
-        .eq('id', tourId)
+        .eq('id', effectiveTourId)
         .eq('operator_id', operatorId)
         .select('id')
         .single()
@@ -677,7 +678,11 @@ export const tourService = {
     } else {
       let insertResponse = await supabase
         .from('tours')
-        .insert({ ...payload, workflow_status: 'draft' } as any)
+        .insert({
+          ...payload,
+          workflow_status: 'draft',
+          slug: payload.slug || buildFallbackSlug(payload.title),
+        } as any)
         .select('id')
         .single()
 

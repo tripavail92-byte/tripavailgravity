@@ -79,6 +79,12 @@ Verify:
 - cancellation policy is visible
 - payment policy text matches the selected booking mode
 
+Known blocker to record when using browser automation:
+
+- Stripe Payment Element may reject automated iframe keystrokes with `Your card number is incomplete` even though the checkout itself remains responsive
+- Treat this as a tooling limitation until Stripe completion-state logging is reviewed with `stripe_debug=1` or `localStorage['tripavail:stripe-debug']='1'`
+- Do not classify this specific symptom as a generic checkout freeze unless manual browser entry reproduces it
+
 ### Confirmation Page
 
 Verify:

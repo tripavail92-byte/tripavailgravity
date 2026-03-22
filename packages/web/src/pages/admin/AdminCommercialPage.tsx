@@ -180,13 +180,23 @@ export default function AdminCommercialPage() {
     setHoldReason(selectedOperator.payout_hold_reason ?? '')
   }, [selectedOperator])
 
+  const operatorPayoutsCleared = useMemo(() => {
+    if (!overview?.financeHealth) return overview?.financeSummary?.total_operator_payouts ?? 0
+
+    return (
+      overview.financeHealth.total_payouts_completed
+      + overview.financeHealth.total_payouts_scheduled
+      + overview.financeHealth.total_payouts_on_hold
+    )
+  }, [overview?.financeHealth, overview?.financeSummary?.total_operator_payouts])
+
   const summaryCards = overview?.financeSummary
     ? [
         { label: 'Customer payments', value: formatMoney(overview.financeSummary.total_customer_payments_collected), icon: CircleDollarSign },
         { label: 'Commission accrued', value: formatMoney(overview.financeSummary.total_commission_earned), icon: Banknote },
         { label: 'Held payouts', value: formatMoney(overview.financeSummary.total_held_amounts), icon: ShieldAlert },
-        { label: 'Operator payouts', value: formatMoney(overview.financeSummary.total_operator_payouts), icon: Wallet },
-        { label: 'Recovery offsets', value: formatMoney(overview.financeSummary.total_recovery_deductions), icon: ShieldAlert },
+        { label: 'Operator payouts cleared', value: formatMoney(operatorPayoutsCleared), icon: Wallet },
+        { label: 'Not-ready liability', value: formatMoney(overview.financeHealth?.total_operator_liability_not_ready ?? 0), icon: Users },
       ]
     : []
 
@@ -485,79 +495,6 @@ export default function AdminCommercialPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Fraud review queue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Operator</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Triggered</TableHead>
-                    <TableHead>Reason</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {flaggedOperators.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground">
-                        No operators currently require fraud review.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    flaggedOperators.map((profile) => (
-                      <TableRow key={profile.operator_user_id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-foreground">
-                              {profile.tour_operator_profiles?.company_name || profile.tour_operator_profiles?.contact_person || profile.operator_user_id.slice(0, 8)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{profile.operator_user_id.slice(0, 8).toUpperCase()}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">Review required</Badge>
-                        </TableCell>
-                        <TableCell>{formatTimestamp(profile.fraud_review_triggered_at)}</TableCell>
-                        <TableCell>{profile.fraud_review_reason ?? 'Manual review required'}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tier performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tier</TableHead>
-                    <TableHead>Operators</TableHead>
-                    <TableHead className="text-right">Average GMV</TableHead>
-                    <TableHead className="text-right">Average payout</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(overview?.tierReportRows ?? []).map((row) => (
-                    <TableRow key={row.membership_tier_code}>
-                      <TableCell>{row.display_name}</TableCell>
-                      <TableCell>{row.operators_count}</TableCell>
-                      <TableCell className="text-right">{formatMoney(row.average_gmv)}</TableCell>
-                      <TableCell className="text-right">{formatMoney(row.average_payout)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
             <Card>
               <CardHeader>
@@ -642,6 +579,80 @@ export default function AdminCommercialPage() {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Fraud review queue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Triggered</TableHead>
+                    <TableHead>Reason</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {flaggedOperators.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground">
+                        No operators currently require fraud review.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    flaggedOperators.map((profile) => (
+                      <TableRow key={profile.operator_user_id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {profile.tour_operator_profiles?.company_name || profile.tour_operator_profiles?.contact_person || profile.operator_user_id.slice(0, 8)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{profile.operator_user_id.slice(0, 8).toUpperCase()}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">Review required</Badge>
+                        </TableCell>
+                        <TableCell>{formatTimestamp(profile.fraud_review_triggered_at)}</TableCell>
+                        <TableCell>{profile.fraud_review_reason ?? 'Manual review required'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Tier performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tier</TableHead>
+                    <TableHead>Operators</TableHead>
+                    <TableHead className="text-right">Average GMV</TableHead>
+                    <TableHead className="text-right">Average payout</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(overview?.tierReportRows ?? []).map((row) => (
+                    <TableRow key={row.membership_tier_code}>
+                      <TableCell>{row.display_name}</TableCell>
+                      <TableCell>{row.operators_count}</TableCell>
+                      <TableCell className="text-right">{formatMoney(row.average_gmv)}</TableCell>
+                      <TableCell className="text-right">{formatMoney(row.average_payout)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
         </TabsContent>
 
         <TabsContent value="operators" className="space-y-6 pt-4">

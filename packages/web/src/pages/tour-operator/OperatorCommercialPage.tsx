@@ -92,6 +92,15 @@ function formatPromoWindow(startsAt?: string | null, endsAt?: string | null) {
   return `Ends ${formatTimestamp(endsAt)}`
 }
 
+function formatTierName(value?: string | null) {
+  if (!value) return '—'
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 function toOperatorPromoForm(promotion: CommercialPromotion): OperatorPromoFormState {
   return {
     title: promotion.title,
@@ -267,12 +276,26 @@ export default function OperatorCommercialPage() {
     [payoutRows],
   )
 
+  const resolvedTierName =
+    tier?.display_name
+    ?? formatTierName(profile?.membership_tier_code)
+    ?? formatTierName(billingRows[0]?.membership_tier_code)
+  const resolvedCommissionRate = tier?.commission_rate ?? profile?.commission_rate ?? 0
+  const resolvedPublishLimit = tier?.monthly_publish_limit ?? null
+  const publishedTripsThisCycle = profile?.monthly_published_tours_count ?? performance?.published_trips ?? 0
+  const publishLimitCaption =
+    typeof resolvedPublishLimit === 'number' && resolvedPublishLimit > 0
+      ? `${publishedTripsThisCycle}/${resolvedPublishLimit} publish slots used`
+      : publishedTripsThisCycle > 0
+        ? `${publishedTripsThisCycle} published trip${publishedTripsThisCycle === 1 ? '' : 's'} this cycle`
+        : 'Publish limit not configured yet'
+
   const stats = [
     {
       label: 'Current tier',
-      value: tier?.display_name ?? '—',
+      value: resolvedTierName,
       icon: Gem,
-      caption: `${profile?.commission_rate ?? 0}% commission`,
+      caption: `${resolvedCommissionRate}% commission`,
     },
     {
       label: 'Cycle GMV',
@@ -290,7 +313,7 @@ export default function OperatorCommercialPage() {
       label: 'Next billing date',
       value: formatDate(profile?.next_billing_date),
       icon: CreditCard,
-      caption: `${profile?.monthly_published_tours_count ?? 0}/${tier?.monthly_publish_limit ?? 0} publish slots used`,
+      caption: publishLimitCaption,
     },
   ]
 
@@ -366,7 +389,15 @@ export default function OperatorCommercialPage() {
                   <Entitlement label="Multi-city pickup" enabled={Boolean(tier?.pickup_multi_city_enabled)} />
                   <Entitlement label="Google Maps support" enabled={Boolean(tier?.google_maps_enabled)} />
                   <Entitlement label="AI itinerary tools" enabled={Boolean(tier?.ai_itinerary_enabled)} />
-                  <Entitlement label="Cycle publish limit" enabled description={`${tier?.monthly_publish_limit ?? 0} trips`} />
+                  <Entitlement
+                    label="Cycle publish limit"
+                    enabled={Boolean(resolvedPublishLimit && resolvedPublishLimit > 0)}
+                    description={
+                      typeof resolvedPublishLimit === 'number' && resolvedPublishLimit > 0
+                        ? `${resolvedPublishLimit} trips`
+                        : 'Not configured yet'
+                    }
+                  />
                 </CardContent>
               </Card>
             </div>

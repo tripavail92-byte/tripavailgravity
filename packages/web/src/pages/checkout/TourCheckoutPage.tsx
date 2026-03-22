@@ -36,6 +36,28 @@ interface CountdownTimer {
   seconds: number
 }
 
+function logStripeDebug(event: string, payload: Record<string, unknown> = {}) {
+  if (typeof window === 'undefined') return
+
+  const params = new URLSearchParams(window.location.search)
+  const enabled =
+    params.get('stripe_debug') === '1' || window.localStorage.getItem('tripavail:stripe-debug') === '1'
+
+  if (!enabled) return
+
+  const globalWindow = window as Window & {
+    __tripavailStripeDebug?: Array<Record<string, unknown>>
+  }
+  const entry = {
+    ts: new Date().toISOString(),
+    event,
+    ...payload,
+  }
+
+  globalWindow.__tripavailStripeDebug = [...(globalWindow.__tripavailStripeDebug ?? []), entry]
+  console.info('[stripe-debug]', entry)
+}
+
 export default function TourCheckoutPage() {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
@@ -839,6 +861,7 @@ export default function TourCheckoutPage() {
                       )}
                     </Button>
                   )}
+                  </div>
                 </GlassContent>
               </GlassCard>
 
@@ -882,16 +905,49 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [paymentReady, setPaymentReady] = useState(false)
+  const [lastPaymentEvent, setLastPaymentEvent] = useState<{
+    complete: boolean
+    empty: boolean
+    collapsed?: boolean
+    valueType: string | null
+  } | null>(null)
+  const stripeDebugEnabled =
+    typeof window !== 'undefined'
+    && (new URLSearchParams(window.location.search).get('stripe_debug') === '1'
+      || window.localStorage.getItem('tripavail:stripe-debug') === '1')
 
   const handlePay = async () => {
-    if (!stripe || !elements) return
+    if (!stripe || !elements) {
+      logStripeDebug('payment_submit_blocked', {
+        bookingId: props.bookingId,
+        hasStripe: Boolean(stripe),
+        hasElements: Boolean(elements),
+        paymentReady,
+        lastPaymentEvent,
+      })
+      return
+    }
+
     const paymentElement = elements.getElement(PaymentElement)
     if (!paymentElement) {
+      logStripeDebug('payment_element_missing', {
+        bookingId: props.bookingId,
+        paymentReady,
+        lastPaymentEvent,
+      })
       setError('Payment form is still loading. Please wait a moment and try again.')
       return
     }
+
     setSubmitting(true)
     setError(null)
+    logStripeDebug('payment_submit_started', {
+      bookingId: props.bookingId,
+      chargeAmount: props.chargeAmount,
+      remainingAmount: props.remainingAmount,
+      paymentReady,
+      lastPaymentEvent,
+    })
 
     try {
       const returnUrl =
@@ -905,16 +961,35 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
       })
 
       if (result.error) {
+        logStripeDebug('payment_submit_result', {
+          bookingId: props.bookingId,
+          outcome: 'error',
+          message: result.error.message || 'Payment failed',
+          paymentIntentStatus: result.paymentIntent?.status ?? null,
+          lastPaymentEvent,
+        })
         throw new Error(result.error.message || 'Payment failed')
       }
 
       const paymentIntentId = result.paymentIntent?.id
+      logStripeDebug('payment_submit_result', {
+        bookingId: props.bookingId,
+        outcome: 'success',
+        paymentIntentId: paymentIntentId ?? null,
+        paymentIntentStatus: result.paymentIntent?.status ?? null,
+        lastPaymentEvent,
+      })
       if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
         navigate(
           `/booking/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`,
         )
       }
     } catch (err) {
+      logStripeDebug('payment_submit_exception', {
+        bookingId: props.bookingId,
+        message: err instanceof Error ? err.message : 'Payment failed',
+        lastPaymentEvent,
+      })
       setError(err instanceof Error ? err.message : 'Payment failed')
     } finally {
       setSubmitting(false)
@@ -924,8 +999,30 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
   return (
     <div className="space-y-4">
       <PaymentElement
-        onReady={() => setPaymentReady(true)}
-        onChange={() => {
+        onReady={() => {
+          setPaymentReady(true)
+          logStripeDebug('payment_element_ready', {
+            bookingId: props.bookingId,
+            chargeAmount: props.chargeAmount,
+            remainingAmount: props.remainingAmount,
+          })
+        }}
+        onChange={(event: any) => {
+          const snapshot = {
+            complete: Boolean(event?.complete),
+            empty: Boolean(event?.empty),
+            collapsed: typeof event?.collapsed === 'boolean' ? event.collapsed : undefined,
+            valueType:
+              event?.value && typeof event.value === 'object' && 'type' in event.value
+                ? String(event.value.type ?? '')
+                : null,
+          }
+
+          setLastPaymentEvent(snapshot)
+          logStripeDebug('payment_element_change', {
+            bookingId: props.bookingId,
+            ...snapshot,
+          })
           if (error) setError(null)
         }}
       />
@@ -933,6 +1030,12 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
       {!paymentReady && !error && (
         <div className="type-caption text-muted-foreground">Loading secure payment form...</div>
       )}
+
+      {stripeDebugEnabled && lastPaymentEvent ? (
+        <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          Stripe debug: ready={paymentReady ? 'yes' : 'no'} complete={lastPaymentEvent.complete ? 'yes' : 'no'} empty={lastPaymentEvent.empty ? 'yes' : 'no'} type={lastPaymentEvent.valueType || 'unknown'}
+        </div>
+      ) : null}
 
       {error && <div className="type-body-sm text-destructive">{error}</div>}
 

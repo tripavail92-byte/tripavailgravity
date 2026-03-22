@@ -124,6 +124,9 @@ export function TourPricingStep({
   )
   const isDepositBelowTierMinimum = normalizedDepositPercentage < effectiveMinimumDeposit
   const promoValidationError = validateTourPricingPromoDraft(promoDraft)
+  const isPromoEnabled = Boolean(promoDraft.enabled)
+  const hasGroupDiscounts = Boolean(data.group_discounts)
+  const hasSeasonalPricing = Boolean(data.seasonal_pricing)
   const availableDepositOptions = Array.from(
     new Set(
       [...DEPOSIT_OPTIONS, effectiveMinimumDeposit].filter(
@@ -476,14 +479,14 @@ export function TourPricingStep({
                 </p>
               </div>
               <Switch
-                checked={promoDraft.enabled}
+                checked={isPromoEnabled}
                 onCheckedChange={(enabled) => updatePromoDraft({ enabled })}
                 className="data-[state=checked]:bg-primary"
               />
             </div>
 
             <AnimatePresence>
-              {promoDraft.enabled ? (
+              {isPromoEnabled ? (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -643,14 +646,14 @@ export function TourPricingStep({
             </p>
           </div>
           <Switch
-            checked={data.group_discounts}
+            checked={hasGroupDiscounts}
             onCheckedChange={(v) => handleInputChange('group_discounts', v)}
             className="data-[state=checked]:bg-primary"
           />
         </div>
 
         <AnimatePresence>
-          {data.group_discounts && (
+          {hasGroupDiscounts && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -788,14 +791,14 @@ export function TourPricingStep({
             </p>
           </div>
           <Switch
-            checked={data.seasonal_pricing}
+            checked={hasSeasonalPricing}
             onCheckedChange={(v) => handleInputChange('seasonal_pricing', v)}
             className="data-[state=checked]:bg-primary"
           />
         </div>
 
         <AnimatePresence>
-          {data.seasonal_pricing && (
+          {hasSeasonalPricing && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
