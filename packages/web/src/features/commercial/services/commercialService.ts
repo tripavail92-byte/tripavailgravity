@@ -119,6 +119,62 @@ export interface OperatorPayoutBatch {
   created_at: string
 }
 
+function inferOperatorBatchStatus(rows: OperatorPayoutReportRow[]): string {
+  if (rows.some((row) => row.payout_status === 'on_hold')) return 'on_hold'
+  if (rows.some((row) => row.payout_status === 'recovery_pending')) return 'recovery_pending'
+  if (rows.every((row) => row.payout_status === 'paid')) return 'paid'
+  if (rows.some((row) => row.payout_status === 'scheduled')) return 'scheduled'
+  if (rows.some((row) => row.payout_status === 'eligible')) return 'eligible'
+  if (rows.every((row) => row.payout_status === 'reversed')) return 'reversed'
+  return rows[0]?.payout_status ?? 'not_ready'
+}
+
+function summarizeOperatorPayoutBatches(rows: OperatorPayoutReportRow[]): OperatorPayoutBatch[] {
+  const batches = new Map<string, OperatorPayoutBatch>()
+  const groupedRows = new Map<string, OperatorPayoutReportRow[]>()
+
+  for (const row of rows) {
+    if (!row.batch_reference || !row.payout_batch_scheduled_for) continue
+
+    const key = row.batch_reference
+    const existingRows = groupedRows.get(key) ?? []
+    existingRows.push(row)
+    groupedRows.set(key, existingRows)
+
+    const existingBatch = batches.get(key)
+    if (!existingBatch) {
+      batches.set(key, {
+        id: key,
+        batch_reference: row.batch_reference,
+        scheduled_for: row.payout_batch_scheduled_for,
+        status: row.payout_status,
+        total_gross_amount: row.gross_amount,
+        total_commission_amount: row.commission_retained_by_tripavail,
+        total_operator_payable: row.net_operator_payable_amount,
+        total_recovery_deduction_amount: row.recovery_deduction_amount,
+        created_at: row.payout_batch_scheduled_for,
+      })
+      continue
+    }
+
+    existingBatch.total_gross_amount += row.gross_amount
+    existingBatch.total_commission_amount += row.commission_retained_by_tripavail
+    existingBatch.total_operator_payable += row.net_operator_payable_amount
+    existingBatch.total_recovery_deduction_amount += row.recovery_deduction_amount
+    if (new Date(row.payout_batch_scheduled_for).getTime() > new Date(existingBatch.scheduled_for).getTime()) {
+      existingBatch.scheduled_for = row.payout_batch_scheduled_for
+    }
+  }
+
+  for (const [key, batch] of batches) {
+    batch.status = inferOperatorBatchStatus(groupedRows.get(key) ?? [])
+  }
+
+  return Array.from(batches.values()).sort(
+    (left, right) => new Date(right.scheduled_for).getTime() - new Date(left.scheduled_for).getTime(),
+  )
+}
+
 export interface CommercialPromotion {
   id: string
   operator_user_id: string
@@ -463,7 +519,7 @@ export const commercialService = {
     payoutRows: OperatorPayoutReportRow[]
     payoutBatches: OperatorPayoutBatch[]
   }> {
-    const [profileResult, performanceResult, billingResult, payoutResult, batchesResult] = await Promise.all([
+    const [profileResult, performanceResult, billingResult, payoutResult] = await Promise.all([
       (supabase.from('operator_commercial_profiles' as any) as any)
         .select(`
           operator_user_id,
@@ -509,31 +565,15 @@ export const commercialService = {
         .select('*')
         .eq('operator_user_id', operatorUserId)
         .order('payout_due_at', { ascending: false, nullsFirst: false }),
-      (supabase.from('operator_payout_batches' as any) as any)
-        .select(`
-          id,
-          batch_reference,
-          operator_user_id,
-          scheduled_for,
-          status,
-          total_gross_amount,
-          total_commission_amount,
-          total_operator_payable,
-          total_recovery_deduction_amount,
-          created_at
-        `)
-        .eq('operator_user_id', operatorUserId)
-        .order('scheduled_for', { ascending: false })
-        .limit(10),
     ])
 
     if (profileResult.error) throw profileResult.error
     if (performanceResult.error) throw performanceResult.error
     if (billingResult.error) throw billingResult.error
     if (payoutResult.error) throw payoutResult.error
-    if (batchesResult.error) throw batchesResult.error
 
     const profile = profileResult.data ? mapProfile(profileResult.data) : null
+    const payoutRows = (payoutResult.data ?? []).map(mapPayoutRow)
     let tier: CommercialTierConfig | null = null
 
     if (profile?.membership_tier_code) {
@@ -564,8 +604,8 @@ export const commercialService = {
       tier,
       performance: performanceResult.data ? mapPerformance(performanceResult.data) : null,
       billingRows: (billingResult.data ?? []).map(mapBillingRow),
-      payoutRows: (payoutResult.data ?? []).map(mapPayoutRow),
-      payoutBatches: (batchesResult.data ?? []).map(mapBatch),
+      payoutRows,
+      payoutBatches: summarizeOperatorPayoutBatches(payoutRows).slice(0, 10),
     }
   },
 
