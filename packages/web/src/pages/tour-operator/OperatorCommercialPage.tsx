@@ -285,7 +285,7 @@ export default function OperatorCommercialPage() {
       label: 'Current tier',
       value: resolvedTierName,
       icon: Gem,
-      caption: `${resolvedCommissionRate}% commission`,
+      caption: `${resolvedCommissionRate}% platform fee rate`,
     },
     {
       label: 'Cycle GMV',

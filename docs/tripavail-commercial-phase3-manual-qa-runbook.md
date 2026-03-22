@@ -31,9 +31,9 @@ Run one ordered manual QA pass across operator, traveller, and admin commercial 
 Verify:
 
 - current tier is visible
-- commission rate is visible
+- platform fee rate is visible
 - trips used versus publish limit is visible
-- commission earned is visible
+- eligible payouts are visible
 - next billing date is visible
 - outstanding recovery is visible
 - cancellation penalty and payout hold state are visible
@@ -56,7 +56,7 @@ Verify:
 - paid payouts are visible when expected
 - on-hold payouts are visible when expected
 - recovery-pending rows are visible when expected
-- each row shows commission split, recovery deduction, and net operator payable
+- each row shows recovery deduction and net operator payable
 
 ### Operator Create-Tour Flow
 
@@ -147,6 +147,10 @@ Phase 3 passes only if:
 - payout and billing values align across operator and admin views
 - traveller deposit and balance messaging matches booking finance behavior
 - reconciliation remains at zero delta
+
+## Sign-Off Note
+
+Phase 3 final sign-off still requires one manual traveller checkout using direct human Stripe entry. Browser automation can validate surrounding UX and hold behavior, but it is not the authority for Stripe iframe completion.
 
 ## References
 
