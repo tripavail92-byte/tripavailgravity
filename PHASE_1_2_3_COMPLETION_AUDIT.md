@@ -104,9 +104,38 @@ This file is a review artifact summarizing what has been completed in Phase 1 an
 
 ---
 
-## Phase 3 — Admin Modules (Partially Completed / Started)
+## Phase 3 — Commercial + Admin QA Closure (Pending Final Manual Payment Sign-Off)
 
-Phase 3 in the original plan is “real admin modules (moderation-only).” We have started this phase with read-only data visibility so the UI is not blank.
+Phase 3 is now functionally complete from an engineering and production-fix perspective, but it is not yet fully signed off. The remaining gate is one final manual traveller payment pass using direct human Stripe entry.
+
+Current status: `Pending final manual payment sign-off`
+
+What is complete:
+
+- operator commercial production issues fixed and redeployed
+- admin commercial production issues fixed and redeployed
+- operator create-tour draft slug collision fixed and revalidated in production
+- pricing-step uncontrolled-to-controlled switch warning fixed and revalidated in production
+- operator commission amounts removed from operator-facing commercial surfaces
+- operator commercial `400` root cause fixed by removing the admin-only payout batch query from the operator path
+- Phase 3 runbook updated to reflect operator payout-only visibility and the manual Stripe sign-off requirement
+
+Remaining sign-off requirement:
+
+- one manual traveller checkout on production using direct human entry into Stripe Elements
+
+Why this remains open:
+
+- browser automation is not a reliable authority for Stripe iframe completion state
+- prior checkout investigation showed the app flow itself was responsive, but automated iframe keystrokes can be rejected with incomplete-card validation even when the product is functioning correctly
+
+Phase 3 should be marked fully complete only after that manual traveller payment pass succeeds.
+
+---
+
+## Earlier Phase 3 Foundation Work (Completed)
+
+Phase 3 in the original plan was “real admin modules (moderation-only).” That foundation work was completed earlier and remains part of the overall Phase 3 delivery.
 
 ### Completed in Phase 3 (read-only visibility)
 
