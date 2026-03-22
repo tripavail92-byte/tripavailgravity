@@ -27,6 +27,13 @@ function readEnvFile(filePath) {
   return values
 }
 
+function readOptionalTextFile(filePath) {
+  if (!fs.existsSync(filePath)) return null
+
+  const value = fs.readFileSync(filePath, 'utf8').trim()
+  return value || null
+}
+
 export function loadRemoteDbEnv() {
   const root = process.cwd()
   return {
@@ -57,12 +64,40 @@ function buildSupabaseDirectDatabaseUrl(env) {
   return `postgresql://postgres:${encodeURIComponent(databasePassword)}@db.${projectId}.supabase.co:5432/postgres`
 }
 
+function buildSupabasePoolerDatabaseUrl(env) {
+  const root = process.cwd()
+  const databasePassword =
+    env.Database_password ||
+    env.DATABASE_PASSWORD ||
+    env.SUPABASE_DB_PASSWORD ||
+    null
+
+  const explicitPoolerUrl =
+    env.SUPABASE_POOLER_URL ||
+    env.POOLER_DATABASE_URL ||
+    env.SUPABASE_POOLER_DATABASE_URL ||
+    readOptionalTextFile(path.join(root, 'supabase', '.temp', 'pooler-url'))
+
+  if (!explicitPoolerUrl) return null
+
+  try {
+    const url = new URL(explicitPoolerUrl)
+    if (!url.password && databasePassword) {
+      url.password = databasePassword
+    }
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 export function resolveRemoteConnectionString(env = loadRemoteDbEnv()) {
   return (
     env.DATABASE_URL ||
     env.SUPABASE_DB_URL ||
     env.REMOTE_DATABASE_URL ||
     env.SUPABASE_REMOTE_DATABASE_URL ||
+    buildSupabasePoolerDatabaseUrl(env) ||
     buildSupabaseDirectDatabaseUrl(env) ||
     null
   )
