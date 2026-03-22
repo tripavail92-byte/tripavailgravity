@@ -23,13 +23,23 @@ CREATE TABLE IF NOT EXISTS public.tours (
     max_age INT DEFAULT 100,
     difficulty_level TEXT DEFAULT 'easy',
     languages TEXT[] DEFAULT '{}',
+    group_discounts BOOLEAN DEFAULT FALSE,
+    pricing_tiers JSONB DEFAULT '[]'::jsonb,
+    seasonal_pricing BOOLEAN DEFAULT FALSE,
+    peak_season_multiplier NUMERIC DEFAULT 1.2,
+    off_season_multiplier NUMERIC DEFAULT 0.8,
+    deposit_required BOOLEAN DEFAULT FALSE,
+    deposit_percentage NUMERIC DEFAULT 0,
+    cancellation_policy TEXT DEFAULT 'flexible',
     rating NUMERIC DEFAULT 0,
     review_count INT DEFAULT 0,
     is_active BOOLEAN DEFAULT FALSE,
     is_verified BOOLEAN DEFAULT FALSE,
     is_featured BOOLEAN DEFAULT FALSE,
+    is_published BOOLEAN DEFAULT FALSE,
     itinerary JSONB DEFAULT '[]'::jsonb,
     schedules JSONB DEFAULT '[]'::jsonb,
+    draft_data JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -57,7 +67,13 @@ CREATE TABLE IF NOT EXISTS public.tour_bookings (
     total_price NUMERIC NOT NULL,
     pax_count INT NOT NULL DEFAULT 1,
     booking_date TIMESTAMPTZ DEFAULT NOW(),
-    metadata JSONB DEFAULT '{}'::jsonb
+    expires_at TIMESTAMPTZ,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    stripe_payment_intent_id TEXT UNIQUE,
+    payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'processing', 'paid', 'failed', 'refunded')),
+    payment_method TEXT,
+    paid_at TIMESTAMPTZ,
+    payment_metadata JSONB DEFAULT '{}'::jsonb
 );
 
 -- 4. Enable RLS
@@ -108,6 +124,13 @@ BEGIN
         CREATE POLICY "Travelers can create bookings" ON public.tour_bookings FOR INSERT WITH CHECK (auth.uid() = traveler_id);
     END IF;
 
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Travelers can update own pending bookings' AND tablename = 'tour_bookings' AND schemaname = 'public') THEN
+        CREATE POLICY "Travelers can update own pending bookings" ON public.tour_bookings
+            FOR UPDATE
+            USING (auth.uid() = traveler_id AND status = 'pending')
+            WITH CHECK (auth.uid() = traveler_id AND status IN ('pending', 'confirmed', 'cancelled'));
+    END IF;
+
     -- Storage
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public view tour images' AND tablename = 'objects' AND schemaname = 'storage') THEN
         CREATE POLICY "Public view tour images" ON storage.objects FOR SELECT USING (bucket_id = 'tour-images');
@@ -131,3 +154,68 @@ BEGIN
         );
     END IF;
 END $$;
+
+CREATE INDEX IF NOT EXISTS idx_tour_bookings_schedule_status
+ON public.tour_bookings(schedule_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_tour_bookings_expires_at
+ON public.tour_bookings(expires_at)
+WHERE status = 'pending';
+
+CREATE INDEX IF NOT EXISTS idx_tour_bookings_stripe_payment_intent
+ON public.tour_bookings(stripe_payment_intent_id);
+
+CREATE INDEX IF NOT EXISTS idx_tour_bookings_payment_status
+ON public.tour_bookings(payment_status);
+
+CREATE OR REPLACE FUNCTION public.get_available_slots(schedule_id_param UUID)
+RETURNS INT AS $$
+DECLARE
+    total_cap INT;
+    confirmed_count INT;
+    active_pending_count INT;
+BEGIN
+    SELECT capacity INTO total_cap FROM public.tour_schedules WHERE id = schedule_id_param;
+
+    IF total_cap IS NULL THEN
+        RAISE EXCEPTION 'Schedule not found';
+    END IF;
+
+    SELECT COALESCE(SUM(pax_count), 0) INTO confirmed_count
+    FROM public.tour_bookings
+    WHERE schedule_id = schedule_id_param AND status = 'confirmed';
+
+    SELECT COALESCE(SUM(pax_count), 0) INTO active_pending_count
+    FROM public.tour_bookings
+    WHERE schedule_id = schedule_id_param
+      AND status = 'pending'
+      AND expires_at > NOW();
+
+    RETURN total_cap - confirmed_count - active_pending_count;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.update_schedule_booked_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.status = 'confirmed' AND (OLD.status IS NULL OR OLD.status != 'confirmed') THEN
+        UPDATE public.tour_schedules
+        SET booked_count = COALESCE(
+            (SELECT SUM(pax_count) FROM public.tour_bookings
+             WHERE schedule_id = NEW.schedule_id AND status = 'confirmed'),
+            0
+        )
+        WHERE id = NEW.schedule_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_schedule_booked_count ON public.tour_bookings;
+CREATE TRIGGER trigger_update_schedule_booked_count
+AFTER INSERT OR UPDATE ON public.tour_bookings
+FOR EACH ROW
+EXECUTE FUNCTION public.update_schedule_booked_count();
+
+GRANT EXECUTE ON FUNCTION public.get_available_slots(UUID) TO authenticated, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.update_schedule_booked_count() TO authenticated, service_role;

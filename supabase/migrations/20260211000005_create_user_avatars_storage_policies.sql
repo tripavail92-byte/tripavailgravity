@@ -6,43 +6,55 @@
 -- If you see: "must be owner of table objects"
 -- you are NOT running this as an owner/admin role.
 -- Run this in Supabase Dashboard → SQL Editor as the project owner (it typically runs as `postgres`).
--- If the storage tables are owned by `supabase_storage_admin`, run the next line first:
-SET ROLE supabase_storage_admin;
+DO $$
+DECLARE
+  v_storage_owner TEXT;
+BEGIN
+  SELECT tableowner
+  INTO v_storage_owner
+  FROM pg_tables
+  WHERE schemaname = 'storage'
+    AND tablename = 'objects';
 
--- Ensure storage.objects RLS is enabled
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+  IF v_storage_owner IS NULL THEN
+    RAISE NOTICE 'Skipping avatar storage policies because storage.objects is unavailable';
+    RETURN;
+  END IF;
 
--- Drop existing policies (idempotent)
-DROP POLICY IF EXISTS "Public view user avatars" ON storage.objects;
-DROP POLICY IF EXISTS "Users upload own avatars" ON storage.objects;
-DROP POLICY IF EXISTS "Users update own avatars" ON storage.objects;
-DROP POLICY IF EXISTS "Users delete own avatars" ON storage.objects;
+  IF current_user <> v_storage_owner THEN
+    RAISE NOTICE 'Skipping avatar storage policies because current_user % does not own storage.objects (owner: %)', current_user, v_storage_owner;
+    RETURN;
+  END IF;
 
--- Public can read avatars (bucket is public and app uses getPublicUrl)
-CREATE POLICY "Public view user avatars" ON storage.objects
-  FOR SELECT
-  USING (bucket_id = 'user-avatars');
+  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
--- Users can upload/update/delete only inside their own folder: <uid>/...
-CREATE POLICY "Users upload own avatars" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'user-avatars'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  DROP POLICY IF EXISTS "Public view user avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Users upload own avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Users update own avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Users delete own avatars" ON storage.objects;
 
-CREATE POLICY "Users update own avatars" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (
-    bucket_id = 'user-avatars'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  CREATE POLICY "Public view user avatars" ON storage.objects
+    FOR SELECT
+    USING (bucket_id = 'user-avatars');
 
-CREATE POLICY "Users delete own avatars" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (
-    bucket_id = 'user-avatars'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  CREATE POLICY "Users upload own avatars" ON storage.objects
+    FOR INSERT TO authenticated
+    WITH CHECK (
+      bucket_id = 'user-avatars'
+      AND (storage.foldername(name))[1] = auth.uid()::text
+    );
 
-RESET ROLE;
+  CREATE POLICY "Users update own avatars" ON storage.objects
+    FOR UPDATE TO authenticated
+    USING (
+      bucket_id = 'user-avatars'
+      AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+
+  CREATE POLICY "Users delete own avatars" ON storage.objects
+    FOR DELETE TO authenticated
+    USING (
+      bucket_id = 'user-avatars'
+      AND (storage.foldername(name))[1] = auth.uid()::text
+    );
+END $$;

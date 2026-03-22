@@ -1,0 +1,6 @@
+-- Intentionally empty baseline seed file.
+--
+-- Local `supabase db reset` is configured to execute this file after applying
+-- migrations. Test-specific data is seeded by dedicated SQL fixtures and
+-- scripts, so the shared local reset path should remain a no-op unless the
+-- project adds common seed data later.

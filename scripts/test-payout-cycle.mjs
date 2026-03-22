@@ -118,7 +118,11 @@ async function main() {
         10000,
         1,
         TIMEZONE('UTC', NOW()) - INTERVAL '6 days',
-        '{}'::JSONB,
+        jsonb_build_object(
+          'operator_completion_confirmed_at', TO_CHAR(TIMEZONE('UTC', NOW()) - INTERVAL '4 days', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+          'traveler_completion_confirmed_at', TO_CHAR(TIMEZONE('UTC', NOW()) - INTERVAL '4 days', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+          'completion_confirmation_state', 'confirmed_by_both'
+        ),
         'paid',
         'pi_remote_payout_cycle',
         'full_online',

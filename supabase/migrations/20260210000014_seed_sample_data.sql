@@ -21,6 +21,40 @@
 -- Manual setup required in Supabase Dashboard:
 -- Run this after creating auth users via API or Dashboard
 
+-- Bootstrap the demo auth/public users if they are missing so clean replays do
+-- not depend on manual dashboard setup.
+WITH demo_users AS (
+    SELECT *
+    FROM (VALUES
+        ('90000000-0000-0000-0000-000000000001'::uuid, 'paradise-hotels@tripavail.demo', 'Grand Paradise Resort Owner'),
+        ('90000000-0000-0000-0000-000000000002'::uuid, 'luxury-stays@tripavail.demo', 'Serene Mountain Lodge Owner'),
+        ('90000000-0000-0000-0000-000000000003'::uuid, 'coastal-retreats@tripavail.demo', 'Tropical Beach Villa Owner'),
+        ('90000000-0000-0000-0000-000000000004'::uuid, 'bali-adventures@tripavail.demo', 'Bali Adventures Operator'),
+        ('90000000-0000-0000-0000-000000000005'::uuid, 'cultural-tours@tripavail.demo', 'Cultural Tours Operator'),
+        ('90000000-0000-0000-0000-000000000006'::uuid, 'extreme-sports@tripavail.demo', 'Extreme Sports Operator')
+    ) AS rows(id, email, full_name)
+)
+INSERT INTO auth.users (id, email, email_confirmed_at, created_at, updated_at)
+SELECT id, email, NOW(), NOW(), NOW()
+FROM demo_users
+ON CONFLICT (id) DO NOTHING;
+
+WITH demo_users AS (
+    SELECT *
+    FROM (VALUES
+        ('90000000-0000-0000-0000-000000000001'::uuid, 'paradise-hotels@tripavail.demo', 'Grand Paradise Resort Owner'),
+        ('90000000-0000-0000-0000-000000000002'::uuid, 'luxury-stays@tripavail.demo', 'Serene Mountain Lodge Owner'),
+        ('90000000-0000-0000-0000-000000000003'::uuid, 'coastal-retreats@tripavail.demo', 'Tropical Beach Villa Owner'),
+        ('90000000-0000-0000-0000-000000000004'::uuid, 'bali-adventures@tripavail.demo', 'Bali Adventures Operator'),
+        ('90000000-0000-0000-0000-000000000005'::uuid, 'cultural-tours@tripavail.demo', 'Cultural Tours Operator'),
+        ('90000000-0000-0000-0000-000000000006'::uuid, 'extreme-sports@tripavail.demo', 'Extreme Sports Operator')
+    ) AS rows(id, email, full_name)
+)
+INSERT INTO public.users (id, email, full_name)
+SELECT id, email, full_name
+FROM demo_users
+ON CONFLICT (id) DO NOTHING;
+
 -- ============================================
 -- 2. INSERT SAMPLE HOTELS
 -- ============================================
