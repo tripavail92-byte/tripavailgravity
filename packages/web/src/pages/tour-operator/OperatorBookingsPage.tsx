@@ -77,6 +77,10 @@ export default function OperatorBookingsPage() {
   const [actionNote, setActionNote] = useState('')
   const [submittingAction, setSubmittingAction] = useState(false)
   const highlightedBookingId = searchParams.get('bookingId')
+  const highlightedBooking = useMemo(
+    () => bookings.find((booking) => booking.id === highlightedBookingId) ?? null,
+    [bookings, highlightedBookingId],
+  )
 
   useEffect(() => {
     document.documentElement.setAttribute('data-role', 'tour_operator')
@@ -141,7 +145,7 @@ export default function OperatorBookingsPage() {
   useEffect(() => {
     if (!highlightedBookingId || bookings.length === 0) return
 
-    const matchingBooking = bookings.find((booking) => booking.id === highlightedBookingId)
+    const matchingBooking = highlightedBooking
     if (!matchingBooking) return
 
     const requiredTab = matchingBooking.status
@@ -157,7 +161,7 @@ export default function OperatorBookingsPage() {
     if (activeTab !== requiredTab) {
       setActiveTab(requiredTab)
     }
-  }, [activeTab, bookings, highlightedBookingId])
+  }, [activeTab, bookings.length, highlightedBooking, highlightedBookingId])
 
   useEffect(() => {
     if (!highlightedBookingId || loading) return
@@ -292,20 +296,55 @@ export default function OperatorBookingsPage() {
         </GlassCard>
 
         {highlightedBookingId ? (
-          <GlassCard variant="card" className="mb-6 rounded-3xl border border-primary/30 px-6 py-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Focused reservation view</p>
-                <p className="text-sm text-muted-foreground">
-                  The bookings table is highlighting the reservation linked from the commercial
-                  payout surface.
-                </p>
+          highlightedBooking ? (
+            <GlassCard
+              variant="card"
+              className="mb-6 rounded-3xl border border-primary/30 px-6 py-5"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Focused reservation view</p>
+                  <p className="text-sm text-muted-foreground">
+                    The bookings table is highlighting the reservation linked from the commercial
+                    payout surface.
+                  </p>
+                </div>
+                <Button variant="outline" className="rounded-2xl" onClick={clearHighlightedBooking}>
+                  Clear highlight
+                </Button>
               </div>
-              <Button variant="outline" className="rounded-2xl" onClick={clearHighlightedBooking}>
-                Clear highlight
-              </Button>
-            </div>
-          </GlassCard>
+            </GlassCard>
+          ) : !loading ? (
+            <GlassCard
+              variant="card"
+              className="mb-6 rounded-3xl border border-warning/30 px-6 py-5"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Linked booking unavailable
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    The commercial page linked to a booking that is not available in your current
+                    operator booking list. It may be archived, reassigned, or filtered out of this
+                    surface.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" className="rounded-2xl" onClick={handleRefreshBookings}>
+                    Refresh bookings
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl"
+                    onClick={clearHighlightedBooking}
+                  >
+                    Clear link
+                  </Button>
+                </div>
+              </div>
+            </GlassCard>
+          ) : null
         ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -363,7 +402,7 @@ export default function OperatorBookingsPage() {
                         key={booking.id}
                         id={`operator-booking-row-${booking.id}`}
                         className={
-                          booking.id === highlightedBookingId
+                          booking.id === highlightedBooking?.id
                             ? 'bg-primary/5 ring-1 ring-primary/30'
                             : undefined
                         }

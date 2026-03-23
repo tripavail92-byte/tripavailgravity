@@ -1,3 +1,4 @@
+import { bookingMessengerService } from '@/features/messaging/services/bookingMessengerService'
 import { supabase } from '@/lib/supabase'
 
 export type MembershipTierCode = 'gold' | 'diamond' | 'platinum'
@@ -119,6 +120,36 @@ export interface OperatorPayoutBatch {
   created_at: string
 }
 
+export type OperatorPayoutDisputeStatus = 'submitted' | 'in_review' | 'resolved' | 'withdrawn'
+
+export interface OperatorPayoutDisputeCase {
+  id: string
+  operator_user_id: string
+  payout_item_id: string
+  booking_id: string
+  conversation_id: string | null
+  dispute_category: string
+  requested_action: string
+  status: OperatorPayoutDisputeStatus
+  reason_summary: string
+  evidence_notes: string | null
+  reconciliation_report: Record<string, unknown>
+  support_escalated_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OperatorPayoutDisputeUpsert {
+  operator_user_id: string
+  payout_item_id: string
+  booking_id: string
+  dispute_category: string
+  requested_action: string
+  reason_summary: string
+  evidence_notes?: string | null
+  reconciliation_report?: Record<string, unknown>
+}
+
 export interface CommercialAuditLogRow {
   id: string
   admin_id: string
@@ -175,7 +206,10 @@ function summarizeOperatorPayoutBatches(rows: OperatorPayoutReportRow[]): Operat
     existingBatch.total_commission_amount += row.commission_retained_by_tripavail
     existingBatch.total_operator_payable += row.net_operator_payable_amount
     existingBatch.total_recovery_deduction_amount += row.recovery_deduction_amount
-    if (new Date(row.payout_batch_scheduled_for).getTime() > new Date(existingBatch.scheduled_for).getTime()) {
+    if (
+      new Date(row.payout_batch_scheduled_for).getTime() >
+      new Date(existingBatch.scheduled_for).getTime()
+    ) {
       existingBatch.scheduled_for = row.payout_batch_scheduled_for
     }
   }
@@ -185,7 +219,8 @@ function summarizeOperatorPayoutBatches(rows: OperatorPayoutReportRow[]): Operat
   }
 
   return Array.from(batches.values()).sort(
-    (left, right) => new Date(right.scheduled_for).getTime() - new Date(left.scheduled_for).getTime(),
+    (left, right) =>
+      new Date(right.scheduled_for).getTime() - new Date(left.scheduled_for).getTime(),
   )
 }
 
@@ -329,7 +364,8 @@ function mapProfile(row: any): OperatorCommercialProfile {
     payout_hold: Boolean(row.payout_hold),
     payout_hold_reason: row.payout_hold_reason ?? null,
     operator_fault_cancellation_count: toNumber(row.operator_fault_cancellation_count),
-    operator_fault_cancellation_window_started_at: row.operator_fault_cancellation_window_started_at ?? null,
+    operator_fault_cancellation_window_started_at:
+      row.operator_fault_cancellation_window_started_at ?? null,
     cancellation_penalty_active: Boolean(row.cancellation_penalty_active),
     cancellation_penalty_triggered_at: row.cancellation_penalty_triggered_at ?? null,
     fraud_review_required: Boolean(row.fraud_review_required),
@@ -362,6 +398,28 @@ function mapPerformance(row: any): OperatorPerformanceReport {
     ai_usage: toNumber(row.ai_usage),
     pickup_usage: toNumber(row.pickup_usage),
     map_usage: toNumber(row.map_usage),
+  }
+}
+
+function mapPayoutDisputeCase(row: any): OperatorPayoutDisputeCase {
+  return {
+    id: row.id,
+    operator_user_id: row.operator_user_id,
+    payout_item_id: row.payout_item_id,
+    booking_id: row.booking_id,
+    conversation_id: row.conversation_id ?? null,
+    dispute_category: row.dispute_category,
+    requested_action: row.requested_action,
+    status: row.status,
+    reason_summary: row.reason_summary,
+    evidence_notes: row.evidence_notes ?? null,
+    reconciliation_report:
+      row.reconciliation_report && typeof row.reconciliation_report === 'object'
+        ? row.reconciliation_report
+        : {},
+    support_escalated_at: row.support_escalated_at ?? null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   }
 }
 
@@ -458,9 +516,10 @@ function mapPromotion(row: any): CommercialPromotion {
     funding_source: row.funding_source,
     discount_type: row.discount_type,
     discount_value: toNumber(row.discount_value),
-    max_discount_value: row.max_discount_value === null || row.max_discount_value === undefined
-      ? null
-      : toNumber(row.max_discount_value),
+    max_discount_value:
+      row.max_discount_value === null || row.max_discount_value === undefined
+        ? null
+        : toNumber(row.max_discount_value),
     is_active: Boolean(row.is_active),
     starts_at: row.starts_at ?? null,
     ends_at: row.ends_at ?? null,
@@ -490,9 +549,11 @@ function mapBatchActionResult(row: any): PayoutBatchActionResult {
     previous_status: row.previous_status ?? undefined,
     items_reversed: row.items_reversed === undefined ? undefined : toNumber(row.items_reversed),
     recovery_items: row.recovery_items === undefined ? undefined : toNumber(row.recovery_items),
-    total_recovery_amount: row.total_recovery_amount === undefined ? undefined : toNumber(row.total_recovery_amount),
+    total_recovery_amount:
+      row.total_recovery_amount === undefined ? undefined : toNumber(row.total_recovery_amount),
     items_paid: row.items_paid === undefined ? undefined : toNumber(row.items_paid),
-    total_operator_payable: row.total_operator_payable === undefined ? undefined : toNumber(row.total_operator_payable),
+    total_operator_payable:
+      row.total_operator_payable === undefined ? undefined : toNumber(row.total_operator_payable),
     paid_at: row.paid_at ?? null,
   }
 }
@@ -581,7 +642,8 @@ export const commercialService = {
   }> {
     const [profileResult, performanceResult, billingResult, payoutResult] = await Promise.all([
       (supabase.from('operator_commercial_profiles' as any) as any)
-        .select(`
+        .select(
+          `
           operator_user_id,
           operational_status,
           kyc_status,
@@ -610,7 +672,8 @@ export const commercialService = {
             contact_person,
             account_status
           )
-        `)
+        `,
+        )
         .eq('operator_user_id', operatorUserId)
         .maybeSingle(),
       (supabase.from('operator_performance_report_v' as any) as any)
@@ -669,6 +732,55 @@ export const commercialService = {
     }
   },
 
+  async listOperatorPayoutDisputeCases(
+    operatorUserId: string,
+  ): Promise<OperatorPayoutDisputeCase[]> {
+    const { data, error } = await (supabase.from('operator_payout_dispute_cases' as any) as any)
+      .select(
+        'id, operator_user_id, payout_item_id, booking_id, conversation_id, dispute_category, requested_action, status, reason_summary, evidence_notes, reconciliation_report, support_escalated_at, created_at, updated_at',
+      )
+      .eq('operator_user_id', operatorUserId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data ?? []).map(mapPayoutDisputeCase)
+  },
+
+  async submitOperatorPayoutDisputeCase(
+    payload: OperatorPayoutDisputeUpsert,
+  ): Promise<OperatorPayoutDisputeCase> {
+    const conversation = await bookingMessengerService.getOrCreateConversation(
+      'tour_booking',
+      payload.booking_id,
+    )
+    const escalation = await bookingMessengerService.escalateSupport({
+      conversationId: conversation.conversationId,
+      reason: `${payload.dispute_category}: ${payload.reason_summary.trim()}`,
+    })
+
+    const { data, error } = await (supabase.from('operator_payout_dispute_cases' as any) as any)
+      .insert({
+        operator_user_id: payload.operator_user_id,
+        payout_item_id: payload.payout_item_id,
+        booking_id: payload.booking_id,
+        conversation_id: conversation.conversationId,
+        dispute_category: payload.dispute_category.trim(),
+        requested_action: payload.requested_action.trim(),
+        status: 'submitted',
+        reason_summary: payload.reason_summary.trim(),
+        evidence_notes: payload.evidence_notes?.trim() || null,
+        reconciliation_report: payload.reconciliation_report ?? {},
+        support_escalated_at: escalation.supportEscalatedAt,
+      })
+      .select(
+        'id, operator_user_id, payout_item_id, booking_id, conversation_id, dispute_category, requested_action, status, reason_summary, evidence_notes, reconciliation_report, support_escalated_at, created_at, updated_at',
+      )
+      .single()
+
+    if (error) throw error
+    return mapPayoutDisputeCase(data)
+  },
+
   async getAdminCommercialOverview(): Promise<{
     financeSummary: AdminFinanceSummary | null
     financeHealth: AdminFinanceHealth | null
@@ -679,11 +791,21 @@ export const commercialService = {
     payoutRows: OperatorPayoutReportRow[]
     payoutBatches: OperatorPayoutBatch[]
   }> {
-    const [summaryResult, healthResult, snapshotResult, tierReportResult, profileResult, billingResult, payoutResult, batchResult] = await Promise.all([
+    const [
+      summaryResult,
+      healthResult,
+      snapshotResult,
+      tierReportResult,
+      profileResult,
+      billingResult,
+      payoutResult,
+      batchResult,
+    ] = await Promise.all([
       (supabase.from('admin_finance_summary_v' as any) as any).select('*').maybeSingle(),
       (supabase.from('admin_finance_health_v' as any) as any).select('*').maybeSingle(),
       (supabase.from('operator_booking_finance_snapshots' as any) as any)
-        .select(`
+        .select(
+          `
           booking_id,
           operator_user_id,
           payment_collected,
@@ -695,11 +817,15 @@ export const commercialService = {
           promo_owner,
           promo_funding_source,
           promo_discount_value
-        `)
+        `,
+        )
         .limit(2000),
-      (supabase.from('membership_tier_report_v' as any) as any).select('*').order('display_name', { ascending: true }),
+      (supabase.from('membership_tier_report_v' as any) as any)
+        .select('*')
+        .order('display_name', { ascending: true }),
       (supabase.from('operator_commercial_profiles' as any) as any)
-        .select(`
+        .select(
+          `
           operator_user_id,
           operational_status,
           kyc_status,
@@ -728,7 +854,8 @@ export const commercialService = {
             contact_person,
             account_status
           )
-        `)
+        `,
+        )
         .order('created_at', { ascending: false }),
       (supabase.from('operator_billing_report_v' as any) as any)
         .select('*')
@@ -739,7 +866,8 @@ export const commercialService = {
         .order('payout_due_at', { ascending: false, nullsFirst: false })
         .limit(500),
       (supabase.from('operator_payout_batches' as any) as any)
-        .select(`
+        .select(
+          `
           id,
           batch_reference,
           scheduled_for,
@@ -749,7 +877,8 @@ export const commercialService = {
           total_operator_payable,
           total_recovery_deduction_amount,
           created_at
-        `)
+        `,
+        )
         .order('scheduled_for', { ascending: false })
         .limit(250),
     ])
@@ -792,7 +921,8 @@ export const commercialService = {
 
   async listOperatorPromotions(operatorUserId: string): Promise<CommercialPromotion[]> {
     const { data, error } = await (supabase.from('operator_promotions' as any) as any)
-      .select(`
+      .select(
+        `
         id,
         operator_user_id,
         applicable_tour_id,
@@ -813,7 +943,8 @@ export const commercialService = {
           id,
           title
         )
-      `)
+      `,
+      )
       .eq('operator_user_id', operatorUserId)
       .order('created_at', { ascending: false })
 
@@ -823,7 +954,8 @@ export const commercialService = {
 
   async listAdminPromotions(): Promise<CommercialPromotion[]> {
     const { data, error } = await (supabase.from('operator_promotions' as any) as any)
-      .select(`
+      .select(
+        `
         id,
         operator_user_id,
         applicable_tour_id,
@@ -844,7 +976,8 @@ export const commercialService = {
           id,
           title
         )
-      `)
+      `,
+      )
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -853,7 +986,8 @@ export const commercialService = {
 
   async listCommercialAuditHistory(limit = 100): Promise<CommercialAuditLogRow[]> {
     const { data, error } = await (supabase.from('admin_action_logs' as any) as any)
-      .select(`
+      .select(
+        `
         id,
         admin_id,
         entity_type,
@@ -867,7 +1001,8 @@ export const commercialService = {
           email,
           role
         )
-      `)
+      `,
+      )
       .in('entity_type', ['commercial_profile', 'payout_batch', 'payout_item', 'promotion'])
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -894,7 +1029,8 @@ export const commercialService = {
         starts_at: payload.starts_at ?? null,
         ends_at: payload.ends_at ?? null,
       })
-      .select(`
+      .select(
+        `
         id,
         operator_user_id,
         applicable_tour_id,
@@ -915,7 +1051,8 @@ export const commercialService = {
           id,
           title
         )
-      `)
+      `,
+      )
       .single()
 
     if (error) throw error
@@ -942,7 +1079,8 @@ export const commercialService = {
         updated_at: new Date().toISOString(),
       })
       .eq('id', promotionId)
-      .select(`
+      .select(
+        `
         id,
         operator_user_id,
         applicable_tour_id,
@@ -963,7 +1101,8 @@ export const commercialService = {
           id,
           title
         )
-      `)
+      `,
+      )
       .single()
 
     if (error) throw error
@@ -991,7 +1130,11 @@ export const commercialService = {
     return data
   },
 
-  async updateOperatorPayoutHold(operatorUserId: string, payoutHold: boolean, payoutHoldReason?: string) {
+  async updateOperatorPayoutHold(
+    operatorUserId: string,
+    payoutHold: boolean,
+    payoutHoldReason?: string,
+  ) {
     const { data, error } = await supabase.rpc('admin_update_operator_payout_hold' as any, {
       p_operator_user_id: operatorUserId,
       p_payout_hold: payoutHold,
@@ -1008,7 +1151,7 @@ export const commercialService = {
     })
 
     if (error) throw error
-    return Array.isArray(data) ? data[0] ?? null : data ?? null
+    return Array.isArray(data) ? (data[0] ?? null) : (data ?? null)
   },
 
   async markPayoutBatchPaid(batchId: string) {
@@ -1017,7 +1160,9 @@ export const commercialService = {
     })
 
     if (error) throw error
-    return data ? mapBatchActionResult(Array.isArray(data) ? data[0] ?? null : data ?? null) : null
+    return data
+      ? mapBatchActionResult(Array.isArray(data) ? (data[0] ?? null) : (data ?? null))
+      : null
   },
 
   async reversePayoutBatch(batchId: string, reason?: string) {
@@ -1027,7 +1172,9 @@ export const commercialService = {
     })
 
     if (error) throw error
-    return data ? mapBatchActionResult(Array.isArray(data) ? data[0] ?? null : data ?? null) : null
+    return data
+      ? mapBatchActionResult(Array.isArray(data) ? (data[0] ?? null) : (data ?? null))
+      : null
   },
 
   async resolvePayoutRecovery(payoutItemId: string, recoveredAmount?: number, reason?: string) {
@@ -1038,6 +1185,6 @@ export const commercialService = {
     })
 
     if (error) throw error
-    return data ? mapRecoveryResult(Array.isArray(data) ? data[0] ?? null : data ?? null) : null
+    return data ? mapRecoveryResult(Array.isArray(data) ? (data[0] ?? null) : (data ?? null)) : null
   },
 }

@@ -1,5 +1,16 @@
 import { format } from 'date-fns'
-import { BarChart3, CreditCard, Download, Gem, Rocket, ShieldAlert, Wallet } from 'lucide-react'
+import {
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  CreditCard,
+  Download,
+  Gem,
+  Rocket,
+  Scale,
+  ShieldAlert,
+  Wallet,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -30,6 +41,7 @@ import {
   commercialService,
   type CommercialTourOption,
   type OperatorBillingReportRow,
+  type OperatorPayoutDisputeCase,
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
 import { useAuth } from '@/hooks/useAuth'
@@ -78,6 +90,14 @@ type OperatorPromoFormState = {
   isActive: 'active' | 'inactive'
 }
 
+type OperatorDisputeFormState = {
+  payoutItemId: string
+  disputeCategory: string
+  requestedAction: string
+  reasonSummary: string
+  evidenceNotes: string
+}
+
 function createEmptyOperatorPromoForm(): OperatorPromoFormState {
   return {
     title: '',
@@ -91,6 +111,42 @@ function createEmptyOperatorPromoForm(): OperatorPromoFormState {
     endsAt: '',
     isActive: 'active',
   }
+}
+
+function createEmptyDisputeForm(): OperatorDisputeFormState {
+  return {
+    payoutItemId: '',
+    disputeCategory: 'other',
+    requestedAction: 'manual_reconciliation',
+    reasonSummary: '',
+    evidenceNotes: '',
+  }
+}
+
+function suggestedDisputeCategory(row: OperatorPayoutReportRow) {
+  if (row.payout_status === 'on_hold') return 'payout_hold'
+  if (row.payout_status === 'recovery_pending' || row.recovery_deduction_amount > 0) {
+    return 'recovery_deduction'
+  }
+  if (row.refund_amount > 0) return 'refund_mismatch'
+  if (row.promo_funding_source === 'operator' && row.promo_discount_value > 0) {
+    return 'promo_funding_mismatch'
+  }
+  if (row.commission_remaining > 0) return 'commission_mismatch'
+  return 'missing_payout'
+}
+
+function suggestedRequestedAction(row: OperatorPayoutReportRow) {
+  if (row.payout_status === 'on_hold') return 'release_payout'
+  if (row.payout_status === 'recovery_pending' || row.recovery_deduction_amount > 0) {
+    return 'review_recovery'
+  }
+  if (row.refund_amount > 0) return 'review_refund'
+  if (row.promo_funding_source === 'operator' && row.promo_discount_value > 0) {
+    return 'review_promo_funding'
+  }
+  if (row.commission_remaining > 0) return 'review_commission'
+  return 'manual_reconciliation'
 }
 
 function toDateTimeInputValue(value?: string | null) {
@@ -173,6 +229,143 @@ function payoutStatusExplanation(status?: string | null) {
   }
 }
 
+function exportFeedbackToneClass(tone: 'success' | 'error') {
+  return tone === 'success'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-destructive/30 bg-destructive/5 text-destructive'
+}
+
+function disputeCaseSummary(row: OperatorPayoutReportRow) {
+  if (row.payout_status === 'on_hold') {
+    return {
+      label: 'Payout hold',
+      detail: row.hold_reason ?? 'Finance review is blocking this payout item.',
+      nextStep: 'Review finance hold reason and keep booking evidence ready.',
+    }
+  }
+
+  if (row.payout_status === 'recovery_pending' || row.recovery_deduction_amount > 0) {
+    return {
+      label: 'Recovery deduction',
+      detail:
+        row.recovery_deduction_amount > 0
+          ? `${formatMoney(row.recovery_deduction_amount)} is still being offset from this payout item.`
+          : 'A recovery balance must be resolved before full payout release.',
+      nextStep: 'Match the recovery deduction against refund or offline collection records.',
+    }
+  }
+
+  if (row.refund_amount > 0) {
+    return {
+      label: 'Refund / dispute exposure',
+      detail: `${formatMoney(row.refund_amount)} has been refunded or disputed against this booking.`,
+      nextStep: 'Confirm traveler outcome and preserve the decision trail in the booking thread.',
+    }
+  }
+
+  if (row.commission_remaining > 0) {
+    return {
+      label: 'Commission still outstanding',
+      detail: `${formatMoney(row.commission_remaining)} remains in commission settlement for this booking.`,
+      nextStep: 'Wait for settlement to complete before expecting full operator release.',
+    }
+  }
+
+  return {
+    label: 'Reconciliation review',
+    detail:
+      'This booking should be checked against payout, refund, and promo records before escalation.',
+    nextStep: 'Verify payout status, promo attribution, and traveler outcome.',
+  }
+}
+
+function buildPayoutTimelineEvents(
+  row: OperatorPayoutReportRow,
+  selectedBatch?: { batch_reference: string; scheduled_for: string } | null,
+) {
+  const events: Array<{
+    label: string
+    timestamp: string | null
+    detail: string
+    tone: 'default' | 'warning' | 'success'
+  }> = []
+
+  if (row.travel_date) {
+    events.push({
+      label: 'Travel date',
+      timestamp: row.travel_date,
+      detail: 'The booking reached its service date and entered post-trip settlement checks.',
+      tone: 'default',
+    })
+  }
+
+  if (row.payout_due_at) {
+    events.push({
+      label: 'Eligible checkpoint',
+      timestamp: row.payout_due_at,
+      detail: 'This is the payout readiness date after the settlement window clears.',
+      tone: 'default',
+    })
+  }
+
+  if (
+    selectedBatch?.batch_reference &&
+    row.batch_reference &&
+    row.batch_reference === selectedBatch.batch_reference
+  ) {
+    events.push({
+      label: 'Assigned to batch',
+      timestamp: selectedBatch.scheduled_for,
+      detail: `${selectedBatch.batch_reference} is the scheduled release batch for this payout item.`,
+      tone: 'default',
+    })
+  }
+
+  if (row.payout_status === 'paid') {
+    events.push({
+      label: 'Paid out',
+      timestamp: row.paid_at ?? selectedBatch?.scheduled_for ?? null,
+      detail: 'Funds were released to the operator and this payout item is closed.',
+      tone: 'success',
+    })
+  } else if (row.payout_status === 'on_hold') {
+    events.push({
+      label: 'Manual hold',
+      timestamp: row.payout_due_at ?? selectedBatch?.scheduled_for ?? null,
+      detail: row.hold_reason ?? 'Finance paused this payout item for manual review.',
+      tone: 'warning',
+    })
+  } else if (row.payout_status === 'recovery_pending') {
+    events.push({
+      label: 'Recovery deduction',
+      timestamp: row.payout_due_at ?? selectedBatch?.scheduled_for ?? null,
+      detail:
+        row.recovery_deduction_amount > 0
+          ? `${formatMoney(row.recovery_deduction_amount)} is being deducted before release.`
+          : 'Recovery settlement is still pending on this booking.',
+      tone: 'warning',
+    })
+  } else if (row.payout_status === 'scheduled') {
+    events.push({
+      label: 'Awaiting release',
+      timestamp: selectedBatch?.scheduled_for ?? row.payout_batch_scheduled_for,
+      detail: 'This payout item is queued inside a scheduled batch and waiting for release.',
+      tone: 'default',
+    })
+  }
+
+  if (row.refund_amount > 0) {
+    events.push({
+      label: 'Refund impact',
+      timestamp: row.paid_at ?? row.payout_due_at ?? null,
+      detail: `${formatMoney(row.refund_amount)} reduced the payout path for this booking.`,
+      tone: 'warning',
+    })
+  }
+
+  return events
+}
+
 function toOperatorPromoForm(promotion: CommercialPromotion): OperatorPromoFormState {
   return {
     title: promotion.title,
@@ -219,6 +412,27 @@ export default function OperatorCommercialPage() {
   const [editingPromotionId, setEditingPromotionId] = useState<string | null>(null)
   const [promoSubmitting, setPromoSubmitting] = useState(false)
   const [promoError, setPromoError] = useState<string | null>(null)
+  const [disputeCases, setDisputeCases] = useState<OperatorPayoutDisputeCase[]>([])
+  const [disputeForm, setDisputeForm] = useState<OperatorDisputeFormState>(() =>
+    createEmptyDisputeForm(),
+  )
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false)
+  const [disputeFeedback, setDisputeFeedback] = useState<{
+    tone: 'success' | 'error'
+    message: string
+  } | null>(null)
+  const [invoiceExportFeedback, setInvoiceExportFeedback] = useState<{
+    tone: 'success' | 'error'
+    message: string
+  } | null>(null)
+  const [payoutExportFeedback, setPayoutExportFeedback] = useState<{
+    tone: 'success' | 'error'
+    message: string
+  } | null>(null)
+  const [reconciliationExportFeedback, setReconciliationExportFeedback] = useState<{
+    tone: 'success' | 'error'
+    message: string
+  } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -228,10 +442,11 @@ export default function OperatorCommercialPage() {
 
       try {
         setLoading(true)
-        const [overview, nextPromotions, nextTours] = await Promise.all([
+        const [overview, nextPromotions, nextTours, nextDisputeCases] = await Promise.all([
           commercialService.getOperatorCommercialOverview(user.id),
           commercialService.listOperatorPromotions(user.id),
           commercialService.listCommercialTours(user.id),
+          commercialService.listOperatorPayoutDisputeCases(user.id),
         ])
         if (cancelled) return
 
@@ -255,6 +470,7 @@ export default function OperatorCommercialPage() {
         })
         setPromotions(nextPromotions)
         setPromotionTours(nextTours)
+        setDisputeCases(nextDisputeCases)
         setError(null)
       } catch (loadError) {
         if (!cancelled) {
@@ -570,81 +786,411 @@ export default function OperatorCommercialPage() {
     profile?.payout_hold_reason,
     recoveryItemCount,
   ])
+  const payoutDisputeCases = useMemo(
+    () =>
+      payoutRows
+        .filter(
+          (row) =>
+            row.payout_status === 'on_hold' ||
+            row.payout_status === 'recovery_pending' ||
+            row.refund_amount > 0 ||
+            row.commission_remaining > 0,
+        )
+        .sort((left, right) => {
+          const leftTime = new Date(left.payout_due_at ?? left.travel_date ?? 0).getTime()
+          const rightTime = new Date(right.payout_due_at ?? right.travel_date ?? 0).getTime()
+          return rightTime - leftTime
+        })
+        .slice(0, 6),
+    [payoutRows],
+  )
+  const reconciliationSnapshot = useMemo(() => {
+    const totalGross = payoutRows.reduce((sum, row) => sum + row.gross_amount, 0)
+    const totalRefunds = payoutRows.reduce((sum, row) => sum + row.refund_amount, 0)
+    const totalCommissionOutstanding = payoutRows.reduce(
+      (sum, row) => sum + row.commission_remaining,
+      0,
+    )
+    const operatorFundedPromoExposure = payoutRows.reduce(
+      (sum, row) =>
+        row.promo_funding_source === 'operator' ? sum + row.promo_discount_value : sum,
+      0,
+    )
+
+    return {
+      totalGross,
+      totalRefunds,
+      totalCommissionOutstanding,
+      operatorFundedPromoExposure,
+      reviewRequired:
+        Boolean(profile?.payout_hold) ||
+        onHoldExposure > 0 ||
+        outstandingRecovery > 0 ||
+        totalRefunds > 0 ||
+        totalCommissionOutstanding > 0,
+    }
+  }, [onHoldExposure, outstandingRecovery, payoutRows, profile?.payout_hold])
+  const payoutDisputeCandidates = useMemo(() => {
+    const seen = new Set<string>()
+
+    return [...payoutDisputeCases, ...payoutRows]
+      .filter((row) => {
+        if (seen.has(row.payout_item_id)) return false
+        seen.add(row.payout_item_id)
+        return true
+      })
+      .slice(0, 24)
+  }, [payoutDisputeCases, payoutRows])
+  const selectedDisputeRow =
+    payoutDisputeCandidates.find((row) => row.payout_item_id === disputeForm.payoutItemId) ?? null
+  const selectedDisputeSummary = selectedDisputeRow ? disputeCaseSummary(selectedDisputeRow) : null
+  const latestDisputeCaseByPayoutItem = useMemo(() => {
+    const next = new Map<string, OperatorPayoutDisputeCase>()
+
+    for (const disputeCase of disputeCases) {
+      if (!next.has(disputeCase.payout_item_id)) {
+        next.set(disputeCase.payout_item_id, disputeCase)
+      }
+    }
+
+    return next
+  }, [disputeCases])
+
+  useEffect(() => {
+    setInvoiceExportFeedback(null)
+  }, [selectedBillingCycleId])
+
+  useEffect(() => {
+    setPayoutExportFeedback(null)
+  }, [selectedPayoutBatchId])
+
+  useEffect(() => {
+    setReconciliationExportFeedback(null)
+  }, [disputeCases, payoutRows])
+
+  useEffect(() => {
+    if (payoutDisputeCandidates.length === 0) return
+
+    const hasCurrentSelection = payoutDisputeCandidates.some(
+      (row) => row.payout_item_id === disputeForm.payoutItemId,
+    )
+
+    if (hasCurrentSelection) return
+
+    const preferredRow = payoutDisputeCandidates[0]
+    setDisputeForm((current) => ({
+      ...current,
+      payoutItemId: preferredRow.payout_item_id,
+      disputeCategory: suggestedDisputeCategory(preferredRow),
+      requestedAction: suggestedRequestedAction(preferredRow),
+    }))
+  }, [disputeForm.payoutItemId, payoutDisputeCandidates])
+
+  const handleDisputeFormChange = (field: keyof OperatorDisputeFormState, value: string) => {
+    setDisputeForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const handleDisputePayoutSelection = (payoutItemId: string) => {
+    const selectedRow = payoutDisputeCandidates.find((row) => row.payout_item_id === payoutItemId)
+
+    setDisputeForm((current) => ({
+      ...current,
+      payoutItemId,
+      disputeCategory: selectedRow
+        ? suggestedDisputeCategory(selectedRow)
+        : current.disputeCategory,
+      requestedAction: selectedRow
+        ? suggestedRequestedAction(selectedRow)
+        : current.requestedAction,
+    }))
+    setDisputeFeedback(null)
+  }
+
+  const handleSubmitDisputeCase = async () => {
+    if (!user?.id) return
+
+    if (!selectedDisputeRow) {
+      setDisputeFeedback({
+        tone: 'error',
+        message: 'Choose a payout item before submitting a dispute case.',
+      })
+      return
+    }
+
+    const reasonSummary = disputeForm.reasonSummary.trim()
+    if (!reasonSummary) {
+      setDisputeFeedback({
+        tone: 'error',
+        message: 'A short dispute summary is required before submitting the case.',
+      })
+      return
+    }
+
+    try {
+      setDisputeSubmitting(true)
+      setDisputeFeedback(null)
+
+      const createdCase = await commercialService.submitOperatorPayoutDisputeCase({
+        operator_user_id: user.id,
+        payout_item_id: selectedDisputeRow.payout_item_id,
+        booking_id: selectedDisputeRow.booking_id,
+        dispute_category: disputeForm.disputeCategory,
+        requested_action: disputeForm.requestedAction,
+        reason_summary: reasonSummary,
+        evidence_notes: disputeForm.evidenceNotes.trim() || null,
+        reconciliation_report: {
+          payout_status: selectedDisputeRow.payout_status,
+          gross_amount: selectedDisputeRow.gross_amount,
+          refund_amount: selectedDisputeRow.refund_amount,
+          commission_retained_by_tripavail: selectedDisputeRow.commission_retained_by_tripavail,
+          commission_remaining: selectedDisputeRow.commission_remaining,
+          recovery_deduction_amount: selectedDisputeRow.recovery_deduction_amount,
+          net_operator_payable_amount: selectedDisputeRow.net_operator_payable_amount,
+          promo_owner: selectedDisputeRow.promo_owner,
+          promo_funding_source: selectedDisputeRow.promo_funding_source,
+          promo_discount_value: selectedDisputeRow.promo_discount_value,
+          hold_reason: selectedDisputeRow.hold_reason,
+          batch_reference: selectedDisputeRow.batch_reference,
+          payout_due_at: selectedDisputeRow.payout_due_at,
+          paid_at: selectedDisputeRow.paid_at,
+        },
+      })
+
+      setDisputeCases((current) => [createdCase, ...current])
+      setDisputeFeedback({
+        tone: 'success',
+        message:
+          'Dispute case submitted and escalated to TripAvail support through the booking conversation.',
+      })
+      setDisputeForm((current) => ({
+        ...current,
+        reasonSummary: '',
+        evidenceNotes: '',
+      }))
+    } catch (submitError) {
+      setDisputeFeedback({
+        tone: 'error',
+        message:
+          submitError instanceof Error
+            ? submitError.message
+            : 'Failed to submit the payout dispute case.',
+      })
+    } finally {
+      setDisputeSubmitting(false)
+    }
+  }
+
+  const exportReconciliationReportCsv = () => {
+    if (payoutRows.length === 0) {
+      setReconciliationExportFeedback({
+        tone: 'error',
+        message: 'No payout rows are loaded, so there is no reconciliation report to export.',
+      })
+      return
+    }
+
+    const filename = `operator-reconciliation-report-${format(new Date(), 'yyyyMMdd-HHmmss')}.csv`
+
+    try {
+      downloadCsvFile(
+        filename,
+        [
+          'payout_item_id',
+          'booking_id',
+          'trip_name',
+          'travel_date',
+          'payout_status',
+          'gross_amount',
+          'refund_amount',
+          'commission_amount',
+          'commission_remaining',
+          'recovery_deduction_amount',
+          'net_operator_payable_amount',
+          'promo_owner',
+          'promo_funding_source',
+          'promo_discount_value',
+          'hold_reason',
+          'batch_reference',
+          'payout_due_at',
+          'paid_at',
+          'latest_dispute_status',
+          'latest_dispute_category',
+          'latest_dispute_reason',
+          'latest_dispute_created_at',
+          'support_escalated_at',
+        ],
+        payoutRows.map((row) => {
+          const disputeCase = latestDisputeCaseByPayoutItem.get(row.payout_item_id)
+
+          return [
+            row.payout_item_id,
+            row.booking_id,
+            row.trip_name,
+            row.travel_date,
+            row.payout_status,
+            row.gross_amount,
+            row.refund_amount,
+            row.commission_retained_by_tripavail,
+            row.commission_remaining,
+            row.recovery_deduction_amount,
+            row.net_operator_payable_amount,
+            row.promo_owner,
+            row.promo_funding_source,
+            row.promo_discount_value,
+            row.hold_reason,
+            row.batch_reference,
+            row.payout_due_at,
+            row.paid_at,
+            disputeCase?.status,
+            disputeCase?.dispute_category,
+            disputeCase?.reason_summary,
+            disputeCase?.created_at,
+            disputeCase?.support_escalated_at,
+          ]
+        }),
+      )
+      setReconciliationExportFeedback({
+        tone: 'success',
+        message: `${filename} downloaded with payout, promo funding, refund, and dispute evidence columns.`,
+      })
+    } catch (exportError) {
+      setReconciliationExportFeedback({
+        tone: 'error',
+        message:
+          exportError instanceof Error
+            ? exportError.message
+            : 'Failed to export the reconciliation report.',
+      })
+    }
+  }
 
   const exportSelectedInvoiceCsv = () => {
-    if (!selectedBillingRow) return
+    if (!selectedBillingRow) {
+      setInvoiceExportFeedback({
+        tone: 'error',
+        message: 'No invoice is selected yet, so there is nothing to export.',
+      })
+      return
+    }
 
-    downloadCsvFile(
-      `operator-invoice-${selectedBillingRow.invoice_number ?? selectedBillingRow.billing_cycle_id}.csv`,
-      [
-        'billing_cycle_id',
-        'invoice_number',
-        'membership_tier_code',
-        'cycle_start',
-        'cycle_end',
-        'membership_fee',
-        'prior_cycle_commission_credit',
-        'adjustment_applied',
-        'final_membership_charge',
-        'invoice_status',
-        'payment_status',
-        'issued_at',
-        'due_date',
-        'paid_at',
-      ],
-      [
+    const filename = `operator-invoice-${selectedBillingRow.invoice_number ?? selectedBillingRow.billing_cycle_id}.csv`
+
+    try {
+      downloadCsvFile(
+        filename,
         [
-          selectedBillingRow.billing_cycle_id,
-          selectedBillingRow.invoice_number,
-          selectedBillingRow.membership_tier_code,
-          selectedBillingRow.cycle_start,
-          selectedBillingRow.cycle_end,
-          selectedBillingRow.membership_fee,
-          selectedBillingRow.prior_cycle_commission_credit,
-          selectedBillingRow.adjustment_applied,
-          selectedBillingRow.final_membership_charge,
-          selectedBillingRow.invoice_status,
-          selectedBillingRow.payment_status,
-          selectedBillingRow.issued_at,
-          selectedBillingRow.due_date,
-          selectedBillingRow.paid_at,
+          'billing_cycle_id',
+          'invoice_number',
+          'membership_tier_code',
+          'cycle_start',
+          'cycle_end',
+          'membership_fee',
+          'prior_cycle_commission_credit',
+          'adjustment_applied',
+          'final_membership_charge',
+          'invoice_status',
+          'payment_status',
+          'issued_at',
+          'due_date',
+          'paid_at',
         ],
-      ],
-    )
+        [
+          [
+            selectedBillingRow.billing_cycle_id,
+            selectedBillingRow.invoice_number,
+            selectedBillingRow.membership_tier_code,
+            selectedBillingRow.cycle_start,
+            selectedBillingRow.cycle_end,
+            selectedBillingRow.membership_fee,
+            selectedBillingRow.prior_cycle_commission_credit,
+            selectedBillingRow.adjustment_applied,
+            selectedBillingRow.final_membership_charge,
+            selectedBillingRow.invoice_status,
+            selectedBillingRow.payment_status,
+            selectedBillingRow.issued_at,
+            selectedBillingRow.due_date,
+            selectedBillingRow.paid_at,
+          ],
+        ],
+      )
+      setInvoiceExportFeedback({
+        tone: 'success',
+        message: `${filename} downloaded with the selected invoice detail.`,
+      })
+    } catch (exportError) {
+      setInvoiceExportFeedback({
+        tone: 'error',
+        message:
+          exportError instanceof Error
+            ? exportError.message
+            : 'Invoice export failed. Try again after reloading the page.',
+      })
+    }
   }
 
   const exportSelectedPayoutBatchCsv = () => {
-    if (!selectedPayoutBatch) return
+    if (!selectedPayoutBatch) {
+      setPayoutExportFeedback({
+        tone: 'error',
+        message: 'No payout batch is selected yet, so there is nothing to export.',
+      })
+      return
+    }
 
-    downloadCsvFile(
-      `operator-payout-batch-${selectedPayoutBatch.batch_reference}.csv`,
-      [
-        'batch_reference',
-        'scheduled_for',
-        'batch_status',
-        'booking_id',
-        'trip_name',
-        'travel_date',
-        'payout_status',
-        'gross_amount',
-        'commission_amount',
-        'recovery_deduction_amount',
-        'net_operator_payable_amount',
-      ],
-      selectedBatchRows.map((row) => [
-        selectedPayoutBatch.batch_reference,
-        selectedPayoutBatch.scheduled_for,
-        selectedPayoutBatch.status,
-        row.booking_id,
-        row.trip_name,
-        row.travel_date,
-        row.payout_status,
-        row.gross_amount,
-        row.commission_retained_by_tripavail,
-        row.recovery_deduction_amount,
-        row.net_operator_payable_amount,
-      ]),
-    )
+    if (selectedBatchRows.length === 0) {
+      setPayoutExportFeedback({
+        tone: 'error',
+        message:
+          'This payout batch does not have booking-level payout rows yet, so CSV export is unavailable.',
+      })
+      return
+    }
+
+    const filename = `operator-payout-batch-${selectedPayoutBatch.batch_reference}.csv`
+
+    try {
+      downloadCsvFile(
+        filename,
+        [
+          'batch_reference',
+          'scheduled_for',
+          'batch_status',
+          'booking_id',
+          'trip_name',
+          'travel_date',
+          'payout_status',
+          'gross_amount',
+          'commission_amount',
+          'recovery_deduction_amount',
+          'net_operator_payable_amount',
+        ],
+        selectedBatchRows.map((row) => [
+          selectedPayoutBatch.batch_reference,
+          selectedPayoutBatch.scheduled_for,
+          selectedPayoutBatch.status,
+          row.booking_id,
+          row.trip_name,
+          row.travel_date,
+          row.payout_status,
+          row.gross_amount,
+          row.commission_retained_by_tripavail,
+          row.recovery_deduction_amount,
+          row.net_operator_payable_amount,
+        ]),
+      )
+      setPayoutExportFeedback({
+        tone: 'success',
+        message: `${filename} downloaded with ${selectedBatchRows.length} payout item(s).`,
+      })
+    } catch (exportError) {
+      setPayoutExportFeedback({
+        tone: 'error',
+        message:
+          exportError instanceof Error
+            ? exportError.message
+            : 'Payout batch export failed. Try again after reloading the page.',
+      })
+    }
   }
 
   return (
@@ -974,6 +1520,15 @@ export default function OperatorCommercialPage() {
                     </Button>
                   </div>
                 </CardHeader>
+                {invoiceExportFeedback ? (
+                  <CardContent className="pb-0">
+                    <div
+                      className={`rounded-2xl border px-4 py-3 text-sm ${exportFeedbackToneClass(invoiceExportFeedback.tone)}`}
+                    >
+                      {invoiceExportFeedback.message}
+                    </div>
+                  </CardContent>
+                ) : null}
                 <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <Metric
                     label="Invoice reference"
@@ -1108,6 +1663,293 @@ export default function OperatorCommercialPage() {
 
             <Card className="mb-6 rounded-3xl border-border/60">
               <CardHeader>
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Scale className="h-5 w-5" />
+                    Payout disputes and reconciliation workflow
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-2xl"
+                    onClick={exportReconciliationReportCsv}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export reconciliation CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              {reconciliationExportFeedback ? (
+                <CardContent className="pb-0">
+                  <div
+                    className={`rounded-2xl border px-4 py-3 text-sm ${exportFeedbackToneClass(reconciliationExportFeedback.tone)}`}
+                  >
+                    {reconciliationExportFeedback.message}
+                  </div>
+                </CardContent>
+              ) : null}
+              <CardContent className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+                <div className="space-y-3">
+                  <div
+                    className={`rounded-2xl border p-4 ${reconciliationSnapshot.reviewRequired ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}
+                  >
+                    <p className="text-sm font-semibold text-foreground">
+                      {reconciliationSnapshot.reviewRequired
+                        ? 'Review required before the next release'
+                        : 'No active reconciliation blockers'}
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Keep payout evidence aligned across traveler outcomes, refund actions, promo
+                      funding, and finance holds before raising a formal dispute.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Metric
+                      label="Refund / dispute exposure"
+                      value={formatMoney(reconciliationSnapshot.totalRefunds)}
+                    />
+                    <Metric
+                      label="Commission still settling"
+                      value={formatMoney(reconciliationSnapshot.totalCommissionOutstanding)}
+                    />
+                    <Metric
+                      label="Operator-funded promo exposure"
+                      value={formatMoney(reconciliationSnapshot.operatorFundedPromoExposure)}
+                    />
+                    <Metric
+                      label="Tracked payout gross"
+                      value={formatMoney(reconciliationSnapshot.totalGross)}
+                    />
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Operator workflow</p>
+                    <p className="mt-2">
+                      1. Open the affected booking and confirm traveler, refund, and trip outcome
+                      details.
+                    </p>
+                    <p className="mt-2">
+                      2. Reconcile the payout row against promo funding, recovery deductions, and
+                      any offline collection proof.
+                    </p>
+                    <p className="mt-2">
+                      3. Escalate only after the booking thread contains the evidence finance will
+                      need to clear a hold or close a dispute.
+                    </p>
+                  </div>
+                  {selectedDisputeSummary ? (
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">Selected case context</p>
+                      <p className="mt-2">{selectedDisputeSummary.detail}</p>
+                      <p className="mt-2 text-foreground">
+                        Recommended next step: {selectedDisputeSummary.nextStep}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Submit payout dispute case
+                    </p>
+                    <div className="mt-4 grid gap-4">
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Payout item
+                        </label>
+                        <Select
+                          value={disputeForm.payoutItemId}
+                          onValueChange={handleDisputePayoutSelection}
+                        >
+                          <SelectTrigger className="rounded-2xl">
+                            <SelectValue placeholder="Select payout item" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {payoutDisputeCandidates.map((row) => (
+                              <SelectItem key={row.payout_item_id} value={row.payout_item_id}>
+                                {(row.trip_name ?? 'Trip booking').slice(0, 48)} ·{' '}
+                                {formatStatusLabel(row.payout_status)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            Category
+                          </label>
+                          <Select
+                            value={disputeForm.disputeCategory}
+                            onValueChange={(value) =>
+                              handleDisputeFormChange('disputeCategory', value)
+                            }
+                          >
+                            <SelectTrigger className="rounded-2xl">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="payout_hold">Payout hold</SelectItem>
+                              <SelectItem value="recovery_deduction">Recovery deduction</SelectItem>
+                              <SelectItem value="refund_mismatch">Refund mismatch</SelectItem>
+                              <SelectItem value="promo_funding_mismatch">
+                                Promo funding mismatch
+                              </SelectItem>
+                              <SelectItem value="commission_mismatch">
+                                Commission mismatch
+                              </SelectItem>
+                              <SelectItem value="missing_payout">Missing payout</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                            Requested action
+                          </label>
+                          <Select
+                            value={disputeForm.requestedAction}
+                            onValueChange={(value) =>
+                              handleDisputeFormChange('requestedAction', value)
+                            }
+                          >
+                            <SelectTrigger className="rounded-2xl">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="release_payout">Release payout</SelectItem>
+                              <SelectItem value="review_recovery">Review recovery</SelectItem>
+                              <SelectItem value="review_refund">Review refund</SelectItem>
+                              <SelectItem value="review_promo_funding">
+                                Review promo funding
+                              </SelectItem>
+                              <SelectItem value="review_commission">Review commission</SelectItem>
+                              <SelectItem value="manual_reconciliation">
+                                Manual reconciliation
+                              </SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Summary for support
+                        </label>
+                        <Input
+                          value={disputeForm.reasonSummary}
+                          onChange={(event) =>
+                            handleDisputeFormChange('reasonSummary', event.target.value)
+                          }
+                          placeholder="Summarize the payout mismatch or blocker"
+                          className="rounded-2xl"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Evidence notes
+                        </label>
+                        <Textarea
+                          value={disputeForm.evidenceNotes}
+                          onChange={(event) =>
+                            handleDisputeFormChange('evidenceNotes', event.target.value)
+                          }
+                          placeholder="Add refund proof, promo funding evidence, offline payment notes, or finance context"
+                          className="min-h-[120px] rounded-2xl border-border/60 bg-background/80"
+                        />
+                      </div>
+                      {disputeFeedback ? (
+                        <div
+                          className={`rounded-2xl border px-4 py-3 text-sm ${exportFeedbackToneClass(disputeFeedback.tone)}`}
+                        >
+                          {disputeFeedback.message}
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        {selectedDisputeRow ? (
+                          <Button asChild variant="link" className="h-auto p-0 text-primary">
+                            <Link
+                              to={`/operator/bookings?bookingId=${encodeURIComponent(selectedDisputeRow.booking_id)}`}
+                            >
+                              Open booking evidence
+                            </Link>
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">
+                            No payout item selected.
+                          </span>
+                        )}
+                        <Button
+                          className="rounded-2xl"
+                          onClick={handleSubmitDisputeCase}
+                          disabled={disputeSubmitting || payoutDisputeCandidates.length === 0}
+                        >
+                          {disputeSubmitting ? 'Submitting…' : 'Submit dispute case'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Submitted cases
+                    </p>
+                    {disputeCases.length === 0 ? (
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                        No payout dispute cases have been submitted yet.
+                      </div>
+                    ) : (
+                      disputeCases.map((disputeCase) => {
+                        const row = payoutRows.find(
+                          (candidate) => candidate.payout_item_id === disputeCase.payout_item_id,
+                        )
+
+                        return (
+                          <div
+                            key={disputeCase.id}
+                            className="rounded-2xl border border-border/60 bg-background/70 p-4"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <p className="font-medium text-foreground">
+                                  {row?.trip_name ?? 'Trip booking'}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {formatStatusLabel(disputeCase.dispute_category)} · Submitted{' '}
+                                  {formatTimestamp(disputeCase.created_at)}
+                                </p>
+                              </div>
+                              <Badge
+                                variant="outline"
+                                className="border-border/60 bg-background/70"
+                              >
+                                {formatStatusLabel(disputeCase.status)}
+                              </Badge>
+                            </div>
+                            <p className="mt-3 text-sm text-foreground">
+                              {disputeCase.reason_summary}
+                            </p>
+                            {disputeCase.evidence_notes ? (
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                {disputeCase.evidence_notes}
+                              </p>
+                            ) : null}
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              Requested action: {formatStatusLabel(disputeCase.requested_action)}
+                              {disputeCase.support_escalated_at
+                                ? ` · Support escalated ${formatTimestamp(disputeCase.support_escalated_at)}`
+                                : ''}
+                            </p>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6 rounded-3xl border-border/60">
+              <CardHeader>
                 <CardTitle className="text-lg">Payout batches</CardTitle>
               </CardHeader>
               <CardContent>
@@ -1174,12 +2016,22 @@ export default function OperatorCommercialPage() {
                       size="sm"
                       className="rounded-2xl"
                       onClick={exportSelectedPayoutBatchCsv}
+                      disabled={selectedBatchRows.length === 0}
                     >
                       <Download className="mr-2 h-4 w-4" />
                       Export batch CSV
                     </Button>
                   </div>
                 </CardHeader>
+                {payoutExportFeedback ? (
+                  <CardContent className="pb-0">
+                    <div
+                      className={`rounded-2xl border px-4 py-3 text-sm ${exportFeedbackToneClass(payoutExportFeedback.tone)}`}
+                    >
+                      {payoutExportFeedback.message}
+                    </div>
+                  </CardContent>
+                ) : null}
                 <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <Metric label="Batch reference" value={selectedPayoutBatch.batch_reference} />
                   <Metric
@@ -1224,42 +2076,83 @@ export default function OperatorCommercialPage() {
                         Included bookings
                       </p>
                       <div className="space-y-3">
-                        {selectedBatchRows.map((row) => (
-                          <div
-                            key={row.payout_item_id}
-                            className="flex flex-col gap-1 rounded-2xl border border-border/50 bg-background/70 px-4 py-3 md:flex-row md:items-center md:justify-between"
-                          >
-                            <div>
-                              <p className="font-medium text-foreground">
-                                {row.trip_name ?? 'Trip booking'}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Booking {row.booking_id.slice(0, 8).toUpperCase()} · Travel{' '}
-                                {formatDate(row.travel_date)}
-                              </p>
+                        {selectedBatchRows.map((row) => {
+                          const timelineEvents = buildPayoutTimelineEvents(row, selectedPayoutBatch)
+
+                          return (
+                            <div
+                              key={row.payout_item_id}
+                              className="rounded-2xl border border-border/50 bg-background/70 px-4 py-3"
+                            >
+                              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">
+                                    {row.trip_name ?? 'Trip booking'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Booking {row.booking_id.slice(0, 8).toUpperCase()} · Travel{' '}
+                                    {formatDate(row.travel_date)}
+                                  </p>
+                                </div>
+                                <div className="text-sm text-muted-foreground md:text-right">
+                                  <p>{formatStatusLabel(row.payout_status)}</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {payoutStatusExplanation(row.payout_status)}
+                                  </p>
+                                  <p className="font-medium text-foreground">
+                                    {formatMoney(row.net_operator_payable_amount)}
+                                  </p>
+                                  <Button
+                                    asChild
+                                    variant="link"
+                                    className="mt-1 h-auto p-0 text-primary"
+                                  >
+                                    <Link
+                                      to={`/operator/bookings?bookingId=${encodeURIComponent(row.booking_id)}`}
+                                    >
+                                      Open booking
+                                    </Link>
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                                {timelineEvents.map((event) => (
+                                  <div
+                                    key={`${row.payout_item_id}-${event.label}`}
+                                    className={
+                                      event.tone === 'success'
+                                        ? 'rounded-2xl border border-emerald-200 bg-emerald-50 p-3'
+                                        : event.tone === 'warning'
+                                          ? 'rounded-2xl border border-amber-200 bg-amber-50 p-3'
+                                          : 'rounded-2xl border border-border/60 bg-muted/20 p-3'
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {event.tone === 'success' ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                      ) : event.tone === 'warning' ? (
+                                        <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                      ) : (
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                      )}
+                                      <p className="text-sm font-medium text-foreground">
+                                        {event.label}
+                                      </p>
+                                    </div>
+                                    <p className="mt-2 text-xs font-medium text-muted-foreground">
+                                      {event.timestamp
+                                        ? formatTimestamp(event.timestamp)
+                                        : 'Awaiting timestamp'}
+                                    </p>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {event.detail}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <div className="text-sm text-muted-foreground md:text-right">
-                              <p>{formatStatusLabel(row.payout_status)}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {payoutStatusExplanation(row.payout_status)}
-                              </p>
-                              <p className="font-medium text-foreground">
-                                {formatMoney(row.net_operator_payable_amount)}
-                              </p>
-                              <Button
-                                asChild
-                                variant="link"
-                                className="mt-1 h-auto p-0 text-primary"
-                              >
-                                <Link
-                                  to={`/operator/bookings?bookingId=${encodeURIComponent(row.booking_id)}`}
-                                >
-                                  Open booking
-                                </Link>
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )}
