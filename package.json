@@ -9,6 +9,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "qa:provision:phase6-operator": "node scripts/provision-phase6-operator-qa.mjs",
     "db:run-remote": "node scripts/run-remote-sql-file.mjs",
     "db:sql:remote": "node scripts/run-remote-sql-file.mjs",
     "db:finance:health": "node scripts/finance-health-report.mjs",

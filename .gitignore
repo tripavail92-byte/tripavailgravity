@@ -49,3 +49,4 @@ STRIPE_EXPORT.md
 !railway.json
 !*config*.json
 !.vscode/*.json
+supabase/.branches/
