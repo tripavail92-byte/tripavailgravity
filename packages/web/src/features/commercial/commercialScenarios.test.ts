@@ -149,4 +149,108 @@ describe('commercial scenario coverage', () => {
 
     expect(goldSnapshot.commissionAmount).not.toBe(diamondSnapshot.commissionAmount)
   })
+
+  it('keeps operator-funded promo discounts on the operator receivable side of payout scenarios', () => {
+    const result = evaluatePayoutScenario({
+      threshold: 5000,
+      bookings: [
+        {
+          bookingId: 'operator-funded-promo',
+          bookingTotal: 80000,
+          membershipTier: 'gold',
+          bookingStatus: 'completed',
+          paymentSettled: true,
+          scheduleEnded: true,
+          operatorKycApproved: true,
+          promoFundingSource: 'operator',
+          promoDiscountValue: 10000,
+        },
+      ],
+    })
+
+    expect(result.thresholdMet).toBe(true)
+    expect(result.bookings[0]).toMatchObject({
+      commissionTotal: 16000,
+      operatorPayableAmount: 64000,
+      settlementState: 'eligible_for_payout',
+      payoutStatus: 'eligible',
+    })
+  })
+
+  it('lets platform-funded promo discounts preserve more operator payable in payout scenarios', () => {
+    const result = evaluatePayoutScenario({
+      threshold: 5000,
+      bookings: [
+        {
+          bookingId: 'platform-funded-promo',
+          bookingTotal: 80000,
+          membershipTier: 'gold',
+          bookingStatus: 'completed',
+          paymentSettled: true,
+          scheduleEnded: true,
+          operatorKycApproved: true,
+          promoFundingSource: 'platform',
+          promoDiscountValue: 10000,
+        },
+      ],
+    })
+
+    expect(result.thresholdMet).toBe(true)
+    expect(result.bookings[0]).toMatchObject({
+      commissionTotal: 6000,
+      operatorPayableAmount: 74000,
+      settlementState: 'eligible_for_payout',
+      payoutStatus: 'eligible',
+    })
+  })
+
+  it('keeps non-promo payout scenarios unchanged after promo support is added', () => {
+    const result = evaluatePayoutScenario({
+      threshold: 5000,
+      bookings: [
+        {
+          bookingId: 'baseline-booking',
+          bookingTotal: 100000,
+          membershipTier: 'gold',
+          bookingStatus: 'completed',
+          paymentSettled: true,
+          scheduleEnded: true,
+          operatorKycApproved: true,
+        },
+      ],
+    })
+
+    expect(result.bookings[0]).toMatchObject({
+      commissionTotal: 20000,
+      operatorPayableAmount: 80000,
+      settlementState: 'eligible_for_payout',
+      payoutStatus: 'eligible',
+    })
+  })
+
+  it('keeps refunded promo-applied bookings out of payout eligibility', () => {
+    const result = evaluatePayoutScenario({
+      bookings: [
+        {
+          bookingId: 'refunded-promo-booking',
+          bookingTotal: 80000,
+          membershipTier: 'gold',
+          bookingStatus: 'completed',
+          paymentSettled: true,
+          scheduleEnded: true,
+          refundAmount: 80000,
+          operatorKycApproved: true,
+          promoFundingSource: 'operator',
+          promoDiscountValue: 10000,
+        },
+      ],
+    })
+
+    expect(result.thresholdMet).toBe(false)
+    expect(result.bookings[0]).toMatchObject({
+      settlementState: 'refunded',
+      payoutStatus: 'not_ready',
+      operatorPayableAmount: 0,
+    })
+  })
 })

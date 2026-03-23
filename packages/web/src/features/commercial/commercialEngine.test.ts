@@ -89,6 +89,48 @@ describe('commercial engine', () => {
     })
   })
 
+  it('lets platform-funded promo discounts reduce retained commission before operator payable', () => {
+    expect(
+      buildBookingFinanceSnapshot({
+        bookingTotal: 80000,
+        paymentCollected: 80000,
+        commissionRate: 20,
+        membershipTier: 'gold',
+        promoFundingSource: 'platform',
+        promoDiscountValue: 10000,
+      }),
+    ).toMatchObject({
+      bookingTotal: 80000,
+      commissionRate: 20,
+      commissionAmount: 6000,
+      commissionTotal: 6000,
+      commissionCollected: 6000,
+      commissionRemaining: 0,
+      operatorReceivableEstimate: 74000,
+    })
+  })
+
+  it('keeps operator-funded promo discounts on the operator side of the booking math', () => {
+    expect(
+      buildBookingFinanceSnapshot({
+        bookingTotal: 80000,
+        paymentCollected: 80000,
+        commissionRate: 20,
+        membershipTier: 'gold',
+        promoFundingSource: 'operator',
+        promoDiscountValue: 10000,
+      }),
+    ).toMatchObject({
+      bookingTotal: 80000,
+      commissionRate: 20,
+      commissionAmount: 16000,
+      commissionTotal: 16000,
+      commissionCollected: 16000,
+      commissionRemaining: 0,
+      operatorReceivableEstimate: 64000,
+    })
+  })
+
   it('caps collected commission at total commission when deposit exceeds the fee due', () => {
     expect(
       calculateCommissionCollection({

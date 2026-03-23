@@ -37,6 +37,8 @@ export interface BookingFinanceSnapshotInput {
   commissionRate: number
   paymentCollected?: number
   refundAmount?: number
+  promoFundingSource?: 'operator' | 'platform' | null
+  promoDiscountValue?: number
   depositRequired?: boolean
   depositPercentage?: number
   depositUpfrontAmount?: number
@@ -66,6 +68,8 @@ export interface CommissionCollectionInput {
   commissionRate: number
   paymentCollected?: number
   refundAmount?: number
+  promoFundingSource?: 'operator' | 'platform' | null
+  promoDiscountValue?: number
 }
 
 export interface CommissionCollectionResult {
@@ -163,7 +167,12 @@ export function calculateCommissionCollection(
   const bookingTotal = normalizeMoney(Math.max(0, input.bookingTotal))
   const paymentCollected = normalizeMoney(Math.max(0, input.paymentCollected ?? bookingTotal))
   const refundAmount = normalizeMoney(Math.max(0, input.refundAmount ?? 0))
-  const commissionTotal = calculateCommissionAmount(bookingTotal, input.commissionRate)
+  const promoDiscountValue = normalizeMoney(Math.max(0, input.promoDiscountValue ?? 0))
+  const grossCommissionTotal = calculateCommissionAmount(bookingTotal, input.commissionRate)
+  const commissionTotal =
+    input.promoFundingSource === 'platform' && promoDiscountValue > 0
+      ? normalizeMoney(Math.max(0, grossCommissionTotal - Math.min(promoDiscountValue, grossCommissionTotal)))
+      : grossCommissionTotal
   const collectedBasisAmount = normalizeMoney(
     Math.max(0, Math.min(bookingTotal, paymentCollected - refundAmount)),
   )
@@ -257,6 +266,8 @@ export function buildBookingFinanceSnapshot(
     commissionRate,
     paymentCollected,
     refundAmount,
+    promoFundingSource: input.promoFundingSource ?? null,
+    promoDiscountValue: input.promoDiscountValue ?? 0,
   })
   const commissionAmount = commissionCollection.commissionTotal
   const operatorReceivableEstimate = normalizeMoney(

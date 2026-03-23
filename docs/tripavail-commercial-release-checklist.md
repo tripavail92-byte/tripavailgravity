@@ -4,6 +4,7 @@
 
 - Run `pnpm db:test:commercial-finance:remote`
 - Run `pnpm db:test:payouts:remote`
+- Run `pnpm db:test:promo-edge-cases:remote`
 - Run `pnpm db:test:payout-cycle`
 - Run `pnpm db:run-remote -- --file supabase/tests/admin_finance_health_cash_reconciliation_test.sql`
 

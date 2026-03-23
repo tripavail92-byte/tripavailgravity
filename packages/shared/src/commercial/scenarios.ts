@@ -32,6 +32,8 @@ export interface PayoutScenarioBookingInput {
   bookingTotal: number
   membershipTier: MembershipTierCode
   commissionRateSnapshot?: number
+  promoFundingSource?: 'operator' | 'platform' | null
+  promoDiscountValue?: number
   bookingStatus: 'pending' | 'confirmed' | 'completed' | 'cancelled'
   paymentSettled: boolean
   scheduleEnded: boolean
@@ -134,6 +136,8 @@ export function evaluatePayoutScenario(input: {
       bookingTotal: booking.bookingTotal,
       commissionRate,
       refundAmount: booking.refundAmount ?? 0,
+      promoFundingSource: booking.promoFundingSource ?? null,
+      promoDiscountValue: booking.promoDiscountValue ?? 0,
       membershipTier: booking.membershipTier,
     })
 
