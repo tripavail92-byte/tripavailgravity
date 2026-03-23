@@ -56,6 +56,8 @@ interface TourPickupLocationsStepProps {
   onUpdate: (data: Partial<Tour>) => void
   onNext: () => void
   onBack: () => void
+  allowGoogleMaps?: boolean
+  allowPickupMultiCity?: boolean
   tourId?: string | null
   ensureTourDraft?: () => Promise<string>
 }
@@ -612,6 +614,8 @@ export function TourPickupLocationsStep({
   onUpdate,
   onNext,
   onBack,
+  allowGoogleMaps = true,
+  allowPickupMultiCity = true,
   tourId,
   ensureTourDraft,
 }: TourPickupLocationsStepProps) {
@@ -653,17 +657,21 @@ export function TourPickupLocationsStep({
   )
 
   const activeExistsInList = useMemo(() => pickups.some((pickup) => pickup.key === active.key), [pickups, active.key])
+  const hasPickupLimitReached = useMemo(
+    () => !allowPickupMultiCity && !activeExistsInList && pickups.length >= 1,
+    [allowPickupMultiCity, activeExistsInList, pickups.length],
+  )
   const activeHasCoordinates = useMemo(
     () => typeof active.latitude === 'number' && typeof active.longitude === 'number' && isValidLatLng(active.latitude, active.longitude),
     [active.latitude, active.longitude],
   )
   const activeMapPreview = useMemo(
-    () => (activeHasCoordinates ? buildStaticMapPreviewUrl(active.latitude as number, active.longitude as number) : null),
-    [activeHasCoordinates, active.latitude, active.longitude],
+    () => (allowGoogleMaps && activeHasCoordinates ? buildStaticMapPreviewUrl(active.latitude as number, active.longitude as number) : null),
+    [allowGoogleMaps, activeHasCoordinates, active.latitude, active.longitude],
   )
   const activeDirectionsUrl = useMemo(
-    () => (activeHasCoordinates ? buildGoogleDirectionsUrl(active.latitude as number, active.longitude as number) : null),
-    [activeHasCoordinates, active.latitude, active.longitude],
+    () => (allowGoogleMaps && activeHasCoordinates ? buildGoogleDirectionsUrl(active.latitude as number, active.longitude as number) : null),
+    [allowGoogleMaps, activeHasCoordinates, active.latitude, active.longitude],
   )
 
   const mapCenter = useMemo(() => {
@@ -902,10 +910,15 @@ export function TourPickupLocationsStep({
   }, [active.key])
 
   const resetEditor = useCallback(() => {
+    if (!allowPickupMultiCity && pickups.length >= 1) {
+      toast.error('Your current membership allows one pickup location per tour')
+      return
+    }
+
     setActive(newEmptyPickup())
     setMarkerPosition(null)
     setSearchQuery('')
-  }, [])
+  }, [allowPickupMultiCity, pickups.length])
 
   useEffect(() => {
     syncDraftCounts(pickups)
@@ -944,6 +957,11 @@ export function TourPickupLocationsStep({
 
     if (pickupsToSave.length < 1) {
       toast.error('Add at least 1 pickup location before saving')
+      return
+    }
+
+    if (!allowPickupMultiCity && pickupsToSave.length > 1) {
+      toast.error('Your current membership allows one pickup location per tour')
       return
     }
 
@@ -1080,8 +1098,7 @@ export function TourPickupLocationsStep({
     onNext()
   }, [pickups.length, isDirty, onNext])
 
-  return (
-    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+  const content = (
       <div className="space-y-8">
         <div>
           <h2 className="text-xl font-bold text-foreground tracking-tight">Pickup Locations</h2>
@@ -1098,6 +1115,11 @@ export function TourPickupLocationsStep({
                 <p className="text-sm text-muted-foreground">
                   {pickups.length} stop{pickups.length === 1 ? '' : 's'} ready for travellers.
                 </p>
+                {!allowPickupMultiCity ? (
+                  <p className="text-xs text-muted-foreground">
+                    Your current membership supports one pickup location per tour.
+                  </p>
+                ) : null}
               </div>
 
               {isLoadingRemote ? (
@@ -1113,7 +1135,7 @@ export function TourPickupLocationsStep({
                 <div className="grid grid-cols-1 gap-4">
                   {pickups.map((pickup, index) => {
                     const mapPreview =
-                      typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
+                      allowGoogleMaps && typeof pickup.latitude === 'number' && typeof pickup.longitude === 'number'
                         ? buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
                         : null
 
@@ -1185,8 +1207,9 @@ export function TourPickupLocationsStep({
                               type="button"
                               variant="outline"
                               className="rounded-xl border-border/60 bg-background/80 sm:flex-1"
-                              disabled={typeof pickup.latitude !== 'number' || typeof pickup.longitude !== 'number'}
+                              disabled={!allowGoogleMaps || typeof pickup.latitude !== 'number' || typeof pickup.longitude !== 'number'}
                               onClick={() => {
+                                if (!allowGoogleMaps) return
                                 if (typeof pickup.latitude !== 'number' || typeof pickup.longitude !== 'number') return
                                 const directionsUrl = buildGoogleDirectionsUrl(pickup.latitude, pickup.longitude)
                                 if (directionsUrl) {
@@ -1195,7 +1218,7 @@ export function TourPickupLocationsStep({
                               }}
                             >
                               <MapPin className="mr-2 h-4 w-4" />
-                              Directions
+                              {allowGoogleMaps ? 'Directions' : 'Maps unavailable'}
                             </Button>
                             <Button
                               type="button"
@@ -1253,6 +1276,7 @@ export function TourPickupLocationsStep({
                   type="button"
                   className="border-0 bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
                   onClick={resetEditor}
+                  disabled={hasPickupLimitReached}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   New pickup
@@ -1269,19 +1293,33 @@ export function TourPickupLocationsStep({
                       <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
                         <div>
                           <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Search Pickup</div>
-                          <p className="mt-1 text-sm text-muted-foreground">Choose the hotel, landmark, or meeting point first.</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {allowGoogleMaps
+                              ? 'Choose the hotel, landmark, or meeting point first.'
+                              : 'Google Maps search is unavailable on your current membership. Enter the pickup details manually.'}
+                          </p>
                         </div>
 
                         <div className="space-y-2">
                           <Label className="block pl-1 text-xs font-bold uppercase tracking-widest text-foreground">
                             Search
                           </Label>
-                          <PlacesAutocomplete
-                            value={searchQuery}
-                            onChange={setSearchQuery}
-                            onPlaceSelect={handlePlaceSelect}
-                            disabled={isSaving}
-                          />
+                          {allowGoogleMaps ? (
+                            <PlacesAutocomplete
+                              value={searchQuery}
+                              onChange={setSearchQuery}
+                              onPlaceSelect={handlePlaceSelect}
+                              disabled={isSaving}
+                            />
+                          ) : (
+                            <Input
+                              value={searchQuery}
+                              onChange={(event) => setSearchQuery(event.target.value)}
+                              placeholder="Manual search unavailable on this tier"
+                              className="rounded-2xl"
+                              disabled
+                            />
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1442,7 +1480,7 @@ export function TourPickupLocationsStep({
                               {active.formatted_address || formatLatLngAddress(active.latitude as number, active.longitude as number)}
                             </p>
                           </div>
-                          {activeDirectionsUrl ? (
+                          {allowGoogleMaps && activeDirectionsUrl ? (
                             <Button
                               type="button"
                               variant="outline"
@@ -1503,6 +1541,11 @@ export function TourPickupLocationsStep({
           </Button>
         </div>
       </div>
-    </APIProvider>
   )
+
+  if (!allowGoogleMaps) {
+    return content
+  }
+
+  return <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>{content}</APIProvider>
 }

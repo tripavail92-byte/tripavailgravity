@@ -456,6 +456,8 @@ def process_session(session):
                 os.remove(p)
 
 POLLING_INTERVAL = int(os.environ.get("POLLING_INTERVAL_SECONDS", "3"))
+BILLING_AUTOMATION_ENABLED = os.environ.get("BILLING_AUTOMATION_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+BILLING_AUTOMATION_INTERVAL = max(int(os.environ.get("BILLING_AUTOMATION_INTERVAL_SECONDS", "86400")), 300)
 PAYOUT_AUTOMATION_ENABLED = os.environ.get("PAYOUT_AUTOMATION_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 PAYOUT_AUTOMATION_INTERVAL = max(int(os.environ.get("PAYOUT_AUTOMATION_INTERVAL_SECONDS", "300")), 10)
 PAYOUT_AUTOMATION_AUTO_SETTLE = os.environ.get("PAYOUT_AUTOMATION_AUTO_SETTLE", "false").lower() in {"1", "true", "yes", "on"}
@@ -469,6 +471,29 @@ def poll_kyc_sessions_once():
         logger.info(f"Found {len(sessions)} session(s) to process.")
         for session in sessions:
             process_session(session)
+
+
+def run_billing_automation_once():
+    if not BILLING_AUTOMATION_ENABLED:
+        return
+
+    as_of_date = date.today().isoformat()
+    logger.info("Running billing automation cycle for %s...", as_of_date)
+    billing_response = supabase.rpc(
+        "run_due_operator_billing_cycles",
+        {
+            "p_as_of_date": as_of_date,
+            "p_operator_user_id": None,
+        },
+    ).execute()
+    billing_rows = billing_response.data or []
+    processed_count = len(billing_rows) if isinstance(billing_rows, list) else (1 if billing_rows else 0)
+
+    logger.info(
+        "Billing automation closed %s due billing cycle(s) for as_of_date=%s.",
+        processed_count,
+        as_of_date,
+    )
 
 
 def run_payout_automation_once():
@@ -513,17 +538,31 @@ def run_payout_automation_once():
 def main():
     logger.info("Starting background KYC verification worker...")
     logger.info(
+        "Billing automation enabled=%s interval=%ss",
+        BILLING_AUTOMATION_ENABLED,
+        BILLING_AUTOMATION_INTERVAL,
+    )
+    logger.info(
         "Payout automation enabled=%s interval=%ss auto_settle=%s",
         PAYOUT_AUTOMATION_ENABLED,
         PAYOUT_AUTOMATION_INTERVAL,
         PAYOUT_AUTOMATION_AUTO_SETTLE,
     )
+    next_billing_run_at = 0.0
     next_payout_run_at = 0.0
     while True:
         try:
             poll_kyc_sessions_once()
         except Exception as e:
             logger.error(f"Error polling KYC sessions: {e}")
+
+        try:
+            if BILLING_AUTOMATION_ENABLED and time.monotonic() >= next_billing_run_at:
+                run_billing_automation_once()
+                next_billing_run_at = time.monotonic() + BILLING_AUTOMATION_INTERVAL
+        except Exception as e:
+            logger.error(f"Error running billing automation: {e}")
+            next_billing_run_at = time.monotonic() + BILLING_AUTOMATION_INTERVAL
 
         try:
             if PAYOUT_AUTOMATION_ENABLED and time.monotonic() >= next_payout_run_at:

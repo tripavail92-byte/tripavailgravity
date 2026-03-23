@@ -18,6 +18,11 @@ interface TourReviewStepProps {
   onPublish: () => void
   membershipTierLabel?: string
   minimumDepositPercent?: number
+  canPublish?: boolean
+  publishLimitReason?: string | null
+  publishLimit?: number
+  publishedTripsThisCycle?: number
+  isEditingPublishedTour?: boolean
 }
 
 function ReviewRow({
@@ -65,6 +70,11 @@ export function TourReviewStep({
   onPublish,
   membershipTierLabel = 'Gold',
   minimumDepositPercent = 0,
+  canPublish = true,
+  publishLimitReason = null,
+  publishLimit = 0,
+  publishedTripsThisCycle = 0,
+  isEditingPublishedTour = false,
 }: TourReviewStepProps) {
   const schedules = Array.isArray(data.schedules) ? data.schedules : []
   const durationDays = Math.max(1, data.duration_days ?? 1)
@@ -175,6 +185,10 @@ export function TourReviewStep({
               value={`${minimumDepositPercent}% minimum for ${membershipTierLabel} membership`}
             />
             <ReviewRow
+              label="Monthly Publish Slots"
+              value={isEditingPublishedTour ? 'Existing published tour' : `${publishedTripsThisCycle} / ${publishLimit}`}
+            />
+            <ReviewRow
               label="Pay Now"
               value={`${data.currency || 'PKR'} ${paymentTerms.upfrontAmount.toLocaleString() || 0} per traveler`}
             />
@@ -244,6 +258,12 @@ export function TourReviewStep({
         </div>
       </div>
 
+      {!canPublish && publishLimitReason ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+          {publishLimitReason}
+        </div>
+      ) : null}
+
       <div className="flex justify-between pt-6 border-t border-border/60">
         <Button
           variant="outline"
@@ -255,6 +275,7 @@ export function TourReviewStep({
         </Button>
         <Button
           onClick={onPublish}
+          disabled={!canPublish}
           size="lg"
           className="px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
         >

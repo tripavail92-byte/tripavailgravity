@@ -3,7 +3,11 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { getMembershipTierConfig, type MembershipTierCode } from '@tripavail/shared/commercial/engine'
+import {
+  canPublishAnotherTrip,
+  getMembershipTierConfig,
+  type MembershipTierCode,
+} from '@tripavail/shared/commercial/engine'
 
 import { supabase } from '@/lib/supabase'
 import {
@@ -47,6 +51,21 @@ const OPERATOR_RETURN_PATHS = new Set([
   '/operator/calendar',
   '/operator/bookings',
 ])
+
+function resolveBooleanFeatureOverride(
+  featureOverrides: Record<string, unknown> | null | undefined,
+  keys: string[],
+  fallback: boolean,
+) {
+  if (!featureOverrides) return fallback
+
+  for (const key of keys) {
+    const value = featureOverrides[key]
+    if (typeof value === 'boolean') return value
+  }
+
+  return fallback
+}
 
 function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
   const details =
@@ -103,12 +122,17 @@ export default function CreateTourPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]))
-  const [depositTierPolicy, setDepositTierPolicy] = useState(() => {
+  const [commercialGate, setCommercialGate] = useState(() => {
     const fallback = getMembershipTierConfig('gold')
     return {
       tierCode: fallback.code,
       tierLabel: fallback.label,
       minimumDepositPercent: fallback.minimumDepositPercent,
+      monthlyPublishLimit: fallback.monthlyPublishLimit,
+      publishedToursThisCycle: 0,
+      pickupMultiCityEnabled: fallback.pickupMultiCityEnabled,
+      googleMapsEnabled: fallback.googleMapsEnabled,
+      aiItineraryEnabled: fallback.aiItineraryEnabled,
     }
   })
   const ignoreDirtyRef = useRef(false)
@@ -170,10 +194,10 @@ export default function CreateTourPage() {
 
     let cancelled = false
 
-    const loadDepositTierPolicy = async () => {
+    const loadCommercialGate = async () => {
       try {
         const { data, error } = await (supabase.from('operator_commercial_profiles' as any) as any)
-          .select('membership_tier_code')
+          .select('membership_tier_code, monthly_published_tours_count, feature_overrides')
           .eq('operator_user_id', user.id)
           .maybeSingle()
 
@@ -181,33 +205,82 @@ export default function CreateTourPage() {
 
         const tierCode = (data?.membership_tier_code ?? 'gold') as MembershipTierCode
         const tierConfig = getMembershipTierConfig(tierCode)
+        const featureOverrides =
+          data?.feature_overrides && typeof data.feature_overrides === 'object'
+            ? (data.feature_overrides as Record<string, unknown>)
+            : null
 
         if (!cancelled) {
-          setDepositTierPolicy({
+          setCommercialGate({
             tierCode,
             tierLabel: tierConfig.label,
             minimumDepositPercent: tierConfig.minimumDepositPercent,
+            monthlyPublishLimit: tierConfig.monthlyPublishLimit,
+            publishedToursThisCycle: Number(data?.monthly_published_tours_count ?? 0),
+            pickupMultiCityEnabled: resolveBooleanFeatureOverride(
+              featureOverrides,
+              ['pickup_multi_city_enabled', 'pickup_multi_city'],
+              tierConfig.pickupMultiCityEnabled,
+            ),
+            googleMapsEnabled: resolveBooleanFeatureOverride(
+              featureOverrides,
+              ['google_maps_enabled', 'google_maps'],
+              tierConfig.googleMapsEnabled,
+            ),
+            aiItineraryEnabled: resolveBooleanFeatureOverride(
+              featureOverrides,
+              ['ai_itinerary_enabled', 'ai_itinerary'],
+              tierConfig.aiItineraryEnabled,
+            ),
           })
         }
       } catch (error) {
-        console.error('[CreateTourPage] Failed to load commercial tier for deposit policy', error)
+        console.error('[CreateTourPage] Failed to load commercial tier gate', error)
         if (!cancelled) {
           const fallback = getMembershipTierConfig('gold')
-          setDepositTierPolicy({
+          setCommercialGate({
             tierCode: fallback.code,
             tierLabel: fallback.label,
             minimumDepositPercent: fallback.minimumDepositPercent,
+            monthlyPublishLimit: fallback.monthlyPublishLimit,
+            publishedToursThisCycle: 0,
+            pickupMultiCityEnabled: fallback.pickupMultiCityEnabled,
+            googleMapsEnabled: fallback.googleMapsEnabled,
+            aiItineraryEnabled: fallback.aiItineraryEnabled,
           })
         }
       }
     }
 
-    void loadDepositTierPolicy()
+    void loadCommercialGate()
 
     return () => {
       cancelled = true
     }
   }, [user?.id])
+
+  const isEditingPublishedTour = Boolean(tourIdToEdit && tourData.is_published === true)
+  const publishGate = useMemo(
+    () =>
+      isEditingPublishedTour
+        ? { allowed: true, reason: null }
+        : canPublishAnotherTrip(commercialGate.tierCode, commercialGate.publishedToursThisCycle),
+    [commercialGate.publishedToursThisCycle, commercialGate.tierCode, isEditingPublishedTour],
+  )
+
+  const ensureDepositPolicySatisfied = useCallback(() => {
+    const depositPercentage = Number(tourData.deposit_percentage || 0)
+    if (depositPercentage >= commercialGate.minimumDepositPercent) {
+      return true
+    }
+
+    toast.error(
+      `Deposit must be at least ${commercialGate.minimumDepositPercent}% for ${commercialGate.tierLabel} membership.`,
+    )
+    setVisitedSteps((prev) => new Set(prev).add(3))
+    setCurrentStep(3)
+    return false
+  }, [commercialGate.minimumDepositPercent, commercialGate.tierLabel, tourData.deposit_percentage])
 
   useEffect(() => {
     const loadTourForEdit = async () => {
@@ -533,6 +606,7 @@ export default function CreateTourPage() {
       toast.error(`Please complete: ${missing.map(m => m.label).join(', ')}`)
       return
     }
+    if (!ensureDepositPolicySatisfied()) return
     setIsSubmitting(true)
     try {
       // First save everything
@@ -589,6 +663,12 @@ export default function CreateTourPage() {
 
   const handlePublish = async () => {
     if (!user) return
+    if (!publishGate.allowed) {
+      toast.error(publishGate.reason || 'Your membership tier has reached its publish limit for this cycle.')
+      return
+    }
+    if (!ensureDepositPolicySatisfied()) return
+
     const promoDraft = getTourPricingPromoDraft(tourData.draft_data)
     const promoValidationError = validateTourPricingPromoDraft(promoDraft)
 
@@ -896,8 +976,16 @@ export default function CreateTourPage() {
                 onNext={handleNext}
                 onBack={handleBack}
                 onPublish={handlePublish}
-                membershipTierLabel={depositTierPolicy.tierLabel}
-                minimumDepositPercent={depositTierPolicy.minimumDepositPercent}
+                membershipTierLabel={commercialGate.tierLabel}
+                minimumDepositPercent={commercialGate.minimumDepositPercent}
+                allowGoogleMaps={commercialGate.googleMapsEnabled}
+                allowPickupMultiCity={commercialGate.pickupMultiCityEnabled}
+                allowAiItinerary={commercialGate.aiItineraryEnabled}
+                canPublish={publishGate.allowed}
+                publishLimitReason={publishGate.reason}
+                publishLimit={commercialGate.monthlyPublishLimit}
+                publishedTripsThisCycle={commercialGate.publishedToursThisCycle}
+                isEditingPublishedTour={isEditingPublishedTour}
                 tourId={currentTourId}
                 ensureTourDraft={ensureTourDraftForMedia}
               />

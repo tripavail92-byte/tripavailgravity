@@ -74,9 +74,13 @@ Optional hardening:
 
 Payout automation:
 
+- `BILLING_AUTOMATION_ENABLED` (default: `true`)
+	- Enables daily due billing-cycle closure in the same Railway worker.
+- `BILLING_AUTOMATION_INTERVAL_SECONDS` (default: `86400`)
+	- Controls how often the worker runs the billing automation cycle. The Phase 7 cadence is once daily shortly after midnight UTC.
 - `PAYOUT_AUTOMATION_ENABLED` (default: `true`)
 	- Enables the same Railway worker to refresh operator payout eligibility and create payout batches automatically.
 - `PAYOUT_AUTOMATION_INTERVAL_SECONDS` (default: `300`)
-	- Controls how often the worker runs the payout automation cycle.
+	- Controls how often the worker runs the payout automation cycle. The Phase 7 cadence is every 5 to 15 minutes depending on booking volume.
 - `PAYOUT_AUTOMATION_AUTO_SETTLE` (default: `false`)
 	- If enabled, newly created payout batches are immediately marked paid after batch creation.

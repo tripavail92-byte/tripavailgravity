@@ -39,6 +39,8 @@ interface TourBasicsStepProps {
   data: Partial<Tour>
   onUpdate: (data: Partial<Tour>) => void
   onNext: () => void
+  allowGoogleMaps?: boolean
+  allowAiItinerary?: boolean
 }
 
 const CATEGORIES = [
@@ -116,7 +118,13 @@ interface Template {
   length_class: string
 }
 
-export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) {
+export function TourBasicsStep({
+  data,
+  onUpdate,
+  onNext,
+  allowGoogleMaps = true,
+  allowAiItinerary = true,
+}: TourBasicsStepProps) {
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [selectedTone, setSelectedTone] = useState<string>('general')
   const [templates, setTemplates] = useState<Template[]>([])
@@ -175,6 +183,12 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     data.max_participants > 0 &&
     hasPrimarySchedule
 
+  useEffect(() => {
+    if (!allowAiItinerary && showAiPanel) {
+      setShowAiPanel(false)
+    }
+  }, [allowAiItinerary, showAiPanel])
+
   // Fetch templates whenever the panel opens, tone, or tour_type changes
   useEffect(() => {
     if (!showAiPanel) return
@@ -203,8 +217,7 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
     setShowAiPanel(false)
   }
 
-  return (
-    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+  const content = (
       <div className="space-y-6">
         {/* Header card */}
         <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
@@ -388,40 +401,83 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                       </div>
 
                       {/* Primary city */}
-                      <CityAutocomplete
-                        value={data.location?.city || ''}
-                        onCitySelect={(city) => {
-                          const existing = Array.isArray(data.destination_cities)
-                            ? data.destination_cities.slice(1)
-                            : []
-                          onUpdate({
-                            location: {
-                              ...data.location,
-                              city,
-                              country: data.location?.country || '',
-                            },
-                            destination_cities: [city, ...existing].filter(Boolean),
-                          })
-                        }}
-                        placeholder="Primary city or region…"
-                      />
+                      {allowGoogleMaps ? (
+                        <CityAutocomplete
+                          value={data.location?.city || ''}
+                          onCitySelect={(city) => {
+                            const existing = Array.isArray(data.destination_cities)
+                              ? data.destination_cities.slice(1)
+                              : []
+                            onUpdate({
+                              location: {
+                                ...data.location,
+                                city,
+                                country: data.location?.country || '',
+                              },
+                              destination_cities: [city, ...existing].filter(Boolean),
+                            })
+                          }}
+                          placeholder="Primary city or region…"
+                        />
+                      ) : (
+                        <Input
+                          value={data.location?.city || ''}
+                          onChange={(e) => {
+                            const city = e.target.value
+                            const existing = Array.isArray(data.destination_cities)
+                              ? data.destination_cities.slice(1)
+                              : []
+                            onUpdate({
+                              location: {
+                                ...data.location,
+                                city,
+                                country: data.location?.country || '',
+                              },
+                              destination_cities: [city, ...existing].filter(Boolean),
+                            })
+                          }}
+                          placeholder="Primary city or region…"
+                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                        />
+                      )}
+
+                      {!allowGoogleMaps ? (
+                        <p className="text-xs text-muted-foreground">
+                          Google Maps search is not enabled for your current membership tier. Enter city names manually.
+                        </p>
+                      ) : null}
 
                       {/* Additional cities */}
                       {Array.isArray(data.destination_cities) &&
                         data.destination_cities.slice(1).map((extraCity, idx) => (
                           <div key={idx} className="flex items-center gap-2">
                             <div className="flex-1">
-                              <CityAutocomplete
-                                value={extraCity}
-                                onCitySelect={(city) => {
-                                  const cities = Array.isArray(data.destination_cities)
-                                    ? [...data.destination_cities]
-                                    : [data.location?.city || '']
-                                  cities[idx + 1] = city
-                                  onUpdate({ destination_cities: cities.filter(Boolean) })
-                                }}
-                                placeholder={`Additional city ${idx + 2}…`}
-                              />
+                              {allowGoogleMaps ? (
+                                <CityAutocomplete
+                                  value={extraCity}
+                                  onCitySelect={(city) => {
+                                    const cities = Array.isArray(data.destination_cities)
+                                      ? [...data.destination_cities]
+                                      : [data.location?.city || '']
+                                    cities[idx + 1] = city
+                                    onUpdate({ destination_cities: cities.filter(Boolean) })
+                                  }}
+                                  placeholder={`Additional city ${idx + 2}…`}
+                                />
+                              ) : (
+                                <Input
+                                  value={extraCity}
+                                  onChange={(e) => {
+                                    const cities = Array.isArray(data.destination_cities)
+                                      ? [...data.destination_cities]
+                                      : [data.location?.city || '']
+                                    cities[idx + 1] = e.target.value
+                                    onUpdate({ destination_cities: cities.filter(Boolean) })
+                                  }}
+                                  placeholder={`Additional city ${idx + 2}…`}
+                                  className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                                />
+                              )}
                             </div>
                             <button
                               type="button"
@@ -560,11 +616,18 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
                 size="sm"
                 className="gap-1.5 text-xs h-7 px-3 border-primary/40 text-primary hover:bg-primary/5"
                 onClick={() => setShowAiPanel((v) => !v)}
+                disabled={!allowAiItinerary}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 AI Suggest
               </Button>
             </div>
+
+            {!allowAiItinerary ? (
+              <p className="text-xs text-muted-foreground">
+                AI-assisted description suggestions are available on Diamond and Platinum memberships.
+              </p>
+            ) : null}
 
             <Textarea
               placeholder="A brief teaser for the tour card"
@@ -664,6 +727,15 @@ export function TourBasicsStep({ data, onUpdate, onNext }: TourBasicsStepProps) 
           </Button>
         </div>
       </div>
-    </APIProvider>
   )
+
+  if (allowGoogleMaps) {
+    return (
+      <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+        {content}
+      </APIProvider>
+    )
+  }
+
+  return content
 }

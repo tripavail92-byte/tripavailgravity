@@ -22,8 +22,11 @@
     "db:test:deposit-policy:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_tour_deposit_policy_test.sql",
     "db:test:payout-cycle": "node scripts/test-payout-cycle.mjs",
     "db:test:payouts:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_payout_batch_rpc_test.sql",
+    "worker:billing": "node scripts/run-operator-billing-worker.mjs",
     "worker:payouts": "node scripts/run-operator-payout-worker.mjs",
-    "worker:payouts:auto-settle": "node scripts/run-operator-payout-worker.mjs --auto-settle"
+    "worker:payouts:auto-settle": "node scripts/run-operator-payout-worker.mjs --auto-settle",
+    "worker:commercial:cycle": "node scripts/run-commercial-ops-worker.mjs",
+    "monitor:commercial": "node scripts/commercial-ops-monitor.mjs"
   },
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.7.1",

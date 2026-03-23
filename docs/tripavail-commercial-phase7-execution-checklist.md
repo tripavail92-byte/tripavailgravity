@@ -150,17 +150,17 @@ Phase 7 is complete when all of the following are true:
 
 ### 2. Operator billing and payout visibility
 
-- [ ] Add billing summary cards to the operator commercial surface
+- [x] Add billing summary cards to the operator commercial surface
 - Primary files:
 	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
 	- `packages/web/src/features/tour-operator/services/operatorCommercialService.ts`
 	- `packages/shared/src/commercial/*`
-- [ ] Add operator invoice history and drill-down surfaces
+- [x] Add operator invoice history and drill-down surfaces
 - Primary files:
 	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
 	- `packages/web/src/features/tour-operator/components/*`
 	- `supabase/migrations/*invoice*`
-- [ ] Add operator payout history and payout state explanations
+- [x] Add operator payout history and payout state explanations
 - Primary files:
 	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
 	- `packages/web/src/features/tour-operator/services/operatorCommercialService.ts`
@@ -168,24 +168,24 @@ Phase 7 is complete when all of the following are true:
 
 ### 3. Live feature-gate enforcement
 
-- [ ] Audit all tour creation and editing entry points against live entitlements
+- [x] Audit all tour creation and editing entry points against live entitlements
 - Primary files:
 	- `packages/web/src/pages/tour-operator/TourBuilderPage.tsx`
 	- `packages/web/src/features/tour-operator/utils/operatorAccess.ts`
 	- `packages/shared/src/commercial/*`
-- [ ] Add regression coverage for publish limits and premium gates
+- [x] Add regression coverage for publish limits and premium gates
 - Primary files:
 	- `packages/web/src/features/tour-operator/**/*test*.ts*`
 	- `packages/shared/src/commercial/**/*test*.ts`
 
 ### 4. Billing-cycle and payout automation
 
-- [ ] Define and implement idempotent billing-cycle closure jobs
+- [x] Define and implement idempotent billing-cycle closure jobs
 - Primary files:
 	- `packages/python-worker/*`
 	- `scripts/*billing*`
 	- `supabase/functions/*`
-- [ ] Define and implement settlement eligibility and payout batch jobs
+- [x] Define and implement settlement eligibility and payout batch jobs
 - Primary files:
 	- `packages/python-worker/*`
 	- `scripts/*payout*`
@@ -193,12 +193,12 @@ Phase 7 is complete when all of the following are true:
 
 ### 5. Dispute, hold, and recovery workflows
 
-- [ ] Add operator/admin drill-down for holds, reversals, and recovery balances
+- [x] Add operator/admin drill-down for holds, reversals, and recovery balances
 - Primary files:
 	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
 	- `packages/web/src/pages/admin/AdminCommercialPage.tsx`
 	- `packages/shared/src/commercial/recovery/*`
-- [ ] Validate promo-applied bookings through exception paths
+- [x] Validate promo-applied bookings through exception paths
 - Primary files:
 	- `packages/web/src/features/booking/**/*test*.ts*`
 	- `packages/shared/src/commercial/**/*test*.ts`
@@ -206,13 +206,13 @@ Phase 7 is complete when all of the following are true:
 
 ### 6. Reconciliation and monitoring loops
 
-- [ ] Add repeatable reconciliation checklist and support-facing mismatch slice
+- [x] Add repeatable reconciliation checklist and support-facing mismatch slice
 - Primary files:
 	- `docs/stripe-go-live-readiness.md`
 	- `docs/pickup-locations-monitoring.md`
 	- `docs/tripavail-commercial-phase7-execution-checklist.md`
 	- `packages/web/src/pages/admin/AdminReportsPage.tsx`
-- [ ] Define alert thresholds and stuck-state reporting
+- [x] Define alert thresholds and stuck-state reporting
 - Primary files:
 	- `packages/python-worker/*`
 	- `scripts/*monitor*`
@@ -220,7 +220,7 @@ Phase 7 is complete when all of the following are true:
 
 ### 7. Operational runbook
 
-- [ ] Record the steady-state operator/admin support runbook for automated billing and payout exceptions
+- [x] Record the steady-state operator/admin support runbook for automated billing and payout exceptions
 - Primary files:
 	- `docs/tripavail-commercial-phase7-execution-checklist.md`
 	- `docs/tripavail-phase6-follow-up-operator-dashboard-bookings-bug.md`
