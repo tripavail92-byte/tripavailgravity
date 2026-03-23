@@ -27,10 +27,10 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 
-import { RecentBookings } from '../../hotel-manager/dashboard/components/RecentBookings'
 import { Tour, tourService } from '../services/tourService'
 import { ActiveToursGrid } from './components/ActiveToursGrid'
 import { DraftsAlert } from './components/DraftsAlert'
+import { OperatorRecentBookings } from './components/OperatorRecentBookings'
 
 const STEP_SLUGS = ['welcome','personal','profile-pic','business','services','coverage','policies','completion']
 
@@ -563,7 +563,7 @@ export function TourOperatorDashboard() {
             {/* Right: Recent Activity */}
             <div className="lg:col-span-1">
               <div className="glass-card-dark border border-border/50 rounded-3xl p-6">
-                <RecentBookings />
+                <OperatorRecentBookings operatorId={user?.id} />
               </div>
             </div>
           </motion.div>

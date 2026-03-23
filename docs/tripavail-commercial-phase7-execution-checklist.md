@@ -134,6 +134,98 @@ Phase 7 is complete when all of the following are true:
 5. Strengthen dispute, hold, and recovery workflows
 6. Close monitoring and runbook gaps
 
+## Concrete Execution Order And Code Targets
+
+### 1. Dashboard summary mismatches
+
+- [x] Wire live operator bookings into the dashboard recent bookings panel
+- Primary files:
+	- `packages/web/src/features/tour-operator/dashboard/TourOperatorDashboard.tsx`
+	- `packages/web/src/features/tour-operator/dashboard/components/OperatorRecentBookings.tsx`
+	- `packages/web/src/features/tour-operator/services/operatorPortalService.ts`
+- Follow-on audit targets:
+	- `packages/web/src/pages/tour-operator/OperatorBookingsPage.tsx`
+	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+	- `packages/web/src/features/tour-operator/dashboard/components/ActiveToursGrid.tsx`
+
+### 2. Operator billing and payout visibility
+
+- [ ] Add billing summary cards to the operator commercial surface
+- Primary files:
+	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+	- `packages/web/src/features/tour-operator/services/operatorCommercialService.ts`
+	- `packages/shared/src/commercial/*`
+- [ ] Add operator invoice history and drill-down surfaces
+- Primary files:
+	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+	- `packages/web/src/features/tour-operator/components/*`
+	- `supabase/migrations/*invoice*`
+- [ ] Add operator payout history and payout state explanations
+- Primary files:
+	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+	- `packages/web/src/features/tour-operator/services/operatorCommercialService.ts`
+	- `packages/shared/src/commercial/payouts/*`
+
+### 3. Live feature-gate enforcement
+
+- [ ] Audit all tour creation and editing entry points against live entitlements
+- Primary files:
+	- `packages/web/src/pages/tour-operator/TourBuilderPage.tsx`
+	- `packages/web/src/features/tour-operator/utils/operatorAccess.ts`
+	- `packages/shared/src/commercial/*`
+- [ ] Add regression coverage for publish limits and premium gates
+- Primary files:
+	- `packages/web/src/features/tour-operator/**/*test*.ts*`
+	- `packages/shared/src/commercial/**/*test*.ts`
+
+### 4. Billing-cycle and payout automation
+
+- [ ] Define and implement idempotent billing-cycle closure jobs
+- Primary files:
+	- `packages/python-worker/*`
+	- `scripts/*billing*`
+	- `supabase/functions/*`
+- [ ] Define and implement settlement eligibility and payout batch jobs
+- Primary files:
+	- `packages/python-worker/*`
+	- `scripts/*payout*`
+	- `packages/shared/src/commercial/payouts/*`
+
+### 5. Dispute, hold, and recovery workflows
+
+- [ ] Add operator/admin drill-down for holds, reversals, and recovery balances
+- Primary files:
+	- `packages/web/src/pages/tour-operator/OperatorCommercialPage.tsx`
+	- `packages/web/src/pages/admin/AdminCommercialPage.tsx`
+	- `packages/shared/src/commercial/recovery/*`
+- [ ] Validate promo-applied bookings through exception paths
+- Primary files:
+	- `packages/web/src/features/booking/**/*test*.ts*`
+	- `packages/shared/src/commercial/**/*test*.ts`
+	- `supabase/tests/*`
+
+### 6. Reconciliation and monitoring loops
+
+- [ ] Add repeatable reconciliation checklist and support-facing mismatch slice
+- Primary files:
+	- `docs/stripe-go-live-readiness.md`
+	- `docs/pickup-locations-monitoring.md`
+	- `docs/tripavail-commercial-phase7-execution-checklist.md`
+	- `packages/web/src/pages/admin/AdminReportsPage.tsx`
+- [ ] Define alert thresholds and stuck-state reporting
+- Primary files:
+	- `packages/python-worker/*`
+	- `scripts/*monitor*`
+	- `packages/web/src/pages/admin/AdminReportsPage.tsx`
+
+### 7. Operational runbook
+
+- [ ] Record the steady-state operator/admin support runbook for automated billing and payout exceptions
+- Primary files:
+	- `docs/tripavail-commercial-phase7-execution-checklist.md`
+	- `docs/tripavail-phase6-follow-up-operator-dashboard-bookings-bug.md`
+	- `docs/*runbook*`
+
 ## Current Assessment
 
 There is no canonical pre-written Phase 7 artifact in the original commercial roadmap.
