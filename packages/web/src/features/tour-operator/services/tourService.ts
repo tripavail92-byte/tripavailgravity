@@ -739,7 +739,7 @@ export const tourService = {
             insertResponse = {
               data: racedDraft,
               error: null,
-            } as typeof insertResponse
+            } as unknown as typeof insertResponse
           } else {
             insertResponse = await supabase
               .from('tours')

@@ -959,13 +959,14 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
         confirmParams: { return_url: returnUrl },
         redirect: 'if_required',
       })
+      const paymentIntentStatus = 'paymentIntent' in result ? result.paymentIntent?.status ?? null : null
 
       if (result.error) {
         logStripeDebug('payment_submit_result', {
           bookingId: props.bookingId,
           outcome: 'error',
           message: result.error.message || 'Payment failed',
-          paymentIntentStatus: result.paymentIntent?.status ?? null,
+          paymentIntentStatus,
           lastPaymentEvent,
         })
         throw new Error(result.error.message || 'Payment failed')
@@ -976,7 +977,7 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
         bookingId: props.bookingId,
         outcome: 'success',
         paymentIntentId: paymentIntentId ?? null,
-        paymentIntentStatus: result.paymentIntent?.status ?? null,
+        paymentIntentStatus,
         lastPaymentEvent,
       })
       if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {

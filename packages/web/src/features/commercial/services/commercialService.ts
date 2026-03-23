@@ -687,11 +687,11 @@ export const commercialService = {
       (supabase.from('operator_billing_report_v' as any) as any)
         .select('*')
         .order('cycle_start', { ascending: false })
-        .limit(50),
+        .limit(500),
       (supabase.from('operator_payout_report_v' as any) as any)
         .select('*')
         .order('payout_due_at', { ascending: false, nullsFirst: false })
-        .limit(100),
+        .limit(500),
       (supabase.from('operator_payout_batches' as any) as any)
         .select(`
           id,
@@ -705,7 +705,7 @@ export const commercialService = {
           created_at
         `)
         .order('scheduled_for', { ascending: false })
-        .limit(25),
+        .limit(250),
     ])
 
     if (summaryResult.error) throw summaryResult.error

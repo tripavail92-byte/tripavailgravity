@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { Banknote, CircleDollarSign, ShieldAlert, Users, Wallet } from 'lucide-react'
+import { Banknote, CircleDollarSign, Download, ShieldAlert, Users, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -105,6 +105,122 @@ function formatAuditEntityType(entityType: string) {
   }
 }
 
+function isWithinDateRange(value: string | null | undefined, startDate: string, endDate: string) {
+  if (!value) return true
+
+  const parsedValue = new Date(value)
+  if (Number.isNaN(parsedValue.getTime())) return true
+
+  if (startDate) {
+    const startBoundary = new Date(`${startDate}T00:00:00`)
+    if (parsedValue < startBoundary) {
+      return false
+    }
+  }
+
+  if (endDate) {
+    const endBoundary = new Date(`${endDate}T23:59:59.999`)
+    if (parsedValue > endBoundary) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function toCsvCell(value: unknown) {
+  if (value === null || value === undefined) return ''
+  const stringValue = String(value)
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`
+  }
+  return stringValue
+}
+
+function downloadCsvFile(filename: string, headers: string[], rows: Array<Array<unknown>>) {
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((value) => toCsvCell(value)).join(','))
+    .join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function formatRiskState(riskState: string) {
+  switch (riskState) {
+    case 'fraud_review':
+      return 'Fraud review'
+    case 'payout_hold':
+      return 'Payout hold'
+    case 'recovery_pending':
+      return 'Recovery pending'
+    case 'kyc_blocked':
+      return 'KYC blocker'
+    case 'cancellation_penalty':
+      return 'Cancellation penalty'
+    default:
+      return 'Clear'
+  }
+}
+
+function getPrimaryRiskState(profile: OperatorCommercialProfile, recoveryExposure: number, onHoldExposure: number) {
+  if (profile.fraud_review_required) return 'fraud_review'
+  if (profile.payout_hold || onHoldExposure > 0) return 'payout_hold'
+  if (recoveryExposure > 0) return 'recovery_pending'
+  if (profile.kyc_status !== 'approved') return 'kyc_blocked'
+  if (profile.cancellation_penalty_active) return 'cancellation_penalty'
+  return 'clear'
+}
+
+type OperatorRiskReviewRow = {
+  operator_user_id: string
+  operator_name: string
+  membership_tier_code: MembershipTierCode
+  kyc_status: string
+  primary_risk: string
+  risk_signals: string[]
+  payout_hold: boolean
+  fraud_review_required: boolean
+  recovery_exposure: number
+  on_hold_exposure: number
+  operator_fault_cancellation_count: number
+}
+
+type PromoPerformanceRow = {
+  promotion_id: string
+  operator_user_id: string
+  operator_name: string
+  title: string
+  code: string
+  funding_source: 'operator' | 'platform'
+  is_active: boolean
+  bookings_count: number
+  discount_total: number
+  operator_funded_discount_total: number
+  platform_funded_discount_total: number
+  commission_remaining_exposure: number
+  operator_payable_total: number
+}
+
+type CommercialTrendRow = {
+  month_key: string
+  month_label: string
+  billing_cycles_closed: number
+  invoiced_total: number
+  commission_credit_total: number
+  payouts_paid_total: number
+  payouts_scheduled_total: number
+  promo_discount_total: number
+  recovery_pending_total: number
+}
+
 type AdminPromoFormState = {
   operatorUserId: string
   title: string
@@ -173,6 +289,7 @@ function toAdminPromoForm(promotion: CommercialPromotion): AdminPromoFormState {
 export default function AdminCommercialPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('overview')
   const [selectedOperatorId, setSelectedOperatorId] = useState<string>('')
   const [tierCode, setTierCode] = useState<MembershipTierCode>('gold')
   const [tierReason, setTierReason] = useState('')
@@ -194,6 +311,15 @@ export default function AdminCommercialPage() {
   const [historyOperatorFilter, setHistoryOperatorFilter] = useState('all')
   const [historyEntityTypeFilter, setHistoryEntityTypeFilter] = useState('all')
   const [historyActionTypeFilter, setHistoryActionTypeFilter] = useState('all')
+  const [reportStartDate, setReportStartDate] = useState('')
+  const [reportEndDate, setReportEndDate] = useState('')
+  const [reportOperatorFilter, setReportOperatorFilter] = useState('all')
+  const [billingStatusFilter, setBillingStatusFilter] = useState('all')
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState('all')
+  const [promoFundingFilter, setPromoFundingFilter] = useState('all')
+  const [riskStateFilter, setRiskStateFilter] = useState('all')
+  const [tierFilter, setTierFilter] = useState('all')
+  const [kycFilter, setKycFilter] = useState('all')
 
   const load = async () => {
     try {
@@ -247,6 +373,53 @@ export default function AdminCommercialPage() {
     setHoldReason(selectedOperator.payout_hold_reason ?? '')
   }, [selectedOperator])
 
+  const openReportSlice = (options?: {
+    operatorId?: string
+    billingStatus?: string
+    payoutStatus?: string
+    promoFundingSource?: string
+    riskState?: string
+    tierCode?: string
+    kycStatus?: string
+  }) => {
+    setActiveTab('reports')
+    setReportOperatorFilter(options?.operatorId ?? 'all')
+    setBillingStatusFilter(options?.billingStatus ?? 'all')
+    setPayoutStatusFilter(options?.payoutStatus ?? 'all')
+    setPromoFundingFilter(options?.promoFundingSource ?? 'all')
+    setRiskStateFilter(options?.riskState ?? 'all')
+    setTierFilter(options?.tierCode ?? 'all')
+    setKycFilter(options?.kycStatus ?? 'all')
+  }
+
+  const resetReportFilters = () => {
+    setReportStartDate('')
+    setReportEndDate('')
+    setReportOperatorFilter('all')
+    setBillingStatusFilter('all')
+    setPayoutStatusFilter('all')
+    setPromoFundingFilter('all')
+    setRiskStateFilter('all')
+    setTierFilter('all')
+    setKycFilter('all')
+  }
+
+  const handleSummaryDrillDown = (cardId: string) => {
+    switch (cardId) {
+      case 'held_payouts':
+        openReportSlice({ payoutStatus: 'on_hold', riskState: 'payout_hold' })
+        return
+      case 'operator_payouts_cleared':
+        openReportSlice({ payoutStatus: 'paid' })
+        return
+      case 'not_ready_liability':
+        openReportSlice({ payoutStatus: 'not_ready' })
+        return
+      default:
+        openReportSlice()
+    }
+  }
+
   const operatorPayoutsCleared = useMemo(() => {
     if (!overview?.financeHealth) return overview?.financeSummary?.total_operator_payouts ?? 0
 
@@ -259,11 +432,11 @@ export default function AdminCommercialPage() {
 
   const summaryCards = overview?.financeSummary
     ? [
-        { label: 'Customer payments', value: formatMoney(overview.financeSummary.total_customer_payments_collected), icon: CircleDollarSign },
-        { label: 'Commission accrued', value: formatMoney(overview.financeSummary.total_commission_earned), icon: Banknote },
-        { label: 'Held payouts', value: formatMoney(overview.financeSummary.total_held_amounts), icon: ShieldAlert },
-        { label: 'Operator payouts cleared', value: formatMoney(operatorPayoutsCleared), icon: Wallet },
-        { label: 'Not-ready liability', value: formatMoney(overview.financeHealth?.total_operator_liability_not_ready ?? 0), icon: Users },
+        { id: 'customer_payments', label: 'Customer payments', value: formatMoney(overview.financeSummary.total_customer_payments_collected), icon: CircleDollarSign },
+        { id: 'commission_accrued', label: 'Commission accrued', value: formatMoney(overview.financeSummary.total_commission_earned), icon: Banknote },
+        { id: 'held_payouts', label: 'Held payouts', value: formatMoney(overview.financeSummary.total_held_amounts), icon: ShieldAlert },
+        { id: 'operator_payouts_cleared', label: 'Operator payouts cleared', value: formatMoney(operatorPayoutsCleared), icon: Wallet },
+        { id: 'not_ready_liability', label: 'Not-ready liability', value: formatMoney(overview.financeHealth?.total_operator_liability_not_ready ?? 0), icon: Users },
       ]
     : []
 
@@ -320,6 +493,381 @@ export default function AdminCommercialPage() {
     return Array.from(new Set(auditRows.map((row) => row.action_type))).sort()
   }, [auditRows])
 
+  const billingStatusOptions = useMemo(() => {
+    return Array.from(new Set((overview?.billingRows ?? []).map((row) => row.invoice_status))).sort()
+  }, [overview?.billingRows])
+
+  const payoutStatusOptions = useMemo(() => {
+    return Array.from(new Set((overview?.payoutRows ?? []).map((row) => row.payout_status))).sort()
+  }, [overview?.payoutRows])
+
+  const tierOptions = useMemo(() => {
+    return Array.from(new Set((overview?.operatorProfiles ?? []).map((row) => row.membership_tier_code))).sort()
+  }, [overview?.operatorProfiles])
+
+  const kycOptions = useMemo(() => {
+    return Array.from(new Set((overview?.operatorProfiles ?? []).map((row) => row.kyc_status))).sort()
+  }, [overview?.operatorProfiles])
+
+  const reportBillingRows = useMemo(() => {
+    return (overview?.billingRows ?? []).filter((row) => {
+      if (reportOperatorFilter !== 'all' && row.operator_user_id !== reportOperatorFilter) {
+        return false
+      }
+
+      if (billingStatusFilter !== 'all' && row.invoice_status !== billingStatusFilter) {
+        return false
+      }
+
+      return isWithinDateRange(row.issued_at ?? row.cycle_end ?? row.cycle_start, reportStartDate, reportEndDate)
+    })
+  }, [billingStatusFilter, overview?.billingRows, reportEndDate, reportOperatorFilter, reportStartDate])
+
+  const reportPayoutRows = useMemo(() => {
+    return (overview?.payoutRows ?? []).filter((row) => {
+      if (reportOperatorFilter !== 'all' && row.operator_user_id !== reportOperatorFilter) {
+        return false
+      }
+
+      if (payoutStatusFilter !== 'all' && row.payout_status !== payoutStatusFilter) {
+        return false
+      }
+
+      return isWithinDateRange(row.paid_at ?? row.payout_due_at ?? row.travel_date, reportStartDate, reportEndDate)
+    })
+  }, [overview?.payoutRows, payoutStatusFilter, reportEndDate, reportOperatorFilter, reportStartDate])
+
+  const reportPromotions = useMemo(() => {
+    return promotions.filter((promotion) => {
+      if (reportOperatorFilter !== 'all' && promotion.operator_user_id !== reportOperatorFilter) {
+        return false
+      }
+
+      if (promoFundingFilter !== 'all' && promotion.funding_source !== promoFundingFilter) {
+        return false
+      }
+
+      return isWithinDateRange(promotion.updated_at ?? promotion.created_at, reportStartDate, reportEndDate)
+    })
+  }, [promoFundingFilter, promotions, reportEndDate, reportOperatorFilter, reportStartDate])
+
+  const payoutImpactByPromoCode = useMemo(() => {
+    const nextMap = new Map<string, {
+      bookings_count: number
+      discount_total: number
+      operator_funded_discount_total: number
+      platform_funded_discount_total: number
+      commission_remaining_exposure: number
+      operator_payable_total: number
+    }>()
+
+    for (const row of reportPayoutRows) {
+      if (!row.promo_owner || row.promo_discount_value <= 0) continue
+
+      const current = nextMap.get(row.promo_owner) ?? {
+        bookings_count: 0,
+        discount_total: 0,
+        operator_funded_discount_total: 0,
+        platform_funded_discount_total: 0,
+        commission_remaining_exposure: 0,
+        operator_payable_total: 0,
+      }
+
+      current.bookings_count += 1
+      current.discount_total += row.promo_discount_value
+      current.commission_remaining_exposure += row.commission_remaining
+      current.operator_payable_total += row.operator_payable_amount
+
+      if (row.promo_funding_source === 'operator') {
+        current.operator_funded_discount_total += row.promo_discount_value
+      } else {
+        current.platform_funded_discount_total += row.promo_discount_value
+      }
+
+      nextMap.set(row.promo_owner, current)
+    }
+
+    return nextMap
+  }, [reportPayoutRows])
+
+  const promoPerformanceRows = useMemo<PromoPerformanceRow[]>(() => {
+    return reportPromotions
+      .map((promotion) => {
+        const impact = payoutImpactByPromoCode.get(promotion.code) ?? {
+          bookings_count: 0,
+          discount_total: 0,
+          operator_funded_discount_total: 0,
+          platform_funded_discount_total: 0,
+          commission_remaining_exposure: 0,
+          operator_payable_total: 0,
+        }
+
+        return {
+          promotion_id: promotion.id,
+          operator_user_id: promotion.operator_user_id,
+          operator_name: operatorNameById.get(promotion.operator_user_id) ?? promotion.operator_user_id.slice(0, 8),
+          title: promotion.title,
+          code: promotion.code,
+          funding_source: promotion.funding_source,
+          is_active: promotion.is_active,
+          bookings_count: impact.bookings_count,
+          discount_total: impact.discount_total,
+          operator_funded_discount_total: impact.operator_funded_discount_total,
+          platform_funded_discount_total: impact.platform_funded_discount_total,
+          commission_remaining_exposure: impact.commission_remaining_exposure,
+          operator_payable_total: impact.operator_payable_total,
+        }
+      })
+      .sort((left, right) => right.discount_total - left.discount_total || left.title.localeCompare(right.title))
+  }, [operatorNameById, payoutImpactByPromoCode, reportPromotions])
+
+  const recoveryExposureByOperator = useMemo(() => {
+    const nextMap = new Map<string, number>()
+
+    for (const row of overview?.payoutRows ?? []) {
+      if (row.recovery_amount <= 0) continue
+      nextMap.set(row.operator_user_id, (nextMap.get(row.operator_user_id) ?? 0) + row.recovery_amount)
+    }
+
+    return nextMap
+  }, [overview?.payoutRows])
+
+  const onHoldExposureByOperator = useMemo(() => {
+    const nextMap = new Map<string, number>()
+
+    for (const row of overview?.payoutRows ?? []) {
+      if (row.payout_status !== 'on_hold') continue
+      nextMap.set(row.operator_user_id, (nextMap.get(row.operator_user_id) ?? 0) + row.operator_payable_amount)
+    }
+
+    return nextMap
+  }, [overview?.payoutRows])
+
+  const operatorRiskRows = useMemo<OperatorRiskReviewRow[]>(() => {
+    return (overview?.operatorProfiles ?? [])
+      .filter((profile) => {
+        if (reportOperatorFilter !== 'all' && profile.operator_user_id !== reportOperatorFilter) {
+          return false
+        }
+
+        if (tierFilter !== 'all' && profile.membership_tier_code !== tierFilter) {
+          return false
+        }
+
+        if (kycFilter !== 'all' && profile.kyc_status !== kycFilter) {
+          return false
+        }
+
+        const recoveryExposure = recoveryExposureByOperator.get(profile.operator_user_id) ?? 0
+        const onHoldExposure = onHoldExposureByOperator.get(profile.operator_user_id) ?? 0
+        const primaryRisk = getPrimaryRiskState(profile, recoveryExposure, onHoldExposure)
+
+        if (riskStateFilter !== 'all' && primaryRisk !== riskStateFilter) {
+          return false
+        }
+
+        return true
+      })
+      .map((profile) => {
+        const recoveryExposure = recoveryExposureByOperator.get(profile.operator_user_id) ?? 0
+        const onHoldExposure = onHoldExposureByOperator.get(profile.operator_user_id) ?? 0
+        const riskSignals: string[] = []
+
+        if (profile.payout_hold || onHoldExposure > 0) riskSignals.push('Payout hold')
+        if (profile.fraud_review_required) riskSignals.push('Fraud review')
+        if (profile.kyc_status !== 'approved') riskSignals.push('KYC blocker')
+        if (recoveryExposure > 0) riskSignals.push('Recovery pending')
+        if (profile.cancellation_penalty_active) riskSignals.push('Cancellation penalty')
+
+        return {
+          operator_user_id: profile.operator_user_id,
+          operator_name: operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8),
+          membership_tier_code: profile.membership_tier_code,
+          kyc_status: profile.kyc_status,
+          primary_risk: getPrimaryRiskState(profile, recoveryExposure, onHoldExposure),
+          risk_signals: riskSignals.length > 0 ? riskSignals : ['Clear'],
+          payout_hold: profile.payout_hold,
+          fraud_review_required: profile.fraud_review_required,
+          recovery_exposure: recoveryExposure,
+          on_hold_exposure: onHoldExposure,
+          operator_fault_cancellation_count: profile.operator_fault_cancellation_count,
+        }
+      })
+      .sort((left, right) => {
+        const riskComparison = left.primary_risk.localeCompare(right.primary_risk)
+        if (riskComparison !== 0) return riskComparison
+        return right.recovery_exposure - left.recovery_exposure
+      })
+  }, [kycFilter, onHoldExposureByOperator, operatorNameById, overview?.operatorProfiles, recoveryExposureByOperator, reportOperatorFilter, riskStateFilter, tierFilter])
+
+  const trendRows = useMemo<CommercialTrendRow[]>(() => {
+    const monthMap = new Map<string, CommercialTrendRow>()
+
+    const ensureMonth = (value: string | null | undefined) => {
+      if (!value) return null
+      const parsedValue = new Date(value)
+      if (Number.isNaN(parsedValue.getTime())) return null
+
+      const monthKey = format(parsedValue, 'yyyy-MM')
+      const existing = monthMap.get(monthKey)
+      if (existing) return existing
+
+      const nextValue: CommercialTrendRow = {
+        month_key: monthKey,
+        month_label: format(parsedValue, 'MMM yyyy'),
+        billing_cycles_closed: 0,
+        invoiced_total: 0,
+        commission_credit_total: 0,
+        payouts_paid_total: 0,
+        payouts_scheduled_total: 0,
+        promo_discount_total: 0,
+        recovery_pending_total: 0,
+      }
+
+      monthMap.set(monthKey, nextValue)
+      return nextValue
+    }
+
+    for (const row of reportBillingRows) {
+      const month = ensureMonth(row.cycle_end ?? row.issued_at ?? row.cycle_start)
+      if (!month) continue
+      month.billing_cycles_closed += 1
+      month.invoiced_total += row.final_membership_charge
+      month.commission_credit_total += row.prior_cycle_commission_credit
+    }
+
+    for (const row of reportPayoutRows) {
+      const month = ensureMonth(row.paid_at ?? row.payout_due_at ?? row.travel_date)
+      if (!month) continue
+
+      if (row.payout_status === 'paid') {
+        month.payouts_paid_total += row.operator_payable_amount
+      }
+
+      if (row.payout_status === 'scheduled') {
+        month.payouts_scheduled_total += row.operator_payable_amount
+      }
+
+      month.promo_discount_total += row.promo_discount_value
+
+      if (row.payout_status === 'recovery_pending') {
+        month.recovery_pending_total += row.recovery_amount
+      }
+    }
+
+    return Array.from(monthMap.values())
+      .sort((left, right) => right.month_key.localeCompare(left.month_key))
+      .slice(0, 6)
+  }, [reportBillingRows, reportPayoutRows])
+
+  const reconciliationChecks = useMemo(() => {
+    const allPayoutRows = overview?.payoutRows ?? []
+    const allBillingRows = overview?.billingRows ?? []
+
+    const derived = {
+      total_operator_liability_not_ready: 0,
+      total_payouts_eligible_unbatched: 0,
+      total_payouts_scheduled: 0,
+      total_payouts_completed: 0,
+      total_payouts_on_hold: 0,
+      total_commission_collected: 0,
+      total_refunds: 0,
+      total_payouts_recovery_pending: 0,
+      outstanding_recovery_balances: 0,
+      total_membership_fees_charged: 0,
+      total_membership_adjustments: 0,
+      total_prior_commission_credit: 0,
+      total_final_membership_charge: 0,
+    }
+
+    for (const row of allPayoutRows) {
+      derived.total_commission_collected += row.commission_collected
+      derived.total_refunds += row.refund_amount
+      derived.outstanding_recovery_balances += row.recovery_amount
+
+      if (row.payout_status === 'not_ready') derived.total_operator_liability_not_ready += row.operator_payable_amount
+      if (row.payout_status === 'eligible') derived.total_payouts_eligible_unbatched += row.operator_payable_amount
+      if (row.payout_status === 'scheduled') derived.total_payouts_scheduled += row.operator_payable_amount
+      if (row.payout_status === 'paid') derived.total_payouts_completed += row.operator_payable_amount
+      if (row.payout_status === 'on_hold') derived.total_payouts_on_hold += row.operator_payable_amount
+      if (row.payout_status === 'recovery_pending') derived.total_payouts_recovery_pending += row.recovery_amount
+    }
+
+    for (const row of allBillingRows) {
+      derived.total_membership_fees_charged += row.membership_fee
+      derived.total_membership_adjustments += row.adjustment_applied
+      derived.total_prior_commission_credit += row.prior_cycle_commission_credit
+      derived.total_final_membership_charge += row.final_membership_charge
+    }
+
+    const derivedReconciliationRhs =
+      derived.total_operator_liability_not_ready
+      + derived.total_payouts_completed
+      + derived.total_payouts_scheduled
+      + derived.total_payouts_on_hold
+      + derived.total_payouts_eligible_unbatched
+      + derived.total_commission_collected
+      + derived.total_refunds
+
+    const financeHealth = overview?.financeHealth
+    const financeSummary = overview?.financeSummary
+
+    const payoutComparisons = [
+      { label: 'Not-ready liability', source: financeHealth?.total_operator_liability_not_ready ?? 0, derived: derived.total_operator_liability_not_ready },
+      { label: 'Eligible unbatched payouts', source: financeHealth?.total_payouts_eligible_unbatched ?? 0, derived: derived.total_payouts_eligible_unbatched },
+      { label: 'Scheduled payouts', source: financeHealth?.total_payouts_scheduled ?? 0, derived: derived.total_payouts_scheduled },
+      { label: 'Paid payouts', source: financeHealth?.total_payouts_completed ?? 0, derived: derived.total_payouts_completed },
+      { label: 'On-hold payouts', source: financeHealth?.total_payouts_on_hold ?? 0, derived: derived.total_payouts_on_hold },
+      { label: 'Commission collected', source: financeHealth?.total_commission_collected ?? 0, derived: derived.total_commission_collected },
+      { label: 'Refunds', source: financeHealth?.total_refunds ?? 0, derived: derived.total_refunds },
+      { label: 'Reconciliation RHS', source: financeHealth?.reconciliation_rhs ?? 0, derived: derivedReconciliationRhs },
+      { label: 'Recovery pending', source: financeHealth?.total_payouts_recovery_pending ?? 0, derived: derived.total_payouts_recovery_pending },
+      { label: 'Outstanding recoveries', source: financeHealth?.outstanding_recovery_balances ?? 0, derived: derived.outstanding_recovery_balances },
+    ].map((row) => ({ ...row, delta: row.source - row.derived }))
+
+    const billingComparisons = [
+      { label: 'Membership fees charged', source: financeSummary?.total_membership_fees_charged ?? 0, derived: derived.total_membership_fees_charged },
+      { label: 'Adjustments and waivers', source: financeSummary?.total_membership_fees_waived_adjusted ?? 0, derived: derived.total_membership_adjustments },
+      { label: 'Recovery pending summary', source: financeSummary?.total_recovery_pending ?? 0, derived: derived.total_payouts_recovery_pending },
+    ].map((row) => ({ ...row, delta: row.source - row.derived }))
+
+    const formulaBreaks = allBillingRows.filter((row) => {
+      return Math.abs((row.membership_fee - row.prior_cycle_commission_credit - row.adjustment_applied) - row.final_membership_charge) > 0.01
+    })
+
+    const operatorFundedPromoDiscountTotal = allPayoutRows.reduce((sum, row) => {
+      return row.promo_funding_source === 'operator' ? sum + row.promo_discount_value : sum
+    }, 0)
+
+    const platformFundedPromoDiscountTotal = allPayoutRows.reduce((sum, row) => {
+      return row.promo_funding_source === 'platform' ? sum + row.promo_discount_value : sum
+    }, 0)
+
+    const releaseBlocker = payoutComparisons.some((row) => Math.abs(row.delta) > 0.01)
+      || billingComparisons.some((row) => Math.abs(row.delta) > 0.01)
+      || formulaBreaks.length > 0
+
+    return {
+      payoutComparisons,
+      billingComparisons,
+      formulaBreakCount: formulaBreaks.length,
+      operatorFundedPromoDiscountTotal,
+      platformFundedPromoDiscountTotal,
+      totalPriorCommissionCredit: derived.total_prior_commission_credit,
+      totalFinalMembershipCharge: derived.total_final_membership_charge,
+      releaseBlocker,
+    }
+  }, [overview?.billingRows, overview?.financeHealth, overview?.financeSummary, overview?.payoutRows])
+
+  const opsReviewSummary = useMemo(() => {
+    return {
+      payoutHolds: operatorRiskRows.filter((row) => row.payout_hold || row.on_hold_exposure > 0).length,
+      fraudReview: operatorRiskRows.filter((row) => row.fraud_review_required).length,
+      kycBlocked: operatorRiskRows.filter((row) => row.kyc_status !== 'approved').length,
+      recoveryPending: operatorRiskRows.filter((row) => row.recovery_exposure > 0).length,
+    }
+  }, [operatorRiskRows])
+
   const visibleAuditRows = useMemo(() => {
     return auditRows.filter((row) => {
       if (historyEntityTypeFilter !== 'all' && row.entity_type !== historyEntityTypeFilter) {
@@ -345,6 +893,106 @@ export default function AdminCommercialPage() {
     if (!selectedRecoveryRow) return
     setRecoveryAmount(selectedRecoveryRow.recovery_amount.toString())
   }, [selectedRecoveryRow])
+
+  const exportBillingLifecycleCsv = () => {
+    downloadCsvFile(
+      'commercial-billing-lifecycle.csv',
+      ['Operator', 'Tier', 'Cycle start', 'Cycle end', 'Invoice status', 'Membership fee', 'Commission credit', 'Adjustment', 'Final charge', 'Invoice number', 'Issued at', 'Due date', 'Paid at'],
+      reportBillingRows.map((row) => [
+        operatorNameById.get(row.operator_user_id) ?? row.operator_user_id,
+        row.membership_tier_code,
+        row.cycle_start,
+        row.cycle_end,
+        row.invoice_status,
+        row.membership_fee,
+        row.prior_cycle_commission_credit,
+        row.adjustment_applied,
+        row.final_membership_charge,
+        row.invoice_number,
+        row.issued_at,
+        row.due_date,
+        row.paid_at,
+      ]),
+    )
+  }
+
+  const exportPayoutOperationsCsv = () => {
+    downloadCsvFile(
+      'commercial-payout-operations.csv',
+      ['Operator', 'Trip', 'Batch', 'Status', 'Travel date', 'Due at', 'Paid at', 'Gross amount', 'Refund amount', 'Commission collected', 'Commission remaining', 'Operator payable', 'Recovery amount', 'Promo owner', 'Promo funding', 'Promo discount'],
+      reportPayoutRows.map((row) => [
+        operatorNameById.get(row.operator_user_id) ?? row.operator_user_id,
+        row.trip_name ?? row.booking_id,
+        row.batch_reference,
+        row.payout_status,
+        row.travel_date,
+        row.payout_due_at,
+        row.paid_at,
+        row.gross_amount,
+        row.refund_amount,
+        row.commission_collected,
+        row.commission_remaining,
+        row.operator_payable_amount,
+        row.recovery_amount,
+        row.promo_owner,
+        row.promo_funding_source,
+        row.promo_discount_value,
+      ]),
+    )
+  }
+
+  const exportPromoPerformanceCsv = () => {
+    downloadCsvFile(
+      'commercial-promo-performance.csv',
+      ['Operator', 'Promo', 'Code', 'Funding source', 'Status', 'Bookings', 'Discount total', 'Operator-funded discount', 'Platform-funded discount', 'Commission remaining exposure', 'Operator payable total'],
+      promoPerformanceRows.map((row) => [
+        row.operator_name,
+        row.title,
+        row.code,
+        row.funding_source,
+        row.is_active ? 'active' : 'inactive',
+        row.bookings_count,
+        row.discount_total,
+        row.operator_funded_discount_total,
+        row.platform_funded_discount_total,
+        row.commission_remaining_exposure,
+        row.operator_payable_total,
+      ]),
+    )
+  }
+
+  const exportRiskReviewCsv = () => {
+    downloadCsvFile(
+      'commercial-risk-review.csv',
+      ['Operator', 'Tier', 'KYC status', 'Primary risk', 'Signals', 'On-hold exposure', 'Recovery exposure', 'Cancellation count'],
+      operatorRiskRows.map((row) => [
+        row.operator_name,
+        row.membership_tier_code,
+        row.kyc_status,
+        formatRiskState(row.primary_risk),
+        row.risk_signals.join(' | '),
+        row.on_hold_exposure,
+        row.recovery_exposure,
+        row.operator_fault_cancellation_count,
+      ]),
+    )
+  }
+
+  const exportAuditHistoryCsv = () => {
+    downloadCsvFile(
+      'commercial-audit-history.csv',
+      ['When', 'Action', 'Entity type', 'Entity id', 'Actor email', 'Actor role', 'Reason'],
+      visibleAuditRows.map((row) => [
+        row.created_at,
+        row.action_type,
+        row.entity_type,
+        row.entity_id,
+        row.admin_email,
+        row.admin_role,
+        row.reason,
+      ]),
+    )
+  }
 
   const handlePromoFormChange = (field: keyof AdminPromoFormState, value: string) => {
     setPromoForm((current) => ({ ...current, [field]: value }))
@@ -586,7 +1234,7 @@ export default function AdminCommercialPage() {
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map((card) => (
-          <Card key={card.label}>
+          <Card key={card.id}>
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
                 <card.icon className="h-4 w-4" />
@@ -595,18 +1243,22 @@ export default function AdminCommercialPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-foreground">{loading ? 'Loading…' : card.value}</p>
+              <Button variant="ghost" className="mt-3 h-auto px-0 text-xs text-muted-foreground" onClick={() => handleSummaryDrillDown(card.id)}>
+                Drill into report
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Tabs defaultValue="overview" className="mt-8">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
         <TabsList className="h-auto p-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="operators">Operators</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="promos">Promos</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
@@ -1217,10 +1869,447 @@ export default function AdminCommercialPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="history" className="pt-4">
+        <TabsContent value="reports" className="space-y-6 pt-4">
           <Card>
             <CardHeader>
+              <CardTitle className="text-lg">Report filters</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Start date</label>
+                  <Input type="date" value={reportStartDate} onChange={(event) => setReportStartDate(event.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">End date</label>
+                  <Input type="date" value={reportEndDate} onChange={(event) => setReportEndDate(event.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Operator</label>
+                  <Select value={reportOperatorFilter} onValueChange={setReportOperatorFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All operators</SelectItem>
+                      {(overview?.operatorProfiles ?? []).map((profile) => (
+                        <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
+                          {operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Billing status</label>
+                  <Select value={billingStatusFilter} onValueChange={setBillingStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All billing statuses</SelectItem>
+                      {billingStatusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Payout status</label>
+                  <Select value={payoutStatusFilter} onValueChange={setPayoutStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All payout statuses</SelectItem>
+                      {payoutStatusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Promo funding</label>
+                  <Select value={promoFundingFilter} onValueChange={setPromoFundingFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All funding sources</SelectItem>
+                      <SelectItem value="platform">Platform-funded</SelectItem>
+                      <SelectItem value="operator">Operator-funded</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Risk state</label>
+                  <Select value={riskStateFilter} onValueChange={setRiskStateFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All risk states</SelectItem>
+                      <SelectItem value="fraud_review">Fraud review</SelectItem>
+                      <SelectItem value="payout_hold">Payout hold</SelectItem>
+                      <SelectItem value="recovery_pending">Recovery pending</SelectItem>
+                      <SelectItem value="kyc_blocked">KYC blocker</SelectItem>
+                      <SelectItem value="cancellation_penalty">Cancellation penalty</SelectItem>
+                      <SelectItem value="clear">Clear</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Tier</label>
+                  <Select value={tierFilter} onValueChange={setTierFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All tiers</SelectItem>
+                      {tierOptions.map((tier) => (
+                        <SelectItem key={tier} value={tier}>{tier}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">KYC status</label>
+                  <Select value={kycFilter} onValueChange={setKycFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All KYC states</SelectItem>
+                      {kycOptions.map((status) => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" onClick={resetReportFilters}>Reset filters</Button>
+                <p className="text-xs text-muted-foreground">Exports use the filters and date window currently applied here.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Weekly ops review pack</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <HealthMetric label="Payout holds" value={String(opsReviewSummary.payoutHolds)} />
+                  <HealthMetric label="Fraud review" value={String(opsReviewSummary.fraudReview)} />
+                  <HealthMetric label="KYC blockers" value={String(opsReviewSummary.kycBlocked)} />
+                  <HealthMetric label="Recovery pending" value={String(opsReviewSummary.recoveryPending)} />
+                </div>
+
+                <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Minimum review evidence</p>
+                  <p className="mt-2">Release holds only after KYC is approved, recovery exposure is explained, and the hold reason is already preserved in audit history.</p>
+                  <p className="mt-2">Resolve recoveries only after external payment proof, refund context, or finance approval is referenced in the resolution reason.</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => openReportSlice({ payoutStatus: 'on_hold', riskState: 'payout_hold' })}>Review payout holds</Button>
+                  <Button variant="outline" onClick={() => openReportSlice({ riskState: 'kyc_blocked' })}>Review KYC blockers</Button>
+                  <Button variant="outline" onClick={() => openReportSlice({ riskState: 'recovery_pending', payoutStatus: 'recovery_pending' })}>Review recoveries</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Reconciliation alignment</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className={`rounded-lg border p-4 ${reconciliationChecks.releaseBlocker ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+                  <p className="text-sm font-medium text-foreground">
+                    {reconciliationChecks.releaseBlocker ? 'Release blocker: admin totals and row-backed totals diverge and should be reviewed before money-state changes.' : 'Admin finance totals align with the loaded billing and payout views.'}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Billing formula breaks: {reconciliationChecks.formulaBreakCount}. Prior-cycle commission credit: {formatMoney(reconciliationChecks.totalPriorCommissionCredit)}. Final invoice charges: {formatMoney(reconciliationChecks.totalFinalMembershipCharge)}.
+                  </p>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Check</TableHead>
+                      <TableHead className="text-right">SQL / view</TableHead>
+                      <TableHead className="text-right">Row-derived</TableHead>
+                      <TableHead className="text-right">Delta</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reconciliationChecks.payoutComparisons.map((row) => (
+                      <TableRow key={row.label}>
+                        <TableCell>{row.label}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.source)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.derived)}</TableCell>
+                        <TableCell className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}>{formatSignedMoney(row.delta)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {reconciliationChecks.billingComparisons.map((row) => (
+                      <TableRow key={row.label}>
+                        <TableCell>{row.label}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.source)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.derived)}</TableCell>
+                        <TableCell className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}>{formatSignedMoney(row.delta)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border p-4">
+                    <p className="text-sm text-muted-foreground">Operator-funded promo discounts</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(reconciliationChecks.operatorFundedPromoDiscountTotal)}</p>
+                  </div>
+                  <div className="rounded-lg border border-border p-4">
+                    <p className="text-sm text-muted-foreground">Platform-funded promo discounts</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(reconciliationChecks.platformFundedPromoDiscountTotal)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-lg">Billing lifecycle</CardTitle>
+              <Button variant="outline" size="sm" onClick={exportBillingLifecycleCsv}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Cycle</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Membership fee</TableHead>
+                    <TableHead className="text-right">Commission credit</TableHead>
+                    <TableHead className="text-right">Adjustment</TableHead>
+                    <TableHead className="text-right">Final charge</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportBillingRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">No billing cycles match the current filters.</TableCell>
+                    </TableRow>
+                  ) : (
+                    reportBillingRows.map((row) => (
+                      <TableRow key={row.billing_cycle_id}>
+                        <TableCell>{operatorNameById.get(row.operator_user_id) ?? row.operator_user_id.slice(0, 8)}</TableCell>
+                        <TableCell>{formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}</TableCell>
+                        <TableCell>{row.invoice_status}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.membership_fee)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.prior_cycle_commission_credit)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.adjustment_applied)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.final_membership_charge)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-lg">Payout operations</CardTitle>
+              <Button variant="outline" size="sm" onClick={exportPayoutOperationsCsv}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Trip</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Batch</TableHead>
+                    <TableHead className="text-right">Operator payable</TableHead>
+                    <TableHead className="text-right">Commission remaining</TableHead>
+                    <TableHead className="text-right">Recovery</TableHead>
+                    <TableHead className="text-right">Promo discount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportPayoutRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">No payout items match the current filters.</TableCell>
+                    </TableRow>
+                  ) : (
+                    reportPayoutRows.map((row) => (
+                      <TableRow key={row.payout_item_id}>
+                        <TableCell>{operatorNameById.get(row.operator_user_id) ?? row.operator_user_id.slice(0, 8)}</TableCell>
+                        <TableCell>{row.trip_name ?? row.booking_id.slice(0, 8)}</TableCell>
+                        <TableCell>{row.payout_status}</TableCell>
+                        <TableCell>{row.batch_reference ?? 'Unbatched'}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.operator_payable_amount)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.commission_remaining)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.recovery_amount)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.promo_discount_value)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-lg">Promo performance</CardTitle>
+              <Button variant="outline" size="sm" onClick={exportPromoPerformanceCsv}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Promo</TableHead>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Funding</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Bookings</TableHead>
+                    <TableHead className="text-right">Discount total</TableHead>
+                    <TableHead className="text-right">Commission remaining</TableHead>
+                    <TableHead className="text-right">Operator payable</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {promoPerformanceRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">No promotions match the current filters.</TableCell>
+                    </TableRow>
+                  ) : (
+                    promoPerformanceRows.map((row) => (
+                      <TableRow key={row.promotion_id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-foreground">{row.title}</p>
+                            <p className="text-xs text-muted-foreground">{row.code}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{row.operator_name}</TableCell>
+                        <TableCell>{row.funding_source}</TableCell>
+                        <TableCell>{row.is_active ? 'Active' : 'Inactive'}</TableCell>
+                        <TableCell className="text-right">{row.bookings_count}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.discount_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.commission_remaining_exposure)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.operator_payable_total)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <CardTitle className="text-lg">Operator risk signals</CardTitle>
+              <Button variant="outline" size="sm" onClick={exportRiskReviewCsv}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Tier</TableHead>
+                    <TableHead>KYC</TableHead>
+                    <TableHead>Primary risk</TableHead>
+                    <TableHead>Signals</TableHead>
+                    <TableHead className="text-right">On-hold exposure</TableHead>
+                    <TableHead className="text-right">Recovery exposure</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {operatorRiskRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">No operators match the current filters.</TableCell>
+                    </TableRow>
+                  ) : (
+                    operatorRiskRows.map((row) => (
+                      <TableRow key={row.operator_user_id}>
+                        <TableCell>{row.operator_name}</TableCell>
+                        <TableCell>{row.membership_tier_code}</TableCell>
+                        <TableCell>{row.kyc_status}</TableCell>
+                        <TableCell>{formatRiskState(row.primary_risk)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{row.risk_signals.join(' · ')}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.on_hold_exposure)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.recovery_exposure)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Commercial trend monitor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-right">Cycles closed</TableHead>
+                    <TableHead className="text-right">Invoiced</TableHead>
+                    <TableHead className="text-right">Commission credit</TableHead>
+                    <TableHead className="text-right">Payouts paid</TableHead>
+                    <TableHead className="text-right">Payouts scheduled</TableHead>
+                    <TableHead className="text-right">Promo discounts</TableHead>
+                    <TableHead className="text-right">Recovery pending</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {trendRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">No trend data is available for the current filters.</TableCell>
+                    </TableRow>
+                  ) : (
+                    trendRows.map((row) => (
+                      <TableRow key={row.month_key}>
+                        <TableCell>{row.month_label}</TableCell>
+                        <TableCell className="text-right">{row.billing_cycles_closed}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.invoiced_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.commission_credit_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.payouts_paid_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.payouts_scheduled_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.promo_discount_total)}</TableCell>
+                        <TableCell className="text-right">{formatMoney(row.recovery_pending_total)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="pt-4">
+          <Card>
+            <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Commercial audit history</CardTitle>
+              <Button variant="outline" size="sm" onClick={exportAuditHistoryCsv}>
+                <Download className="mr-2 h-4 w-4" />Export CSV
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">

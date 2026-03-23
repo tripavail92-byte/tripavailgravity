@@ -50,58 +50,58 @@ This phase is about closing the gap between "the core controls exist" and "admin
 
 ### 1. Lock the canonical admin-commercial scope
 
-- [ ] Confirm that the commercial roadmap now treats promo completion as Phase 4 and admin control/reporting as Phase 5
-- [ ] Mark which existing Phase 5 deliverables are already satisfied by the current admin commercial page and finance views
-- [ ] Separate true Phase 5 gaps from already-delivered capabilities so work does not duplicate existing functionality
-- [ ] Record the canonical acceptance criteria for admin actions that change money state versus those that are read-only
+- [x] Confirm that the commercial roadmap now treats promo completion as Phase 4 and admin control/reporting as Phase 5
+- [x] Mark which existing Phase 5 deliverables are already satisfied by the current admin commercial page and finance views
+- [x] Separate true Phase 5 gaps from already-delivered capabilities so work does not duplicate existing functionality
+- [x] Record the canonical acceptance criteria for admin actions that change money state versus those that are read-only
 
 ### 2. Harden admin money-state actions
 
-- [ ] Verify every admin money-state action requires a reason and persists that reason historically
-- [ ] Verify payout hold apply/release actions are clearly distinguishable from automatic holds
-- [ ] Verify payout batch reversal leaves a complete audit trail linking the original batch, reversal event, and resulting recovery exposure
-- [ ] Verify manual recovery resolution records who performed the action, when, and why
-- [ ] Add targeted regression coverage for admin-triggered hold, release, reversal, and recovery flows if any state transitions remain untested
+- [x] Verify every admin money-state action requires a reason and persists that reason historically
+- [x] Verify payout hold apply/release actions are clearly distinguishable from automatic holds
+- [x] Verify payout batch reversal leaves a complete audit trail linking the original batch, reversal event, and resulting recovery exposure
+- [x] Verify manual recovery resolution records who performed the action, when, and why
+- [x] Add targeted regression coverage for admin-triggered hold, release, reversal, and recovery flows if any state transitions remain untested
 
 ### 3. Finish auditability and admin traceability
 
-- [ ] Add or confirm an admin action log for commercial operations if one does not already exist elsewhere
-- [ ] Ensure tier changes record operator, old tier, new tier, actor, timestamp, and reason in an admin-readable way
-- [ ] Ensure payout-hold history is visible, not just current payout-hold state
-- [ ] Ensure reversal and recovery history can be reconstructed without reading raw database tables manually
-- [ ] Ensure promo create/edit actions by admins are auditable separately from operator-created promos
+- [x] Add or confirm an admin action log for commercial operations if one does not already exist elsewhere
+- [x] Ensure tier changes record operator, old tier, new tier, actor, timestamp, and reason in an admin-readable way
+- [x] Ensure payout-hold history is visible, not just current payout-hold state
+- [x] Ensure reversal and recovery history can be reconstructed without reading raw database tables manually
+- [x] Ensure promo create/edit actions by admins are auditable separately from operator-created promos
 
 ### 4. Expand reporting from finance health into decision support
 
-- [ ] Add a dedicated report for operator billing lifecycle by cycle and invoice status
-- [ ] Add a dedicated report for payout operations by status: eligible, scheduled, paid, reversed, recovery pending, on hold
-- [ ] Add a dedicated report for promo performance by campaign, operator, and funding source
-- [ ] Add a dedicated report for operator risk signals including payout holds, repeated cancellations, KYC blockers, and fraud-review flags
-- [ ] Add a report or dashboard slice for commercial trend monitoring over time instead of single-point totals only
+- [x] Add a dedicated report for operator billing lifecycle by cycle and invoice status
+- [x] Add a dedicated report for payout operations by status: eligible, scheduled, paid, reversed, recovery pending, on hold
+- [x] Add a dedicated report for promo performance by campaign, operator, and funding source
+- [x] Add a dedicated report for operator risk signals including payout holds, repeated cancellations, KYC blockers, and fraud-review flags
+- [x] Add a report or dashboard slice for commercial trend monitoring over time instead of single-point totals only
 
 ### 5. Close reconciliation coverage for admin-facing totals
 
-- [ ] Confirm admin UI totals reconcile with the CLI and SQL reconciliation outputs for all major buckets
-- [ ] Add a verification path for invoice totals versus commission credits and membership fees by billing cycle
-- [ ] Add a verification path for hold, refund, reversal, and recovery totals against payout report outputs
-- [ ] Add a verification path for promo-funded discount totals versus payout margin effects
-- [ ] Treat any unexplained mismatch between admin UI and SQL views as a release blocker
+- [x] Confirm admin UI totals reconcile with the CLI and SQL reconciliation outputs for all major buckets
+- [x] Add a verification path for invoice totals versus commission credits and membership fees by billing cycle
+- [x] Add a verification path for hold, refund, reversal, and recovery totals against payout report outputs
+- [x] Add a verification path for promo-funded discount totals versus payout margin effects
+- [x] Treat any unexplained mismatch between admin UI and SQL views as a release blocker
 
 ### 6. Improve admin usability for exception handling
 
-- [ ] Add clearer grouping for operators who require immediate attention: payout hold, fraud review, recovery pending, KYC blocked
-- [ ] Add filters for payout status, tier, KYC status, promo funding source, and risk state
-- [ ] Add direct drill-down from summary cards into the underlying operator or payout rows
-- [ ] Add exportable views for finance operations where admins currently need to copy values manually
-- [ ] Make high-risk actions visually explicit so reversal and recovery operations cannot be confused with read-only inspection
+- [x] Add clearer grouping for operators who require immediate attention: payout hold, fraud review, recovery pending, KYC blocked
+- [x] Add filters for payout status, tier, KYC status, promo funding source, and risk state
+- [x] Add direct drill-down from summary cards into the underlying operator or payout rows
+- [x] Add exportable views for finance operations where admins currently need to copy values manually
+- [x] Make high-risk actions visually explicit so reversal and recovery operations cannot be confused with read-only inspection
 
 ### 7. Define the Phase 5 operational review pack
 
-- [ ] Create a single runbook for weekly commercial admin review
-- [ ] Define the minimum checks for payout readiness, recovery exposure, reconciliation status, and KYC blockers
-- [ ] Define the minimum evidence needed before an admin manually releases a payout hold
-- [ ] Define the minimum evidence needed before an admin resolves or writes down a recovery item
-- [ ] Define the escalation path for finance mismatches, chargebacks, and suspicious cancellation patterns
+- [x] Create a single runbook for weekly commercial admin review
+- [x] Define the minimum checks for payout readiness, recovery exposure, reconciliation status, and KYC blockers
+- [x] Define the minimum evidence needed before an admin manually releases a payout hold
+- [x] Define the minimum evidence needed before an admin resolves or writes down a recovery item
+- [x] Define the escalation path for finance mismatches, chargebacks, and suspicious cancellation patterns
 
 ## Definition of Done
 
@@ -127,9 +127,6 @@ Phase 5 is not a greenfield build.
 
 The foundation already exists in the admin commercial page, payout report views, finance health views, recovery workflows, and reconciliation tests.
 
-The remaining work is mainly:
+The remaining work described above has been completed through the shipped admin commercial history feed, the reporting and reconciliation surfaces on the admin commercial page, and the weekly operations runbook in `docs/tripavail-commercial-phase5-weekly-ops-runbook.md`.
 
-- making admin actions fully auditable
-- improving reporting depth and drill-downs
-- aligning every admin-facing total with the underlying reconciliation model
-- documenting the operational review process clearly
+Phase 5 is therefore complete against the canonical admin control and reporting scope.
