@@ -51,6 +51,10 @@ function formatAuditAction(actionType: string) {
   switch (actionType) {
     case 'membership_tier_changed':
       return 'Tier changed'
+    case 'promotion_created':
+      return 'Promo created'
+    case 'promotion_updated':
+      return 'Promo updated'
     case 'payout_hold_applied':
       return 'Payout hold applied'
     case 'payout_hold_released':
@@ -66,6 +70,39 @@ function formatAuditAction(actionType: string) {
 
 function asObject(value: Record<string, unknown> | null) {
   return value && typeof value === 'object' ? value : null
+}
+
+function getAuditOperatorIds(row: CommercialAuditLogRow) {
+  if (row.entity_type === 'commercial_profile') return [row.entity_id]
+
+  const previousState = asObject(row.previous_state)
+  const nextState = asObject(row.new_state)
+  const directOperatorId = nextState?.operator_user_id ?? previousState?.operator_user_id
+  if (typeof directOperatorId === 'string' && directOperatorId.length > 0) {
+    return [directOperatorId]
+  }
+
+  const operatorIds = nextState?.operator_user_ids ?? previousState?.operator_user_ids
+  if (Array.isArray(operatorIds)) {
+    return operatorIds.filter((value): value is string => typeof value === 'string' && value.length > 0)
+  }
+
+  return []
+}
+
+function formatAuditEntityType(entityType: string) {
+  switch (entityType) {
+    case 'commercial_profile':
+      return 'Operator profile'
+    case 'payout_batch':
+      return 'Payout batch'
+    case 'payout_item':
+      return 'Payout item'
+    case 'promotion':
+      return 'Promotion'
+    default:
+      return entityType.replace(/_/g, ' ')
+  }
 }
 
 type AdminPromoFormState = {
@@ -154,6 +191,9 @@ export default function AdminCommercialPage() {
   const [submitting, setSubmitting] = useState(false)
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof commercialService.getAdminCommercialOverview>> | null>(null)
   const [auditRows, setAuditRows] = useState<CommercialAuditLogRow[]>([])
+  const [historyOperatorFilter, setHistoryOperatorFilter] = useState('all')
+  const [historyEntityTypeFilter, setHistoryEntityTypeFilter] = useState('all')
+  const [historyActionTypeFilter, setHistoryActionTypeFilter] = useState('all')
 
   const load = async () => {
     try {
@@ -272,7 +312,34 @@ export default function AdminCommercialPage() {
     return filteredPayoutRows.find((row) => row.payout_item_id === selectedRecoveryItemId) ?? null
   }, [filteredPayoutRows, selectedRecoveryItemId])
 
-  const visibleAuditRows = useMemo(() => auditRows, [auditRows])
+  const historyEntityTypeOptions = useMemo(() => {
+    return Array.from(new Set(auditRows.map((row) => row.entity_type))).sort()
+  }, [auditRows])
+
+  const historyActionTypeOptions = useMemo(() => {
+    return Array.from(new Set(auditRows.map((row) => row.action_type))).sort()
+  }, [auditRows])
+
+  const visibleAuditRows = useMemo(() => {
+    return auditRows.filter((row) => {
+      if (historyEntityTypeFilter !== 'all' && row.entity_type !== historyEntityTypeFilter) {
+        return false
+      }
+
+      if (historyActionTypeFilter !== 'all' && row.action_type !== historyActionTypeFilter) {
+        return false
+      }
+
+      if (historyOperatorFilter !== 'all') {
+        const operatorIds = getAuditOperatorIds(row)
+        if (!operatorIds.includes(historyOperatorFilter)) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [auditRows, historyActionTypeFilter, historyEntityTypeFilter, historyOperatorFilter])
 
   useEffect(() => {
     if (!selectedRecoveryRow) return
@@ -1155,7 +1222,60 @@ export default function AdminCommercialPage() {
             <CardHeader>
               <CardTitle className="text-lg">Commercial audit history</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Operator</label>
+                  <Select value={historyOperatorFilter} onValueChange={setHistoryOperatorFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All operators</SelectItem>
+                      {(overview?.operatorProfiles ?? []).map((profile) => (
+                        <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
+                          {operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Entity type</label>
+                  <Select value={historyEntityTypeFilter} onValueChange={setHistoryEntityTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All entity types</SelectItem>
+                      {historyEntityTypeOptions.map((entityType) => (
+                        <SelectItem key={entityType} value={entityType}>
+                          {formatAuditEntityType(entityType)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Action type</label>
+                  <Select value={historyActionTypeFilter} onValueChange={setHistoryActionTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All actions</SelectItem>
+                      {historyActionTypeOptions.map((actionType) => (
+                        <SelectItem key={actionType} value={actionType}>
+                          {formatAuditAction(actionType)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1180,6 +1300,8 @@ export default function AdminCommercialPage() {
                       const nextState = asObject(row.new_state)
                       const entityLabel = row.entity_type === 'commercial_profile'
                         ? (operatorNameById.get(row.entity_id) ?? row.entity_id.slice(0, 8))
+                        : row.entity_type === 'promotion'
+                          ? String(nextState?.title ?? previousState?.title ?? nextState?.code ?? previousState?.code ?? row.entity_id.slice(0, 8))
                         : row.entity_type === 'payout_batch'
                           ? String(nextState?.batch_reference ?? previousState?.batch_reference ?? row.entity_id.slice(0, 8))
                           : String(nextState?.booking_id ?? previousState?.booking_id ?? row.entity_id.slice(0, 8))
@@ -1191,6 +1313,8 @@ export default function AdminCommercialPage() {
                             ? `${String(previousState?.status ?? '—')} -> ${String(nextState?.status ?? '—')}`
                             : row.action_type === 'payout_recovery_resolved'
                               ? `${String(previousState?.recovery_amount ?? '—')} -> ${String(nextState?.remaining_recovery_amount ?? '—')}`
+                              : row.action_type === 'promotion_created' || row.action_type === 'promotion_updated'
+                                ? `${String(previousState?.code ?? 'new')} -> ${String(nextState?.code ?? previousState?.code ?? '—')}`
                               : '—'
 
                       return (
@@ -1200,7 +1324,7 @@ export default function AdminCommercialPage() {
                           <TableCell>
                             <div>
                               <p className="font-medium text-foreground">{entityLabel}</p>
-                              <p className="text-xs text-muted-foreground">{row.entity_type}</p>
+                              <p className="text-xs text-muted-foreground">{formatAuditEntityType(row.entity_type)}</p>
                             </div>
                           </TableCell>
                           <TableCell>

@@ -198,11 +198,13 @@ DO $$
 DECLARE
   v_admin_id UUID := (SELECT val FROM _audit_ids WHERE key = 'admin');
   v_operator_id UUID := (SELECT val FROM _audit_ids WHERE key = 'operator');
+  v_tour_id UUID := (SELECT val FROM _audit_ids WHERE key = 'tour');
   v_batch RECORD;
   v_paid RECORD;
   v_reversed RECORD;
   v_recovery RECORD;
   v_recovery_item_id UUID;
+  v_promo_id UUID;
 BEGIN
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
   PERFORM set_config('request.jwt.claim.sub', v_admin_id::TEXT, true);
@@ -224,6 +226,61 @@ BEGIN
       AND new_state->>'new_tier_code' = 'diamond'
   ),
     'FAIL: tier changes should be visible through the unified commercial audit feed';
+
+  INSERT INTO public.operator_promotions (
+    operator_user_id,
+    applicable_tour_id,
+    title,
+    code,
+    description,
+    owner_label,
+    funding_source,
+    discount_type,
+    discount_value,
+    is_active
+  ) VALUES (
+    v_operator_id,
+    v_tour_id,
+    'Audit promo launch',
+    'AUDITPROMO',
+    'Launch support offer',
+    'AUDITPROMO',
+    'platform',
+    'fixed_amount',
+    1200,
+    TRUE
+  )
+  RETURNING id INTO v_promo_id;
+
+  ASSERT EXISTS (
+    SELECT 1
+    FROM public.admin_action_logs
+    WHERE entity_type = 'promotion'
+      AND entity_id = v_promo_id
+      AND action_type = 'promotion_created'
+      AND new_state->>'operator_user_id' = v_operator_id::TEXT
+      AND new_state->>'code' = 'AUDITPROMO'
+  ),
+    'FAIL: promo creation should create an admin audit log';
+
+  UPDATE public.operator_promotions
+  SET
+    title = 'Audit promo launch updated',
+    discount_value = 1500,
+    updated_at = TIMEZONE('UTC', NOW())
+  WHERE id = v_promo_id;
+
+  ASSERT EXISTS (
+    SELECT 1
+    FROM public.admin_action_logs
+    WHERE entity_type = 'promotion'
+      AND entity_id = v_promo_id
+      AND action_type = 'promotion_updated'
+      AND previous_state->>'title' = 'Audit promo launch'
+      AND new_state->>'title' = 'Audit promo launch updated'
+      AND new_state->>'discount_value' = '1500.00'
+  ),
+    'FAIL: promo updates should create an admin audit log';
 
   PERFORM public.admin_update_operator_payout_hold(v_operator_id, TRUE, 'Manual payout hold for audit review');
 

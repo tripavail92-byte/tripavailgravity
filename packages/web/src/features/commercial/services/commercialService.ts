@@ -820,7 +820,7 @@ export const commercialService = {
           role
         )
       `)
-      .in('entity_type', ['commercial_profile', 'payout_batch', 'payout_item'])
+      .in('entity_type', ['commercial_profile', 'payout_batch', 'payout_item', 'promotion'])
       .order('created_at', { ascending: false })
       .limit(limit)
 
