@@ -903,7 +903,7 @@ Implementation status:
 
 Remaining note:
 
-- broader premium feature-gate enforcement across all operator workflows is still a separate next-step item
+- broader premium feature-gate enforcement on the live operator create and edit trip paths was closed in Phase 7 via shared commercial rules plus database-backed publish enforcement
 
 ## 22. Financial Rule That Still Needs Explicit Enforcement
 
@@ -945,7 +945,11 @@ What must be confirmed or tightened next:
 Implementation status:
 
 - implemented at the commercial eligibility layer
-- still requires future worker orchestration for actual payout scheduling and release
+- Phase 7 worker orchestration now runs billing closure, payout eligibility refresh, and payout batch creation on the documented production cadence
+
+Operational note:
+
+- manual settlement release policy and escalation evidence remain governed by the Phase 7 ops runbook rather than by ad hoc SQL procedures
 
 ## 23. Next Implementation Order
 

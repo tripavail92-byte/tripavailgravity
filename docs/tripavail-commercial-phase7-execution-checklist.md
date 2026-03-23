@@ -56,63 +56,69 @@ Already complete and available:
 
 ## Execution Checklist
 
+Status note:
+
+- Validated against implemented code paths, worker automation, admin/operator surfaces, and Phase 7 operations docs on 2026-03-24
+- The abstract checklist below is intentionally kept in sync with the concrete execution section later in this document
+- Phase 7 has no remaining release-blocking gaps after the worker auth and ops closeout fixes
+
 ### 1. Close summary-surface mismatches
 
-- [ ] Fix the operator dashboard Recent Bookings mismatch so it reflects live operator booking data
-- [ ] Audit other summary cards or dashboard widgets for data paths that diverge from the primary booking or finance surfaces
-- [ ] Ensure every summary widget has a defined source of truth and empty-state rule
-- [ ] Treat any UI mismatch between dashboard summaries and detail pages as a release-blocking data-integrity bug for this phase
+- [x] Fix the operator dashboard Recent Bookings mismatch so it reflects live operator booking data
+- [x] Audit other summary cards or dashboard widgets for data paths that diverge from the primary booking or finance surfaces
+- [x] Ensure every summary widget has a defined source of truth and empty-state rule
+- [x] Treat any UI mismatch between dashboard summaries and detail pages as a release-blocking data-integrity bug for this phase
 
 ### 2. Build operator-facing commercial visibility
 
-- [ ] Add operator-facing billing summary cards showing current tier, membership fee, prior-cycle commission credit, and invoice status
-- [ ] Add operator invoice history view using the existing billing and invoice data model
-- [ ] Add operator payout history view using payout batch and payout item data
-- [ ] Add operator explanation copy for payout holds, reversals, recovery balances, and payout eligibility timing
-- [ ] Ensure operators can inspect their own commercial state without needing admin support for routine questions
+- [x] Add operator-facing billing summary cards showing current tier, membership fee, prior-cycle commission credit, and invoice status
+- [x] Add operator invoice history view using the existing billing and invoice data model
+- [x] Add operator payout history view using payout batch and payout item data
+- [x] Add operator explanation copy for payout holds, reversals, recovery balances, and payout eligibility timing
+- [x] Ensure operators can inspect their own commercial state without needing admin support for routine questions
 
 ### 3. Finish live feature-gate enforcement
 
-- [ ] Audit actual tour creation and editing entry points against tier-based feature entitlements
-- [ ] Enforce publish limits from the shared commercial rules engine across all live product paths
-- [ ] Enforce gated premium features consistently in the operator UI, not only in backend logic or planning docs
-- [ ] Add regression coverage for live feature-gated entry points that are still relying on soft UI assumptions
+- [x] Audit actual tour creation and editing entry points against tier-based feature entitlements
+- [x] Enforce publish limits from the shared commercial rules engine across all live product paths
+- [x] Enforce gated premium features consistently in the operator UI, not only in backend logic or planning docs
+- [x] Add regression coverage for live feature-gated entry points that are still relying on soft UI assumptions
 
 ### 4. Automate billing-cycle and payout orchestration
 
-- [ ] Define the production job path for billing-cycle closure
-- [ ] Define the production job path for settlement eligibility updates after completion
-- [ ] Define the production job path for payout batch creation and scheduled release
-- [ ] Ensure every automation job is idempotent and safe to rerun
-- [ ] Add operator-visible timestamps or status markers so background automation effects are traceable in the UI
+- [x] Define the production job path for billing-cycle closure
+- [x] Define the production job path for settlement eligibility updates after completion
+- [x] Define the production job path for payout batch creation and scheduled release
+- [x] Ensure every automation job is idempotent and safe to rerun
+- [x] Add operator-visible timestamps or status markers so background automation effects are traceable in the UI
 
 ### 5. Strengthen dispute, hold, and recovery workflows
 
-- [ ] Add clearer operational drill-down for payout holds, reversals, and recovery balances
-- [ ] Ensure support and finance teams can trace a booking from booking state to payout state to recovery state without raw SQL
-- [ ] Add or refine UI surfaces for chargeback-like or dispute-related exceptional booking states if those workflows are still only partially modeled
-- [ ] Validate that promo-applied bookings continue to reconcile correctly when hold or recovery workflows are involved
+- [x] Add clearer operational drill-down for payout holds, reversals, and recovery balances
+- [x] Ensure support and finance teams can trace a booking from booking state to payout state to recovery state without raw SQL
+- [x] Add or refine UI surfaces for chargeback-like or dispute-related exceptional booking states if those workflows are still only partially modeled
+- [x] Validate that promo-applied bookings continue to reconcile correctly when hold or recovery workflows are involved
 
 ### 6. Expand reconciliation and monitoring loops
 
-- [ ] Add a repeatable Phase 7 reconciliation checklist that compares UI totals, report views, and worker outcomes
-- [ ] Define alert thresholds for payout backlog, recovery exposure, reconciliation mismatches, and stuck settlement states
-- [ ] Add a support-ready slice for bookings whose UI surface and finance state disagree
-- [ ] Ensure production monitoring distinguishes data-latency issues from true state corruption
+- [x] Add a repeatable Phase 7 reconciliation checklist that compares UI totals, report views, and worker outcomes
+- [x] Define alert thresholds for payout backlog, recovery exposure, reconciliation mismatches, and stuck settlement states
+- [x] Add a support-ready slice for bookings whose UI surface and finance state disagree
+- [x] Ensure production monitoring distinguishes data-latency issues from true state corruption
 
 ### 7. Finish operator and admin productization
 
-- [ ] Review operator dashboard information architecture so bookings, payouts, invoices, and exceptions form a coherent operator experience
-- [ ] Review admin commercial workflows for excessive dependence on manual query inspection
-- [ ] Add drill-down paths from summary cards into operator invoice, payout, risk, and booking detail views
-- [ ] Remove temporary or placeholder commercial summary widgets that no longer meet production expectations
+- [x] Review operator dashboard information architecture so bookings, payouts, invoices, and exceptions form a coherent operator experience
+- [x] Review admin commercial workflows for excessive dependence on manual query inspection
+- [x] Add drill-down paths from summary cards into operator invoice, payout, risk, and booking detail views
+- [x] Remove temporary or placeholder commercial summary widgets that no longer meet production expectations
 
 ### 8. Record the Phase 7 operational runbook
 
-- [ ] Define the daily or weekly checks for billing-cycle automation, payout readiness, reconciliation drift, and operator exceptions
-- [ ] Define the escalation path when a dashboard summary and source-of-truth page disagree
-- [ ] Define the minimum evidence required before manual intervention in automated payout or billing workflows
-- [ ] Document how support should validate operator questions about promo, payout, balance-due, refund, and invoice state
+- [x] Define the daily or weekly checks for billing-cycle automation, payout readiness, reconciliation drift, and operator exceptions
+- [x] Define the escalation path when a dashboard summary and source-of-truth page disagree
+- [x] Define the minimum evidence required before manual intervention in automated payout or billing workflows
+- [x] Document how support should validate operator questions about promo, payout, balance-due, refund, and invoice state
 
 ## Definition of Done
 
