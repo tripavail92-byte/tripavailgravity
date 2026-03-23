@@ -58,7 +58,9 @@ if (!remoteConnectionString) {
 const OPERATOR_EMAIL = 'phase6-operator-qa@tripavail.test'
 const OPERATOR_PASSWORD = 'Phase6-Operator-QA_2026!'
 const OPERATOR_NAME = 'Phase 6 Operator QA'
-const TRAVELER_EMAIL = 'traveler@test.com'
+const TRAVELER_QA_EMAIL = 'phase6-traveler-qa@tripavail.test'
+const TRAVELER_QA_PASSWORD = 'Phase6-Traveler-QA_2026!'
+const TRAVELER_QA_NAME = 'Phase 6 Traveler QA'
 
 const SOURCE_TOUR_ID = 'fbb1ce22-0105-48c8-9f2b-79b0ac3929b2'
 const SOURCE_SCHEDULE_ID = 'fc9c91d9-9039-4ed9-bcb9-68cae1d5917f'
@@ -136,12 +138,6 @@ async function waitForPublicUser(userId, email, fullName) {
   if (error) throw error
 }
 
-async function getUserIdByEmail(email) {
-  const users = await listAllUsers()
-  const match = users.find((user) => (user.email || '').toLowerCase() === email.toLowerCase())
-  return match?.id || null
-}
-
 async function getSingle(table, id) {
   const { data, error } = await admin.from(table).select('*').eq('id', id).single()
   if (error) throw error
@@ -161,6 +157,58 @@ async function upsertJsonRecord(client, tableType, tableName, payload, conflictT
   )
 }
 
+async function ensureTravelerProfile(client, travelerUserId, rowTimestamp) {
+  await upsertJsonRecord(
+    client,
+    'public.profiles',
+    'public.profiles',
+    {
+      id: travelerUserId,
+      email: TRAVELER_QA_EMAIL,
+      first_name: 'Phase 6',
+      last_name: 'Traveler QA',
+      account_status: 'active',
+      created_at: rowTimestamp,
+      updated_at: rowTimestamp,
+      email_verified: true,
+    },
+    'id',
+      "email = EXCLUDED.email, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, account_status = EXCLUDED.account_status, updated_at = EXCLUDED.updated_at, email_verified = EXCLUDED.email_verified",
+  )
+
+  await client.query(
+    `
+      INSERT INTO public.user_roles (user_id, role_type, is_active, verification_status, profile_completion)
+      VALUES ($1, 'traveller', true, 'approved', 100)
+      ON CONFLICT (user_id, role_type) DO UPDATE
+      SET
+        is_active = EXCLUDED.is_active,
+        verification_status = EXCLUDED.verification_status,
+        profile_completion = EXCLUDED.profile_completion
+    `,
+    [travelerUserId],
+  )
+
+  await upsertJsonRecord(
+    client,
+    'public.account_settings',
+    'public.account_settings',
+    {
+      user_id: travelerUserId,
+      allow_messages_from_anyone: false,
+      profile_visibility: 'private',
+      marketing_emails: false,
+      booking_reminders: true,
+      email_notifications_enabled: true,
+      push_notifications_enabled: true,
+      created_at: rowTimestamp,
+      updated_at: rowTimestamp,
+    },
+    'user_id',
+    "allow_messages_from_anyone = EXCLUDED.allow_messages_from_anyone, profile_visibility = EXCLUDED.profile_visibility, marketing_emails = EXCLUDED.marketing_emails, booking_reminders = EXCLUDED.booking_reminders, email_notifications_enabled = EXCLUDED.email_notifications_enabled, push_notifications_enabled = EXCLUDED.push_notifications_enabled, updated_at = EXCLUDED.updated_at",
+  )
+}
+
 async function main() {
   const client = createRemoteClient(remoteConnectionString)
   await client.connect()
@@ -169,11 +217,13 @@ async function main() {
     const rowTimestamp = new Date().toISOString()
     const operatorUserId = await ensureAuthUser(OPERATOR_EMAIL, OPERATOR_PASSWORD, OPERATOR_NAME)
     await waitForPublicUser(operatorUserId, OPERATOR_EMAIL, OPERATOR_NAME)
-
-    const travelerUserId = await getUserIdByEmail(TRAVELER_EMAIL)
-    if (!travelerUserId) {
-      throw new Error(`Traveler auth user not found for ${TRAVELER_EMAIL}`)
-    }
+    const travelerUserId = await ensureAuthUser(
+      TRAVELER_QA_EMAIL,
+      TRAVELER_QA_PASSWORD,
+      TRAVELER_QA_NAME,
+    )
+    await waitForPublicUser(travelerUserId, TRAVELER_QA_EMAIL, TRAVELER_QA_NAME)
+    await ensureTravelerProfile(client, travelerUserId, rowTimestamp)
 
     await upsertJsonRecord(
       client,
@@ -376,6 +426,8 @@ async function main() {
       operatorEmail: OPERATOR_EMAIL,
       operatorPassword: OPERATOR_PASSWORD,
       operatorUserId,
+      travelerEmail: TRAVELER_QA_EMAIL,
+      travelerPassword: TRAVELER_QA_PASSWORD,
       travelerUserId,
       tourId: QA_TOUR_ID,
       scheduleId: QA_SCHEDULE_ID,
