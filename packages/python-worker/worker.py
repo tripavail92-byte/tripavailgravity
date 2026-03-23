@@ -1,6 +1,9 @@
 import os
 import time
 import logging
+import base64
+import json
+from dataclasses import dataclass
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import requests
@@ -21,13 +24,82 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
-if not SUPABASE_URL or not SUPABASE_KEY:
+
+def _decode_jwt_claims(token: str | None) -> dict:
+    if not token or token.count(".") != 2:
+        return {}
+
+    try:
+        payload = token.split(".")[1]
+        padding = "=" * (-len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload + padding)
+        claims = json.loads(decoded.decode("utf-8"))
+        return claims if isinstance(claims, dict) else {}
+    except Exception:
+        return {}
+
+
+def _describe_supabase_key(token: str | None) -> tuple[str, str | None]:
+    if not token:
+        return "missing", None
+
+    if token.startswith("sb_"):
+        return "secret", None
+
+    claims = _decode_jwt_claims(token)
+    role = claims.get("role") if claims else None
+    if role:
+        return "jwt", str(role)
+
+    return "unknown", None
+
+if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
     logger.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.")
     exit(1)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_KEY_FORMAT, SUPABASE_KEY_ROLE = _describe_supabase_key(SUPABASE_SERVICE_ROLE_KEY)
+if SUPABASE_KEY_ROLE and SUPABASE_KEY_ROLE != "service_role":
+    logger.warning(
+        "SUPABASE_SERVICE_ROLE_KEY decoded role=%s; billing and payout admin RPCs require service_role.",
+        SUPABASE_KEY_ROLE,
+    )
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+
+@dataclass
+class RpcResult:
+    data: object
+
+
+def _rpc(function_name: str, params: dict | None = None):
+    response = requests.post(
+        f"{SUPABASE_URL}/rest/v1/rpc/{function_name}",
+        headers={
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            "Content-Type": "application/json",
+        },
+        json=params or {},
+        timeout=30,
+    )
+
+    if not response.ok:
+        try:
+            error_payload = response.json()
+        except ValueError:
+            error_payload = response.text
+        raise RuntimeError(error_payload)
+
+    if not response.content:
+        return RpcResult(data=None)
+
+    try:
+        return RpcResult(data=response.json())
+    except ValueError:
+        return RpcResult(data=response.text)
 
 # Initialize EasyOCR reader (loads models into memory once)
 # English-only: CNIC front has all fields printed in English
@@ -99,8 +171,8 @@ def _download_storage_path(path: str, suffix: str) -> str:
     resp = requests.get(
         url,
         headers={
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+            "apikey": SUPABASE_SERVICE_ROLE_KEY,
         },
         timeout=30,
     )
@@ -108,7 +180,14 @@ def _download_storage_path(path: str, suffix: str) -> str:
         # Try the other bucket as fallback
         fallback = LEGACY_BUCKET if bucket == KYC_BUCKET else KYC_BUCKET
         url2 = f"{SUPABASE_URL}/storage/v1/object/{fallback}/{encoded_path}"
-        resp2 = requests.get(url2, headers={"Authorization": f"Bearer {SUPABASE_KEY}", "apikey": SUPABASE_KEY}, timeout=30)
+        resp2 = requests.get(
+            url2,
+            headers={
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+            },
+            timeout=30,
+        )
         if resp2.ok:
             resp = resp2
         else:
@@ -479,13 +558,13 @@ def run_billing_automation_once():
 
     as_of_date = date.today().isoformat()
     logger.info("Running billing automation cycle for %s...", as_of_date)
-    billing_response = supabase.rpc(
+    billing_response = _rpc(
         "run_due_operator_billing_cycles",
         {
             "p_as_of_date": as_of_date,
             "p_operator_user_id": None,
         },
-    ).execute()
+    )
     billing_rows = billing_response.data or []
     processed_count = len(billing_rows) if isinstance(billing_rows, list) else (1 if billing_rows else 0)
 
@@ -501,13 +580,13 @@ def run_payout_automation_once():
         return
 
     logger.info("Running payout automation cycle...")
-    refresh_response = supabase.rpc("refresh_all_operator_payout_eligibility").execute()
+    refresh_response = _rpc("refresh_all_operator_payout_eligibility")
     refreshed_profiles = refresh_response.data
     logger.info(f"Refreshed payout eligibility for {refreshed_profiles or 0} operator commercial profile(s).")
 
-    batch_response = supabase.rpc("create_operator_payout_batch", {
+    batch_response = _rpc("create_operator_payout_batch", {
         "p_scheduled_for": datetime.utcnow().isoformat() + "Z"
-    }).execute()
+    })
     batch_rows = batch_response.data or []
     batch = batch_rows[0] if isinstance(batch_rows, list) and batch_rows else batch_rows
 
@@ -524,9 +603,9 @@ def run_payout_automation_once():
     if not PAYOUT_AUTOMATION_AUTO_SETTLE:
         return
 
-    paid_response = supabase.rpc("mark_operator_payout_batch_paid", {
+    paid_response = _rpc("mark_operator_payout_batch_paid", {
         "p_batch_id": batch.get("batch_id")
-    }).execute()
+    })
     paid_rows = paid_response.data or []
     paid_batch = paid_rows[0] if isinstance(paid_rows, list) and paid_rows else paid_rows
     logger.info(
@@ -537,6 +616,12 @@ def run_payout_automation_once():
 
 def main():
     logger.info("Starting background KYC verification worker...")
+    logger.info("Worker RPC transport=rest-v1 service_role_headers=enabled")
+    logger.info(
+        "Supabase admin key env=SUPABASE_SERVICE_ROLE_KEY format=%s decoded_role=%s",
+        SUPABASE_KEY_FORMAT,
+        SUPABASE_KEY_ROLE or "unknown",
+    )
     logger.info(
         "Billing automation enabled=%s interval=%ss",
         BILLING_AUTOMATION_ENABLED,
