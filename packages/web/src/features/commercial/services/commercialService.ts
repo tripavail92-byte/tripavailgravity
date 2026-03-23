@@ -284,6 +284,20 @@ export interface AdminFinanceHealth {
   reconciliation_delta: number
 }
 
+export interface AdminFinanceSnapshotRow {
+  booking_id: string
+  operator_user_id: string
+  payment_collected: number
+  refund_amount: number
+  commission_amount: number
+  commission_collected: number
+  commission_remaining: number
+  payout_status: string
+  promo_owner: string | null
+  promo_funding_source: string | null
+  promo_discount_value: number
+}
+
 export interface MembershipTierReportRow {
   membership_tier_code: MembershipTierCode
   display_name: string
@@ -540,6 +554,22 @@ function mapFinanceHealth(row: any): AdminFinanceHealth {
   }
 }
 
+function mapFinanceSnapshot(row: any): AdminFinanceSnapshotRow {
+  return {
+    booking_id: row.booking_id,
+    operator_user_id: row.operator_user_id,
+    payment_collected: toNumber(row.payment_collected),
+    refund_amount: toNumber(row.refund_amount),
+    commission_amount: toNumber(row.commission_amount),
+    commission_collected: toNumber(row.commission_collected),
+    commission_remaining: toNumber(row.commission_remaining),
+    payout_status: row.payout_status,
+    promo_owner: row.promo_owner ?? null,
+    promo_funding_source: row.promo_funding_source ?? null,
+    promo_discount_value: toNumber(row.promo_discount_value),
+  }
+}
+
 export const commercialService = {
   async getOperatorCommercialOverview(operatorUserId: string): Promise<{
     profile: OperatorCommercialProfile | null
@@ -642,15 +672,31 @@ export const commercialService = {
   async getAdminCommercialOverview(): Promise<{
     financeSummary: AdminFinanceSummary | null
     financeHealth: AdminFinanceHealth | null
+    financeSnapshotRows: AdminFinanceSnapshotRow[]
     tierReportRows: MembershipTierReportRow[]
     operatorProfiles: OperatorCommercialProfile[]
     billingRows: OperatorBillingReportRow[]
     payoutRows: OperatorPayoutReportRow[]
     payoutBatches: OperatorPayoutBatch[]
   }> {
-    const [summaryResult, healthResult, tierReportResult, profileResult, billingResult, payoutResult, batchResult] = await Promise.all([
+    const [summaryResult, healthResult, snapshotResult, tierReportResult, profileResult, billingResult, payoutResult, batchResult] = await Promise.all([
       (supabase.from('admin_finance_summary_v' as any) as any).select('*').maybeSingle(),
       (supabase.from('admin_finance_health_v' as any) as any).select('*').maybeSingle(),
+      (supabase.from('operator_booking_finance_snapshots' as any) as any)
+        .select(`
+          booking_id,
+          operator_user_id,
+          payment_collected,
+          refund_amount,
+          commission_amount,
+          commission_collected,
+          commission_remaining,
+          payout_status,
+          promo_owner,
+          promo_funding_source,
+          promo_discount_value
+        `)
+        .limit(2000),
       (supabase.from('membership_tier_report_v' as any) as any).select('*').order('display_name', { ascending: true }),
       (supabase.from('operator_commercial_profiles' as any) as any)
         .select(`
@@ -709,7 +755,8 @@ export const commercialService = {
     ])
 
     if (summaryResult.error) throw summaryResult.error
-  if (healthResult.error) throw healthResult.error
+    if (healthResult.error) throw healthResult.error
+    if (snapshotResult.error) throw snapshotResult.error
     if (tierReportResult.error) throw tierReportResult.error
     if (profileResult.error) throw profileResult.error
     if (billingResult.error) throw billingResult.error
@@ -719,6 +766,7 @@ export const commercialService = {
     return {
       financeSummary: summaryResult.data ? mapSummary(summaryResult.data) : null,
       financeHealth: healthResult.data ? mapFinanceHealth(healthResult.data) : null,
+      financeSnapshotRows: (snapshotResult.data ?? []).map(mapFinanceSnapshot),
       tierReportRows: (tierReportResult.data ?? []).map(mapTierReportRow),
       operatorProfiles: (profileResult.data ?? []).map(mapProfile),
       billingRows: (billingResult.data ?? []).map(mapBillingRow),

@@ -761,6 +761,7 @@ export default function AdminCommercialPage() {
   }, [reportBillingRows, reportPayoutRows])
 
   const reconciliationChecks = useMemo(() => {
+    const financeSnapshotRows = overview?.financeSnapshotRows ?? []
     const allPayoutRows = overview?.payoutRows ?? []
     const allBillingRows = overview?.billingRows ?? []
 
@@ -780,16 +781,22 @@ export default function AdminCommercialPage() {
       total_final_membership_charge: 0,
     }
 
-    for (const row of allPayoutRows) {
-      derived.total_commission_collected += row.commission_collected
-      derived.total_refunds += row.refund_amount
-      derived.outstanding_recovery_balances += row.recovery_amount
+    for (const row of financeSnapshotRows) {
+      const commissionCollected = Number.isFinite(row.commission_collected) ? row.commission_collected : row.commission_amount
+      const cashBucketValue = Math.max(row.payment_collected - row.refund_amount - commissionCollected, 0)
 
-      if (row.payout_status === 'not_ready') derived.total_operator_liability_not_ready += row.operator_payable_amount
-      if (row.payout_status === 'eligible') derived.total_payouts_eligible_unbatched += row.operator_payable_amount
-      if (row.payout_status === 'scheduled') derived.total_payouts_scheduled += row.operator_payable_amount
-      if (row.payout_status === 'paid') derived.total_payouts_completed += row.operator_payable_amount
-      if (row.payout_status === 'on_hold') derived.total_payouts_on_hold += row.operator_payable_amount
+      derived.total_commission_collected += commissionCollected
+      derived.total_refunds += row.refund_amount
+
+      if (row.payout_status === 'not_ready') derived.total_operator_liability_not_ready += cashBucketValue
+      if (row.payout_status === 'eligible') derived.total_payouts_eligible_unbatched += cashBucketValue
+      if (row.payout_status === 'scheduled') derived.total_payouts_scheduled += cashBucketValue
+      if (row.payout_status === 'paid') derived.total_payouts_completed += cashBucketValue
+      if (row.payout_status === 'on_hold') derived.total_payouts_on_hold += cashBucketValue
+    }
+
+    for (const row of allPayoutRows) {
+      derived.outstanding_recovery_balances += row.recovery_amount
       if (row.payout_status === 'recovery_pending') derived.total_payouts_recovery_pending += row.recovery_amount
     }
 
@@ -857,7 +864,7 @@ export default function AdminCommercialPage() {
       totalFinalMembershipCharge: derived.total_final_membership_charge,
       releaseBlocker,
     }
-  }, [overview?.billingRows, overview?.financeHealth, overview?.financeSummary, overview?.payoutRows])
+  }, [overview?.billingRows, overview?.financeHealth, overview?.financeSnapshotRows, overview?.financeSummary, overview?.payoutRows])
 
   const opsReviewSummary = useMemo(() => {
     return {
