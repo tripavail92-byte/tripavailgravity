@@ -17,6 +17,7 @@
     "db:test:promo-foundation:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/promo_finance_foundation_test.sql",
     "db:test:promo-allocation:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/promo_pricing_allocation_test.sql",
     "db:test:promo-edge-cases:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/promo_finance_edge_cases_test.sql",
+    "db:test:commercial-audit:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/admin_commercial_auditability_test.sql",
     "db:test:deposit-policy:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_tour_deposit_policy_test.sql",
     "db:test:payout-cycle": "node scripts/test-payout-cycle.mjs",
     "db:test:payouts:remote": "node scripts/run-remote-sql-file.mjs --file supabase/tests/operator_payout_batch_rpc_test.sql",

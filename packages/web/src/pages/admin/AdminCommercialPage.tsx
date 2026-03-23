@@ -13,11 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
   commercialService,
+  type CommercialAuditLogRow,
   type CommercialPromotion,
   type CommercialTourOption,
   type MembershipTierCode,
   type OperatorCommercialProfile,
 } from '@/features/commercial/services/commercialService'
+
+const MIN_ADMIN_ACTION_REASON_LENGTH = 10
 
 function formatMoney(value: number) {
   return `PKR ${value.toLocaleString()}`
@@ -42,6 +45,27 @@ function formatPromoAttribution(owner?: string | null, fundingSource?: string | 
   if (!discountValue || discountValue <= 0) return '—'
   const parts = [owner, fundingSource].filter(Boolean)
   return `${formatMoney(discountValue)}${parts.length ? ` · ${parts.join(' / ')}` : ''}`
+}
+
+function formatAuditAction(actionType: string) {
+  switch (actionType) {
+    case 'membership_tier_changed':
+      return 'Tier changed'
+    case 'payout_hold_applied':
+      return 'Payout hold applied'
+    case 'payout_hold_released':
+      return 'Payout hold released'
+    case 'payout_batch_reversed':
+      return 'Payout batch reversed'
+    case 'payout_recovery_resolved':
+      return 'Recovery resolved'
+    default:
+      return actionType.replace(/_/g, ' ')
+  }
+}
+
+function asObject(value: Record<string, unknown> | null) {
+  return value && typeof value === 'object' ? value : null
 }
 
 type AdminPromoFormState = {
@@ -129,18 +153,21 @@ export default function AdminCommercialPage() {
   const [promoError, setPromoError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [overview, setOverview] = useState<Awaited<ReturnType<typeof commercialService.getAdminCommercialOverview>> | null>(null)
+  const [auditRows, setAuditRows] = useState<CommercialAuditLogRow[]>([])
 
   const load = async () => {
     try {
       setLoading(true)
-      const [nextOverview, nextPromotions, nextTours] = await Promise.all([
+      const [nextOverview, nextPromotions, nextTours, nextAuditRows] = await Promise.all([
         commercialService.getAdminCommercialOverview(),
         commercialService.listAdminPromotions(),
         commercialService.listCommercialTours(),
+        commercialService.listCommercialAuditHistory(100),
       ])
       setOverview(nextOverview)
       setPromotions(nextPromotions)
       setPromotionTours(nextTours)
+      setAuditRows(nextAuditRows)
       if (!selectedOperatorId && nextOverview.operatorProfiles[0]?.operator_user_id) {
         const firstOperator = nextOverview.operatorProfiles[0]
         setSelectedOperatorId(firstOperator.operator_user_id)
@@ -244,6 +271,8 @@ export default function AdminCommercialPage() {
   const selectedRecoveryRow = useMemo(() => {
     return filteredPayoutRows.find((row) => row.payout_item_id === selectedRecoveryItemId) ?? null
   }, [filteredPayoutRows, selectedRecoveryItemId])
+
+  const visibleAuditRows = useMemo(() => auditRows, [auditRows])
 
   useEffect(() => {
     if (!selectedRecoveryRow) return
@@ -352,14 +381,21 @@ export default function AdminCommercialPage() {
   const handleToggleHold = async () => {
     if (!selectedOperator) return
 
+    const reasonText = holdReason.trim()
+    if (reasonText.length < MIN_ADMIN_ACTION_REASON_LENGTH) {
+      toast.error('Hold or release reason must be at least 10 characters')
+      return
+    }
+
     try {
       setSubmitting(true)
       await commercialService.updateOperatorPayoutHold(
         selectedOperator.operator_user_id,
         !selectedOperator.payout_hold,
-        holdReason,
+        reasonText,
       )
       toast.success(selectedOperator.payout_hold ? 'Payout hold released' : 'Payout hold applied')
+      setHoldReason('')
       await load()
     } catch (actionError) {
       toast.error(actionError instanceof Error ? actionError.message : 'Failed to update payout hold')
@@ -414,9 +450,15 @@ export default function AdminCommercialPage() {
   const handleReverseBatch = async () => {
     if (!selectedBatchId) return
 
+    const reasonText = batchActionReason.trim()
+    if (reasonText.length < MIN_ADMIN_ACTION_REASON_LENGTH) {
+      toast.error('Batch reversal reason must be at least 10 characters')
+      return
+    }
+
     try {
       setSubmitting(true)
-      const result = await commercialService.reversePayoutBatch(selectedBatchId, batchActionReason)
+      const result = await commercialService.reversePayoutBatch(selectedBatchId, reasonText)
       if (result?.previous_status === 'paid') {
         toast.success(`${result.batch_reference} reversed into recovery`) 
       } else {
@@ -434,10 +476,16 @@ export default function AdminCommercialPage() {
   const handleResolveRecovery = async () => {
     if (!selectedRecoveryItemId) return
 
+    const reasonText = recoveryReason.trim()
+    if (reasonText.length < MIN_ADMIN_ACTION_REASON_LENGTH) {
+      toast.error('Recovery resolution reason must be at least 10 characters')
+      return
+    }
+
     try {
       setSubmitting(true)
       const amount = recoveryAmount.trim() ? Number(recoveryAmount) : undefined
-      const result = await commercialService.resolvePayoutRecovery(selectedRecoveryItemId, amount, recoveryReason)
+      const result = await commercialService.resolvePayoutRecovery(selectedRecoveryItemId, amount, reasonText)
       if (result?.remaining_recovery_amount) {
         toast.success(`Recovery updated. PKR ${result.remaining_recovery_amount.toLocaleString()} still outstanding`)
       } else {
@@ -492,6 +540,7 @@ export default function AdminCommercialPage() {
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="promos">Promos</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 pt-4">
@@ -1099,6 +1148,77 @@ export default function AdminCommercialPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="history" className="pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Commercial audit history</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>When</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>Actor</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>State change</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleAuditRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No commercial audit events recorded yet.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    visibleAuditRows.map((row) => {
+                      const previousState = asObject(row.previous_state)
+                      const nextState = asObject(row.new_state)
+                      const entityLabel = row.entity_type === 'commercial_profile'
+                        ? (operatorNameById.get(row.entity_id) ?? row.entity_id.slice(0, 8))
+                        : row.entity_type === 'payout_batch'
+                          ? String(nextState?.batch_reference ?? previousState?.batch_reference ?? row.entity_id.slice(0, 8))
+                          : String(nextState?.booking_id ?? previousState?.booking_id ?? row.entity_id.slice(0, 8))
+                      const stateSummary = row.action_type === 'membership_tier_changed'
+                        ? `${String(previousState?.previous_tier_code ?? '—')} -> ${String(nextState?.new_tier_code ?? '—')}`
+                        : row.action_type === 'payout_hold_applied' || row.action_type === 'payout_hold_released'
+                          ? `${String(previousState?.payout_hold ?? '—')} -> ${String(nextState?.payout_hold ?? '—')}`
+                          : row.action_type === 'payout_batch_reversed'
+                            ? `${String(previousState?.status ?? '—')} -> ${String(nextState?.status ?? '—')}`
+                            : row.action_type === 'payout_recovery_resolved'
+                              ? `${String(previousState?.recovery_amount ?? '—')} -> ${String(nextState?.remaining_recovery_amount ?? '—')}`
+                              : '—'
+
+                      return (
+                        <TableRow key={row.id}>
+                          <TableCell>{formatTimestamp(row.created_at)}</TableCell>
+                          <TableCell>{formatAuditAction(row.action_type)}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">{entityLabel}</p>
+                              <p className="text-xs text-muted-foreground">{row.entity_type}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">{row.admin_email ?? row.admin_id.slice(0, 8)}</p>
+                              <p className="text-xs text-muted-foreground">{row.admin_role ?? 'admin'}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[240px] text-sm text-muted-foreground">{row.reason ?? '—'}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{stateSummary}</TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

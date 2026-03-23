@@ -119,6 +119,20 @@ export interface OperatorPayoutBatch {
   created_at: string
 }
 
+export interface CommercialAuditLogRow {
+  id: string
+  admin_id: string
+  admin_email: string | null
+  admin_role: string | null
+  entity_type: string
+  entity_id: string
+  action_type: string
+  reason: string | null
+  previous_state: Record<string, unknown> | null
+  new_state: Record<string, unknown> | null
+  created_at: string
+}
+
 function inferOperatorBatchStatus(rows: OperatorPayoutReportRow[]): string {
   if (rows.some((row) => row.payout_status === 'on_hold')) return 'on_hold'
   if (rows.some((row) => row.payout_status === 'recovery_pending')) return 'recovery_pending'
@@ -398,6 +412,22 @@ function mapBatch(row: any): OperatorPayoutBatch {
     total_commission_amount: toNumber(row.total_commission_amount),
     total_operator_payable: toNumber(row.total_operator_payable),
     total_recovery_deduction_amount: toNumber(row.total_recovery_deduction_amount),
+    created_at: row.created_at,
+  }
+}
+
+function mapCommercialAuditRow(row: any): CommercialAuditLogRow {
+  return {
+    id: row.id,
+    admin_id: row.admin_id,
+    admin_email: row.admin_users?.email ?? null,
+    admin_role: row.admin_users?.role ?? null,
+    entity_type: row.entity_type,
+    entity_id: row.entity_id,
+    action_type: row.action_type,
+    reason: row.reason ?? null,
+    previous_state: row.previous_state ?? null,
+    new_state: row.new_state ?? null,
     created_at: row.created_at,
   }
 }
@@ -773,6 +803,31 @@ export const commercialService = {
     return (data ?? []).map(mapPromotion)
   },
 
+  async listCommercialAuditHistory(limit = 100): Promise<CommercialAuditLogRow[]> {
+    const { data, error } = await (supabase.from('admin_action_logs' as any) as any)
+      .select(`
+        id,
+        admin_id,
+        entity_type,
+        entity_id,
+        action_type,
+        reason,
+        previous_state,
+        new_state,
+        created_at,
+        admin_users!admin_action_logs_admin_id_fkey(
+          email,
+          role
+        )
+      `)
+      .in('entity_type', ['commercial_profile', 'payout_batch', 'payout_item'])
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []).map(mapCommercialAuditRow)
+  },
+
   async createPromotion(payload: CommercialPromotionUpsert) {
     const normalizedCode = payload.code.trim().toUpperCase()
     const { data, error } = await (supabase.from('operator_promotions' as any) as any)
@@ -870,7 +925,7 @@ export const commercialService = {
   async assignOperatorTier(operatorUserId: string, tierCode: MembershipTierCode, reason: string) {
     const { data, error } = await supabase.rpc('admin_assign_operator_membership_tier' as any, {
       p_operator_user_id: operatorUserId,
-      p_membership_tier_code: tierCode,
+      p_tier_code: tierCode,
       p_reason: reason.trim() || null,
     })
 
@@ -889,14 +944,11 @@ export const commercialService = {
   },
 
   async updateOperatorPayoutHold(operatorUserId: string, payoutHold: boolean, payoutHoldReason?: string) {
-    const { data, error } = await (supabase.from('operator_commercial_profiles' as any) as any)
-      .update({
-        payout_hold: payoutHold,
-        payout_hold_reason: payoutHold ? payoutHoldReason?.trim() || 'Finance hold applied by admin' : null,
-      })
-      .eq('operator_user_id', operatorUserId)
-      .select('operator_user_id')
-      .single()
+    const { data, error } = await supabase.rpc('admin_update_operator_payout_hold' as any, {
+      p_operator_user_id: operatorUserId,
+      p_payout_hold: payoutHold,
+      p_reason: payoutHoldReason?.trim() || null,
+    })
 
     if (error) throw error
     return data
