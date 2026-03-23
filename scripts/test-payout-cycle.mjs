@@ -19,7 +19,9 @@ async function main() {
 
   try {
     await client.query('BEGIN')
-    await client.query("SELECT set_config('request.jwt.claim.role', 'service_role', true)")
+    await client.query(
+      "SELECT set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true)",
+    )
 
     await client.query(`
       CREATE TEMP TABLE _payout_cycle_ids (key TEXT PRIMARY KEY, val UUID NOT NULL DEFAULT gen_random_uuid())
