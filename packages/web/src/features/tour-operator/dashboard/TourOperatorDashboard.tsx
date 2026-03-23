@@ -1,7 +1,6 @@
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   Clock,
   Compass,
   Edit3,
@@ -22,17 +21,35 @@ import { useNavigate } from 'react-router-dom'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { commercialService } from '@/features/commercial/services/commercialService'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
+import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
-import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 
 import { Tour, tourService } from '../services/tourService'
 import { ActiveToursGrid } from './components/ActiveToursGrid'
 import { DraftsAlert } from './components/DraftsAlert'
 import { OperatorRecentBookings } from './components/OperatorRecentBookings'
 
-const STEP_SLUGS = ['welcome','personal','profile-pic','business','services','coverage','policies','completion']
+const STEP_SLUGS = [
+  'welcome',
+  'personal',
+  'profile-pic',
+  'business',
+  'services',
+  'coverage',
+  'policies',
+  'completion',
+]
+
+function clearKycProcessingHint() {
+  try {
+    localStorage.removeItem('tripavail_kyc_processing')
+  } catch {
+    // Ignore storage access failures in restricted browser contexts.
+  }
+}
 
 export function TourOperatorDashboard() {
   const { user, activeRole } = useAuth()
@@ -43,6 +60,7 @@ export function TourOperatorDashboard() {
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
   const [drafts, setDrafts] = useState<Tour[]>([])
   const [continuableTours, setContinuableTours] = useState<Partial<Tour>[]>([])
+  const [confirmedBookings, setConfirmedBookings] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null)
   const [setupCurrentStep, setSetupCurrentStep] = useState<number>(0)
@@ -81,9 +99,7 @@ export function TourOperatorDashboard() {
       setIsKycPendingAdminReview(Boolean(pendingAdmin && verificationStatus !== 'approved'))
 
       // Clear the short-lived hint once we’re no longer actively processing.
-      if (!processing) {
-        try { localStorage.removeItem('tripavail_kyc_processing') } catch {}
-      }
+      if (!processing) clearKycProcessingHint()
     }
 
     // Initial load + short polling (OCR can take minutes)
@@ -111,14 +127,16 @@ export function TourOperatorDashboard() {
         setSetupCompleted(hasCompletedTourOperatorSetup(profile, verificationStatus))
         setSetupCurrentStep(profile?.setup_current_step ?? 0)
 
-        const [pub, drf, cont] = await Promise.all([
+        const [pub, drf, cont, commercialOverview] = await Promise.all([
           tourService.fetchPublishedTours(user.id),
           tourService.fetchDraftTours(user.id),
           tourService.fetchContinuableTours(user.id),
+          commercialService.getOperatorCommercialOverview(user.id),
         ])
         setPublishedTours(pub)
         setDrafts(drf)
         setContinuableTours(cont)
+        setConfirmedBookings(commercialOverview.performance?.confirmed_bookings ?? 0)
       } catch (error) {
         console.error('Error loading dashboard data:', error)
       } finally {
@@ -126,31 +144,68 @@ export function TourOperatorDashboard() {
       }
     }
     loadDashboardData()
-  }, [user])
+  }, [user, verificationStatus])
 
   const handleCreateTour = () => {
-    if (setupCompleted !== true) { navigate('/operator/setup'); return }
+    if (setupCompleted !== true) {
+      navigate('/operator/setup')
+      return
+    }
     navigate('/operator/tours/new')
   }
-  const handleEditTour   = (tour: Tour) => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
-  const handleViewTour   = (tour: Tour) => window.open(`/tours/${tour.id}`, '_blank')
+  const handleEditTour = (tour: Tour) =>
+    navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
+  const handleViewTour = (tour: Tour) => window.open(`/tours/${tour.id}`, '_blank')
   const handleDeleteTour = async (tour: Tour) => {
-    if (window.confirm(`Delete "${tour.title}"?`)) { /* TODO */ }
+    if (window.confirm(`Delete "${tour.title}"?`)) {
+      // TODO: Wire tour deletion once backend deletion semantics are finalized.
+    }
   }
 
   const operatorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Partner'
+  const ratedTours = publishedTours.filter((tour) => tour.rating > 0)
+  const reviewCount = ratedTours.reduce((sum, tour) => sum + Math.max(tour.review_count || 0, 0), 0)
+  const weightedRatingTotal = ratedTours.reduce(
+    (sum, tour) => sum + tour.rating * Math.max(tour.review_count || 0, 0),
+    0,
+  )
+  const averageRating =
+    reviewCount > 0
+      ? `${(weightedRatingTotal / reviewCount).toFixed(1)}★`
+      : ratedTours.length > 0
+        ? `${(ratedTours.reduce((sum, tour) => sum + tour.rating, 0) / ratedTours.length).toFixed(1)}★`
+        : 'New'
 
-  // ── Quick stats (live counts, others placeholder until analytics lands) ──
+  // ── Quick stats ──
   const quickStats = [
-    { label: 'Active Tours',     value: publishedTours.length || '—', icon: MapPin,   glow: 'shadow-primary/20'   },
-    { label: 'Draft Tours',      value: continuableTours.length || drafts.length || '—', icon: Clock,    glow: 'shadow-amber-500/20' },
-    { label: 'Total Travellers', value: '—', icon: Users,    glow: 'shadow-blue-500/20'  },
-    { label: 'Avg Rating',       value: '—', icon: Star,     glow: 'shadow-yellow-500/20'},
+    {
+      label: 'Active Tours',
+      value: publishedTours.length || '—',
+      icon: MapPin,
+      glow: 'shadow-primary/20',
+    },
+    {
+      label: 'Draft Tours',
+      value: continuableTours.length || drafts.length || '—',
+      icon: Clock,
+      glow: 'shadow-amber-500/20',
+    },
+    {
+      label: 'Confirmed Bookings',
+      value: confirmedBookings.toString(),
+      icon: Users,
+      glow: 'shadow-blue-500/20',
+    },
+    {
+      label: 'Avg Rating',
+      value: averageRating,
+      icon: Star,
+      glow: 'shadow-yellow-500/20',
+    },
   ]
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
-
       {/* ── Ambient gradient background ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
@@ -160,7 +215,6 @@ export function TourOperatorDashboard() {
 
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-
           {/* ── HERO HEADER ── */}
           <motion.div
             initial={{ opacity: 0, y: -16 }}
@@ -248,7 +302,9 @@ export function TourOperatorDashboard() {
                 className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}`}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">{stat.label}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
+                    {stat.label}
+                  </p>
                   <div className="w-8 h-8 rounded-xl bg-background/40 flex items-center justify-center">
                     <stat.icon className="w-4 h-4 text-muted-foreground" />
                   </div>
@@ -272,7 +328,10 @@ export function TourOperatorDashboard() {
                 </div>
                 <div>
                   <p className="font-bold text-foreground text-sm">Verification processing</p>
-                  <p className="text-xs text-muted-foreground font-medium">We’re running OCR on your CNIC. This usually takes a few minutes — you can keep using the dashboard.</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    We’re running OCR on your CNIC. This usually takes a few minutes — you can keep
+                    using the dashboard.
+                  </p>
                 </div>
               </div>
               <Button
@@ -298,7 +357,9 @@ export function TourOperatorDashboard() {
                 </div>
                 <div>
                   <p className="font-bold text-foreground text-sm">Verification pending review</p>
-                  <p className="text-xs text-muted-foreground font-medium">Your CNIC was processed successfully and is now queued for admin approval.</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Your CNIC was processed successfully and is now queued for admin approval.
+                  </p>
                 </div>
               </div>
               <Button
@@ -324,7 +385,10 @@ export function TourOperatorDashboard() {
                 </div>
                 <div>
                   <p className="font-bold text-foreground text-sm">Verification rejected</p>
-                  <p className="text-xs text-muted-foreground font-medium">Your documents could not be verified. Please re-upload clearer photos of your CNIC front and back.</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Your documents could not be verified. Please re-upload clearer photos of your
+                    CNIC front and back.
+                  </p>
                 </div>
               </div>
               <Button
@@ -338,7 +402,10 @@ export function TourOperatorDashboard() {
           )}
 
           {setupCompleted === false && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
               className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
@@ -347,58 +414,85 @@ export function TourOperatorDashboard() {
                 </div>
                 <div>
                   <p className="font-bold text-foreground text-sm">Setup incomplete</p>
-                  <p className="text-xs text-muted-foreground font-medium">Complete your profile to start listing tour packages.</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Complete your profile to start listing tour packages.
+                  </p>
                 </div>
               </div>
-              <Button size="sm"
+              <Button
+                size="sm"
                 className="rounded-xl h-10 px-5 font-bold gap-2 flex-shrink-0 bg-warning text-warning-foreground hover:bg-warning/90"
-                onClick={() => navigate(setupCurrentStep > 0 ? `/operator/setup?step=${STEP_SLUGS[setupCurrentStep] ?? 'welcome'}` : '/operator/setup')}
+                onClick={() =>
+                  navigate(
+                    setupCurrentStep > 0
+                      ? `/operator/setup?step=${STEP_SLUGS[setupCurrentStep] ?? 'welcome'}`
+                      : '/operator/setup',
+                  )
+                }
               >
                 Resume Setup <ArrowRight className="w-4 h-4" />
               </Button>
             </motion.div>
           )}
 
-          {setupCompleted === true && verificationStatus === 'incomplete' && !isKycProcessing && !isKycPendingAdminReview && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <ShieldAlert className="w-5 h-5 text-primary" />
+          {setupCompleted === true &&
+            verificationStatus === 'incomplete' &&
+            !isKycProcessing &&
+            !isKycPendingAdminReview && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground text-sm">
+                      Identity verification required
+                    </p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Upload your CNIC (front &amp; back) to activate your account.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide"
+                  onClick={() => navigate('/operator/verification')}
+                >
+                  Verify Now <ArrowRight className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
+
+          {setupCompleted === true &&
+            verificationStatus === 'pending' &&
+            !isKycProcessing &&
+            !isKycPendingAdminReview && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center gap-4"
+              >
+                <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-warning animate-pulse" />
                 </div>
                 <div>
-                  <p className="font-bold text-foreground text-sm">Identity verification required</p>
-                  <p className="text-xs text-muted-foreground font-medium">Upload your CNIC (front &amp; back) to activate your account.</p>
+                  <p className="font-bold text-foreground text-sm">Verification under review</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Our compliance team is reviewing your documents. Typical review time: 1–3
+                    business days.
+                  </p>
                 </div>
-              </div>
-              <Button size="sm"
-                className="rounded-xl h-10 px-5 font-black gap-2 flex-shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 uppercase tracking-wide"
-                onClick={() => navigate('/operator/verification')}
-              >
-                Verify Now <ArrowRight className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          )}
-
-          {setupCompleted === true && verificationStatus === 'pending' && !isKycProcessing && !isKycPendingAdminReview && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center gap-4"
-            >
-              <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-warning animate-pulse" />
-              </div>
-              <div>
-                <p className="font-bold text-foreground text-sm">Verification under review</p>
-                <p className="text-xs text-muted-foreground font-medium">Our compliance team is reviewing your documents. Typical review time: 1–3 business days.</p>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
           {/* ── DRAFTS ALERT ── */}
-          {drafts.length > 0 && (
-            <DraftsAlert drafts={drafts} />
-          )}
+          {drafts.length > 0 && <DraftsAlert drafts={drafts} />}
 
           {/* ── CONTINUE EDITING ── */}
           {continuableTours.length > 0 && (
@@ -416,16 +510,42 @@ export function TourOperatorDashboard() {
                     {continuableTours.length}
                   </Badge>
                 </h2>
-                <p className="text-xs text-muted-foreground font-medium">Pick up where you left off</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Pick up where you left off
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {continuableTours.map((tour) => {
                   const statusConfig = {
-                    draft:       { label: 'Draft',       bg: 'bg-muted/50',       text: 'text-muted-foreground',  border: 'border-border/50', icon: Clock },
-                    in_progress: { label: 'In Progress', bg: 'bg-primary/20',     text: 'text-primary',    border: 'border-primary/40',   icon: Edit3 },
-                    rejected:    { label: 'Rejected',    bg: 'bg-destructive/20', text: 'text-destructive', border: 'border-destructive/40', icon: XCircle },
-                  }[tour.workflow_status as string] ?? { label: tour.workflow_status ?? 'Draft', bg: 'bg-muted/50', text: 'text-muted-foreground', border: 'border-border/50', icon: Clock }
+                    draft: {
+                      label: 'Draft',
+                      bg: 'bg-muted/50',
+                      text: 'text-muted-foreground',
+                      border: 'border-border/50',
+                      icon: Clock,
+                    },
+                    in_progress: {
+                      label: 'In Progress',
+                      bg: 'bg-primary/20',
+                      text: 'text-primary',
+                      border: 'border-primary/40',
+                      icon: Edit3,
+                    },
+                    rejected: {
+                      label: 'Rejected',
+                      bg: 'bg-destructive/20',
+                      text: 'text-destructive',
+                      border: 'border-destructive/40',
+                      icon: XCircle,
+                    },
+                  }[tour.workflow_status as string] ?? {
+                    label: tour.workflow_status ?? 'Draft',
+                    bg: 'bg-muted/50',
+                    text: 'text-muted-foreground',
+                    border: 'border-border/50',
+                    icon: Clock,
+                  }
 
                   const completionPct = tour.completion_percentage ?? 0
                   const lastEdited = tour.last_edited_at
@@ -452,7 +572,9 @@ export function TourOperatorDashboard() {
                         <h3 className="font-bold text-foreground text-sm leading-snug line-clamp-2 flex-1">
                           {tour.title || 'Untitled Tour'}
                         </h3>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${statusConfig.bg} ${statusConfig.text}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${statusConfig.bg} ${statusConfig.text}`}
+                        >
                           <StatusIcon className="w-3 h-3" />
                           {statusConfig.label}
                         </span>
@@ -468,8 +590,12 @@ export function TourOperatorDashboard() {
                       {/* Completion bar */}
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground font-medium">Completion</span>
-                          <span className="text-xs font-bold text-foreground/80">{completionPct}%</span>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            Completion
+                          </span>
+                          <span className="text-xs font-bold text-foreground/80">
+                            {completionPct}%
+                          </span>
                         </div>
                         <div className="w-full h-1.5 bg-muted/40 rounded-full overflow-hidden">
                           <div
@@ -487,7 +613,11 @@ export function TourOperatorDashboard() {
                         </span>
                         <Button
                           size="sm"
-                          onClick={() => navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id ?? '')}`)}
+                          onClick={() =>
+                            navigate(
+                              `/operator/tours/new?tour_id=${encodeURIComponent(tour.id ?? '')}`,
+                            )
+                          }
                           className="h-8 px-4 rounded-xl text-xs font-bold gap-1.5 bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-all"
                         >
                           <Edit3 className="w-3 h-3" />
@@ -567,7 +697,6 @@ export function TourOperatorDashboard() {
               </div>
             </div>
           </motion.div>
-
         </div>
       </div>
     </div>

@@ -6,20 +6,33 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { PageHeader } from '@/components/ui/PageHeader'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { useAuth } from '@/hooks/useAuth'
 import {
-  commercialService,
   type CommercialPromotion,
+  commercialService,
   type CommercialTourOption,
   type OperatorBillingReportRow,
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
+import { useAuth } from '@/hooks/useAuth'
 
 function formatMoney(value: number) {
   return `PKR ${value.toLocaleString()}`
@@ -35,7 +48,11 @@ function formatTimestamp(value?: string | null) {
   return format(new Date(value), 'MMM d, yyyy h:mm a')
 }
 
-function formatPromoAttribution(owner?: string | null, fundingSource?: string | null, discountValue?: number) {
+function formatPromoAttribution(
+  owner?: string | null,
+  fundingSource?: string | null,
+  discountValue?: number,
+) {
   if (!discountValue || discountValue <= 0) return '—'
   const parts = [owner, fundingSource].filter(Boolean)
   return `${formatMoney(discountValue)}${parts.length ? ` · ${parts.join(' / ')}` : ''}`
@@ -92,6 +109,15 @@ function formatPromoWindow(startsAt?: string | null, endsAt?: string | null) {
   return `Ends ${formatTimestamp(endsAt)}`
 }
 
+function formatStatusLabel(value?: string | null) {
+  if (!value) return '—'
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 function formatTierName(value?: string | null) {
   if (!value) return '—'
   return value
@@ -122,13 +148,28 @@ export default function OperatorCommercialPage() {
   const [error, setError] = useState<string | null>(null)
   const [billingRows, setBillingRows] = useState<OperatorBillingReportRow[]>([])
   const [payoutRows, setPayoutRows] = useState<OperatorPayoutReportRow[]>([])
-  const [profile, setProfile] = useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['profile']>(null)
-  const [tier, setTier] = useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['tier']>(null)
-  const [performance, setPerformance] = useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['performance']>(null)
-  const [payoutBatches, setPayoutBatches] = useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['payoutBatches']>([])
+  const [selectedBillingCycleId, setSelectedBillingCycleId] = useState<string | null>(null)
+  const [selectedPayoutBatchId, setSelectedPayoutBatchId] = useState<string | null>(null)
+  const [profile, setProfile] =
+    useState<
+      Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['profile']
+    >(null)
+  const [tier, setTier] =
+    useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['tier']>(
+      null,
+    )
+  const [performance, setPerformance] =
+    useState<
+      Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['performance']
+    >(null)
+  const [payoutBatches, setPayoutBatches] = useState<
+    Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['payoutBatches']
+  >([])
   const [promotions, setPromotions] = useState<CommercialPromotion[]>([])
   const [promotionTours, setPromotionTours] = useState<CommercialTourOption[]>([])
-  const [promoForm, setPromoForm] = useState<OperatorPromoFormState>(() => createEmptyOperatorPromoForm())
+  const [promoForm, setPromoForm] = useState<OperatorPromoFormState>(() =>
+    createEmptyOperatorPromoForm(),
+  )
   const [editingPromotionId, setEditingPromotionId] = useState<string | null>(null)
   const [promoSubmitting, setPromoSubmitting] = useState(false)
   const [promoError, setPromoError] = useState<string | null>(null)
@@ -154,12 +195,26 @@ export default function OperatorCommercialPage() {
         setBillingRows(overview.billingRows)
         setPayoutRows(overview.payoutRows)
         setPayoutBatches(overview.payoutBatches)
+        setSelectedBillingCycleId((current) => {
+          if (current && overview.billingRows.some((row) => row.billing_cycle_id === current)) {
+            return current
+          }
+          return overview.billingRows[0]?.billing_cycle_id ?? null
+        })
+        setSelectedPayoutBatchId((current) => {
+          if (current && overview.payoutBatches.some((batch) => batch.id === current)) {
+            return current
+          }
+          return overview.payoutBatches[0]?.id ?? null
+        })
         setPromotions(nextPromotions)
         setPromotionTours(nextTours)
         setError(null)
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : 'Failed to load commercial data')
+          setError(
+            loadError instanceof Error ? loadError.message : 'Failed to load commercial data',
+          )
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -194,7 +249,9 @@ export default function OperatorCommercialPage() {
     const title = promoForm.title.trim()
     const code = promoForm.code.trim().toUpperCase()
     const discountValue = Number(promoForm.discountValue)
-    const maxDiscountValue = promoForm.maxDiscountValue.trim() ? Number(promoForm.maxDiscountValue) : null
+    const maxDiscountValue = promoForm.maxDiscountValue.trim()
+      ? Number(promoForm.maxDiscountValue)
+      : null
 
     if (!title || !code) {
       setPromoError('Title and promo code are required')
@@ -211,7 +268,10 @@ export default function OperatorCommercialPage() {
       return
     }
 
-    if (maxDiscountValue !== null && (!Number.isFinite(maxDiscountValue) || maxDiscountValue <= 0)) {
+    if (
+      maxDiscountValue !== null &&
+      (!Number.isFinite(maxDiscountValue) || maxDiscountValue <= 0)
+    ) {
       setPromoError('Max discount must be greater than zero when provided')
       return
     }
@@ -222,7 +282,8 @@ export default function OperatorCommercialPage() {
 
       const payload = {
         operator_user_id: user.id,
-        applicable_tour_id: promoForm.applicableTourId === 'all' ? null : promoForm.applicableTourId,
+        applicable_tour_id:
+          promoForm.applicableTourId === 'all' ? null : promoForm.applicableTourId,
         title,
         code,
         description: promoForm.description.trim() || null,
@@ -257,22 +318,29 @@ export default function OperatorCommercialPage() {
   }
 
   const eligibleBalance = useMemo(
-    () => payoutRows.filter((row) => row.payout_status === 'eligible').reduce((sum, row) => sum + row.net_operator_payable_amount, 0),
+    () =>
+      payoutRows
+        .filter((row) => row.payout_status === 'eligible')
+        .reduce((sum, row) => sum + row.net_operator_payable_amount, 0),
     [payoutRows],
   )
 
   const outstandingRecovery = useMemo(
-    () => payoutRows.filter((row) => row.payout_status === 'recovery_pending').reduce((sum, row) => sum + row.recovery_amount, 0),
+    () =>
+      payoutRows
+        .filter((row) => row.payout_status === 'recovery_pending')
+        .reduce((sum, row) => sum + row.recovery_amount, 0),
     [payoutRows],
   )
 
   const resolvedTierName =
-    tier?.display_name
-    ?? formatTierName(profile?.membership_tier_code)
-    ?? formatTierName(billingRows[0]?.membership_tier_code)
+    tier?.display_name ??
+    formatTierName(profile?.membership_tier_code) ??
+    formatTierName(billingRows[0]?.membership_tier_code)
   const resolvedCommissionRate = tier?.commission_rate ?? profile?.commission_rate ?? 0
   const resolvedPublishLimit = tier?.monthly_publish_limit ?? null
-  const publishedTripsThisCycle = profile?.monthly_published_tours_count ?? performance?.published_trips ?? 0
+  const publishedTripsThisCycle =
+    profile?.monthly_published_tours_count ?? performance?.published_trips ?? 0
   const publishLimitCaption =
     typeof resolvedPublishLimit === 'number' && resolvedPublishLimit > 0
       ? `${publishedTripsThisCycle}/${resolvedPublishLimit} publish slots used`
@@ -311,6 +379,104 @@ export default function OperatorCommercialPage() {
     () => promotions.filter((promotion) => promotion.is_active).length,
     [promotions],
   )
+  const latestBillingRow = billingRows[0] ?? null
+  const nextPendingBatch =
+    payoutBatches.find((batch) => batch.status !== 'paid' && batch.status !== 'reversed') ?? null
+  const selectedBillingRow =
+    billingRows.find((row) => row.billing_cycle_id === selectedBillingCycleId) ?? latestBillingRow
+  const selectedPayoutBatch =
+    payoutBatches.find((batch) => batch.id === selectedPayoutBatchId) ?? payoutBatches[0] ?? null
+  const scheduledPayoutTotal = useMemo(
+    () =>
+      payoutRows
+        .filter((row) => row.payout_status === 'scheduled')
+        .reduce((sum, row) => sum + row.net_operator_payable_amount, 0),
+    [payoutRows],
+  )
+  const onHoldExposure = useMemo(
+    () =>
+      payoutRows
+        .filter((row) => row.payout_status === 'on_hold')
+        .reduce((sum, row) => sum + row.net_operator_payable_amount, 0),
+    [payoutRows],
+  )
+  const recoveryItemCount = useMemo(
+    () => payoutRows.filter((row) => row.payout_status === 'recovery_pending').length,
+    [payoutRows],
+  )
+  const selectedBatchRows = useMemo(() => {
+    if (!selectedPayoutBatch?.batch_reference) return []
+
+    return payoutRows
+      .filter((row) => row.batch_reference === selectedPayoutBatch.batch_reference)
+      .sort((left, right) => {
+        const leftDate = left.payout_due_at ? new Date(left.payout_due_at).getTime() : 0
+        const rightDate = right.payout_due_at ? new Date(right.payout_due_at).getTime() : 0
+        return rightDate - leftDate
+      })
+  }, [payoutRows, selectedPayoutBatch])
+
+  const billingHighlights = [
+    {
+      label: 'Current tier',
+      value: resolvedTierName,
+      caption: `Membership status: ${formatStatusLabel(profile?.membership_status)}`,
+    },
+    {
+      label: 'Monthly membership fee',
+      value: formatMoney(
+        profile?.monthly_membership_fee ??
+          latestBillingRow?.membership_fee ??
+          tier?.monthly_fee ??
+          0,
+      ),
+      caption: `Next billing date: ${formatDate(profile?.next_billing_date)}`,
+    },
+    {
+      label: 'Prior-cycle commission credit',
+      value: formatMoney(latestBillingRow?.prior_cycle_commission_credit ?? 0),
+      caption: latestBillingRow?.invoice_number
+        ? `Applied against ${latestBillingRow.invoice_number}`
+        : 'No invoice has been generated for the current cycle yet',
+    },
+    {
+      label: 'Latest invoice status',
+      value: formatStatusLabel(latestBillingRow?.invoice_status),
+      caption: latestBillingRow
+        ? `${latestBillingRow.invoice_number ?? 'Draft pending'} · Due ${formatDate(latestBillingRow.due_date)}`
+        : 'Billing cycle snapshots will appear here once invoicing runs',
+    },
+  ]
+
+  const payoutHighlights = [
+    {
+      label: 'Eligible now',
+      value: formatMoney(eligibleBalance),
+      caption: `${payoutRows.filter((row) => row.payout_status === 'eligible').length} payout item(s) ready for batching`,
+    },
+    {
+      label: 'Next payout batch',
+      value: nextPendingBatch ? formatDate(nextPendingBatch.scheduled_for) : 'Unscheduled',
+      caption: nextPendingBatch
+        ? `${nextPendingBatch.batch_reference} · ${formatMoney(nextPendingBatch.total_operator_payable)}`
+        : 'No scheduled batch is currently waiting for release',
+    },
+    {
+      label: 'On-hold exposure',
+      value: formatMoney(onHoldExposure),
+      caption: profile?.payout_hold
+        ? (profile.payout_hold_reason ?? 'Finance has placed this operator on payout hold')
+        : 'No payout hold is active right now',
+    },
+    {
+      label: 'Recovery balance',
+      value: formatMoney(outstandingRecovery),
+      caption:
+        recoveryItemCount > 0
+          ? `${recoveryItemCount} payout item(s) still carrying recovery deductions`
+          : 'No recovery balance is pending against upcoming payouts',
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -342,7 +508,9 @@ export default function OperatorCommercialPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-foreground">{loading ? 'Loading…' : stat.value}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {loading ? 'Loading…' : stat.value}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{stat.caption}</p>
               </CardContent>
             </Card>
@@ -351,22 +519,42 @@ export default function OperatorCommercialPage() {
 
         <Tabs defaultValue="overview" className="mt-8">
           <TabsList className="h-auto rounded-2xl bg-muted/70 p-1">
-            <TabsTrigger value="overview" className="rounded-2xl">Overview</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-2xl">Billing</TabsTrigger>
-            <TabsTrigger value="payouts" className="rounded-2xl">Payouts</TabsTrigger>
-            <TabsTrigger value="promos" className="rounded-2xl">Promos</TabsTrigger>
+            <TabsTrigger value="overview" className="rounded-2xl">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="rounded-2xl">
+              Billing
+            </TabsTrigger>
+            <TabsTrigger value="payouts" className="rounded-2xl">
+              Payouts
+            </TabsTrigger>
+            <TabsTrigger value="promos" className="rounded-2xl">
+              Promos
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 pt-4">
             <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
               <Card className="rounded-3xl border-border/60">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg"><BarChart3 className="h-5 w-5" />Cycle performance</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <BarChart3 className="h-5 w-5" />
+                    Cycle performance
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <Metric label="Confirmed bookings" value={String(performance?.confirmed_bookings ?? 0)} />
-                  <Metric label="Payouts received" value={formatMoney(performance?.payouts_received ?? 0)} />
-                  <Metric label="AI credits used" value={`${profile?.ai_credits_used_current_cycle ?? 0}/${tier?.ai_monthly_credits ?? 0}`} />
+                  <Metric
+                    label="Confirmed bookings"
+                    value={String(performance?.confirmed_bookings ?? 0)}
+                  />
+                  <Metric
+                    label="Payouts received"
+                    value={formatMoney(performance?.payouts_received ?? 0)}
+                  />
+                  <Metric
+                    label="AI credits used"
+                    value={`${profile?.ai_credits_used_current_cycle ?? 0}/${tier?.ai_monthly_credits ?? 0}`}
+                  />
                 </CardContent>
               </Card>
 
@@ -375,9 +563,18 @@ export default function OperatorCommercialPage() {
                   <CardTitle className="text-lg">Tier entitlements</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm text-muted-foreground">
-                  <Entitlement label="Multi-city pickup" enabled={Boolean(tier?.pickup_multi_city_enabled)} />
-                  <Entitlement label="Google Maps support" enabled={Boolean(tier?.google_maps_enabled)} />
-                  <Entitlement label="AI itinerary tools" enabled={Boolean(tier?.ai_itinerary_enabled)} />
+                  <Entitlement
+                    label="Multi-city pickup"
+                    enabled={Boolean(tier?.pickup_multi_city_enabled)}
+                  />
+                  <Entitlement
+                    label="Google Maps support"
+                    enabled={Boolean(tier?.google_maps_enabled)}
+                  />
+                  <Entitlement
+                    label="AI itinerary tools"
+                    enabled={Boolean(tier?.ai_itinerary_enabled)}
+                  />
                   <Entitlement
                     label="Cycle publish limit"
                     enabled={Boolean(resolvedPublishLimit && resolvedPublishLimit > 0)}
@@ -410,36 +607,52 @@ export default function OperatorCommercialPage() {
                     label="Operator-fault cancellations"
                     value={String(profile?.operator_fault_cancellation_count ?? 0)}
                   />
-                  <Metric
-                    label="Payout hold"
-                    value={profile?.payout_hold ? 'Held' : 'Clear'}
-                  />
+                  <Metric label="Payout hold" value={profile?.payout_hold ? 'Held' : 'Clear'} />
                 </CardContent>
               </Card>
 
               <Card className="rounded-3xl border-border/60">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg"><ShieldAlert className="h-5 w-5" />Fraud review status</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <ShieldAlert className="h-5 w-5" />
+                    Fraud review status
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm text-muted-foreground">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant={profile?.fraud_review_required ? 'destructive' : 'outline'}
-                      className={profile?.fraud_review_required ? 'border-0' : 'border-border/60 bg-background/60 text-muted-foreground'}
+                      className={
+                        profile?.fraud_review_required
+                          ? 'border-0'
+                          : 'border-border/60 bg-background/60 text-muted-foreground'
+                      }
                     >
-                      {profile?.fraud_review_required ? 'Review required' : 'No active fraud review'}
+                      {profile?.fraud_review_required
+                        ? 'Review required'
+                        : 'No active fraud review'}
                     </Badge>
                     {profile?.payout_hold ? (
-                      <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">Payout hold active</Badge>
+                      <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">
+                        Payout hold active
+                      </Badge>
                     ) : null}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Metric label="Triggered" value={formatTimestamp(profile?.fraud_review_triggered_at)} />
+                    <Metric
+                      label="Triggered"
+                      value={formatTimestamp(profile?.fraud_review_triggered_at)}
+                    />
                     <Metric label="Operational status" value={profile?.operational_status ?? '—'} />
                   </div>
                   <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Review reason</p>
-                    <p className="mt-2 text-sm text-foreground">{profile?.fraud_review_reason ?? 'No fraud review trigger is active on your commercial profile.'}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      Review reason
+                    </p>
+                    <p className="mt-2 text-sm text-foreground">
+                      {profile?.fraud_review_reason ??
+                        'No fraud review trigger is active on your commercial profile.'}
+                    </p>
                   </div>
                   {profile?.payout_hold_reason ? (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -448,7 +661,6 @@ export default function OperatorCommercialPage() {
                   ) : null}
                 </CardContent>
               </Card>
-
             </div>
 
             <Card className="rounded-3xl border-border/60">
@@ -469,7 +681,9 @@ export default function OperatorCommercialPage() {
                   <TableBody>
                     {payoutBatches.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">No payout batches yet.</TableCell>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          No payout batches yet.
+                        </TableCell>
                       </TableRow>
                     ) : (
                       payoutBatches.slice(0, 5).map((batch) => (
@@ -477,8 +691,12 @@ export default function OperatorCommercialPage() {
                           <TableCell className="font-medium">{batch.batch_reference}</TableCell>
                           <TableCell>{formatDate(batch.scheduled_for)}</TableCell>
                           <TableCell className={statusTone(batch.status)}>{batch.status}</TableCell>
-                          <TableCell className="text-right">{formatMoney(batch.total_recovery_deduction_amount)}</TableCell>
-                          <TableCell className="text-right">{formatMoney(batch.total_operator_payable)}</TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(batch.total_recovery_deduction_amount)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(batch.total_operator_payable)}
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -489,6 +707,24 @@ export default function OperatorCommercialPage() {
           </TabsContent>
 
           <TabsContent value="billing" className="pt-4">
+            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {billingHighlights.map((item) => (
+                <Card key={item.label} className="rounded-3xl border-border/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">
+                      {item.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-foreground">
+                      {loading ? 'Loading…' : item.value}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{item.caption}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             <Card className="rounded-3xl border-border/60">
               <CardHeader>
                 <CardTitle className="text-lg">Billing cycles and invoices</CardTitle>
@@ -502,21 +738,49 @@ export default function OperatorCommercialPage() {
                       <TableHead>Invoice</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Final charge</TableHead>
+                      <TableHead className="text-right">Detail</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {billingRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">No billing cycles available.</TableCell>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No billing cycles available.
+                        </TableCell>
                       </TableRow>
                     ) : (
                       billingRows.map((row) => (
-                        <TableRow key={row.billing_cycle_id}>
-                          <TableCell>{formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}</TableCell>
+                        <TableRow
+                          key={row.billing_cycle_id}
+                          className={
+                            row.billing_cycle_id === selectedBillingCycleId
+                              ? 'bg-muted/30'
+                              : undefined
+                          }
+                        >
+                          <TableCell>
+                            {formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}
+                          </TableCell>
                           <TableCell className="capitalize">{row.membership_tier_code}</TableCell>
                           <TableCell>{row.invoice_number ?? 'Draft pending'}</TableCell>
-                          <TableCell className="capitalize">{row.invoice_status}</TableCell>
-                          <TableCell className="text-right">{formatMoney(row.final_membership_charge)}</TableCell>
+                          <TableCell>{formatStatusLabel(row.invoice_status)}</TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(row.final_membership_charge)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant={
+                                row.billing_cycle_id === selectedBillingCycleId
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              size="sm"
+                              className="rounded-2xl"
+                              onClick={() => setSelectedBillingCycleId(row.billing_cycle_id)}
+                            >
+                              View details
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -524,9 +788,230 @@ export default function OperatorCommercialPage() {
                 </Table>
               </CardContent>
             </Card>
+
+            {selectedBillingRow ? (
+              <Card className="mt-6 rounded-3xl border-border/60">
+                <CardHeader>
+                  <CardTitle className="text-lg">Invoice detail</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <Metric
+                    label="Invoice reference"
+                    value={selectedBillingRow.invoice_number ?? 'Draft pending'}
+                  />
+                  <Metric
+                    label="Membership fee"
+                    value={formatMoney(selectedBillingRow.membership_fee)}
+                  />
+                  <Metric
+                    label="Commission credit"
+                    value={formatMoney(selectedBillingRow.prior_cycle_commission_credit)}
+                  />
+                  <Metric
+                    label="Final charge"
+                    value={formatMoney(selectedBillingRow.final_membership_charge)}
+                  />
+                </CardContent>
+                <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 pt-0">
+                  <Metric
+                    label="Adjustment applied"
+                    value={formatMoney(selectedBillingRow.adjustment_applied)}
+                  />
+                  <Metric
+                    label="Invoice status"
+                    value={formatStatusLabel(selectedBillingRow.invoice_status)}
+                  />
+                  <Metric label="Issued" value={formatTimestamp(selectedBillingRow.issued_at)} />
+                  <Metric label="Due" value={formatTimestamp(selectedBillingRow.due_date)} />
+                </CardContent>
+                <CardContent className="pt-0">
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                    <p>
+                      Cycle window: {formatDate(selectedBillingRow.cycle_start)} to{' '}
+                      {formatDate(selectedBillingRow.cycle_end)}
+                    </p>
+                    <p className="mt-2">
+                      Payment state: {formatStatusLabel(selectedBillingRow.payment_status)}
+                      {selectedBillingRow.paid_at
+                        ? ` · Paid ${formatTimestamp(selectedBillingRow.paid_at)}`
+                        : ''}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
           </TabsContent>
 
           <TabsContent value="payouts" className="pt-4">
+            <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {payoutHighlights.map((item) => (
+                <Card key={item.label} className="rounded-3xl border-border/60">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">
+                      {item.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold text-foreground">
+                      {loading ? 'Loading…' : item.value}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{item.caption}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="mb-6 rounded-3xl border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg">Payout timeline</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-3">
+                <Metric label="Completed and eligible" value={formatMoney(eligibleBalance)} />
+                <Metric label="Already scheduled" value={formatMoney(scheduledPayoutTotal)} />
+                <Metric label="Paid out" value={formatMoney(performance?.payouts_received ?? 0)} />
+              </CardContent>
+              <CardContent className="pt-0 text-sm text-muted-foreground">
+                {profile?.payout_hold
+                  ? `Payout releases are currently blocked. Finance reason: ${profile.payout_hold_reason ?? 'manual review in progress'}`
+                  : outstandingRecovery > 0
+                    ? 'Recovery balances are automatically deducted from future eligible payouts before a batch is released.'
+                    : 'Completed bookings become eligible after the settlement window, then move into the next payout batch automatically.'}
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6 rounded-3xl border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg">Payout batches</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Batch</TableHead>
+                      <TableHead>Scheduled</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Recovery offset</TableHead>
+                      <TableHead className="text-right">Operator payable</TableHead>
+                      <TableHead className="text-right">Detail</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payoutBatches.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">
+                          No payout batches yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      payoutBatches.map((batch) => (
+                        <TableRow
+                          key={batch.id}
+                          className={batch.id === selectedPayoutBatchId ? 'bg-muted/30' : undefined}
+                        >
+                          <TableCell className="font-medium">{batch.batch_reference}</TableCell>
+                          <TableCell>{formatDate(batch.scheduled_for)}</TableCell>
+                          <TableCell className={statusTone(batch.status)}>
+                            {formatStatusLabel(batch.status)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(batch.total_recovery_deduction_amount)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(batch.total_operator_payable)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant={batch.id === selectedPayoutBatchId ? 'default' : 'outline'}
+                              size="sm"
+                              className="rounded-2xl"
+                              onClick={() => setSelectedPayoutBatchId(batch.id)}
+                            >
+                              View details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {selectedPayoutBatch ? (
+              <Card className="mb-6 rounded-3xl border-border/60">
+                <CardHeader>
+                  <CardTitle className="text-lg">Payout batch detail</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <Metric label="Batch reference" value={selectedPayoutBatch.batch_reference} />
+                  <Metric
+                    label="Scheduled release"
+                    value={formatTimestamp(selectedPayoutBatch.scheduled_for)}
+                  />
+                  <Metric
+                    label="Batch status"
+                    value={formatStatusLabel(selectedPayoutBatch.status)}
+                  />
+                  <Metric label="Booking items" value={String(selectedBatchRows.length)} />
+                </CardContent>
+                <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 pt-0">
+                  <Metric
+                    label="Gross amount"
+                    value={formatMoney(selectedPayoutBatch.total_gross_amount)}
+                  />
+                  <Metric
+                    label="Commission"
+                    value={formatMoney(selectedPayoutBatch.total_commission_amount)}
+                  />
+                  <Metric
+                    label="Recovery deductions"
+                    value={formatMoney(selectedPayoutBatch.total_recovery_deduction_amount)}
+                  />
+                  <Metric
+                    label="Net operator payable"
+                    value={formatMoney(selectedPayoutBatch.total_operator_payable)}
+                  />
+                </CardContent>
+                <CardContent className="pt-0">
+                  {selectedBatchRows.length === 0 ? (
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                      Booking-level payout items have not been attached to this batch summary yet.
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Included bookings
+                      </p>
+                      <div className="space-y-3">
+                        {selectedBatchRows.map((row) => (
+                          <div
+                            key={row.payout_item_id}
+                            className="flex flex-col gap-1 rounded-2xl border border-border/50 bg-background/70 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                          >
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {row.trip_name ?? 'Trip booking'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Booking {row.booking_id.slice(0, 8).toUpperCase()} · Travel{' '}
+                                {formatDate(row.travel_date)}
+                              </p>
+                            </div>
+                            <div className="text-sm text-muted-foreground md:text-right">
+                              <p>{formatStatusLabel(row.payout_status)}</p>
+                              <p className="font-medium text-foreground">
+                                {formatMoney(row.net_operator_payable_amount)}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
+
             <Card className="rounded-3xl border-border/60">
               <CardHeader>
                 <CardTitle className="text-lg">Booking-level payout queue</CardTitle>
@@ -547,25 +1032,41 @@ export default function OperatorCommercialPage() {
                   <TableBody>
                     {payoutRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">No payout items found.</TableCell>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          No payout items found.
+                        </TableCell>
                       </TableRow>
                     ) : (
                       payoutRows.map((row) => (
                         <TableRow key={row.payout_item_id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium text-foreground">{row.trip_name ?? 'Trip booking'}</p>
-                              <p className="text-xs text-muted-foreground">Booking {row.booking_id.slice(0, 8).toUpperCase()}</p>
+                              <p className="font-medium text-foreground">
+                                {row.trip_name ?? 'Trip booking'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Booking {row.booking_id.slice(0, 8).toUpperCase()}
+                              </p>
                             </div>
                           </TableCell>
                           <TableCell>{formatDate(row.travel_date)}</TableCell>
-                          <TableCell className={statusTone(row.payout_status)}>{row.payout_status}</TableCell>
+                          <TableCell className={statusTone(row.payout_status)}>
+                            {row.payout_status}
+                          </TableCell>
                           <TableCell>{row.batch_reference ?? 'Unbatched'}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">
-                            {formatPromoAttribution(row.promo_owner, row.promo_funding_source, row.promo_discount_value)}
+                            {formatPromoAttribution(
+                              row.promo_owner,
+                              row.promo_funding_source,
+                              row.promo_discount_value,
+                            )}
                           </TableCell>
-                          <TableCell className="text-right">{formatMoney(row.recovery_deduction_amount)}</TableCell>
-                          <TableCell className="text-right">{formatMoney(row.net_operator_payable_amount)}</TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(row.recovery_deduction_amount)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatMoney(row.net_operator_payable_amount)}
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -583,35 +1084,65 @@ export default function OperatorCommercialPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
-                    Active promos: <span className="font-semibold text-foreground">{activePromotionCount}</span>. Platform-funded campaigns are reserved for admin finance controls.
+                    Active promos:{' '}
+                    <span className="font-semibold text-foreground">{activePromotionCount}</span>.
+                    Platform-funded campaigns are reserved for admin finance controls.
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Title</label>
-                      <Input value={promoForm.title} onChange={(event) => handlePromoFormChange('title', event.target.value)} placeholder="Summer launch discount" className="rounded-2xl" />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Title
+                      </label>
+                      <Input
+                        value={promoForm.title}
+                        onChange={(event) => handlePromoFormChange('title', event.target.value)}
+                        placeholder="Summer launch discount"
+                        className="rounded-2xl"
+                      />
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Promo code</label>
-                      <Input value={promoForm.code} onChange={(event) => handlePromoFormChange('code', event.target.value.toUpperCase())} placeholder="SUMMER25" className="rounded-2xl" />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Promo code
+                      </label>
+                      <Input
+                        value={promoForm.code}
+                        onChange={(event) =>
+                          handlePromoFormChange('code', event.target.value.toUpperCase())
+                        }
+                        placeholder="SUMMER25"
+                        className="rounded-2xl"
+                      />
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Applies to</label>
-                      <Select value={promoForm.applicableTourId} onValueChange={(value) => handlePromoFormChange('applicableTourId', value)}>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Applies to
+                      </label>
+                      <Select
+                        value={promoForm.applicableTourId}
+                        onValueChange={(value) => handlePromoFormChange('applicableTourId', value)}
+                      >
                         <SelectTrigger className="rounded-2xl">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All trips</SelectItem>
                           {promotionTours.map((tour) => (
-                            <SelectItem key={tour.id} value={tour.id}>{tour.title}</SelectItem>
+                            <SelectItem key={tour.id} value={tour.id}>
+                              {tour.title}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Status</label>
-                      <Select value={promoForm.isActive} onValueChange={(value) => handlePromoFormChange('isActive', value)}>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Status
+                      </label>
+                      <Select
+                        value={promoForm.isActive}
+                        onValueChange={(value) => handlePromoFormChange('isActive', value)}
+                      >
                         <SelectTrigger className="rounded-2xl">
                           <SelectValue />
                         </SelectTrigger>
@@ -622,8 +1153,13 @@ export default function OperatorCommercialPage() {
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Discount type</label>
-                      <Select value={promoForm.discountType} onValueChange={(value) => handlePromoFormChange('discountType', value)}>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Discount type
+                      </label>
+                      <Select
+                        value={promoForm.discountType}
+                        onValueChange={(value) => handlePromoFormChange('discountType', value)}
+                      >
                         <SelectTrigger className="rounded-2xl">
                           <SelectValue />
                         </SelectTrigger>
@@ -634,38 +1170,97 @@ export default function OperatorCommercialPage() {
                       </Select>
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Discount value</label>
-                      <Input value={promoForm.discountValue} onChange={(event) => handlePromoFormChange('discountValue', event.target.value)} placeholder={promoForm.discountType === 'percentage' ? '15' : '5000'} type="number" min="0" className="rounded-2xl" />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Discount value
+                      </label>
+                      <Input
+                        value={promoForm.discountValue}
+                        onChange={(event) =>
+                          handlePromoFormChange('discountValue', event.target.value)
+                        }
+                        placeholder={promoForm.discountType === 'percentage' ? '15' : '5000'}
+                        type="number"
+                        min="0"
+                        className="rounded-2xl"
+                      />
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Max discount</label>
-                      <Input value={promoForm.maxDiscountValue} onChange={(event) => handlePromoFormChange('maxDiscountValue', event.target.value)} placeholder="Optional cap" type="number" min="0" className="rounded-2xl" disabled={promoForm.discountType !== 'percentage'} />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Max discount
+                      </label>
+                      <Input
+                        value={promoForm.maxDiscountValue}
+                        onChange={(event) =>
+                          handlePromoFormChange('maxDiscountValue', event.target.value)
+                        }
+                        placeholder="Optional cap"
+                        type="number"
+                        min="0"
+                        className="rounded-2xl"
+                        disabled={promoForm.discountType !== 'percentage'}
+                      />
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Starts at</label>
-                      <Input value={promoForm.startsAt} onChange={(event) => handlePromoFormChange('startsAt', event.target.value)} type="datetime-local" className="rounded-2xl" />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Starts at
+                      </label>
+                      <Input
+                        value={promoForm.startsAt}
+                        onChange={(event) => handlePromoFormChange('startsAt', event.target.value)}
+                        type="datetime-local"
+                        className="rounded-2xl"
+                      />
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ends at</label>
-                      <Input value={promoForm.endsAt} onChange={(event) => handlePromoFormChange('endsAt', event.target.value)} type="datetime-local" className="rounded-2xl" />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Ends at
+                      </label>
+                      <Input
+                        value={promoForm.endsAt}
+                        onChange={(event) => handlePromoFormChange('endsAt', event.target.value)}
+                        type="datetime-local"
+                        className="rounded-2xl"
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Description</label>
-                    <Textarea value={promoForm.description} onChange={(event) => handlePromoFormChange('description', event.target.value)} placeholder="Traveller-facing context for why this discount exists." className="min-h-[96px] rounded-2xl" />
+                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Description
+                    </label>
+                    <Textarea
+                      value={promoForm.description}
+                      onChange={(event) => handlePromoFormChange('description', event.target.value)}
+                      placeholder="Traveller-facing context for why this discount exists."
+                      className="min-h-[96px] rounded-2xl"
+                    />
                   </div>
 
                   {promoError ? (
-                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{promoError}</div>
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                      {promoError}
+                    </div>
                   ) : null}
 
                   <div className="flex flex-wrap gap-3">
-                    <Button onClick={handleSavePromotion} disabled={promoSubmitting} className="rounded-2xl">
-                      {promoSubmitting ? 'Saving...' : editingPromotionId ? 'Update promo' : 'Create promo'}
+                    <Button
+                      onClick={handleSavePromotion}
+                      disabled={promoSubmitting}
+                      className="rounded-2xl"
+                    >
+                      {promoSubmitting
+                        ? 'Saving...'
+                        : editingPromotionId
+                          ? 'Update promo'
+                          : 'Create promo'}
                     </Button>
                     {editingPromotionId ? (
-                      <Button variant="outline" onClick={resetPromoForm} disabled={promoSubmitting} className="rounded-2xl">
+                      <Button
+                        variant="outline"
+                        onClick={resetPromoForm}
+                        disabled={promoSubmitting}
+                        className="rounded-2xl"
+                      >
                         Cancel edit
                       </Button>
                     ) : null}
@@ -692,7 +1287,9 @@ export default function OperatorCommercialPage() {
                     <TableBody>
                       {promotions.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground">No promos configured yet.</TableCell>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            No promos configured yet.
+                          </TableCell>
                         </TableRow>
                       ) : (
                         promotions.map((promotion) => (
@@ -700,11 +1297,15 @@ export default function OperatorCommercialPage() {
                             <TableCell>
                               <div>
                                 <p className="font-medium text-foreground">{promotion.title}</p>
-                                <p className="text-xs text-muted-foreground">{promotion.code} · operator funded</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {promotion.code} · operator funded
+                                </p>
                               </div>
                             </TableCell>
                             <TableCell>{promotion.applicable_tour?.title ?? 'All trips'}</TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{formatPromoWindow(promotion.starts_at, promotion.ends_at)}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {formatPromoWindow(promotion.starts_at, promotion.ends_at)}
+                            </TableCell>
                             <TableCell>{promotion.is_active ? 'Active' : 'Inactive'}</TableCell>
                             <TableCell className="text-right">
                               {promotion.discount_type === 'percentage'
@@ -712,7 +1313,12 @@ export default function OperatorCommercialPage() {
                                 : `PKR ${promotion.discount_value.toLocaleString()}`}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button variant="outline" size="sm" className="rounded-2xl" onClick={() => handleEditPromotion(promotion)}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => handleEditPromotion(promotion)}
+                              >
                                 Edit
                               </Button>
                             </TableCell>
@@ -740,14 +1346,24 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Entitlement({ label, enabled, description }: { label: string; enabled: boolean; description?: string }) {
+function Entitlement({
+  label,
+  enabled,
+  description,
+}: {
+  label: string
+  enabled: boolean
+  description?: string
+}) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3">
       <div>
         <p className="font-medium text-foreground">{label}</p>
         {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
-      <span className={enabled ? 'text-emerald-600' : 'text-muted-foreground'}>{enabled ? 'Enabled' : 'Locked'}</span>
+      <span className={enabled ? 'text-emerald-600' : 'text-muted-foreground'}>
+        {enabled ? 'Enabled' : 'Locked'}
+      </span>
     </div>
   )
 }
