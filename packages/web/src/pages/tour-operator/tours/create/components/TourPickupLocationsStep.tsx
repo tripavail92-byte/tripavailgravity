@@ -125,6 +125,120 @@ function getPickupSubtitle(pickup: DraftPickup) {
   return 'Coordinates pending'
 }
 
+function ManualCoordinateSection({
+  active,
+  setActive,
+  setMarkerPosition,
+  isSaving,
+  onRetry,
+}: {
+  active: { latitude: number | null; longitude: number | null }
+  setActive: React.Dispatch<React.SetStateAction<any>>
+  setMarkerPosition: React.Dispatch<React.SetStateAction<{ lat: number; lng: number } | null>>
+  isSaving: boolean
+  onRetry?: () => void
+}) {
+  const canUseCoords =
+    typeof active.latitude === 'number' &&
+    typeof active.longitude === 'number' &&
+    isValidLatLng(active.latitude, active.longitude)
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
+            Latitude
+          </Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={typeof active.latitude === 'number' ? String(active.latitude) : ''}
+            onChange={(e) => {
+              const raw = e.target.value
+              const next = raw.trim() === '' ? null : Number.parseFloat(raw)
+              setActive((prev: any) => ({
+                ...prev,
+                latitude: Number.isFinite(next as number) ? (next as number) : null,
+              }))
+            }}
+            placeholder="e.g. 48.8566"
+            className="rounded-2xl"
+            disabled={isSaving}
+          />
+          {typeof active.latitude === 'number' && !isValidLatitude(active.latitude) && (
+            <div className="text-xs text-destructive">Latitude must be between -90 and 90.</div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
+            Longitude
+          </Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            value={typeof active.longitude === 'number' ? String(active.longitude) : ''}
+            onChange={(e) => {
+              const raw = e.target.value
+              const next = raw.trim() === '' ? null : Number.parseFloat(raw)
+              setActive((prev: any) => ({
+                ...prev,
+                longitude: Number.isFinite(next as number) ? (next as number) : null,
+              }))
+            }}
+            placeholder="e.g. 2.3522"
+            className="rounded-2xl"
+            disabled={isSaving}
+          />
+          {typeof active.longitude === 'number' && !isValidLongitude(active.longitude) && (
+            <div className="text-xs text-destructive">Longitude must be between -180 and 180.</div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          className="bg-background border-border"
+          onClick={() => {
+            if (!canUseCoords) return
+
+            const lat = active.latitude as number
+            const lng = active.longitude as number
+            setMarkerPosition({ lat, lng })
+
+            setActive((prev: any) => ({
+              ...prev,
+              formatted_address:
+                typeof prev.formatted_address === 'string' && prev.formatted_address.trim().length > 0
+                  ? prev.formatted_address
+                  : formatLatLngAddress(lat, lng),
+            }))
+          }}
+          disabled={isSaving || !canUseCoords}
+        >
+          Use coordinates
+        </Button>
+
+        {onRetry ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-background border-border"
+            onClick={onRetry}
+            disabled={isSaving}
+            title="Retry rendering the map"
+          >
+            Retry map
+          </Button>
+        ) : null}
+      </div>
+    </>
+  )
+}
+
 function PickupMapSection({
   center,
   zoom,
@@ -173,11 +287,6 @@ function PickupMapSection({
   const isFailed = status === APILoadingStatus.FAILED
   const isMapUnavailable = !GOOGLE_MAPS_API_KEY || isAuthFailure || isFailed || gmAuthFailed
 
-  const canUseCoords =
-    typeof active.latitude === 'number' &&
-    typeof active.longitude === 'number' &&
-    isValidLatLng(active.latitude, active.longitude)
-
   if (isMapUnavailable) {
     const reason = !GOOGLE_MAPS_API_KEY
       ? 'Missing Google Maps API key (VITE_GOOGLE_MAPS_API_KEY).'
@@ -197,95 +306,13 @@ function PickupMapSection({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
-              Latitude
-            </Label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={typeof active.latitude === 'number' ? String(active.latitude) : ''}
-              onChange={(e) => {
-                const raw = e.target.value
-                const next = raw.trim() === '' ? null : Number.parseFloat(raw)
-                setActive((prev: any) => ({
-                  ...prev,
-                  latitude: Number.isFinite(next as number) ? (next as number) : null,
-                }))
-              }}
-              placeholder="e.g. 48.8566"
-              className="rounded-2xl"
-              disabled={isSaving}
-            />
-            {typeof active.latitude === 'number' && !isValidLatitude(active.latitude) && (
-              <div className="text-xs text-destructive">Latitude must be between -90 and 90.</div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
-              Longitude
-            </Label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={typeof active.longitude === 'number' ? String(active.longitude) : ''}
-              onChange={(e) => {
-                const raw = e.target.value
-                const next = raw.trim() === '' ? null : Number.parseFloat(raw)
-                setActive((prev: any) => ({
-                  ...prev,
-                  longitude: Number.isFinite(next as number) ? (next as number) : null,
-                }))
-              }}
-              placeholder="e.g. 2.3522"
-              className="rounded-2xl"
-              disabled={isSaving}
-            />
-            {typeof active.longitude === 'number' && !isValidLongitude(active.longitude) && (
-              <div className="text-xs text-destructive">Longitude must be between -180 and 180.</div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-background border-border"
-            onClick={() => {
-              if (!canUseCoords) return
-
-              const lat = active.latitude as number
-              const lng = active.longitude as number
-              setMarkerPosition({ lat, lng })
-
-              // Ensure list doesn't show a blank address when map/reverse-geocode isn't available.
-              setActive((prev: any) => ({
-                ...prev,
-                formatted_address:
-                  typeof prev.formatted_address === 'string' && prev.formatted_address.trim().length > 0
-                    ? prev.formatted_address
-                    : formatLatLngAddress(lat, lng),
-              }))
-            }}
-            disabled={isSaving || !canUseCoords}
-          >
-            Use coordinates
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-background border-border"
-            onClick={() => setRetryNonce((n) => n + 1)}
-            disabled={isSaving}
-            title="Retry rendering the map"
-          >
-            Retry map
-          </Button>
-        </div>
+        <ManualCoordinateSection
+          active={active}
+          setActive={setActive}
+          setMarkerPosition={setMarkerPosition}
+          isSaving={isSaving}
+          onRetry={() => setRetryNonce((n) => n + 1)}
+        />
       </div>
     )
   }
@@ -1329,6 +1356,45 @@ export function TourPickupLocationsStep({
                       <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">2</div>
                       <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
                         <div>
+                          <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">
+                            {allowGoogleMaps ? 'Pickup Map' : 'Pickup Coordinates'}
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {allowGoogleMaps
+                              ? 'Pin the exact stop on the map or drag the marker to refine the location.'
+                              : 'Enter the exact latitude and longitude for this pickup, then apply the coordinates.'}
+                          </p>
+                        </div>
+
+                        {allowGoogleMaps ? (
+                          <PickupMapSection
+                            center={mapCenter}
+                            zoom={mapZoom}
+                            markerPosition={markerPosition}
+                            onMapClick={handleMapClick}
+                            onMarkerDragEnd={handleMarkerDrag}
+                            isSaving={isSaving}
+                            active={active}
+                            setActive={setActive}
+                            setMarkerPosition={setMarkerPosition}
+                            mapId={GOOGLE_MAPS_MAP_ID}
+                          />
+                        ) : (
+                          <ManualCoordinateSection
+                            active={active}
+                            setActive={setActive}
+                            setMarkerPosition={setMarkerPosition}
+                            isSaving={isSaving}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="relative pl-14">
+                      <div className="absolute left-4 top-10 bottom-[-32px] w-px bg-border/70" />
+                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">3</div>
+                      <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
+                        <div>
                           <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Pickup Details</div>
                           <p className="mt-1 text-sm text-muted-foreground">Fill in the title, pickup time, address, and any special notes.</p>
                         </div>
@@ -1407,7 +1473,7 @@ export function TourPickupLocationsStep({
                     </div>
 
                     <div className="relative pl-14">
-                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">3</div>
+                      <div className="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">4</div>
                       <div className="space-y-4 rounded-[22px] border border-border/50 bg-background/80 p-4">
                         <div>
                           <div className="text-sm font-bold uppercase tracking-[0.18em] text-foreground">Save Pickup</div>
