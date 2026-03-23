@@ -42,6 +42,10 @@ export interface OperatorBookingRecord {
   amount_paid_online?: number | null
   amount_due_to_operator?: number | null
   payment_policy_text?: string | null
+  promo_owner?: string | null
+  promo_funding_source?: 'operator' | 'platform' | null
+  promo_discount_value?: number | null
+  price_before_promo?: number | null
   metadata?: Record<string, any> | null
   paid_at?: string | null
   tours: {
@@ -125,6 +129,10 @@ function mapBookingRow(row: any): OperatorBookingRecord {
     amount_paid_online: row.amount_paid_online ?? null,
     amount_due_to_operator: row.amount_due_to_operator ?? null,
     payment_policy_text: row.payment_policy_text ?? null,
+    promo_owner: row.promo_owner ?? null,
+    promo_funding_source: row.promo_funding_source ?? null,
+    promo_discount_value: row.promo_discount_value ?? null,
+    price_before_promo: row.price_before_promo ?? null,
     metadata: row.metadata ?? null,
     paid_at: row.paid_at ?? null,
     tours: {

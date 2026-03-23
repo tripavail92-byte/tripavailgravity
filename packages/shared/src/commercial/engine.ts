@@ -34,6 +34,7 @@ export interface MembershipAdjustmentResult {
 
 export interface BookingFinanceSnapshotInput {
   bookingTotal: number
+  priceBeforePromo?: number
   commissionRate: number
   paymentCollected?: number
   refundAmount?: number
@@ -65,6 +66,7 @@ export interface BookingFinanceSnapshotResult {
 
 export interface CommissionCollectionInput {
   bookingTotal: number
+  priceBeforePromo?: number
   commissionRate: number
   paymentCollected?: number
   refundAmount?: number
@@ -165,10 +167,17 @@ export function calculateCommissionCollection(
   input: CommissionCollectionInput,
 ): CommissionCollectionResult {
   const bookingTotal = normalizeMoney(Math.max(0, input.bookingTotal))
+  const promoDiscountValue = normalizeMoney(Math.max(0, input.promoDiscountValue ?? 0))
+  const inferredPriceBeforePromo = normalizeMoney(
+    Math.max(bookingTotal, input.priceBeforePromo ?? bookingTotal + promoDiscountValue),
+  )
   const paymentCollected = normalizeMoney(Math.max(0, input.paymentCollected ?? bookingTotal))
   const refundAmount = normalizeMoney(Math.max(0, input.refundAmount ?? 0))
-  const promoDiscountValue = normalizeMoney(Math.max(0, input.promoDiscountValue ?? 0))
-  const grossCommissionTotal = calculateCommissionAmount(bookingTotal, input.commissionRate)
+  const commissionBasisTotal =
+    input.promoFundingSource === 'platform' && promoDiscountValue > 0
+      ? inferredPriceBeforePromo
+      : bookingTotal
+  const grossCommissionTotal = calculateCommissionAmount(commissionBasisTotal, input.commissionRate)
   const commissionTotal =
     input.promoFundingSource === 'platform' && promoDiscountValue > 0
       ? normalizeMoney(Math.max(0, grossCommissionTotal - Math.min(promoDiscountValue, grossCommissionTotal)))
@@ -263,6 +272,7 @@ export function buildBookingFinanceSnapshot(
   const commissionRate = Math.max(0, input.commissionRate)
   const commissionCollection = calculateCommissionCollection({
     bookingTotal,
+    priceBeforePromo: input.priceBeforePromo,
     commissionRate,
     paymentCollected,
     refundAmount,

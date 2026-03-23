@@ -184,6 +184,7 @@ describe('commercial scenario coverage', () => {
         {
           bookingId: 'platform-funded-promo',
           bookingTotal: 80000,
+          priceBeforePromo: 90000,
           membershipTier: 'gold',
           bookingStatus: 'completed',
           paymentSettled: true,
@@ -197,8 +198,36 @@ describe('commercial scenario coverage', () => {
 
     expect(result.thresholdMet).toBe(true)
     expect(result.bookings[0]).toMatchObject({
-      commissionTotal: 6000,
-      operatorPayableAmount: 74000,
+      commissionTotal: 8000,
+      operatorPayableAmount: 72000,
+      settlementState: 'eligible_for_payout',
+      payoutStatus: 'eligible',
+    })
+  })
+
+  it('keeps capped percentage platform-funded promos on the same pre-promo commission basis in payout scenarios', () => {
+    const result = evaluatePayoutScenario({
+      threshold: 5000,
+      bookings: [
+        {
+          bookingId: 'platform-funded-promo-cap',
+          bookingTotal: 85000,
+          priceBeforePromo: 90000,
+          membershipTier: 'gold',
+          bookingStatus: 'completed',
+          paymentSettled: true,
+          scheduleEnded: true,
+          operatorKycApproved: true,
+          promoFundingSource: 'platform',
+          promoDiscountValue: 5000,
+        },
+      ],
+    })
+
+    expect(result.thresholdMet).toBe(true)
+    expect(result.bookings[0]).toMatchObject({
+      commissionTotal: 13000,
+      operatorPayableAmount: 72000,
       settlementState: 'eligible_for_payout',
       payoutStatus: 'eligible',
     })

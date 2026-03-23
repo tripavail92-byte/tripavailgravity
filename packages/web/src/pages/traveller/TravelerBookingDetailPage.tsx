@@ -20,6 +20,10 @@ import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { bookingService } from '@/features/booking/services/bookingService'
+import {
+  getTravelerBookingOutcomeSummary,
+  getTravelerBookingSettlementState,
+} from '@/features/booking/utils/travelerBookingPresentation'
 import { tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import type { BookingConversationScope } from '@/features/messaging/services/bookingMessengerService'
@@ -89,9 +93,19 @@ export default function TravelerBookingDetailPage() {
   const locationLabel = details?.location?.city || details?.location || 'Location confirmed after booking'
   const dateLabel = booking?.check_in_date || schedule?.start_time || booking?.booking_date || null
   const totalGuests = booking?.pax_count ?? booking?.guest_count ?? 0
-  const totalAmount = Number(booking?.total_price || 0)
-  const paidOnline = Number((booking?.amount_paid_online ?? booking?.upfront_amount ?? booking?.total_price) || 0)
-  const remainingAmount = Number(booking?.remaining_amount || 0)
+  const settlementState = getTravelerBookingSettlementState(booking)
+  const outcome = getTravelerBookingOutcomeSummary(settlementState)
+  const totalAmount = settlementState.totalAmount
+  const paidOnline = settlementState.paidOnline
+  const remainingAmount = settlementState.remainingAmount
+  const promoDiscountValue = settlementState.promoDiscountValue
+  const priceBeforePromo = settlementState.priceBeforePromo
+  const refundAmount = settlementState.refundAmount
+  const refundReason = settlementState.refundReason
+  const refundTimestamp = settlementState.refundTimestamp
+  const hasPromo = settlementState.hasPromo
+  const isRefunded = settlementState.isRefunded
+  const isCancelled = settlementState.isCancelled
   const counterpartLabel = scope === 'tour_booking' ? 'tour operator' : 'host'
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
@@ -273,6 +287,45 @@ export default function TravelerBookingDetailPage() {
                   </div>
                 </div>
               ) : null}
+
+              {hasPromo ? (
+                <div className="mt-6 rounded-3xl border border-emerald-200/80 bg-emerald-50/80 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    Promo pricing locked at booking time
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">
+                    {booking?.promo_owner || 'Promo applied'}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Original total: PKR {priceBeforePromo.toLocaleString()} · Discount: PKR {promoDiscountValue.toLocaleString()} · Final booking total: PKR {totalAmount.toLocaleString()}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Funding: {booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'}
+                  </p>
+                </div>
+              ) : null}
+
+              {(isRefunded || isCancelled) ? (
+                <div className="mt-6 rounded-3xl border border-warning/30 bg-warning/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning">
+                    {isRefunded ? 'Refund status' : 'Cancellation status'}
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">
+                    {outcome.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{outcome.message}</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <InfoRow label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
+                    <InfoRow label="Refunded amount" value={`PKR ${refundAmount.toLocaleString()}`} />
+                    <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+                    <InfoRow label="Booking status" value={booking.status} />
+                    {refundReason ? <InfoRow label="Reason" value={refundReason} /> : null}
+                    {refundTimestamp ? (
+                      <InfoRow label="Updated at" value={format(new Date(refundTimestamp), 'MMM d, yyyy h:mm a')} />
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </GlassCard>
@@ -305,8 +358,14 @@ export default function TravelerBookingDetailPage() {
                     <InfoRow label="Payment status" value={booking.payment_status || 'paid'} />
                     <InfoRow label="Guests" value={String(totalGuests)} />
                     <InfoRow label="Total" value={`PKR ${totalAmount.toLocaleString()}`} />
+                    {hasPromo ? <InfoRow label="Original total" value={`PKR ${priceBeforePromo.toLocaleString()}`} /> : null}
+                    {hasPromo ? <InfoRow label="Promo discount" value={`PKR ${promoDiscountValue.toLocaleString()}`} /> : null}
+                    {hasPromo ? <InfoRow label="Promo funding" value={booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'} /> : null}
+                    {hasPromo ? <InfoRow label="Promo attribution" value={booking?.promo_owner || 'Promo applied'} /> : null}
                     <InfoRow label="Upfront paid" value={`PKR ${paidOnline.toLocaleString()}`} />
                     <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+                    {isRefunded ? <InfoRow label="Refunded amount" value={`PKR ${refundAmount.toLocaleString()}`} /> : null}
+                    {refundReason ? <InfoRow label="Refund reason" value={refundReason} /> : null}
                     <InfoRow label="Balance payment method" value={remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online'} />
                     <InfoRow label="Due timing" value={remainingAmount > 0 ? 'Before departure' : 'Paid in full'} />
                     {schedule?.start_time ? (

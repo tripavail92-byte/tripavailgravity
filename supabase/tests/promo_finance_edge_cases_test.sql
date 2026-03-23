@@ -11,33 +11,37 @@ VALUES
   ('operator'),
   ('traveler_refund'),
   ('traveler_cancel'),
+  ('traveler_deposit'),
   ('traveler_recovery_old'),
   ('traveler_recovery_new'),
   ('tour'),
   ('schedule_refund'),
   ('schedule_cancel'),
+  ('schedule_deposit'),
   ('schedule_recovery_old'),
   ('schedule_recovery_new'),
   ('booking_refund'),
   ('booking_cancel'),
+  ('booking_deposit'),
   ('booking_recovery'),
   ('booking_promo_eligible');
 
 INSERT INTO auth.users(id, email, email_confirmed_at, created_at, updated_at)
 SELECT val, key || '_' || val || '@test.invalid', NOW(), NOW(), NOW()
 FROM _promo_edge_ids
-WHERE key IN ('operator', 'traveler_refund', 'traveler_cancel', 'traveler_recovery_old', 'traveler_recovery_new');
+WHERE key IN ('operator', 'traveler_refund', 'traveler_cancel', 'traveler_deposit', 'traveler_recovery_old', 'traveler_recovery_new');
 
 INSERT INTO public.users(id, email, full_name)
 SELECT val, key || '_' || val || '@test.invalid', initcap(replace(key, '_', ' '))
 FROM _promo_edge_ids
-WHERE key IN ('operator', 'traveler_refund', 'traveler_cancel', 'traveler_recovery_old', 'traveler_recovery_new')
+WHERE key IN ('operator', 'traveler_refund', 'traveler_cancel', 'traveler_deposit', 'traveler_recovery_old', 'traveler_recovery_new')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.user_roles(user_id, role_type, is_active, verification_status)
 VALUES
   ((SELECT val FROM _promo_edge_ids WHERE key = 'traveler_refund'), 'traveller', TRUE, 'approved'),
   ((SELECT val FROM _promo_edge_ids WHERE key = 'traveler_cancel'), 'traveller', TRUE, 'approved'),
+  ((SELECT val FROM _promo_edge_ids WHERE key = 'traveler_deposit'), 'traveller', TRUE, 'approved'),
   ((SELECT val FROM _promo_edge_ids WHERE key = 'traveler_recovery_old'), 'traveller', TRUE, 'approved'),
   ((SELECT val FROM _promo_edge_ids WHERE key = 'traveler_recovery_new'), 'traveller', TRUE, 'approved')
 ON CONFLICT (user_id, role_type) DO NOTHING;
@@ -151,6 +155,15 @@ VALUES
     10,
     0,
     'scheduled'
+  ),
+  (
+    (SELECT val FROM _promo_edge_ids WHERE key = 'schedule_deposit'),
+    (SELECT val FROM _promo_edge_ids WHERE key = 'tour'),
+    TIMEZONE('UTC', NOW()) - INTERVAL '5 days',
+    TIMEZONE('UTC', NOW()) - INTERVAL '4 days',
+    10,
+    1,
+    'completed'
   ),
   (
     (SELECT val FROM _promo_edge_ids WHERE key = 'schedule_recovery_old'),
@@ -274,6 +287,32 @@ VALUES
     0,
     0,
     'Cancelled promo booking before payment settlement.',
+    (SELECT id FROM public.operator_promotions WHERE UPPER(BTRIM(code)) = 'EDGE10K'),
+    'EDGE10K',
+    'operator',
+    10000,
+    90000
+  ),
+  (
+    (SELECT val FROM _promo_edge_ids WHERE key = 'booking_deposit'),
+    (SELECT val FROM _promo_edge_ids WHERE key = 'tour'),
+    (SELECT val FROM _promo_edge_ids WHERE key = 'schedule_deposit'),
+    (SELECT val FROM _promo_edge_ids WHERE key = 'traveler_deposit'),
+    'completed',
+    80000,
+    1,
+    TIMEZONE('UTC', NOW()) - INTERVAL '6 days',
+    '{}'::JSONB,
+    'balance_pending',
+    CONCAT('pi_deposit_', REPLACE((SELECT val::TEXT FROM _promo_edge_ids WHERE key = 'booking_deposit'), '-', '')),
+    'partial_online',
+    TRUE,
+    20,
+    16000,
+    64000,
+    16000,
+    64000,
+    'Promo deposit booking with balance due to operator.',
     (SELECT id FROM public.operator_promotions WHERE UPPER(BTRIM(code)) = 'EDGE10K'),
     'EDGE10K',
     'operator',
@@ -530,6 +569,7 @@ DO $$
 DECLARE
   v_refund_snapshot RECORD;
   v_cancel_snapshot RECORD;
+  v_deposit_snapshot RECORD;
 BEGIN
   SELECT settlement_state, payout_status, promo_funding_source, promo_discount_value, commission_total, operator_receivable_estimate
   INTO v_refund_snapshot
@@ -563,7 +603,68 @@ BEGIN
   ASSERT v_cancel_snapshot.promo_discount_value = 10000,
     'FAIL: cancelled promo booking should preserve promo discount value';
 
-  RAISE NOTICE 'PASS: promo-attributed refunds and cancellations persist the correct finance states';
+  SELECT payment_collected, commission_total, commission_collected, commission_remaining,
+         operator_receivable_estimate, deposit_required, deposit_percentage, promo_funding_source, promo_discount_value
+  INTO v_deposit_snapshot
+  FROM public.operator_booking_finance_snapshots
+  WHERE booking_id = (SELECT val FROM _promo_edge_ids WHERE key = 'booking_deposit');
+
+  ASSERT v_deposit_snapshot.deposit_required = TRUE,
+    'FAIL: deposit promo booking should persist deposit_required';
+  ASSERT v_deposit_snapshot.deposit_percentage = 20,
+    'FAIL: deposit promo booking should persist deposit_percentage';
+  ASSERT v_deposit_snapshot.payment_collected = 16000,
+    'FAIL: deposit promo booking should persist the upfront payment collected';
+  ASSERT v_deposit_snapshot.commission_total = 16000,
+    'FAIL: operator-funded promo deposit booking should commission the discounted total';
+  ASSERT v_deposit_snapshot.commission_collected = 16000,
+    'FAIL: deposit promo booking should collect commission from the deposit cash first';
+  ASSERT v_deposit_snapshot.commission_remaining = 0,
+    'FAIL: deposit promo booking should have no remaining commission when the deposit covers it';
+  ASSERT v_deposit_snapshot.operator_receivable_estimate = 64000,
+    'FAIL: deposit promo booking should preserve the operator receivable on the discounted total';
+  ASSERT v_deposit_snapshot.promo_funding_source = 'operator',
+    'FAIL: deposit promo booking should preserve promo funding source';
+  ASSERT v_deposit_snapshot.promo_discount_value = 10000,
+    'FAIL: deposit promo booking should preserve promo discount value';
+
+  UPDATE public.tour_bookings
+  SET amount_paid_online = amount_paid_online
+  WHERE id = (SELECT val FROM _promo_edge_ids WHERE key = 'booking_refund');
+
+  UPDATE public.tour_bookings
+  SET remaining_amount = remaining_amount
+  WHERE id = (SELECT val FROM _promo_edge_ids WHERE key = 'booking_cancel');
+
+  SELECT settlement_state, payout_status, promo_funding_source, promo_discount_value, commission_total, operator_receivable_estimate
+  INTO v_refund_snapshot
+  FROM public.operator_booking_finance_snapshots
+  WHERE booking_id = (SELECT val FROM _promo_edge_ids WHERE key = 'booking_refund');
+
+  ASSERT v_refund_snapshot.settlement_state = 'refunded'::public.settlement_state_enum,
+    'FAIL: replayed refund sync should preserve refunded settlement state';
+  ASSERT v_refund_snapshot.payout_status = 'not_ready'::public.payout_status_enum,
+    'FAIL: replayed refund sync should preserve blocked payout status';
+  ASSERT v_refund_snapshot.promo_funding_source = 'operator',
+    'FAIL: replayed refund sync should preserve promo funding source';
+  ASSERT v_refund_snapshot.promo_discount_value = 10000,
+    'FAIL: replayed refund sync should preserve promo discount value';
+
+  SELECT settlement_state, payout_status, promo_funding_source, promo_discount_value
+  INTO v_cancel_snapshot
+  FROM public.operator_booking_finance_snapshots
+  WHERE booking_id = (SELECT val FROM _promo_edge_ids WHERE key = 'booking_cancel');
+
+  ASSERT v_cancel_snapshot.settlement_state = 'cancelled_by_operator'::public.settlement_state_enum,
+    'FAIL: replayed cancel sync should preserve cancelled_by_operator settlement state';
+  ASSERT v_cancel_snapshot.payout_status = 'not_ready'::public.payout_status_enum,
+    'FAIL: replayed cancel sync should preserve blocked payout status';
+  ASSERT v_cancel_snapshot.promo_funding_source = 'operator',
+    'FAIL: replayed cancel sync should preserve promo funding source';
+  ASSERT v_cancel_snapshot.promo_discount_value = 10000,
+    'FAIL: replayed cancel sync should preserve promo discount value';
+
+  RAISE NOTICE 'PASS: promo-attributed refunds, cancellations, deposits, and replayed syncs persist the correct finance states';
 END $$;
 
 DO $$

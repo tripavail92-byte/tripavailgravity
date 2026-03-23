@@ -28,6 +28,55 @@ export interface ResolvedTourPromotion {
   discountedBookingTotal: number
 }
 
+export type TourPromotionResolutionStatus =
+  | 'valid'
+  | 'invalid'
+  | 'inactive'
+  | 'expired'
+  | 'not_started'
+  | 'inapplicable'
+
+export interface TourPromotionPreviewResult {
+  status: TourPromotionResolutionStatus
+  message: string
+  promotion: ResolvedTourPromotion | null
+}
+
+export function getTourPromotionStatusMessage(
+  status: TourPromotionResolutionStatus,
+  promoCode?: string | null,
+): string {
+  const normalizedCode = promoCode?.trim().toUpperCase()
+
+  switch (status) {
+    case 'valid':
+      return normalizedCode
+        ? `${normalizedCode} applied successfully.`
+        : 'Promo applied successfully.'
+    case 'inactive':
+      return normalizedCode
+        ? `${normalizedCode} is currently inactive.`
+        : 'This promo code is currently inactive.'
+    case 'expired':
+      return normalizedCode
+        ? `${normalizedCode} has expired.`
+        : 'This promo code has expired.'
+    case 'not_started':
+      return normalizedCode
+        ? `${normalizedCode} is not active yet.`
+        : 'This promo code is not active yet.'
+    case 'inapplicable':
+      return normalizedCode
+        ? `${normalizedCode} is not valid for this trip.`
+        : 'This promo code is not valid for this trip.'
+    case 'invalid':
+    default:
+      return normalizedCode
+        ? `${normalizedCode} is not a valid promo code.`
+        : 'This promo code is not valid.'
+  }
+}
+
 export function normalizeCurrencyAmount(value: number): number {
   if (!Number.isFinite(value)) {
     return 0

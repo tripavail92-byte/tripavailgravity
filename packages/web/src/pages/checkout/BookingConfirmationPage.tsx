@@ -13,6 +13,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { handlePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
+import {
+  getTravelerBookingOutcomeSummary,
+  getTravelerBookingSettlementState,
+} from '@/features/booking/utils/travelerBookingPresentation'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { supabase } from '@/lib/supabase'
 
@@ -30,6 +34,53 @@ export default function BookingConfirmationPage() {
   )
   const [error, setError] = useState<string | null>(null)
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null)
+
+  const settlementState = getTravelerBookingSettlementState(confirmedBooking)
+  const outcome = getTravelerBookingOutcomeSummary(settlementState)
+  const currencyCode = tour?.currency || 'PKR'
+  const formatMoney = (value: number) => `${currencyCode} ${value.toFixed(2)}`
+
+  const nextSteps = (() => {
+    if (outcome.kind === 'cancelled') {
+      return [
+        'Keep this receipt for your records and any support follow-up.',
+        settlementState.refundAmount > 0
+          ? `Refunded amount recorded: ${formatMoney(settlementState.refundAmount)}.`
+          : 'Review the booking workspace for the latest cancellation handling.',
+        'Check your original payment method for refund timing updates.',
+      ]
+    }
+
+    if (outcome.kind === 'refunded') {
+      return [
+        'Keep this receipt for your records and any bank follow-up.',
+        `Refunded amount recorded: ${formatMoney(settlementState.refundAmount)}.`,
+        'Use the booking workspace if you need the latest operator or support context.',
+      ]
+    }
+
+    if (outcome.kind === 'payment_processing') {
+      return [
+        'Refresh this page or return from your email confirmation once payment clears.',
+        'Messaging and operator coordination unlock after payment confirmation.',
+        'Contact support if the booking stays in processing unexpectedly.',
+      ]
+    }
+
+    if (outcome.kind === 'deposit_pending') {
+      return [
+        'Check your email for booking confirmation and operator instructions.',
+        'Save your confirmation number for check-in and payment follow-up.',
+        `Remaining balance due later: ${formatMoney(settlementState.remainingAmount)} paid directly to the operator before departure.`,
+      ]
+    }
+
+    return [
+      'Check your email for booking confirmation and tour details.',
+      'Save your confirmation number for check-in.',
+      'Review the itinerary and any pre-departure instructions from the operator.',
+    ]
+  })()
 
   // Confirm payment on load
   useEffect(() => {
@@ -171,14 +222,21 @@ export default function BookingConfirmationPage() {
             transition={{ delay: 0.2, type: 'spring' }}
             className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4"
           >
-            <Check className="w-10 h-10 text-success" />
+            {outcome.tone === 'success' ? (
+              <Check className="w-10 h-10 text-success" />
+            ) : (
+              <AlertCircle className="w-10 h-10 text-warning" />
+            )}
           </motion.div>
-          <h1 className="text-4xl font-black text-foreground mb-2">Booking Confirmed!</h1>
+          <h1 className="text-4xl font-black text-foreground mb-2">{outcome.title}</h1>
           <p className="text-lg text-muted-foreground font-medium">
-            {confirmedBooking?.remaining_amount > 0
-              ? 'Your deposit booking is confirmed. The remaining balance will be paid directly to the operator before departure.'
-              : 'Your tour is booked. Get ready for an amazing adventure!'}
+            {outcome.message}
           </p>
+          {settlementState.hasPromo ? (
+            <p className="mt-3 inline-flex rounded-full border border-success/30 bg-success/10 px-4 py-2 text-sm font-semibold text-success">
+              Promo savings locked in: {formatMoney(settlementState.promoDiscountValue)} off
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -269,29 +327,62 @@ export default function BookingConfirmationPage() {
                 <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Booking status</span>
-                  <span className="text-foreground font-bold">Confirmed</span>
+                  <span className="text-foreground font-bold">{confirmedBooking.status || 'Confirmed'}</span>
                 </div>
+                <div className="h-px bg-border" />
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground font-medium">Payment status</span>
+                  <span className="text-foreground font-bold">{confirmedBooking.payment_status || 'paid'}</span>
+                </div>
+                {settlementState.hasPromo ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Original booking total</span>
+                      <span className="text-foreground font-bold">
+                        {formatMoney(settlementState.priceBeforePromo || settlementState.totalAmount)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Promo discount</span>
+                      <span className="font-bold text-success">
+                        -{formatMoney(settlementState.promoDiscountValue)}
+                      </span>
+                    </div>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Promo attribution</span>
+                      <span className="text-foreground font-bold">
+                        {settlementState.promoOwner || 'Promo applied'}
+                        {settlementState.promoFundingSource
+                          ? ` · ${settlementState.promoFundingSource === 'platform' ? 'TripAvail funded' : 'Operator funded'}`
+                          : ''}
+                      </span>
+                    </div>
+                  </>
+                ) : null}
                 <div className="h-px bg-border" />
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground font-medium">Total booking amount</span>
                   <span className="text-foreground font-bold">
-                    {tour?.currency} {Number(confirmedBooking.total_price || 0).toFixed(2)}
+                    {formatMoney(settlementState.totalAmount)}
                   </span>
                 </div>
                 <div className="h-px bg-border" />
                 <div className="flex items-center justify-between text-lg">
                   <span className="text-foreground font-bold">Upfront paid</span>
                   <span className="font-black text-primary">
-                    {tour?.currency} {Number((confirmedBooking.amount_paid_online ?? confirmedBooking.upfront_amount ?? confirmedBooking.total_price) || 0).toFixed(2)}
+                    {formatMoney(settlementState.paidOnline)}
                   </span>
                 </div>
-                {Number(confirmedBooking.remaining_amount || 0) > 0 ? (
+                {settlementState.isDeposit ? (
                   <>
                     <div className="h-px bg-border" />
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground font-medium">Remaining balance</span>
                       <span className="text-foreground font-bold">
-                        {tour?.currency} {Number(confirmedBooking.remaining_amount || 0).toFixed(2)}
+                        {formatMoney(settlementState.remainingAmount)}
                       </span>
                     </div>
                     <div className="h-px bg-border" />
@@ -306,6 +397,33 @@ export default function BookingConfirmationPage() {
                     </div>
                   </>
                 ) : null}
+                {(settlementState.isRefunded || settlementState.isCancelled) ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Refunded amount</span>
+                      <span className="text-foreground font-bold">{formatMoney(settlementState.refundAmount)}</span>
+                    </div>
+                  </>
+                ) : null}
+                {settlementState.refundReason ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-muted-foreground font-medium">Refund reason</span>
+                      <span className="text-right text-foreground font-bold">{settlementState.refundReason}</span>
+                    </div>
+                  </>
+                ) : null}
+                {settlementState.refundTimestamp ? (
+                  <>
+                    <div className="h-px bg-border" />
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-muted-foreground font-medium">Updated at</span>
+                      <span className="text-right text-foreground font-bold">{formatDate(settlementState.refundTimestamp)} {formatTime(settlementState.refundTimestamp)}</span>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </div>
           )}
@@ -314,16 +432,12 @@ export default function BookingConfirmationPage() {
           <div className="space-y-4 p-4 bg-warning/10 rounded-xl border border-warning/20">
             <h4 className="font-bold text-foreground flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-warning" />
-              What's Next?
+              Receipt Notes
             </h4>
             <ul className="space-y-2 text-sm text-foreground font-medium">
-              <li>✓ Check your email for booking confirmation and tour details</li>
-              <li>✓ Save your confirmation number for check-in</li>
-              <li>✓ Review the tour itinerary and packing list</li>
-              {Number(confirmedBooking?.remaining_amount || 0) > 0 ? (
-                <li>✓ Balance due later: {tour?.currency} {Number(confirmedBooking?.remaining_amount || 0).toFixed(2)} paid directly to the operator before departure</li>
-              ) : null}
-              <li>✓ Follow the tour operator's pre-departure instructions</li>
+              {nextSteps.map((step) => (
+                <li key={step}>✓ {step}</li>
+              ))}
             </ul>
           </div>
 
@@ -352,7 +466,7 @@ export default function BookingConfirmationPage() {
               className="w-full h-12 rounded-xl"
             >
               <Download className="w-4 h-4 mr-2" />
-              Download Confirmation
+              Download Confirmation / Receipt
             </Button>
           </div>
         </GlassCard>

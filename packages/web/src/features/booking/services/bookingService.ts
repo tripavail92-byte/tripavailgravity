@@ -1,8 +1,11 @@
 import { supabase } from '@/lib/supabase'
 import {
   buildTourPaymentTermsFromTotal,
+  getTourPromotionStatusMessage,
   getTourPaymentTerms,
   type ResolvedTourPromotion,
+  type TourPromotionPreviewResult,
+  type TourPromotionResolutionStatus,
 } from '@/features/booking/utils/tourPaymentTerms'
 
 function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
@@ -95,34 +98,60 @@ export interface PackageBooking {
  * Tour Booking Service
  */
 export const tourBookingService = {
-  async resolvePromotionPreview(params: {
+  async inspectPromotionPreview(params: {
     tourId: string
     bookingTotal: number
     promoCode: string
-  }): Promise<ResolvedTourPromotion | null> {
-    const { data, error } = await supabase.rpc('resolve_tour_promotion' as any, {
+  }): Promise<TourPromotionPreviewResult> {
+    const normalizedCode = params.promoCode.trim().toUpperCase()
+
+    const { data, error } = await supabase.rpc('inspect_tour_promotion' as any, {
       p_tour_id: params.tourId,
-      p_promo_code: params.promoCode,
+      p_promo_code: normalizedCode,
       p_booking_total: params.bookingTotal,
     })
 
     if (error) throw error
 
     const row = Array.isArray(data) ? data[0] ?? null : data ?? null
+    const status = (row?.resolution_status ?? 'invalid') as TourPromotionResolutionStatus
+    const message =
+      typeof row?.resolution_message === 'string' && row.resolution_message.trim().length > 0
+        ? row.resolution_message.trim()
+        : getTourPromotionStatusMessage(status, normalizedCode)
 
-    if (!row) return null
+    if (!row || status !== 'valid') {
+      return {
+        status,
+        message,
+        promotion: null,
+      }
+    }
 
     return {
-      promotionId: row.promotion_id,
-      title: row.title,
-      code: row.code,
-      ownerLabel: row.owner_label,
-      fundingSource: row.funding_source,
-      discountType: row.discount_type,
-      discountValue: Number(row.discount_value || 0),
-      appliedDiscountValue: Number(row.applied_discount_value || 0),
-      discountedBookingTotal: Number(row.discounted_booking_total || 0),
+      status,
+      message,
+      promotion: {
+        promotionId: row.promotion_id,
+        title: row.title,
+        code: row.code,
+        ownerLabel: row.owner_label,
+        fundingSource: row.funding_source,
+        discountType: row.discount_type,
+        discountValue: Number(row.discount_value || 0),
+        appliedDiscountValue: Number(row.applied_discount_value || 0),
+        discountedBookingTotal: Number(row.discounted_booking_total || 0),
+      },
     }
+  },
+
+  async resolvePromotionPreview(params: {
+    tourId: string
+    bookingTotal: number
+    promoCode: string
+  }): Promise<ResolvedTourPromotion | null> {
+    const preview = await this.inspectPromotionPreview(params)
+    return preview.status === 'valid' ? preview.promotion : null
   },
 
   async getTravelerBookings(travelerId: string): Promise<any[]> {
@@ -301,16 +330,20 @@ export const tourBookingService = {
       depositPercentage: Number(tourRow?.deposit_percentage || 0),
     })
 
-    const resolvedPromotion = params.promoCode?.trim()
-      ? await this.resolvePromotionPreview({
+    const promoPreview = params.promoCode?.trim()
+      ? await this.inspectPromotionPreview({
           tourId: params.tour_id,
           bookingTotal: basePaymentTerms.totalAmount,
           promoCode: params.promoCode,
         })
       : null
 
+    const resolvedPromotion = promoPreview?.status === 'valid' ? promoPreview.promotion : null
+
     if (params.promoCode?.trim() && !resolvedPromotion) {
-      throw new Error('Promo code is invalid or inactive for this tour')
+      throw new Error(
+        promoPreview?.message || getTourPromotionStatusMessage('invalid', params.promoCode),
+      )
     }
 
     const paymentTerms = resolvedPromotion

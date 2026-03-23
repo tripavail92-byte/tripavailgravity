@@ -68,9 +68,22 @@ export async function handlePaymentSuccess(
 
     // STEP 3: Make confirmation idempotent for return-page reloads.
     if (
-      booking.status === 'confirmed' &&
-      ['paid', 'partially_paid', 'balance_pending'].includes(booking.payment_status || '')
+      booking.status !== 'pending' &&
+      [
+        'paid',
+        'partially_paid',
+        'balance_pending',
+        'refunded',
+        'partially_refunded',
+      ].includes(booking.payment_status || '')
     ) {
+      return {
+        success: true,
+        booking,
+      }
+    }
+
+    if (booking.status === 'cancelled') {
       return {
         success: true,
         booking,

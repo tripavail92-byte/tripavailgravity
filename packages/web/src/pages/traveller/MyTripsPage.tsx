@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { bookingService } from '@/features/booking/services/bookingService'
+import { getTravelerBookingSettlementState } from '@/features/booking/utils/travelerBookingPresentation'
 import { useAuth } from '@/hooks/useAuth'
 
 type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed'
@@ -138,6 +139,21 @@ export default function MyTripsPage() {
                 const details = trip.tours || trip.packages
                 const date =
                   trip.tour_schedules?.start_time || trip.booking_date || trip.start_time || trip.check_in_date
+                const settlementState = getTravelerBookingSettlementState(trip)
+                const summaryPills: string[] = []
+
+                if (settlementState.hasPromo) {
+                  summaryPills.push(`Promo saved PKR ${settlementState.promoDiscountValue.toLocaleString()}`)
+                }
+
+                if (settlementState.isRefunded) {
+                  summaryPills.push(`Refunded PKR ${settlementState.refundAmount.toLocaleString()}`)
+                } else if (settlementState.isDeposit) {
+                  summaryPills.push(`Paid PKR ${settlementState.paidOnline.toLocaleString()} now`)
+                  summaryPills.push(`Remaining PKR ${settlementState.remainingAmount.toLocaleString()}`)
+                } else {
+                  summaryPills.push(`Paid online PKR ${settlementState.paidOnline.toLocaleString()}`)
+                }
 
                 return (
                   <motion.div
@@ -222,15 +238,27 @@ export default function MyTripsPage() {
                                 </div>
                               </div>
                             </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {summaryPills.map((pill) => (
+                                <Badge
+                                  key={pill}
+                                  variant="outline"
+                                  className="rounded-full border-border/60 bg-background/70 px-3 py-1 text-[11px] font-semibold text-muted-foreground"
+                                >
+                                  {pill}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
 
                           <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between gap-3">
                             <div className="flex flex-col">
                               <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest leading-none mb-1">
-                                Total Paid
+                                Booking total
                               </span>
                               <span className="text-lg font-black text-foreground leading-none">
-                                ${trip.total_price?.toLocaleString()}
+                                PKR {settlementState.totalAmount.toLocaleString()}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">

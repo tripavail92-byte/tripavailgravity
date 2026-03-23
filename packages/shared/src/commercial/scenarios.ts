@@ -30,6 +30,7 @@ export interface PublishLimitScenarioResult {
 export interface PayoutScenarioBookingInput {
   bookingId: string
   bookingTotal: number
+  priceBeforePromo?: number
   membershipTier: MembershipTierCode
   commissionRateSnapshot?: number
   promoFundingSource?: 'operator' | 'platform' | null
@@ -134,6 +135,7 @@ export function evaluatePayoutScenario(input: {
     const commissionRate = booking.commissionRateSnapshot ?? getMembershipTierConfig(booking.membershipTier).commissionRate
     const snapshot = buildBookingFinanceSnapshot({
       bookingTotal: booking.bookingTotal,
+      priceBeforePromo: booking.priceBeforePromo,
       commissionRate,
       refundAmount: booking.refundAmount ?? 0,
       promoFundingSource: booking.promoFundingSource ?? null,

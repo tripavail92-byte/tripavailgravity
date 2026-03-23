@@ -8,7 +8,9 @@ VALUES
   ('tour'),
   ('schedule'),
   ('platform_booking'),
-  ('operator_booking');
+  ('operator_booking'),
+  ('platform_percentage_booking'),
+  ('operator_percentage_booking');
 
 INSERT INTO auth.users(id, email, email_confirmed_at, created_at, updated_at)
 SELECT val, key || '_' || val || '@test.invalid', NOW(), NOW(), NOW()
@@ -167,6 +169,7 @@ INSERT INTO public.operator_promotions (
   funding_source,
   discount_type,
   discount_value,
+  max_discount_value,
   is_active
 )
 VALUES
@@ -180,6 +183,7 @@ VALUES
     'platform',
     'fixed_amount',
     10000,
+    NULL,
     TRUE
   ),
   (
@@ -192,6 +196,33 @@ VALUES
     'operator',
     'fixed_amount',
     10000,
+    NULL,
+    TRUE
+  ),
+  (
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'operator'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'tour'),
+    'TripAvail capped support',
+    'PLATFORM15CAP5K',
+    'Platform-funded percentage promo with a cap',
+    'PLATFORM15CAP5K',
+    'platform',
+    'percentage',
+    15,
+    5000,
+    TRUE
+  ),
+  (
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'operator'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'tour'),
+    'Operator capped percentage',
+    'OPERATOR15CAP5K',
+    'Operator-funded percentage promo with a cap',
+    'OPERATOR15CAP5K',
+    'operator',
+    'percentage',
+    15,
+    5000,
     TRUE
   )
 ON CONFLICT DO NOTHING;
@@ -274,6 +305,58 @@ VALUES
     10000,
     90000,
     '{}'::JSONB
+  ),
+  (
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'platform_percentage_booking'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'tour'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'schedule'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'traveler'),
+    'completed',
+    85000,
+    1,
+    TIMEZONE('UTC', NOW()) - INTERVAL '5 days',
+    'paid',
+    CONCAT('pi_platform_pct_', REPLACE((SELECT val::TEXT FROM _promo_alloc_ids WHERE key = 'platform_percentage_booking'), '-', '')),
+    'full_online',
+    FALSE,
+    0,
+    85000,
+    0,
+    85000,
+    73000,
+    'Platform-funded capped percentage promo charged online.',
+    (SELECT id FROM public.operator_promotions WHERE UPPER(BTRIM(code)) = 'PLATFORM15CAP5K'),
+    'PLATFORM15CAP5K',
+    'platform',
+    5000,
+    90000,
+    '{}'::JSONB
+  ),
+  (
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'operator_percentage_booking'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'tour'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'schedule'),
+    (SELECT val FROM _promo_alloc_ids WHERE key = 'traveler'),
+    'completed',
+    85000,
+    1,
+    TIMEZONE('UTC', NOW()) - INTERVAL '5 days',
+    'paid',
+    CONCAT('pi_operator_pct_', REPLACE((SELECT val::TEXT FROM _promo_alloc_ids WHERE key = 'operator_percentage_booking'), '-', '')),
+    'full_online',
+    FALSE,
+    0,
+    85000,
+    0,
+    85000,
+    68000,
+    'Operator-funded capped percentage promo charged online.',
+    (SELECT id FROM public.operator_promotions WHERE UPPER(BTRIM(code)) = 'OPERATOR15CAP5K'),
+    'OPERATOR15CAP5K',
+    'operator',
+    5000,
+    90000,
+    '{}'::JSONB
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -281,6 +364,8 @@ DO $$
 DECLARE
   v_platform_snapshot RECORD;
   v_operator_snapshot RECORD;
+  v_platform_percentage_snapshot RECORD;
+  v_operator_percentage_snapshot RECORD;
 BEGIN
   SELECT commission_total, operator_receivable_estimate, promo_funding_source, promo_discount_value
   INTO v_platform_snapshot
@@ -310,7 +395,35 @@ BEGIN
   ASSERT v_operator_snapshot.operator_receivable_estimate = 64000,
     'FAIL: operator-funded promo should reduce operator payable';
 
-  RAISE NOTICE 'PASS: promo allocation rules keep platform-funded discounts from distorting operator payable';
+  SELECT commission_total, operator_receivable_estimate, promo_funding_source, promo_discount_value
+  INTO v_platform_percentage_snapshot
+  FROM public.operator_booking_finance_snapshots
+  WHERE booking_id = (SELECT val FROM _promo_alloc_ids WHERE key = 'platform_percentage_booking');
+
+  ASSERT v_platform_percentage_snapshot.promo_funding_source = 'platform',
+    'FAIL: capped percentage platform booking should persist platform funding source';
+  ASSERT v_platform_percentage_snapshot.promo_discount_value = 5000,
+    'FAIL: capped percentage platform booking should persist the capped discount value';
+  ASSERT v_platform_percentage_snapshot.commission_total = 13000,
+    'FAIL: capped percentage platform promo should reduce retained commission by the applied capped discount';
+  ASSERT v_platform_percentage_snapshot.operator_receivable_estimate = 72000,
+    'FAIL: capped percentage platform promo should keep the applied discount on the platform side';
+
+  SELECT commission_total, operator_receivable_estimate, promo_funding_source, promo_discount_value
+  INTO v_operator_percentage_snapshot
+  FROM public.operator_booking_finance_snapshots
+  WHERE booking_id = (SELECT val FROM _promo_alloc_ids WHERE key = 'operator_percentage_booking');
+
+  ASSERT v_operator_percentage_snapshot.promo_funding_source = 'operator',
+    'FAIL: capped percentage operator booking should persist operator funding source';
+  ASSERT v_operator_percentage_snapshot.promo_discount_value = 5000,
+    'FAIL: capped percentage operator booking should persist the capped discount value';
+  ASSERT v_operator_percentage_snapshot.commission_total = 17000,
+    'FAIL: capped percentage operator promo should commission the discounted booking total';
+  ASSERT v_operator_percentage_snapshot.operator_receivable_estimate = 68000,
+    'FAIL: capped percentage operator promo should reduce operator payable by the applied discount';
+
+  RAISE NOTICE 'PASS: promo allocation rules cover fixed and capped percentage promo funding behavior';
 END
 $$;
 

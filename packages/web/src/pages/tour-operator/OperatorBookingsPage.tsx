@@ -378,6 +378,13 @@ export default function OperatorBookingsPage() {
                               Completion confirmed by traveler
                             </p>
                           ) : null}
+                          {booking.status === 'cancelled' ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {refundReasonForBooking(booking)
+                                ? `Reason: ${refundReasonForBooking(booking)}`
+                                : 'Cancelled by operator workflow'}
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -389,6 +396,11 @@ export default function OperatorBookingsPage() {
                               {Number(booking.remaining_amount || 0) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
                                   Balance due: PKR {Number(booking.remaining_amount || 0).toLocaleString()}
+                                </p>
+                              ) : null}
+                              {refundedAmountForBooking(booking) > 0 ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Refunded: PKR {refundedAmountForBooking(booking).toLocaleString()}
                                 </p>
                               ) : null}
                             </div>
@@ -454,6 +466,16 @@ export default function OperatorBookingsPage() {
                         <TableCell className="text-right font-semibold text-foreground">
                           <div>
                             <p>PKR {booking.total_price.toLocaleString()}</p>
+                            {Number(booking.promo_discount_value || 0) > 0 ? (
+                              <p className="mt-1 text-xs font-medium text-emerald-700">
+                                Promo: {booking.promo_owner || 'Applied'} · -PKR {Number(booking.promo_discount_value || 0).toLocaleString()}
+                              </p>
+                            ) : null}
+                            {Number(booking.promo_discount_value || 0) > 0 && Number(booking.price_before_promo || 0) > 0 ? (
+                              <p className="mt-1 text-xs font-medium text-muted-foreground">
+                                Original total: PKR {Number(booking.price_before_promo || 0).toLocaleString()} · {booking.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'}
+                              </p>
+                            ) : null}
                             <p className="mt-1 text-xs font-medium text-muted-foreground">
                               Paid online: PKR {Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0).toLocaleString()}
                             </p>
@@ -585,4 +607,18 @@ function actionSuccessMessage(action: BookingAction) {
   if (action === 'cancel') return 'Booking cancelled and traveler notified'
   if (action === 'complete') return 'Completion request sent to the traveler for confirmation'
   return 'Confirmation resent to the traveler notification center'
+}
+
+function refundedAmountForBooking(booking: OperatorBookingRecord) {
+  const metadataRefund = Number(booking.metadata?.refund_amount || 0)
+  if (metadataRefund > 0) return metadataRefund
+  if (booking.payment_status === 'refunded') {
+    return Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0)
+  }
+  return 0
+}
+
+function refundReasonForBooking(booking: OperatorBookingRecord) {
+  const reason = booking.metadata?.refund_reason || booking.metadata?.operator_last_action_reason
+  return typeof reason === 'string' && reason.trim().length > 0 ? reason.trim() : null
 }

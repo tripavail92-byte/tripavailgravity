@@ -327,19 +327,19 @@ export default function TourCheckoutPage() {
 
     try {
       setPromoLoading(true)
-      const promotion = await tourBookingService.resolvePromotionPreview({
+      const preview = await tourBookingService.inspectPromotionPreview({
         tourId: tour.id,
         bookingTotal: basePaymentTerms.totalAmount,
         promoCode: normalizedCode,
       })
 
-      if (!promotion) {
+      if (preview.status !== 'valid' || !preview.promotion) {
         setAppliedPromotion(null)
-        setPromoError('This promo code is not active for the selected trip')
+        setPromoError(preview.message)
         return
       }
 
-      setAppliedPromotion(promotion)
+      setAppliedPromotion(preview.promotion)
       setPromoError(null)
     } catch (error) {
       setAppliedPromotion(null)
@@ -746,6 +746,7 @@ export default function TourCheckoutPage() {
                             onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                             placeholder="Enter promo code"
                             className="h-11 rounded-xl"
+                            aria-label="Promo code"
                           />
                           <Button
                             type="button"
@@ -766,7 +767,7 @@ export default function TourCheckoutPage() {
                               {appliedPromotion.code} applied: {tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)} off
                             </p>
                             <p className="mt-1 text-xs text-emerald-800">
-                              {appliedPromotion.ownerLabel} · {appliedPromotion.fundingSource}
+                              {appliedPromotion.ownerLabel} · {appliedPromotion.fundingSource === 'platform' ? 'TripAvail funded' : 'Operator funded'}
                             </p>
                           </div>
                         ) : null}
@@ -802,6 +803,9 @@ export default function TourCheckoutPage() {
                           <span className="font-bold text-emerald-700">
                             -{tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)}
                           </span>
+                        </div>
+                        <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-900">
+                          Your promo savings are already reflected in the pay-now and remaining-balance amounts below.
                         </div>
                       </>
                     ) : null}

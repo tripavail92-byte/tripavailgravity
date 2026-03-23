@@ -93,6 +93,7 @@ describe('commercial engine', () => {
     expect(
       buildBookingFinanceSnapshot({
         bookingTotal: 80000,
+        priceBeforePromo: 90000,
         paymentCollected: 80000,
         commissionRate: 20,
         membershipTier: 'gold',
@@ -102,11 +103,33 @@ describe('commercial engine', () => {
     ).toMatchObject({
       bookingTotal: 80000,
       commissionRate: 20,
-      commissionAmount: 6000,
-      commissionTotal: 6000,
-      commissionCollected: 6000,
+      commissionAmount: 8000,
+      commissionTotal: 8000,
+      commissionCollected: 8000,
       commissionRemaining: 0,
-      operatorReceivableEstimate: 74000,
+      operatorReceivableEstimate: 72000,
+    })
+  })
+
+  it('caps percentage platform-funded promo discounts before reducing retained commission', () => {
+    expect(
+      buildBookingFinanceSnapshot({
+        bookingTotal: 85000,
+        priceBeforePromo: 90000,
+        paymentCollected: 85000,
+        commissionRate: 20,
+        membershipTier: 'gold',
+        promoFundingSource: 'platform',
+        promoDiscountValue: 5000,
+      }),
+    ).toMatchObject({
+      bookingTotal: 85000,
+      commissionRate: 20,
+      commissionAmount: 13000,
+      commissionTotal: 13000,
+      commissionCollected: 13000,
+      commissionRemaining: 0,
+      operatorReceivableEstimate: 72000,
     })
   })
 
@@ -143,6 +166,23 @@ describe('commercial engine', () => {
       commissionCollected: 13000,
       commissionRemaining: 0,
       collectedBasisAmount: 20000,
+    })
+  })
+
+  it('infers pre-promo commission basis from the applied platform-funded discount when not provided', () => {
+    expect(
+      calculateCommissionCollection({
+        bookingTotal: 85000,
+        paymentCollected: 85000,
+        commissionRate: 20,
+        promoFundingSource: 'platform',
+        promoDiscountValue: 5000,
+      }),
+    ).toEqual({
+      commissionTotal: 13000,
+      commissionCollected: 13000,
+      commissionRemaining: 0,
+      collectedBasisAmount: 85000,
     })
   })
 
@@ -187,6 +227,57 @@ describe('commercial engine', () => {
       commissionTotal: 10000,
       commissionCollected: 10000,
       commissionRemaining: 0,
+    })
+  })
+
+  it('keeps operator-funded promo deposits on the operator side while collecting commission from the discounted total', () => {
+    expect(
+      buildBookingFinanceSnapshot({
+        bookingTotal: 80000,
+        paymentCollected: 16000,
+        commissionRate: 20,
+        membershipTier: 'gold',
+        promoFundingSource: 'operator',
+        promoDiscountValue: 10000,
+        depositRequired: true,
+        depositPercentage: 20,
+        depositUpfrontAmount: 16000,
+        depositRemainingAmount: 64000,
+      }),
+    ).toMatchObject({
+      depositRequired: true,
+      depositPercentage: 20,
+      paymentCollected: 16000,
+      commissionTotal: 16000,
+      commissionCollected: 16000,
+      commissionRemaining: 0,
+      operatorReceivableEstimate: 64000,
+    })
+  })
+
+  it('keeps platform-funded promo deposits on the pre-promo commission basis without reducing operator payable', () => {
+    expect(
+      buildBookingFinanceSnapshot({
+        bookingTotal: 80000,
+        priceBeforePromo: 90000,
+        paymentCollected: 16000,
+        commissionRate: 20,
+        membershipTier: 'gold',
+        promoFundingSource: 'platform',
+        promoDiscountValue: 10000,
+        depositRequired: true,
+        depositPercentage: 20,
+        depositUpfrontAmount: 16000,
+        depositRemainingAmount: 64000,
+      }),
+    ).toMatchObject({
+      depositRequired: true,
+      depositPercentage: 20,
+      paymentCollected: 16000,
+      commissionTotal: 8000,
+      commissionCollected: 8000,
+      commissionRemaining: 0,
+      operatorReceivableEstimate: 72000,
     })
   })
 
