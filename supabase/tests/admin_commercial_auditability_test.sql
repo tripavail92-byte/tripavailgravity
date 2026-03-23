@@ -206,8 +206,11 @@ DECLARE
   v_recovery_item_id UUID;
   v_promo_id UUID;
 BEGIN
-  PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
-  PERFORM set_config('request.jwt.claim.sub', v_admin_id::TEXT, true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('role', 'authenticated', 'sub', v_admin_id::TEXT)::text,
+    true
+  );
 
   PERFORM public.admin_assign_operator_membership_tier(
     v_operator_id,
