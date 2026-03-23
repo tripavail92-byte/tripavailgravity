@@ -104,11 +104,11 @@ This file is a review artifact summarizing what has been completed in Phase 1 an
 
 ---
 
-## Phase 3 — Commercial + Admin QA Closure (Pending Final Manual Payment Sign-Off)
+## Phase 3 — Commercial + Admin QA Closure (Completed)
 
-Phase 3 is now functionally complete from an engineering and production-fix perspective, but it is not yet fully signed off. The remaining gate is one final manual traveller payment pass using direct human Stripe entry.
+Phase 3 is complete from both an engineering and production sign-off perspective. The final traveller payment pass succeeded in production, and the admin-side bookings visibility issue discovered during sign-off was fixed and reverified.
 
-Current status: `Pending final manual payment sign-off`
+Current status: `Complete`
 
 What is complete:
 
@@ -118,18 +118,17 @@ What is complete:
 - pricing-step uncontrolled-to-controlled switch warning fixed and revalidated in production
 - operator commission amounts removed from operator-facing commercial surfaces
 - operator commercial `400` root cause fixed by removing the admin-only payout batch query from the operator path
-- Phase 3 runbook updated to reflect operator payout-only visibility and the manual Stripe sign-off requirement
+- Phase 3 runbook updated to reflect operator payout-only visibility and the final payment sign-off path
+- manual traveller checkout completed successfully in production
+- booking confirmation reached successfully for confirmation number `3FD0206E`
+- admin bookings production issue fixed by replacing the raw `tour_bookings` client query with the `admin_list_tour_bookings` admin RPC path
+- admin bookings page reverified in production and now shows the confirmed booking record and recent booking history
 
-Remaining sign-off requirement:
+Final sign-off evidence:
 
-- one manual traveller checkout on production using direct human entry into Stripe Elements
-
-Why this remains open:
-
-- browser automation is not a reliable authority for Stripe iframe completion state
-- prior checkout investigation showed the app flow itself was responsive, but automated iframe keystrokes can be rejected with incomplete-card validation even when the product is functioning correctly
-
-Phase 3 should be marked fully complete only after that manual traveller payment pass succeeds.
+- traveller booking confirmed in production for booking `3fd0206e-6449-44c1-90d5-86289589dbe8`
+- Stripe payment intent returned successfully as `pi_3TDva8GxQMGYeml21hKikMRU`
+- admin dashboard, admin commercial, and admin bookings surfaces all verified after the final fixes
 
 ---
 
