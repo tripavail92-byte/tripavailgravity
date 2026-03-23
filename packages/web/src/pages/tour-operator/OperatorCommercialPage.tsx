@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { BarChart3, CreditCard, Gem, Rocket, ShieldAlert, Wallet } from 'lucide-react'
+import { BarChart3, CreditCard, Download, Gem, Rocket, ShieldAlert, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -125,6 +125,52 @@ function formatTierName(value?: string | null) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
+}
+
+function toCsvCell(value: unknown) {
+  if (value === null || value === undefined) return ''
+  const stringValue = String(value)
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`
+  }
+  return stringValue
+}
+
+function downloadCsvFile(filename: string, headers: string[], rows: Array<Array<unknown>>) {
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((value) => toCsvCell(value)).join(','))
+    .join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function payoutStatusExplanation(status?: string | null) {
+  switch (status) {
+    case 'eligible':
+      return 'Completed bookings cleared the settlement window and are ready for the next payout batch.'
+    case 'scheduled':
+      return 'This payout item is assigned to a batch and is waiting for its scheduled release date.'
+    case 'paid':
+      return 'Funds have been released to the operator and recorded as paid in the payout ledger.'
+    case 'on_hold':
+      return 'Finance has paused release because of a manual review, risk state, or unresolved operator issue.'
+    case 'recovery_pending':
+      return 'A prior recovery balance is being deducted before the remaining payable amount can be released.'
+    case 'reversed':
+      return 'This payout item was reversed after batch creation and no operator funds remain scheduled for it.'
+    case 'not_ready':
+      return 'The booking has not yet become payout-eligible, usually because travel or settlement completion is still pending.'
+    default:
+      return 'This payout state will update automatically as the booking clears settlement, review, and recovery checkpoints.'
+  }
 }
 
 function toOperatorPromoForm(promotion: CommercialPromotion): OperatorPromoFormState {
@@ -477,6 +523,129 @@ export default function OperatorCommercialPage() {
           : 'No recovery balance is pending against upcoming payouts',
     },
   ]
+  const payoutExceptionStates = useMemo(() => {
+    const items: Array<{
+      title: string
+      detail: string
+      tone: 'warning' | 'default' | 'destructive'
+    }> = []
+
+    if (profile?.payout_hold) {
+      items.push({
+        title: 'Payout hold active',
+        detail: profile.payout_hold_reason ?? 'Finance review is preventing new payout releases.',
+        tone: 'destructive',
+      })
+    }
+
+    if (outstandingRecovery > 0) {
+      items.push({
+        title: 'Recovery balance outstanding',
+        detail: `${formatMoney(outstandingRecovery)} is still being deducted from future eligible payouts.`,
+        tone: 'warning',
+      })
+    }
+
+    if (onHoldExposure > 0) {
+      items.push({
+        title: 'On-hold payout exposure',
+        detail: `${formatMoney(onHoldExposure)} is sitting in payout items marked on hold.`,
+        tone: 'warning',
+      })
+    }
+
+    if (recoveryItemCount === 0 && !profile?.payout_hold && onHoldExposure === 0) {
+      items.push({
+        title: 'No active payout exceptions',
+        detail: 'Your payout history is clear of holds and recovery deductions right now.',
+        tone: 'default',
+      })
+    }
+
+    return items
+  }, [
+    onHoldExposure,
+    outstandingRecovery,
+    profile?.payout_hold,
+    profile?.payout_hold_reason,
+    recoveryItemCount,
+  ])
+
+  const exportSelectedInvoiceCsv = () => {
+    if (!selectedBillingRow) return
+
+    downloadCsvFile(
+      `operator-invoice-${selectedBillingRow.invoice_number ?? selectedBillingRow.billing_cycle_id}.csv`,
+      [
+        'billing_cycle_id',
+        'invoice_number',
+        'membership_tier_code',
+        'cycle_start',
+        'cycle_end',
+        'membership_fee',
+        'prior_cycle_commission_credit',
+        'adjustment_applied',
+        'final_membership_charge',
+        'invoice_status',
+        'payment_status',
+        'issued_at',
+        'due_date',
+        'paid_at',
+      ],
+      [
+        [
+          selectedBillingRow.billing_cycle_id,
+          selectedBillingRow.invoice_number,
+          selectedBillingRow.membership_tier_code,
+          selectedBillingRow.cycle_start,
+          selectedBillingRow.cycle_end,
+          selectedBillingRow.membership_fee,
+          selectedBillingRow.prior_cycle_commission_credit,
+          selectedBillingRow.adjustment_applied,
+          selectedBillingRow.final_membership_charge,
+          selectedBillingRow.invoice_status,
+          selectedBillingRow.payment_status,
+          selectedBillingRow.issued_at,
+          selectedBillingRow.due_date,
+          selectedBillingRow.paid_at,
+        ],
+      ],
+    )
+  }
+
+  const exportSelectedPayoutBatchCsv = () => {
+    if (!selectedPayoutBatch) return
+
+    downloadCsvFile(
+      `operator-payout-batch-${selectedPayoutBatch.batch_reference}.csv`,
+      [
+        'batch_reference',
+        'scheduled_for',
+        'batch_status',
+        'booking_id',
+        'trip_name',
+        'travel_date',
+        'payout_status',
+        'gross_amount',
+        'commission_amount',
+        'recovery_deduction_amount',
+        'net_operator_payable_amount',
+      ],
+      selectedBatchRows.map((row) => [
+        selectedPayoutBatch.batch_reference,
+        selectedPayoutBatch.scheduled_for,
+        selectedPayoutBatch.status,
+        row.booking_id,
+        row.trip_name,
+        row.travel_date,
+        row.payout_status,
+        row.gross_amount,
+        row.commission_retained_by_tripavail,
+        row.recovery_deduction_amount,
+        row.net_operator_payable_amount,
+      ]),
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -792,7 +961,18 @@ export default function OperatorCommercialPage() {
             {selectedBillingRow ? (
               <Card className="mt-6 rounded-3xl border-border/60">
                 <CardHeader>
-                  <CardTitle className="text-lg">Invoice detail</CardTitle>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <CardTitle className="text-lg">Invoice detail</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-2xl"
+                      onClick={exportSelectedInvoiceCsv}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export invoice CSV
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <Metric
@@ -881,6 +1061,53 @@ export default function OperatorCommercialPage() {
 
             <Card className="mb-6 rounded-3xl border-border/60">
               <CardHeader>
+                <CardTitle className="text-lg">Payout history and exception states</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+                <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    How payout history moves
+                  </p>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>
+                      Eligible means the booking completed and cleared the settlement wait before
+                      batching.
+                    </p>
+                    <p>
+                      Scheduled means the item is already inside a payout batch and waiting for
+                      release.
+                    </p>
+                    <p>
+                      Paid means the operator transfer has been released and the item is closed.
+                    </p>
+                    <p>
+                      On Hold and Recovery Pending are the two primary exception states that delay
+                      or reduce payout release.
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {payoutExceptionStates.map((item) => (
+                    <div
+                      key={item.title}
+                      className={
+                        item.tone === 'destructive'
+                          ? 'rounded-2xl border border-destructive/30 bg-destructive/5 p-4'
+                          : item.tone === 'warning'
+                            ? 'rounded-2xl border border-warning/30 bg-warning/5 p-4'
+                            : 'rounded-2xl border border-border/60 bg-background/70 p-4'
+                      }
+                    >
+                      <p className="font-medium text-foreground">{item.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6 rounded-3xl border-border/60">
+              <CardHeader>
                 <CardTitle className="text-lg">Payout batches</CardTitle>
               </CardHeader>
               <CardContent>
@@ -940,7 +1167,18 @@ export default function OperatorCommercialPage() {
             {selectedPayoutBatch ? (
               <Card className="mb-6 rounded-3xl border-border/60">
                 <CardHeader>
-                  <CardTitle className="text-lg">Payout batch detail</CardTitle>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <CardTitle className="text-lg">Payout batch detail</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-2xl"
+                      onClick={exportSelectedPayoutBatchCsv}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export batch CSV
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <Metric label="Batch reference" value={selectedPayoutBatch.batch_reference} />
@@ -973,6 +1211,9 @@ export default function OperatorCommercialPage() {
                   />
                 </CardContent>
                 <CardContent className="pt-0">
+                  <div className="mb-4 rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+                    {payoutStatusExplanation(selectedPayoutBatch.status)}
+                  </div>
                   {selectedBatchRows.length === 0 ? (
                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
                       Booking-level payout items have not been attached to this batch summary yet.
@@ -999,9 +1240,23 @@ export default function OperatorCommercialPage() {
                             </div>
                             <div className="text-sm text-muted-foreground md:text-right">
                               <p>{formatStatusLabel(row.payout_status)}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {payoutStatusExplanation(row.payout_status)}
+                              </p>
                               <p className="font-medium text-foreground">
                                 {formatMoney(row.net_operator_payable_amount)}
                               </p>
+                              <Button
+                                asChild
+                                variant="link"
+                                className="mt-1 h-auto p-0 text-primary"
+                              >
+                                <Link
+                                  to={`/operator/bookings?bookingId=${encodeURIComponent(row.booking_id)}`}
+                                >
+                                  Open booking
+                                </Link>
+                              </Button>
                             </div>
                           </div>
                         ))}
@@ -1066,6 +1321,13 @@ export default function OperatorCommercialPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             {formatMoney(row.net_operator_payable_amount)}
+                            <Button asChild variant="link" className="mt-1 h-auto p-0 text-primary">
+                              <Link
+                                to={`/operator/bookings?bookingId=${encodeURIComponent(row.booking_id)}`}
+                              >
+                                Open booking
+                              </Link>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))

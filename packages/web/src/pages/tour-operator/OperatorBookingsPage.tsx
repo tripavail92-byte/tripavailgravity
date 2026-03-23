@@ -13,16 +13,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
-import {
-  isAwaitingTravelerCompletionConfirmation,
-  isCancellationLocked,
-  isTravelerCompletionConfirmed,
-  operatorPortalService,
-  type OperatorBookingRecord,
-} from '@/features/tour-operator/services/operatorPortalService'
-import { useAuth } from '@/hooks/useAuth'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,9 +27,24 @@ import {
 } from '@/components/ui/dialog'
 import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  isAwaitingTravelerCompletionConfirmation,
+  isCancellationLocked,
+  isTravelerCompletionConfirmed,
+  type OperatorBookingRecord,
+  operatorPortalService,
+} from '@/features/tour-operator/services/operatorPortalService'
+import { useAuth } from '@/hooks/useAuth'
 
 type BookingAction = 'cancel' | 'complete' | 'resend_confirmation'
 
@@ -57,6 +64,7 @@ function paymentTone(paymentStatus: OperatorBookingRecord['payment_status']) {
 
 export default function OperatorBookingsPage() {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [bookings, setBookings] = useState<OperatorBookingRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,6 +76,7 @@ export default function OperatorBookingsPage() {
   } | null>(null)
   const [actionNote, setActionNote] = useState('')
   const [submittingAction, setSubmittingAction] = useState(false)
+  const highlightedBookingId = searchParams.get('bookingId')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-role', 'tour_operator')
@@ -95,8 +104,8 @@ export default function OperatorBookingsPage() {
     load()
   }, [user?.id])
 
-  const now = new Date()
   const stats = useMemo(() => {
+    const now = new Date()
     const confirmed = bookings.filter((booking) => booking.status === 'confirmed')
     const pending = bookings.filter((booking) => booking.status === 'pending')
     const upcoming = bookings.filter((booking) =>
@@ -112,7 +121,7 @@ export default function OperatorBookingsPage() {
       revenue,
       travellers,
     }
-  }, [bookings, now])
+  }, [bookings])
 
   const filteredBookings = useMemo(() => {
     switch (activeTab) {
@@ -128,6 +137,43 @@ export default function OperatorBookingsPage() {
         return bookings
     }
   }, [activeTab, bookings])
+
+  useEffect(() => {
+    if (!highlightedBookingId || bookings.length === 0) return
+
+    const matchingBooking = bookings.find((booking) => booking.id === highlightedBookingId)
+    if (!matchingBooking) return
+
+    const requiredTab = matchingBooking.status
+    if (
+      requiredTab !== 'pending' &&
+      requiredTab !== 'confirmed' &&
+      requiredTab !== 'completed' &&
+      requiredTab !== 'cancelled'
+    ) {
+      return
+    }
+
+    if (activeTab !== requiredTab) {
+      setActiveTab(requiredTab)
+    }
+  }, [activeTab, bookings, highlightedBookingId])
+
+  useEffect(() => {
+    if (!highlightedBookingId || loading) return
+
+    const row = document.getElementById(`operator-booking-row-${highlightedBookingId}`)
+    if (!row) return
+
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [filteredBookings, highlightedBookingId, loading])
+
+  const clearHighlightedBooking = () => {
+    if (!highlightedBookingId) return
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('bookingId')
+    setSearchParams(nextParams, { replace: true })
+  }
 
   const handleRefreshBookings = async () => {
     if (!user?.id) return
@@ -206,7 +252,11 @@ export default function OperatorBookingsPage() {
             <StatCard icon={CalendarClock} label="Upcoming" value={String(stats.upcoming)} />
           </GlassCard>
           <GlassCard variant="card" className="rounded-3xl p-5">
-            <StatCard icon={Receipt} label="Revenue" value={`PKR ${stats.revenue.toLocaleString()}`} />
+            <StatCard
+              icon={Receipt}
+              label="Revenue"
+              value={`PKR ${stats.revenue.toLocaleString()}`}
+            />
           </GlassCard>
           <GlassCard variant="card" className="rounded-3xl p-5">
             <StatCard icon={Users} label="Travellers" value={String(stats.travellers)} />
@@ -216,7 +266,8 @@ export default function OperatorBookingsPage() {
         {bookingsPaused && (
           <GlassCard variant="card" className="mb-6 rounded-3xl border border-warning/30 px-6 py-5">
             <p className="text-sm text-foreground">
-              New bookings are paused in settings. Existing reservations below are still active and should continue to be serviced.
+              New bookings are paused in settings. Existing reservations below are still active and
+              should continue to be serviced.
             </p>
           </GlassCard>
         )}
@@ -226,7 +277,9 @@ export default function OperatorBookingsPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">Safe traveler contact</p>
               <p className="text-sm text-muted-foreground">
-                Direct email and phone are only shown when the traveler opted in and the channel is verified. Otherwise the reservation stays in a messaging-required state until the dedicated messenger service is shipped.
+                Direct email and phone are only shown when the traveler opted in and the channel is
+                verified. Otherwise the reservation stays in a messaging-required state until the
+                dedicated messenger service is shipped.
               </p>
             </div>
             <Badge
@@ -237,6 +290,23 @@ export default function OperatorBookingsPage() {
             </Badge>
           </div>
         </GlassCard>
+
+        {highlightedBookingId ? (
+          <GlassCard variant="card" className="mb-6 rounded-3xl border border-primary/30 px-6 py-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Focused reservation view</p>
+                <p className="text-sm text-muted-foreground">
+                  The bookings table is highlighting the reservation linked from the commercial
+                  payout surface.
+                </p>
+              </div>
+              <Button variant="outline" className="rounded-2xl" onClick={clearHighlightedBooking}>
+                Clear highlight
+              </Button>
+            </div>
+          </GlassCard>
+        ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 h-auto rounded-2xl bg-muted/60 p-1">
@@ -269,7 +339,8 @@ export default function OperatorBookingsPage() {
                 <div className="p-12 text-center">
                   <h2 className="text-lg font-black text-foreground">No bookings in this view</h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Once travellers reserve your upcoming departures, they will appear here with status, safe contact detail, and action controls.
+                    Once travellers reserve your upcoming departures, they will appear here with
+                    status, safe contact detail, and action controls.
                   </p>
                 </div>
               ) : (
@@ -288,7 +359,15 @@ export default function OperatorBookingsPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredBookings.map((booking) => (
-                      <TableRow key={booking.id}>
+                      <TableRow
+                        key={booking.id}
+                        id={`operator-booking-row-${booking.id}`}
+                        className={
+                          booking.id === highlightedBookingId
+                            ? 'bg-primary/5 ring-1 ring-primary/30'
+                            : undefined
+                        }
+                      >
                         <TableCell>
                           <div>
                             <p className="font-semibold text-foreground">{booking.tours.title}</p>
@@ -318,7 +397,9 @@ export default function OperatorBookingsPage() {
                                   variant="outline"
                                   className="h-8 rounded-full border-border/60 bg-background/80 px-3 text-xs"
                                 >
-                                  <a href={`mailto:${booking.traveler.email}`}>{booking.traveler.email}</a>
+                                  <a href={`mailto:${booking.traveler.email}`}>
+                                    {booking.traveler.email}
+                                  </a>
                                 </Button>
                               ) : null}
                               {booking.traveler.phone ? (
@@ -328,7 +409,9 @@ export default function OperatorBookingsPage() {
                                   variant="outline"
                                   className="h-8 rounded-full border-border/60 bg-background/80 px-3 text-xs"
                                 >
-                                  <a href={`tel:${booking.traveler.phone}`}>{booking.traveler.phone}</a>
+                                  <a href={`tel:${booking.traveler.phone}`}>
+                                    {booking.traveler.phone}
+                                  </a>
                                 </Button>
                               ) : null}
                               {!booking.traveler.email && !booking.traveler.phone ? (
@@ -373,7 +456,8 @@ export default function OperatorBookingsPage() {
                               Awaiting traveler completion confirmation
                             </p>
                           ) : null}
-                          {booking.status === 'completed' && isTravelerCompletionConfirmed(booking) ? (
+                          {booking.status === 'completed' &&
+                          isTravelerCompletionConfirmed(booking) ? (
                             <p className="mt-1 text-xs text-muted-foreground">
                               Completion confirmed by traveler
                             </p>
@@ -388,14 +472,19 @@ export default function OperatorBookingsPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <CreditCard className={`h-4 w-4 ${paymentTone(booking.payment_status)}`} />
+                            <CreditCard
+                              className={`h-4 w-4 ${paymentTone(booking.payment_status)}`}
+                            />
                             <div>
-                              <span className={`text-sm font-medium ${paymentTone(booking.payment_status)}`}>
+                              <span
+                                className={`text-sm font-medium ${paymentTone(booking.payment_status)}`}
+                              >
                                 {booking.payment_status || 'unpaid'}
                               </span>
                               {Number(booking.remaining_amount || 0) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Balance due: PKR {Number(booking.remaining_amount || 0).toLocaleString()}
+                                  Balance due: PKR{' '}
+                                  {Number(booking.remaining_amount || 0).toLocaleString()}
                                 </p>
                               ) : null}
                               {refundedAmountForBooking(booking) > 0 ? (
@@ -468,16 +557,28 @@ export default function OperatorBookingsPage() {
                             <p>PKR {booking.total_price.toLocaleString()}</p>
                             {Number(booking.promo_discount_value || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-emerald-700">
-                                Promo: {booking.promo_owner || 'Applied'} · -PKR {Number(booking.promo_discount_value || 0).toLocaleString()}
+                                Promo: {booking.promo_owner || 'Applied'} · -PKR{' '}
+                                {Number(booking.promo_discount_value || 0).toLocaleString()}
                               </p>
                             ) : null}
-                            {Number(booking.promo_discount_value || 0) > 0 && Number(booking.price_before_promo || 0) > 0 ? (
+                            {Number(booking.promo_discount_value || 0) > 0 &&
+                            Number(booking.price_before_promo || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-muted-foreground">
-                                Original total: PKR {Number(booking.price_before_promo || 0).toLocaleString()} · {booking.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'}
+                                Original total: PKR{' '}
+                                {Number(booking.price_before_promo || 0).toLocaleString()} ·{' '}
+                                {booking.promo_funding_source === 'platform'
+                                  ? 'TripAvail funded'
+                                  : 'Operator funded'}
                               </p>
                             ) : null}
                             <p className="mt-1 text-xs font-medium text-muted-foreground">
-                              Paid online: PKR {Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0).toLocaleString()}
+                              Paid online: PKR{' '}
+                              {Number(
+                                (booking.amount_paid_online ??
+                                  booking.upfront_amount ??
+                                  booking.total_price) ||
+                                  0,
+                              ).toLocaleString()}
                             </p>
                           </div>
                         </TableCell>
@@ -546,7 +647,15 @@ export default function OperatorBookingsPage() {
   )
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: typeof Ticket; label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Ticket
+  label: string
+  value: string
+}) {
   return (
     <div className="flex items-center gap-3">
       <div className="rounded-2xl bg-primary/12 p-3 text-primary">
@@ -613,7 +722,9 @@ function refundedAmountForBooking(booking: OperatorBookingRecord) {
   const metadataRefund = Number(booking.metadata?.refund_amount || 0)
   if (metadataRefund > 0) return metadataRefund
   if (booking.payment_status === 'refunded') {
-    return Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0)
+    return Number(
+      (booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0,
+    )
   }
   return 0
 }
