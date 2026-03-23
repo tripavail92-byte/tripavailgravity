@@ -356,7 +356,11 @@ DO $$
 DECLARE
   v_batch RECORD;
 BEGIN
-  PERFORM set_config('request.jwt.claim.role', 'service_role', true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('role', 'service_role', 'sub', v_finance_admin::text)::text,
+    true
+  );
 
   SELECT *
   INTO v_batch

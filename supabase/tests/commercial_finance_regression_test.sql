@@ -585,7 +585,11 @@ BEGIN
   RAISE NOTICE 'PASS: Scenario 6 — Refund state suppresses payout eligibility safely';
 
   -- Scenario 7: Chargeback recovery and automatic deduction from future payout.
-  PERFORM set_config('request.jwt.claim.role', 'service_role', true);
+  PERFORM set_config(
+    'request.jwt.claims',
+    json_build_object('role', 'service_role', 'sub', v_admin_finance::text)::text,
+    true
+  );
 
   UPDATE public.tour_bookings
   SET metadata = COALESCE(metadata, '{}'::JSONB) || jsonb_build_object(
