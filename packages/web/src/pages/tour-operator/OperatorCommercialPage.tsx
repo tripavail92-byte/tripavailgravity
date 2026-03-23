@@ -930,7 +930,7 @@ export default function OperatorCommercialPage() {
       setDisputeSubmitting(true)
       setDisputeFeedback(null)
 
-      const createdCase = await commercialService.submitOperatorPayoutDisputeCase({
+      const submissionResult = await commercialService.submitOperatorPayoutDisputeCase({
         operator_user_id: user.id,
         payout_item_id: selectedDisputeRow.payout_item_id,
         booking_id: selectedDisputeRow.booking_id,
@@ -956,11 +956,12 @@ export default function OperatorCommercialPage() {
         },
       })
 
-      setDisputeCases((current) => [createdCase, ...current])
+      setDisputeCases((current) => [submissionResult.disputeCase, ...current])
       setDisputeFeedback({
-        tone: 'success',
-        message:
-          'Dispute case submitted and escalated to TripAvail support through the booking conversation.',
+        tone: submissionResult.supportEscalationError ? 'error' : 'success',
+        message: submissionResult.supportEscalationError
+          ? 'Dispute case submitted, but automatic booking-thread escalation failed. Finance and support can still triage it from Admin Commercial.'
+          : 'Dispute case submitted and escalated to TripAvail support through the booking conversation.',
       })
       setDisputeForm((current) => ({
         ...current,

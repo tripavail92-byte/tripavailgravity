@@ -1,23 +1,37 @@
 import { format } from 'date-fns'
 import { Banknote, CircleDollarSign, Download, ShieldAlert, Users, Wallet } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  commercialService,
   type CommercialAuditLogRow,
   type CommercialPromotion,
+  commercialService,
   type CommercialTourOption,
   type MembershipTierCode,
   type OperatorCommercialProfile,
+  type OperatorPayoutDisputeCase,
 } from '@/features/commercial/services/commercialService'
 
 const MIN_ADMIN_ACTION_REASON_LENGTH = 10
@@ -41,7 +55,11 @@ function formatTimestamp(value?: string | null) {
   return format(new Date(value), 'MMM d, yyyy h:mm a')
 }
 
-function formatPromoAttribution(owner?: string | null, fundingSource?: string | null, discountValue?: number) {
+function formatPromoAttribution(
+  owner?: string | null,
+  fundingSource?: string | null,
+  discountValue?: number,
+) {
   if (!discountValue || discountValue <= 0) return '—'
   const parts = [owner, fundingSource].filter(Boolean)
   return `${formatMoney(discountValue)}${parts.length ? ` · ${parts.join(' / ')}` : ''}`
@@ -84,7 +102,9 @@ function getAuditOperatorIds(row: CommercialAuditLogRow) {
 
   const operatorIds = nextState?.operator_user_ids ?? previousState?.operator_user_ids
   if (Array.isArray(operatorIds)) {
-    return operatorIds.filter((value): value is string => typeof value === 'string' && value.length > 0)
+    return operatorIds.filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    )
   }
 
   return []
@@ -170,7 +190,11 @@ function formatRiskState(riskState: string) {
   }
 }
 
-function getPrimaryRiskState(profile: OperatorCommercialProfile, recoveryExposure: number, onHoldExposure: number) {
+function getPrimaryRiskState(
+  profile: OperatorCommercialProfile,
+  recoveryExposure: number,
+  onHoldExposure: number,
+) {
   if (profile.fraud_review_required) return 'fraud_review'
   if (profile.payout_hold || onHoldExposure > 0) return 'payout_hold'
   if (recoveryExposure > 0) return 'recovery_pending'
@@ -306,8 +330,14 @@ export default function AdminCommercialPage() {
   const [promoSubmitting, setPromoSubmitting] = useState(false)
   const [promoError, setPromoError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [overview, setOverview] = useState<Awaited<ReturnType<typeof commercialService.getAdminCommercialOverview>> | null>(null)
+  const [overview, setOverview] = useState<Awaited<
+    ReturnType<typeof commercialService.getAdminCommercialOverview>
+  > | null>(null)
   const [auditRows, setAuditRows] = useState<CommercialAuditLogRow[]>([])
+  const [disputeCases, setDisputeCases] = useState<OperatorPayoutDisputeCase[]>([])
+  const [disputeStatusById, setDisputeStatusById] = useState<
+    Record<string, OperatorPayoutDisputeCase['status']>
+  >({})
   const [historyOperatorFilter, setHistoryOperatorFilter] = useState('all')
   const [historyEntityTypeFilter, setHistoryEntityTypeFilter] = useState('all')
   const [historyActionTypeFilter, setHistoryActionTypeFilter] = useState('all')
@@ -321,31 +351,45 @@ export default function AdminCommercialPage() {
   const [tierFilter, setTierFilter] = useState('all')
   const [kycFilter, setKycFilter] = useState('all')
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true)
-      const [nextOverview, nextPromotions, nextTours, nextAuditRows] = await Promise.all([
-        commercialService.getAdminCommercialOverview(),
-        commercialService.listAdminPromotions(),
-        commercialService.listCommercialTours(),
-        commercialService.listCommercialAuditHistory(100),
-      ])
+      const [nextOverview, nextPromotions, nextTours, nextAuditRows, nextDisputeCases] =
+        await Promise.all([
+          commercialService.getAdminCommercialOverview(),
+          commercialService.listAdminPromotions(),
+          commercialService.listCommercialTours(),
+          commercialService.listCommercialAuditHistory(100),
+          commercialService.listAdminPayoutDisputeCases(),
+        ])
       setOverview(nextOverview)
       setPromotions(nextPromotions)
       setPromotionTours(nextTours)
       setAuditRows(nextAuditRows)
+      setDisputeCases(nextDisputeCases)
+      setDisputeStatusById(
+        Object.fromEntries(nextDisputeCases.map((row) => [row.id, row.status])) as Record<
+          string,
+          OperatorPayoutDisputeCase['status']
+        >,
+      )
       if (!selectedOperatorId && nextOverview.operatorProfiles[0]?.operator_user_id) {
         const firstOperator = nextOverview.operatorProfiles[0]
         setSelectedOperatorId(firstOperator.operator_user_id)
         setTierCode(firstOperator.membership_tier_code)
         setHoldReason(firstOperator.payout_hold_reason ?? '')
-        setPromoForm((current) => ({ ...current, operatorUserId: current.operatorUserId || firstOperator.operator_user_id }))
+        setPromoForm((current) => ({
+          ...current,
+          operatorUserId: current.operatorUserId || firstOperator.operator_user_id,
+        }))
       }
       if (!selectedBatchId && nextOverview.payoutBatches[0]?.id) {
         setSelectedBatchId(nextOverview.payoutBatches[0].id)
       }
       if (!selectedRecoveryItemId) {
-        const firstRecoveryItem = nextOverview.payoutRows.find((row) => row.payout_status === 'recovery_pending')
+        const firstRecoveryItem = nextOverview.payoutRows.find(
+          (row) => row.payout_status === 'recovery_pending',
+        )
         if (firstRecoveryItem) {
           setSelectedRecoveryItemId(firstRecoveryItem.payout_item_id)
           setRecoveryAmount(firstRecoveryItem.recovery_amount.toString())
@@ -353,18 +397,24 @@ export default function AdminCommercialPage() {
       }
       setError(null)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Failed to load commercial admin data')
+      setError(
+        loadError instanceof Error ? loadError.message : 'Failed to load commercial admin data',
+      )
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedBatchId, selectedOperatorId, selectedRecoveryItemId])
 
   useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
   const selectedOperator = useMemo<OperatorCommercialProfile | null>(() => {
-    return overview?.operatorProfiles.find((profile) => profile.operator_user_id === selectedOperatorId) ?? null
+    return (
+      overview?.operatorProfiles.find(
+        (profile) => profile.operator_user_id === selectedOperatorId,
+      ) ?? null
+    )
   }, [overview?.operatorProfiles, selectedOperatorId])
 
   useEffect(() => {
@@ -424,19 +474,44 @@ export default function AdminCommercialPage() {
     if (!overview?.financeHealth) return overview?.financeSummary?.total_operator_payouts ?? 0
 
     return (
-      overview.financeHealth.total_payouts_completed
-      + overview.financeHealth.total_payouts_scheduled
-      + overview.financeHealth.total_payouts_on_hold
+      overview.financeHealth.total_payouts_completed +
+      overview.financeHealth.total_payouts_scheduled +
+      overview.financeHealth.total_payouts_on_hold
     )
   }, [overview?.financeHealth, overview?.financeSummary?.total_operator_payouts])
 
   const summaryCards = overview?.financeSummary
     ? [
-        { id: 'customer_payments', label: 'Customer payments', value: formatMoney(overview.financeSummary.total_customer_payments_collected), icon: CircleDollarSign },
-        { id: 'commission_accrued', label: 'Commission accrued', value: formatMoney(overview.financeSummary.total_commission_earned), icon: Banknote },
-        { id: 'held_payouts', label: 'Held payouts', value: formatMoney(overview.financeSummary.total_held_amounts), icon: ShieldAlert },
-        { id: 'operator_payouts_cleared', label: 'Operator payouts cleared', value: formatMoney(operatorPayoutsCleared), icon: Wallet },
-        { id: 'not_ready_liability', label: 'Not-ready liability', value: formatMoney(overview.financeHealth?.total_operator_liability_not_ready ?? 0), icon: Users },
+        {
+          id: 'customer_payments',
+          label: 'Customer payments',
+          value: formatMoney(overview.financeSummary.total_customer_payments_collected),
+          icon: CircleDollarSign,
+        },
+        {
+          id: 'commission_accrued',
+          label: 'Commission accrued',
+          value: formatMoney(overview.financeSummary.total_commission_earned),
+          icon: Banknote,
+        },
+        {
+          id: 'held_payouts',
+          label: 'Held payouts',
+          value: formatMoney(overview.financeSummary.total_held_amounts),
+          icon: ShieldAlert,
+        },
+        {
+          id: 'operator_payouts_cleared',
+          label: 'Operator payouts cleared',
+          value: formatMoney(operatorPayoutsCleared),
+          icon: Wallet,
+        },
+        {
+          id: 'not_ready_liability',
+          label: 'Not-ready liability',
+          value: formatMoney(overview.financeHealth?.total_operator_liability_not_ready ?? 0),
+          icon: Users,
+        },
       ]
     : []
 
@@ -474,9 +549,9 @@ export default function AdminCommercialPage() {
     return new Map(
       (overview?.operatorProfiles ?? []).map((profile) => [
         profile.operator_user_id,
-        profile.tour_operator_profiles?.company_name
-          || profile.tour_operator_profiles?.contact_person
-          || profile.operator_user_id.slice(0, 8),
+        profile.tour_operator_profiles?.company_name ||
+          profile.tour_operator_profiles?.contact_person ||
+          profile.operator_user_id.slice(0, 8),
       ]),
     )
   }, [overview?.operatorProfiles])
@@ -484,6 +559,11 @@ export default function AdminCommercialPage() {
   const selectedRecoveryRow = useMemo(() => {
     return filteredPayoutRows.find((row) => row.payout_item_id === selectedRecoveryItemId) ?? null
   }, [filteredPayoutRows, selectedRecoveryItemId])
+
+  const filteredDisputeCases = useMemo(() => {
+    if (!selectedOperatorId) return disputeCases
+    return disputeCases.filter((row) => row.operator_user_id === selectedOperatorId)
+  }, [disputeCases, selectedOperatorId])
 
   const historyEntityTypeOptions = useMemo(() => {
     return Array.from(new Set(auditRows.map((row) => row.entity_type))).sort()
@@ -494,7 +574,9 @@ export default function AdminCommercialPage() {
   }, [auditRows])
 
   const billingStatusOptions = useMemo(() => {
-    return Array.from(new Set((overview?.billingRows ?? []).map((row) => row.invoice_status))).sort()
+    return Array.from(
+      new Set((overview?.billingRows ?? []).map((row) => row.invoice_status)),
+    ).sort()
   }, [overview?.billingRows])
 
   const payoutStatusOptions = useMemo(() => {
@@ -502,11 +584,15 @@ export default function AdminCommercialPage() {
   }, [overview?.payoutRows])
 
   const tierOptions = useMemo(() => {
-    return Array.from(new Set((overview?.operatorProfiles ?? []).map((row) => row.membership_tier_code))).sort()
+    return Array.from(
+      new Set((overview?.operatorProfiles ?? []).map((row) => row.membership_tier_code)),
+    ).sort()
   }, [overview?.operatorProfiles])
 
   const kycOptions = useMemo(() => {
-    return Array.from(new Set((overview?.operatorProfiles ?? []).map((row) => row.kyc_status))).sort()
+    return Array.from(
+      new Set((overview?.operatorProfiles ?? []).map((row) => row.kyc_status)),
+    ).sort()
   }, [overview?.operatorProfiles])
 
   const reportBillingRows = useMemo(() => {
@@ -519,9 +605,19 @@ export default function AdminCommercialPage() {
         return false
       }
 
-      return isWithinDateRange(row.issued_at ?? row.cycle_end ?? row.cycle_start, reportStartDate, reportEndDate)
+      return isWithinDateRange(
+        row.issued_at ?? row.cycle_end ?? row.cycle_start,
+        reportStartDate,
+        reportEndDate,
+      )
     })
-  }, [billingStatusFilter, overview?.billingRows, reportEndDate, reportOperatorFilter, reportStartDate])
+  }, [
+    billingStatusFilter,
+    overview?.billingRows,
+    reportEndDate,
+    reportOperatorFilter,
+    reportStartDate,
+  ])
 
   const reportPayoutRows = useMemo(() => {
     return (overview?.payoutRows ?? []).filter((row) => {
@@ -533,9 +629,19 @@ export default function AdminCommercialPage() {
         return false
       }
 
-      return isWithinDateRange(row.paid_at ?? row.payout_due_at ?? row.travel_date, reportStartDate, reportEndDate)
+      return isWithinDateRange(
+        row.paid_at ?? row.payout_due_at ?? row.travel_date,
+        reportStartDate,
+        reportEndDate,
+      )
     })
-  }, [overview?.payoutRows, payoutStatusFilter, reportEndDate, reportOperatorFilter, reportStartDate])
+  }, [
+    overview?.payoutRows,
+    payoutStatusFilter,
+    reportEndDate,
+    reportOperatorFilter,
+    reportStartDate,
+  ])
 
   const reportPromotions = useMemo(() => {
     return promotions.filter((promotion) => {
@@ -547,19 +653,26 @@ export default function AdminCommercialPage() {
         return false
       }
 
-      return isWithinDateRange(promotion.updated_at ?? promotion.created_at, reportStartDate, reportEndDate)
+      return isWithinDateRange(
+        promotion.updated_at ?? promotion.created_at,
+        reportStartDate,
+        reportEndDate,
+      )
     })
   }, [promoFundingFilter, promotions, reportEndDate, reportOperatorFilter, reportStartDate])
 
   const payoutImpactByPromoCode = useMemo(() => {
-    const nextMap = new Map<string, {
-      bookings_count: number
-      discount_total: number
-      operator_funded_discount_total: number
-      platform_funded_discount_total: number
-      commission_remaining_exposure: number
-      operator_payable_total: number
-    }>()
+    const nextMap = new Map<
+      string,
+      {
+        bookings_count: number
+        discount_total: number
+        operator_funded_discount_total: number
+        platform_funded_discount_total: number
+        commission_remaining_exposure: number
+        operator_payable_total: number
+      }
+    >()
 
     for (const row of reportPayoutRows) {
       if (!row.promo_owner || row.promo_discount_value <= 0) continue
@@ -605,7 +718,9 @@ export default function AdminCommercialPage() {
         return {
           promotion_id: promotion.id,
           operator_user_id: promotion.operator_user_id,
-          operator_name: operatorNameById.get(promotion.operator_user_id) ?? promotion.operator_user_id.slice(0, 8),
+          operator_name:
+            operatorNameById.get(promotion.operator_user_id) ??
+            promotion.operator_user_id.slice(0, 8),
           title: promotion.title,
           code: promotion.code,
           funding_source: promotion.funding_source,
@@ -618,7 +733,10 @@ export default function AdminCommercialPage() {
           operator_payable_total: impact.operator_payable_total,
         }
       })
-      .sort((left, right) => right.discount_total - left.discount_total || left.title.localeCompare(right.title))
+      .sort(
+        (left, right) =>
+          right.discount_total - left.discount_total || left.title.localeCompare(right.title),
+      )
   }, [operatorNameById, payoutImpactByPromoCode, reportPromotions])
 
   const recoveryExposureByOperator = useMemo(() => {
@@ -626,7 +744,10 @@ export default function AdminCommercialPage() {
 
     for (const row of overview?.payoutRows ?? []) {
       if (row.recovery_amount <= 0) continue
-      nextMap.set(row.operator_user_id, (nextMap.get(row.operator_user_id) ?? 0) + row.recovery_amount)
+      nextMap.set(
+        row.operator_user_id,
+        (nextMap.get(row.operator_user_id) ?? 0) + row.recovery_amount,
+      )
     }
 
     return nextMap
@@ -637,7 +758,10 @@ export default function AdminCommercialPage() {
 
     for (const row of overview?.payoutRows ?? []) {
       if (row.payout_status !== 'on_hold') continue
-      nextMap.set(row.operator_user_id, (nextMap.get(row.operator_user_id) ?? 0) + row.operator_payable_amount)
+      nextMap.set(
+        row.operator_user_id,
+        (nextMap.get(row.operator_user_id) ?? 0) + row.operator_payable_amount,
+      )
     }
 
     return nextMap
@@ -681,7 +805,8 @@ export default function AdminCommercialPage() {
 
         return {
           operator_user_id: profile.operator_user_id,
-          operator_name: operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8),
+          operator_name:
+            operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8),
           membership_tier_code: profile.membership_tier_code,
           kyc_status: profile.kyc_status,
           primary_risk: getPrimaryRiskState(profile, recoveryExposure, onHoldExposure),
@@ -698,7 +823,16 @@ export default function AdminCommercialPage() {
         if (riskComparison !== 0) return riskComparison
         return right.recovery_exposure - left.recovery_exposure
       })
-  }, [kycFilter, onHoldExposureByOperator, operatorNameById, overview?.operatorProfiles, recoveryExposureByOperator, reportOperatorFilter, riskStateFilter, tierFilter])
+  }, [
+    kycFilter,
+    onHoldExposureByOperator,
+    operatorNameById,
+    overview?.operatorProfiles,
+    recoveryExposureByOperator,
+    reportOperatorFilter,
+    riskStateFilter,
+    tierFilter,
+  ])
 
   const trendRows = useMemo<CommercialTrendRow[]>(() => {
     const monthMap = new Map<string, CommercialTrendRow>()
@@ -782,14 +916,21 @@ export default function AdminCommercialPage() {
     }
 
     for (const row of financeSnapshotRows) {
-      const commissionCollected = Number.isFinite(row.commission_collected) ? row.commission_collected : row.commission_amount
-      const cashBucketValue = Math.max(row.payment_collected - row.refund_amount - commissionCollected, 0)
+      const commissionCollected = Number.isFinite(row.commission_collected)
+        ? row.commission_collected
+        : row.commission_amount
+      const cashBucketValue = Math.max(
+        row.payment_collected - row.refund_amount - commissionCollected,
+        0,
+      )
 
       derived.total_commission_collected += commissionCollected
       derived.total_refunds += row.refund_amount
 
-      if (row.payout_status === 'not_ready') derived.total_operator_liability_not_ready += cashBucketValue
-      if (row.payout_status === 'eligible') derived.total_payouts_eligible_unbatched += cashBucketValue
+      if (row.payout_status === 'not_ready')
+        derived.total_operator_liability_not_ready += cashBucketValue
+      if (row.payout_status === 'eligible')
+        derived.total_payouts_eligible_unbatched += cashBucketValue
       if (row.payout_status === 'scheduled') derived.total_payouts_scheduled += cashBucketValue
       if (row.payout_status === 'paid') derived.total_payouts_completed += cashBucketValue
       if (row.payout_status === 'on_hold') derived.total_payouts_on_hold += cashBucketValue
@@ -797,7 +938,8 @@ export default function AdminCommercialPage() {
 
     for (const row of allPayoutRows) {
       derived.outstanding_recovery_balances += row.recovery_amount
-      if (row.payout_status === 'recovery_pending') derived.total_payouts_recovery_pending += row.recovery_amount
+      if (row.payout_status === 'recovery_pending')
+        derived.total_payouts_recovery_pending += row.recovery_amount
     }
 
     for (const row of allBillingRows) {
@@ -808,38 +950,97 @@ export default function AdminCommercialPage() {
     }
 
     const derivedReconciliationRhs =
-      derived.total_operator_liability_not_ready
-      + derived.total_payouts_completed
-      + derived.total_payouts_scheduled
-      + derived.total_payouts_on_hold
-      + derived.total_payouts_eligible_unbatched
-      + derived.total_commission_collected
-      + derived.total_refunds
+      derived.total_operator_liability_not_ready +
+      derived.total_payouts_completed +
+      derived.total_payouts_scheduled +
+      derived.total_payouts_on_hold +
+      derived.total_payouts_eligible_unbatched +
+      derived.total_commission_collected +
+      derived.total_refunds
 
     const financeHealth = overview?.financeHealth
     const financeSummary = overview?.financeSummary
 
     const payoutComparisons = [
-      { label: 'Not-ready liability', source: financeHealth?.total_operator_liability_not_ready ?? 0, derived: derived.total_operator_liability_not_ready },
-      { label: 'Eligible unbatched payouts', source: financeHealth?.total_payouts_eligible_unbatched ?? 0, derived: derived.total_payouts_eligible_unbatched },
-      { label: 'Scheduled payouts', source: financeHealth?.total_payouts_scheduled ?? 0, derived: derived.total_payouts_scheduled },
-      { label: 'Paid payouts', source: financeHealth?.total_payouts_completed ?? 0, derived: derived.total_payouts_completed },
-      { label: 'On-hold payouts', source: financeHealth?.total_payouts_on_hold ?? 0, derived: derived.total_payouts_on_hold },
-      { label: 'Commission collected', source: financeHealth?.total_commission_collected ?? 0, derived: derived.total_commission_collected },
-      { label: 'Refunds', source: financeHealth?.total_refunds ?? 0, derived: derived.total_refunds },
-      { label: 'Reconciliation RHS', source: financeHealth?.reconciliation_rhs ?? 0, derived: derivedReconciliationRhs },
-      { label: 'Recovery pending', source: financeHealth?.total_payouts_recovery_pending ?? 0, derived: derived.total_payouts_recovery_pending },
-      { label: 'Outstanding recoveries', source: financeHealth?.outstanding_recovery_balances ?? 0, derived: derived.outstanding_recovery_balances },
+      {
+        label: 'Not-ready liability',
+        source: financeHealth?.total_operator_liability_not_ready ?? 0,
+        derived: derived.total_operator_liability_not_ready,
+      },
+      {
+        label: 'Eligible unbatched payouts',
+        source: financeHealth?.total_payouts_eligible_unbatched ?? 0,
+        derived: derived.total_payouts_eligible_unbatched,
+      },
+      {
+        label: 'Scheduled payouts',
+        source: financeHealth?.total_payouts_scheduled ?? 0,
+        derived: derived.total_payouts_scheduled,
+      },
+      {
+        label: 'Paid payouts',
+        source: financeHealth?.total_payouts_completed ?? 0,
+        derived: derived.total_payouts_completed,
+      },
+      {
+        label: 'On-hold payouts',
+        source: financeHealth?.total_payouts_on_hold ?? 0,
+        derived: derived.total_payouts_on_hold,
+      },
+      {
+        label: 'Commission collected',
+        source: financeHealth?.total_commission_collected ?? 0,
+        derived: derived.total_commission_collected,
+      },
+      {
+        label: 'Refunds',
+        source: financeHealth?.total_refunds ?? 0,
+        derived: derived.total_refunds,
+      },
+      {
+        label: 'Reconciliation RHS',
+        source: financeHealth?.reconciliation_rhs ?? 0,
+        derived: derivedReconciliationRhs,
+      },
+      {
+        label: 'Recovery pending',
+        source: financeHealth?.total_payouts_recovery_pending ?? 0,
+        derived: derived.total_payouts_recovery_pending,
+      },
+      {
+        label: 'Outstanding recoveries',
+        source: financeHealth?.outstanding_recovery_balances ?? 0,
+        derived: derived.outstanding_recovery_balances,
+      },
     ].map((row) => ({ ...row, delta: row.source - row.derived }))
 
     const billingComparisons = [
-      { label: 'Membership fees charged', source: financeSummary?.total_membership_fees_charged ?? 0, derived: derived.total_membership_fees_charged },
-      { label: 'Adjustments and waivers', source: financeSummary?.total_membership_fees_waived_adjusted ?? 0, derived: derived.total_membership_adjustments },
-      { label: 'Recovery pending summary', source: financeSummary?.total_recovery_pending ?? 0, derived: derived.total_payouts_recovery_pending },
+      {
+        label: 'Membership fees charged',
+        source: financeSummary?.total_membership_fees_charged ?? 0,
+        derived: derived.total_membership_fees_charged,
+      },
+      {
+        label: 'Adjustments and waivers',
+        source: financeSummary?.total_membership_fees_waived_adjusted ?? 0,
+        derived: derived.total_membership_adjustments,
+      },
+      {
+        label: 'Recovery pending summary',
+        source: financeSummary?.total_recovery_pending ?? 0,
+        derived: derived.total_payouts_recovery_pending,
+      },
     ].map((row) => ({ ...row, delta: row.source - row.derived }))
 
     const formulaBreaks = allBillingRows.filter((row) => {
-      return Math.abs((row.membership_fee - row.prior_cycle_commission_credit - row.adjustment_applied) - row.final_membership_charge) > 0.01
+      return (
+        Math.abs(
+          row.membership_fee -
+            row.prior_cycle_commission_credit -
+            row.adjustment_applied -
+            row.final_membership_charge,
+        ) > 0.01
+      )
     })
 
     const operatorFundedPromoDiscountTotal = allPayoutRows.reduce((sum, row) => {
@@ -850,9 +1051,10 @@ export default function AdminCommercialPage() {
       return row.promo_funding_source === 'platform' ? sum + row.promo_discount_value : sum
     }, 0)
 
-    const releaseBlocker = payoutComparisons.some((row) => Math.abs(row.delta) > 0.01)
-      || billingComparisons.some((row) => Math.abs(row.delta) > 0.01)
-      || formulaBreaks.length > 0
+    const releaseBlocker =
+      payoutComparisons.some((row) => Math.abs(row.delta) > 0.01) ||
+      billingComparisons.some((row) => Math.abs(row.delta) > 0.01) ||
+      formulaBreaks.length > 0
 
     return {
       payoutComparisons,
@@ -864,11 +1066,18 @@ export default function AdminCommercialPage() {
       totalFinalMembershipCharge: derived.total_final_membership_charge,
       releaseBlocker,
     }
-  }, [overview?.billingRows, overview?.financeHealth, overview?.financeSnapshotRows, overview?.financeSummary, overview?.payoutRows])
+  }, [
+    overview?.billingRows,
+    overview?.financeHealth,
+    overview?.financeSnapshotRows,
+    overview?.financeSummary,
+    overview?.payoutRows,
+  ])
 
   const opsReviewSummary = useMemo(() => {
     return {
-      payoutHolds: operatorRiskRows.filter((row) => row.payout_hold || row.on_hold_exposure > 0).length,
+      payoutHolds: operatorRiskRows.filter((row) => row.payout_hold || row.on_hold_exposure > 0)
+        .length,
       fraudReview: operatorRiskRows.filter((row) => row.fraud_review_required).length,
       kycBlocked: operatorRiskRows.filter((row) => row.kyc_status !== 'approved').length,
       recoveryPending: operatorRiskRows.filter((row) => row.recovery_exposure > 0).length,
@@ -904,7 +1113,21 @@ export default function AdminCommercialPage() {
   const exportBillingLifecycleCsv = () => {
     downloadCsvFile(
       'commercial-billing-lifecycle.csv',
-      ['Operator', 'Tier', 'Cycle start', 'Cycle end', 'Invoice status', 'Membership fee', 'Commission credit', 'Adjustment', 'Final charge', 'Invoice number', 'Issued at', 'Due date', 'Paid at'],
+      [
+        'Operator',
+        'Tier',
+        'Cycle start',
+        'Cycle end',
+        'Invoice status',
+        'Membership fee',
+        'Commission credit',
+        'Adjustment',
+        'Final charge',
+        'Invoice number',
+        'Issued at',
+        'Due date',
+        'Paid at',
+      ],
       reportBillingRows.map((row) => [
         operatorNameById.get(row.operator_user_id) ?? row.operator_user_id,
         row.membership_tier_code,
@@ -926,7 +1149,24 @@ export default function AdminCommercialPage() {
   const exportPayoutOperationsCsv = () => {
     downloadCsvFile(
       'commercial-payout-operations.csv',
-      ['Operator', 'Trip', 'Batch', 'Status', 'Travel date', 'Due at', 'Paid at', 'Gross amount', 'Refund amount', 'Commission collected', 'Commission remaining', 'Operator payable', 'Recovery amount', 'Promo owner', 'Promo funding', 'Promo discount'],
+      [
+        'Operator',
+        'Trip',
+        'Batch',
+        'Status',
+        'Travel date',
+        'Due at',
+        'Paid at',
+        'Gross amount',
+        'Refund amount',
+        'Commission collected',
+        'Commission remaining',
+        'Operator payable',
+        'Recovery amount',
+        'Promo owner',
+        'Promo funding',
+        'Promo discount',
+      ],
       reportPayoutRows.map((row) => [
         operatorNameById.get(row.operator_user_id) ?? row.operator_user_id,
         row.trip_name ?? row.booking_id,
@@ -951,7 +1191,19 @@ export default function AdminCommercialPage() {
   const exportPromoPerformanceCsv = () => {
     downloadCsvFile(
       'commercial-promo-performance.csv',
-      ['Operator', 'Promo', 'Code', 'Funding source', 'Status', 'Bookings', 'Discount total', 'Operator-funded discount', 'Platform-funded discount', 'Commission remaining exposure', 'Operator payable total'],
+      [
+        'Operator',
+        'Promo',
+        'Code',
+        'Funding source',
+        'Status',
+        'Bookings',
+        'Discount total',
+        'Operator-funded discount',
+        'Platform-funded discount',
+        'Commission remaining exposure',
+        'Operator payable total',
+      ],
       promoPerformanceRows.map((row) => [
         row.operator_name,
         row.title,
@@ -971,7 +1223,16 @@ export default function AdminCommercialPage() {
   const exportRiskReviewCsv = () => {
     downloadCsvFile(
       'commercial-risk-review.csv',
-      ['Operator', 'Tier', 'KYC status', 'Primary risk', 'Signals', 'On-hold exposure', 'Recovery exposure', 'Cancellation count'],
+      [
+        'Operator',
+        'Tier',
+        'KYC status',
+        'Primary risk',
+        'Signals',
+        'On-hold exposure',
+        'Recovery exposure',
+        'Cancellation count',
+      ],
       operatorRiskRows.map((row) => [
         row.operator_name,
         row.membership_tier_code,
@@ -1022,7 +1283,9 @@ export default function AdminCommercialPage() {
     const title = promoForm.title.trim()
     const code = promoForm.code.trim().toUpperCase()
     const discountValue = Number(promoForm.discountValue)
-    const maxDiscountValue = promoForm.maxDiscountValue.trim() ? Number(promoForm.maxDiscountValue) : null
+    const maxDiscountValue = promoForm.maxDiscountValue.trim()
+      ? Number(promoForm.maxDiscountValue)
+      : null
 
     if (!operatorUserId) {
       setPromoError('Select an operator for this promotion')
@@ -1044,7 +1307,10 @@ export default function AdminCommercialPage() {
       return
     }
 
-    if (maxDiscountValue !== null && (!Number.isFinite(maxDiscountValue) || maxDiscountValue <= 0)) {
+    if (
+      maxDiscountValue !== null &&
+      (!Number.isFinite(maxDiscountValue) || maxDiscountValue <= 0)
+    ) {
       setPromoError('Max discount must be greater than zero when provided')
       return
     }
@@ -1055,7 +1321,8 @@ export default function AdminCommercialPage() {
 
       const payload = {
         operator_user_id: operatorUserId,
-        applicable_tour_id: promoForm.applicableTourId === 'all' ? null : promoForm.applicableTourId,
+        applicable_tour_id:
+          promoForm.applicableTourId === 'all' ? null : promoForm.applicableTourId,
         title,
         code,
         description: promoForm.description.trim() || null,
@@ -1120,7 +1387,9 @@ export default function AdminCommercialPage() {
       setHoldReason('')
       await load()
     } catch (actionError) {
-      toast.error(actionError instanceof Error ? actionError.message : 'Failed to update payout hold')
+      toast.error(
+        actionError instanceof Error ? actionError.message : 'Failed to update payout hold',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -1135,7 +1404,9 @@ export default function AdminCommercialPage() {
       toast.success('Billing cycle closed and next invoice generated')
       await load()
     } catch (actionError) {
-      toast.error(actionError instanceof Error ? actionError.message : 'Failed to close billing cycle')
+      toast.error(
+        actionError instanceof Error ? actionError.message : 'Failed to close billing cycle',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -1145,10 +1416,14 @@ export default function AdminCommercialPage() {
     try {
       setSubmitting(true)
       const batch = await commercialService.schedulePayoutBatch()
-      toast.success(batch ? `Scheduled ${batch.batch_reference}` : 'No eligible payout items to batch')
+      toast.success(
+        batch ? `Scheduled ${batch.batch_reference}` : 'No eligible payout items to batch',
+      )
       await load()
     } catch (actionError) {
-      toast.error(actionError instanceof Error ? actionError.message : 'Failed to schedule payout batch')
+      toast.error(
+        actionError instanceof Error ? actionError.message : 'Failed to schedule payout batch',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -1182,14 +1457,16 @@ export default function AdminCommercialPage() {
       setSubmitting(true)
       const result = await commercialService.reversePayoutBatch(selectedBatchId, reasonText)
       if (result?.previous_status === 'paid') {
-        toast.success(`${result.batch_reference} reversed into recovery`) 
+        toast.success(`${result.batch_reference} reversed into recovery`)
       } else {
-        toast.success(`${result?.batch_reference ?? 'Batch'} unscheduled and returned to eligible`) 
+        toast.success(`${result?.batch_reference ?? 'Batch'} unscheduled and returned to eligible`)
       }
       setBatchActionReason('')
       await load()
     } catch (actionError) {
-      toast.error(actionError instanceof Error ? actionError.message : 'Failed to reverse payout batch')
+      toast.error(
+        actionError instanceof Error ? actionError.message : 'Failed to reverse payout batch',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -1207,9 +1484,15 @@ export default function AdminCommercialPage() {
     try {
       setSubmitting(true)
       const amount = recoveryAmount.trim() ? Number(recoveryAmount) : undefined
-      const result = await commercialService.resolvePayoutRecovery(selectedRecoveryItemId, amount, reasonText)
+      const result = await commercialService.resolvePayoutRecovery(
+        selectedRecoveryItemId,
+        amount,
+        reasonText,
+      )
       if (result?.remaining_recovery_amount) {
-        toast.success(`Recovery updated. PKR ${result.remaining_recovery_amount.toLocaleString()} still outstanding`)
+        toast.success(
+          `Recovery updated. PKR ${result.remaining_recovery_amount.toLocaleString()} still outstanding`,
+        )
       } else {
         toast.success('Recovery completed and payout item closed')
       }
@@ -1222,22 +1505,58 @@ export default function AdminCommercialPage() {
     }
   }
 
+  const handleApplyDisputeStatus = async (disputeCase: OperatorPayoutDisputeCase) => {
+    const nextStatus = disputeStatusById[disputeCase.id] || disputeCase.status
+    if (nextStatus === disputeCase.status) return
+
+    try {
+      setSubmitting(true)
+      const updatedCase = await commercialService.updateOperatorPayoutDisputeCaseStatus(
+        disputeCase.id,
+        nextStatus,
+      )
+      setDisputeCases((current) =>
+        current.map((row) => (row.id === updatedCase.id ? updatedCase : row)),
+      )
+      setDisputeStatusById((current) => ({ ...current, [updatedCase.id]: updatedCase.status }))
+      toast.success('Dispute case status updated')
+    } catch (actionError) {
+      toast.error(
+        actionError instanceof Error ? actionError.message : 'Failed to update dispute status',
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Commercial</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Finance overview, operator commercial controls, billing cycle actions, and payout batch management.
+            Finance overview, operator commercial controls, billing cycle actions, and payout batch
+            management.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleScheduleBatch} disabled={submitting || loading}>Create payout batch</Button>
-          <Button onClick={handleMarkBatchPaid} disabled={submitting || loading || !selectedBatchId}>Mark batch paid</Button>
+          <Button variant="outline" onClick={handleScheduleBatch} disabled={submitting || loading}>
+            Create payout batch
+          </Button>
+          <Button
+            onClick={handleMarkBatchPaid}
+            disabled={submitting || loading || !selectedBatchId}
+          >
+            Mark batch paid
+          </Button>
         </div>
       </div>
 
-      {error ? <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+      {error ? (
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map((card) => (
@@ -1249,8 +1568,14 @@ export default function AdminCommercialPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-foreground">{loading ? 'Loading…' : card.value}</p>
-              <Button variant="ghost" className="mt-3 h-auto px-0 text-xs text-muted-foreground" onClick={() => handleSummaryDrillDown(card.id)}>
+              <p className="text-2xl font-bold text-foreground">
+                {loading ? 'Loading…' : card.value}
+              </p>
+              <Button
+                variant="ghost"
+                className="mt-3 h-auto px-0 text-xs text-muted-foreground"
+                onClick={() => handleSummaryDrillDown(card.id)}
+              >
                 Drill into report
               </Button>
             </CardContent>
@@ -1276,12 +1601,36 @@ export default function AdminCommercialPage() {
                 <CardTitle className="text-lg">Finance health</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <HealthMetric label="Customer payments" value={formatMoney(overview?.financeHealth?.total_customer_payments_collected ?? 0)} />
-                <HealthMetric label="Commission collected" value={formatMoney(overview?.financeHealth?.total_commission_collected ?? 0)} />
-                <HealthMetric label="Not-ready operator liability" value={formatMoney(overview?.financeHealth?.total_operator_liability_not_ready ?? 0)} />
-                <HealthMetric label="Reconciliation RHS" value={formatMoney(overview?.financeHealth?.reconciliation_rhs ?? 0)} />
-                <HealthMetric label="Eligible unbatched" value={formatMoney(overview?.financeHealth?.total_payouts_eligible_unbatched ?? 0)} />
-                <HealthMetric label="Recovery exposure" value={formatMoney(overview?.financeHealth?.outstanding_recovery_balances ?? 0)} />
+                <HealthMetric
+                  label="Customer payments"
+                  value={formatMoney(
+                    overview?.financeHealth?.total_customer_payments_collected ?? 0,
+                  )}
+                />
+                <HealthMetric
+                  label="Commission collected"
+                  value={formatMoney(overview?.financeHealth?.total_commission_collected ?? 0)}
+                />
+                <HealthMetric
+                  label="Not-ready operator liability"
+                  value={formatMoney(
+                    overview?.financeHealth?.total_operator_liability_not_ready ?? 0,
+                  )}
+                />
+                <HealthMetric
+                  label="Reconciliation RHS"
+                  value={formatMoney(overview?.financeHealth?.reconciliation_rhs ?? 0)}
+                />
+                <HealthMetric
+                  label="Eligible unbatched"
+                  value={formatMoney(
+                    overview?.financeHealth?.total_payouts_eligible_unbatched ?? 0,
+                  )}
+                />
+                <HealthMetric
+                  label="Recovery exposure"
+                  value={formatMoney(overview?.financeHealth?.outstanding_recovery_balances ?? 0)}
+                />
               </CardContent>
             </Card>
 
@@ -1292,7 +1641,13 @@ export default function AdminCommercialPage() {
               <CardContent className="space-y-4">
                 <div className="rounded-lg border border-border p-4">
                   <p className="text-sm text-muted-foreground">Delta</p>
-                  <p className={Math.abs(overview?.financeHealth?.reconciliation_delta ?? 0) <= 0.01 ? 'mt-2 text-2xl font-bold text-emerald-600' : 'mt-2 text-2xl font-bold text-amber-600'}>
+                  <p
+                    className={
+                      Math.abs(overview?.financeHealth?.reconciliation_delta ?? 0) <= 0.01
+                        ? 'mt-2 text-2xl font-bold text-emerald-600'
+                        : 'mt-2 text-2xl font-bold text-amber-600'
+                    }
+                  >
                     {formatSignedMoney(overview?.financeHealth?.reconciliation_delta ?? 0)}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -1305,11 +1660,15 @@ export default function AdminCommercialPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-sm text-muted-foreground">Commission accrued</p>
-                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(overview?.financeHealth?.total_commission_earned ?? 0)}</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {formatMoney(overview?.financeHealth?.total_commission_earned ?? 0)}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-sm text-muted-foreground">Commission still outstanding</p>
-                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(overview?.financeHealth?.total_commission_remaining ?? 0)}</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {formatMoney(overview?.financeHealth?.total_commission_remaining ?? 0)}
+                    </p>
                   </div>
                 </div>
 
@@ -1323,31 +1682,49 @@ export default function AdminCommercialPage() {
                   <TableBody>
                     <TableRow>
                       <TableCell>Operator liability not ready for payout</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_operator_liability_not_ready ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(
+                          overview?.financeHealth?.total_operator_liability_not_ready ?? 0,
+                        )}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Eligible unbatched payouts</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_payouts_eligible_unbatched ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(
+                          overview?.financeHealth?.total_payouts_eligible_unbatched ?? 0,
+                        )}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Payouts completed</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_payouts_completed ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(overview?.financeHealth?.total_payouts_completed ?? 0)}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Payouts scheduled</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_payouts_scheduled ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(overview?.financeHealth?.total_payouts_scheduled ?? 0)}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Payouts on hold</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_payouts_on_hold ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(overview?.financeHealth?.total_payouts_on_hold ?? 0)}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>TripAvail commission collected</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_commission_collected ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(overview?.financeHealth?.total_commission_collected ?? 0)}
+                      </TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>Refunds</TableCell>
-                      <TableCell className="text-right">{formatMoney(overview?.financeHealth?.total_refunds ?? 0)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(overview?.financeHealth?.total_refunds ?? 0)}
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -1382,16 +1759,24 @@ export default function AdminCommercialPage() {
                         <TableCell>
                           <div>
                             <p className="font-medium text-foreground">
-                              {profile.tour_operator_profiles?.company_name || profile.tour_operator_profiles?.contact_person || profile.operator_user_id.slice(0, 8)}
+                              {profile.tour_operator_profiles?.company_name ||
+                                profile.tour_operator_profiles?.contact_person ||
+                                profile.operator_user_id.slice(0, 8)}
                             </p>
-                            <p className="text-xs text-muted-foreground">{profile.operator_user_id.slice(0, 8).toUpperCase()}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {profile.operator_user_id.slice(0, 8).toUpperCase()}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">Review required</Badge>
+                          <Badge className="border-0 bg-amber-500 text-white hover:bg-amber-500">
+                            Review required
+                          </Badge>
                         </TableCell>
                         <TableCell>{formatTimestamp(profile.fraud_review_triggered_at)}</TableCell>
-                        <TableCell>{profile.fraud_review_reason ?? 'Manual review required'}</TableCell>
+                        <TableCell>
+                          {profile.fraud_review_reason ?? 'Manual review required'}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -1420,14 +1805,15 @@ export default function AdminCommercialPage() {
                       <TableCell>{row.display_name}</TableCell>
                       <TableCell>{row.operators_count}</TableCell>
                       <TableCell className="text-right">{formatMoney(row.average_gmv)}</TableCell>
-                      <TableCell className="text-right">{formatMoney(row.average_payout)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(row.average_payout)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-
         </TabsContent>
 
         <TabsContent value="operators" className="space-y-6 pt-4">
@@ -1445,7 +1831,9 @@ export default function AdminCommercialPage() {
                   <SelectContent>
                     {(overview?.operatorProfiles ?? []).map((profile) => (
                       <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
-                        {profile.tour_operator_profiles?.company_name || profile.tour_operator_profiles?.contact_person || profile.operator_user_id.slice(0, 8)}
+                        {profile.tour_operator_profiles?.company_name ||
+                          profile.tour_operator_profiles?.contact_person ||
+                          profile.operator_user_id.slice(0, 8)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1454,21 +1842,42 @@ export default function AdminCommercialPage() {
                 {selectedOperator ? (
                   <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-foreground">{selectedOperator.tour_operator_profiles?.company_name || 'Unnamed operator'}</p>
+                      <p className="font-medium text-foreground">
+                        {selectedOperator.tour_operator_profiles?.company_name ||
+                          'Unnamed operator'}
+                      </p>
                       <Badge
                         variant={selectedOperator.fraud_review_required ? 'destructive' : 'outline'}
-                        className={selectedOperator.fraud_review_required ? 'border-0' : 'border-border/60 bg-background/60 text-muted-foreground'}
+                        className={
+                          selectedOperator.fraud_review_required
+                            ? 'border-0'
+                            : 'border-border/60 bg-background/60 text-muted-foreground'
+                        }
                       >
-                        {selectedOperator.fraud_review_required ? 'Fraud review required' : 'Fraud review clear'}
+                        {selectedOperator.fraud_review_required
+                          ? 'Fraud review required'
+                          : 'Fraud review clear'}
                       </Badge>
                     </div>
                     <p>City: {selectedOperator.tour_operator_profiles?.primary_city || '—'}</p>
                     <p>KYC: {selectedOperator.kyc_status}</p>
                     <p>Operational status: {selectedOperator.operational_status}</p>
-                    <p>Operator-fault cancellations: {selectedOperator.operator_fault_cancellation_count}</p>
-                    <p>Cancellation penalty: {selectedOperator.cancellation_penalty_active ? 'Active' : 'Clear'}</p>
-                    <p>Penalty triggered: {formatDate(selectedOperator.cancellation_penalty_triggered_at)}</p>
-                    <p>Fraud review triggered: {formatTimestamp(selectedOperator.fraud_review_triggered_at)}</p>
+                    <p>
+                      Operator-fault cancellations:{' '}
+                      {selectedOperator.operator_fault_cancellation_count}
+                    </p>
+                    <p>
+                      Cancellation penalty:{' '}
+                      {selectedOperator.cancellation_penalty_active ? 'Active' : 'Clear'}
+                    </p>
+                    <p>
+                      Penalty triggered:{' '}
+                      {formatDate(selectedOperator.cancellation_penalty_triggered_at)}
+                    </p>
+                    <p>
+                      Fraud review triggered:{' '}
+                      {formatTimestamp(selectedOperator.fraud_review_triggered_at)}
+                    </p>
                     <p>Fraud review reason: {selectedOperator.fraud_review_reason ?? '—'}</p>
                   </div>
                 ) : null}
@@ -1477,7 +1886,10 @@ export default function AdminCommercialPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-3 rounded-lg border border-border p-4">
                   <p className="font-medium text-foreground">Membership tier</p>
-                  <Select value={tierCode} onValueChange={(value) => setTierCode(value as MembershipTierCode)}>
+                  <Select
+                    value={tierCode}
+                    onValueChange={(value) => setTierCode(value as MembershipTierCode)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1492,7 +1904,9 @@ export default function AdminCommercialPage() {
                     onChange={(event) => setTierReason(event.target.value)}
                     placeholder="Reason for tier change"
                   />
-                  <Button onClick={handleAssignTier} disabled={submitting || !selectedOperatorId}>Apply tier change</Button>
+                  <Button onClick={handleAssignTier} disabled={submitting || !selectedOperatorId}>
+                    Apply tier change
+                  </Button>
                 </div>
 
                 <div className="space-y-3 rounded-lg border border-border p-4">
@@ -1502,10 +1916,17 @@ export default function AdminCommercialPage() {
                     onChange={(event) => setHoldReason(event.target.value)}
                     placeholder="Hold reason shown on payout items"
                   />
-                  <Button variant="outline" onClick={handleToggleHold} disabled={submitting || !selectedOperator}>
+                  <Button
+                    variant="outline"
+                    onClick={handleToggleHold}
+                    disabled={submitting || !selectedOperator}
+                  >
                     {selectedOperator?.payout_hold ? 'Release payout hold' : 'Apply payout hold'}
                   </Button>
-                  <Button onClick={handleCloseBillingCycle} disabled={submitting || !selectedOperatorId}>
+                  <Button
+                    onClick={handleCloseBillingCycle}
+                    disabled={submitting || !selectedOperatorId}
+                  >
                     Close billing cycle
                   </Button>
                 </div>
@@ -1517,7 +1938,10 @@ export default function AdminCommercialPage() {
         <TabsContent value="billing" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg"><Users className="h-5 w-5" />Billing cycles</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5" />
+                Billing cycles
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1533,9 +1957,13 @@ export default function AdminCommercialPage() {
                   {filteredBillingRows.map((row) => (
                     <TableRow key={row.billing_cycle_id}>
                       <TableCell>{row.operator_user_id.slice(0, 8)}</TableCell>
-                      <TableCell>{formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}</TableCell>
+                      <TableCell>
+                        {formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}
+                      </TableCell>
                       <TableCell>{row.invoice_status}</TableCell>
-                      <TableCell className="text-right">{formatMoney(row.final_membership_charge)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(row.final_membership_charge)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1577,10 +2005,28 @@ export default function AdminCommercialPage() {
                       : 'Scheduled batches are unwound back to eligible so they can be re-batched.'}
                   </p>
                 </div>
-                <Button variant="outline" onClick={handleReverseBatch} disabled={submitting || loading || !selectedBatchId || selectedBatch?.status === 'reversed'}>
+                <Button
+                  variant="outline"
+                  onClick={handleReverseBatch}
+                  disabled={
+                    submitting ||
+                    loading ||
+                    !selectedBatchId ||
+                    selectedBatch?.status === 'reversed'
+                  }
+                >
                   Reverse batch
                 </Button>
-                <Button onClick={handleMarkBatchPaid} disabled={submitting || loading || !selectedBatchId || selectedBatch?.status === 'paid' || selectedBatch?.status === 'reversed'}>
+                <Button
+                  onClick={handleMarkBatchPaid}
+                  disabled={
+                    submitting ||
+                    loading ||
+                    !selectedBatchId ||
+                    selectedBatch?.status === 'paid' ||
+                    selectedBatch?.status === 'reversed'
+                  }
+                >
                   Mark batch paid
                 </Button>
               </div>
@@ -1601,8 +2047,12 @@ export default function AdminCommercialPage() {
                       <TableCell>{batch.batch_reference}</TableCell>
                       <TableCell>{formatDate(batch.scheduled_for)}</TableCell>
                       <TableCell>{batch.status}</TableCell>
-                      <TableCell className="text-right">{formatMoney(batch.total_recovery_deduction_amount)}</TableCell>
-                      <TableCell className="text-right">{formatMoney(batch.total_operator_payable)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(batch.total_recovery_deduction_amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(batch.total_operator_payable)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1624,14 +2074,17 @@ export default function AdminCommercialPage() {
                   <SelectContent>
                     {recoveryRows.map((row) => (
                       <SelectItem key={row.payout_item_id} value={row.payout_item_id}>
-                        {(row.trip_name ?? row.booking_id.slice(0, 8))} · {formatMoney(row.recovery_amount)}
+                        {row.trip_name ?? row.booking_id.slice(0, 8)} ·{' '}
+                        {formatMoney(row.recovery_amount)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {selectedRecoveryRow ? (
                   <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">{selectedRecoveryRow.trip_name ?? selectedRecoveryRow.booking_id.slice(0, 8)}</p>
+                    <p className="font-medium text-foreground">
+                      {selectedRecoveryRow.trip_name ?? selectedRecoveryRow.booking_id.slice(0, 8)}
+                    </p>
                     <p>Outstanding recovery: {formatMoney(selectedRecoveryRow.recovery_amount)}</p>
                     <p>Batch: {selectedRecoveryRow.batch_reference ?? '—'}</p>
                   </div>
@@ -1654,7 +2107,10 @@ export default function AdminCommercialPage() {
                   onChange={(event) => setRecoveryReason(event.target.value)}
                   placeholder="Recovery note or evidence reference"
                 />
-                <Button onClick={handleResolveRecovery} disabled={submitting || !selectedRecoveryItemId}>
+                <Button
+                  onClick={handleResolveRecovery}
+                  disabled={submitting || !selectedRecoveryItemId}
+                >
                   Apply recovery settlement
                 </Button>
               </div>
@@ -1685,17 +2141,163 @@ export default function AdminCommercialPage() {
                       <TableCell>{row.batch_reference ?? 'Unbatched'}</TableCell>
                       <TableCell>{row.payout_status}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {formatPromoAttribution(row.promo_owner, row.promo_funding_source, row.promo_discount_value)}
+                        {formatPromoAttribution(
+                          row.promo_owner,
+                          row.promo_funding_source,
+                          row.promo_discount_value,
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
-                        {formatMoney(row.commission_collected)} / {formatMoney(row.commission_remaining)}
+                        {formatMoney(row.commission_collected)} /{' '}
+                        {formatMoney(row.commission_remaining)}
                       </TableCell>
-                      <TableCell className="text-right">{formatMoney(row.recovery_deduction_amount)}</TableCell>
-                      <TableCell className="text-right">{formatMoney(row.net_operator_payable_amount)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(row.recovery_deduction_amount)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatMoney(row.net_operator_payable_amount)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Operator payout dispute cases</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+                These cases are submitted from the operator commercial page and escalated through
+                the booking conversation. Finance and support can triage them here without leaving
+                the commercial console.
+              </div>
+
+              {filteredDisputeCases.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                  No payout dispute cases match the current operator filter.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Operator</TableHead>
+                      <TableHead>Booking</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Requested action</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Support</TableHead>
+                      <TableHead className="text-right">Apply</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDisputeCases.map((disputeCase) => {
+                      const payoutRow = overview?.payoutRows.find(
+                        (row) => row.payout_item_id === disputeCase.payout_item_id,
+                      )
+                      const disputeReport = asObject(disputeCase.reconciliation_report)
+
+                      return (
+                        <TableRow key={disputeCase.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {operatorNameById.get(disputeCase.operator_user_id) ??
+                                  disputeCase.operator_user_id.slice(0, 8)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Submitted {formatTimestamp(disputeCase.created_at)}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {payoutRow?.trip_name ?? disputeCase.booking_id.slice(0, 8)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Booking {disputeCase.booking_id.slice(0, 8).toUpperCase()} ·{' '}
+                                {String(
+                                  payoutRow?.payout_status ?? disputeReport?.payout_status ?? '—',
+                                )}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Promo:{' '}
+                                {formatPromoAttribution(
+                                  payoutRow?.promo_owner,
+                                  payoutRow?.promo_funding_source,
+                                  payoutRow?.promo_discount_value,
+                                )}
+                              </p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Refund:{' '}
+                                {formatMoney(
+                                  Number(
+                                    disputeReport?.refund_amount ?? payoutRow?.refund_amount ?? 0,
+                                  ),
+                                )}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {formatAuditAction(disputeCase.dispute_category)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {disputeCase.reason_summary}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatAuditAction(disputeCase.requested_action)}</TableCell>
+                          <TableCell>
+                            <Select
+                              value={disputeStatusById[disputeCase.id] || disputeCase.status}
+                              onValueChange={(value) =>
+                                setDisputeStatusById((current) => ({
+                                  ...current,
+                                  [disputeCase.id]: value as OperatorPayoutDisputeCase['status'],
+                                }))
+                              }
+                              disabled={submitting}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="submitted">Submitted</SelectItem>
+                                <SelectItem value="in_review">In review</SelectItem>
+                                <SelectItem value="resolved">Resolved</SelectItem>
+                                <SelectItem value="withdrawn">Withdrawn</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            {disputeCase.support_escalated_at
+                              ? formatTimestamp(disputeCase.support_escalated_at)
+                              : 'Not escalated'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              onClick={() => handleApplyDisputeStatus(disputeCase)}
+                              disabled={
+                                submitting ||
+                                (disputeStatusById[disputeCase.id] || disputeCase.status) ===
+                                  disputeCase.status
+                              }
+                            >
+                              Apply
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1709,15 +2311,25 @@ export default function AdminCommercialPage() {
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Operator</label>
-                    <Select value={promoForm.operatorUserId || selectedOperatorId} onValueChange={(value) => handlePromoFormChange('operatorUserId', value)}>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Operator
+                    </label>
+                    <Select
+                      value={promoForm.operatorUserId || selectedOperatorId}
+                      onValueChange={(value) => handlePromoFormChange('operatorUserId', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Choose operator" />
                       </SelectTrigger>
                       <SelectContent>
                         {(overview?.operatorProfiles ?? []).map((profile) => (
-                          <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
-                            {profile.tour_operator_profiles?.company_name || profile.tour_operator_profiles?.contact_person || profile.operator_user_id.slice(0, 8)}
+                          <SelectItem
+                            key={profile.operator_user_id}
+                            value={profile.operator_user_id}
+                          >
+                            {profile.tour_operator_profiles?.company_name ||
+                              profile.tour_operator_profiles?.contact_person ||
+                              profile.operator_user_id.slice(0, 8)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1725,29 +2337,51 @@ export default function AdminCommercialPage() {
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-foreground">Scope</label>
-                    <Select value={promoForm.applicableTourId} onValueChange={(value) => handlePromoFormChange('applicableTourId', value)}>
+                    <Select
+                      value={promoForm.applicableTourId}
+                      onValueChange={(value) => handlePromoFormChange('applicableTourId', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All operator trips</SelectItem>
                         {promoScopedTours.map((tour) => (
-                          <SelectItem key={tour.id} value={tour.id}>{tour.title}</SelectItem>
+                          <SelectItem key={tour.id} value={tour.id}>
+                            {tour.title}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-foreground">Title</label>
-                    <Input value={promoForm.title} onChange={(event) => handlePromoFormChange('title', event.target.value)} placeholder="TripAvail launch support" />
+                    <Input
+                      value={promoForm.title}
+                      onChange={(event) => handlePromoFormChange('title', event.target.value)}
+                      placeholder="TripAvail launch support"
+                    />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Promo code</label>
-                    <Input value={promoForm.code} onChange={(event) => handlePromoFormChange('code', event.target.value.toUpperCase())} placeholder="LAUNCH10K" />
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Promo code
+                    </label>
+                    <Input
+                      value={promoForm.code}
+                      onChange={(event) =>
+                        handlePromoFormChange('code', event.target.value.toUpperCase())
+                      }
+                      placeholder="LAUNCH10K"
+                    />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Funding source</label>
-                    <Select value={promoForm.fundingSource} onValueChange={(value) => handlePromoFormChange('fundingSource', value)}>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Funding source
+                    </label>
+                    <Select
+                      value={promoForm.fundingSource}
+                      onValueChange={(value) => handlePromoFormChange('fundingSource', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1759,7 +2393,10 @@ export default function AdminCommercialPage() {
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-medium text-foreground">Status</label>
-                    <Select value={promoForm.isActive} onValueChange={(value) => handlePromoFormChange('isActive', value)}>
+                    <Select
+                      value={promoForm.isActive}
+                      onValueChange={(value) => handlePromoFormChange('isActive', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1770,8 +2407,13 @@ export default function AdminCommercialPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Discount type</label>
-                    <Select value={promoForm.discountType} onValueChange={(value) => handlePromoFormChange('discountType', value)}>
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Discount type
+                    </label>
+                    <Select
+                      value={promoForm.discountType}
+                      onValueChange={(value) => handlePromoFormChange('discountType', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1782,38 +2424,87 @@ export default function AdminCommercialPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Discount value</label>
-                    <Input value={promoForm.discountValue} onChange={(event) => handlePromoFormChange('discountValue', event.target.value)} type="number" min="0" placeholder={promoForm.discountType === 'percentage' ? '15' : '10000'} />
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Discount value
+                    </label>
+                    <Input
+                      value={promoForm.discountValue}
+                      onChange={(event) =>
+                        handlePromoFormChange('discountValue', event.target.value)
+                      }
+                      type="number"
+                      min="0"
+                      placeholder={promoForm.discountType === 'percentage' ? '15' : '10000'}
+                    />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Max discount</label>
-                    <Input value={promoForm.maxDiscountValue} onChange={(event) => handlePromoFormChange('maxDiscountValue', event.target.value)} type="number" min="0" placeholder="Optional cap" disabled={promoForm.discountType !== 'percentage'} />
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Max discount
+                    </label>
+                    <Input
+                      value={promoForm.maxDiscountValue}
+                      onChange={(event) =>
+                        handlePromoFormChange('maxDiscountValue', event.target.value)
+                      }
+                      type="number"
+                      min="0"
+                      placeholder="Optional cap"
+                      disabled={promoForm.discountType !== 'percentage'}
+                    />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Starts at</label>
-                    <Input value={promoForm.startsAt} onChange={(event) => handlePromoFormChange('startsAt', event.target.value)} type="datetime-local" />
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Starts at
+                    </label>
+                    <Input
+                      value={promoForm.startsAt}
+                      onChange={(event) => handlePromoFormChange('startsAt', event.target.value)}
+                      type="datetime-local"
+                    />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">Ends at</label>
-                    <Input value={promoForm.endsAt} onChange={(event) => handlePromoFormChange('endsAt', event.target.value)} type="datetime-local" />
+                    <label className="mb-2 block text-sm font-medium text-foreground">
+                      Ends at
+                    </label>
+                    <Input
+                      value={promoForm.endsAt}
+                      onChange={(event) => handlePromoFormChange('endsAt', event.target.value)}
+                      type="datetime-local"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">Description</label>
-                  <Textarea value={promoForm.description} onChange={(event) => handlePromoFormChange('description', event.target.value)} placeholder="Explain the campaign and intended margin owner." />
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    Description
+                  </label>
+                  <Textarea
+                    value={promoForm.description}
+                    onChange={(event) => handlePromoFormChange('description', event.target.value)}
+                    placeholder="Explain the campaign and intended margin owner."
+                  />
                 </div>
 
                 {promoError ? (
-                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{promoError}</div>
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                    {promoError}
+                  </div>
                 ) : null}
 
                 <div className="flex gap-3">
                   <Button onClick={handleSavePromotion} disabled={promoSubmitting}>
-                    {promoSubmitting ? 'Saving...' : editingPromotionId ? 'Update promo' : 'Create promo'}
+                    {promoSubmitting
+                      ? 'Saving...'
+                      : editingPromotionId
+                        ? 'Update promo'
+                        : 'Create promo'}
                   </Button>
                   {editingPromotionId ? (
-                    <Button variant="outline" onClick={() => resetPromoForm(promoForm.operatorUserId || selectedOperatorId)} disabled={promoSubmitting}>
+                    <Button
+                      variant="outline"
+                      onClick={() => resetPromoForm(promoForm.operatorUserId || selectedOperatorId)}
+                      disabled={promoSubmitting}
+                    >
                       Cancel edit
                     </Button>
                   ) : null}
@@ -1841,7 +2532,9 @@ export default function AdminCommercialPage() {
                   <TableBody>
                     {promotions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground">No promotions configured.</TableCell>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          No promotions configured.
+                        </TableCell>
                       </TableRow>
                     ) : (
                       promotions.map((promotion) => (
@@ -1849,12 +2542,21 @@ export default function AdminCommercialPage() {
                           <TableCell>
                             <div>
                               <p className="font-medium text-foreground">{promotion.title}</p>
-                              <p className="text-xs text-muted-foreground">{promotion.code} · {promotion.funding_source}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {promotion.code} · {promotion.funding_source}
+                              </p>
                             </div>
                           </TableCell>
-                          <TableCell>{operatorNameById.get(promotion.operator_user_id) ?? promotion.operator_user_id.slice(0, 8)}</TableCell>
-                          <TableCell>{promotion.applicable_tour?.title ?? 'All operator trips'}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{formatPromoWindow(promotion.starts_at, promotion.ends_at)}</TableCell>
+                          <TableCell>
+                            {operatorNameById.get(promotion.operator_user_id) ??
+                              promotion.operator_user_id.slice(0, 8)}
+                          </TableCell>
+                          <TableCell>
+                            {promotion.applicable_tour?.title ?? 'All operator trips'}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {formatPromoWindow(promotion.starts_at, promotion.ends_at)}
+                          </TableCell>
                           <TableCell>{promotion.is_active ? 'Active' : 'Inactive'}</TableCell>
                           <TableCell className="text-right">
                             {promotion.discount_type === 'percentage'
@@ -1862,7 +2564,11 @@ export default function AdminCommercialPage() {
                               : `PKR ${promotion.discount_value.toLocaleString()}`}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" onClick={() => handleEditPromotion(promotion)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPromotion(promotion)}
+                            >
                               Edit
                             </Button>
                           </TableCell>
@@ -1885,11 +2591,19 @@ export default function AdminCommercialPage() {
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Start date</label>
-                  <Input type="date" value={reportStartDate} onChange={(event) => setReportStartDate(event.target.value)} />
+                  <Input
+                    type="date"
+                    value={reportStartDate}
+                    onChange={(event) => setReportStartDate(event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">End date</label>
-                  <Input type="date" value={reportEndDate} onChange={(event) => setReportEndDate(event.target.value)} />
+                  <Input
+                    type="date"
+                    value={reportEndDate}
+                    onChange={(event) => setReportEndDate(event.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Operator</label>
@@ -1901,7 +2615,8 @@ export default function AdminCommercialPage() {
                       <SelectItem value="all">All operators</SelectItem>
                       {(overview?.operatorProfiles ?? []).map((profile) => (
                         <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
-                          {operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8)}
+                          {operatorNameById.get(profile.operator_user_id) ??
+                            profile.operator_user_id.slice(0, 8)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1916,7 +2631,9 @@ export default function AdminCommercialPage() {
                     <SelectContent>
                       <SelectItem value="all">All billing statuses</SelectItem>
                       {billingStatusOptions.map((status) => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1930,7 +2647,9 @@ export default function AdminCommercialPage() {
                     <SelectContent>
                       <SelectItem value="all">All payout statuses</SelectItem>
                       {payoutStatusOptions.map((status) => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1974,7 +2693,9 @@ export default function AdminCommercialPage() {
                     <SelectContent>
                       <SelectItem value="all">All tiers</SelectItem>
                       {tierOptions.map((tier) => (
-                        <SelectItem key={tier} value={tier}>{tier}</SelectItem>
+                        <SelectItem key={tier} value={tier}>
+                          {tier}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1988,7 +2709,9 @@ export default function AdminCommercialPage() {
                     <SelectContent>
                       <SelectItem value="all">All KYC states</SelectItem>
                       {kycOptions.map((status) => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1996,8 +2719,12 @@ export default function AdminCommercialPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" onClick={resetReportFilters}>Reset filters</Button>
-                <p className="text-xs text-muted-foreground">Exports use the filters and date window currently applied here.</p>
+                <Button variant="outline" onClick={resetReportFilters}>
+                  Reset filters
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Exports use the filters and date window currently applied here.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -2012,19 +2739,50 @@ export default function AdminCommercialPage() {
                   <HealthMetric label="Payout holds" value={String(opsReviewSummary.payoutHolds)} />
                   <HealthMetric label="Fraud review" value={String(opsReviewSummary.fraudReview)} />
                   <HealthMetric label="KYC blockers" value={String(opsReviewSummary.kycBlocked)} />
-                  <HealthMetric label="Recovery pending" value={String(opsReviewSummary.recoveryPending)} />
+                  <HealthMetric
+                    label="Recovery pending"
+                    value={String(opsReviewSummary.recoveryPending)}
+                  />
                 </div>
 
                 <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
                   <p className="font-medium text-foreground">Minimum review evidence</p>
-                  <p className="mt-2">Release holds only after KYC is approved, recovery exposure is explained, and the hold reason is already preserved in audit history.</p>
-                  <p className="mt-2">Resolve recoveries only after external payment proof, refund context, or finance approval is referenced in the resolution reason.</p>
+                  <p className="mt-2">
+                    Release holds only after KYC is approved, recovery exposure is explained, and
+                    the hold reason is already preserved in audit history.
+                  </p>
+                  <p className="mt-2">
+                    Resolve recoveries only after external payment proof, refund context, or finance
+                    approval is referenced in the resolution reason.
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => openReportSlice({ payoutStatus: 'on_hold', riskState: 'payout_hold' })}>Review payout holds</Button>
-                  <Button variant="outline" onClick={() => openReportSlice({ riskState: 'kyc_blocked' })}>Review KYC blockers</Button>
-                  <Button variant="outline" onClick={() => openReportSlice({ riskState: 'recovery_pending', payoutStatus: 'recovery_pending' })}>Review recoveries</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      openReportSlice({ payoutStatus: 'on_hold', riskState: 'payout_hold' })
+                    }
+                  >
+                    Review payout holds
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => openReportSlice({ riskState: 'kyc_blocked' })}
+                  >
+                    Review KYC blockers
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      openReportSlice({
+                        riskState: 'recovery_pending',
+                        payoutStatus: 'recovery_pending',
+                      })
+                    }
+                  >
+                    Review recoveries
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -2034,12 +2792,19 @@ export default function AdminCommercialPage() {
                 <CardTitle className="text-lg">Reconciliation alignment</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className={`rounded-lg border p-4 ${reconciliationChecks.releaseBlocker ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
+                <div
+                  className={`rounded-lg border p-4 ${reconciliationChecks.releaseBlocker ? 'border-amber-300 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}
+                >
                   <p className="text-sm font-medium text-foreground">
-                    {reconciliationChecks.releaseBlocker ? 'Release blocker: admin totals and row-backed totals diverge and should be reviewed before money-state changes.' : 'Admin finance totals align with the loaded billing and payout views.'}
+                    {reconciliationChecks.releaseBlocker
+                      ? 'Release blocker: admin totals and row-backed totals diverge and should be reviewed before money-state changes.'
+                      : 'Admin finance totals align with the loaded billing and payout views.'}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Billing formula breaks: {reconciliationChecks.formulaBreakCount}. Prior-cycle commission credit: {formatMoney(reconciliationChecks.totalPriorCommissionCredit)}. Final invoice charges: {formatMoney(reconciliationChecks.totalFinalMembershipCharge)}.
+                    Billing formula breaks: {reconciliationChecks.formulaBreakCount}. Prior-cycle
+                    commission credit:{' '}
+                    {formatMoney(reconciliationChecks.totalPriorCommissionCredit)}. Final invoice
+                    charges: {formatMoney(reconciliationChecks.totalFinalMembershipCharge)}.
                   </p>
                 </div>
 
@@ -2058,7 +2823,11 @@ export default function AdminCommercialPage() {
                         <TableCell>{row.label}</TableCell>
                         <TableCell className="text-right">{formatMoney(row.source)}</TableCell>
                         <TableCell className="text-right">{formatMoney(row.derived)}</TableCell>
-                        <TableCell className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}>{formatSignedMoney(row.delta)}</TableCell>
+                        <TableCell
+                          className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}
+                        >
+                          {formatSignedMoney(row.delta)}
+                        </TableCell>
                       </TableRow>
                     ))}
                     {reconciliationChecks.billingComparisons.map((row) => (
@@ -2066,7 +2835,11 @@ export default function AdminCommercialPage() {
                         <TableCell>{row.label}</TableCell>
                         <TableCell className="text-right">{formatMoney(row.source)}</TableCell>
                         <TableCell className="text-right">{formatMoney(row.derived)}</TableCell>
-                        <TableCell className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}>{formatSignedMoney(row.delta)}</TableCell>
+                        <TableCell
+                          className={`text-right ${Math.abs(row.delta) <= 0.01 ? 'text-emerald-600' : 'text-amber-600'}`}
+                        >
+                          {formatSignedMoney(row.delta)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -2075,11 +2848,15 @@ export default function AdminCommercialPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-sm text-muted-foreground">Operator-funded promo discounts</p>
-                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(reconciliationChecks.operatorFundedPromoDiscountTotal)}</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {formatMoney(reconciliationChecks.operatorFundedPromoDiscountTotal)}
+                    </p>
                   </div>
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-sm text-muted-foreground">Platform-funded promo discounts</p>
-                    <p className="mt-2 text-xl font-bold text-foreground">{formatMoney(reconciliationChecks.platformFundedPromoDiscountTotal)}</p>
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {formatMoney(reconciliationChecks.platformFundedPromoDiscountTotal)}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -2090,7 +2867,8 @@ export default function AdminCommercialPage() {
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Billing lifecycle</CardTitle>
               <Button variant="outline" size="sm" onClick={exportBillingLifecycleCsv}>
-                <Download className="mr-2 h-4 w-4" />Export CSV
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </CardHeader>
             <CardContent>
@@ -2109,18 +2887,33 @@ export default function AdminCommercialPage() {
                 <TableBody>
                   {reportBillingRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">No billing cycles match the current filters.</TableCell>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                        No billing cycles match the current filters.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     reportBillingRows.map((row) => (
                       <TableRow key={row.billing_cycle_id}>
-                        <TableCell>{operatorNameById.get(row.operator_user_id) ?? row.operator_user_id.slice(0, 8)}</TableCell>
-                        <TableCell>{formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}</TableCell>
+                        <TableCell>
+                          {operatorNameById.get(row.operator_user_id) ??
+                            row.operator_user_id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(row.cycle_start)} to {formatDate(row.cycle_end)}
+                        </TableCell>
                         <TableCell>{row.invoice_status}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.membership_fee)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.prior_cycle_commission_credit)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.adjustment_applied)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.final_membership_charge)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.membership_fee)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.prior_cycle_commission_credit)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.adjustment_applied)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.final_membership_charge)}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -2133,7 +2926,8 @@ export default function AdminCommercialPage() {
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Payout operations</CardTitle>
               <Button variant="outline" size="sm" onClick={exportPayoutOperationsCsv}>
-                <Download className="mr-2 h-4 w-4" />Export CSV
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </CardHeader>
             <CardContent>
@@ -2153,19 +2947,32 @@ export default function AdminCommercialPage() {
                 <TableBody>
                   {reportPayoutRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground">No payout items match the current filters.</TableCell>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
+                        No payout items match the current filters.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     reportPayoutRows.map((row) => (
                       <TableRow key={row.payout_item_id}>
-                        <TableCell>{operatorNameById.get(row.operator_user_id) ?? row.operator_user_id.slice(0, 8)}</TableCell>
+                        <TableCell>
+                          {operatorNameById.get(row.operator_user_id) ??
+                            row.operator_user_id.slice(0, 8)}
+                        </TableCell>
                         <TableCell>{row.trip_name ?? row.booking_id.slice(0, 8)}</TableCell>
                         <TableCell>{row.payout_status}</TableCell>
                         <TableCell>{row.batch_reference ?? 'Unbatched'}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.operator_payable_amount)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.commission_remaining)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.recovery_amount)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.promo_discount_value)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.operator_payable_amount)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.commission_remaining)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.recovery_amount)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.promo_discount_value)}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -2178,7 +2985,8 @@ export default function AdminCommercialPage() {
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Promo performance</CardTitle>
               <Button variant="outline" size="sm" onClick={exportPromoPerformanceCsv}>
-                <Download className="mr-2 h-4 w-4" />Export CSV
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </CardHeader>
             <CardContent>
@@ -2198,7 +3006,9 @@ export default function AdminCommercialPage() {
                 <TableBody>
                   {promoPerformanceRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground">No promotions match the current filters.</TableCell>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
+                        No promotions match the current filters.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     promoPerformanceRows.map((row) => (
@@ -2213,9 +3023,15 @@ export default function AdminCommercialPage() {
                         <TableCell>{row.funding_source}</TableCell>
                         <TableCell>{row.is_active ? 'Active' : 'Inactive'}</TableCell>
                         <TableCell className="text-right">{row.bookings_count}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.discount_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.commission_remaining_exposure)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.operator_payable_total)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.discount_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.commission_remaining_exposure)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.operator_payable_total)}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -2228,7 +3044,8 @@ export default function AdminCommercialPage() {
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Operator risk signals</CardTitle>
               <Button variant="outline" size="sm" onClick={exportRiskReviewCsv}>
-                <Download className="mr-2 h-4 w-4" />Export CSV
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </CardHeader>
             <CardContent>
@@ -2247,7 +3064,9 @@ export default function AdminCommercialPage() {
                 <TableBody>
                   {operatorRiskRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">No operators match the current filters.</TableCell>
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                        No operators match the current filters.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     operatorRiskRows.map((row) => (
@@ -2256,9 +3075,15 @@ export default function AdminCommercialPage() {
                         <TableCell>{row.membership_tier_code}</TableCell>
                         <TableCell>{row.kyc_status}</TableCell>
                         <TableCell>{formatRiskState(row.primary_risk)}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{row.risk_signals.join(' · ')}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.on_hold_exposure)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.recovery_exposure)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {row.risk_signals.join(' · ')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.on_hold_exposure)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.recovery_exposure)}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -2288,19 +3113,33 @@ export default function AdminCommercialPage() {
                 <TableBody>
                   {trendRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground">No trend data is available for the current filters.</TableCell>
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
+                        No trend data is available for the current filters.
+                      </TableCell>
                     </TableRow>
                   ) : (
                     trendRows.map((row) => (
                       <TableRow key={row.month_key}>
                         <TableCell>{row.month_label}</TableCell>
                         <TableCell className="text-right">{row.billing_cycles_closed}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.invoiced_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.commission_credit_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.payouts_paid_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.payouts_scheduled_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.promo_discount_total)}</TableCell>
-                        <TableCell className="text-right">{formatMoney(row.recovery_pending_total)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.invoiced_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.commission_credit_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.payouts_paid_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.payouts_scheduled_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.promo_discount_total)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatMoney(row.recovery_pending_total)}
+                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -2315,7 +3154,8 @@ export default function AdminCommercialPage() {
             <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <CardTitle className="text-lg">Commercial audit history</CardTitle>
               <Button variant="outline" size="sm" onClick={exportAuditHistoryCsv}>
-                <Download className="mr-2 h-4 w-4" />Export CSV
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -2330,7 +3170,8 @@ export default function AdminCommercialPage() {
                       <SelectItem value="all">All operators</SelectItem>
                       {(overview?.operatorProfiles ?? []).map((profile) => (
                         <SelectItem key={profile.operator_user_id} value={profile.operator_user_id}>
-                          {operatorNameById.get(profile.operator_user_id) ?? profile.operator_user_id.slice(0, 8)}
+                          {operatorNameById.get(profile.operator_user_id) ??
+                            profile.operator_user_id.slice(0, 8)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -2339,7 +3180,10 @@ export default function AdminCommercialPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Entity type</label>
-                  <Select value={historyEntityTypeFilter} onValueChange={setHistoryEntityTypeFilter}>
+                  <Select
+                    value={historyEntityTypeFilter}
+                    onValueChange={setHistoryEntityTypeFilter}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -2356,7 +3200,10 @@ export default function AdminCommercialPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Action type</label>
-                  <Select value={historyActionTypeFilter} onValueChange={setHistoryActionTypeFilter}>
+                  <Select
+                    value={historyActionTypeFilter}
+                    onValueChange={setHistoryActionTypeFilter}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -2394,24 +3241,42 @@ export default function AdminCommercialPage() {
                     visibleAuditRows.map((row) => {
                       const previousState = asObject(row.previous_state)
                       const nextState = asObject(row.new_state)
-                      const entityLabel = row.entity_type === 'commercial_profile'
-                        ? (operatorNameById.get(row.entity_id) ?? row.entity_id.slice(0, 8))
-                        : row.entity_type === 'promotion'
-                          ? String(nextState?.title ?? previousState?.title ?? nextState?.code ?? previousState?.code ?? row.entity_id.slice(0, 8))
-                        : row.entity_type === 'payout_batch'
-                          ? String(nextState?.batch_reference ?? previousState?.batch_reference ?? row.entity_id.slice(0, 8))
-                          : String(nextState?.booking_id ?? previousState?.booking_id ?? row.entity_id.slice(0, 8))
-                      const stateSummary = row.action_type === 'membership_tier_changed'
-                        ? `${String(previousState?.previous_tier_code ?? '—')} -> ${String(nextState?.new_tier_code ?? '—')}`
-                        : row.action_type === 'payout_hold_applied' || row.action_type === 'payout_hold_released'
-                          ? `${String(previousState?.payout_hold ?? '—')} -> ${String(nextState?.payout_hold ?? '—')}`
-                          : row.action_type === 'payout_batch_reversed'
-                            ? `${String(previousState?.status ?? '—')} -> ${String(nextState?.status ?? '—')}`
-                            : row.action_type === 'payout_recovery_resolved'
-                              ? `${String(previousState?.recovery_amount ?? '—')} -> ${String(nextState?.remaining_recovery_amount ?? '—')}`
-                              : row.action_type === 'promotion_created' || row.action_type === 'promotion_updated'
-                                ? `${String(previousState?.code ?? 'new')} -> ${String(nextState?.code ?? previousState?.code ?? '—')}`
-                              : '—'
+                      const entityLabel =
+                        row.entity_type === 'commercial_profile'
+                          ? (operatorNameById.get(row.entity_id) ?? row.entity_id.slice(0, 8))
+                          : row.entity_type === 'promotion'
+                            ? String(
+                                nextState?.title ??
+                                  previousState?.title ??
+                                  nextState?.code ??
+                                  previousState?.code ??
+                                  row.entity_id.slice(0, 8),
+                              )
+                            : row.entity_type === 'payout_batch'
+                              ? String(
+                                  nextState?.batch_reference ??
+                                    previousState?.batch_reference ??
+                                    row.entity_id.slice(0, 8),
+                                )
+                              : String(
+                                  nextState?.booking_id ??
+                                    previousState?.booking_id ??
+                                    row.entity_id.slice(0, 8),
+                                )
+                      const stateSummary =
+                        row.action_type === 'membership_tier_changed'
+                          ? `${String(previousState?.previous_tier_code ?? '—')} -> ${String(nextState?.new_tier_code ?? '—')}`
+                          : row.action_type === 'payout_hold_applied' ||
+                              row.action_type === 'payout_hold_released'
+                            ? `${String(previousState?.payout_hold ?? '—')} -> ${String(nextState?.payout_hold ?? '—')}`
+                            : row.action_type === 'payout_batch_reversed'
+                              ? `${String(previousState?.status ?? '—')} -> ${String(nextState?.status ?? '—')}`
+                              : row.action_type === 'payout_recovery_resolved'
+                                ? `${String(previousState?.recovery_amount ?? '—')} -> ${String(nextState?.remaining_recovery_amount ?? '—')}`
+                                : row.action_type === 'promotion_created' ||
+                                    row.action_type === 'promotion_updated'
+                                  ? `${String(previousState?.code ?? 'new')} -> ${String(nextState?.code ?? previousState?.code ?? '—')}`
+                                  : '—'
 
                       return (
                         <TableRow key={row.id}>
@@ -2420,17 +3285,27 @@ export default function AdminCommercialPage() {
                           <TableCell>
                             <div>
                               <p className="font-medium text-foreground">{entityLabel}</p>
-                              <p className="text-xs text-muted-foreground">{formatAuditEntityType(row.entity_type)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatAuditEntityType(row.entity_type)}
+                              </p>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-medium text-foreground">{row.admin_email ?? row.admin_id.slice(0, 8)}</p>
-                              <p className="text-xs text-muted-foreground">{row.admin_role ?? 'admin'}</p>
+                              <p className="font-medium text-foreground">
+                                {row.admin_email ?? row.admin_id.slice(0, 8)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {row.admin_role ?? 'admin'}
+                              </p>
                             </div>
                           </TableCell>
-                          <TableCell className="max-w-[240px] text-sm text-muted-foreground">{row.reason ?? '—'}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{stateSummary}</TableCell>
+                          <TableCell className="max-w-[240px] text-sm text-muted-foreground">
+                            {row.reason ?? '—'}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {stateSummary}
+                          </TableCell>
                         </TableRow>
                       )
                     })

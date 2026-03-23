@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { bookingMessengerService } from '@/features/messaging/services/bookingMessengerService'
 import { supabase } from '@/lib/supabase'
 
@@ -148,6 +150,12 @@ export interface OperatorPayoutDisputeUpsert {
   reason_summary: string
   evidence_notes?: string | null
   reconciliation_report?: Record<string, unknown>
+}
+
+export interface OperatorPayoutDisputeSubmissionResult {
+  disputeCase: OperatorPayoutDisputeCase
+  supportEscalatedAt: string | null
+  supportEscalationError: string | null
 }
 
 export interface CommercialAuditLogRow {
@@ -347,6 +355,24 @@ export interface MembershipTierReportRow {
 function toNumber(value: unknown): number {
   const parsed = Number(value ?? 0)
   return Number.isFinite(parsed) ? parsed : 0
+}
+
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message.trim()
+
+  if (error && typeof error === 'object') {
+    const maybeMessage = 'message' in error ? error.message : null
+    const maybeDetails = 'details' in error ? error.details : null
+    const parts = [maybeMessage, maybeDetails].filter(
+      (value): value is string => typeof value === 'string' && value.trim().length > 0,
+    )
+
+    if (parts.length > 0) {
+      return parts.join(' ')
+    }
+  }
+
+  return fallback
 }
 
 function mapProfile(row: any): OperatorCommercialProfile {
@@ -746,17 +772,45 @@ export const commercialService = {
     return (data ?? []).map(mapPayoutDisputeCase)
   },
 
+  async listAdminPayoutDisputeCases(): Promise<OperatorPayoutDisputeCase[]> {
+    const { data, error } = await (supabase.from('operator_payout_dispute_cases' as any) as any)
+      .select(
+        'id, operator_user_id, payout_item_id, booking_id, conversation_id, dispute_category, requested_action, status, reason_summary, evidence_notes, reconciliation_report, support_escalated_at, created_at, updated_at',
+      )
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return (data ?? []).map(mapPayoutDisputeCase)
+  },
+
   async submitOperatorPayoutDisputeCase(
     payload: OperatorPayoutDisputeUpsert,
-  ): Promise<OperatorPayoutDisputeCase> {
+  ): Promise<OperatorPayoutDisputeSubmissionResult> {
     const conversation = await bookingMessengerService.getOrCreateConversation(
       'tour_booking',
       payload.booking_id,
     )
-    const escalation = await bookingMessengerService.escalateSupport({
-      conversationId: conversation.conversationId,
-      reason: `${payload.dispute_category}: ${payload.reason_summary.trim()}`,
-    })
+    let supportEscalatedAt: string | null = null
+    let supportEscalationError: string | null = null
+
+    try {
+      const escalation = await bookingMessengerService.escalateSupport({
+        conversationId: conversation.conversationId,
+        reason: `${payload.dispute_category}: ${payload.reason_summary.trim()}`,
+      })
+      supportEscalatedAt = escalation.supportEscalatedAt
+    } catch (error) {
+      supportEscalationError = toErrorMessage(
+        error,
+        'Booking support escalation could not be completed automatically.',
+      )
+    }
+
+    const reconciliationReport = {
+      ...(payload.reconciliation_report ?? {}),
+      support_escalation_status: supportEscalationError ? 'failed' : 'submitted',
+      support_escalation_error: supportEscalationError,
+    }
 
     const { data, error } = await (supabase.from('operator_payout_dispute_cases' as any) as any)
       .insert({
@@ -769,9 +823,32 @@ export const commercialService = {
         status: 'submitted',
         reason_summary: payload.reason_summary.trim(),
         evidence_notes: payload.evidence_notes?.trim() || null,
-        reconciliation_report: payload.reconciliation_report ?? {},
-        support_escalated_at: escalation.supportEscalatedAt,
+        reconciliation_report: reconciliationReport,
+        support_escalated_at: supportEscalatedAt,
       })
+      .select(
+        'id, operator_user_id, payout_item_id, booking_id, conversation_id, dispute_category, requested_action, status, reason_summary, evidence_notes, reconciliation_report, support_escalated_at, created_at, updated_at',
+      )
+      .single()
+
+    if (error) throw error
+    return {
+      disputeCase: mapPayoutDisputeCase(data),
+      supportEscalatedAt,
+      supportEscalationError,
+    }
+  },
+
+  async updateOperatorPayoutDisputeCaseStatus(
+    disputeCaseId: string,
+    status: OperatorPayoutDisputeStatus,
+  ): Promise<OperatorPayoutDisputeCase> {
+    const { data, error } = await (supabase.from('operator_payout_dispute_cases' as any) as any)
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', disputeCaseId)
       .select(
         'id, operator_user_id, payout_item_id, booking_id, conversation_id, dispute_category, requested_action, status, reason_summary, evidence_notes, reconciliation_report, support_escalated_at, created_at, updated_at',
       )

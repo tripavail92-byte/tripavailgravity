@@ -158,6 +158,36 @@ async function updatePassword(userId, password) {
   if (error) throw error
 }
 
+async function ensurePublicUserMirror(userId, email) {
+  const { error: userError } = await supabaseService.from('users').upsert(
+    {
+      id: userId,
+      email,
+    },
+    { onConflict: 'id' },
+  )
+  if (userError) throw userError
+
+  const { error: roleError } = await supabaseService.from('user_roles').upsert(
+    {
+      user_id: userId,
+      role_type: 'traveller',
+      is_active: true,
+      verification_status: 'pending',
+    },
+    { onConflict: 'user_id,role_type' },
+  )
+  if (roleError) throw roleError
+
+  const { error: profileError } = await supabaseService.from('traveller_profiles').upsert(
+    {
+      user_id: userId,
+    },
+    { onConflict: 'user_id' },
+  )
+  if (profileError) throw profileError
+}
+
 async function upsertAdminUser(userId, email, role) {
   const { error } = await supabaseService
     .from('admin_users')
@@ -251,6 +281,10 @@ async function main() {
       console.log(` - ${x.who}: ${x.email} -> ${x.envKey}=${x.ensured.password}`)
     }
   }
+
+  await ensurePublicUserMirror(superId, superEmail)
+  await ensurePublicUserMirror(supportId, supportEmail)
+  await ensurePublicUserMirror(normalId, normalEmail)
 
   await upsertAdminUser(superId, superEmail, 'super_admin')
   console.log('[OK] super_admin:', superEmail)

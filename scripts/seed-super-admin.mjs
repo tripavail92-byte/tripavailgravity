@@ -67,6 +67,39 @@ const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 
+async function ensurePublicUserMirror(userId, userEmail) {
+  const { error: userError } = await supabase.from('users').upsert(
+    {
+      id: userId,
+      email: userEmail,
+    },
+    { onConflict: 'id' },
+  )
+
+  if (userError) throw userError
+
+  const { error: roleError } = await supabase.from('user_roles').upsert(
+    {
+      user_id: userId,
+      role_type: 'traveller',
+      is_active: true,
+      verification_status: 'pending',
+    },
+    { onConflict: 'user_id,role_type' },
+  )
+
+  if (roleError) throw roleError
+
+  const { error: profileError } = await supabase.from('traveller_profiles').upsert(
+    {
+      user_id: userId,
+    },
+    { onConflict: 'user_id' },
+  )
+
+  if (profileError) throw profileError
+}
+
 console.log('Seeding super admin (no secrets printed)')
 console.log('Supabase host:', new URL(supabaseUrl).host)
 
@@ -85,6 +118,16 @@ if (createError) {
 const userId = created.user?.id
 if (!userId) {
   console.error('Auth user created but missing id')
+  process.exit(1)
+}
+
+try {
+  await ensurePublicUserMirror(userId, email)
+} catch (mirrorError) {
+  console.error(
+    'Failed to create public.users mirror for admin account:',
+    mirrorError instanceof Error ? mirrorError.message : String(mirrorError),
+  )
   process.exit(1)
 }
 
