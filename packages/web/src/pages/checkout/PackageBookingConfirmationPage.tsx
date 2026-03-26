@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { handlePackagePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
+import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
   getTravelerBookingOutcomeSummary,
   getTravelerBookingSettlementState,
@@ -35,6 +36,57 @@ export default function PackageBookingConfirmationPage() {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
+    })
+  }
+
+  const handleDownloadReceipt = () => {
+    if (!booking) return
+
+    downloadBookingReceipt({
+      fileName: `tripavail-package-booking-${booking.id.slice(0, 8).toLowerCase()}.html`,
+      title: outcome.title,
+      subtitle: outcome.message,
+      confirmationNumber: booking.id.slice(0, 8).toUpperCase(),
+      sections: [
+        {
+          title: 'Package details',
+          rows: [
+            { label: 'Package', value: pkg?.name || booking.package_id || 'Package booking' },
+            { label: 'Type', value: pkg?.package_type?.replace('-', ' ') || 'Package' },
+            { label: 'Check-in', value: formatDate(booking.check_in_date) || 'See booking workspace' },
+            { label: 'Check-out', value: formatDate(booking.check_out_date) || 'See booking workspace' },
+            {
+              label: 'Stay length',
+              value: booking.number_of_nights
+                ? `${booking.number_of_nights} night${booking.number_of_nights === 1 ? '' : 's'}`
+                : 'See booking workspace',
+            },
+            { label: 'Guests', value: String(booking.guest_count || 0) },
+          ],
+        },
+        {
+          title: 'Payment breakdown',
+          rows: [
+            { label: 'Booking status', value: booking.status || 'confirmed' },
+            { label: 'Payment status', value: booking.payment_status || 'paid' },
+            { label: 'Total booking amount', value: formatMoney(settlementState.totalAmount) },
+            { label: 'Paid online', value: formatMoney(settlementState.paidOnline) },
+            { label: 'Remaining to operator', value: formatMoney(settlementState.remainingAmount) },
+            {
+              label: 'Payment mode',
+              value: settlementState.remainingAmount > 0 ? 'Deposit booking' : 'Full payment online',
+            },
+            {
+              label: 'Payment policy',
+              value: booking.payment_policy_text || 'See booking workspace for the latest payment policy details',
+            },
+          ],
+        },
+        {
+          title: 'Receipt notes',
+          bullets: nextSteps,
+        },
+      ],
     })
   }
 
@@ -357,7 +409,7 @@ export default function PackageBookingConfirmationPage() {
                 <Link to={`/trips/${booking.id}?tab=messages`}>Message Host</Link>
               </Button>
             ) : null}
-            <Button variant="outline" onClick={() => window.print()} className="w-full h-12 rounded-2xl font-bold">
+            <Button variant="outline" onClick={handleDownloadReceipt} className="w-full h-12 rounded-2xl font-bold">
               <Download className="mr-2 h-4 w-4" />
               Download Confirmation / Receipt
             </Button>

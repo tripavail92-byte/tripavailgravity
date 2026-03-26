@@ -13,6 +13,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { handlePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
+import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
   getTravelerBookingOutcomeSummary,
   getTravelerBookingSettlementState,
@@ -151,6 +152,55 @@ export default function BookingConfirmationPage() {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
+    })
+  }
+
+  const handleDownloadReceipt = () => {
+    if (!confirmedBooking) return
+
+    downloadBookingReceipt({
+      fileName: `tripavail-tour-booking-${confirmedBooking.id.slice(0, 8).toLowerCase()}.html`,
+      title: outcome.title,
+      subtitle: outcome.message,
+      confirmationNumber: confirmedBooking.id.slice(0, 8).toUpperCase(),
+      sections: [
+        {
+          title: 'Tour details',
+          rows: [
+            { label: 'Tour name', value: tour?.title || confirmedBooking.tour_id || 'Tour booking' },
+            { label: 'Location', value: tour ? `${tour.location.city}, ${tour.location.country}` : 'See booking workspace' },
+            { label: 'Duration', value: tour?.duration || 'See booking workspace' },
+          ],
+        },
+        {
+          title: 'Departure details',
+          rows: schedule
+            ? [
+                { label: 'Departure', value: `${formatDate(schedule.start_time)} at ${formatTime(schedule.start_time)}` },
+                { label: 'Return', value: `${formatDate(schedule.end_time)} at ${formatTime(schedule.end_time)}` },
+              ]
+            : [{ label: 'Departure status', value: 'Schedule details available in your booking workspace' }],
+        },
+        {
+          title: 'Booking summary',
+          rows: [
+            { label: 'Guests', value: String(confirmedBooking.pax_count ?? 0) },
+            { label: 'Booking status', value: confirmedBooking.status || 'confirmed' },
+            { label: 'Payment status', value: confirmedBooking.payment_status || 'paid' },
+            { label: 'Total booking amount', value: formatMoney(settlementState.totalAmount) },
+            { label: 'Paid online', value: formatMoney(settlementState.paidOnline) },
+            { label: 'Remaining balance', value: formatMoney(settlementState.remainingAmount) },
+            {
+              label: 'Balance payment method',
+              value: settlementState.remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online',
+            },
+          ],
+        },
+        {
+          title: 'Receipt notes',
+          bullets: nextSteps,
+        },
+      ],
     })
   }
 
@@ -462,7 +512,7 @@ export default function BookingConfirmationPage() {
             ) : null}
             <Button
               variant="outline"
-              onClick={() => window.print()}
+              onClick={handleDownloadReceipt}
               className="w-full h-12 rounded-xl"
             >
               <Download className="w-4 h-4 mr-2" />
