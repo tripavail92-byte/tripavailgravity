@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { bookingService } from '@/features/booking/services/bookingService'
 import { getTravelerBookingSettlementState } from '@/features/booking/utils/travelerBookingPresentation'
 import { useAuth } from '@/hooks/useAuth'
@@ -90,20 +91,23 @@ export default function MyTripsPage() {
             </p>
           </div>
 
-          <div className="flex bg-muted p-1 rounded-xl">
-            {(['upcoming', 'past'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                  activeTab === tab
-                    ? 'bg-background text-primary shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab}
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="flex bg-muted p-1 rounded-xl">
+              {(['upcoming', 'past'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                    activeTab === tab
+                      ? 'bg-background text-primary shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab}
               </button>
             ))}
+            </div>
           </div>
         </div>
       </div>

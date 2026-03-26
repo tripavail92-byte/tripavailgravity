@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { useAuth } from '@/hooks/useAuth'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { cn } from '@/lib/utils'
@@ -98,9 +99,12 @@ export default function MessagesInboxPage() {
           subtitle="Reservation-scoped inbox with unread state, mute controls, and direct booking context for every conversation."
           showBackButton={false}
           actions={
-            <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
-              <Link to="/help">Help hub</Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
+                <Link to="/help">Help hub</Link>
+              </Button>
+            </div>
           }
         />
 

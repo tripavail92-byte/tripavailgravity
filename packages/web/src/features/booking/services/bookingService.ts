@@ -180,7 +180,7 @@ export const tourBookingService = {
     const { data, error } = await supabase
       .from('tour_bookings')
       .select(
-        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
+        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy, pickup_locations), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
       )
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false })
@@ -193,7 +193,7 @@ export const tourBookingService = {
     const { data, error } = await supabase
       .from('tour_bookings')
       .select(
-        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
+        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy, pickup_locations), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
       )
       .eq('traveler_id', travelerId)
       .eq('id', bookingId)

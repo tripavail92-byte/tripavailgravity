@@ -23,6 +23,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import {
   Dialog,
   DialogContent,
@@ -341,6 +342,7 @@ export default function MessageThreadPage() {
           backPath="/messages"
           actions={
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <Button
                 type="button"
                 variant="outline"

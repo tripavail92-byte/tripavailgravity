@@ -3,6 +3,8 @@ import {
   AlertTriangle,
   Calendar,
   CreditCard,
+  ExternalLink,
+  Headphones,
   Loader2,
   MapPin,
   MessageSquare,
@@ -15,6 +17,7 @@ import toast from 'react-hot-toast'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 
 import { BookingConversationPanel } from '@/components/messaging/BookingConversationPanel'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -159,6 +162,7 @@ export default function TravelerBookingDetailPage() {
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
   const itinerary = Array.isArray(booking?.tours?.itinerary) ? booking.tours.itinerary : []
+  const pickupLocations = Array.isArray(booking?.tours?.pickup_locations) ? booking.tours.pickup_locations : []
   const operatorCompletionConfirmedAt =
     typeof booking?.metadata?.operator_completion_confirmed_at === 'string'
       ? booking.metadata.operator_completion_confirmed_at
@@ -360,6 +364,7 @@ export default function TravelerBookingDetailPage() {
           backPath="/trips"
           actions={
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
                 <Link to="/trips">All bookings</Link>
               </Button>
@@ -702,6 +707,65 @@ export default function TravelerBookingDetailPage() {
                       </div>
                     </div>
                   ) : null}
+
+                  {scope === 'tour_booking' && pickupLocations.length > 0 ? (
+                    <div className="space-y-4 border-t border-border/60 pt-6">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Pickup locations
+                        </p>
+                        <h4 className="mt-1 text-base font-semibold text-foreground">
+                          Where your tour picks up
+                        </h4>
+                      </div>
+                      <div className="space-y-4">
+                        {pickupLocations.map((pickup: any, index: number) => (
+                          <div
+                            key={pickup.id ?? index}
+                            className="rounded-2xl border border-border/40 bg-muted/20 p-4 space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                                <span className="text-sm font-semibold text-foreground">
+                                  {pickup.title ?? pickup.name ?? `Stop ${index + 1}`}
+                                </span>
+                              </div>
+                              {pickup.is_primary ? (
+                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+                                  Primary
+                                </span>
+                              ) : null}
+                            </div>
+                            {pickup.formatted_address ? (
+                              <p className="text-sm text-muted-foreground pl-6">{pickup.formatted_address}</p>
+                            ) : null}
+                            {pickup.pickup_time ? (
+                              <p className="text-sm text-muted-foreground pl-6">
+                                Pickup: <span className="font-medium text-foreground">{pickup.pickup_time}</span>
+                              </p>
+                            ) : null}
+                            {pickup.notes ? (
+                              <p className="text-sm text-muted-foreground pl-6 italic">{pickup.notes}</p>
+                            ) : null}
+                            {pickup.formatted_address ? (
+                              <div className="pl-6">
+                                <a
+                                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pickup.formatted_address)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  Get directions
+                                </a>
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </GlassCard>
 
@@ -737,6 +801,33 @@ export default function TravelerBookingDetailPage() {
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Open Messages
+                    </Button>
+                  </div>
+                </GlassCard>
+
+                <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
+                  <div className="space-y-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-info/10 text-info">
+                      <Headphones className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Support
+                      </p>
+                      <h3 className="mt-1 text-lg font-semibold text-foreground">Need help with this booking?</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Open the booking thread to message your {counterpartLabel} directly. If you need platform support, use the escalation option inside the messages tab.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl border-border/60 bg-background/80"
+                      onClick={() => setTab('messages')}
+                      disabled={!messagingUnlocked}
+                    >
+                      <Headphones className="mr-2 h-4 w-4" />
+                      Get support
                     </Button>
                   </div>
                 </GlassCard>
