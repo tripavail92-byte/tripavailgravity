@@ -15,6 +15,11 @@ export default function RefundsPage() {
             refund eligibility depends on the listing and the Provider’s cancellation policy shown
             at checkout.
           </p>
+          <p>
+            TripAvail charges eligible card payments as merchant of record, while Providers are
+            responsible for delivering the booked service and honoring listing-specific fulfillment
+            terms.
+          </p>
 
           <h2>1. Provider cancellation terms</h2>
           <p>
@@ -46,6 +51,10 @@ export default function RefundsPage() {
           <p>
             If something went wrong, contact support first so we can help quickly. Filing a
             chargeback can slow resolution and may limit future use of the Service.
+          </p>
+          <p>
+            We maintain booking confirmations, provider communication, and refund records so that
+            disputed payments can be reviewed against the original booking and fulfillment history.
           </p>
 
           <h2>6. Contact</h2>

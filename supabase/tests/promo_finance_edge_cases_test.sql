@@ -669,6 +669,7 @@ END $$;
 
 DO $$
 DECLARE
+  v_finance_admin UUID := gen_random_uuid();
   v_batch RECORD;
 BEGIN
   PERFORM set_config(

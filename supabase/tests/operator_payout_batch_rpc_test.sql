@@ -353,6 +353,7 @@ SET
 
 DO $$
 DECLARE
+  v_finance_admin UUID := gen_random_uuid();
   v_batch RECORD;
   v_paid RECORD;
   v_reversed RECORD;

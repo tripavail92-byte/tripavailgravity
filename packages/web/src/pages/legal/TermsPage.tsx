@@ -23,6 +23,14 @@ export default function TermsPage() {
             packages, and accommodations) offered by third-party providers ("Providers"). Providers
             are responsible for delivering the booked services.
           </p>
+          <p>
+            TripAvail is the merchant of record for card payments processed through the platform,
+            while Providers remain responsible for delivering the underlying travel service.
+          </p>
+          <p>
+            Listing pages and checkout flows identify whether a booking is instant confirmation or
+            subject to provider confirmation or follow-up before fulfillment.
+          </p>
 
           <h2>2. Eligibility and Accounts</h2>
           <p>
@@ -41,6 +49,10 @@ export default function TermsPage() {
           <p>
             Payments are processed securely through our payment processor. We do not store your full
             card details. Your statement may show a descriptor related to {COMPANY.name}.
+          </p>
+          <p>
+            If only a deposit is collected online, checkout and confirmation pages will show the
+            remaining balance due directly to the Provider before travel.
           </p>
 
           <h2>5. Cancellations and Refunds</h2>
