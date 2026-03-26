@@ -1,11 +1,19 @@
 import { formatDistanceToNow } from 'date-fns'
-import { Loader2, Lock, MessageSquare, Send } from 'lucide-react'
+import { Loader2, Lock, MessageSquare, Send, ShieldAlert } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { GlassCard } from '@/components/ui/glass'
 import { Textarea } from '@/components/ui/textarea'
 import { useAuth } from '@/hooks/useAuth'
@@ -17,6 +25,7 @@ import {
   messagingKeys,
   useBookingConversationMessages,
   useBookingConversations,
+  useEscalateConversationSupport,
   useEnsureBookingConversation,
   useMarkConversationRead,
   useSendBookingMessage,
@@ -42,6 +51,8 @@ export function BookingConversationPanel({
   const { user } = useAuth()
   const [conversationId, setConversationId] = useState<string | undefined>(undefined)
   const [composerValue, setComposerValue] = useState('')
+  const [showEscalationDialog, setShowEscalationDialog] = useState(false)
+  const [escalationReason, setEscalationReason] = useState('')
 
   const conversationsQuery = useBookingConversations({ limit: 200 })
 
@@ -75,6 +86,16 @@ export function BookingConversationPanel({
     },
     onError: (error) => {
       toast.error(error.message || 'Message could not be sent')
+    },
+  })
+  const escalateSupport = useEscalateConversationSupport({
+    onSuccess: () => {
+      toast.success('Support escalation sent')
+      setShowEscalationDialog(false)
+      setEscalationReason('')
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Support escalation failed')
     },
   })
   const markRead = useMarkConversationRead()
@@ -181,11 +202,23 @@ export function BookingConversationPanel({
             </p>
             <h3 className="mt-1 text-lg font-semibold text-foreground">Talk to your {counterpartLabel}</h3>
           </div>
-          <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
-            <Link to={conversationId ? `/messages/${conversationId}` : `/messages?scope=${scope}&bookingId=${bookingId}`}>
-              Open full thread
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-border/60 bg-background/80"
+              onClick={() => setShowEscalationDialog(true)}
+              disabled={!conversationId || escalateSupport.isPending}
+            >
+              <ShieldAlert className="mr-2 h-4 w-4" />
+              Escalate support
+            </Button>
+            <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
+              <Link to={conversationId ? `/messages/${conversationId}` : `/messages?scope=${scope}&bookingId=${bookingId}`}>
+                Open full thread
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <div className="max-h-[56vh] space-y-4 overflow-y-auto px-4 py-5 sm:px-5">
@@ -288,8 +321,57 @@ export function BookingConversationPanel({
             <p>Use it for pickup timing, itinerary coordination, change requests, and support-ready evidence if something goes wrong.</p>
             <p>{bookingLabel}</p>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-2xl border-border/60 bg-background/80"
+            onClick={() => setShowEscalationDialog(true)}
+            disabled={!conversationId || escalateSupport.isPending}
+          >
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            Escalate to support
+          </Button>
         </div>
       </GlassCard>
+
+      <Dialog open={showEscalationDialog} onOpenChange={setShowEscalationDialog}>
+        <DialogContent className="rounded-3xl border-border/60 bg-background/95 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Escalate to TripAvail support</DialogTitle>
+            <DialogDescription>
+              Bring support into this booking thread for payment disputes, safety concerns, or coordination issues that need intervention.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Textarea
+            value={escalationReason}
+            onChange={(event) => setEscalationReason(event.target.value)}
+            placeholder="Summarize what support should step in on"
+            className="min-h-[140px] rounded-2xl border-border/60 bg-background/80"
+          />
+
+          <DialogFooter>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setShowEscalationDialog(false)}>
+              Keep thread private
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              disabled={!conversationId || !escalationReason.trim() || escalateSupport.isPending}
+              onClick={() => {
+                if (!conversationId) return
+                escalateSupport.mutate({
+                  conversationId,
+                  reason: escalationReason.trim(),
+                })
+              }}
+            >
+              Invite support
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
