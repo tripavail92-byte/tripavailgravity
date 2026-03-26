@@ -192,6 +192,7 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
     <>
       <button
         data-tour="profile-menu"
+        aria-label={`${roleLabel} menu`}
         onClick={() => setIsOpen(true)}
         className={cn(
           'group shrink-0 rounded-full border p-1 pl-3 backdrop-blur-sm transition-shadow flex items-center gap-2',
@@ -202,9 +203,9 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
       >
         <AlignJustify className={cn('h-4 w-4 group-hover:text-primary', inverted ? 'text-white/72' : 'text-foreground')} />
         <Avatar className={cn('h-7 w-7 border', inverted ? 'border-white/10' : 'border-border')}>
-          <AvatarImage src={user?.user_metadata?.avatar_url} alt="Traveler" />
+          <AvatarImage src={user?.user_metadata?.avatar_url} alt="" />
           <AvatarFallback
-            aria-label="Traveler"
+            aria-hidden="true"
             className={cn(inverted ? 'bg-white/10 text-white/72' : 'bg-muted text-muted-foreground')}
           >
             {user?.email ? user.email.charAt(0).toUpperCase() : <MapPin className="h-4 w-4" />}

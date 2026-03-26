@@ -8,7 +8,13 @@ import { cn } from '@/lib/utils'
 
 export function DashboardHeader() {
   const { activeRole } = useAuth()
-  const roleTitle = activeRole?.role_type === 'tour_operator' ? 'Tour Operator' : 'Hotel Manager'
+  const roleTitle = activeRole?.role_type === 'tour_operator'
+    ? 'Tour Operator'
+    : activeRole?.role_type === 'hotel_manager'
+      ? 'Hotel Manager'
+      : activeRole?.role_type === 'admin'
+        ? 'Administrator'
+        : 'Traveler'
   const isPartnerChrome =
     activeRole?.role_type === 'tour_operator' || activeRole?.role_type === 'hotel_manager'
   const isTourOperator = activeRole?.role_type === 'tour_operator'
