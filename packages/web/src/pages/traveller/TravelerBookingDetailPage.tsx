@@ -20,6 +20,7 @@ import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { bookingService } from '@/features/booking/services/bookingService'
+import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
   getTravelerBookingOutcomeSummary,
   getTravelerBookingSettlementState,
@@ -95,6 +96,7 @@ export default function TravelerBookingDetailPage() {
   const totalGuests = booking?.pax_count ?? booking?.guest_count ?? 0
   const settlementState = getTravelerBookingSettlementState(booking)
   const outcome = getTravelerBookingOutcomeSummary(settlementState)
+  const formatMoney = (value: number) => `PKR ${value.toLocaleString()}`
   const totalAmount = settlementState.totalAmount
   const paidOnline = settlementState.paidOnline
   const remainingAmount = settlementState.remainingAmount
@@ -128,6 +130,84 @@ export default function TravelerBookingDetailPage() {
     const nextParams = new URLSearchParams(searchParams)
     nextParams.set('tab', value)
     setSearchParams(nextParams, { replace: true })
+  }
+
+  const handleDownloadReceipt = () => {
+    if (!booking) return
+
+    const confirmationNumber = booking.id.slice(0, 8).toUpperCase()
+    const baseSections = [
+      {
+        title: 'Booking summary',
+        rows: [
+          { label: 'Reservation type', value: scope === 'tour_booking' ? 'Tour booking' : 'Package booking' },
+          { label: 'Booking status', value: booking.status || 'confirmed' },
+          { label: 'Payment status', value: booking.payment_status || 'paid' },
+          { label: 'Guests', value: String(totalGuests) },
+          { label: 'Total booking amount', value: formatMoney(totalAmount) },
+          { label: 'Paid online', value: formatMoney(paidOnline) },
+          { label: 'Remaining balance', value: formatMoney(remainingAmount) },
+          {
+            label: 'Balance payment method',
+            value: remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online',
+          },
+        ],
+      },
+      {
+        title: 'Receipt notes',
+        bullets: [
+          outcome.message,
+          messagingUnlocked
+            ? `Message your ${counterpartLabel} directly from the booking workspace.`
+            : 'Messaging unlocks automatically after payment clears.',
+          remainingAmount > 0
+            ? `Remaining balance due before departure: ${formatMoney(remainingAmount)}.`
+            : 'This reservation is fully settled online.',
+        ],
+      },
+    ]
+
+    if (scope === 'tour_booking') {
+      downloadBookingReceipt({
+        fileName: `tripavail-tour-workspace-receipt-${booking.id.slice(0, 8).toLowerCase()}.html`,
+        title: outcome.title,
+        subtitle: bookingLabel,
+        confirmationNumber,
+        sections: [
+          {
+            title: 'Tour details',
+            rows: [
+              { label: 'Tour name', value: bookingLabel },
+              { label: 'Location', value: locationLabel },
+              { label: 'Departure', value: dateLabel ? format(new Date(dateLabel), 'MMM d, yyyy') : 'TBA' },
+              { label: 'Start time', value: schedule?.start_time ? format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a') : 'TBA' },
+              { label: 'End time', value: schedule?.end_time ? format(new Date(schedule.end_time), 'MMM d, yyyy h:mm a') : 'TBA' },
+            ],
+          },
+          ...baseSections,
+        ],
+      })
+      return
+    }
+
+    downloadBookingReceipt({
+      fileName: `tripavail-package-workspace-receipt-${booking.id.slice(0, 8).toLowerCase()}.html`,
+      title: outcome.title,
+      subtitle: bookingLabel,
+      confirmationNumber,
+      sections: [
+        {
+          title: 'Package details',
+          rows: [
+            { label: 'Package', value: bookingLabel },
+            { label: 'Location', value: locationLabel },
+            { label: 'Check-in', value: booking.check_in_date ? format(new Date(booking.check_in_date), 'MMM d, yyyy') : 'TBA' },
+            { label: 'Check-out', value: booking.check_out_date ? format(new Date(booking.check_out_date), 'MMM d, yyyy') : 'TBA' },
+          ],
+        },
+        ...baseSections,
+      ],
+    })
   }
 
   const handleConfirmCompletion = async () => {
@@ -188,6 +268,10 @@ export default function TravelerBookingDetailPage() {
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
                 <Link to="/trips">All bookings</Link>
+              </Button>
+              <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={handleDownloadReceipt}>
+                <Receipt className="mr-2 h-4 w-4" />
+                Download receipt
               </Button>
               <Button
                 type="button"
@@ -451,17 +535,26 @@ export default function TravelerBookingDetailPage() {
               <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
                 <div className="space-y-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <ShieldCheck className="h-6 w-6" />
+                    <Receipt className="h-6 w-6" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Secure operations
+                      Booking records
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">Use the booking thread for changes</h3>
+                    <h3 className="mt-1 text-lg font-semibold text-foreground">Keep your receipt and thread together</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Keep pickup notes, itinerary clarifications, and dispute-ready communication inside the reservation thread so support can inspect the full history if needed.
+                    Re-download your confirmation from the workspace any time, then use the booking thread for itinerary clarifications, payment follow-up, and support-ready written history.
                   </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-2xl border-border/60 bg-background/80"
+                    onClick={handleDownloadReceipt}
+                  >
+                    <Receipt className="mr-2 h-4 w-4" />
+                    Download Receipt
+                  </Button>
                   <Button
                     type="button"
                     className="w-full rounded-2xl"
