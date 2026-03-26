@@ -109,6 +109,7 @@ export default function TravelerBookingDetailPage() {
   const counterpartLabel = scope === 'tour_booking' ? 'tour operator' : 'host'
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
+  const itinerary = Array.isArray(booking?.tours?.itinerary) ? booking.tours.itinerary : []
   const operatorCompletionConfirmedAt =
     typeof booking?.metadata?.operator_completion_confirmed_at === 'string'
       ? booking.metadata.operator_completion_confirmed_at
@@ -381,6 +382,69 @@ export default function TravelerBookingDetailPage() {
                       <InfoRow label="Check-out" value={format(new Date(booking.check_out_date), 'MMM d, yyyy')} />
                     ) : null}
                   </div>
+
+                  {scope === 'tour_booking' && itinerary.length > 0 ? (
+                    <div className="space-y-4 border-t border-border/60 pt-6">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Itinerary
+                        </p>
+                        <h4 className="mt-1 text-base font-semibold text-foreground">
+                          Your booked day-by-day plan
+                        </h4>
+                      </div>
+
+                      <div className="space-y-6">
+                        {itinerary.map((day: any, index: number) => (
+                          <div
+                            key={`${day?.day ?? index}-${day?.title ?? 'itinerary-day'}`}
+                            className="relative border-l-2 border-border/50 pb-6 pl-8 last:border-transparent last:pb-0"
+                          >
+                            <div className="absolute left-[-9px] top-0 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                            <div className="space-y-3">
+                              <h5 className="text-sm font-semibold text-foreground">
+                                Day {day?.day ?? index + 1}
+                                {day?.title ? `: ${day.title}` : ''}
+                              </h5>
+
+                              {Array.isArray(day?.activities) && day.activities.length > 0 ? (
+                                <div className="space-y-2">
+                                  {day.activities.map((activity: any, activityIndex: number) => (
+                                    <div
+                                      key={`${activity?.title ?? activity?.activity ?? 'activity'}-${activityIndex}`}
+                                      className="rounded-2xl border border-border/40 bg-muted/20 p-3"
+                                    >
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-semibold text-foreground">
+                                          {activity?.title ?? activity?.activity ?? 'Activity'}
+                                        </span>
+                                        {activity?.time ? (
+                                          <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                            {activity.time}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      {activity?.description ? (
+                                        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                          {activity.description}
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : typeof day?.description === 'string' && day.description.trim().length > 0 ? (
+                                <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
+                                  <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                                    {day.description}
+                                  </p>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </GlassCard>
 
