@@ -56,6 +56,22 @@ export const reviewService = {
     return (data ?? []) as TourReview[]
   },
 
+  async getTourReviewsWithReplies(tourId: string): Promise<TourReviewWithReply[]> {
+    const { data, error } = await supabase
+      .from('tour_booking_reviews')
+      .select('*, reply:tour_review_replies(id, review_id, operator_id, body, created_at, updated_at)')
+      .eq('tour_id', tourId)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (error) throw new Error(error.message)
+    return (data ?? []).map((row: any) => ({
+      ...row,
+      reply: Array.isArray(row.reply) ? (row.reply[0] ?? null) : (row.reply ?? null),
+    })) as TourReviewWithReply[]
+  },
+
   async getTravelerReviewForBooking(bookingId: string): Promise<TourReview | null> {
     const { data, error } = await supabase
       .from('tour_booking_reviews')
@@ -65,6 +81,67 @@ export const reviewService = {
 
     if (error) throw new Error(error.message)
     return data as TourReview | null
+  },
+}
+
+export interface TourReviewReply {
+  id: string
+  review_id: string
+  operator_id: string
+  body: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TourReviewWithReply extends TourReview {
+  reply: TourReviewReply | null
+}
+
+export const operatorReviewService = {
+  /** All published reviews on tours owned by the authenticated operator */
+  async listMyReviews(): Promise<TourReviewWithReply[]> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase
+      .from('tour_booking_reviews')
+      .select('*, tours!inner(operator_id), reply:tour_review_replies(id, review_id, operator_id, body, created_at, updated_at)')
+      .eq('tours.operator_id', user.id)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(200)
+
+    if (error) throw new Error(error.message)
+    return (data ?? []).map((row: any) => ({
+      ...row,
+      reply: Array.isArray(row.reply) ? (row.reply[0] ?? null) : (row.reply ?? null),
+    })) as TourReviewWithReply[]
+  },
+
+  async submitReply(reviewId: string, body: string): Promise<TourReviewReply> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data, error } = await supabase
+      .from('tour_review_replies')
+      .insert({ review_id: reviewId, operator_id: user.id, body: body.trim() })
+      .select('*')
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data as TourReviewReply
+  },
+
+  async updateReply(replyId: string, body: string): Promise<TourReviewReply> {
+    const { data, error } = await supabase
+      .from('tour_review_replies')
+      .update({ body: body.trim() })
+      .eq('id', replyId)
+      .select('*')
+      .single()
+
+    if (error) throw new Error(error.message)
+    return data as TourReviewReply
   },
 }
 

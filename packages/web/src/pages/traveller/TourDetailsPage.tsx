@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 
 import { Button } from '@/components/ui/button'
@@ -45,7 +45,8 @@ import {
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
-import { reviewService, type TourReview } from '@/features/booking/services/reviewService'
+import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
+import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
@@ -151,7 +152,8 @@ export default function TourDetailsPage() {
   const [selectedSeats, setSelectedSeats] = useState(1)
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [reviews, setReviews] = useState<TourReview[]>([])
+  const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
+  const [operatorSlug, setOperatorSlug] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchTourDetails = async () => {
@@ -217,8 +219,15 @@ export default function TourDetailsPage() {
 
   useEffect(() => {
     if (!tour?.id) return
-    reviewService.getTourReviews(tour.id).then(setReviews).catch(() => {})
+    reviewService.getTourReviewsWithReplies(tour.id).then(setReviews).catch(() => {})
   }, [tour?.id])
+
+  useEffect(() => {
+    if (!tour?.operator_id) return
+    operatorPublicService.getProfileById(tour.operator_id)
+      .then((prof) => setOperatorSlug(prof?.slug ?? null))
+      .catch(() => {})
+  }, [tour?.operator_id])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -845,7 +854,7 @@ export default function TourDetailsPage() {
                   Hosted by {tour.operator_display_name || 'Tour Operator'}
                 </GlassTitle>
               </GlassHeader>
-              <GlassContent>
+              <GlassContent className="space-y-4">
                 <p className="text-muted-foreground">
                   {(tour.operator_is_verified ?? tour.is_verified) ? 'Verified Operator' : 'Tour Operator'}
                   {' • '}
@@ -855,6 +864,14 @@ export default function TourDetailsPage() {
                       : `Up to ${tour.max_participants} guests`
                     : 'Group tours'}
                 </p>
+                {operatorSlug ? (
+                  <Link
+                    to={`/operators/${operatorSlug}`}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-muted/50"
+                  >
+                    View operator profile
+                  </Link>
+                ) : null}
               </GlassContent>
             </GlassCard>
 
@@ -1318,6 +1335,12 @@ export default function TourDetailsPage() {
                         </div>
                         {review.title ? <p className="text-sm font-semibold text-foreground">{review.title}</p> : null}
                         {review.body ? <p className="text-sm text-muted-foreground leading-relaxed">{review.body}</p> : null}
+                        {review.reply ? (
+                          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 space-y-1">
+                            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">Operator reply</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{review.reply.body}</p>
+                          </div>
+                        ) : null}
                       </div>
                     ))}
                   </div>

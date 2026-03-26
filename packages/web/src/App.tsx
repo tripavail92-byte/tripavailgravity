@@ -63,6 +63,8 @@ const HotelManagerSettingsPage = lazy(
 const TourOperatorSettingsPage = lazy(
   () => import('@/pages/tour-operator/TourOperatorSettingsPage'),
 )
+const OperatorReviewsPage = lazy(() => import('@/pages/tour-operator/OperatorReviewsPage'))
+const OperatorProfilePage = lazy(() => import('@/pages/traveller/OperatorProfilePage'))
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
 const HelpSupportHubPage = lazy(() => import('@/pages/shared/HelpSupportHubPage'))
 const LegalPoliciesHubPage = lazy(() => import('@/pages/shared/LegalPoliciesHubPage'))
@@ -184,6 +186,8 @@ function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/hotel/:id" element={<HotelDetailsPage />} />
               <Route path="/tours/:id" element={<TourDetailsPage />} />
+              {/* Public operator storefront */}
+              <Route path="/operators/:slug" element={<OperatorProfilePage />} />
               <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
               <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
               <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
@@ -335,6 +339,15 @@ function App() {
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
                     <TourOperatorSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/reviews"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorReviewsPage />
                   </RoleGuard>
                 }
               />
