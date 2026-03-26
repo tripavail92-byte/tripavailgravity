@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import {
+  AlertTriangle,
   Calendar,
   CreditCard,
   Loader2,
@@ -16,9 +17,18 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { BookingConversationPanel } from '@/components/messaging/BookingConversationPanel'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { bookingService } from '@/features/booking/services/bookingService'
 import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
@@ -33,6 +43,40 @@ const BOOKING_TABS = ['overview', 'messages'] as const
 
 type BookingTab = (typeof BOOKING_TABS)[number]
 
+const TOUR_CANCELLATION_POLICY_META = {
+  flexible: {
+    title: 'Free cancellation',
+    description: 'Cancel up to 48 hours before departure.',
+  },
+  moderate: {
+    title: 'Moderate cancellation',
+    description: 'Cancel up to 5 days before departure for free.',
+  },
+  strict: {
+    title: 'Strict cancellation',
+    description: '50% refund if cancelled 14 days before departure.',
+  },
+  'non-refundable': {
+    title: 'Non-refundable booking',
+    description: 'No refund after booking confirmation.',
+  },
+} as const
+
+function getTourCancellationPolicySummary(policy: unknown) {
+  const normalized = typeof policy === 'string' ? policy : 'flexible'
+  return TOUR_CANCELLATION_POLICY_META[normalized as keyof typeof TOUR_CANCELLATION_POLICY_META]
+    || TOUR_CANCELLATION_POLICY_META.flexible
+}
+
+function getTrimmedMetadataString(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : null
+}
+
 export default function TravelerBookingDetailPage() {
   const { bookingId } = useParams<{ bookingId: string }>()
   const { user } = useAuth()
@@ -42,44 +86,47 @@ export default function TravelerBookingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [confirmingCompletion, setConfirmingCompletion] = useState(false)
+  const [showCancellationDialog, setShowCancellationDialog] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [requestingCancellation, setRequestingCancellation] = useState(false)
 
   const activeTab = (searchParams.get('tab') as BookingTab) || 'overview'
   const safeActiveTab = BOOKING_TABS.includes(activeTab) ? activeTab : 'overview'
 
-  useEffect(() => {
-    const loadBooking = async () => {
-      if (!user?.id || !bookingId) {
+  const loadBookingDetails = async () => {
+    if (!user?.id || !bookingId) {
+      return
+    }
+
+    try {
+      setLoading(true)
+      const loadedBooking = await bookingService.getTravelerBookingById(user.id, bookingId)
+
+      if (!loadedBooking) {
+        setBooking(null)
+        setError('Booking not found')
         return
       }
 
-      try {
-        setLoading(true)
-        const loadedBooking = await bookingService.getTravelerBookingById(user.id, bookingId)
+      setBooking(loadedBooking)
+      setError(null)
 
-        if (!loadedBooking) {
-          setBooking(null)
-          setError('Booking not found')
-          return
-        }
-
-        setBooking(loadedBooking)
-        setError(null)
-
-        if (loadedBooking.tours?.id && loadedBooking.schedule_id) {
-          const schedules = await tourService.getTourSchedules(loadedBooking.tours.id)
-          setSchedule(schedules.find((item) => item.id === loadedBooking.schedule_id) || null)
-        } else {
-          setSchedule(null)
-        }
-      } catch (loadError) {
-        console.error('Failed to load traveller booking details:', loadError)
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load this booking')
-      } finally {
-        setLoading(false)
+      if (loadedBooking.tours?.id && loadedBooking.schedule_id) {
+        const schedules = await tourService.getTourSchedules(loadedBooking.tours.id)
+        setSchedule(schedules.find((item) => item.id === loadedBooking.schedule_id) || null)
+      } else {
+        setSchedule(null)
       }
+    } catch (loadError) {
+      console.error('Failed to load traveller booking details:', loadError)
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load this booking')
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadBooking()
+  useEffect(() => {
+    void loadBookingDetails()
   }, [bookingId, user?.id])
 
   const scope = useMemo<BookingConversationScope | null>(() => {
@@ -120,6 +167,29 @@ export default function TravelerBookingDetailPage() {
     typeof booking?.metadata?.traveler_completion_confirmed_at === 'string'
       ? booking.metadata.traveler_completion_confirmed_at
       : null
+  const cancellationRequestState = getTrimmedMetadataString(booking?.metadata?.cancellation_request_state)
+  const cancellationRequestedAt = getTrimmedMetadataString(booking?.metadata?.traveler_cancellation_requested_at)
+  const cancellationRequestedReason = getTrimmedMetadataString(booking?.metadata?.traveler_cancellation_reason)
+  const cancellationReviewedAt = getTrimmedMetadataString(booking?.metadata?.cancellation_request_reviewed_at)
+  const cancellationReviewReason = getTrimmedMetadataString(booking?.metadata?.cancellation_request_review_reason)
+  const tourCancellationPolicy = getTourCancellationPolicySummary(booking?.tours?.cancellation_policy)
+  const packageCancellationPolicy = getTrimmedMetadataString(details?.cancellation_policy)
+  const packagePaymentTerms = getTrimmedMetadataString(details?.payment_terms)
+  const cancellationPolicyTitle = scope === 'tour_booking'
+    ? tourCancellationPolicy.title
+    : 'Package cancellation policy'
+  const cancellationPolicyDescription = scope === 'tour_booking'
+    ? tourCancellationPolicy.description
+    : packageCancellationPolicy || 'Your host reviews cancellation requests using the cancellation policy attached to this reservation.'
+  const cancellationPolicySecondary = scope === 'package_booking' ? packagePaymentTerms : null
+  const cancellationRequestPending = cancellationRequestState === 'requested'
+  const cancellationRequestDeclined = cancellationRequestState === 'declined'
+  const canRequestCancellation = Boolean(
+    scope
+    && booking?.status === 'confirmed'
+    && !isCancelled
+    && !cancellationRequestPending,
+  )
   const showCompletionConfirmationAction =
     scope === 'tour_booking'
     && booking?.status === 'completed'
@@ -227,6 +297,30 @@ export default function TravelerBookingDetailPage() {
     }
   }
 
+  const handleRequestCancellation = async () => {
+    if (!booking?.id || !scope) return
+
+    const reason = cancellationReason.trim()
+    if (!reason) {
+      toast.error('Add a short reason for your cancellation request')
+      return
+    }
+
+    try {
+      setRequestingCancellation(true)
+      await bookingService.requestTravelerCancellation(scope, booking.id, reason)
+      setShowCancellationDialog(false)
+      setCancellationReason('')
+      await loadBookingDetails()
+      toast.success(`Cancellation request sent to the ${counterpartLabel}`)
+    } catch (requestError) {
+      console.error('Failed to request booking cancellation:', requestError)
+      toast.error(requestError instanceof Error ? requestError.message : 'Unable to request cancellation')
+    } finally {
+      setRequestingCancellation(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
@@ -269,6 +363,23 @@ export default function TravelerBookingDetailPage() {
               <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
                 <Link to="/trips">All bookings</Link>
               </Button>
+              {canRequestCancellation ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-2xl border-border/60 bg-background/80"
+                  onClick={() => setShowCancellationDialog(true)}
+                >
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Request cancellation
+                </Button>
+              ) : null}
+              {cancellationRequestPending ? (
+                <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" disabled>
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Cancellation requested
+                </Button>
+              ) : null}
               <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={handleDownloadReceipt}>
                 <Receipt className="mr-2 h-4 w-4" />
                 Download receipt
@@ -369,6 +480,68 @@ export default function TravelerBookingDetailPage() {
                         {travelerCompletionConfirmedAt ? 'Confirmed by both sides' : 'Awaiting your confirmation'}
                       </Badge>
                     )}
+                  </div>
+                </div>
+              ) : null}
+
+              {(canRequestCancellation || cancellationRequestPending || cancellationRequestDeclined) ? (
+                <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Cancellation support
+                      </p>
+                      <h2 className="mt-1 text-xl font-semibold text-foreground">
+                        {cancellationRequestPending
+                          ? 'Cancellation request submitted'
+                          : cancellationRequestDeclined
+                            ? 'Cancellation request declined'
+                            : 'Need to cancel this booking?'}
+                      </h2>
+                      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                        {cancellationRequestPending
+                          ? 'TripAvail sent your request to the partner. The booking remains active until they process the request or support steps in.'
+                          : cancellationRequestDeclined
+                            ? 'The partner kept this reservation active. Use the booking thread if you need to challenge the decision or submit a new request with updated context.'
+                            : 'TripAvail records your cancellation request inside the booking workspace so policy, payment, and support follow-up stay attached to this reservation.'}
+                      </p>
+                    </div>
+                    {canRequestCancellation ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-2xl border-border/60 bg-background/80"
+                        onClick={() => setShowCancellationDialog(true)}
+                      >
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                        Request cancellation
+                      </Button>
+                    ) : (
+                      <Badge variant="outline" className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        {cancellationRequestPending ? 'Awaiting partner review' : 'Decision recorded'}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <InfoRow label="Policy" value={cancellationPolicyTitle} />
+                    <InfoRow label="What to expect" value="Request review before refund" />
+                    <InfoRow label="Policy details" value={cancellationPolicyDescription} />
+                    {cancellationRequestedAt ? (
+                      <InfoRow label="Requested at" value={format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')} />
+                    ) : null}
+                    {cancellationRequestedReason ? (
+                      <InfoRow label="Your reason" value={cancellationRequestedReason} />
+                    ) : null}
+                    {cancellationReviewedAt ? (
+                      <InfoRow label="Reviewed at" value={format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')} />
+                    ) : null}
+                    {cancellationReviewReason ? (
+                      <InfoRow label="Partner note" value={cancellationReviewReason} />
+                    ) : null}
+                    {cancellationPolicySecondary ? (
+                      <InfoRow label="Payment terms" value={cancellationPolicySecondary} />
+                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -532,40 +705,103 @@ export default function TravelerBookingDetailPage() {
                 </div>
               </GlassCard>
 
-              <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
-                <div className="space-y-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Receipt className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Booking records
+              <div className="space-y-6">
+                <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
+                  <div className="space-y-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Receipt className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Booking records
+                      </p>
+                      <h3 className="mt-1 text-lg font-semibold text-foreground">Keep your receipt and thread together</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Re-download your confirmation from the workspace any time, then use the booking thread for itinerary clarifications, payment follow-up, and support-ready written history.
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">Keep your receipt and thread together</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl border-border/60 bg-background/80"
+                      onClick={handleDownloadReceipt}
+                    >
+                      <Receipt className="mr-2 h-4 w-4" />
+                      Download Receipt
+                    </Button>
+                    <Button
+                      type="button"
+                      className="w-full rounded-2xl"
+                      onClick={() => setTab('messages')}
+                      disabled={!messagingUnlocked}
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Open Messages
+                    </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Re-download your confirmation from the workspace any time, then use the booking thread for itinerary clarifications, payment follow-up, and support-ready written history.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full rounded-2xl border-border/60 bg-background/80"
-                    onClick={handleDownloadReceipt}
-                  >
-                    <Receipt className="mr-2 h-4 w-4" />
-                    Download Receipt
-                  </Button>
-                  <Button
-                    type="button"
-                    className="w-full rounded-2xl"
-                    onClick={() => setTab('messages')}
-                    disabled={!messagingUnlocked}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Open Messages
-                  </Button>
-                </div>
-              </GlassCard>
+                </GlassCard>
+
+                {(canRequestCancellation || cancellationRequestPending || cancellationRequestDeclined) ? (
+                  <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
+                    <div className="space-y-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning">
+                        <AlertTriangle className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Cancellation request
+                        </p>
+                        <h3 className="mt-1 text-lg font-semibold text-foreground">
+                          {cancellationRequestPending
+                            ? 'Request in review'
+                            : cancellationRequestDeclined
+                              ? 'Request was declined'
+                              : 'Start a cancellation request'}
+                        </h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {cancellationPolicyDescription}
+                      </p>
+                      {cancellationPolicySecondary ? (
+                        <p className="text-sm text-muted-foreground">
+                          {cancellationPolicySecondary}
+                        </p>
+                      ) : null}
+                      {cancellationRequestedAt ? (
+                        <p className="text-sm text-muted-foreground">
+                          Requested on {format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')}
+                        </p>
+                      ) : null}
+                      {cancellationReviewedAt ? (
+                        <p className="text-sm text-muted-foreground">
+                          Reviewed on {format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')}
+                        </p>
+                      ) : null}
+                      {cancellationReviewReason ? (
+                        <p className="text-sm text-muted-foreground">
+                          {cancellationReviewReason}
+                        </p>
+                      ) : null}
+                      {cancellationRequestPending ? (
+                        <Button type="button" variant="outline" className="w-full rounded-2xl border-border/60 bg-background/80" disabled>
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                          Cancellation requested
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full rounded-2xl border-border/60 bg-background/80"
+                          onClick={() => setShowCancellationDialog(true)}
+                        >
+                          <AlertTriangle className="mr-2 h-4 w-4" />
+                          Request cancellation
+                        </Button>
+                      )}
+                    </div>
+                  </GlassCard>
+                ) : null}
+              </div>
             </div>
           </TabsContent>
 
@@ -583,6 +819,66 @@ export default function TravelerBookingDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={showCancellationDialog} onOpenChange={setShowCancellationDialog}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Request cancellation</DialogTitle>
+            <DialogDescription>
+              TripAvail will send this request to the {counterpartLabel}. The booking stays active until they process it or support intervenes.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Cancellation policy
+              </p>
+              <h3 className="mt-2 text-base font-semibold text-foreground">{cancellationPolicyTitle}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {cancellationPolicyDescription}
+              </p>
+              {cancellationPolicySecondary ? (
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {cancellationPolicySecondary}
+                </p>
+              ) : null}
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Submitting this request does not automatically cancel or refund the booking. The partner reviews the request inside this workspace.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="traveler-cancellation-reason">
+                Reason for cancellation
+              </label>
+              <Textarea
+                id="traveler-cancellation-reason"
+                value={cancellationReason}
+                onChange={(event) => setCancellationReason(event.target.value)}
+                placeholder="Tell the operator what changed so they can review the request quickly."
+                rows={5}
+                disabled={requestingCancellation}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-border/60 bg-background/80"
+              onClick={() => setShowCancellationDialog(false)}
+              disabled={requestingCancellation}
+            >
+              Keep booking
+            </Button>
+            <Button type="button" className="rounded-2xl" onClick={handleRequestCancellation} disabled={requestingCancellation}>
+              {requestingCancellation ? 'Sending request...' : 'Send cancellation request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

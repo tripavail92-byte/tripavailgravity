@@ -3,9 +3,12 @@ import toast from 'react-hot-toast'
 import { Link, useParams } from 'react-router-dom'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
+  AlertTriangle,
   Bell,
   BellOff,
+  CheckCircle2,
   CornerUpLeft,
+  CreditCard,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -37,6 +40,7 @@ import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { bookingService, type PartnerCancellationReviewRecord } from '@/features/booking/services/bookingService'
 import { useAuth } from '@/hooks/useAuth'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { queryClient } from '@/lib/queryClient'
@@ -61,6 +65,8 @@ import type {
 
 const QUICK_REACTIONS = ['👍', '❤️', '🙏', '😄']
 
+type CancellationReviewAction = 'approve' | 'decline' | 'refund'
+
 export default function MessageThreadPage() {
   const { user } = useAuth()
   const { conversationId } = useParams<{ conversationId: string }>()
@@ -72,6 +78,12 @@ export default function MessageThreadPage() {
   const [reportDetails, setReportDetails] = useState('')
   const [showEscalationDialog, setShowEscalationDialog] = useState(false)
   const [escalationReason, setEscalationReason] = useState('')
+  const [cancellationReview, setCancellationReview] = useState<PartnerCancellationReviewRecord | null>(null)
+  const [loadingCancellationReview, setLoadingCancellationReview] = useState(false)
+  const [reviewAction, setReviewAction] = useState<CancellationReviewAction | null>(null)
+  const [reviewReason, setReviewReason] = useState('')
+  const [refundAmountInput, setRefundAmountInput] = useState('')
+  const [submittingReviewAction, setSubmittingReviewAction] = useState(false)
 
   const conversationsQuery = useBookingConversations({ limit: 200 })
   const messagesQuery = useBookingConversationMessages(conversationId)
@@ -129,6 +141,7 @@ export default function MessageThreadPage() {
     () => (conversationsQuery.data ?? []).find((item) => item.conversation_id === conversationId),
     [conversationId, conversationsQuery.data],
   )
+  const isPartnerReviewer = conversation?.participant_role === 'operator' || conversation?.participant_role === 'owner'
 
   const messages = useMemo(() => {
     return [...(messagesQuery.data ?? [])].reverse()
@@ -172,6 +185,32 @@ export default function MessageThreadPage() {
     })
   }, [conversationId, markRead, messages, user?.id])
 
+  useEffect(() => {
+    const loadCancellationReview = async () => {
+      if (!user?.id || !conversation || !isPartnerReviewer) {
+        setCancellationReview(null)
+        return
+      }
+
+      try {
+        setLoadingCancellationReview(true)
+        const review = await bookingService.getPartnerCancellationReview(
+          conversation.booking_scope,
+          conversation.booking_id,
+          user.id,
+        )
+        setCancellationReview(review)
+      } catch (error) {
+        console.error('Failed to load cancellation review state:', error)
+        setCancellationReview(null)
+      } finally {
+        setLoadingCancellationReview(false)
+      }
+    }
+
+    void loadCancellationReview()
+  }, [conversation, isPartnerReviewer, user?.id])
+
   const handleSubmit = async () => {
     if (!conversationId || !composerValue.trim()) {
       return
@@ -190,6 +229,56 @@ export default function MessageThreadPage() {
       body: composerValue.trim(),
       replyToMessageId: replyToMessage?.message_id ?? null,
     })
+  }
+
+  const handleReviewCancellation = async () => {
+    if (!conversation || !reviewAction || !user?.id) {
+      return
+    }
+
+    const reason = reviewReason.trim()
+    const refundAmount = reviewAction === 'refund' ? Number(refundAmountInput) : undefined
+
+    if ((reviewAction === 'approve' || reviewAction === 'decline') && !reason) {
+      toast.error('Add a note for the traveler before submitting this decision')
+      return
+    }
+
+    if (reviewAction === 'refund' && (!Number.isFinite(refundAmount) || refundAmount <= 0)) {
+      toast.error('Enter a valid refund amount')
+      return
+    }
+
+    try {
+      setSubmittingReviewAction(true)
+      await bookingService.reviewTravelerCancellationRequest(conversation.booking_scope, {
+        bookingId: conversation.booking_id,
+        action: reviewAction,
+        reason,
+        refundAmount,
+      })
+
+      const refreshedReview = await bookingService.getPartnerCancellationReview(
+        conversation.booking_scope,
+        conversation.booking_id,
+        user.id,
+      )
+
+      setCancellationReview(refreshedReview)
+      setReviewAction(null)
+      setReviewReason('')
+      setRefundAmountInput('')
+      toast.success(reviewAction === 'approve'
+        ? 'Cancellation approved'
+        : reviewAction === 'decline'
+          ? 'Cancellation declined'
+          : 'Refund recorded')
+    } catch (error) {
+      console.error('Failed to review cancellation request:', error)
+      toast.error(error instanceof Error ? error.message : 'Unable to review cancellation request')
+    } finally {
+      setSubmittingReviewAction(false)
+    }
   }
 
   const counterpartName = getCounterpartName(conversation, user?.id)
@@ -365,6 +454,27 @@ export default function MessageThreadPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Thread controls
                 </p>
+                {isPartnerReviewer ? (
+                  <PartnerCancellationReviewCard
+                    review={cancellationReview}
+                    loading={loadingCancellationReview}
+                    onApprove={() => {
+                      setReviewAction('approve')
+                      setReviewReason('')
+                      setRefundAmountInput('')
+                    }}
+                    onDecline={() => {
+                      setReviewAction('decline')
+                      setReviewReason('')
+                      setRefundAmountInput('')
+                    }}
+                    onRefund={() => {
+                      setReviewAction('refund')
+                      setReviewReason('')
+                      setRefundAmountInput(cancellationReview?.paidOnline ? String(cancellationReview.paidOnline) : '')
+                    }}
+                  />
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"
@@ -490,6 +600,148 @@ export default function MessageThreadPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={reviewAction !== null} onOpenChange={(open) => {
+        if (!open && !submittingReviewAction) {
+          setReviewAction(null)
+          setReviewReason('')
+          setRefundAmountInput('')
+        }
+      }}>
+        <DialogContent className="rounded-3xl border-border/60 bg-background/95 sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {reviewAction === 'approve'
+                ? 'Approve cancellation'
+                : reviewAction === 'decline'
+                  ? 'Decline cancellation'
+                  : 'Record refund'}
+            </DialogTitle>
+            <DialogDescription>
+              {reviewAction === 'approve'
+                ? 'This marks the booking cancelled without recording an online refund.'
+                : reviewAction === 'decline'
+                  ? 'The booking stays confirmed and the traveler receives your review note.'
+                  : 'Use this when you are cancelling the booking and recording the refund amount already approved for the traveler.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {reviewAction === 'refund' ? (
+              <Input
+                value={refundAmountInput}
+                onChange={(event) => setRefundAmountInput(event.target.value)}
+                placeholder="Refund amount in PKR"
+                className="rounded-2xl border-border/60 bg-background/80"
+              />
+            ) : null}
+            <Textarea
+              value={reviewReason}
+              onChange={(event) => setReviewReason(event.target.value)}
+              placeholder={reviewAction === 'decline'
+                ? 'Explain why the booking remains active'
+                : reviewAction === 'approve'
+                  ? 'Tell the traveler what happens next'
+                  : 'Add refund timing, amount confirmation, or finance notes'}
+              className="min-h-[140px] rounded-2xl border-border/60 bg-background/80"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setReviewAction(null)}>
+              Cancel
+            </Button>
+            <Button type="button" className="rounded-2xl" disabled={submittingReviewAction} onClick={handleReviewCancellation}>
+              {submittingReviewAction
+                ? 'Saving...'
+                : reviewAction === 'approve'
+                  ? 'Approve cancellation'
+                  : reviewAction === 'decline'
+                    ? 'Decline request'
+                    : 'Record refund'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+function PartnerCancellationReviewCard({
+  review,
+  loading,
+  onApprove,
+  onDecline,
+  onRefund,
+}: {
+  review: PartnerCancellationReviewRecord | null
+  loading: boolean
+  onApprove: () => void
+  onDecline: () => void
+  onRefund: () => void
+}) {
+  const requestPending = review?.cancellationRequestState === 'requested'
+
+  return (
+    <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/30 p-4">
+      <div className="flex items-start gap-3">
+        <div className="rounded-2xl bg-warning/10 p-2 text-warning">
+          <AlertTriangle className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Cancellation review
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {loading
+              ? 'Loading request status'
+              : requestPending
+                ? 'Traveler request awaiting your decision'
+                : review?.cancellationRequestState === 'declined'
+                  ? 'Request already declined'
+                  : review?.cancellationRequestState === 'approved'
+                    ? 'Cancellation approved'
+                    : review?.cancellationRequestState === 'refunded'
+                      ? 'Refund recorded'
+                      : 'No open traveler cancellation request'}
+          </p>
+        </div>
+      </div>
+
+      {review?.cancellationRequestReason ? (
+        <p className="text-sm text-muted-foreground">
+          Traveler note: {review.cancellationRequestReason}
+        </p>
+      ) : null}
+      {review?.cancellationReviewReason ? (
+        <p className="text-sm text-muted-foreground">
+          Decision note: {review.cancellationReviewReason}
+        </p>
+      ) : null}
+      {typeof review?.refundAmount === 'number' && review.refundAmount > 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Refunded online: PKR {review.refundAmount.toLocaleString()}
+        </p>
+      ) : null}
+
+      {requestPending ? (
+        <div className="space-y-2">
+          <Button type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80" onClick={onApprove}>
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Approve cancellation
+          </Button>
+          <Button type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80" onClick={onDecline}>
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            Decline request
+          </Button>
+          {review.paidOnline > 0 ? (
+            <Button type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80" onClick={onRefund}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Record refund
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

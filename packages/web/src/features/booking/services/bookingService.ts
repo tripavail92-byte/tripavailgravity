@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { operatorPortalService } from '@/features/tour-operator/services/operatorPortalService'
 import {
   buildTourPaymentTermsFromTotal,
   getTourPromotionStatusMessage,
@@ -99,6 +100,22 @@ export interface PackageBooking {
   metadata?: any
 }
 
+export interface PartnerCancellationReviewRecord {
+  bookingId: string
+  scope: 'tour_booking' | 'package_booking'
+  bookingLabel: string
+  status: string
+  paymentStatus: string | null
+  paidOnline: number
+  totalAmount: number
+  cancellationRequestState: string | null
+  cancellationRequestedAt: string | null
+  cancellationRequestReason: string | null
+  cancellationReviewedAt: string | null
+  cancellationReviewReason: string | null
+  refundAmount: number
+}
+
 /**
  * Tour Booking Service
  */
@@ -163,7 +180,7 @@ export const tourBookingService = {
     const { data, error } = await supabase
       .from('tour_bookings')
       .select(
-        '*, tours(id, title, images, duration, location, itinerary), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
+        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
       )
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false })
@@ -176,7 +193,7 @@ export const tourBookingService = {
     const { data, error } = await supabase
       .from('tour_bookings')
       .select(
-        '*, tours(id, title, images, duration, location, itinerary), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
+        '*, tours(id, title, images, duration, location, itinerary, cancellation_policy), tour_schedules!tour_bookings_schedule_id_fkey(start_time, end_time, status)',
       )
       .eq('traveler_id', travelerId)
       .eq('id', bookingId)
@@ -280,6 +297,33 @@ export const tourBookingService = {
 
     if (!row) {
       throw new Error('No completion confirmation result returned')
+    }
+
+    return {
+      bookingId: row.booking_id,
+      status: row.status,
+      action: row.action,
+      notificationCount: Number(row.notification_count || 0),
+    }
+  },
+
+  async requestCancellation(bookingId: string, reason?: string): Promise<{
+    bookingId: string
+    status: TourBooking['status']
+    action: string
+    notificationCount: number
+  }> {
+    const { data, error } = await supabase.rpc('traveler_request_tour_booking_cancellation' as any, {
+      p_booking_id: bookingId,
+      p_reason: reason?.trim() || null,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+
+    if (!row) {
+      throw new Error('No cancellation request result returned')
     }
 
     return {
@@ -455,7 +499,7 @@ export const packageBookingService = {
   async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*, packages(id, name, cover_image, package_type)')
+      .select('*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)')
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false })
 
@@ -466,7 +510,7 @@ export const packageBookingService = {
   async getTravelerBookingById(travelerId: string, bookingId: string): Promise<any | null> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*, packages(id, name, cover_image, package_type)')
+      .select('*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)')
       .eq('traveler_id', travelerId)
       .eq('id', bookingId)
       .maybeSingle()
@@ -665,6 +709,33 @@ export const packageBookingService = {
     if (error && error.code !== 'PGRST116') throw error
     return (data as PackageBooking) || null
   },
+
+  async requestCancellation(bookingId: string, reason?: string): Promise<{
+    bookingId: string
+    status: PackageBooking['status']
+    action: string
+    notificationCount: number
+  }> {
+    const { data, error } = await supabase.rpc('traveler_request_package_booking_cancellation' as any, {
+      p_booking_id: bookingId,
+      p_reason: reason?.trim() || null,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+
+    if (!row) {
+      throw new Error('No cancellation request result returned')
+    }
+
+    return {
+      bookingId: row.booking_id,
+      status: row.status,
+      action: row.action,
+      notificationCount: Number(row.notification_count || 0),
+    }
+  },
 }
 
 /**
@@ -747,6 +818,121 @@ export const bookingService = {
   },
   confirmTravelerTourCompletion: async (bookingId: string, reason?: string) => {
     return tourBookingService.confirmTravelerCompletion(bookingId, reason)
+  },
+  requestTravelerCancellation: async (
+    scope: 'tour_booking' | 'package_booking',
+    bookingId: string,
+    reason?: string,
+  ) => {
+    return scope === 'tour_booking'
+      ? tourBookingService.requestCancellation(bookingId, reason)
+      : packageBookingService.requestCancellation(bookingId, reason)
+  },
+  getPartnerCancellationReview: async (
+    scope: 'tour_booking' | 'package_booking',
+    bookingId: string,
+    partnerId: string,
+  ): Promise<PartnerCancellationReviewRecord | null> => {
+    if (scope === 'tour_booking') {
+      const { bookings } = await operatorPortalService.getBookingsData(partnerId)
+      const booking = bookings.find((item) => item.id === bookingId)
+
+      if (!booking) return null
+
+      return {
+        bookingId: booking.id,
+        scope,
+        bookingLabel: booking.tours?.title || 'Tour booking',
+        status: booking.status,
+        paymentStatus: booking.payment_status || null,
+        paidOnline: Number(booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0),
+        totalAmount: Number(booking.total_price ?? 0),
+        cancellationRequestState: typeof booking.metadata?.cancellation_request_state === 'string'
+          ? booking.metadata.cancellation_request_state
+          : null,
+        cancellationRequestedAt: typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
+          ? booking.metadata.traveler_cancellation_requested_at
+          : null,
+        cancellationRequestReason: typeof booking.metadata?.traveler_cancellation_reason === 'string'
+          ? booking.metadata.traveler_cancellation_reason
+          : null,
+        cancellationReviewedAt: typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
+          ? booking.metadata.cancellation_request_reviewed_at
+          : null,
+        cancellationReviewReason: typeof booking.metadata?.cancellation_request_review_reason === 'string'
+          ? booking.metadata.cancellation_request_review_reason
+          : null,
+        refundAmount: Number(booking.metadata?.refund_amount || 0),
+      }
+    }
+
+    const booking = await packageBookingService.getOwnerBookings(partnerId)
+      .then((rows) => rows.find((item: any) => item.id === bookingId) || null)
+
+    if (!booking) return null
+
+    const packageRow = booking as any
+
+    return {
+      bookingId: booking.id,
+      scope,
+      bookingLabel: packageRow.packages?.name || 'Package booking',
+      status: booking.status,
+      paymentStatus: booking.payment_status || null,
+      paidOnline: Number(booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0),
+      totalAmount: Number(booking.total_price ?? 0),
+      cancellationRequestState: typeof booking.metadata?.cancellation_request_state === 'string'
+        ? booking.metadata.cancellation_request_state
+        : null,
+      cancellationRequestedAt: typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
+        ? booking.metadata.traveler_cancellation_requested_at
+        : null,
+      cancellationRequestReason: typeof booking.metadata?.traveler_cancellation_reason === 'string'
+        ? booking.metadata.traveler_cancellation_reason
+        : null,
+      cancellationReviewedAt: typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
+        ? booking.metadata.cancellation_request_reviewed_at
+        : null,
+      cancellationReviewReason: typeof booking.metadata?.cancellation_request_review_reason === 'string'
+        ? booking.metadata.cancellation_request_review_reason
+        : null,
+      refundAmount: Number(booking.metadata?.refund_amount || 0),
+    }
+  },
+  reviewTravelerCancellationRequest: async (
+    scope: 'tour_booking' | 'package_booking',
+    params: {
+      bookingId: string
+      action: 'approve' | 'decline' | 'refund'
+      reason?: string
+      refundAmount?: number
+    },
+  ) => {
+    const rpcName = scope === 'tour_booking'
+      ? 'operator_review_tour_cancellation_request'
+      : 'owner_review_package_cancellation_request'
+    const { data, error } = await supabase.rpc(rpcName as any, {
+      p_booking_id: params.bookingId,
+      p_action: params.action,
+      p_reason: params.reason?.trim() || null,
+      p_refund_amount: params.action === 'refund' ? params.refundAmount ?? null : null,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+
+    if (!row) {
+      throw new Error('No cancellation review result returned')
+    }
+
+    return {
+      bookingId: row.booking_id as string,
+      status: row.status as string,
+      paymentStatus: row.payment_status as string | null,
+      action: row.action as 'approve' | 'decline' | 'refund',
+      notificationCount: Number(row.notification_count || 0),
+    }
   },
   tour: tourBookingService,
   package: packageBookingService,
