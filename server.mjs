@@ -6,10 +6,9 @@ const port = Number.parseInt(process.env.PORT || '4173', 10)
 const distDir = path.join(process.cwd(), 'packages', 'web', 'dist')
 
 const serve = sirv(distDir, {
+  dev: true,
   single: true,
   etag: true,
-  maxAge: 31536000,
-  immutable: true,
   setHeaders(res, servedPath) {
     // Never cache the HTML shell; it must always pick up the newest asset hashes.
     if (servedPath.endsWith('.html')) {
