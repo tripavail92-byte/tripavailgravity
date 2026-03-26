@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { format, formatDistanceToNow } from 'date-fns'
 import {
   AlertTriangle,
+  ArrowRight,
   Bell,
   BellOff,
   CheckCircle2,
@@ -41,6 +42,12 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { bookingService, type PartnerCancellationReviewRecord } from '@/features/booking/services/bookingService'
+import {
+  getTravelerBookingOutcomeSummary,
+  getTravelerBookingSettlementState,
+  type TravelerBookingOutcomeSummary,
+  type TravelerBookingSettlementState,
+} from '@/features/booking/utils/travelerBookingPresentation'
 import { useAuth } from '@/hooks/useAuth'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { queryClient } from '@/lib/queryClient'
@@ -79,6 +86,8 @@ export default function MessageThreadPage() {
   const [showEscalationDialog, setShowEscalationDialog] = useState(false)
   const [escalationReason, setEscalationReason] = useState('')
   const [cancellationReview, setCancellationReview] = useState<PartnerCancellationReviewRecord | null>(null)
+  const [travelerBooking, setTravelerBooking] = useState<any | null>(null)
+  const [loadingTravelerBooking, setLoadingTravelerBooking] = useState(false)
   const [loadingCancellationReview, setLoadingCancellationReview] = useState(false)
   const [reviewAction, setReviewAction] = useState<CancellationReviewAction | null>(null)
   const [reviewReason, setReviewReason] = useState('')
@@ -141,6 +150,7 @@ export default function MessageThreadPage() {
     () => (conversationsQuery.data ?? []).find((item) => item.conversation_id === conversationId),
     [conversationId, conversationsQuery.data],
   )
+  const isTravelerParticipant = conversation?.participant_role === 'traveler'
   const isOperatorReviewer = conversation?.participant_role === 'operator'
   const isOwnerReviewer = conversation?.participant_role === 'owner' && conversation?.booking_scope === 'package_booking'
   const isPartnerReviewer = isOperatorReviewer || isOwnerReviewer
@@ -212,6 +222,28 @@ export default function MessageThreadPage() {
 
     void loadCancellationReview()
   }, [conversation, isPartnerReviewer, user?.id])
+
+  useEffect(() => {
+    const loadTravelerBooking = async () => {
+      if (!user?.id || !conversation || !isTravelerParticipant) {
+        setTravelerBooking(null)
+        return
+      }
+
+      try {
+        setLoadingTravelerBooking(true)
+        const booking = await bookingService.getTravelerBookingById(user.id, conversation.booking_id)
+        setTravelerBooking(booking)
+      } catch (error) {
+        console.error('Failed to load traveler booking context for thread:', error)
+        setTravelerBooking(null)
+      } finally {
+        setLoadingTravelerBooking(false)
+      }
+    }
+
+    void loadTravelerBooking()
+  }, [conversation, isTravelerParticipant, user?.id])
 
   const handleSubmit = async () => {
     if (!conversationId || !composerValue.trim()) {
@@ -287,6 +319,18 @@ export default function MessageThreadPage() {
   const ownerManagePath = conversation && isOwnerReviewer
     ? `/manager/bookings?bookingId=${encodeURIComponent(conversation.booking_id)}`
     : null
+  const travelerSettlementState = useMemo<TravelerBookingSettlementState | null>(
+    () => (travelerBooking ? getTravelerBookingSettlementState(travelerBooking) : null),
+    [travelerBooking],
+  )
+  const travelerOutcome = useMemo<TravelerBookingOutcomeSummary | null>(
+    () => (travelerSettlementState ? getTravelerBookingOutcomeSummary(travelerSettlementState) : null),
+    [travelerSettlementState],
+  )
+  const travelerCancellationRequestState = getMetadataString(travelerBooking?.metadata?.cancellation_request_state)
+  const travelerCancellationRequestedReason = getMetadataString(travelerBooking?.metadata?.traveler_cancellation_reason)
+  const travelerCancellationReviewReason = getMetadataString(travelerBooking?.metadata?.cancellation_request_review_reason)
+  const travelerCancellationReviewedAt = getMetadataString(travelerBooking?.metadata?.cancellation_request_reviewed_at)
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -452,6 +496,22 @@ export default function MessageThreadPage() {
                 <MetaRow label="Unread" value={String(conversation?.unread_count ?? 0)} />
                 <MetaRow label="Participant mode" value={conversation?.participant_role?.replace('_', ' ') || 'Unknown'} />
               </div>
+
+              {isTravelerParticipant ? (
+                <>
+                  <Separator className="my-5" />
+                  <TravelerBookingStatusCard
+                    booking={travelerBooking}
+                    loading={loadingTravelerBooking}
+                    outcome={travelerOutcome}
+                    settlementState={travelerSettlementState}
+                    cancellationRequestState={travelerCancellationRequestState}
+                    cancellationRequestReason={travelerCancellationRequestedReason}
+                    cancellationReviewReason={travelerCancellationReviewReason}
+                    cancellationReviewedAt={travelerCancellationReviewedAt}
+                  />
+                </>
+              ) : null}
 
               <Separator className="my-5" />
 
@@ -669,6 +729,110 @@ export default function MessageThreadPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  )
+}
+
+function TravelerBookingStatusCard({
+  booking,
+  loading,
+  outcome,
+  settlementState,
+  cancellationRequestState,
+  cancellationRequestReason,
+  cancellationReviewReason,
+  cancellationReviewedAt,
+}: {
+  booking: any | null
+  loading: boolean
+  outcome: TravelerBookingOutcomeSummary | null
+  settlementState: TravelerBookingSettlementState | null
+  cancellationRequestState: string | null
+  cancellationRequestReason: string | null
+  cancellationReviewReason: string | null
+  cancellationReviewedAt: string | null
+}) {
+  const bookingStatus = typeof booking?.status === 'string' ? booking.status : null
+  const paymentStatus = typeof booking?.payment_status === 'string' ? booking.payment_status : null
+  const cancellationLabel = getCancellationStateLabel(cancellationRequestState)
+  const refundedAmount = settlementState?.refundAmount ?? 0
+  const paidOnline = settlementState?.paidOnline ?? 0
+  const remainingAmount = settlementState?.remainingAmount ?? 0
+  const statusIcon = outcome?.tone === 'warning' ? AlertTriangle : CheckCircle2
+  const StatusIcon = statusIcon
+
+  return (
+    <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/30 p-4">
+      <div className="flex items-start gap-3">
+        <div className={cn(
+          'rounded-2xl p-2',
+          outcome?.tone === 'warning' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary',
+        )}>
+          <StatusIcon className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Booking status
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            {loading
+              ? 'Loading booking outcome'
+              : outcome?.title ?? 'Booking context unavailable'}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {loading
+              ? 'Pulling the latest reservation details for this thread.'
+              : outcome?.message ?? 'Open the booking workspace if you need the full reservation timeline.'}
+          </p>
+        </div>
+      </div>
+
+      {!loading && booking ? (
+        <div className="flex flex-wrap gap-2">
+          {bookingStatus ? (
+            <Badge variant="outline" className="rounded-full border-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-foreground">
+              {bookingStatus}
+            </Badge>
+          ) : null}
+          {paymentStatus ? (
+            <Badge variant="outline" className="rounded-full border-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-foreground">
+              {paymentStatus}
+            </Badge>
+          ) : null}
+          {cancellationLabel ? (
+            <Badge variant="outline" className="rounded-full border-border/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-foreground">
+              {cancellationLabel}
+            </Badge>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!loading && booking && settlementState ? (
+        <div className="space-y-3 text-sm">
+          <MetaRow label="Booking status" value={bookingStatus || 'Unknown'} />
+          <MetaRow label="Payment status" value={paymentStatus || 'Unknown'} />
+          <MetaRow label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
+          <MetaRow label="Refunded amount" value={`PKR ${refundedAmount.toLocaleString()}`} />
+          <MetaRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+          {cancellationLabel ? <MetaRow label="Request state" value={cancellationLabel} /> : null}
+        </div>
+      ) : null}
+
+      {!loading && cancellationRequestReason ? (
+        <p className="text-sm text-muted-foreground">
+          Your request: {cancellationRequestReason}
+        </p>
+      ) : null}
+      {!loading && cancellationReviewReason ? (
+        <p className="text-sm text-muted-foreground">
+          Partner note: {cancellationReviewReason}
+        </p>
+      ) : null}
+      {!loading && cancellationReviewedAt ? (
+        <p className="text-xs text-muted-foreground">
+          Reviewed {format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -992,6 +1156,30 @@ function getCounterpartName(summary: BookingConversationSummary | undefined, cur
 
 function previewBody(message: BookingConversationMessage) {
   return message.body || `[${message.message_kind.replace('_', ' ')}]`
+}
+
+function getMetadataString(value: unknown) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function getCancellationStateLabel(state: string | null) {
+  switch (state) {
+    case 'requested':
+      return 'Awaiting review'
+    case 'approved':
+      return 'Approved'
+    case 'declined':
+      return 'Declined'
+    case 'refunded':
+      return 'Refund recorded'
+    default:
+      return null
+  }
 }
 
 function initials(name: string) {
