@@ -11,6 +11,12 @@ import { supabase } from '@/lib/supabase'
 let initializeInFlight: Promise<void> | null = null
 let authListenerUnsubscribe: (() => void) | null = null
 
+const DEV_BYPASS_CREDENTIALS = {
+  email: 'traveler@test.com',
+  password: 'demo123',
+  fullName: 'Dev Traveller',
+} as const
+
 interface AuthState {
   user: User | null
   activeRole: UserRole | null
@@ -290,34 +296,28 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   devLogin: async () => {
     set({ isLoading: true })
-    // Mock User Data
-    const mockUser: User = {
-      id: 'dev-user-id',
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: 'dev@tripavail.com',
-      phone: '',
-      app_metadata: { provider: 'email', providers: ['email'] },
-      user_metadata: { full_name: 'Dev Traveller', avatar_url: 'https://github.com/shadcn.png' },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as User
+    try {
+      await authService.signIn(DEV_BYPASS_CREDENTIALS.email, DEV_BYPASS_CREDENTIALS.password)
+      return
+    } catch (signInError) {
+      try {
+        await authService.signUp(
+          DEV_BYPASS_CREDENTIALS.email,
+          DEV_BYPASS_CREDENTIALS.password,
+          DEV_BYPASS_CREDENTIALS.fullName,
+        )
 
-    // Mock Role Data
-    const mockRole: UserRole = {
-      id: 'dev-role-id',
-      user_id: 'dev-user-id',
-      role_type: 'traveller',
-      is_active: true,
-      // enabled_at: new Date().toISOString(), // Optional or non-existent in strict type
-      profile_completion: 80,
-      verification_status: 'approved',
+        await authService.signIn(DEV_BYPASS_CREDENTIALS.email, DEV_BYPASS_CREDENTIALS.password)
+        return
+      } catch (signUpError) {
+        console.error('[useAuth] Dev bypass failed to establish a real auth session:', {
+          signInError,
+          signUpError,
+        })
+        set({ isLoading: false })
+        throw signInError instanceof Error ? signInError : new Error('Dev bypass authentication failed')
+      }
     }
-
-    // Simulate network delay
-    setTimeout(() => {
-      set({ user: mockUser, activeRole: mockRole, partnerType: null, isLoading: false })
-    }, 800)
   },
 
   signUp: async (email, password, fullName) => {

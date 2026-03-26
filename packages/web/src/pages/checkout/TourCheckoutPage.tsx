@@ -1012,6 +1012,20 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
             remainingAmount: props.remainingAmount,
           })
         }}
+        onLoadError={(event: any) => {
+          console.error('Stripe PaymentElement failed to load for tour checkout', event)
+          logStripeDebug('payment_element_load_error', {
+            bookingId: props.bookingId,
+            message:
+              event?.error?.message ||
+              'Secure payment form failed to load. Refresh the page or try another browser.',
+          })
+          setPaymentReady(false)
+          setError(
+            event?.error?.message ||
+              'Secure payment form failed to load. Refresh the page or try another browser.',
+          )
+        }}
         onChange={(event: any) => {
           const snapshot = {
             complete: Boolean(event?.complete),

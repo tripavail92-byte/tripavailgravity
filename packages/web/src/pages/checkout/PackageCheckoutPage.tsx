@@ -20,6 +20,9 @@ import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
 const STRIPE_TEST_CARD_HINT = 'Sandbox card: 4242 4242 4242 4242 · any future date · any CVC.'
+const FULL_ONLINE_POLICY_TEXT = 'Full amount is charged online at the time of booking confirmation.'
+const FULL_ONLINE_MODE_LABEL = 'Full payment online'
+const PARTIAL_ONLINE_MODE_LABEL = 'Deposit booking'
 
 interface CountdownTimer {
   minutes: number
@@ -306,6 +309,24 @@ export default function PackageCheckoutPage() {
       (1000 * 60 * 60 * 24),
   )
   const stayNights = nights || computedNights
+  const bookingTotal = Number(pendingBooking?.total_price ?? pricing?.total_price ?? 0)
+  const payNowAmount = Number(pendingBooking?.upfront_amount ?? bookingTotal)
+  const remainingAmount = Number(pendingBooking?.remaining_amount ?? 0)
+  const paymentCollectionMode =
+    pendingBooking?.payment_collection_mode ??
+    (remainingAmount > 0 ? 'partial_online' : 'full_online')
+  const usesDeposit = paymentCollectionMode === 'partial_online'
+  const depositPercentage = Number(
+    pendingBooking?.deposit_percentage ??
+      (bookingTotal > 0 && remainingAmount > 0
+        ? Math.round((payNowAmount / bookingTotal) * 100)
+        : 0),
+  )
+  const paymentPolicyText =
+    pendingBooking?.payment_policy_text ??
+    (usesDeposit
+      ? `Pay ${packageCurrency} ${payNowAmount.toLocaleString()} now to confirm this reservation. The remaining ${packageCurrency} ${remainingAmount.toLocaleString()} is paid directly to the operator before check-in.`
+      : FULL_ONLINE_POLICY_TEXT)
   const isStayLengthValid = stayNights > 0 && stayNights >= minNights && stayNights <= maxNights
   const stayLengthMessage = !isStayLengthValid
     ? stayNights < minNights
@@ -377,6 +398,15 @@ export default function PackageCheckoutPage() {
                 We hold your booking for 10 minutes while you complete payment. If the timer
                 expires, you will need to start over.
               </p>
+              <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                  Payment mode
+                </p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">
+                  {usesDeposit ? PARTIAL_ONLINE_MODE_LABEL : FULL_ONLINE_MODE_LABEL}
+                </p>
+                <p className="mt-2 text-sm text-gray-600">{paymentPolicyText}</p>
+              </div>
               <p
                 className={
                   'mt-3 text-xs ' +
@@ -405,12 +435,30 @@ export default function PackageCheckoutPage() {
                     <span>
                       {packageCurrency} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
                     </span>
-                    <span>{packageCurrency} {(pricing?.total_price || 0).toLocaleString()}</span>
+                    <span>{packageCurrency} {bookingTotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Payment mode</span>
+                    <span>{usesDeposit ? PARTIAL_ONLINE_MODE_LABEL : FULL_ONLINE_MODE_LABEL}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>
+                      Pay now{usesDeposit ? ` (${depositPercentage}%)` : ''}
+                    </span>
+                    <span>{packageCurrency} {payNowAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pay later to operator</span>
+                    <span>{packageCurrency} {remainingAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
                     <span>Total</span>
-                    <span>{packageCurrency} {(pricing?.total_price || 0).toLocaleString()}</span>
+                    <span>{packageCurrency} {bookingTotal.toLocaleString()}</span>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">
+                  {paymentPolicyText}
                 </div>
 
                 {!pendingBooking ? (
@@ -432,6 +480,27 @@ export default function PackageCheckoutPage() {
                   <>
                     <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4">
                       <div className="text-sm font-semibold text-gray-900 mb-3">Payment</div>
+
+                      <div className="mb-4 space-y-2 rounded-2xl border border-primary/10 bg-white p-4 text-sm text-gray-600">
+                        <div className="flex items-center justify-between">
+                          <span>Booking total</span>
+                          <span className="font-semibold text-gray-900">
+                            {packageCurrency} {bookingTotal.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Charged online now</span>
+                          <span className="font-semibold text-gray-900">
+                            {packageCurrency} {payNowAmount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Remaining to operator</span>
+                          <span className="font-semibold text-gray-900">
+                            {packageCurrency} {remainingAmount.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
 
                       {stripeAvailable === false ? (
                         <div className="text-sm text-red-600">Payments are not configured.</div>
@@ -459,7 +528,9 @@ export default function PackageCheckoutPage() {
 
                     <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
                       <Shield className="w-4 h-4 text-emerald-500" />
-                      Your reservation expires when the timer ends.
+                      {usesDeposit
+                        ? `Your reservation expires when the timer ends. You will pay ${packageCurrency} ${payNowAmount.toLocaleString()} now and the remaining ${packageCurrency} ${remainingAmount.toLocaleString()} directly to the operator before check-in.`
+                        : 'Your reservation expires when the timer ends.'}
                     </div>
                   </>
                 )}
@@ -524,6 +595,14 @@ function PackagePaymentForm(props: { bookingId: string; total: number; currency:
         onReady={() => setPaymentReady(true)}
         onChange={() => {
           if (error) setError(null)
+        }}
+        onLoadError={(event: any) => {
+          console.error('Stripe PaymentElement failed to load for package checkout', event)
+          setPaymentReady(false)
+          setError(
+            event?.error?.message ||
+              'Secure payment form failed to load. Refresh the page or try another browser.',
+          )
         }}
       />
 

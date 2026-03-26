@@ -90,6 +90,11 @@ export interface PackageBooking {
   amount_paid_online?: number
   amount_due_to_operator?: number
   payment_policy_text?: string | null
+  promo_campaign_id?: string | null
+  promo_owner?: string | null
+  promo_funding_source?: 'operator' | 'platform' | null
+  promo_discount_value?: number
+  price_before_promo?: number
   payment_metadata?: any
   metadata?: any
 }
@@ -620,9 +625,20 @@ export const packageBookingService = {
     stripePaymentIntentId?: string,
     paymentMethod?: string,
   ): Promise<PackageBooking> {
+    const booking = await this.getBookingById(bookingId)
+    if (!booking) {
+      throw new Error('Booking not found')
+    }
+
+    const hasOnlinePayment = ['paid', 'partially_paid', 'balance_pending'].includes(paymentStatus)
     const updates: any = {
       payment_status: paymentStatus,
-      paid_at: paymentStatus === 'paid' ? new Date().toISOString() : null,
+      paid_at: hasOnlinePayment ? new Date().toISOString() : null,
+      amount_paid_online: hasOnlinePayment
+        ? Number(booking.upfront_amount ?? booking.total_price ?? 0)
+        : Number(booking.amount_paid_online ?? 0),
+      amount_due_to_operator:
+        paymentStatus === 'balance_pending' ? Number(booking.remaining_amount ?? 0) : 0,
     }
 
     if (stripePaymentIntentId) updates.stripe_payment_intent_id = stripePaymentIntentId
