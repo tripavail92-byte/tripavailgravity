@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Receipt,
   ShieldCheck,
+  Star,
   Users,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -31,8 +32,10 @@ import {
 import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { bookingService } from '@/features/booking/services/bookingService'
+import { reviewService, type TourReview } from '@/features/booking/services/reviewService'
 import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
   getTravelerBookingOutcomeSummary,
@@ -92,6 +95,12 @@ export default function TravelerBookingDetailPage() {
   const [showCancellationDialog, setShowCancellationDialog] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
   const [requestingCancellation, setRequestingCancellation] = useState(false)
+  const [existingReview, setExistingReview] = useState<TourReview | null | undefined>(undefined)
+  const [showReviewDialog, setShowReviewDialog] = useState(false)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewTitle, setReviewTitle] = useState('')
+  const [reviewBody, setReviewBody] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   const activeTab = (searchParams.get('tab') as BookingTab) || 'overview'
   const safeActiveTab = BOOKING_TABS.includes(activeTab) ? activeTab : 'overview'
@@ -119,6 +128,12 @@ export default function TravelerBookingDetailPage() {
         setSchedule(schedules.find((item) => item.id === loadedBooking.schedule_id) || null)
       } else {
         setSchedule(null)
+      }
+
+      // Load existing review (tour bookings only)
+      if (loadedBooking.tours?.id) {
+        const review = await reviewService.getTravelerReviewForBooking(loadedBooking.id).catch(() => null)
+        setExistingReview(review)
       }
     } catch (loadError) {
       console.error('Failed to load traveller booking details:', loadError)
@@ -322,6 +337,32 @@ export default function TravelerBookingDetailPage() {
       toast.error(requestError instanceof Error ? requestError.message : 'Unable to request cancellation')
     } finally {
       setRequestingCancellation(false)
+    }
+  }
+
+  const handleSubmitReview = async () => {
+    if (!booking?.id || !booking?.tours?.id || reviewRating === 0) {
+      toast.error('Please select a star rating before submitting')
+      return
+    }
+
+    try {
+      setSubmittingReview(true)
+      const submitted = await reviewService.submitTourReview({
+        bookingId: booking.id,
+        tourId: booking.tours.id,
+        rating: reviewRating,
+        title: reviewTitle || undefined,
+        body: reviewBody || undefined,
+      })
+      setExistingReview(submitted)
+      setShowReviewDialog(false)
+      toast.success('Your review has been published — thank you!')
+    } catch (reviewError) {
+      console.error('Failed to submit review:', reviewError)
+      toast.error(reviewError instanceof Error ? reviewError.message : 'Unable to submit review')
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -832,6 +873,42 @@ export default function TravelerBookingDetailPage() {
                   </div>
                 </GlassCard>
 
+                {/* Review card — shown after operator confirms tour completion */}
+                {scope === 'tour_booking' && operatorCompletionConfirmedAt ? (
+                  <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
+                    <div className="space-y-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
+                        <Star className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Your review</p>
+                        <h3 className="mt-1 text-lg font-semibold text-foreground">
+                          {existingReview ? 'Thank you for your review' : 'Rate your experience'}
+                        </h3>
+                      </div>
+                      {existingReview ? (
+                        <div className="space-y-2">
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                              <Star key={i} className={`h-5 w-5 ${i <= existingReview.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                            ))}
+                          </div>
+                          {existingReview.title ? <p className="text-sm font-medium text-foreground">{existingReview.title}</p> : null}
+                          {existingReview.body ? <p className="text-sm text-muted-foreground">{existingReview.body}</p> : null}
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground">Share your experience so future travelers know what to expect.</p>
+                          <Button type="button" className="w-full rounded-2xl" onClick={() => setShowReviewDialog(true)}>
+                            <Star className="mr-2 h-4 w-4" />
+                            Write a review
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </GlassCard>
+                ) : null}
+
                 {(canRequestCancellation || cancellationRequestPending || cancellationRequestDeclined) ? (
                   <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
                     <div className="space-y-4">
@@ -966,6 +1043,75 @@ export default function TravelerBookingDetailPage() {
             </Button>
             <Button type="button" className="rounded-2xl" onClick={handleRequestCancellation} disabled={requestingCancellation}>
               {requestingCancellation ? 'Sending request...' : 'Send cancellation request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Rate your experience</DialogTitle>
+            <DialogDescription>
+              Your review helps future travelers and rewards great operators.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex justify-center gap-2 py-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setReviewRating(i)}
+                  className="transition-transform hover:scale-110"
+                  aria-label={`Rate ${i} star${i !== 1 ? 's' : ''}`}
+                >
+                  <Star
+                    className={`h-8 w-8 ${i <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                  />
+                </button>
+              ))}
+            </div>
+            <Input
+              placeholder="Title (optional)"
+              value={reviewTitle}
+              onChange={(e) => setReviewTitle(e.target.value)}
+              maxLength={120}
+              className="rounded-2xl"
+            />
+            <Textarea
+              placeholder="Tell future travelers about your experience..."
+              value={reviewBody}
+              onChange={(e) => setReviewBody(e.target.value)}
+              rows={4}
+              maxLength={2000}
+              className="rounded-2xl"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-border/60"
+              onClick={() => setShowReviewDialog(false)}
+              disabled={submittingReview}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              onClick={handleSubmitReview}
+              disabled={reviewRating === 0 || submittingReview}
+            >
+              {submittingReview ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Star className="mr-2 h-4 w-4" />
+              )}
+              Publish review
             </Button>
           </DialogFooter>
         </DialogContent>

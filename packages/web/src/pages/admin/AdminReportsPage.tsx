@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
-import { AlertTriangle, CheckCircle2, Copy, Eye, Loader2, MessageSquare, RefreshCw, Siren, ShieldCheck, Target } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Copy, Eye, Loader2, MessageSquare, RefreshCw, Siren, ShieldCheck, Star, Target } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,7 @@ import {
   type AdminCancellationRequestRow,
   type AdminCancellationRequestState,
 } from '@/features/admin/services/adminService'
+import { adminReviewService } from '@/features/booking/services/reviewService'
 import { supabase } from '@/lib/supabase'
 
 type ReportRow = {
@@ -174,6 +175,8 @@ export default function AdminReportsPage() {
   const [messagingRows, setMessagingRows] = useState<MessagingReportRow[]>([])
   const [escalationRows, setEscalationRows] = useState<SupportEscalationRow[]>([])
   const [cancellationRows, setCancellationRows] = useState<AdminCancellationRequestRow[]>([])
+  const [reviewRows, setReviewRows] = useState<any[]>([])
+  const [reviewModBusy, setReviewModBusy] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [cancellationFilter, setCancellationFilter] = useState<CancellationFilter>('all')
@@ -275,11 +278,12 @@ export default function AdminReportsPage() {
       setErrorMessage(null)
 
       try {
-        const [generalData, messagingData, escalationData, cancellationData] = await Promise.all([
+        const [generalData, messagingData, escalationData, cancellationData, reviewData] = await Promise.all([
           fetchReports(50),
           fetchMessagingReports(100),
           fetchSupportEscalations(100),
           fetchAdminCancellationRequests(200),
+          adminReviewService.listReviews(200),
         ])
 
         if (!isCancelled) {
@@ -287,6 +291,7 @@ export default function AdminReportsPage() {
           setMessagingRows(messagingData as MessagingReportRow[])
           setEscalationRows(escalationData as SupportEscalationRow[])
           setCancellationRows(cancellationData as AdminCancellationRequestRow[])
+          setReviewRows(reviewData)
         }
       } catch (err: any) {
         console.error('Error loading reports:', err)
@@ -307,16 +312,18 @@ export default function AdminReportsPage() {
     setErrorMessage(null)
 
     try {
-      const [generalData, messagingData, escalationData, cancellationData] = await Promise.all([
+      const [generalData, messagingData, escalationData, cancellationData, reviewData] = await Promise.all([
         fetchReports(50),
         fetchMessagingReports(100),
         fetchSupportEscalations(100),
         fetchAdminCancellationRequests(200),
+        adminReviewService.listReviews(200),
       ])
       setRows(generalData as ReportRow[])
       setMessagingRows(messagingData as MessagingReportRow[])
       setEscalationRows(escalationData as SupportEscalationRow[])
       setCancellationRows(cancellationData as AdminCancellationRequestRow[])
+      setReviewRows(reviewData)
     } catch (err: any) {
       console.error('Error reloading reports:', err)
       setErrorMessage(err?.message || 'Failed to load reports')
@@ -1401,11 +1408,12 @@ export default function AdminReportsPage() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-5">
         <SummaryCard icon={AlertTriangle} label="General reports" value={String(rows.length)} />
         <SummaryCard icon={MessageSquare} label="Messaging reports" value={String(messagingRows.length)} />
         <SummaryCard icon={ShieldCheck} label="Cancellation requests" value={String(cancellationRows.length)} />
         <SummaryCard icon={Siren} label="Escalations" value={String(escalationRows.length)} />
+        <SummaryCard icon={Star} label="Reviews" value={String(reviewRows.length)} />
       </div>
 
       <Tabs defaultValue="general" className="mt-6">
@@ -1414,12 +1422,87 @@ export default function AdminReportsPage() {
           <TabsTrigger value="messaging">Messaging Reports</TabsTrigger>
           <TabsTrigger value="cancellations">Cancellation Requests</TabsTrigger>
           <TabsTrigger value="escalations">Support Escalations</TabsTrigger>
+          <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">{generalContent}</TabsContent>
         <TabsContent value="messaging">{messagingContent}</TabsContent>
         <TabsContent value="cancellations">{cancellationContent}</TabsContent>
         <TabsContent value="escalations">{escalationContent}</TabsContent>
+        <TabsContent value="reviews">
+          {reviewRows.length === 0 ? (
+            <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No reviews yet.</CardContent></Card>
+          ) : (
+            <div className="space-y-4">
+              {reviewRows.map((row: any) => (
+                <Card key={row.id}>
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{row.tour_title || 'Unknown tour'}</p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map((i: number) => (
+                              <Star key={i} className={`h-3.5 w-3.5 ${i <= row.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                            ))}
+                          </div>
+                          <Badge variant={row.status === 'removed' ? 'destructive' : 'secondary'}>{row.status}</Badge>
+                          <span className="text-xs text-muted-foreground">{new Date(row.created_at).toLocaleDateString()}</span>
+                        </div>
+                        {row.title ? <p className="text-sm font-semibold text-foreground">{row.title}</p> : null}
+                        {row.body ? <p className="text-sm text-muted-foreground">{row.body}</p> : null}
+                      </div>
+                      <div className="shrink-0">
+                        {row.status !== 'removed' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                            disabled={reviewModBusy[row.id]}
+                            onClick={async () => {
+                              setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
+                              try {
+                                await adminReviewService.moderateReview(row.id, 'remove')
+                                setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'removed' } : r))
+                                toast.success('Review removed')
+                              } catch (err: any) {
+                                toast.error(err?.message || 'Failed to remove review')
+                              } finally {
+                                setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
+                              }
+                            }}
+                          >
+                            {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={reviewModBusy[row.id]}
+                            onClick={async () => {
+                              setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
+                              try {
+                                await adminReviewService.moderateReview(row.id, 'publish')
+                                setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'published' } : r))
+                                toast.success('Review restored')
+                              } catch (err: any) {
+                                toast.error(err?.message || 'Failed to restore review')
+                              } finally {
+                                setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
+                              }
+                            }}
+                          >
+                            {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Restore'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       <Dialog

@@ -45,6 +45,7 @@ import {
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
+import { reviewService, type TourReview } from '@/features/booking/services/reviewService'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
@@ -150,6 +151,7 @@ export default function TourDetailsPage() {
   const [selectedSeats, setSelectedSeats] = useState(1)
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [reviews, setReviews] = useState<TourReview[]>([])
 
   useEffect(() => {
     const fetchTourDetails = async () => {
@@ -212,6 +214,11 @@ export default function TourDetailsPage() {
   useEffect(() => {
     setSelectedSeats((prev) => Math.min(prev, maxSelectableSeats))
   }, [maxSelectableSeats])
+
+  useEffect(() => {
+    if (!tour?.id) return
+    reviewService.getTourReviews(tour.id).then(setReviews).catch(() => {})
+  }, [tour?.id])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -1267,6 +1274,50 @@ export default function TourDetailsPage() {
                             </div>
                           ) : null}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
+
+            {/* Traveler reviews */}
+            {reviews.length > 0 ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">
+                    Traveler reviews
+                    {tour.rating ? (
+                      <span className="ml-3 text-base font-semibold text-muted-foreground">
+                        {Number(tour.rating).toFixed(1)} ★ &middot; {tour.review_count} {tour.review_count === 1 ? 'review' : 'reviews'}
+                      </span>
+                    ) : null}
+                  </GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                            T
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-3.5 w-3.5 ${i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                        </div>
+                        {review.title ? <p className="text-sm font-semibold text-foreground">{review.title}</p> : null}
+                        {review.body ? <p className="text-sm text-muted-foreground leading-relaxed">{review.body}</p> : null}
                       </div>
                     ))}
                   </div>
