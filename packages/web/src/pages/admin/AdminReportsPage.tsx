@@ -33,10 +33,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  fetchAdminCancellationRequests,
   fetchAdminConversationMessages,
   fetchMessagingReports,
   fetchReports,
+  reviewAdminCancellationRequest,
   fetchSupportEscalations,
+  type AdminCancellationRequestRow,
+  type AdminCancellationRequestState,
 } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 
@@ -140,7 +144,23 @@ type EscalationInspectionTarget = {
   latestPreview: string | null
 }
 
-type ConversationInspectionState = MessagingInspectionTarget | EscalationInspectionTarget | null
+type CancellationInspectionTarget = {
+  kind: 'cancellation-request'
+  conversationId: string
+  bookingLabel: string
+  subject: string | null
+  travelerName: string
+  partnerName: string
+  sourceLabel: string
+  latestPreview: string | null
+  bookingId: string
+  bookingScope: 'tour_booking' | 'package_booking'
+}
+
+type ConversationInspectionState = MessagingInspectionTarget | EscalationInspectionTarget | CancellationInspectionTarget | null
+
+type CancellationInterventionAction = 'approve' | 'decline' | 'refund'
+type CancellationFilter = 'all' | AdminCancellationRequestState
 
 const MIN_REASON_LEN = 12
 
@@ -153,8 +173,10 @@ export default function AdminReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([])
   const [messagingRows, setMessagingRows] = useState<MessagingReportRow[]>([])
   const [escalationRows, setEscalationRows] = useState<SupportEscalationRow[]>([])
+  const [cancellationRows, setCancellationRows] = useState<AdminCancellationRequestRow[]>([])
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [cancellationFilter, setCancellationFilter] = useState<CancellationFilter>('all')
 
   const [nextStatusById, setNextStatusById] = useState<Record<string, ReportStatus>>({})
   const [reasonById, setReasonById] = useState<Record<string, string>>({})
@@ -167,6 +189,11 @@ export default function AdminReportsPage() {
   const [escalationReasonById, setEscalationReasonById] = useState<Record<string, string>>({})
   const [escalationNotesById, setEscalationNotesById] = useState<Record<string, string>>({})
   const [escalationBusyById, setEscalationBusyById] = useState<Record<string, boolean>>({})
+  const [cancellationActionById, setCancellationActionById] = useState<Record<string, CancellationInterventionAction>>({})
+  const [cancellationReasonById, setCancellationReasonById] = useState<Record<string, string>>({})
+  const [cancellationNoteById, setCancellationNoteById] = useState<Record<string, string>>({})
+  const [cancellationRefundById, setCancellationRefundById] = useState<Record<string, string>>({})
+  const [cancellationBusyById, setCancellationBusyById] = useState<Record<string, boolean>>({})
   const [inspectionTarget, setInspectionTarget] = useState<ConversationInspectionState>(null)
   const [inspectionMessages, setInspectionMessages] = useState<AdminConversationMessage[]>([])
   const [inspectionLoading, setInspectionLoading] = useState(false)
@@ -195,6 +222,51 @@ export default function AdminReportsPage() {
     }
   ).rpc
 
+  const cancellationRowKey = (row: AdminCancellationRequestRow) => `${row.booking_scope}:${row.booking_id}`
+
+  const getAvailableCancellationActions = (row: AdminCancellationRequestRow) => {
+    if (row.cancellation_request_state === 'requested') {
+      return [
+        'approve',
+        'decline',
+        ...(row.paid_online > 0 ? (['refund'] as CancellationInterventionAction[]) : []),
+      ] as CancellationInterventionAction[]
+    }
+
+    if (row.cancellation_request_state === 'declined') {
+      return [
+        'approve',
+        ...(row.paid_online > 0 ? (['refund'] as CancellationInterventionAction[]) : []),
+      ] as CancellationInterventionAction[]
+    }
+
+    if (row.cancellation_request_state === 'approved' && row.paid_online > 0) {
+      return row.payment_status === 'refunded' || row.payment_status === 'partially_refunded'
+        ? []
+        : ['refund']
+    }
+
+    return [] as CancellationInterventionAction[]
+  }
+
+  const getSupportAttentionLabel = (value: string | null) => {
+    switch (value) {
+      case 'stale_request':
+        return 'Stale request'
+      case 'traveler_dispute':
+        return 'Traveler dispute'
+      case 'stale_request_and_dispute':
+        return 'Stale and disputed'
+      default:
+        return null
+    }
+  }
+
+  const formatMoney = (value: number | null) => {
+    if (value == null || Number.isNaN(value)) return 'PKR 0'
+    return `PKR ${value.toLocaleString()}`
+  }
+
   useEffect(() => {
     let isCancelled = false
 
@@ -203,16 +275,18 @@ export default function AdminReportsPage() {
       setErrorMessage(null)
 
       try {
-        const [generalData, messagingData, escalationData] = await Promise.all([
+        const [generalData, messagingData, escalationData, cancellationData] = await Promise.all([
           fetchReports(50),
           fetchMessagingReports(100),
           fetchSupportEscalations(100),
+          fetchAdminCancellationRequests(200),
         ])
 
         if (!isCancelled) {
           setRows(generalData as ReportRow[])
           setMessagingRows(messagingData as MessagingReportRow[])
           setEscalationRows(escalationData as SupportEscalationRow[])
+          setCancellationRows(cancellationData as AdminCancellationRequestRow[])
         }
       } catch (err: any) {
         console.error('Error loading reports:', err)
@@ -233,14 +307,16 @@ export default function AdminReportsPage() {
     setErrorMessage(null)
 
     try {
-      const [generalData, messagingData, escalationData] = await Promise.all([
+      const [generalData, messagingData, escalationData, cancellationData] = await Promise.all([
         fetchReports(50),
         fetchMessagingReports(100),
         fetchSupportEscalations(100),
+        fetchAdminCancellationRequests(200),
       ])
       setRows(generalData as ReportRow[])
       setMessagingRows(messagingData as MessagingReportRow[])
       setEscalationRows(escalationData as SupportEscalationRow[])
+      setCancellationRows(cancellationData as AdminCancellationRequestRow[])
     } catch (err: any) {
       console.error('Error reloading reports:', err)
       setErrorMessage(err?.message || 'Failed to load reports')
@@ -325,6 +401,19 @@ export default function AdminReportsPage() {
       return
     }
 
+    if (inspectionTarget.kind === 'cancellation-request') {
+      const row = cancellationRows.find(
+        (item) => item.booking_id === inspectionTarget.bookingId && item.booking_scope === inspectionTarget.bookingScope,
+      )
+      if (!row) {
+        toast.error('Cancellation request is no longer available')
+        return
+      }
+
+      await applyCancellationIntervention(row)
+      return
+    }
+
     const row = escalationRows.find((item) => item.conversation_id === inspectionTarget.conversationId)
     if (!row) {
       toast.error('Support escalation is no longer available')
@@ -357,6 +446,16 @@ export default function AdminReportsPage() {
       { value: 'pending', label: 'pending' },
       { value: 'in_review', label: 'in_review' },
       { value: 'resolved', label: 'resolved' },
+    ] as const
+  }, [])
+
+  const cancellationFilterOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All' },
+      { value: 'requested', label: 'Requested' },
+      { value: 'declined', label: 'Declined' },
+      { value: 'approved', label: 'Approved' },
+      { value: 'refunded', label: 'Refunded' },
     ] as const
   }, [])
 
@@ -561,6 +660,76 @@ export default function AdminReportsPage() {
       toast.error(err?.message || 'Failed to update escalation')
     } finally {
       setEscalationBusyById((prev) => ({ ...prev, [row.conversation_id]: false }))
+    }
+  }
+
+  const applyCancellationIntervention = async (row: AdminCancellationRequestRow) => {
+    const rowKey = cancellationRowKey(row)
+    const availableActions = getAvailableCancellationActions(row)
+
+    if (!row.requires_support_intervention) {
+      toast.error('Support intervention is reserved for disputed or stale requests')
+      return
+    }
+
+    if (!availableActions.length) {
+      toast.error('No support intervention actions are available for this request state')
+      return
+    }
+
+    const action = (cancellationActionById[rowKey] || availableActions[0]) as CancellationInterventionAction
+    const reason = (cancellationReasonById[rowKey] || '').trim()
+    const internalNote = (cancellationNoteById[rowKey] || '').trim()
+    const refundInput = (cancellationRefundById[rowKey] || '').trim()
+    const refundAmount = action === 'refund' ? Number(refundInput) : null
+
+    if (!reason) {
+      toast.error('Reason is required', { id: `reason-cancellation-${rowKey}` })
+      return
+    }
+
+    if (reason.length < MIN_REASON_LEN) {
+      toast.error(`Reason must be at least ${MIN_REASON_LEN} characters`, {
+        id: `reason-cancellation-${rowKey}`,
+      })
+      return
+    }
+
+    if (action === 'refund') {
+      if (!refundInput) {
+        toast.error('Refund amount is required', { id: `refund-cancellation-${rowKey}` })
+        return
+      }
+
+      if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+        toast.error('Refund amount must be greater than zero', { id: `refund-cancellation-${rowKey}` })
+        return
+      }
+    }
+
+    setCancellationBusyById((prev) => ({ ...prev, [rowKey]: true }))
+    try {
+      await reviewAdminCancellationRequest(row.booking_scope, {
+        bookingId: row.booking_id,
+        action,
+        reason,
+        refundAmount: action === 'refund' ? refundAmount ?? undefined : undefined,
+        internalNote: internalNote || undefined,
+      })
+
+      toast.success('Cancellation request updated')
+      window.dispatchEvent(new CustomEvent('tripavail:admin_action'))
+      await reloadReports()
+      setCancellationReasonById((prev) => ({ ...prev, [rowKey]: '' }))
+      setCancellationNoteById((prev) => ({ ...prev, [rowKey]: '' }))
+      if (action === 'refund') {
+        setCancellationRefundById((prev) => ({ ...prev, [rowKey]: '' }))
+      }
+    } catch (err: any) {
+      console.error('Error updating cancellation request:', err)
+      toast.error(err?.message || 'Failed to update cancellation request')
+    } finally {
+      setCancellationBusyById((prev) => ({ ...prev, [rowKey]: false }))
     }
   }
 
@@ -977,13 +1146,253 @@ export default function AdminReportsPage() {
     )
   }, [applyEscalationStatus, errorMessage, escalationBusyById, escalationNotesById, escalationReasonById, escalationRows, escalationStatusById, escalationStatusOptions, loading])
 
+  const filteredCancellationRows = useMemo(() => {
+    if (cancellationFilter === 'all') {
+      return cancellationRows
+    }
+
+    return cancellationRows.filter((row) => row.cancellation_request_state === cancellationFilter)
+  }, [cancellationFilter, cancellationRows])
+
+  const cancellationContent = useMemo(() => {
+    if (loading) {
+      return <SectionSkeleton count={5} />
+    }
+
+    if (errorMessage) {
+      return <ErrorCard message={errorMessage} />
+    }
+
+    if (!cancellationRows.length) {
+      return <EmptyCard title="No cancellation requests" body="Traveler cancellation requests will appear here once bookings start moving through cancellation review." />
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {cancellationFilterOptions.map((option) => {
+            const count = option.value === 'all'
+              ? cancellationRows.length
+              : cancellationRows.filter((row) => row.cancellation_request_state === option.value).length
+
+            return (
+              <Button
+                key={option.value}
+                type="button"
+                variant={cancellationFilter === option.value ? 'default' : 'outline'}
+                onClick={() => setCancellationFilter(option.value as CancellationFilter)}
+                className="rounded-full"
+              >
+                {option.label} ({count})
+              </Button>
+            )
+          })}
+        </div>
+
+        {!filteredCancellationRows.length ? (
+          <EmptyCard title="No matching requests" body="Try a different cancellation state filter." />
+        ) : (
+          filteredCancellationRows.map((row) => {
+            const rowKey = cancellationRowKey(row)
+            const availableActions = getAvailableCancellationActions(row)
+            const defaultAction = availableActions[0] || 'approve'
+            const selectedAction = (cancellationActionById[rowKey] || defaultAction) as CancellationInterventionAction
+            const showRefundInput = selectedAction === 'refund'
+            const supportAttentionLabel = getSupportAttentionLabel(row.support_attention_reason)
+
+            return (
+              <Card key={rowKey}>
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <CardTitle className="text-lg truncate">{row.booking_label}</CardTitle>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {row.traveler_name} ↔ {row.partner_name} • {row.booking_scope === 'tour_booking' ? 'Tour booking' : 'Package booking'}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{row.cancellation_request_state}</Badge>
+                      <Badge variant="outline">booking {row.booking_status}</Badge>
+                      {row.payment_status ? <Badge variant="outline">payment {row.payment_status}</Badge> : null}
+                      {supportAttentionLabel ? <Badge variant="outline">{supportAttentionLabel}</Badge> : null}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide">Traveler note</p>
+                      <p className="mt-1 text-foreground">{row.traveler_cancellation_reason || 'No traveler note supplied'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide">Requested</p>
+                      <p className="mt-1 text-foreground">{row.cancellation_requested_at ? new Date(row.cancellation_requested_at).toLocaleString() : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide">Reviewed</p>
+                      <p className="mt-1 text-foreground">
+                        {row.cancellation_reviewed_at ? new Date(row.cancellation_reviewed_at).toLocaleString() : 'Not reviewed yet'}
+                      </p>
+                      {row.cancellation_reviewed_role ? (
+                        <p className="mt-1 text-xs text-muted-foreground">Last reviewer: {row.cancellation_reviewed_role}</p>
+                      ) : null}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide">Financials</p>
+                      <p className="mt-1 text-foreground">Paid online: {formatMoney(row.paid_online)}</p>
+                      <p className="mt-1 text-foreground">Refunded: {formatMoney(row.refund_amount)}</p>
+                    </div>
+                  </div>
+
+                  {row.cancellation_review_reason ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
+                      Review note: <span className="text-foreground">{row.cancellation_review_reason}</span>
+                    </div>
+                  ) : null}
+
+                  {row.support_review_notes || row.support_review_reason ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
+                      Support notes: <span className="text-foreground">{row.support_review_notes || row.support_review_reason}</span>
+                    </div>
+                  ) : null}
+
+                  {row.last_message_preview ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 text-sm text-muted-foreground">
+                      Latest thread preview: <span className="text-foreground">{row.last_message_preview}</span>
+                    </div>
+                  ) : null}
+
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {row.support_escalated_at ? <Badge variant="outline">Escalated {relativeTime(row.support_escalated_at)}</Badge> : null}
+                    {row.support_review_status ? <Badge variant="outline">Support {row.support_review_status}</Badge> : null}
+                    {row.support_reviewed_at ? <Badge variant="outline">Support updated {relativeTime(row.support_reviewed_at)}</Badge> : null}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {row.conversation_id ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          void openConversationInspection({
+                            kind: 'cancellation-request',
+                            conversationId: row.conversation_id as string,
+                            bookingLabel: row.booking_label,
+                            subject: row.subject,
+                            travelerName: row.traveler_name,
+                            partnerName: row.partner_name,
+                            sourceLabel: 'Cancellation request',
+                            latestPreview: row.last_message_preview,
+                            bookingId: row.booking_id,
+                            bookingScope: row.booking_scope,
+                          })
+                        }
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        Review thread
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  {row.requires_support_intervention && availableActions.length ? (
+                    <>
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                        Support can intervene on this request because it is {supportAttentionLabel?.toLowerCase() || 'flagged for support review'}.
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)_160px]">
+                        <Select
+                          value={selectedAction}
+                          onValueChange={(value) =>
+                            setCancellationActionById((prev) => ({
+                              ...prev,
+                              [rowKey]: value as CancellationInterventionAction,
+                            }))
+                          }
+                          disabled={!!cancellationBusyById[rowKey]}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableActions.map((action) => (
+                              <SelectItem key={action} value={action}>
+                                {action}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Input
+                          placeholder="Intervention reason (required)"
+                          value={cancellationReasonById[rowKey] || ''}
+                          onChange={(event) =>
+                            setCancellationReasonById((prev) => ({
+                              ...prev,
+                              [rowKey]: event.target.value,
+                            }))
+                          }
+                          disabled={!!cancellationBusyById[rowKey]}
+                        />
+
+                        <Button onClick={() => void applyCancellationIntervention(row)} disabled={!!cancellationBusyById[rowKey]}>
+                          {cancellationBusyById[rowKey] ? 'Applying…' : 'Apply'}
+                        </Button>
+                      </div>
+
+                      {showRefundInput ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Refund amount"
+                          value={cancellationRefundById[rowKey] || ''}
+                          onChange={(event) =>
+                            setCancellationRefundById((prev) => ({
+                              ...prev,
+                              [rowKey]: event.target.value,
+                            }))
+                          }
+                          disabled={!!cancellationBusyById[rowKey]}
+                        />
+                      ) : null}
+
+                      <Textarea
+                        placeholder="Internal support note"
+                        value={cancellationNoteById[rowKey] || row.support_review_notes || ''}
+                        onChange={(event) =>
+                          setCancellationNoteById((prev) => ({
+                            ...prev,
+                            [rowKey]: event.target.value,
+                          }))
+                        }
+                        disabled={!!cancellationBusyById[rowKey]}
+                        className="min-h-[96px]"
+                      />
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      {row.requires_support_intervention
+                        ? 'This request has no remaining support override actions.'
+                        : 'Visible for oversight. Support interventions unlock when a request becomes stale or disputed.'}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
+      </div>
+    )
+  }, [applyCancellationIntervention, cancellationActionById, cancellationBusyById, cancellationFilter, cancellationFilterOptions, cancellationNoteById, cancellationReasonById, cancellationRefundById, cancellationRows, errorMessage, filteredCancellationRows, loading])
+
   return (
     <div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reports</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            General moderation reports, booking-message abuse reviews, and support escalation triage in one queue.
+            General moderation reports, booking-message abuse reviews, cancellation oversight, and support escalation triage in one queue.
           </p>
         </div>
         <Button type="button" variant="outline" onClick={() => void reloadReports()}>
@@ -992,9 +1401,10 @@ export default function AdminReportsPage() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard icon={AlertTriangle} label="General reports" value={String(rows.length)} />
         <SummaryCard icon={MessageSquare} label="Messaging reports" value={String(messagingRows.length)} />
+        <SummaryCard icon={ShieldCheck} label="Cancellation requests" value={String(cancellationRows.length)} />
         <SummaryCard icon={Siren} label="Escalations" value={String(escalationRows.length)} />
       </div>
 
@@ -1002,11 +1412,13 @@ export default function AdminReportsPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="general">General Reports</TabsTrigger>
           <TabsTrigger value="messaging">Messaging Reports</TabsTrigger>
+          <TabsTrigger value="cancellations">Cancellation Requests</TabsTrigger>
           <TabsTrigger value="escalations">Support Escalations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">{generalContent}</TabsContent>
         <TabsContent value="messaging">{messagingContent}</TabsContent>
+        <TabsContent value="cancellations">{cancellationContent}</TabsContent>
         <TabsContent value="escalations">{escalationContent}</TabsContent>
       </Tabs>
 
@@ -1156,6 +1568,92 @@ export default function AdminReportsPage() {
                       className="lg:col-span-2 min-h-[96px]"
                     />
                   </div>
+                ) : inspectionTarget.kind === 'cancellation-request' ? (
+                  (() => {
+                    const rowKey = `${inspectionTarget.bookingScope}:${inspectionTarget.bookingId}`
+                    const queueRow = cancellationRows.find(
+                      (item) => item.booking_scope === inspectionTarget.bookingScope && item.booking_id === inspectionTarget.bookingId,
+                    )
+                    const availableActions = queueRow ? getAvailableCancellationActions(queueRow) : []
+                    const defaultAction = availableActions[0] || 'approve'
+                    const selectedAction = (cancellationActionById[rowKey] || defaultAction) as CancellationInterventionAction
+
+                    return (
+                      <div className="mt-4 space-y-3">
+                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
+                          <Select
+                            value={selectedAction}
+                            onValueChange={(value) =>
+                              setCancellationActionById((prev) => ({
+                                ...prev,
+                                [rowKey]: value as CancellationInterventionAction,
+                              }))
+                            }
+                            disabled={!queueRow || !!cancellationBusyById[rowKey] || !availableActions.length}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select action" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableActions.map((action) => (
+                                <SelectItem key={action} value={action}>
+                                  {action}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <Input
+                            placeholder="Intervention reason (required)"
+                            value={cancellationReasonById[rowKey] || ''}
+                            onChange={(event) =>
+                              setCancellationReasonById((prev) => ({
+                                ...prev,
+                                [rowKey]: event.target.value,
+                              }))
+                            }
+                            disabled={!queueRow || !!cancellationBusyById[rowKey]}
+                          />
+
+                          {selectedAction === 'refund' ? (
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="Refund amount"
+                              value={cancellationRefundById[rowKey] || ''}
+                              onChange={(event) =>
+                                setCancellationRefundById((prev) => ({
+                                  ...prev,
+                                  [rowKey]: event.target.value,
+                                }))
+                              }
+                              disabled={!queueRow || !!cancellationBusyById[rowKey]}
+                              className="lg:col-span-2"
+                            />
+                          ) : null}
+
+                          <Textarea
+                            placeholder="Internal support note"
+                            value={cancellationNoteById[rowKey] || ''}
+                            onChange={(event) =>
+                              setCancellationNoteById((prev) => ({
+                                ...prev,
+                                [rowKey]: event.target.value,
+                              }))
+                            }
+                            disabled={!queueRow || !!cancellationBusyById[rowKey]}
+                            className="lg:col-span-2 min-h-[96px]"
+                          />
+                        </div>
+                        {!queueRow?.requires_support_intervention ? (
+                          <p className="text-xs text-muted-foreground">
+                            Support interventions unlock when a request becomes stale or disputed.
+                          </p>
+                        ) : null}
+                      </div>
+                    )
+                  })()
                 ) : (
                   <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[220px_minmax(0,1fr)]">
                     <Select
@@ -1351,6 +1849,11 @@ function buildInspectionEvidence(
   if (target.kind === 'messaging-report') {
     header.push(`Report ID: ${target.reportId}`)
     header.push(`Reported Message ID: ${target.reportedMessageId || 'none'}`)
+  }
+
+  if (target.kind === 'cancellation-request') {
+    header.push(`Booking ID: ${target.bookingId}`)
+    header.push(`Booking Scope: ${target.bookingScope}`)
   }
 
   const transcript = messages.map((message) => {

@@ -25,6 +25,38 @@ export type AdminBookingRow = {
   traveler_last_name: string | null
 }
 
+export type AdminCancellationRequestState = 'requested' | 'declined' | 'approved' | 'refunded'
+
+export type AdminCancellationRequestRow = {
+  booking_scope: 'tour_booking' | 'package_booking'
+  booking_id: string
+  conversation_id: string | null
+  booking_label: string
+  subject: string | null
+  traveler_name: string
+  partner_name: string
+  booking_status: string
+  payment_status: string | null
+  total_amount: number
+  paid_online: number
+  refund_amount: number
+  cancellation_request_state: AdminCancellationRequestState
+  traveler_cancellation_reason: string | null
+  cancellation_requested_at: string | null
+  cancellation_reviewed_at: string | null
+  cancellation_reviewed_by: string | null
+  cancellation_reviewed_role: string | null
+  cancellation_review_reason: string | null
+  support_escalated_at: string | null
+  support_review_status: string | null
+  support_review_reason: string | null
+  support_review_notes: string | null
+  support_reviewed_at: string | null
+  last_message_preview: string | null
+  requires_support_intervention: boolean
+  support_attention_reason: string | null
+}
+
 /**
  * Fetch reports for moderation
  */
@@ -55,6 +87,45 @@ export async function fetchSupportEscalations(limit = 100, status: string | null
   const { data, error } = await (supabase as any).rpc('admin_list_support_escalations', {
     p_status: status,
     p_limit: limit,
+  })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function fetchAdminCancellationRequests(
+  limit = 200,
+  state: AdminCancellationRequestState | null = null,
+) {
+  const { data, error } = await (supabase as any).rpc('admin_list_booking_cancellation_requests', {
+    p_state: state,
+    p_limit: limit,
+  })
+
+  if (error) throw error
+  return (data || []) as AdminCancellationRequestRow[]
+}
+
+export async function reviewAdminCancellationRequest(
+  scope: 'tour_booking' | 'package_booking',
+  params: {
+    bookingId: string
+    action: 'approve' | 'decline' | 'refund'
+    reason?: string
+    refundAmount?: number
+    internalNote?: string
+  },
+) {
+  const rpcName = scope === 'tour_booking'
+    ? 'admin_review_tour_cancellation_request'
+    : 'admin_review_package_cancellation_request'
+
+  const { data, error } = await (supabase as any).rpc(rpcName, {
+    p_booking_id: params.bookingId,
+    p_action: params.action,
+    p_reason: params.reason?.trim() || null,
+    p_refund_amount: params.action === 'refund' ? params.refundAmount ?? null : null,
+    p_internal_note: params.internalNote?.trim() || null,
   })
 
   if (error) throw error

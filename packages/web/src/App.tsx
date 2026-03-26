@@ -24,6 +24,7 @@ const SearchPage = lazy(() => import('@/pages/traveller/SearchPage'))
 const ListHotelPage = lazy(() => import('@/pages/manager/ListHotelPage'))
 const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
 const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
+const HotelManagerBookingsPage = lazy(() => import('@/pages/hotel-manager/HotelManagerBookingsPage'))
 const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
 const OperatorCalendarPage = lazy(() => import('@/pages/tour-operator/OperatorCalendarPage'))
 const OperatorBookingsPage = lazy(() => import('@/pages/tour-operator/OperatorBookingsPage'))
@@ -216,6 +217,15 @@ function App() {
                 element={
                   <RoleGuard allowedRoles={['hotel_manager']}>
                     <DashboardPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/manager/bookings"
+                element={
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <HotelManagerBookingsPage />
                   </RoleGuard>
                 }
               />

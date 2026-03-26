@@ -210,7 +210,7 @@ export function DrawerMenu() {
         {
           icon: Briefcase,
           label: 'Bookings',
-          path: '/bookings',
+          path: '/manager/bookings',
           color: 'from-emerald-500 to-teal-600',
         },
         {

@@ -141,7 +141,9 @@ export default function MessageThreadPage() {
     () => (conversationsQuery.data ?? []).find((item) => item.conversation_id === conversationId),
     [conversationId, conversationsQuery.data],
   )
-  const isPartnerReviewer = conversation?.participant_role === 'operator' || conversation?.participant_role === 'owner'
+  const isOperatorReviewer = conversation?.participant_role === 'operator'
+  const isOwnerReviewer = conversation?.participant_role === 'owner' && conversation?.booking_scope === 'package_booking'
+  const isPartnerReviewer = isOperatorReviewer || isOwnerReviewer
 
   const messages = useMemo(() => {
     return [...(messagesQuery.data ?? [])].reverse()
@@ -282,6 +284,9 @@ export default function MessageThreadPage() {
   }
 
   const counterpartName = getCounterpartName(conversation, user?.id)
+  const ownerManagePath = conversation && isOwnerReviewer
+    ? `/manager/bookings?bookingId=${encodeURIComponent(conversation.booking_id)}`
+    : null
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -458,21 +463,22 @@ export default function MessageThreadPage() {
                   <PartnerCancellationReviewCard
                     review={cancellationReview}
                     loading={loadingCancellationReview}
-                    onApprove={() => {
+                    managePath={ownerManagePath}
+                    onApprove={isOperatorReviewer ? (() => {
                       setReviewAction('approve')
                       setReviewReason('')
                       setRefundAmountInput('')
-                    }}
-                    onDecline={() => {
+                    }) : undefined}
+                    onDecline={isOperatorReviewer ? (() => {
                       setReviewAction('decline')
                       setReviewReason('')
                       setRefundAmountInput('')
-                    }}
-                    onRefund={() => {
+                    }) : undefined}
+                    onRefund={isOperatorReviewer ? (() => {
                       setReviewAction('refund')
                       setReviewReason('')
                       setRefundAmountInput(cancellationReview?.paidOnline ? String(cancellationReview.paidOnline) : '')
-                    }}
+                    }) : undefined}
                   />
                 ) : null}
                 <Button
@@ -670,17 +676,21 @@ export default function MessageThreadPage() {
 function PartnerCancellationReviewCard({
   review,
   loading,
+  managePath,
   onApprove,
   onDecline,
   onRefund,
 }: {
   review: PartnerCancellationReviewRecord | null
   loading: boolean
-  onApprove: () => void
-  onDecline: () => void
-  onRefund: () => void
+  managePath?: string | null
+  onApprove?: () => void
+  onDecline?: () => void
+  onRefund?: () => void
 }) {
   const requestPending = review?.cancellationRequestState === 'requested'
+  const canActInThread = Boolean(onApprove && onDecline)
+  const canRefundInThread = Boolean(onRefund)
 
   return (
     <div className="space-y-3 rounded-3xl border border-border/60 bg-muted/30 p-4">
@@ -724,7 +734,16 @@ function PartnerCancellationReviewCard({
         </p>
       ) : null}
 
-      {requestPending ? (
+      {managePath ? (
+        <Button asChild type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80">
+          <Link to={managePath}>
+            <ArrowRight className="mr-2 h-4 w-4" />
+            Manage in bookings console
+          </Link>
+        </Button>
+      ) : null}
+
+      {requestPending && canActInThread ? (
         <div className="space-y-2">
           <Button type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80" onClick={onApprove}>
             <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -734,13 +753,19 @@ function PartnerCancellationReviewCard({
             <AlertTriangle className="mr-2 h-4 w-4" />
             Decline request
           </Button>
-          {review.paidOnline > 0 ? (
+          {review.paidOnline > 0 && canRefundInThread ? (
             <Button type="button" variant="outline" className="w-full justify-start rounded-2xl border-border/60 bg-background/80" onClick={onRefund}>
               <CreditCard className="mr-2 h-4 w-4" />
               Record refund
             </Button>
           ) : null}
         </div>
+      ) : null}
+
+      {managePath && !requestPending ? (
+        <p className="text-xs text-muted-foreground">
+          Owner-side cancellation actions now live in the package bookings console for easier review and follow-up.
+        </p>
       ) : null}
     </div>
   )
