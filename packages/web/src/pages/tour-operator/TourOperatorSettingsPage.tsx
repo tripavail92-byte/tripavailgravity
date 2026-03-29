@@ -387,6 +387,7 @@ export default function TourOperatorSettingsPage() {
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-4">
+        {storefrontSection === 'all' && (<>
         {/* Quick Settings Overview */}
         <div className="grid grid-cols-2 gap-3">
           <GlassCard variant="card" className="rounded-xl p-4">
@@ -439,28 +440,28 @@ export default function TourOperatorSettingsPage() {
           </h2>
           <div className="space-y-3">
             <ToggleSetting
-              label="Booking Notifications"
+              label="Booking Notification"
               description="Get notified about new tour bookings"
               enabled={settings?.booking_notifications || false}
               onChange={(value) => handleToggle('booking_notifications', value)}
               disabled={isSaving}
             />
             <ToggleSetting
-              label="Messaging Notifications"
+              label="Messaging Notification"
               description="Get notified about traveler messages"
               enabled={settings?.messaging_notifications || false}
               onChange={(value) => handleToggle('messaging_notifications', value)}
               disabled={isSaving}
             />
             <ToggleSetting
-              label="Review Notifications"
+              label="Review Notification"
               description="Get notified about tour reviews and ratings"
               enabled={settings?.review_notifications || false}
               onChange={(value) => handleToggle('review_notifications', value)}
               disabled={isSaving}
             />
             <ToggleSetting
-              label="Payment Notifications"
+              label="Payment Notification"
               description="Get notified about payouts and payments"
               enabled={settings?.payment_notifications || false}
               onChange={(value) => handleToggle('payment_notifications', value)}
@@ -510,6 +511,7 @@ export default function TourOperatorSettingsPage() {
             disabled={isSaving}
           />
         </GlassCard>
+        </>)}
 
         {publicProfile ? (
           <GlassCard variant="card" className="rounded-2xl p-6 space-y-6">
