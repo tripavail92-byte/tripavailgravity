@@ -186,7 +186,7 @@ export default function TravelerBookingDetailPage() {
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
   const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
   const itinerary = Array.isArray(booking?.tours?.itinerary) ? booking.tours.itinerary : []
-  const pickupLocations = Array.isArray(booking?.tours?.pickup_locations) ? booking.tours.pickup_locations : []
+  const pickupLocations = Array.isArray(booking?.tours?.tour_pickup_locations) ? booking.tours.tour_pickup_locations : []
   const operatorCompletionConfirmedAt =
     typeof booking?.metadata?.operator_completion_confirmed_at === 'string'
       ? booking.metadata.operator_completion_confirmed_at

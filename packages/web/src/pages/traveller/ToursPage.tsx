@@ -22,8 +22,6 @@ import {
   useToursByCategory,
 } from '@/queries/tourQueries'
 
-const TRUST_SORT_ENABLED = import.meta.env.VITE_ENABLE_TRUST_SORT === 'true'
-
 export default function ToursPage() {
   const [sortMode, setSortMode] = useState<'newest' | 'nearest_pickup' | 'trust_first'>('newest')
   const { coords } = useTravellerCoords()
@@ -66,11 +64,14 @@ export default function ToursPage() {
 
   const sortedAllTours = useMemo(() => {
     if (sortMode === 'trust_first') {
-      // Sort by operator rating descending as a trust proxy.
-      // When operator quality scores are embedded in tour data, swap this for quality_score.
+      // Featured tours surface first, then rank by star rating as the public trust signal.
       return allTours
         .slice()
-        .sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0))
+        .sort((a: any, b: any) => {
+          const featuredDiff = (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)
+          if (featuredDiff !== 0) return featuredDiff
+          return (b.rating ?? 0) - (a.rating ?? 0)
+        })
     }
 
     if (sortMode !== 'nearest_pickup') return allTours
@@ -219,9 +220,7 @@ export default function ToursPage() {
                       <SelectItem value="nearest_pickup" disabled={!coords}>
                         Nearest Pickup
                       </SelectItem>
-                      {TRUST_SORT_ENABLED && (
-                        <SelectItem value="trust_first">Highest Rated Operators</SelectItem>
-                      )}
+                      <SelectItem value="trust_first">Highest Rated Operators</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

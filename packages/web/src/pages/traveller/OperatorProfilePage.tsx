@@ -20,6 +20,7 @@ import {
   Truck,
   UserCheck,
   Users,
+  XCircle,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -420,6 +421,7 @@ export default function OperatorProfilePage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [starFilter, setStarFilter] = useState<number | null>(null)
+  const [reviewSort, setReviewSort] = useState<'newest' | 'top_rated'>('newest')
   const [reportDialogOpen, setReportDialogOpen] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
@@ -494,10 +496,15 @@ export default function OperatorProfilePage() {
     })
   }, [profile, slug])
 
-  const filteredReviews = useMemo(
-    () => (starFilter == null ? reviews : reviews.filter((review) => review.rating === starFilter)),
-    [reviews, starFilter],
-  )
+  const filteredReviews = useMemo(() => {
+    let result = starFilter == null ? reviews : reviews.filter((review) => review.rating === starFilter)
+    if (reviewSort === 'newest') {
+      result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    } else {
+      result = [...result].sort((a, b) => b.rating - a.rating)
+    }
+    return result
+  }, [reviews, starFilter, reviewSort])
 
   if (loading) {
     return (
@@ -705,11 +712,14 @@ export default function OperatorProfilePage() {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-8">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-5">
               <StatCard label="Avg Rating" value={avgRating ? `${avgRating.toFixed(1)} ★` : '—'} icon={Star} />
               <StatCard label="Reviews" value={String(totalReviews)} icon={Star} />
               <StatCard label="Completed Trips" value={String(completedBookings)} icon={CheckCircle2} />
               <StatCard label="Travelers Served" value={String(travelersServed)} icon={Users} />
+              {metrics?.cancellation_rate != null && (
+                <StatCard label="Cancellation Rate" value={`${metrics.cancellation_rate.toFixed(0)}%`} icon={XCircle} />
+              )}
             </div>
 
             {(profile.description || profile.coverage_range || profile.years_experience) ? (
@@ -894,6 +904,10 @@ export default function OperatorProfilePage() {
                             {star}★
                           </Button>
                         ))}
+                      </div>
+                      <div className="flex gap-2 border-t border-border/40 pt-3">
+                        <Button size="sm" variant={reviewSort === 'newest' ? 'default' : 'outline'} onClick={() => setReviewSort('newest')}>Newest</Button>
+                        <Button size="sm" variant={reviewSort === 'top_rated' ? 'default' : 'outline'} onClick={() => setReviewSort('top_rated')}>Top Rated</Button>
                       </div>
                     </div>
 

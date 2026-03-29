@@ -476,6 +476,14 @@ function App() {
                   </RoleGuard>
                 }
               />
+              <Route
+                path="/operator/public-profile"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorPublicPreviewRedirect />
+                  </RoleGuard>
+                }
+              />
 
               <Route path="/dashboard" element={<DashboardRedirect />} />
             </Route>

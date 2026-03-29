@@ -232,7 +232,8 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
-    .order('created_at', { ascending: false })
+    .order('is_featured', { ascending: false })
+    .order('rating', { ascending: false })
     .limit(10)
 
   if (error) {
