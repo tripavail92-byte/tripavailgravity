@@ -86,8 +86,12 @@ export default function OperatorCalendarPage() {
   )
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen relative overflow-hidden bg-background pb-16">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
+        <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-emerald-500/10 blur-[110px] opacity-60" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="Calendar & Availability"
           subtitle="Airbnb-style departure planning with booking pressure and seat visibility across your upcoming tours."

@@ -156,6 +156,11 @@ export default function TourOperatorSettingsPage() {
   }, [location.pathname])
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-role', 'tour_operator')
+    return () => document.documentElement.removeAttribute('data-role')
+  }, [])
+
+  useEffect(() => {
     if (user?.id) {
       loadSettings()
     }
@@ -363,12 +368,16 @@ export default function TourOperatorSettingsPage() {
   ].filter(Boolean).length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
+    <div className="min-h-screen relative overflow-hidden bg-background pb-20">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
+        <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-violet-500/10 blur-[110px] opacity-60" />
+      </div>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <h1 className="text-xl font-semibold text-foreground mb-1">
-            Tour Operator Settings{settings?.business_name && ` - ${settings.business_name}`}
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50">
+        <div className="max-w-4xl mx-auto px-4 py-5">
+          <h1 className="text-xl font-black tracking-tight text-foreground mb-0.5">
+            Tour Operator Settings{settings?.business_name && ` – ${settings.business_name}`}
           </h1>
           <p className="text-sm text-muted-foreground">
             Manage your tours, team, payments, and business preferences
@@ -377,16 +386,16 @@ export default function TourOperatorSettingsPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-4">
         {/* Quick Settings Overview */}
         <div className="grid grid-cols-2 gap-3">
-          <GlassCard variant="light" className="rounded-xl p-4">
+          <GlassCard variant="card" className="rounded-xl p-4">
             <div className="text-xs text-muted-foreground mb-1">Base Tour Price</div>
             <div className="text-lg font-semibold text-foreground">
               {settings?.currency} {settings?.base_tour_price?.toFixed(2) || '0.00'}
             </div>
           </GlassCard>
-          <GlassCard variant="light" className="rounded-xl p-4">
+          <GlassCard variant="card" className="rounded-xl p-4">
             <div className="text-xs text-muted-foreground mb-1">Max Group Size</div>
             <div className="text-lg font-semibold text-foreground">
               {settings?.max_group_size || '—'} people

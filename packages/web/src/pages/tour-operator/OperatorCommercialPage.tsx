@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { motion } from 'motion/react'
 import {
   Select,
   SelectContent,
@@ -383,6 +384,12 @@ function toOperatorPromoForm(promotion: CommercialPromotion): OperatorPromoFormS
 
 export default function OperatorCommercialPage() {
   const { user } = useAuth()
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-role', 'tour_operator')
+    return () => document.documentElement.removeAttribute('data-role')
+  }, [])
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [billingRows, setBillingRows] = useState<OperatorBillingReportRow[]>([])
@@ -1195,18 +1202,28 @@ export default function OperatorCommercialPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <PageHeader
-          title="Commercial"
-          subtitle="Track your tier, billing, payout readiness, and cycle performance from the database-backed commercial layer."
-          showBackButton={false}
-          actions={
-            <Button asChild variant="outline" className="rounded-2xl">
-              <Link to="/operator/tours/new">Create trip</Link>
-            </Button>
-          }
-        />
+    <div className="min-h-screen relative overflow-hidden bg-background pb-16">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
+        <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-amber-500/10 blur-[110px] opacity-60" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+        >
+          <PageHeader
+            title="Commercial"
+            subtitle="Track your tier, billing, payout readiness, and cycle performance from the database-backed commercial layer."
+            showBackButton={false}
+            actions={
+              <Button asChild variant="outline" className="rounded-2xl">
+                <Link to="/operator/tours/new">Create trip</Link>
+              </Button>
+            }
+          />
+        </motion.div>
 
         {error ? (
           <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
@@ -1214,24 +1231,25 @@ export default function OperatorCommercialPage() {
           </div>
         ) : null}
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        >
           {stats.map((stat) => (
-            <Card key={stat.label} className="rounded-3xl border-border/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                  <stat.icon className="h-4 w-4" />
-                  {stat.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-foreground">
-                  {loading ? 'Loading…' : stat.value}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{stat.caption}</p>
-              </CardContent>
-            </Card>
+            <div key={stat.label} className="glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">{stat.label}</p>
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-background/40">
+                  <stat.icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <p className="text-3xl font-black text-foreground">{loading ? '…' : stat.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{stat.caption}</p>
+            </div>
           ))}
-        </div>
+        </motion.div>
 
         <Tabs defaultValue="overview" className="mt-8">
           <TabsList className="h-auto rounded-2xl bg-muted/70 p-1">
@@ -1251,7 +1269,7 @@ export default function OperatorCommercialPage() {
 
           <TabsContent value="overview" className="space-y-6 pt-4">
             <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <BarChart3 className="h-5 w-5" />
@@ -1274,7 +1292,7 @@ export default function OperatorCommercialPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="text-lg">Tier entitlements</CardTitle>
                 </CardHeader>
@@ -1305,7 +1323,7 @@ export default function OperatorCommercialPage() {
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="text-lg">Finance safeguards</CardTitle>
                 </CardHeader>
@@ -1327,7 +1345,7 @@ export default function OperatorCommercialPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <ShieldAlert className="h-5 w-5" />
@@ -1379,7 +1397,7 @@ export default function OperatorCommercialPage() {
               </Card>
             </div>
 
-            <Card className="rounded-3xl border-border/60">
+            <Card className="glass-card-dark rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Recent payout batches</CardTitle>
               </CardHeader>
@@ -1425,7 +1443,7 @@ export default function OperatorCommercialPage() {
           <TabsContent value="billing" className="pt-4">
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {billingHighlights.map((item) => (
-                <Card key={item.label} className="rounded-3xl border-border/60">
+                <Card key={item.label} className="glass-card-dark rounded-3xl border-border/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">
                       {item.label}
@@ -1441,7 +1459,7 @@ export default function OperatorCommercialPage() {
               ))}
             </div>
 
-            <Card className="rounded-3xl border-border/60">
+            <Card className="glass-card-dark rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Billing cycles and invoices</CardTitle>
               </CardHeader>
@@ -1506,7 +1524,7 @@ export default function OperatorCommercialPage() {
             </Card>
 
             {selectedBillingRow ? (
-              <Card className="mt-6 rounded-3xl border-border/60">
+              <Card className="glass-card-dark mt-6 rounded-3xl border-border/50">
                 <CardHeader>
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <CardTitle className="text-lg">Invoice detail</CardTitle>
@@ -1581,7 +1599,7 @@ export default function OperatorCommercialPage() {
           <TabsContent value="payouts" className="pt-4">
             <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {payoutHighlights.map((item) => (
-                <Card key={item.label} className="rounded-3xl border-border/60">
+                <Card key={item.label} className="glass-card-dark rounded-3xl border-border/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">
                       {item.label}
@@ -1597,7 +1615,7 @@ export default function OperatorCommercialPage() {
               ))}
             </div>
 
-            <Card className="mb-6 rounded-3xl border-border/60">
+            <Card className="glass-card-dark mb-6 rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Payout timeline</CardTitle>
               </CardHeader>
@@ -1615,7 +1633,7 @@ export default function OperatorCommercialPage() {
               </CardContent>
             </Card>
 
-            <Card className="mb-6 rounded-3xl border-border/60">
+            <Card className="glass-card-dark mb-6 rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Payout history and exception states</CardTitle>
               </CardHeader>
@@ -1662,7 +1680,7 @@ export default function OperatorCommercialPage() {
               </CardContent>
             </Card>
 
-            <Card className="mb-6 rounded-3xl border-border/60">
+            <Card className="glass-card-dark mb-6 rounded-3xl border-border/50">
               <CardHeader>
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -1949,7 +1967,7 @@ export default function OperatorCommercialPage() {
               </CardContent>
             </Card>
 
-            <Card className="mb-6 rounded-3xl border-border/60">
+            <Card className="glass-card-dark mb-6 rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Payout batches</CardTitle>
               </CardHeader>
@@ -2008,7 +2026,7 @@ export default function OperatorCommercialPage() {
             </Card>
 
             {selectedPayoutBatch ? (
-              <Card className="mb-6 rounded-3xl border-border/60">
+              <Card className="glass-card-dark mb-6 rounded-3xl border-border/50">
                 <CardHeader>
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <CardTitle className="text-lg">Payout batch detail</CardTitle>
@@ -2161,7 +2179,7 @@ export default function OperatorCommercialPage() {
               </Card>
             ) : null}
 
-            <Card className="rounded-3xl border-border/60">
+            <Card className="glass-card-dark rounded-3xl border-border/50">
               <CardHeader>
                 <CardTitle className="text-lg">Booking-level payout queue</CardTitle>
               </CardHeader>
@@ -2234,7 +2252,7 @@ export default function OperatorCommercialPage() {
 
           <TabsContent value="promos" className="space-y-6 pt-4">
             <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="text-lg">Operator-funded promos</CardTitle>
                 </CardHeader>
@@ -2424,7 +2442,7 @@ export default function OperatorCommercialPage() {
                 </CardContent>
               </Card>
 
-              <Card className="rounded-3xl border-border/60">
+              <Card className="glass-card-dark rounded-3xl border-border/50">
                 <CardHeader>
                   <CardTitle className="text-lg">Promo inventory</CardTitle>
                 </CardHeader>

@@ -28,6 +28,11 @@ export default function OperatorReviewsPage() {
   const [submittingId, setSubmittingId] = useState<string | null>(null)
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-role', 'tour_operator')
+    return () => document.documentElement.removeAttribute('data-role')
+  }, [])
+
+  useEffect(() => {
     operatorReviewService
       .listMyReviews()
       .then(setReviews)
@@ -77,7 +82,12 @@ export default function OperatorReviewsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen relative overflow-hidden bg-background pb-16">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
+        <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-amber-500/10 blur-[110px] opacity-60" />
+      </div>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
       <PageHeader
         title="Reviews"
         subtitle="Read traveler feedback and reply publicly to build trust."
@@ -214,6 +224,7 @@ export default function OperatorReviewsPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

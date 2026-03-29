@@ -50,7 +50,7 @@ export function PageHeader({
           </Button>
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-foreground truncate">{title}</h1>
+          <h1 className="text-2xl font-black tracking-tight text-foreground truncate">{title}</h1>
           {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
         </div>
       </div>
