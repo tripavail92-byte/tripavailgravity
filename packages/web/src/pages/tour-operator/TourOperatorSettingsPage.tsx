@@ -26,6 +26,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
+import { FleetGuidesSection } from './components/FleetGuidesSection'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -722,6 +723,24 @@ export default function TourOperatorSettingsPage() {
             ) : null}
 
             {(storefrontSection === 'all' || storefrontSection === 'fleet-guides') ? (
+              <FleetGuidesSection
+                fleetAssets={publicProfile.fleetAssets}
+                guideProfiles={publicProfile.guideProfiles}
+                galleryMedia={publicProfile.galleryMedia}
+                onUpdateFleet={updateFleetAsset}
+                onAddFleet={addFleetAsset}
+                onRemoveFleet={removeFleetAsset}
+                onUpdateGuide={updateGuideProfile}
+                onAddGuide={addGuideProfile}
+                onRemoveGuide={removeGuideProfile}
+                onUpdateGallery={updateGalleryItem}
+                onAddGallery={addGalleryItem}
+                onRemoveGallery={removeGalleryItem}
+                onSave={handleSavePublicProfile}
+                isSaving={isSavingPublicProfile}
+              />
+            ) : null}
+            {false && (
               <>
             <div className="space-y-4 rounded-2xl border border-border/60 p-4">
               <div className="flex items-center justify-between gap-4">
@@ -823,7 +842,7 @@ export default function TourOperatorSettingsPage() {
               </div>
             </div>
               </>
-            ) : null}
+            )}
 
             {(storefrontSection === 'all' || storefrontSection === 'business-profile') ? (
             <div className="space-y-4 rounded-2xl border border-border/60 p-4">
