@@ -200,7 +200,7 @@ export default function TourOperatorSetupPage() {
                 TripAvail
               </h1>
               <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mt-0.5">
-                Operator Setup
+                {isLocked ? 'Operator Profile' : 'Operator Setup'}
               </p>
             </div>
           </div>

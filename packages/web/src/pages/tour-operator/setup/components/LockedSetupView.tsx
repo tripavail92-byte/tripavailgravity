@@ -28,7 +28,7 @@ export function LockedSetupView({ data, onEdit }: LockedSetupViewProps) {
           Setup Complete & Locked
         </div>
         <h3 className="text-2xl font-black text-foreground tracking-tight">
-          Your Operator Profile
+          Edit Profile
         </h3>
         <p className="text-muted-foreground text-sm font-medium leading-relaxed">
           Your setup is complete. Click <span className="text-foreground font-semibold">Edit Profile</span> below if you need to make changes.
