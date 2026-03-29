@@ -31,16 +31,19 @@ import {
   X,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
 import type {
   OperatorFleetAsset,
   OperatorGalleryItem,
   OperatorGuideProfile,
 } from '@/features/tour-operator/types/operatorProfile'
+import { useAuth } from '@/hooks/useAuth'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -484,13 +487,37 @@ const CATEGORY_COLORS: Record<OperatorGalleryItem['category'], string> = {
   food:          'bg-amber-500/10 border-amber-500/25 text-amber-400',
 }
 
-function GalleryCard({ item, index, onUpdate, onRemove }: {
+function GalleryCard({ item, index, onUpdate, onRemove, userId }: {
   item: OperatorGalleryItem
   index: number
+  userId: string
   onUpdate: (updates: Partial<OperatorGalleryItem>) => void
   onRemove: () => void
 }) {
   const [expanded, setExpanded] = useState(!item.url)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+    setIsUploading(true)
+    try {
+      const publicUrl = await tourOperatorService.uploadAsset(userId, file, 'gallery')
+      onUpdate({ url: publicUrl, title: item.title || file.name.replace(/\.[^.]+$/, '') })
+      toast.success('Image uploaded')
+      setExpanded(false)
+    } catch {
+      toast.error('Upload failed — please try again')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <motion.div
@@ -501,17 +528,55 @@ function GalleryCard({ item, index, onUpdate, onRemove }: {
       transition={{ duration: 0.2 }}
       className="rounded-2xl border border-border/50 bg-card overflow-hidden"
     >
-      {/* Thumbnail / icon header */}
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={isUploading}
+      />
+
+      {/* Thumbnail / upload zone */}
       <div className="relative">
         {item.url ? (
           <div className="h-28 overflow-hidden bg-muted/30">
             <img src={item.url} alt={item.title || 'Gallery'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
           </div>
         ) : (
-          <div className="h-20 flex items-center justify-center bg-muted/20">
-            <Image className="w-8 h-8 text-muted-foreground/25" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="w-full h-24 flex flex-col items-center justify-center gap-1.5 bg-muted/20 hover:bg-primary/5 border-b border-dashed border-border/50 hover:border-primary/30 transition-all group"
+          >
+            {isUploading ? (
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            ) : (
+              <>
+                <Camera className="w-6 h-6 text-muted-foreground/30 group-hover:text-primary/60 transition-colors" aria-hidden="true" />
+                <span className="text-[10px] text-muted-foreground/50 group-hover:text-primary/60 font-semibold transition-colors">Click to upload</span>
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Overlay controls when image exists */}
+        {item.url && (
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-all flex items-center justify-center opacity-0 hover:opacity-100 gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="w-8 h-8 rounded-lg bg-background/90 backdrop-blur-sm border border-border/60 flex items-center justify-center text-foreground hover:bg-primary/10 hover:text-primary transition-all"
+              aria-label="Replace image"
+            >
+              {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </button>
           </div>
         )}
+
         <div className="absolute top-2 right-2 flex gap-1.5">
           <button type="button" onClick={() => setExpanded((v) => !v)} className="w-7 h-7 rounded-lg bg-background/80 backdrop-blur-sm border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all">
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
@@ -520,6 +585,7 @@ function GalleryCard({ item, index, onUpdate, onRemove }: {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
+
         {item.category && (
           <div className="absolute bottom-2 left-2">
             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border capitalize ${CATEGORY_COLORS[item.category]}`}>
@@ -544,14 +610,23 @@ function GalleryCard({ item, index, onUpdate, onRemove }: {
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 border-t border-border/40 space-y-2.5 bg-muted/20 pt-3">
+
+              {/* Upload button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-bold transition-all disabled:opacity-60"
+              >
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                {item.url ? 'Replace image' : 'Upload image'}
+              </button>
+
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</p>
                 <Input value={item.title} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="Beautiful Hunza Valley" className="h-8 text-xs" />
               </div>
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Image URL</p>
-                <Input value={item.url} onChange={(e) => onUpdate({ url: e.target.value })} placeholder="https://…" className="h-8 text-xs" />
-              </div>
+
               <div className="space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -614,9 +689,10 @@ export function FleetGuidesSection({
   onSave,
   isSaving,
 }: FleetGuidesSectionProps) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
   return (
     <div className="space-y-10">
-
       {/* ── Fleet Assets ── */}
       <section>
         <SectionHeader
@@ -706,9 +782,9 @@ export function FleetGuidesSection({
             <EmptyState
               icon={Image}
               title="No gallery items yet"
-              subtitle="Add photos to unlock showcase awards and increase bookings"
+              subtitle="Upload photos to unlock showcase awards and increase bookings"
               onAdd={onAddGallery}
-              addLabel="Add first photo"
+              addLabel="Upload first photo"
             />
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -717,6 +793,7 @@ export function FleetGuidesSection({
                   key={item.id}
                   item={item}
                   index={i}
+                  userId={userId}
                   onUpdate={(u) => onUpdateGallery(i, u)}
                   onRemove={() => onRemoveGallery(i)}
                 />
