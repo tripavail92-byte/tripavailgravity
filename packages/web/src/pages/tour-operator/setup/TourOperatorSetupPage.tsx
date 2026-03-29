@@ -171,7 +171,7 @@ export default function TourOperatorSetupPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Nav Header */}
-      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-6 py-4">
+      <div className="glass-liquid sticky top-0 z-40 border-b border-border/50 px-6 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30 ring-2 ring-primary/20">

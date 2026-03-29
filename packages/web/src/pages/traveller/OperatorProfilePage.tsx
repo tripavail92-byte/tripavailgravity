@@ -1019,7 +1019,7 @@ export default function OperatorProfilePage() {
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 p-4 backdrop-blur-xl lg:hidden">
+      <div className="glass-liquid fixed inset-x-0 bottom-0 z-40 border-t border-border/50 p-4 rounded-t-2xl lg:hidden">
         <div className="mx-auto flex max-w-6xl gap-3">
           <Button asChild className="flex-1 rounded-2xl">
             <a

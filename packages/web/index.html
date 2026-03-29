@@ -33,6 +33,51 @@
 </head>
 
 <body>
+  <!--
+    Liquid Glass SVG Filter Definitions
+    ─────────────────────────────────────────────────────────────────
+    These SVG filters approximate Apple's iOS 26 "Liquid Glass" lensing
+    on the web. Applied via CSS filter: url(#...) or backdrop-filter: url(#...).
+
+    liquid-glass-lens   → feTurbulence + feDisplacementMap simulates the
+                          refractive lensing / light-bending of the material.
+    liquid-glass-frost  → heavier blur + contrast for "frosted" variant.
+    ─────────────────────────────────────────────────────────────────
+  -->
+  <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true"
+       style="position:absolute;overflow:hidden;pointer-events:none">
+    <defs>
+      <!-- Primary lens: gentle turbulence displacement creates soft light-bending -->
+      <filter id="liquid-glass-lens" x="-10%" y="-10%" width="120%" height="120%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018 0.022"
+                      numOctaves="3" seed="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise"
+                           scale="6" xChannelSelector="R" yChannelSelector="G"
+                           result="displaced"/>
+        <feGaussianBlur in="displaced" stdDeviation="0.4" result="softened"/>
+        <feComposite in="softened" in2="SourceGraphic" operator="in"/>
+      </filter>
+
+      <!-- Backdrop lens: applied to backdrop-filter to refract content BEHIND glass -->
+      <filter id="liquid-glass-backdrop" x="-5%" y="-5%" width="110%" height="110%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.015"
+                      numOctaves="2" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise"
+                           scale="4" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+
+      <!-- Specular: white gradient highlight that rides the top-left edge -->
+      <filter id="liquid-glass-specular" x="0%" y="0%" width="100%" height="100%"
+              color-interpolation-filters="sRGB">
+        <feFlood flood-color="white" flood-opacity="0.07" result="shine"/>
+        <feComposite in="shine" in2="SourceGraphic" operator="in" result="masked"/>
+        <feBlend in="SourceGraphic" in2="masked" mode="screen"/>
+      </filter>
+    </defs>
+  </svg>
+
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

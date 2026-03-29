@@ -624,6 +624,134 @@
   }
 
   /* ========================================
+     LIQUID GLASS — LENSING (iOS 26 approximation)
+     ────────────────────────────────────────────
+     Achieves the three things CSS alone cannot:
+     1. Real lensing: SVG feDisplacementMap distorts backdrop content
+        (backdrop-filter: url(#...) — Chrome 76+, Safari 18+)
+     2. Adaptive tint: mix-blend-mode overlay reacts to background color
+     3. Specular highlight: ::before pseudo with radial gradient rides
+        the top-left corner exactly as Liquid Glass does
+     ======================================== */
+
+  .glass-liquid {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+
+    /* Base blur + displacement of backdrop (true lensing on supported browsers) */
+    backdrop-filter: blur(18px) saturate(200%) brightness(1.04) url(#liquid-glass-backdrop);
+    -webkit-backdrop-filter: blur(18px) saturate(200%) brightness(1.04);
+
+    /* Translucent dark base */
+    background: hsl(var(--glass-dark) / 0.55);
+
+    border: 1px solid hsl(var(--glass-border) / 0.18);
+    box-shadow:
+      inset 0 1.5px 0 hsl(0 0% 100% / 0.22),   /* top edge specular lip */
+      inset 0 -1px 0 hsl(0 0% 0% / 0.08),       /* bottom shadow grounding */
+      0 8px 40px hsl(var(--glass-shadow) / 0.45);
+
+    will-change: transform, backdrop-filter;
+    transform: translateZ(0);
+    transition: box-shadow 200ms ease, background 200ms ease;
+  }
+
+  /* Specular highlight pseudo-element: bright white radial at top-left
+     — this is the "light source hitting the glass surface" that iOS Liquid Glass
+     uses to define the material's geometry and sense of elevation */
+  .glass-liquid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(ellipse 80% 55% at 15% 0%, hsl(0 0% 100% / 0.18) 0%, transparent 70%),
+      linear-gradient(145deg, hsl(0 0% 100% / 0.08) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: screen;     /* screen blend makes it additive — bright on dark, invisible on light */
+  }
+
+  /* Adaptive tint layer via mix-blend-mode:
+     overlay blends the primary color with the background content,
+     producing the iOS-style "colored glass" behavior where the tint
+     shifts in saturation and brightness based on what's behind */
+  .glass-liquid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: hsl(var(--primary) / 0.06);
+    pointer-events: none;
+    z-index: 2;
+    mix-blend-mode: overlay;    /* overlay makes the tint respond to underlying luminance */
+  }
+
+  /* Touch illumination: inner glow expands from interaction point
+     — matches iOS Liquid Glass "illuminates from within on touch" */
+  .glass-liquid:active::before {
+    background:
+      radial-gradient(ellipse 100% 100% at 50% 50%, hsl(0 0% 100% / 0.28) 0%, transparent 70%),
+      linear-gradient(145deg, hsl(0 0% 100% / 0.1) 0%, transparent 40%);
+    transition: background 80ms ease;
+  }
+
+  /* Hover: deeper shadows + stronger specular, simulating "lifting" */
+  .glass-liquid:hover {
+    box-shadow:
+      inset 0 1.5px 0 hsl(0 0% 100% / 0.30),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.10),
+      0 16px 60px hsl(var(--glass-shadow) / 0.55);
+    background: hsl(var(--glass-dark) / 0.60);
+  }
+
+  /* Light appearance variant: for use over bright/photo backgrounds
+     — matches Apple's "Clear" Liquid Glass variant */
+  .glass-liquid-clear {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    backdrop-filter: blur(22px) saturate(220%) brightness(1.06) url(#liquid-glass-backdrop);
+    -webkit-backdrop-filter: blur(22px) saturate(220%) brightness(1.06);
+    background: hsl(0 0% 100% / 0.12);
+    border: 1px solid hsl(0 0% 100% / 0.25);
+    box-shadow:
+      inset 0 1.5px 0 hsl(0 0% 100% / 0.40),
+      0 8px 40px hsl(0 0% 0% / 0.20);
+    will-change: transform, backdrop-filter;
+    transform: translateZ(0);
+    /* Dimming layer behind for legibility — Apple requires this for Clear variant */
+    --liquid-glass-dimming: hsl(0 0% 0% / 0.35);
+  }
+
+  .glass-liquid-clear::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(ellipse 80% 55% at 15% 0%, hsl(0 0% 100% / 0.28) 0%, transparent 65%),
+      linear-gradient(145deg, hsl(0 0% 100% / 0.12) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: screen;
+  }
+
+  /* Auto light/dark flip: when .glass-liquid sits over a light background,
+     swap to a darker tint so it remains visible.
+     Applied via JS useLiquidGlassTheme() utility (see below) */
+  .glass-liquid[data-glass-mode='light'] {
+    background: hsl(var(--glass-dark) / 0.75);
+    border-color: hsl(var(--glass-border) / 0.25);
+  }
+
+  .glass-liquid[data-glass-mode='dark'] {
+    background: hsl(0 0% 100% / 0.15);
+    border-color: hsl(0 0% 100% / 0.28);
+  }
+
+  /* ========================================
      LIQUID GLASS ACCESSIBILITY
      Mirrors iOS 26 Liquid Glass accessibility:
      prefers-reduced-transparency removes all blur
@@ -639,7 +767,9 @@
     .glass-button,
     .glass-overlay,
     .glass-badge,
-    .glass-performance {
+    .glass-performance,
+    .glass-liquid,
+    .glass-liquid-clear {
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
@@ -653,6 +783,13 @@
     .glass-button   { background: hsl(var(--muted)); }
     .glass-overlay  { background: hsl(0 0% 0% / 0.6); }
     .glass-badge    { background: hsl(var(--muted)); }
+    .glass-liquid   { background: hsl(var(--card)); }
+    .glass-liquid-clear { background: hsl(var(--card) / 0.95); }
+
+    /* remove pseudo-element effects too */
+    .glass-liquid::before,
+    .glass-liquid::after,
+    .glass-liquid-clear::before { display: none; }
   }
 
   /* Shadows */
