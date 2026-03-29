@@ -64,7 +64,7 @@ interface SettingsCategory {
   hasWarning: boolean
   badge: string | null
   badgeVariant: 'primary' | 'info' | 'light' | 'warning'
-  screen: string
+  href: string
 }
 
 const settingsCategories: SettingsCategory[] = [
@@ -76,7 +76,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'tour-pricing',
+    href: '/operator/settings',
   },
   {
     id: 'business',
@@ -86,17 +86,17 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'business-info',
+    href: '/operator-dashboard/business-profile',
   },
   {
     id: 'payment',
     title: 'Payment & Earnings',
     description: 'Configure payment methods, commission structure, and payout settings',
     icon: CreditCard,
-    hasWarning: true, // Bank details might not be complete
+    hasWarning: true,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'payment-settings',
+    href: '/operator/commercial',
   },
   {
     id: 'cancellation',
@@ -106,7 +106,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: 'Flexible',
     badgeVariant: 'info',
-    screen: 'cancellation-policy',
+    href: '/operator/settings',
   },
   {
     id: 'notifications',
@@ -114,9 +114,9 @@ const settingsCategories: SettingsCategory[] = [
     description: 'Booking alerts, traveler messages, and communication preferences',
     icon: Bell,
     hasWarning: false,
-    badge: '6 Active',
+    badge: null,
     badgeVariant: 'primary',
-    screen: 'notifications-settings',
+    href: '/operator/settings',
   },
   {
     id: 'analytics',
@@ -126,7 +126,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'light',
-    screen: 'analytics',
+    href: '/operator/analytics',
   },
   {
     id: 'security',
@@ -136,7 +136,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    screen: 'security-settings',
+    href: '/operator/settings',
   },
 ]
 
@@ -844,51 +844,54 @@ export default function TourOperatorSettingsPage() {
           </GlassCard>
         ) : null}
 
-        {/* Category Cards */}
-        <div className="pt-4">
-          <h2 className="text-lg font-semibold text-foreground mb-3">Settings Sections</h2>
-          {settingsCategories.map((category, index) => (
-            <GlassCard
-              key={category.id}
-              variant="card"
-              className="rounded-2xl overflow-hidden cursor-pointer mb-2"
-              interactive
-              asMotion
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <category.icon size={24} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
-                        {category.hasWarning && (
-                          <AlertTriangle size={16} className="text-primary flex-shrink-0" />
+        {/* Category Cards — only shown on the main settings route, not on fleet/business-profile sub-routes */}
+        {storefrontSection === 'all' && (
+          <div className="pt-4">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Settings Sections</h2>
+            {settingsCategories.map((category, index) => (
+              <Link key={category.id} to={category.href} className="block mb-2">
+                <GlassCard
+                  variant="card"
+                  className="rounded-2xl overflow-hidden cursor-pointer"
+                  interactive
+                  asMotion
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                          <category.icon size={24} className="text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
+                            {category.hasWarning && (
+                              <AlertTriangle size={16} className="text-primary flex-shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        {category.badge && (
+                          <GlassBadge variant={category.badgeVariant} size="sm">
+                            {category.badge}
+                          </GlassBadge>
                         )}
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
                       </div>
                     </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-16">
+                      {category.description}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {category.badge && (
-                      <GlassBadge variant={category.badgeVariant} size="sm">
-                        {category.badge}
-                      </GlassBadge>
-                    )}
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed pl-16">
-                  {category.description}
-                </p>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
+                </GlassCard>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Support Section */}
         <GlassCard
