@@ -108,7 +108,7 @@ export default function HotelManagerSetupPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
-      <div className="glass-liquid sticky top-0 z-40 border-b border-border/50 px-6 py-5">
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-6 py-5">
         <div className="max-w-content mx-auto flex items-center justify-between">
           <div className="flex flex-col gap-1 flex-1 max-w-xs">
             <div className="flex items-center gap-2">

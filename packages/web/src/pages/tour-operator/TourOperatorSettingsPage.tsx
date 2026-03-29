@@ -374,7 +374,7 @@ export default function TourOperatorSettingsPage() {
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-violet-500/10 blur-[110px] opacity-60" />
       </div>
       {/* Header */}
-      <div className="glass-liquid sticky top-0 z-20 border-b border-border/50">
+      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50">
         <div className="max-w-4xl mx-auto px-4 py-5">
           <h1 className="text-xl font-black tracking-tight text-foreground mb-0.5">
             Tour Operator Settings{settings?.business_name && ` – ${settings.business_name}`}

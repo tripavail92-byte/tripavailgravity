@@ -412,7 +412,7 @@ export default function PackageDetailsPage() {
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header / Nav */}
-      <GlassCard variant="nav" blur="md" className="glass-liquid sticky top-0 z-40 border-b border-border/40">
+      <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Button
             variant="ghost"

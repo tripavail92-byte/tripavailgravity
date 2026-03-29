@@ -680,7 +680,7 @@ export default function TourDetailsPage() {
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
       {/* Header / Nav (match PackageDetailsPage) */}
-      <GlassCard variant="nav" blur="md" className="glass-liquid sticky top-0 z-40 border-b border-border/40">
+      <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -1358,7 +1358,7 @@ export default function TourDetailsPage() {
         </div>
       </main>
 
-      <div className="glass-liquid fixed inset-x-0 bottom-0 z-40 border-t border-border/50 rounded-t-2xl">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"

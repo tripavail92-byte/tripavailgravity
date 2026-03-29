@@ -22,10 +22,10 @@ export function DashboardHeader() {
   return (
     <header
       className={cn(
-        'glass-liquid sticky top-0 z-50 border-b transition-colors',
+        'sticky top-0 z-50 border-b backdrop-blur-xl transition-colors',
         isPartnerChrome
-          ? 'border-white/10'
-          : 'border-border/50',
+          ? 'border-white/10 bg-[linear-gradient(180deg,rgba(9,14,29,0.96)_0%,rgba(13,19,38,0.9)_100%)] shadow-[0_10px_30px_rgba(0,0,0,0.28)]'
+          : 'border-border/60 bg-background/80 backdrop-blur-md',
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

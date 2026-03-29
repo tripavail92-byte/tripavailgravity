@@ -212,7 +212,7 @@ export default function HotelManagerSettingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
-      <div className="glass-liquid sticky top-0 z-10 border-b border-border/50">
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <h1 className="text-xl font-semibold text-foreground mb-1">
             Hotel Settings{settings?.business_name && ` - ${settings.business_name}`}

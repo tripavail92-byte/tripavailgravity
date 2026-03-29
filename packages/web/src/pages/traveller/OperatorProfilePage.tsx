@@ -609,7 +609,7 @@ export default function OperatorProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-28 lg:pb-10">
-      <div className="glass-liquid sticky top-0 z-30 border-b border-border/50">
+      <div className="sticky top-0 z-30 border-b border-border/60 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
           <Button variant="ghost" size="sm" className="rounded-2xl" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -1019,7 +1019,7 @@ export default function OperatorProfilePage() {
         </div>
       </main>
 
-      <div className="glass-liquid fixed inset-x-0 bottom-0 z-40 border-t border-border/50 p-4 rounded-t-2xl lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 p-4 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-6xl gap-3">
           <Button asChild className="flex-1 rounded-2xl">
             <a

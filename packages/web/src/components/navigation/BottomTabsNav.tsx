@@ -10,7 +10,7 @@ export function BottomTabsNav() {
   const inactiveClass = 'text-muted-foreground'
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-16 glass-liquid rounded-t-2xl flex items-center justify-around px-6 z-50">
+    <div className="fixed bottom-0 left-0 right-0 h-16 glass-nav-bottom flex items-center justify-around px-6 z-50">
       <Link
         to="/"
         className={`${baseClass} ${isActive('/') ? activeClass : inactiveClass}`}

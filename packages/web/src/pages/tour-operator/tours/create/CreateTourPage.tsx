@@ -796,7 +796,7 @@ export default function CreateTourPage() {
       </div>
 
       {/* Header */}
-      <div className="glass-liquid sticky top-0 z-10 border-b border-border/50 px-6 py-4">
+      <div className="sticky top-0 z-10 border-b border-border/60 bg-background/85 px-6 py-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
         <div className="max-w-5xl mx-auto space-y-3">
           {/* Title row */}
           <div className="flex justify-between items-center gap-3">
