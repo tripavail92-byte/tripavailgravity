@@ -344,7 +344,7 @@ export default function VerificationStatusPage() {
   return (
     <div className="min-h-screen bg-muted/30 font-sans pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border px-6 py-4">
+      <div className="glass-liquid sticky top-0 z-30 border-b border-border/50 px-6 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="font-black text-foreground tracking-tighter text-xl uppercase italic">
