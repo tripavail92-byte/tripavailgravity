@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase'
 
 import { BusinessInfoStep } from './components/BusinessInfoStep'
 import { CompletionStep } from './components/CompletionStep'
+import { LockedSetupView } from './components/LockedSetupView'
 import { CoverageAreaStep } from './components/CoverageAreaStep'
 import { PersonalInfoStep } from './components/PersonalInfoStep'
 import { PoliciesStep } from './components/PoliciesStep'
@@ -37,6 +38,7 @@ export default function TourOperatorSetupPage() {
   const [setupData, setSetupData] = useState<Partial<TourOperatorOnboardingData>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLocked, setIsLocked] = useState(false)
   const { user, activeRole } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -68,14 +70,17 @@ export default function TourOperatorSetupPage() {
     const loadExistingData = async () => {
       if (!user?.id) return
       try {
-        // If setup is already completed, the wizard is locked — send to dashboard
+        // If setup is already completed, show the locked read-only view
         const { data: profile } = await supabase
           .from('tour_operator_profiles')
           .select('setup_completed')
           .eq('user_id', user.id)
           .maybeSingle()
         if (profile?.setup_completed === true) {
-          navigate('/operator/dashboard', { replace: true })
+          const fullData = await tourOperatorService.getOnboardingData(user.id)
+          if (fullData) setSetupData(fullData)
+          setIsLocked(true)
+          setIsLoading(false)
           return
         }
 
@@ -179,6 +184,7 @@ export default function TourOperatorSetupPage() {
   const CurrentStepComponent = STEPS[currentStep].component
   const isLastContentStep = currentStep === STEPS.length - 2
   const isCompletionStep = currentStep === STEPS.length - 1
+  const hideHeaderActions = isCompletionStep || isLocked
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -199,7 +205,7 @@ export default function TourOperatorSetupPage() {
             </div>
           </div>
 
-          {!isCompletionStep && (
+          {!hideHeaderActions && (
             <Button
               variant="ghost"
               size="sm"
@@ -219,7 +225,7 @@ export default function TourOperatorSetupPage() {
       </div>
 
       {/* Step progress bar */}
-      {!isCompletionStep && (
+      {!isCompletionStep && !isLocked && (
         <div className="max-w-2xl mx-auto w-full px-6 pt-5 pb-1">
           <div className="flex gap-1.5 mb-2">
             {STEPS.slice(0, STEPS.length - 1).map((step, i) => (
@@ -260,11 +266,15 @@ export default function TourOperatorSetupPage() {
               {/* Glass card shell */}
               <div className="rounded-3xl bg-card/80 backdrop-blur-xl border border-border shadow-xl overflow-hidden">
                 <div className="p-8">
-                  <CurrentStepComponent onNext={handleNext} onUpdate={updateData} data={setupData} />
+                  {isLocked ? (
+                    <LockedSetupView data={setupData} onEdit={() => setIsLocked(false)} />
+                  ) : (
+                    <CurrentStepComponent onNext={handleNext} onUpdate={updateData} data={setupData} />
+                  )}
                 </div>
 
                 {/* Inline footer navigation */}
-                {!isCompletionStep && (
+                {!isCompletionStep && !isLocked && (
                   <div className="px-8 pb-8 flex items-center justify-between gap-4 border-t border-border/50 pt-6">
                     <Button
                       variant="ghost"
