@@ -1,6 +1,7 @@
 import { AlignJustify, Briefcase, LayoutDashboard, LogOut, MapPin, RefreshCcw, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -213,23 +214,27 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
         </Avatar>
       </button>
 
-      {/* Drawer Overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[1400]"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Drawer Overlay + Panel — portalled to document.body to escape any parent stacking context
+          (backdrop-filter / isolation:isolate on glass-liquid headers would otherwise trap z-index) */}
+      {createPortal(
+        <>
+          {/* Drawer Overlay */}
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-[1400]"
+                onClick={() => setIsOpen(false)}
+              />
+            )}
+          </AnimatePresence>
 
-      {/* Drawer Right Side */}
-      <AnimatePresence>
-        {isOpen && (
+          {/* Drawer Right Side */}
+          <AnimatePresence>
+            {isOpen && (
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
@@ -538,6 +543,9 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
           </motion.div>
         )}
       </AnimatePresence>
+        </>,
+        document.body
+      )}
     </>
   )
 }
