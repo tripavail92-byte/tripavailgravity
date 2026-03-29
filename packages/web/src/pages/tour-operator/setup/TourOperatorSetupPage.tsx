@@ -10,6 +10,7 @@ import {
   tourOperatorService,
 } from '@/features/tour-operator/services/tourOperatorService'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 import { BusinessInfoStep } from './components/BusinessInfoStep'
 import { CompletionStep } from './components/CompletionStep'
@@ -67,6 +68,17 @@ export default function TourOperatorSetupPage() {
     const loadExistingData = async () => {
       if (!user?.id) return
       try {
+        // If setup is already completed, the wizard is locked — send to dashboard
+        const { data: profile } = await supabase
+          .from('tour_operator_profiles')
+          .select('setup_completed')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (profile?.setup_completed === true) {
+          navigate('/operator/dashboard', { replace: true })
+          return
+        }
+
         const data = await tourOperatorService.getOnboardingData(user.id)
         if (data) {
           setSetupData(data)
