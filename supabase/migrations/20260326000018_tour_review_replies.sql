@@ -100,7 +100,7 @@ BEGIN
       user_id,
       type,
       title,
-      message,
+      body,
       metadata,
       read
     )
@@ -157,7 +157,7 @@ BEGIN
       user_id,
       type,
       title,
-      message,
+      body,
       metadata,
       read
     )

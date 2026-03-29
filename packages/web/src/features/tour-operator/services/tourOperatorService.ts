@@ -1,5 +1,123 @@
 import { supabase } from '@/lib/supabase'
 
+import type {
+  OperatorFleetAsset,
+  OperatorGalleryItem,
+  OperatorGuideProfile,
+  OperatorProfileDocumentLinks,
+  OperatorPublicPolicies,
+} from '@/features/tour-operator/types/operatorProfile'
+
+export interface OperatorPublicProfileEditorData {
+  businessName: string
+  description: string
+  primaryCity: string
+  coverageRange: string
+  yearsExperience: string
+  teamSize: string
+  registrationNumber: string
+  phoneNumber: string
+  email: string
+  fleetAssets: OperatorFleetAsset[]
+  guideProfiles: OperatorGuideProfile[]
+  galleryMedia: OperatorGalleryItem[]
+  publicPolicies: OperatorPublicPolicies
+  verificationUrls: OperatorProfileDocumentLinks
+}
+
+const EMPTY_PUBLIC_POLICIES: OperatorPublicPolicies = {
+  cancellation: '',
+  deposit: '',
+  pickup: '',
+  child: '',
+  refund: '',
+  weather: '',
+  emergency: '',
+  supportHours: '',
+}
+
+const EMPTY_DOCUMENT_LINKS: OperatorProfileDocumentLinks = {
+  businessRegistration: '',
+  insurance: '',
+  vehicleDocs: '',
+  guideLicense: '',
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => String(item || '').trim()).filter(Boolean)
+}
+
+function normalizeFleetAssets(value: unknown): OperatorFleetAsset[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((row: any, index) => ({
+      id: String(row?.id || `fleet-${index + 1}`),
+      type: String(row?.type || '').trim(),
+      name: String(row?.name || '').trim(),
+      quantity: Math.max(1, Number(row?.quantity || 1)),
+      capacity: row?.capacity == null || row?.capacity === '' ? null : Math.max(1, Number(row.capacity)),
+      details: String(row?.details || '').trim(),
+    }))
+    .filter((row) => row.type || row.name || row.details)
+}
+
+function normalizeGuideProfiles(value: unknown): OperatorGuideProfile[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((row: any, index) => ({
+      id: String(row?.id || `guide-${index + 1}`),
+      name: String(row?.name || '').trim(),
+      languages: normalizeStringArray(row?.languages),
+      specialties: normalizeStringArray(row?.specialties),
+      certifications: normalizeStringArray(row?.certifications),
+      yearsExperience:
+        row?.yearsExperience == null || row?.yearsExperience === ''
+          ? null
+          : Math.max(0, Number(row.yearsExperience)),
+      bio: String(row?.bio || '').trim(),
+    }))
+    .filter((row) => row.name || row.languages.length || row.specialties.length || row.certifications.length || row.bio)
+}
+
+function normalizeGalleryMedia(value: unknown): OperatorGalleryItem[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((row: any, index) => ({
+      id: String(row?.id || `gallery-${index + 1}`),
+      url: String(row?.url || '').trim(),
+      title: String(row?.title || '').trim(),
+      category: ['operator', 'vehicle', 'traveler', 'accommodation', 'food'].includes(String(row?.category || ''))
+        ? row.category
+        : 'operator',
+    }))
+    .filter((row) => row.url)
+}
+
+function normalizePublicPolicies(value: unknown): OperatorPublicPolicies {
+  const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  return {
+    cancellation: String(source.cancellation || ''),
+    deposit: String(source.deposit || ''),
+    pickup: String(source.pickup || ''),
+    child: String(source.child || ''),
+    refund: String(source.refund || ''),
+    weather: String(source.weather || ''),
+    emergency: String(source.emergency || ''),
+    supportHours: String(source.supportHours || ''),
+  }
+}
+
+function normalizeDocumentLinks(value: unknown): OperatorProfileDocumentLinks {
+  const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+  return {
+    businessRegistration: String(source.businessRegistration || ''),
+    insurance: String(source.insurance || ''),
+    vehicleDocs: String(source.vehicleDocs || ''),
+    guideLicense: String(source.guideLicense || ''),
+  }
+}
+
 export interface TourOperatorOnboardingData {
   setupCurrentStep?: number
   personalInfo?: {
@@ -66,6 +184,64 @@ function normalizeCategories(services?: TourOperatorOnboardingData['services']):
 }
 
 export const tourOperatorService = {
+  async getPublicProfileEditorData(userId: string): Promise<OperatorPublicProfileEditorData> {
+    if (!userId) throw new Error('User ID required')
+
+    const { data, error } = await supabase
+      .from('tour_operator_profiles')
+      .select('company_name, description, primary_city, coverage_range, years_experience, team_size, registration_number, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, verification_urls')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+
+    const profile = (data ?? {}) as any
+    return {
+      businessName: profile.company_name || '',
+      description: profile.description || '',
+      primaryCity: profile.primary_city || '',
+      coverageRange: profile.coverage_range || '',
+      yearsExperience: profile.years_experience || '',
+      teamSize: profile.team_size || '',
+      registrationNumber: profile.registration_number || '',
+      phoneNumber: profile.phone_number || '',
+      email: profile.email || '',
+      fleetAssets: normalizeFleetAssets(profile.fleet_assets),
+      guideProfiles: normalizeGuideProfiles(profile.guide_profiles),
+      galleryMedia: normalizeGalleryMedia(profile.gallery_media),
+      publicPolicies: normalizePublicPolicies(profile.public_policies),
+      verificationUrls: normalizeDocumentLinks(profile.verification_urls),
+    }
+  },
+
+  async updatePublicProfileEditorData(userId: string, data: OperatorPublicProfileEditorData) {
+    if (!userId) throw new Error('User ID required')
+
+    const payload = {
+      user_id: userId,
+      company_name: data.businessName.trim() || null,
+      business_name: data.businessName.trim() || null,
+      description: data.description.trim() || null,
+      primary_city: data.primaryCity.trim() || null,
+      coverage_range: data.coverageRange.trim() || null,
+      years_experience: data.yearsExperience.trim() || null,
+      team_size: data.teamSize.trim() || null,
+      registration_number: data.registrationNumber.trim() || null,
+      phone_number: data.phoneNumber.trim() || null,
+      email: data.email.trim() || null,
+      fleet_assets: data.fleetAssets,
+      guide_profiles: data.guideProfiles,
+      gallery_media: data.galleryMedia,
+      public_policies: data.publicPolicies,
+      verification_urls: data.verificationUrls,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabase.from('tour_operator_profiles').upsert(payload)
+    if (error) throw error
+    return { success: true }
+  },
+
   async saveOnboardingData(
     userId: string,
     data: Partial<TourOperatorOnboardingData>,

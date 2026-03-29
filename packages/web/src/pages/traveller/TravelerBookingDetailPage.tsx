@@ -101,6 +101,15 @@ export default function TravelerBookingDetailPage() {
   const [reviewTitle, setReviewTitle] = useState('')
   const [reviewBody, setReviewBody] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
+  // Category ratings (0 = not set)
+  const [reviewCommunication, setReviewCommunication] = useState(0)
+  const [reviewPunctuality, setReviewPunctuality] = useState(0)
+  const [reviewTransport, setReviewTransport] = useState(0)
+  const [reviewGuide, setReviewGuide] = useState(0)
+  const [reviewSafety, setReviewSafety] = useState(0)
+  const [reviewCleanliness, setReviewCleanliness] = useState(0)
+  const [reviewValue, setReviewValue] = useState(0)
+  const [reviewItinerary, setReviewItinerary] = useState(0)
 
   const activeTab = (searchParams.get('tab') as BookingTab) || 'overview'
   const safeActiveTab = BOOKING_TABS.includes(activeTab) ? activeTab : 'overview'
@@ -354,6 +363,14 @@ export default function TravelerBookingDetailPage() {
         rating: reviewRating,
         title: reviewTitle || undefined,
         body: reviewBody || undefined,
+        ratingCommunication: reviewCommunication || undefined,
+        ratingPunctuality:   reviewPunctuality   || undefined,
+        ratingTransport:     reviewTransport     || undefined,
+        ratingGuide:         reviewGuide         || undefined,
+        ratingSafety:        reviewSafety        || undefined,
+        ratingCleanliness:   reviewCleanliness   || undefined,
+        ratingValue:         reviewValue         || undefined,
+        ratingItinerary:     reviewItinerary     || undefined,
       })
       setExistingReview(submitted)
       setShowReviewDialog(false)
@@ -665,7 +682,7 @@ export default function TravelerBookingDetailPage() {
                     {hasPromo ? <InfoRow label="Original total" value={`PKR ${priceBeforePromo.toLocaleString()}`} /> : null}
                     {hasPromo ? <InfoRow label="Promo discount" value={`PKR ${promoDiscountValue.toLocaleString()}`} /> : null}
                     {hasPromo ? <InfoRow label="Promo funding" value={booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'} /> : null}
-                    {hasPromo ? <InfoRow label="Promo attribution" value={booking?.promo_owner || 'Promo applied'} /> : null}
+                    {hasPromo ? <InfoRow label="Promo source" value={booking?.promo_owner || 'Promo applied'} /> : null}
                     <InfoRow label="Upfront paid" value={`PKR ${paidOnline.toLocaleString()}`} />
                     <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
                     {isRefunded ? <InfoRow label="Refunded amount" value={`PKR ${refundAmount.toLocaleString()}`} /> : null}
@@ -1049,7 +1066,7 @@ export default function TravelerBookingDetailPage() {
       </Dialog>
 
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Rate your experience</DialogTitle>
             <DialogDescription>
@@ -1057,22 +1074,57 @@ export default function TravelerBookingDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="flex justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setReviewRating(i)}
-                  className="transition-transform hover:scale-110"
-                  aria-label={`Rate ${i} star${i !== 1 ? 's' : ''}`}
-                >
-                  <Star
-                    className={`h-8 w-8 ${i <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
-                  />
-                </button>
+          <div className="space-y-5">
+            {/* Overall star rating */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Overall rating <span className="text-destructive">*</span></p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setReviewRating(i)}
+                    className="transition-transform hover:scale-110"
+                    aria-label={`Rate ${i} star${i !== 1 ? 's' : ''}`}
+                  >
+                    <Star className={`h-9 w-9 ${i <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category ratings */}
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Rate by category <span className="text-muted-foreground/50">(optional)</span></p>
+              {([
+                ['Communication',  reviewCommunication, setReviewCommunication],
+                ['Punctuality',    reviewPunctuality,   setReviewPunctuality],
+                ['Transport',      reviewTransport,     setReviewTransport],
+                ['Guide quality',  reviewGuide,         setReviewGuide],
+                ['Safety',         reviewSafety,        setReviewSafety],
+                ['Cleanliness',    reviewCleanliness,   setReviewCleanliness],
+                ['Value for money',reviewValue,         setReviewValue],
+                ['Itinerary',      reviewItinerary,     setReviewItinerary],
+              ] as [string, number, (v: number) => void][]).map(([label, val, setter]) => (
+                <div key={label} className="flex items-center justify-between gap-3">
+                  <span className="w-36 shrink-0 text-sm text-foreground">{label}</span>
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map((i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setter(val === i ? 0 : i)}
+                        aria-label={`${label} ${i} stars`}
+                        className="transition-transform hover:scale-110"
+                      >
+                        <Star className={`h-5 w-5 ${i <= val ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
+
             <Input
               placeholder="Title (optional)"
               value={reviewTitle}
@@ -1084,7 +1136,7 @@ export default function TravelerBookingDetailPage() {
               placeholder="Tell future travelers about your experience..."
               value={reviewBody}
               onChange={(e) => setReviewBody(e.target.value)}
-              rows={4}
+              rows={3}
               maxLength={2000}
               className="rounded-2xl"
             />

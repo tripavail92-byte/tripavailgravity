@@ -14,14 +14,29 @@ import {
   Compass,
   CreditCard,
   Loader,
+  Plus,
+  Save,
   Shield,
+  Trash2,
   TrendingUp,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Link, useLocation } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  tourOperatorService,
+  type OperatorPublicProfileEditorData,
+} from '@/features/tour-operator/services/tourOperatorService'
+import type {
+  OperatorFleetAsset,
+  OperatorGalleryItem,
+  OperatorGuideProfile,
+} from '@/features/tour-operator/types/operatorProfile'
 import { useAuth } from '@/hooks/useAuth'
 import { tourOperatorSettingsService } from '@/services/tourOperatorSettingsService'
 
@@ -127,9 +142,18 @@ const settingsCategories: SettingsCategory[] = [
 
 export default function TourOperatorSettingsPage() {
   const { user } = useAuth()
+  const location = useLocation()
   const [settings, setSettings] = useState<TourOperatorSettings | null>(null)
+  const [publicProfile, setPublicProfile] = useState<OperatorPublicProfileEditorData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingPublicProfile, setIsSavingPublicProfile] = useState(false)
+
+  const storefrontSection = useMemo<'all' | 'business-profile' | 'fleet-guides'>(() => {
+    if (location.pathname === '/operator-dashboard/business-profile') return 'business-profile'
+    if (location.pathname === '/operator-dashboard/fleet') return 'fleet-guides'
+    return 'all'
+  }, [location.pathname])
 
   useEffect(() => {
     if (user?.id) {
@@ -140,8 +164,12 @@ export default function TourOperatorSettingsPage() {
   const loadSettings = async () => {
     try {
       setIsLoading(true)
-      const data = await tourOperatorSettingsService.getSettings(user!.id)
-      setSettings(data)
+      const [settingsData, publicProfileData] = await Promise.all([
+        tourOperatorSettingsService.getSettings(user!.id),
+        tourOperatorService.getPublicProfileEditorData(user!.id),
+      ])
+      setSettings(settingsData)
+      setPublicProfile(publicProfileData)
     } catch (error) {
       console.error('Failed to load settings:', error)
       toast.error('Failed to load settings')
@@ -193,6 +221,129 @@ export default function TourOperatorSettingsPage() {
       toast.error('Failed to resume bookings')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const updatePublicProfileField = <K extends keyof OperatorPublicProfileEditorData>(
+    key: K,
+    value: OperatorPublicProfileEditorData[K],
+  ) => {
+    setPublicProfile((prev) => (prev ? { ...prev, [key]: value } : prev))
+  }
+
+  const updatePolicyField = (key: keyof OperatorPublicProfileEditorData['publicPolicies'], value: string) => {
+    setPublicProfile((prev) => (
+      prev
+        ? { ...prev, publicPolicies: { ...prev.publicPolicies, [key]: value } }
+        : prev
+    ))
+  }
+
+  const updateDocumentLink = (key: keyof OperatorPublicProfileEditorData['verificationUrls'], value: string) => {
+    setPublicProfile((prev) => (
+      prev
+        ? { ...prev, verificationUrls: { ...prev.verificationUrls, [key]: value } }
+        : prev
+    ))
+  }
+
+  const updateFleetAsset = (index: number, updates: Partial<OperatorFleetAsset>) => {
+    setPublicProfile((prev) => {
+      if (!prev) return prev
+      const next = [...prev.fleetAssets]
+      next[index] = { ...next[index], ...updates }
+      return { ...prev, fleetAssets: next }
+    })
+  }
+
+  const addFleetAsset = () => {
+    setPublicProfile((prev) => (
+      prev
+        ? {
+            ...prev,
+            fleetAssets: [...prev.fleetAssets, createEmptyFleetAsset(prev.fleetAssets.length + 1)],
+          }
+        : prev
+    ))
+  }
+
+  const removeFleetAsset = (index: number) => {
+    setPublicProfile((prev) => (
+      prev
+        ? { ...prev, fleetAssets: prev.fleetAssets.filter((_, rowIndex) => rowIndex !== index) }
+        : prev
+    ))
+  }
+
+  const updateGuideProfile = (index: number, updates: Partial<OperatorGuideProfile>) => {
+    setPublicProfile((prev) => {
+      if (!prev) return prev
+      const next = [...prev.guideProfiles]
+      next[index] = { ...next[index], ...updates }
+      return { ...prev, guideProfiles: next }
+    })
+  }
+
+  const addGuideProfile = () => {
+    setPublicProfile((prev) => (
+      prev
+        ? {
+            ...prev,
+            guideProfiles: [...prev.guideProfiles, createEmptyGuideProfile(prev.guideProfiles.length + 1)],
+          }
+        : prev
+    ))
+  }
+
+  const removeGuideProfile = (index: number) => {
+    setPublicProfile((prev) => (
+      prev
+        ? { ...prev, guideProfiles: prev.guideProfiles.filter((_, rowIndex) => rowIndex !== index) }
+        : prev
+    ))
+  }
+
+  const updateGalleryItem = (index: number, updates: Partial<OperatorGalleryItem>) => {
+    setPublicProfile((prev) => {
+      if (!prev) return prev
+      const next = [...prev.galleryMedia]
+      next[index] = { ...next[index], ...updates }
+      return { ...prev, galleryMedia: next }
+    })
+  }
+
+  const addGalleryItem = () => {
+    setPublicProfile((prev) => (
+      prev
+        ? {
+            ...prev,
+            galleryMedia: [...prev.galleryMedia, createEmptyGalleryItem(prev.galleryMedia.length + 1)],
+          }
+        : prev
+    ))
+  }
+
+  const removeGalleryItem = (index: number) => {
+    setPublicProfile((prev) => (
+      prev
+        ? { ...prev, galleryMedia: prev.galleryMedia.filter((_, rowIndex) => rowIndex !== index) }
+        : prev
+    ))
+  }
+
+  const handleSavePublicProfile = async () => {
+    if (!user?.id || !publicProfile) return
+
+    try {
+      setIsSavingPublicProfile(true)
+      await tourOperatorService.updatePublicProfileEditorData(user.id, publicProfile)
+      toast.success('Public operator profile updated')
+      await loadSettings()
+    } catch (error) {
+      console.error('Failed to save public profile layer:', error)
+      toast.error('Failed to save public operator profile')
+    } finally {
+      setIsSavingPublicProfile(false)
     }
   }
 
@@ -351,6 +502,339 @@ export default function TourOperatorSettingsPage() {
           />
         </GlassCard>
 
+        {publicProfile ? (
+          <GlassCard variant="card" className="rounded-2xl p-6 space-y-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {storefrontSection === 'business-profile'
+                    ? 'Business Profile'
+                    : storefrontSection === 'fleet-guides'
+                      ? 'Fleet, Guides & Media'
+                      : 'Public Operator Storefront'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {storefrontSection === 'business-profile'
+                    ? 'Manage your public business identity, trust inputs, and pre-booking policies.'
+                    : storefrontSection === 'fleet-guides'
+                      ? 'Maintain the fleet, guide, and gallery sections shown on your public operator page.'
+                      : 'Maintain the fleet, guide, verification, and policy sections shown on your public operator page.'}
+                </p>
+              </div>
+              <Button onClick={handleSavePublicProfile} disabled={isSavingPublicProfile} className="gap-2">
+                {isSavingPublicProfile ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save storefront
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant={storefrontSection === 'all' ? 'default' : 'outline'} size="sm">
+                <Link to="/operator/settings">All storefront sections</Link>
+              </Button>
+              <Button asChild variant={storefrontSection === 'business-profile' ? 'default' : 'outline'} size="sm">
+                <Link to="/operator-dashboard/business-profile">Business profile</Link>
+              </Button>
+              <Button asChild variant={storefrontSection === 'fleet-guides' ? 'default' : 'outline'} size="sm">
+                <Link to="/operator-dashboard/fleet">Fleet & guides</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/operator-dashboard/public-preview">Public preview</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/operator-dashboard/verification">Verification</Link>
+              </Button>
+            </div>
+
+            {/* Storefront completeness guidance */}
+            {(() => {
+              const checks = [
+                { key: 'Business name', done: Boolean(publicProfile.businessName?.trim()) },
+                { key: 'Public description', done: Boolean(publicProfile.description?.trim()) },
+                { key: 'Fleet assets', done: publicProfile.fleetAssets.length > 0 },
+                { key: 'Guide team', done: publicProfile.guideProfiles.length > 0 },
+                { key: 'Gallery media', done: publicProfile.galleryMedia.length > 0 },
+                { key: 'Verification document', done: Object.values(publicProfile.verificationUrls).some((v) => Boolean(v?.trim())) },
+                { key: 'Public policies', done: Object.values(publicProfile.publicPolicies).some((v) => Boolean(v?.trim())) },
+              ]
+              const doneCount = checks.filter((c) => c.done).length
+              const total = checks.length
+              const pct = Math.round((doneCount / total) * 100)
+              const missing = checks.filter((c) => !c.done)
+              const barColor = pct === 100 ? 'bg-green-500' : pct >= 57 ? 'bg-amber-500' : 'bg-red-500'
+              return (
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Profile completeness — {doneCount}/{total} sections</p>
+                      <p className="text-xs text-muted-foreground">Completing more sections improves your marketplace ranking and traveler trust.</p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-sm font-bold ${pct === 100 ? 'bg-green-100 text-green-800' : pct >= 57 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>{pct}%</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  {missing.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {missing.map((item) => (
+                        <span key={item.key} className="rounded-full border border-dashed border-amber-400/60 bg-amber-50/60 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          + {item.key}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
+            {(storefrontSection === 'all' || storefrontSection === 'business-profile') ? (
+              <>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Business name</p>
+                <Input
+                  value={publicProfile.businessName}
+                  onChange={(e) => updatePublicProfileField('businessName', e.target.value)}
+                  placeholder="Northern Trails Pakistan"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Primary city</p>
+                <Input
+                  value={publicProfile.primaryCity}
+                  onChange={(e) => updatePublicProfileField('primaryCity', e.target.value)}
+                  placeholder="Islamabad"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Coverage range</p>
+                <Input
+                  value={publicProfile.coverageRange}
+                  onChange={(e) => updatePublicProfileField('coverageRange', e.target.value)}
+                  placeholder="Northern Pakistan, Skardu, Hunza"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Years experience</p>
+                <Input
+                  value={publicProfile.yearsExperience}
+                  onChange={(e) => updatePublicProfileField('yearsExperience', e.target.value)}
+                  placeholder="8"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Team size</p>
+                <Input
+                  value={publicProfile.teamSize}
+                  onChange={(e) => updatePublicProfileField('teamSize', e.target.value)}
+                  placeholder="14"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Registration number</p>
+                <Input
+                  value={publicProfile.registrationNumber}
+                  onChange={(e) => updatePublicProfileField('registrationNumber', e.target.value)}
+                  placeholder="SECP / NTN reference"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Support phone</p>
+                <Input
+                  value={publicProfile.phoneNumber}
+                  onChange={(e) => updatePublicProfileField('phoneNumber', e.target.value)}
+                  placeholder="+92 ..."
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Support email</p>
+                <Input
+                  value={publicProfile.email}
+                  onChange={(e) => updatePublicProfileField('email', e.target.value)}
+                  placeholder="support@operator.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Public description</p>
+              <Textarea
+                rows={4}
+                value={publicProfile.description}
+                onChange={(e) => updatePublicProfileField('description', e.target.value)}
+                placeholder="Describe your operating style, regions, and what travelers can rely on."
+              />
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-foreground">Verification documents & trust inputs</h3>
+                  <p className="text-sm text-muted-foreground">These links power the public trust section. They do not override admin verification status.</p>
+                </div>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Business registration doc URL</p>
+                  <Input
+                    value={publicProfile.verificationUrls.businessRegistration}
+                    onChange={(e) => updateDocumentLink('businessRegistration', e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Insurance doc URL</p>
+                  <Input
+                    value={publicProfile.verificationUrls.insurance}
+                    onChange={(e) => updateDocumentLink('insurance', e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Vehicle docs URL</p>
+                  <Input
+                    value={publicProfile.verificationUrls.vehicleDocs}
+                    onChange={(e) => updateDocumentLink('vehicleDocs', e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Guide license URL</p>
+                  <Input
+                    value={publicProfile.verificationUrls.guideLicense}
+                    onChange={(e) => updateDocumentLink('guideLicense', e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            </div>
+              </>
+            ) : null}
+
+            {(storefrontSection === 'all' || storefrontSection === 'fleet-guides') ? (
+              <>
+            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-foreground">Fleet assets</h3>
+                  <p className="text-sm text-muted-foreground">List transport or equipment assets you want travelers to inspect before booking.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addFleetAsset} className="gap-2">
+                  <Plus className="w-4 h-4" /> Add asset
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {publicProfile.fleetAssets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No fleet assets listed yet.</p>
+                ) : publicProfile.fleetAssets.map((asset, index) => (
+                  <div key={asset.id} className="space-y-4 rounded-2xl border border-border/60 bg-muted/30 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-semibold text-foreground">Asset {index + 1}</p>
+                      <Button type="button" variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => removeFleetAsset(index)}>
+                        <Trash2 className="w-4 h-4" /> Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      <Input value={asset.type} onChange={(e) => updateFleetAsset(index, { type: e.target.value })} placeholder="Vehicle type" />
+                      <Input value={asset.name} onChange={(e) => updateFleetAsset(index, { name: e.target.value })} placeholder="Name / model" />
+                      <Input type="number" min={1} value={asset.quantity} onChange={(e) => updateFleetAsset(index, { quantity: Math.max(1, Number(e.target.value || 1)) })} placeholder="Quantity" />
+                      <Input type="number" min={1} value={asset.capacity ?? ''} onChange={(e) => updateFleetAsset(index, { capacity: e.target.value ? Math.max(1, Number(e.target.value)) : null })} placeholder="Capacity" />
+                    </div>
+                    <Textarea rows={2} value={asset.details} onChange={(e) => updateFleetAsset(index, { details: e.target.value })} placeholder="4x4, AC, owned fleet, rooftop carrier, camping equipment, etc." />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-foreground">Guide team</h3>
+                  <p className="text-sm text-muted-foreground">Highlight languages, specialties, and certifications that improve traveler trust.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addGuideProfile} className="gap-2">
+                  <Plus className="w-4 h-4" /> Add guide
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {publicProfile.guideProfiles.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No guide profiles listed yet.</p>
+                ) : publicProfile.guideProfiles.map((guide, index) => (
+                  <div key={guide.id} className="space-y-4 rounded-2xl border border-border/60 bg-muted/30 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-semibold text-foreground">Guide {index + 1}</p>
+                      <Button type="button" variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => removeGuideProfile(index)}>
+                        <Trash2 className="w-4 h-4" /> Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      <Input value={guide.name} onChange={(e) => updateGuideProfile(index, { name: e.target.value })} placeholder="Guide name" />
+                      <Input type="number" min={0} value={guide.yearsExperience ?? ''} onChange={(e) => updateGuideProfile(index, { yearsExperience: e.target.value ? Math.max(0, Number(e.target.value)) : null })} placeholder="Years experience" />
+                      <Input value={guide.languages.join(', ')} onChange={(e) => updateGuideProfile(index, { languages: splitCommaValues(e.target.value) })} placeholder="Languages" />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Input value={guide.specialties.join(', ')} onChange={(e) => updateGuideProfile(index, { specialties: splitCommaValues(e.target.value) })} placeholder="Specialties" />
+                      <Input value={guide.certifications.join(', ')} onChange={(e) => updateGuideProfile(index, { certifications: splitCommaValues(e.target.value) })} placeholder="Certifications" />
+                    </div>
+                    <Textarea rows={2} value={guide.bio} onChange={(e) => updateGuideProfile(index, { bio: e.target.value })} placeholder="Brief bio, terrain expertise, family support, first-aid training, etc." />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-foreground">Gallery & media</h3>
+                  <p className="text-sm text-muted-foreground">Add public-facing photos that strengthen trust and unlock showcase awards.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addGalleryItem} className="gap-2">
+                  <Plus className="w-4 h-4" /> Add media
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {publicProfile.galleryMedia.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No gallery items added yet.</p>
+                ) : publicProfile.galleryMedia.map((item, index) => (
+                  <div key={item.id} className="space-y-4 rounded-2xl border border-border/60 bg-muted/30 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm font-semibold text-foreground">Media item {index + 1}</p>
+                      <Button type="button" variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => removeGalleryItem(index)}>
+                        <Trash2 className="w-4 h-4" /> Remove
+                      </Button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      <Input value={item.title} onChange={(e) => updateGalleryItem(index, { title: e.target.value })} placeholder="Photo title" />
+                      <Input value={item.category} onChange={(e) => updateGalleryItem(index, { category: (e.target.value || 'operator') as OperatorGalleryItem['category'] })} placeholder="operator / vehicle / traveler / accommodation / food" />
+                      <Input value={item.url} onChange={(e) => updateGalleryItem(index, { url: e.target.value })} placeholder="https://..." />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+              </>
+            ) : null}
+
+            {(storefrontSection === 'all' || storefrontSection === 'business-profile') ? (
+            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
+              <div>
+                <h3 className="font-semibold text-foreground">Public policies</h3>
+                <p className="text-sm text-muted-foreground">These are rendered on the public operator page for pre-booking trust.</p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Textarea rows={3} value={publicProfile.publicPolicies.cancellation} onChange={(e) => updatePolicyField('cancellation', e.target.value)} placeholder="Cancellation policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.deposit} onChange={(e) => updatePolicyField('deposit', e.target.value)} placeholder="Deposit policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.pickup} onChange={(e) => updatePolicyField('pickup', e.target.value)} placeholder="Pickup rules" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.child} onChange={(e) => updatePolicyField('child', e.target.value)} placeholder="Child policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.refund} onChange={(e) => updatePolicyField('refund', e.target.value)} placeholder="Refund policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.weather} onChange={(e) => updatePolicyField('weather', e.target.value)} placeholder="Weather disruption policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.emergency} onChange={(e) => updatePolicyField('emergency', e.target.value)} placeholder="Emergency contact policy" />
+                <Textarea rows={3} value={publicProfile.publicPolicies.supportHours} onChange={(e) => updatePolicyField('supportHours', e.target.value)} placeholder="Support hours" />
+              </div>
+            </div>
+            ) : null}
+          </GlassCard>
+        ) : null}
+
         {/* Category Cards */}
         <div className="pt-4">
           <h2 className="text-lg font-semibold text-foreground mb-3">Settings Sections</h2>
@@ -457,6 +941,42 @@ export default function TourOperatorSettingsPage() {
       </div>
     </div>
   )
+}
+
+function splitCommaValues(value: string): string[] {
+  return value.split(',').map((part) => part.trim()).filter(Boolean)
+}
+
+function createEmptyFleetAsset(index: number): OperatorFleetAsset {
+  return {
+    id: `fleet-${Date.now()}-${index}`,
+    type: '',
+    name: '',
+    quantity: 1,
+    capacity: null,
+    details: '',
+  }
+}
+
+function createEmptyGuideProfile(index: number): OperatorGuideProfile {
+  return {
+    id: `guide-${Date.now()}-${index}`,
+    name: '',
+    languages: [],
+    specialties: [],
+    certifications: [],
+    yearsExperience: null,
+    bio: '',
+  }
+}
+
+function createEmptyGalleryItem(index: number): OperatorGalleryItem {
+  return {
+    id: `gallery-${Date.now()}-${index}`,
+    url: '',
+    title: '',
+    category: 'operator',
+  }
 }
 
 // Helper component

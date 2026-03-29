@@ -201,6 +201,7 @@ export function TourOperatorDashboard() {
       value: averageRating,
       icon: Star,
       glow: 'shadow-yellow-500/20',
+      link: '/operator/reputation',
     },
   ]
 
@@ -299,7 +300,8 @@ export function TourOperatorDashboard() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.07 }}
-                className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}`}
+                onClick={stat.link ? () => navigate(stat.link!) : undefined}
+                className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}${stat.link ? ' cursor-pointer hover:border-primary/40 transition-colors' : ''}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">

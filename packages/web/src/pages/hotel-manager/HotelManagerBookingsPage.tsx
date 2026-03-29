@@ -106,7 +106,7 @@ function paidOnlineAmount(booking: OwnerPackageBookingRecord) {
   return Number((booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price) || 0)
 }
 
-function availableCancellationActions(booking: OwnerPackageBookingRecord) {
+function availableCancellationActions(booking: OwnerPackageBookingRecord): OwnerCancellationAction[] {
   const state = cancellationState(booking)
   const paidOnline = paidOnlineAmount(booking)
 
@@ -126,10 +126,10 @@ function availableCancellationActions(booking: OwnerPackageBookingRecord) {
   }
 
   if (state === 'approved' && paidOnline > 0 && booking.payment_status !== 'refunded' && booking.payment_status !== 'partially_refunded') {
-    return ['refund']
+    return ['refund'] as OwnerCancellationAction[]
   }
 
-  return [] as OwnerCancellationAction[]
+  return []
 }
 
 function actionLabel(action: OwnerCancellationAction) {
@@ -264,7 +264,7 @@ export default function HotelManagerBookingsPage() {
       return
     }
 
-    if (reviewAction === 'refund' && (!Number.isFinite(refundAmount) || refundAmount <= 0)) {
+    if (reviewAction === 'refund' && (refundAmount == null || !Number.isFinite(refundAmount) || refundAmount <= 0)) {
       toast.error('Enter a valid refund amount')
       return
     }
@@ -384,7 +384,7 @@ export default function HotelManagerBookingsPage() {
                   <TableBody>
                     {filteredBookings.map((booking) => {
                       const requestState = cancellationState(booking)
-                      const reviewActions = availableCancellationActions(booking)
+                      const reviewActions: OwnerCancellationAction[] = availableCancellationActions(booking)
 
                       return (
                         <TableRow

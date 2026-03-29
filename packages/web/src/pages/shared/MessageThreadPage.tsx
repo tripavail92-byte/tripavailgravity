@@ -279,7 +279,7 @@ export default function MessageThreadPage() {
       return
     }
 
-    if (reviewAction === 'refund' && (!Number.isFinite(refundAmount) || refundAmount <= 0)) {
+    if (reviewAction === 'refund' && (refundAmount == null || !Number.isFinite(refundAmount) || refundAmount <= 0)) {
       toast.error('Enter a valid refund amount')
       return
     }

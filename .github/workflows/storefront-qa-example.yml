@@ -1,0 +1,56 @@
+name: Storefront QA Example
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/qa_storefront_flows.mjs'
+      - 'supabase/migrations/2026032800000*_operator_storefront*.sql'
+      - 'packages/web/src/pages/admin/AdminPartnersPage.tsx'
+      - 'packages/web/src/pages/tour-operator/OperatorReputationPage.tsx'
+      - 'packages/web/src/pages/tour-operator/OperatorStorefrontAnalyticsPage.tsx'
+      - 'packages/web/src/features/admin/services/adminService.ts'
+      - 'packages/web/src/features/tour-operator/services/operatorPublicService.ts'
+      - '.github/workflows/storefront-qa-example.yml'
+
+jobs:
+  storefront-qa:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run storefront QA gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run qa:storefront:flows | tee storefront-qa.log
+          if grep -q 'STORE_FRONT_QA_STATUS=FAIL' storefront-qa.log; then
+            echo 'Storefront QA gate reported failure'
+            exit 1
+          fi
+          if ! grep -q 'STORE_FRONT_QA_STATUS=PASS' storefront-qa.log; then
+            echo 'Storefront QA gate did not emit an explicit PASS marker'
+            exit 1
+          fi
+          if ! grep -q 'STORE_FRONT_ATTRIBUTION_SPLIT=PASS' storefront-qa.log; then
+            echo 'Storefront QA gate did not confirm the direct-vs-attributed booking split'
+            exit 1
+          fi

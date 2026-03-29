@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   type       TEXT        NOT NULL,   -- e.g. 'verification_approved', 'verification_rejected', 'info_requested'
   title      TEXT        NOT NULL,
   body       TEXT,
+  metadata   JSONB       NOT NULL DEFAULT '{}'::JSONB,
   read       BOOLEAN     NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT TIMEZONE('UTC', NOW())
 );

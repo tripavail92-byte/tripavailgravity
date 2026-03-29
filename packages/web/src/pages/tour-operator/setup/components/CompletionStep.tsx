@@ -7,7 +7,7 @@ const NAV_ACTIONS = [
     icon: ShieldCheck,
     label: 'Verify Identity',
     desc: 'Enable bookings with biometric matching',
-    href: '/operator/verification',
+    href: '/operator-dashboard/verification',
     accent: true,
   },
   {

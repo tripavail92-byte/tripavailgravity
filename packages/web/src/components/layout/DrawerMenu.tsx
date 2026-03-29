@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Briefcase,
   Building2,
   CreditCard,
@@ -240,6 +241,12 @@ export function DrawerMenu() {
           label: 'Bookings',
           path: '/bookings',
           color: 'from-emerald-500 to-teal-600',
+        },
+        {
+          icon: BarChart3,
+          label: 'Analytics',
+          path: '/operator/analytics',
+          color: 'from-amber-500 to-orange-600',
         },
         {
           icon: Settings,

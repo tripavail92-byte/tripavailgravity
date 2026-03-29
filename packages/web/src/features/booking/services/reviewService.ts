@@ -11,6 +11,15 @@ export interface TourReview {
   status: 'published' | 'removed'
   created_at: string
   updated_at: string
+  // Category ratings (optional — null when not submitted)
+  rating_communication: number | null
+  rating_punctuality: number | null
+  rating_transport: number | null
+  rating_guide: number | null
+  rating_safety: number | null
+  rating_cleanliness: number | null
+  rating_value: number | null
+  rating_itinerary: number | null
 }
 
 export interface SubmitReviewParams {
@@ -19,6 +28,15 @@ export interface SubmitReviewParams {
   rating: number
   title?: string
   body?: string
+  // Category ratings (all optional)
+  ratingCommunication?: number
+  ratingPunctuality?: number
+  ratingTransport?: number
+  ratingGuide?: number
+  ratingSafety?: number
+  ratingCleanliness?: number
+  ratingValue?: number
+  ratingItinerary?: number
 }
 
 export const reviewService = {
@@ -35,6 +53,14 @@ export const reviewService = {
         rating: params.rating,
         title: params.title?.trim() || null,
         body: params.body?.trim() || null,
+        rating_communication: params.ratingCommunication ?? null,
+        rating_punctuality:   params.ratingPunctuality   ?? null,
+        rating_transport:     params.ratingTransport     ?? null,
+        rating_guide:         params.ratingGuide         ?? null,
+        rating_safety:        params.ratingSafety        ?? null,
+        rating_cleanliness:   params.ratingCleanliness   ?? null,
+        rating_value:         params.ratingValue         ?? null,
+        rating_itinerary:     params.ratingItinerary     ?? null,
       })
       .select('*')
       .single()

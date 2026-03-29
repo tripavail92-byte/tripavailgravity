@@ -13,6 +13,7 @@ export interface Tour {
   operator_id: string
   operator_display_name?: string
   operator_is_verified?: boolean
+  is_published?: boolean | null
   title: string
   tour_type: string
   location: {

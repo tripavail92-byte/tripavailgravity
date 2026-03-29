@@ -23,6 +23,7 @@ import {
   getTourPaymentTerms,
   type ResolvedTourPromotion,
 } from '@/features/booking/utils/tourPaymentTerms'
+import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { getSessionCached } from '@/lib/authCache'
@@ -403,6 +404,21 @@ export default function TourCheckoutPage() {
 
       setPendingBooking(result.booking)
       setClientSecret(null) // Reset client secret to trigger new payment intent
+
+      if (tour.operator_id) {
+        void operatorPublicService.recordStorefrontEvent({
+          operatorId: tour.operator_id,
+          eventType: 'booking_start',
+          tourId: tour.id,
+          metadata: {
+            booking_id: result.booking.id,
+            guest_count: guestCount,
+            schedule_id: schedule.id,
+          },
+        }).catch((eventError) => {
+          console.error('Failed to record booking_start storefront event:', eventError)
+        })
+      }
 
       // Payment form will be shown automatically via the useEffect
     } catch (error) {

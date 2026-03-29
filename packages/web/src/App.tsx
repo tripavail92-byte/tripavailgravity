@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { lazy, Suspense, useEffect } from 'react'
+import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
@@ -14,6 +15,7 @@ import AdminLayout from '@/layouts/AdminLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
 import { queryClient } from '@/lib/queryClient'
+import { supabase } from '@/lib/supabase'
 import LoginPage from '@/pages/auth/LoginPage'
 import LandingPage from '@/pages/LandingPage'
 
@@ -64,6 +66,10 @@ const TourOperatorSettingsPage = lazy(
   () => import('@/pages/tour-operator/TourOperatorSettingsPage'),
 )
 const OperatorReviewsPage = lazy(() => import('@/pages/tour-operator/OperatorReviewsPage'))
+const OperatorReputationPage = lazy(() => import('@/pages/tour-operator/OperatorReputationPage'))
+const OperatorStorefrontAnalyticsPage = lazy(
+  () => import('@/pages/tour-operator/OperatorStorefrontAnalyticsPage'),
+)
 const OperatorProfilePage = lazy(() => import('@/pages/traveller/OperatorProfilePage'))
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
 const HelpSupportHubPage = lazy(() => import('@/pages/shared/HelpSupportHubPage'))
@@ -116,6 +122,54 @@ function AdminRedirector() {
   }, [activeRole, initialized, navigate, location.pathname])
 
   return null
+}
+
+function OperatorPublicPreviewRedirect() {
+  const { user, initialized } = useAuth()
+  const [target, setTarget] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!initialized) return
+
+    let cancelled = false
+
+    const load = async () => {
+      if (!user?.id) {
+        if (!cancelled) setTarget('/auth')
+        return
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('tour_operator_profiles')
+          .select('slug')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (error) throw error
+
+        const slug = typeof data?.slug === 'string' ? data.slug.trim() : ''
+        if (!cancelled) {
+          setTarget(slug ? `/operators/${slug}` : '/operator/dashboard')
+        }
+      } catch (error) {
+        console.error('[OperatorPublicPreviewRedirect] Failed to resolve slug', error)
+        if (!cancelled) setTarget('/operator/dashboard')
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialized, user?.id])
+
+  if (!initialized || !target) {
+    return <PageLoader />
+  }
+
+  return <Navigate to={target} replace />
 }
 
 function App() {
@@ -344,10 +398,46 @@ function App() {
               />
 
               <Route
+                path="/operator-dashboard/business-profile"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <TourOperatorSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator-dashboard/fleet"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <TourOperatorSettingsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
                 path="/operator/reviews"
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
                     <OperatorReviewsPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/reputation"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorReputationPage />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator/analytics"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorStorefrontAnalyticsPage />
                   </RoleGuard>
                 }
               />
@@ -365,7 +455,24 @@ function App() {
                 path="/operator/verification"
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
+                    <Navigate to="/operator-dashboard/verification" replace />
+                  </RoleGuard>
+                }
+              />
+
+              <Route
+                path="/operator-dashboard/verification"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
                     <VerificationStatusPage />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/operator-dashboard/public-preview"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <OperatorPublicPreviewRedirect />
                   </RoleGuard>
                 }
               />

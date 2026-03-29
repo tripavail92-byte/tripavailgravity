@@ -177,6 +177,7 @@ export default function AdminReportsPage() {
   const [cancellationRows, setCancellationRows] = useState<AdminCancellationRequestRow[]>([])
   const [reviewRows, setReviewRows] = useState<any[]>([])
   const [reviewModBusy, setReviewModBusy] = useState<Record<string, boolean>>({})
+  const [reviewQueueFilter, setReviewQueueFilter] = useState<'all' | 'published' | 'removed'>('all')
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [cancellationFilter, setCancellationFilter] = useState<CancellationFilter>('all')
@@ -466,6 +467,156 @@ export default function AdminReportsPage() {
     ] as const
   }, [])
 
+  const reviewQueueFilterOptions = useMemo(() => {
+    return [
+      { value: 'all', label: 'All statuses' },
+      { value: 'published', label: 'Published only' },
+      { value: 'removed', label: 'Removed only' },
+    ] as const
+  }, [])
+
+  const sortedReviewRows = useMemo(() => {
+    return reviewRows
+      .slice()
+      .sort((left: any, right: any) => Number(Boolean(right.flagged_for_moderation)) - Number(Boolean(left.flagged_for_moderation)))
+  }, [reviewRows])
+
+  const filteredReviewRows = useMemo(() => {
+    if (reviewQueueFilter === 'all') return sortedReviewRows
+    return sortedReviewRows.filter((row: any) => row.status === reviewQueueFilter)
+  }, [reviewQueueFilter, sortedReviewRows])
+
+  const filteredFlaggedReviewRows = useMemo(() => {
+    return filteredReviewRows.filter((row: any) => row.flagged_for_moderation)
+  }, [filteredReviewRows])
+
+  const complaintHeavyOperators = useMemo(() => {
+    const byOperator = new Map<string, { operatorId: string; openCount: number; totalCount: number; latestCreatedAt: string }>()
+
+    rows.forEach((row) => {
+      if (row.target_entity_type !== 'partner') return
+
+      const existing = byOperator.get(row.target_entity_id)
+      const openIncrement = row.status === 'open' || row.status === 'in_review' ? 1 : 0
+
+      if (!existing) {
+        byOperator.set(row.target_entity_id, {
+          operatorId: row.target_entity_id,
+          openCount: openIncrement,
+          totalCount: 1,
+          latestCreatedAt: row.created_at,
+        })
+        return
+      }
+
+      existing.openCount += openIncrement
+      existing.totalCount += 1
+      if (new Date(row.created_at).getTime() > new Date(existing.latestCreatedAt).getTime()) {
+        existing.latestCreatedAt = row.created_at
+      }
+    })
+
+    return Array.from(byOperator.values())
+      .filter((row) => row.totalCount > 1 || row.openCount > 0)
+      .sort((left, right) => {
+        if (right.openCount !== left.openCount) return right.openCount - left.openCount
+        if (right.totalCount !== left.totalCount) return right.totalCount - left.totalCount
+        return new Date(right.latestCreatedAt).getTime() - new Date(left.latestCreatedAt).getTime()
+      })
+      .slice(0, 5)
+  }, [rows])
+
+  const renderReviewQueue = (rowsToRender: any[], emptyMessage: string) => {
+    if (rowsToRender.length === 0) {
+      return <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">{emptyMessage}</CardContent></Card>
+    }
+
+    return (
+      <div className="space-y-4">
+        {rowsToRender.map((row: any) => (
+          <Card key={row.id}>
+            <CardContent className="pt-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{row.tour_title || 'Unknown tour'}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((i: number) => (
+                        <Star key={i} className={`h-3.5 w-3.5 ${i <= row.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                      ))}
+                    </div>
+                    <Badge variant={row.status === 'removed' ? 'destructive' : 'secondary'}>{row.status}</Badge>
+                    {row.flagged_for_moderation ? <Badge variant="destructive">Flagged</Badge> : null}
+                    <span className="text-xs text-muted-foreground">{new Date(row.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {row.title ? <p className="text-sm font-semibold text-foreground">{row.title}</p> : null}
+                  {row.body ? <p className="text-sm text-muted-foreground">{row.body}</p> : null}
+                  {row.flagged_for_moderation ? (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-muted-foreground">
+                      <p className="font-semibold uppercase tracking-widest text-destructive">Moderation signals</p>
+                      <p className="mt-2 text-foreground">
+                        {Array.isArray(row.moderation_flags) && row.moderation_flags.length > 0
+                          ? row.moderation_flags.join(', ')
+                          : 'Flagged by automated safeguards.'}
+                      </p>
+                      {row.flagged_at ? (
+                        <p className="mt-2">Flagged {new Date(row.flagged_at).toLocaleString()}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="shrink-0">
+                  {row.status !== 'removed' ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      disabled={reviewModBusy[row.id]}
+                      onClick={async () => {
+                        setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
+                        try {
+                          await adminReviewService.moderateReview(row.id, 'remove')
+                          setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'removed' } : r))
+                          toast.success('Review removed')
+                        } catch (err: any) {
+                          toast.error(err?.message || 'Failed to remove review')
+                        } finally {
+                          setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
+                        }
+                      }}
+                    >
+                      {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={reviewModBusy[row.id]}
+                      onClick={async () => {
+                        setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
+                        try {
+                          await adminReviewService.moderateReview(row.id, 'restore')
+                          setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'published' } : r))
+                          toast.success('Review restored')
+                        } catch (err: any) {
+                          toast.error(err?.message || 'Failed to restore review')
+                        } finally {
+                          setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
+                        }
+                      }}
+                    >
+                      {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Restore'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   const applyStatus = async (row: ReportRow) => {
     const nextStatus = (nextStatusById[row.id] || row.status || 'open') as ReportStatus
 
@@ -708,7 +859,7 @@ export default function AdminReportsPage() {
         return
       }
 
-      if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+        if (refundAmount == null || !Number.isFinite(refundAmount) || refundAmount <= 0) {
         toast.error('Refund amount must be greater than zero', { id: `refund-cancellation-${rowKey}` })
         return
       }
@@ -787,6 +938,27 @@ export default function AdminReportsPage() {
       )
     }
 
+    const REPORT_PIPELINE: ReportStatus[] = ['open', 'in_review', 'resolved', 'dismissed']
+
+    const reportStatusBadgeVariant = (status: string): 'destructive' | 'secondary' | 'outline' => {
+      if (status === 'open') return 'destructive'
+      if (status === 'in_review') return 'secondary'
+      return 'outline'
+    }
+
+    const reportStatusPipelineColor = (stage: ReportStatus, current: string) => {
+      const idx = REPORT_PIPELINE.indexOf(stage)
+      const curIdx = REPORT_PIPELINE.indexOf(current as ReportStatus)
+      if (stage === current) {
+        if (stage === 'open') return 'bg-red-500 text-white'
+        if (stage === 'in_review') return 'bg-amber-500 text-white'
+        if (stage === 'resolved') return 'bg-green-600 text-white'
+        return 'bg-muted-foreground text-background'
+      }
+      if (idx < curIdx) return 'bg-muted text-muted-foreground line-through'
+      return 'bg-muted/40 text-muted-foreground'
+    }
+
     return (
       <div className="space-y-3">
         {rows.map((r) => (
@@ -800,8 +972,21 @@ export default function AdminReportsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{r.status}</Badge>
+                  <Badge variant={reportStatusBadgeVariant(r.status)}>{r.status}</Badge>
                 </div>
+              </div>
+              {/* Status pipeline strip */}
+              <div className="mt-2 flex items-center gap-1">
+                {REPORT_PIPELINE.map((stage, idx) => (
+                  <div key={stage} className="flex items-center gap-1">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${reportStatusPipelineColor(stage, r.status)}`}>
+                      {stage.replace('_', ' ')}
+                    </span>
+                    {idx < REPORT_PIPELINE.length - 1 && (
+                      <span className="text-muted-foreground/40 text-xs">→</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -811,6 +996,12 @@ export default function AdminReportsPage() {
               {r.details ? (
                 <div className="text-sm text-muted-foreground">
                   Details: <span className="text-foreground">{r.details}</span>
+                </div>
+              ) : null}
+              {r.status_reason ? (
+                <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  <span className="font-semibold uppercase tracking-widest">Last action note: </span>
+                  <span className="text-foreground">{r.status_reason}</span>
                 </div>
               ) : null}
               <div className="text-xs text-muted-foreground">
@@ -1413,8 +1604,33 @@ export default function AdminReportsPage() {
         <SummaryCard icon={MessageSquare} label="Messaging reports" value={String(messagingRows.length)} />
         <SummaryCard icon={ShieldCheck} label="Cancellation requests" value={String(cancellationRows.length)} />
         <SummaryCard icon={Siren} label="Escalations" value={String(escalationRows.length)} />
-        <SummaryCard icon={Star} label="Reviews" value={String(reviewRows.length)} />
+        <SummaryCard icon={Star} label="Flagged reviews" value={String(reviewRows.filter((row: any) => row.flagged_for_moderation).length)} />
       </div>
+
+      {complaintHeavyOperators.length > 0 ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-base">Complaint-heavy operators</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Operators with repeated or still-open concerns so support can prioritize investigations before new issues stack.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {complaintHeavyOperators.map((row) => (
+              <div key={row.operatorId} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Operator {shortId(row.operatorId)}</p>
+                  <p className="text-xs text-muted-foreground">Last concern {formatDistanceToNow(new Date(row.latestCreatedAt), { addSuffix: true })}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="destructive">{row.openCount} open</Badge>
+                  <Badge variant="secondary">{row.totalCount} total</Badge>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Tabs defaultValue="general" className="mt-6">
         <TabsList className="mb-6">
@@ -1422,6 +1638,7 @@ export default function AdminReportsPage() {
           <TabsTrigger value="messaging">Messaging Reports</TabsTrigger>
           <TabsTrigger value="cancellations">Cancellation Requests</TabsTrigger>
           <TabsTrigger value="escalations">Support Escalations</TabsTrigger>
+          <TabsTrigger value="flagged-reviews">Flagged Reviews</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
         </TabsList>
 
@@ -1429,79 +1646,51 @@ export default function AdminReportsPage() {
         <TabsContent value="messaging">{messagingContent}</TabsContent>
         <TabsContent value="cancellations">{cancellationContent}</TabsContent>
         <TabsContent value="escalations">{escalationContent}</TabsContent>
+        <TabsContent value="flagged-reviews">
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Flagged review triage queue</p>
+                  <p className="text-sm text-muted-foreground">Focus on the reviews with moderation signals before reviewing the broader traveler feedback queue.</p>
+                </div>
+                <Select value={reviewQueueFilter} onValueChange={(value) => setReviewQueueFilter(value as 'all' | 'published' | 'removed')}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter reviews" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reviewQueueFilterOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+            {renderReviewQueue(filteredFlaggedReviewRows, 'No flagged reviews are waiting for moderation.')}
+          </div>
+        </TabsContent>
         <TabsContent value="reviews">
-          {reviewRows.length === 0 ? (
-            <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">No reviews yet.</CardContent></Card>
-          ) : (
-            <div className="space-y-4">
-              {reviewRows.map((row: any) => (
-                <Card key={row.id}>
-                  <CardContent className="pt-4 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{row.tour_title || 'Unknown tour'}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-0.5">
-                            {[1, 2, 3, 4, 5].map((i: number) => (
-                              <Star key={i} className={`h-3.5 w-3.5 ${i <= row.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
-                            ))}
-                          </div>
-                          <Badge variant={row.status === 'removed' ? 'destructive' : 'secondary'}>{row.status}</Badge>
-                          <span className="text-xs text-muted-foreground">{new Date(row.created_at).toLocaleDateString()}</span>
-                        </div>
-                        {row.title ? <p className="text-sm font-semibold text-foreground">{row.title}</p> : null}
-                        {row.body ? <p className="text-sm text-muted-foreground">{row.body}</p> : null}
-                      </div>
-                      <div className="shrink-0">
-                        {row.status !== 'removed' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                            disabled={reviewModBusy[row.id]}
-                            onClick={async () => {
-                              setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
-                              try {
-                                await adminReviewService.moderateReview(row.id, 'remove')
-                                setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'removed' } : r))
-                                toast.success('Review removed')
-                              } catch (err: any) {
-                                toast.error(err?.message || 'Failed to remove review')
-                              } finally {
-                                setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
-                              }
-                            }}
-                          >
-                            {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Remove'}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={reviewModBusy[row.id]}
-                            onClick={async () => {
-                              setReviewModBusy((prev) => ({ ...prev, [row.id]: true }))
-                              try {
-                                await adminReviewService.moderateReview(row.id, 'publish')
-                                setReviewRows((prev) => prev.map((r) => r.id === row.id ? { ...r, status: 'published' } : r))
-                                toast.success('Review restored')
-                              } catch (err: any) {
-                                toast.error(err?.message || 'Failed to restore review')
-                              } finally {
-                                setReviewModBusy((prev) => ({ ...prev, [row.id]: false }))
-                              }
-                            }}
-                          >
-                            {reviewModBusy[row.id] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Restore'}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">All review moderation</p>
+                  <p className="text-sm text-muted-foreground">Flagged items stay pinned first, and the status filter helps you move between active and removed reviews.</p>
+                </div>
+                <Select value={reviewQueueFilter} onValueChange={(value) => setReviewQueueFilter(value as 'all' | 'published' | 'removed')}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter reviews" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reviewQueueFilterOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+            {renderReviewQueue(filteredReviewRows, 'No reviews yet.')}
+          </div>
         </TabsContent>
       </Tabs>
 

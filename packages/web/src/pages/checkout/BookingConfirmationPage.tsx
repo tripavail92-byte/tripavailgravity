@@ -402,7 +402,7 @@ export default function BookingConfirmationPage() {
                     </div>
                     <div className="h-px bg-border" />
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground font-medium">Promo attribution</span>
+                      <span className="text-muted-foreground font-medium">Promo source</span>
                       <span className="text-foreground font-bold">
                         {settlementState.promoOwner || 'Promo applied'}
                         {settlementState.promoFundingSource

@@ -275,7 +275,7 @@ function disputeCaseSummary(row: OperatorPayoutReportRow) {
     label: 'Reconciliation review',
     detail:
       'This booking should be checked against payout, refund, and promo records before escalation.',
-    nextStep: 'Verify payout status, promo attribution, and traveler outcome.',
+    nextStep: 'Verify payout status, promo source, and traveler outcome.',
   }
 }
 
