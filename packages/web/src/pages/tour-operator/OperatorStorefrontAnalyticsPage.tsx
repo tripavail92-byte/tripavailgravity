@@ -375,7 +375,7 @@ export default function OperatorStorefrontAnalyticsPage() {
         </motion.div>
 
         {loading ? (
-          <div className="glass-card-dark border border-border/50 rounded-3xl p-20 flex items-center justify-center">
+          <div className="glass-card border border-border/50 rounded-3xl p-20 flex items-center justify-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : (
@@ -418,7 +418,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                   icon: TrendingUp,
                 },
               ].map((stat) => (
-                <div key={stat.label} className="glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl">
+                <div key={stat.label} className="glass-card border border-border/50 rounded-2xl p-5 shadow-xl">
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
                       {stat.label}
@@ -438,7 +438,7 @@ export default function OperatorStorefrontAnalyticsPage() {
               transition={{ duration: 0.45, delay: 0.1 }}
               className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.9fr)]"
             >
-              <Card className="glass-card-dark border-border/50 rounded-3xl">
+              <Card className="glass-card border-border/50 rounded-3xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
                     <BarChart2 className="h-4 w-4 text-primary" />
@@ -488,7 +488,7 @@ export default function OperatorStorefrontAnalyticsPage() {
               </Card>
 
               <div className="space-y-6">
-                <Card className="glass-card-dark border-border/50 rounded-3xl">
+                <Card className="glass-card border-border/50 rounded-3xl">
                   <CardHeader>
                     <CardTitle className="text-sm font-black uppercase tracking-widest">Trend Chart</CardTitle>
                   </CardHeader>
@@ -572,7 +572,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card-dark border-border/50 rounded-3xl">
+                <Card className="glass-card border-border/50 rounded-3xl">
                   <CardHeader>
                     <CardTitle className="text-sm font-black uppercase tracking-widest">Event Mix</CardTitle>
                   </CardHeader>
@@ -591,7 +591,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="glass-card-dark border-border/50 rounded-3xl">
+                <Card className="glass-card border-border/50 rounded-3xl">
                   <CardHeader>
                     <CardTitle className="text-sm font-black uppercase tracking-widest">Highlights</CardTitle>
                   </CardHeader>
@@ -644,7 +644,7 @@ export default function OperatorStorefrontAnalyticsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.15 }}
             >
-              <Card className="glass-card-dark border-border/50 rounded-3xl mb-6">
+              <Card className="glass-card border-border/50 rounded-3xl mb-6">
                 <CardHeader>
                   <CardTitle className="text-sm font-black uppercase tracking-widest">Per-Tour Booking Journey</CardTitle>
                 </CardHeader>
@@ -685,7 +685,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card-dark border-border/50 rounded-3xl">
+              <Card className="glass-card border-border/50 rounded-3xl">
                 <CardHeader>
                   <CardTitle className="text-sm font-black uppercase tracking-widest">Recent Events</CardTitle>
                 </CardHeader>
