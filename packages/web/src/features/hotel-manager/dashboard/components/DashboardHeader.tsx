@@ -15,9 +15,7 @@ export function DashboardHeader() {
       : activeRole?.role_type === 'admin'
         ? 'Administrator'
         : 'Traveler'
-  const isPartnerChrome =
-    activeRole?.role_type === 'tour_operator' || activeRole?.role_type === 'hotel_manager'
-  const isTourOperator = activeRole?.role_type === 'tour_operator'
+  const isPartnerChrome = activeRole?.role_type === 'hotel_manager'
 
   return (
     <header
