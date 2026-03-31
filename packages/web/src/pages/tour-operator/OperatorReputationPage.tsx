@@ -243,7 +243,7 @@ export default function OperatorReputationPage() {
         </motion.div>
 
         {loading ? (
-          <div className="glass-card-dark border border-border/50 rounded-3xl p-20 flex items-center justify-center">
+          <div className="glass-card border border-border/50 rounded-3xl p-20 flex items-center justify-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : (
@@ -298,7 +298,7 @@ export default function OperatorReputationPage() {
               ].map((stat) => (
                 <div
                   key={stat.label}
-                  className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}`}
+                  className={`glass-card border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}`}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
@@ -321,7 +321,7 @@ export default function OperatorReputationPage() {
               className="grid grid-cols-1 lg:grid-cols-2 gap-6"
             >
               {/* Rating Distribution */}
-              <div className="glass-card-dark border border-border/50 rounded-3xl p-6 space-y-4">
+              <div className="glass-card border border-border/50 rounded-3xl p-6 space-y-4">
                 <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   Rating Distribution
@@ -345,7 +345,7 @@ export default function OperatorReputationPage() {
               </div>
 
               {/* Category Scores */}
-              <div className="glass-card-dark border border-border/50 rounded-3xl p-6 space-y-4">
+              <div className="glass-card border border-border/50 rounded-3xl p-6 space-y-4">
                 <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                   <BarChart2 className="w-4 h-4 text-primary" />
                   Category Scores
@@ -373,7 +373,7 @@ export default function OperatorReputationPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.2 }}
-              className="glass-card-dark border border-border/50 rounded-3xl p-6"
+              className="glass-card border border-border/50 rounded-3xl p-6"
             >
               <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2 mb-5">
                 <ExternalLink className="w-4 h-4 text-primary" />
@@ -463,7 +463,7 @@ export default function OperatorReputationPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.24 }}
-              className="glass-card-dark border border-border/50 rounded-3xl p-6"
+              className="glass-card border border-border/50 rounded-3xl p-6"
             >
               <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2 mb-5">
                 <TrendingUp className="w-4 h-4 text-green-400" />

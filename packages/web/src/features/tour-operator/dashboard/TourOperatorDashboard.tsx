@@ -224,7 +224,7 @@ export function TourOperatorDashboard() {
             className="rounded-3xl overflow-hidden relative"
           >
             {/* glass hero panel */}
-            <div className="glass-card-dark border border-border/50 rounded-3xl p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="glass-card border border-border/50 rounded-3xl p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
               {/* left: identity */}
               <div className="flex items-center gap-5">
                 <div className="relative flex-shrink-0">
@@ -301,7 +301,7 @@ export function TourOperatorDashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.07 }}
                 onClick={stat.link ? () => navigate(stat.link!) : undefined}
-                className={`glass-card-dark border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}${stat.link ? ' cursor-pointer hover:border-primary/40 transition-colors' : ''}`}
+                className={`glass-card border border-border/50 rounded-2xl p-5 shadow-xl ${stat.glow}${stat.link ? ' cursor-pointer hover:border-primary/40 transition-colors' : ''}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80">
@@ -322,7 +322,7 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
-              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
@@ -351,7 +351,7 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
-              className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -379,7 +379,7 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
-              className="glass-card-dark border border-destructive/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card border border-destructive/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center flex-shrink-0">
@@ -408,7 +408,7 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+              className="glass-card border border-warning/30 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
@@ -445,7 +445,7 @@ export function TourOperatorDashboard() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="glass-card-dark border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
+                className="glass-card border border-primary/40 rounded-2xl px-6 py-5 flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -478,7 +478,7 @@ export function TourOperatorDashboard() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="glass-card-dark border border-warning/30 rounded-2xl px-6 py-5 flex items-center gap-4"
+                className="glass-card border border-warning/30 rounded-2xl px-6 py-5 flex items-center gap-4"
               >
                 <div className="w-10 h-10 rounded-xl bg-warning/20 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-5 h-5 text-warning animate-pulse" />
@@ -502,7 +502,7 @@ export function TourOperatorDashboard() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.22 }}
-              className="glass-card-dark border border-border/50 rounded-3xl p-6 space-y-4"
+              className="glass-card border border-border/50 rounded-3xl p-6 space-y-4"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-wide">
@@ -660,7 +660,7 @@ export function TourOperatorDashboard() {
               </div>
 
               {loading ? (
-                <div className="glass-card-dark border border-border/50 rounded-3xl p-20 flex flex-col items-center justify-center gap-4">
+                <div className="glass-card border border-border/50 rounded-3xl p-20 flex flex-col items-center justify-center gap-4">
                   <Loader2 className="w-10 h-10 text-primary animate-spin" />
                   <p className="text-muted-foreground font-medium text-sm">Loading your tours…</p>
                 </div>
@@ -672,7 +672,7 @@ export function TourOperatorDashboard() {
                   onView={handleViewTour}
                 />
               ) : (
-                <div className="glass-card-dark border border-border/50 rounded-3xl p-12 text-center">
+                <div className="glass-card border border-border/50 rounded-3xl p-12 text-center">
                   <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
                     <span className="text-4xl">🗺️</span>
                   </div>
@@ -694,7 +694,7 @@ export function TourOperatorDashboard() {
 
             {/* Right: Recent Activity */}
             <div className="lg:col-span-1">
-              <div className="glass-card-dark border border-border/50 rounded-3xl p-6">
+              <div className="glass-card border border-border/50 rounded-3xl p-6">
                 <OperatorRecentBookings operatorId={user?.id} />
               </div>
             </div>

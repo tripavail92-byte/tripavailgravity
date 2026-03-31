@@ -82,8 +82,8 @@
     /* Glass tokens (light mode defaults) */
     --glass-light: var(--background);
     --glass-strong: var(--background);
-    --glass-dark: var(--foreground);
-    --glass-border: var(--foreground);
+    --glass-dark: 215 28% 17%;       /* dark navy surface — intentional dark-glass card in light mode */
+    --glass-border: 215 20% 35%;     /* softer border for dark glass in light mode */
     --glass-shadow: 222 47% 20%;
     --glass-overlay: 0 0% 0%;
 
