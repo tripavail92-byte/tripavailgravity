@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   operatorPublicService,
   type OperatorPublicProfile,
@@ -308,17 +309,13 @@ export default function OperatorStorefrontAnalyticsPage() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+          className="space-y-4"
         >
-          <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-              <BarChart2 className="w-6 h-6 text-primary" />
-              Storefront Analytics
-            </h1>
-            <p className="mt-1 text-sm font-medium text-muted-foreground">
-              Track public profile views, traveler interest, and bookings that follow a profile visit.
-            </p>
-          </div>
+          <PageHeader
+            title="Storefront Analytics"
+            subtitle="Track public profile views, traveler interest, and bookings that follow a profile visit."
+            showBackButton={false}
+          />
 
           <div className="flex flex-wrap items-center gap-2">
             {DAY_FILTERS.map((option) => (

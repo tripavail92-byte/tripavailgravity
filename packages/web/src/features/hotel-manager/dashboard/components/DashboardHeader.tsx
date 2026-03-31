@@ -16,6 +16,7 @@ export function DashboardHeader() {
         ? 'Administrator'
         : 'Traveler'
   const isPartnerChrome = activeRole?.role_type === 'hotel_manager'
+  const isTourOperator = activeRole?.role_type === 'tour_operator'
 
   return (
     <header
@@ -45,26 +46,28 @@ export function DashboardHeader() {
             </div>
           </div>
 
-          {/* Search Bar - Hidden on mobile */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search
-                className={cn(
-                  'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
-                  isPartnerChrome ? 'text-white/45' : 'text-muted-foreground',
-                )}
-              />
-              <Input
-                type="text"
-                placeholder="Search listings, bookings..."
-                className={cn(
-                  'w-full pl-10',
-                  isPartnerChrome &&
-                    'border-white/10 bg-white/5 text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary/50 focus-visible:ring-primary/20',
-                )}
-              />
+          {/* Search Bar — hidden for tour operators (not relevant in operator console) */}
+          {!isTourOperator && (
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <Search
+                  className={cn(
+                    'absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
+                    isPartnerChrome ? 'text-white/45' : 'text-muted-foreground',
+                  )}
+                />
+                <Input
+                  type="text"
+                  placeholder="Search listings, bookings..."
+                  className={cn(
+                    'w-full pl-10',
+                    isPartnerChrome &&
+                      'border-white/10 bg-white/5 text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary/50 focus-visible:ring-primary/20',
+                  )}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">

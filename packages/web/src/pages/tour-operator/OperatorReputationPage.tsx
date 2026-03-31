@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { operatorReviewService } from '@/features/booking/services/reviewService'
 import type { TourReviewWithReply } from '@/features/booking/services/reviewService'
 import {
@@ -193,53 +194,51 @@ export default function OperatorReputationPage() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          className="flex flex-col gap-4"
         >
-          <div>
-            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-              <Award className="w-6 h-6 text-yellow-400" />
-              Reputation
-            </h1>
-            <p className="text-sm text-muted-foreground font-medium mt-1">
-              How travellers rate your service across all tours
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/operator/analytics')}
-              className="rounded-xl gap-2 font-bold border-border/50 h-10"
-            >
-              <BarChart2 className="w-4 h-4" />
-              Analytics
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/operator/reviews')}
-              className="rounded-xl gap-2 font-bold border-border/50 h-10"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Review Inbox
-              {unanswered > 0 && (
-                <span className="bg-primary text-primary-foreground text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">
-                  {unanswered}
-                </span>
-              )}
-            </Button>
-            {profile?.slug && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/operators/${profile.slug}`)}
-                className="rounded-xl gap-2 font-bold border-border/50 h-10"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Public Profile
-              </Button>
-            )}
-          </div>
+          <PageHeader
+            title="Reputation"
+            subtitle="How travellers rate your service across all tours"
+            showBackButton={false}
+            actions={
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/operator/analytics')}
+                  className="rounded-xl gap-2 font-bold border-border/50 h-10"
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  Analytics
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/operator/reviews')}
+                  className="rounded-xl gap-2 font-bold border-border/50 h-10"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Review Inbox
+                  {unanswered > 0 && (
+                    <span className="bg-primary text-primary-foreground text-[10px] font-black rounded-full px-1.5 py-0.5 leading-none">
+                      {unanswered}
+                    </span>
+                  )}
+                </Button>
+                {profile?.slug && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/operators/${profile.slug}`)}
+                    className="rounded-xl gap-2 font-bold border-border/50 h-10"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Public Profile
+                  </Button>
+                )}
+              </div>
+            }
+          />
         </motion.div>
 
         {loading ? (

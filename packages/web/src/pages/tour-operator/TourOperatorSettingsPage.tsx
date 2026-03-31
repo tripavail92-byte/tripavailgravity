@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
 import { FleetGuidesSection } from './components/FleetGuidesSection'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/PageHeader'
 import { Textarea } from '@/components/ui/textarea'
 import {
   tourOperatorService,
@@ -375,19 +376,20 @@ export default function TourOperatorSettingsPage() {
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-violet-500/10 blur-[110px] opacity-60" />
       </div>
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="max-w-4xl mx-auto px-4 py-5">
-          <h1 className="text-xl font-black tracking-tight text-foreground mb-0.5">
-            Tour Operator Settings{settings?.business_name && ` – ${settings.business_name}`}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your tours, team, payments, and business preferences
-          </p>
-        </div>
-      </div>
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-4">
+        <PageHeader
+          title={
+            storefrontSection === 'business-profile'
+              ? 'Business Profile'
+              : storefrontSection === 'fleet-guides'
+                ? 'Fleet & Guides'
+                : `Settings${settings?.business_name ? ` – ${settings.business_name}` : ''}`
+          }
+          subtitle="Manage your tours, team, payments, and business preferences"
+          showBackButton={false}
+        />
         {storefrontSection === 'all' && (<>
         {/* Quick Settings Overview */}
         <div className="grid grid-cols-2 gap-3">

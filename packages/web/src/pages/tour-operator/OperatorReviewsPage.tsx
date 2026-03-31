@@ -91,6 +91,7 @@ export default function OperatorReviewsPage() {
       <PageHeader
         title="Reviews"
         subtitle="Read traveler feedback and reply publicly to build trust."
+        backPath="/operator/reputation"
       />
 
       {reviews.length === 0 ? (
