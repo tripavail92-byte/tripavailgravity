@@ -233,7 +233,7 @@ export default function OperatorBookingsPage() {
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-sky-500/10 blur-[110px] opacity-60" />
       </div>
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <PageHeader
           title="Bookings"
           subtitle="Booking.com-style reservation board with payment state, safe traveler contact, and operational actions for each tour booking."
@@ -375,8 +375,8 @@ export default function OperatorBookingsPage() {
               {error ? (
                 <div className="p-8 text-center text-sm text-destructive">{error}</div>
               ) : loading ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  Loading bookings...
+                <div className="p-16 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
               ) : filteredBookings.length === 0 ? (
                 <div className="p-12 text-center">

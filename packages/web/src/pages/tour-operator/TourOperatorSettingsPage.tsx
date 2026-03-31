@@ -378,7 +378,7 @@ export default function TourOperatorSettingsPage() {
       {/* Header */}
 
       {/* Content */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-4">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <PageHeader
           title={
             storefrontSection === 'business-profile'
@@ -574,7 +574,7 @@ export default function TourOperatorSettingsPage() {
               const total = checks.length
               const pct = Math.round((doneCount / total) * 100)
               const missing = checks.filter((c) => !c.done)
-              const barColor = pct === 100 ? 'bg-green-500' : pct >= 57 ? 'bg-amber-500' : 'bg-red-500'
+              const barColor = pct === 100 ? 'bg-success' : pct >= 57 ? 'bg-warning' : 'bg-destructive'
               return (
                 <div className="rounded-xl border border-border/60 bg-muted/30 p-4 space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -582,7 +582,7 @@ export default function TourOperatorSettingsPage() {
                       <p className="text-sm font-semibold text-foreground">Profile completeness — {doneCount}/{total} sections</p>
                       <p className="text-xs text-muted-foreground">Completing more sections improves your marketplace ranking and traveler trust.</p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-sm font-bold ${pct === 100 ? 'bg-green-100 text-green-800' : pct >= 57 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>{pct}%</span>
+                    <span className={`rounded-full px-3 py-1 text-sm font-bold ${pct === 100 ? 'bg-success/15 text-success' : pct >= 57 ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'}`}>{pct}%</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-border overflow-hidden">
                     <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
@@ -590,7 +590,7 @@ export default function TourOperatorSettingsPage() {
                   {missing.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {missing.map((item) => (
-                        <span key={item.key} className="rounded-full border border-dashed border-amber-400/60 bg-amber-50/60 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                        <span key={item.key} className="rounded-full border border-dashed border-warning/50 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">
                           + {item.key}
                         </span>
                       ))}

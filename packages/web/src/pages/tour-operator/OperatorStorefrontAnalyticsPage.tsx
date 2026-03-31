@@ -298,13 +298,13 @@ export default function OperatorStorefrontAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background">
+    <div className="min-h-screen relative overflow-hidden bg-background pb-16">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-emerald-500/10 blur-[110px] opacity-60" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}

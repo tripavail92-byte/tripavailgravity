@@ -91,7 +91,7 @@ export default function OperatorCalendarPage() {
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-emerald-500/10 blur-[110px] opacity-60" />
       </div>
-      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <PageHeader
           title="Calendar & Availability"
           subtitle="Airbnb-style departure planning with booking pressure and seat visibility across your upcoming tours."
@@ -171,8 +171,8 @@ export default function OperatorCalendarPage() {
             <p className="text-sm font-semibold text-destructive">{error}</p>
           </GlassCard>
         ) : loading ? (
-          <GlassCard variant="card" className="rounded-3xl p-8 text-center text-muted-foreground">
-            Loading availability calendar...
+          <GlassCard variant="card" className="rounded-3xl p-16 flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           </GlassCard>
         ) : schedules.length === 0 ? (
           <GlassCard variant="card" className="rounded-3xl p-10 text-center">

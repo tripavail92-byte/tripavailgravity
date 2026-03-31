@@ -181,14 +181,14 @@ export default function OperatorReputationPage() {
   const hasCategories = categories.some((c) => metrics?.[c.key] != null)
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-background">
+    <div className="min-h-screen relative overflow-hidden bg-background pb-16">
       {/* ambient blobs  */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px] opacity-60" />
         <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] rounded-full bg-yellow-500/10 blur-[100px] opacity-50" />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* ── PAGE HEADER ── */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
