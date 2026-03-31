@@ -16,6 +16,8 @@ import { BusinessInfoStep } from './components/BusinessInfoStep'
 import { CompletionStep } from './components/CompletionStep'
 import { LockedSetupView } from './components/LockedSetupView'
 import { CoverageAreaStep } from './components/CoverageAreaStep'
+import { FleetStep } from './components/FleetStep'
+import { GuidesStep } from './components/GuidesStep'
 import { PersonalInfoStep } from './components/PersonalInfoStep'
 import { PoliciesStep } from './components/PoliciesStep'
 import { ProfilePictureStep } from './components/ProfilePictureStep'
@@ -29,6 +31,8 @@ const STEPS = [
   { id: 'business', title: 'Business Info', component: BusinessInfoStep },
   { id: 'services', title: 'Tour Services', component: ServicesStep },
   { id: 'coverage', title: 'Coverage Area', component: CoverageAreaStep },
+  { id: 'fleet', title: 'Fleet & Vehicles', component: FleetStep },
+  { id: 'guides', title: 'Meet Your Guides', component: GuidesStep },
   { id: 'policies', title: 'Policies', component: PoliciesStep },
   { id: 'completion', title: 'Complete', component: CompletionStep },
 ]

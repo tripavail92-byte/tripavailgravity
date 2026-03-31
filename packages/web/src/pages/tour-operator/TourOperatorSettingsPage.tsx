@@ -600,81 +600,47 @@ export default function TourOperatorSettingsPage() {
 
             {(storefrontSection === 'all' || storefrontSection === 'business-profile') ? (
               <>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Business name</p>
-                <Input
-                  value={publicProfile.businessName}
-                  onChange={(e) => updatePublicProfileField('businessName', e.target.value)}
-                  placeholder="Northern Trails Pakistan"
-                />
+            {/* ── Business identity — read-only, sourced from setup wizard ── */}
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Business identity</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    These values come from your setup wizard. To change them, return to setup.
+                  </p>
+                </div>
+                <Link
+                  to="/operator/setup"
+                  className="flex-shrink-0 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-xs font-semibold text-foreground hover:bg-muted transition-colors"
+                >
+                  Edit in Setup →
+                </Link>
               </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Primary city</p>
-                <Input
-                  value={publicProfile.primaryCity}
-                  onChange={(e) => updatePublicProfileField('primaryCity', e.target.value)}
-                  placeholder="Islamabad"
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                {([
+                  { label: 'Business name', value: publicProfile.businessName },
+                  { label: 'Primary city', value: publicProfile.primaryCity },
+                  { label: 'Coverage range', value: publicProfile.coverageRange },
+                  { label: 'Years experience', value: publicProfile.yearsExperience },
+                  { label: 'Team size', value: publicProfile.teamSize },
+                  { label: 'Registration number', value: publicProfile.registrationNumber },
+                  { label: 'Support phone', value: publicProfile.phoneNumber },
+                  { label: 'Support email', value: publicProfile.email },
+                ] as const).map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                    {value
+                      ? <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
+                      : <p className="text-sm italic text-muted-foreground/60 mt-0.5">Not set</p>}
+                  </div>
+                ))}
+                <div className="sm:col-span-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Public description</p>
+                  {publicProfile.description
+                    ? <p className="text-sm font-medium text-foreground mt-0.5 leading-relaxed">{publicProfile.description}</p>
+                    : <p className="text-sm italic text-muted-foreground/60 mt-0.5">Not set</p>}
+                </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Coverage range</p>
-                <Input
-                  value={publicProfile.coverageRange}
-                  onChange={(e) => updatePublicProfileField('coverageRange', e.target.value)}
-                  placeholder="Northern Pakistan, Skardu, Hunza"
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Years experience</p>
-                <Input
-                  value={publicProfile.yearsExperience}
-                  onChange={(e) => updatePublicProfileField('yearsExperience', e.target.value)}
-                  placeholder="8"
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Team size</p>
-                <Input
-                  value={publicProfile.teamSize}
-                  onChange={(e) => updatePublicProfileField('teamSize', e.target.value)}
-                  placeholder="14"
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Registration number</p>
-                <Input
-                  value={publicProfile.registrationNumber}
-                  onChange={(e) => updatePublicProfileField('registrationNumber', e.target.value)}
-                  placeholder="SECP / NTN reference"
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Support phone</p>
-                <Input
-                  value={publicProfile.phoneNumber}
-                  onChange={(e) => updatePublicProfileField('phoneNumber', e.target.value)}
-                  placeholder="+92 ..."
-                />
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Support email</p>
-                <Input
-                  value={publicProfile.email}
-                  onChange={(e) => updatePublicProfileField('email', e.target.value)}
-                  placeholder="support@operator.com"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Public description</p>
-              <Textarea
-                rows={4}
-                value={publicProfile.description}
-                onChange={(e) => updatePublicProfileField('description', e.target.value)}
-                placeholder="Describe your operating style, regions, and what travelers can rely on."
-              />
             </div>
 
             <div className="space-y-4 rounded-2xl border border-border/60 p-4">

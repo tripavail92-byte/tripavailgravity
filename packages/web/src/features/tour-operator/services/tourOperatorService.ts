@@ -149,6 +149,8 @@ export interface TourOperatorOnboardingData {
     custom: Record<string, string>
     uploads: Record<string, boolean>
   }
+  fleetAssets?: OperatorFleetAsset[]
+  guideProfiles?: OperatorGuideProfile[]
   verification?: {
     idCardUrl: string
     idBackUrl: string
@@ -271,6 +273,8 @@ export const tourOperatorService = {
       primary_city: data.coverage?.primaryLocation,
       coverage_range: (data.coverage?.radii ?? []).join(', ') || null,
       policies: data.policies,
+      fleet_assets: data.fleetAssets ?? undefined,
+      guide_profiles: data.guideProfiles ?? undefined,
       verification_documents: {
         idCardUrl: data.verification?.idCardUrl,
         idBackUrl: data.verification?.idBackUrl,
