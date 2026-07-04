@@ -5,7 +5,16 @@ import { useNavigate } from 'react-router-dom'
 
 import { Modern3DHotelIcon } from '@/components/icons/Modern3DHotelIcon'
 import { Modern3DTourIcon } from '@/components/icons/Modern3DTourIcon'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function PartnerSelectionPage() {
@@ -13,6 +22,7 @@ export default function PartnerSelectionPage() {
   const navigate = useNavigate()
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [pendingMode, setPendingMode] = useState<'hotel_manager' | 'tour_operator' | null>(null)
 
   const allPartnerOptions = [
     {
@@ -47,7 +57,16 @@ export default function PartnerSelectionPage() {
         ? 'Tour Operator'
         : null
 
-  const handleSelectPartner = async (mode: 'hotel_manager' | 'tour_operator') => {
+  const pendingLabel =
+    pendingMode === 'hotel_manager'
+      ? 'Hotel Manager'
+      : pendingMode === 'tour_operator'
+        ? 'Tour Operator'
+        : ''
+
+  // Step 1: user taps a partner card. Validate, then open a friendly confirmation
+  // so a mis-tap never silently commits the permanent choice.
+  const requestSelectPartner = (mode: 'hotel_manager' | 'tour_operator') => {
     // If not logged in, redirect to auth with selected role
     if (!activeRole) {
       navigate(`/auth?role=${mode}`)
@@ -62,16 +81,23 @@ export default function PartnerSelectionPage() {
       return
     }
 
+    setPendingMode(mode)
+  }
+
+  // Step 2: user confirms in the dialog — now commit the role and route into setup.
+  const confirmSelectPartner = async () => {
+    if (!pendingMode) return
     setIsLoading(true)
     try {
-      await switchRole(mode)
+      await switchRole(pendingMode)
       // After becoming a partner, redirect into the required setup flow.
       // - Tour Operator -> Setup
       // - Hotel Manager  -> Hotel listing
-      navigate(mode === 'tour_operator' ? '/operator/setup' : '/manager/list-hotel')
+      navigate(pendingMode === 'tour_operator' ? '/operator/setup' : '/manager/list-hotel')
     } catch (error) {
       console.error('Failed to switch role:', error)
-      alert('Failed to switch role. Please try again.')
+      setPendingMode(null)
+      alert('Something went wrong setting up your partner account. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -163,7 +189,7 @@ export default function PartnerSelectionPage() {
                   onMouseEnter={() => setHoveredOption(option.id)}
                   onMouseLeave={() => setHoveredOption(null)}
                   onClick={() =>
-                    handleSelectPartner(option.id as 'hotel_manager' | 'tour_operator')
+                    requestSelectPartner(option.id as 'hotel_manager' | 'tour_operator')
                   }
                 >
                   {/* Clean Modern Icon */}
@@ -249,6 +275,49 @@ export default function PartnerSelectionPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Friendly permanent-choice confirmation — prevents a mis-tap from locking the role */}
+      <Dialog
+        open={pendingMode !== null}
+        onOpenChange={(open) => {
+          if (!open && !isLoading) setPendingMode(null)
+        }}
+      >
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <div className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
+              <span aria-hidden>{pendingMode === 'hotel_manager' ? '🏨' : '🏔️'}</span>
+            </div>
+            <DialogTitle className="text-center text-xl">
+              Ready to become a {pendingLabel}?
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              We&apos;ll set up your{' '}
+              <span className="font-semibold text-foreground">{pendingLabel}</span> workspace. You
+              can always keep browsing as a traveller — but your partner type stays {pendingLabel}{' '}
+              and can&apos;t be switched to the other one later.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl bg-muted/50 p-3 text-center text-sm text-muted-foreground">
+            Not fully sure yet? No pressure — nothing is locked in until you tap confirm.
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setPendingMode(null)}
+              disabled={isLoading}
+            >
+              Not yet
+            </Button>
+            <Button className="rounded-full" onClick={confirmSelectPartner} disabled={isLoading}>
+              {isLoading ? 'Setting up…' : "Yes, I'm ready"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   )
 }
