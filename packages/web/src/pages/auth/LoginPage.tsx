@@ -259,14 +259,16 @@ export default function LoginPage() {
             {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground"
-            onClick={() => devLogin()}
-          >
-            Dev: Bypass Auth
-          </Button>
+          {import.meta.env.DEV && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground"
+              onClick={() => devLogin()}
+            >
+              Dev: Bypass Auth
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>
