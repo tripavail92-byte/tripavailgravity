@@ -285,7 +285,7 @@ export default function PackageCheckoutPage() {
   if (!packageData || !checkoutCheckIn || !checkoutCheckOut || !checkoutGuestCount) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking details missing</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-2">Booking details missing</h1>
         <Button
           onClick={() => navigate(-1)}
           variant="default"
@@ -335,16 +335,16 @@ export default function PackageCheckoutPage() {
     : `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} · Maximum ${maxNights} nights`
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+    <div className="bg-muted/30 min-h-screen pb-20">
+      <div className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-muted rounded-full transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Complete Your Booking</h1>
+          <h1 className="text-lg font-bold text-foreground">Complete Your Booking</h1>
           <div className="w-10" />
         </div>
       </div>
@@ -365,7 +365,7 @@ export default function PackageCheckoutPage() {
                     <Badge variant="secondary" className="mb-2 capitalize">
                       {packageData.package_type?.replace('-', ' ') || 'Package'}
                     </Badge>
-                    <h2 className="text-2xl font-bold text-gray-900">{packageData.name}</h2>
+                    <h2 className="text-2xl font-bold text-foreground">{packageData.name}</h2>
                   </div>
                   {pendingBooking && (
                     <div className="flex items-center gap-2 text-sm text-orange-600">
@@ -375,7 +375,7 @@ export default function PackageCheckoutPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary" />
                     {checkInDate} → {checkOutDate}
@@ -391,10 +391,10 @@ export default function PackageCheckoutPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+              className="bg-card rounded-2xl p-6 border border-border shadow-sm"
             >
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Next Steps</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="text-lg font-bold text-foreground mb-3">Next Steps</h3>
+              <p className="text-muted-foreground text-sm">
                 We hold your booking for 10 minutes while you complete payment. If the timer
                 expires, you will need to start over.
               </p>
@@ -402,15 +402,15 @@ export default function PackageCheckoutPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
                   Payment mode
                 </p>
-                <p className="mt-2 text-sm font-semibold text-gray-900">
+                <p className="mt-2 text-sm font-semibold text-foreground">
                   {usesDeposit ? PARTIAL_ONLINE_MODE_LABEL : FULL_ONLINE_MODE_LABEL}
                 </p>
-                <p className="mt-2 text-sm text-gray-600">{paymentPolicyText}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{paymentPolicyText}</p>
               </div>
               <p
                 className={
                   'mt-3 text-xs ' +
-                  (isStayLengthValid ? 'text-gray-500' : 'text-red-600 font-medium')
+                  (isStayLengthValid ? 'text-muted-foreground' : 'text-red-600 font-medium')
                 }
               >
                 {stayLengthMessage}
@@ -430,7 +430,7 @@ export default function PackageCheckoutPage() {
                 <GlassTitle>Price Summary</GlassTitle>
               </GlassHeader>
               <GlassContent className="p-6 pt-4">
-                <div className="space-y-3 text-sm text-gray-600">
+                <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex justify-between">
                     <span>
                       {packageCurrency} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
@@ -451,13 +451,13 @@ export default function PackageCheckoutPage() {
                     <span>Pay later to operator</span>
                     <span>{packageCurrency} {remainingAmount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-100">
+                  <div className="flex justify-between font-bold text-foreground pt-2 border-t border-border">
                     <span>Total</span>
                     <span>{packageCurrency} {bookingTotal.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-600">
+                <div className="mt-4 rounded-2xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground">
                   {paymentPolicyText}
                 </div>
 
@@ -471,32 +471,32 @@ export default function PackageCheckoutPage() {
                       {processingBooking ? 'Starting checkout...' : 'Continue to Payment'}
                     </Button>
 
-                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                    <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield className="w-4 h-4 text-emerald-500" />
                       Secure checkout. You’ll enter card details next.
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                      <div className="text-sm font-semibold text-gray-900 mb-3">Payment</div>
+                    <div className="mt-6 rounded-2xl border border-border bg-muted/30 p-4">
+                      <div className="text-sm font-semibold text-foreground mb-3">Payment</div>
 
-                      <div className="mb-4 space-y-2 rounded-2xl border border-primary/10 bg-white p-4 text-sm text-gray-600">
+                      <div className="mb-4 space-y-2 rounded-2xl border border-primary/10 bg-card p-4 text-sm text-muted-foreground">
                         <div className="flex items-center justify-between">
                           <span>Booking total</span>
-                          <span className="font-semibold text-gray-900">
+                          <span className="font-semibold text-foreground">
                             {packageCurrency} {bookingTotal.toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Charged online now</span>
-                          <span className="font-semibold text-gray-900">
+                          <span className="font-semibold text-foreground">
                             {packageCurrency} {payNowAmount.toLocaleString()}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Remaining to operator</span>
-                          <span className="font-semibold text-gray-900">
+                          <span className="font-semibold text-foreground">
                             {packageCurrency} {remainingAmount.toLocaleString()}
                           </span>
                         </div>
@@ -505,7 +505,7 @@ export default function PackageCheckoutPage() {
                       {stripeAvailable === false ? (
                         <div className="text-sm text-red-600">Payments are not configured.</div>
                       ) : !clientSecret ? (
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           {creatingPaymentIntent
                             ? 'Preparing secure payment...'
                             : 'Preparing secure payment...'}
@@ -515,18 +515,18 @@ export default function PackageCheckoutPage() {
                           <Elements stripe={stripePromise} options={{ clientSecret }}>
                             <PackagePaymentForm
                               bookingId={pendingBooking.id}
-                              total={Number(pricing?.total_price || 0)}
+                              total={payNowAmount}
                               currency={packageCurrency}
                             />
                           </Elements>
                           {isTestStripe ? (
-                            <p className="mt-3 text-xs text-gray-500">{STRIPE_TEST_CARD_HINT}</p>
+                            <p className="mt-3 text-xs text-muted-foreground">{STRIPE_TEST_CARD_HINT}</p>
                           ) : null}
                         </>
                       )}
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
+                    <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield className="w-4 h-4 text-emerald-500" />
                       {usesDeposit
                         ? `Your reservation expires when the timer ends. You will pay ${packageCurrency} ${payNowAmount.toLocaleString()} now and the remaining ${packageCurrency} ${remainingAmount.toLocaleString()} directly to the operator before check-in.`
@@ -607,7 +607,7 @@ function PackagePaymentForm(props: { bookingId: string; total: number; currency:
       />
 
       {!paymentReady && !error && (
-        <div className="text-xs text-gray-500">Loading secure payment form...</div>
+        <div className="text-xs text-muted-foreground">Loading secure payment form...</div>
       )}
 
       {error && <div className="text-sm text-red-600">{error}</div>}

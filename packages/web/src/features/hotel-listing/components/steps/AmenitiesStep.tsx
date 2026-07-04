@@ -355,10 +355,10 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                 onClick={() => toggleAmenity(amenity.id)}
                                 onMouseEnter={() => setHoveredAmenity(amenity.id)}
                                 onMouseLeave={() => setHoveredAmenity(null)}
-                                className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-white transition-all ${
+                                className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg bg-card transition-all ${
                                   isSelected
-                                    ? 'border-[1.5px] border-black'
-                                    : 'border border-gray-300'
+                                    ? 'border-[1.5px] border-primary'
+                                    : 'border border-border'
                                 }`}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
@@ -381,7 +381,7 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                   {/* Amenity Name - Centered */}
                                   <div className="text-center">
                                     <h4
-                                      className={`text-[15px] leading-5 text-gray-900 ${
+                                      className={`text-[15px] leading-5 text-card-foreground ${
                                         isSelected ? 'font-medium' : 'font-normal'
                                       }`}
                                     >

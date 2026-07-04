@@ -5,11 +5,11 @@ import { COMPANY } from '@/config/company'
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-gray-200 bg-gray-50 mt-12 py-12">
+    <footer className="border-t border-border bg-muted/40 mt-12 py-12">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div>
-          <h4 className="font-bold text-gray-900 mb-4">Support</h4>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h4 className="font-bold text-foreground mb-4">Support</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link to="/contact" className="hover:underline">
                 Contact
@@ -29,8 +29,8 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4 className="font-bold text-gray-900 mb-4">Partners</h4>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h4 className="font-bold text-foreground mb-4">Partners</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link to="/partner/onboarding" className="hover:underline">
                 Become a partner
@@ -40,8 +40,8 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4 className="font-bold text-gray-900 mb-4">Company</h4>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h4 className="font-bold text-foreground mb-4">Company</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link to="/terms" className="hover:underline">
                 Terms
@@ -56,8 +56,8 @@ export function SiteFooter() {
         </div>
 
         <div>
-          <h4 className="font-bold text-gray-900 mb-4">Legal</h4>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h4 className="font-bold text-foreground mb-4">Legal</h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <Link to="/terms" className="hover:underline">
                 Terms of Service
@@ -77,7 +77,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+      <div className="max-w-7xl mx-auto px-4 pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
         <p>
           © 2026 {COMPANY.legalName} ·{' '}
           <Link to="/privacy" className="hover:underline">

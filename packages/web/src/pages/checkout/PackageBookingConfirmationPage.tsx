@@ -184,8 +184,8 @@ export default function PackageBookingConfirmationPage() {
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-900">Confirming Your Booking</h2>
-          <p className="text-gray-600 font-medium">Please wait while we finalize your payment...</p>
+          <h2 className="text-2xl font-bold text-foreground">Confirming Your Booking</h2>
+          <p className="text-muted-foreground font-medium">Please wait while we finalize your payment...</p>
         </div>
       </div>
     )
@@ -193,7 +193,7 @@ export default function PackageBookingConfirmationPage() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950/30 dark:to-red-900/20 flex items-center justify-center p-4">
         <GlassCard
           asMotion
           initial={{ opacity: 0, scale: 0.95 }}
@@ -205,8 +205,8 @@ export default function PackageBookingConfirmationPage() {
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmation Failed</h2>
-            <p className="text-gray-600 font-medium">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Booking Confirmation Failed</h2>
+            <p className="text-muted-foreground font-medium">
               {error || 'An error occurred while confirming your booking'}
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function PackageBookingConfirmationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50 dark:from-emerald-950/30 dark:via-background dark:to-sky-950/30 pb-20">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <GlassCard
           asMotion
@@ -241,8 +241,8 @@ export default function PackageBookingConfirmationPage() {
             )}
           </div>
           <div className="text-center">
-            <h1 className="text-3xl font-black text-gray-900">{outcome.title}</h1>
-            <p className="text-gray-600 font-medium mt-2">{outcome.message}</p>
+            <h1 className="text-3xl font-black text-foreground">{outcome.title}</h1>
+            <p className="text-muted-foreground font-medium mt-2">{outcome.message}</p>
             {settlementState.hasPromo ? (
               <p className="mt-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
                 Promo savings locked in: {formatMoney(settlementState.promoDiscountValue)} off
@@ -251,7 +251,7 @@ export default function PackageBookingConfirmationPage() {
           </div>
 
           <div className="text-center p-6 bg-primary/5 rounded-xl border border-primary/20">
-            <p className="text-sm text-gray-600 font-medium uppercase tracking-widest mb-2">
+            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest mb-2">
               Confirmation Number
             </p>
             <p className="text-2xl font-black text-primary font-mono break-all">
@@ -260,122 +260,122 @@ export default function PackageBookingConfirmationPage() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-gray-900">Package Details</h3>
-            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <h3 className="text-xl font-bold text-foreground">Package Details</h3>
+            <div className="space-y-3 rounded-xl border border-border bg-muted p-4">
               <div className="flex items-start justify-between gap-4">
-                <span className="text-gray-600 font-medium">Package</span>
-                <span className="text-right text-gray-900 font-bold max-w-xs">
+                <span className="text-muted-foreground font-medium">Package</span>
+                <span className="text-right text-foreground font-bold max-w-xs">
                   {pkg?.name || booking?.package_id}
                 </span>
               </div>
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Type</span>
-                <span className="text-gray-900 font-bold capitalize">
+                <span className="text-muted-foreground font-medium">Type</span>
+                <span className="text-foreground font-bold capitalize">
                   {pkg?.package_type?.replace('-', ' ') || 'Package'}
                 </span>
               </div>
               {booking?.check_in_date ? (
                 <>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">Check-in</span>
-                    <span className="text-gray-900 font-bold">{formatDate(booking.check_in_date)}</span>
+                    <span className="text-muted-foreground font-medium">Check-in</span>
+                    <span className="text-foreground font-bold">{formatDate(booking.check_in_date)}</span>
                   </div>
                 </>
               ) : null}
               {booking?.check_out_date ? (
                 <>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">Check-out</span>
-                    <span className="text-gray-900 font-bold">{formatDate(booking.check_out_date)}</span>
+                    <span className="text-muted-foreground font-medium">Check-out</span>
+                    <span className="text-foreground font-bold">{formatDate(booking.check_out_date)}</span>
                   </div>
                 </>
               ) : null}
               {booking?.number_of_nights ? (
                 <>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">Stay length</span>
-                    <span className="text-gray-900 font-bold">
+                    <span className="text-muted-foreground font-medium">Stay length</span>
+                    <span className="text-foreground font-bold">
                       {booking.number_of_nights} night{booking.number_of_nights === 1 ? '' : 's'}
                     </span>
                   </div>
                 </>
               ) : null}
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Guests</span>
-                <span className="text-gray-900 font-bold">{booking?.guest_count || 0}</span>
+                <span className="text-muted-foreground font-medium">Guests</span>
+                <span className="text-foreground font-bold">{booking?.guest_count || 0}</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-bold text-gray-900">Payment Breakdown</h3>
-            <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4">
+            <h3 className="text-xl font-bold text-foreground">Payment Breakdown</h3>
+            <div className="space-y-3 rounded-xl border border-border bg-muted p-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Booking status</span>
-                <span className="text-gray-900 font-bold">{booking?.status || 'confirmed'}</span>
+                <span className="text-muted-foreground font-medium">Booking status</span>
+                <span className="text-foreground font-bold">{booking?.status || 'confirmed'}</span>
               </div>
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Payment status</span>
-                <span className="text-gray-900 font-bold">{booking?.payment_status || 'paid'}</span>
+                <span className="text-muted-foreground font-medium">Payment status</span>
+                <span className="text-foreground font-bold">{booking?.payment_status || 'paid'}</span>
               </div>
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Total booking amount</span>
-                <span className="text-gray-900 font-bold">
+                <span className="text-muted-foreground font-medium">Total booking amount</span>
+                <span className="text-foreground font-bold">
                   {formatMoney(settlementState.totalAmount)}
                 </span>
               </div>
               {settlementState.hasPromo ? (
                 <>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">Original total</span>
-                    <span className="text-gray-900 font-bold">
+                    <span className="text-muted-foreground font-medium">Original total</span>
+                    <span className="text-foreground font-bold">
                       {formatMoney(settlementState.priceBeforePromo || settlementState.totalAmount)}
                     </span>
                   </div>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600 font-medium">Promo discount</span>
+                    <span className="text-muted-foreground font-medium">Promo discount</span>
                     <span className="font-bold text-emerald-700">
                       -{formatMoney(settlementState.promoDiscountValue)}
                     </span>
                   </div>
                 </>
               ) : null}
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between text-lg">
-                <span className="text-gray-900 font-bold">Paid online</span>
+                <span className="text-foreground font-bold">Paid online</span>
                 <span className="font-black text-primary">
                   {formatMoney(settlementState.paidOnline)}
                 </span>
               </div>
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Remaining to operator</span>
-                <span className="text-gray-900 font-bold">
+                <span className="text-muted-foreground font-medium">Remaining to operator</span>
+                <span className="text-foreground font-bold">
                   {formatMoney(settlementState.remainingAmount)}
                 </span>
               </div>
-              <div className="h-px bg-gray-200" />
+              <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Payment mode</span>
-                <span className="text-gray-900 font-bold">
+                <span className="text-muted-foreground font-medium">Payment mode</span>
+                <span className="text-foreground font-bold">
                   {settlementState.remainingAmount > 0 ? 'Deposit booking' : 'Full payment online'}
                 </span>
               </div>
               {booking?.payment_policy_text ? (
                 <>
-                  <div className="h-px bg-gray-200" />
+                  <div className="h-px bg-border" />
                   <div className="space-y-2">
-                    <p className="text-gray-600 font-medium">Payment policy</p>
-                    <p className="text-sm text-gray-900">{booking.payment_policy_text}</p>
+                    <p className="text-muted-foreground font-medium">Payment policy</p>
+                    <p className="text-sm text-foreground">{booking.payment_policy_text}</p>
                   </div>
                 </>
               ) : null}
@@ -383,18 +383,18 @@ export default function PackageBookingConfirmationPage() {
           </div>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <h4 className="flex items-center gap-2 font-bold text-gray-900">
+            <h4 className="flex items-center gap-2 font-bold text-foreground">
               <Calendar className="w-5 h-5 text-amber-600" />
               What happens next
             </h4>
-            <ul className="mt-3 space-y-2 text-sm text-gray-700">
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {nextSteps.map((step) => (
                 <li key={step}>• {step}</li>
               ))}
             </ul>
           </div>
 
-          <div className="space-y-3 border-t border-gray-100 pt-4">
+          <div className="space-y-3 border-t border-border pt-4">
             {booking ? (
               <Button asChild className="w-full h-12 rounded-2xl font-bold">
                 <Link to={`/trips/${booking.id}`}>Open Booking Workspace</Link>
@@ -415,21 +415,21 @@ export default function PackageBookingConfirmationPage() {
             </Button>
           </div>
 
-          <div className="grid gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4 sm:grid-cols-3">
-            <div className="rounded-2xl bg-white p-4 text-center">
+          <div className="grid gap-3 rounded-xl border border-border bg-muted p-4 sm:grid-cols-3">
+            <div className="rounded-2xl bg-card p-4 text-center">
               <Calendar className="mx-auto h-5 w-5 text-primary" />
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Check-in</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{formatDate(booking?.check_in_date) || 'See workspace'}</p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Check-in</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{formatDate(booking?.check_in_date) || 'See workspace'}</p>
             </div>
-            <div className="rounded-2xl bg-white p-4 text-center">
+            <div className="rounded-2xl bg-card p-4 text-center">
               <Users className="mx-auto h-5 w-5 text-primary" />
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Guests</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{booking?.guest_count || 0}</p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Guests</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{booking?.guest_count || 0}</p>
             </div>
-            <div className="rounded-2xl bg-white p-4 text-center">
+            <div className="rounded-2xl bg-card p-4 text-center">
               <Check className="mx-auto h-5 w-5 text-primary" />
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">Paid online</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{formatMoney(settlementState.paidOnline)}</p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Paid online</p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{formatMoney(settlementState.paidOnline)}</p>
             </div>
           </div>
         </GlassCard>

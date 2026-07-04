@@ -28,7 +28,7 @@ export function AirbnbBottomNav({
   backLabel = 'Back',
 }: AirbnbBottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white z-50 pt-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 pt-4">
       {/* Steps Progress Bar - Absolutely no padding/margin above */}
       <div className="px-4 -mt-4">
         <StepsProgressBar
@@ -47,7 +47,7 @@ export function AirbnbBottomNav({
             <Button
               variant="link"
               onClick={onBack}
-              className="text-gray-900 font-semibold underline decoration-2 underline-offset-4 hover:text-gray-700 p-0"
+              className="text-foreground font-semibold underline decoration-2 underline-offset-4 hover:text-foreground/80 p-0"
             >
               {backLabel}
             </Button>
@@ -60,7 +60,7 @@ export function AirbnbBottomNav({
             <Button
               onClick={onNext}
               disabled={nextDisabled}
-              className="px-6 py-3 bg-black text-white hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400"
+              className="px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
             >
               {nextLabel}
             </Button>

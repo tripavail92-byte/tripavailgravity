@@ -135,8 +135,8 @@ export default function SmartAmenitiesSelector({
         onClick={() => toggleAmenity(amenity.id)}
         className={`relative w-full max-w-[160px] h-[130px] p-5 px-3 rounded-lg transition-all ${
           isSelected
-            ? 'border-[1.5px] border-black bg-white'
-            : 'border border-gray-300 bg-white hover:border-gray-400'
+            ? 'border-[1.5px] border-primary bg-card'
+            : 'border border-border bg-card hover:border-gray-400'
         }`}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -155,7 +155,7 @@ export default function SmartAmenitiesSelector({
           {/* Amenity Name - Centered */}
           <div className="text-center">
             <h4
-              className={`text-[15px] leading-5 text-gray-900 ${
+              className={`text-[15px] leading-5 text-card-foreground ${
                 isSelected ? 'font-medium' : 'font-normal'
               }`}
             >
