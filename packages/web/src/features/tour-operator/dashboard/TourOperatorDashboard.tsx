@@ -156,11 +156,6 @@ export function TourOperatorDashboard() {
   const handleEditTour = (tour: Tour) =>
     navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
   const handleViewTour = (tour: Tour) => window.open(`/tours/${tour.id}`, '_blank')
-  const handleDeleteTour = async (tour: Tour) => {
-    if (window.confirm(`Delete "${tour.title}"?`)) {
-      // TODO: Wire tour deletion once backend deletion semantics are finalized.
-    }
-  }
 
   const operatorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Partner'
   const ratedTours = publishedTours.filter((tour) => tour.rating > 0)
@@ -668,7 +663,6 @@ export function TourOperatorDashboard() {
                 <ActiveToursGrid
                   tours={publishedTours}
                   onEdit={handleEditTour}
-                  onDelete={handleDeleteTour}
                   onView={handleViewTour}
                 />
               ) : (

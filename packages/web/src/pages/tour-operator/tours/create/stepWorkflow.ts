@@ -87,8 +87,12 @@ function evaluatePickup(data: Partial<Tour>) {
 function evaluateItinerary(data: Partial<Tour>) {
   const requiredDays = Math.max(1, data.duration_days ?? 1)
   const itinerary = Array.isArray(data.itinerary) ? data.itinerary : []
-  const filledDays = itinerary.filter((day: any) => hasText(day?.description)).length
-  const hasAnyInput = itinerary.some((day: any) => hasText(day?.title) || hasText(day?.description))
+  const filledDays = itinerary.filter(
+    (day: any) => hasText(day?.title) || (Array.isArray(day?.activities) && day.activities.length > 0),
+  ).length
+  const hasAnyInput = itinerary.some(
+    (day: any) => hasText(day?.title) || (Array.isArray(day?.activities) && day.activities.length > 0),
+  )
 
   return {
     requiredCount: requiredDays,

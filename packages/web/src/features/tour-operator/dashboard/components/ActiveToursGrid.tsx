@@ -1,4 +1,4 @@
-import { Clock, Edit2, ExternalLink, MapPin, Star, Trash2, Users } from 'lucide-react'
+import { Clock, Edit2, ExternalLink, MapPin, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 
 import { Badge } from '@/components/ui/badge'
@@ -8,11 +8,10 @@ import { Tour } from '@/features/tour-operator/services/tourService'
 interface ActiveToursGridProps {
   tours: Tour[]
   onEdit: (tour: Tour) => void
-  onDelete: (tour: Tour) => void
   onView: (tour: Tour) => void
 }
 
-export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveToursGridProps) {
+export function ActiveToursGrid({ tours, onEdit, onView }: ActiveToursGridProps) {
   if (tours.length === 0) return null
 
   return (
@@ -65,14 +64,6 @@ export function ActiveToursGrid({ tours, onEdit, onDelete, onView }: ActiveTours
                   onClick={() => onEdit(tour)}
                 >
                   <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full hover:text-destructive"
-                  onClick={() => onDelete(tour)}
-                >
-                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>

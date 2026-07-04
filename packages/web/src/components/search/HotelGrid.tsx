@@ -1,4 +1,5 @@
 import { Hotel } from '@tripavail/shared/services/searchService'
+import { useNavigate } from 'react-router-dom'
 
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -10,6 +11,8 @@ interface HotelGridProps {
 }
 
 export function HotelGrid({ hotels, isLoading }: HotelGridProps) {
+  const navigate = useNavigate()
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
@@ -41,7 +44,7 @@ export function HotelGrid({ hotels, isLoading }: HotelGridProps) {
         <HotelCard
           key={hotel.id}
           hotel={hotel}
-          onClick={() => console.log('Navigate to hotel', hotel.id)}
+          onClick={() => navigate(`/hotel/${hotel.id}`)}
         />
       ))}
     </div>
