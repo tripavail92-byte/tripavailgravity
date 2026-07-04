@@ -65,22 +65,22 @@ export default function LandingPage() {
       {/* Airbnb Header (Fixed) */}
       <AirbnbHeader />
 
-      <div className="container mx-auto max-w-7xl px-4 pt-32 md:pt-24 pb-6">
-        <div className="space-y-10 pb-20">
-          {/* Conversion Hero */}
-          <section className="pt-2">
-            <div className="max-w-3xl">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
+      <div className="container mx-auto max-w-7xl px-4 pt-28 md:pt-24 pb-6">
+        <div className="space-y-8 pb-20">
+          {/* Conversion Hero (compact — headline on one line, subtitle + CTA share a row on desktop) */}
+          <section className="pt-1">
+            <div className="max-w-4xl">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
                 Premium travel packages, curated for real moments.
               </h1>
-              <p className="mt-4 text-base sm:text-lg text-muted-foreground">
-                Book boutique stays, romantic escapes, and family getaways with transparent pricing
-                and instant confirmation.
-              </p>
-              <div className="mt-6">
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  Boutique stays, romantic escapes &amp; family getaways — transparent pricing,
+                  instant confirmation.
+                </p>
                 <Button
                   onClick={() => navigate('/explore')}
-                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
+                  className="shrink-0 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
                 >
                   Explore Packages
                 </Button>
@@ -88,8 +88,32 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Trust Strip */}
-          <section className="-mt-2">
+          {/* Curated Rows (real Supabase data) */}
+          <div className="space-y-12">
+            <MixedHomepageRow kind="new" title="New Arrivals" />
+            <MixedHomepageRow kind="top-rated" title="Top Rated" />
+            <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
+            <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
+            <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
+
+            <CuratedToursRow
+              category="adventure-trips"
+              title="Adventure Trips"
+              subtitle="Curated from live listings"
+            />
+            <CuratedToursRow
+              category="hiking-trips"
+              title="Hiking Trips"
+              subtitle="Curated from live listings"
+            />
+          </div>
+
+          <QueryErrorBoundaryWrapper>
+            <PakistanNorthernToursRow />
+          </QueryErrorBoundaryWrapper>
+
+          {/* Trust Strip — moved below the listings so experiences lead the page */}
+          <section className="pt-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
                 <div className="flex items-center gap-3">
@@ -125,30 +149,6 @@ export default function LandingPage() {
               </Card>
             </div>
           </section>
-
-          {/* Curated Rows (real Supabase data) */}
-          <div className="space-y-12">
-            <MixedHomepageRow kind="new" title="New Arrivals" />
-            <MixedHomepageRow kind="top-rated" title="Top Rated" />
-            <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
-            <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
-            <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
-
-            <CuratedToursRow
-              category="adventure-trips"
-              title="Adventure Trips"
-              subtitle="Curated from live listings"
-            />
-            <CuratedToursRow
-              category="hiking-trips"
-              title="Hiking Trips"
-              subtitle="Curated from live listings"
-            />
-          </div>
-
-          <QueryErrorBoundaryWrapper>
-            <PakistanNorthernToursRow />
-          </QueryErrorBoundaryWrapper>
         </div>
       </div>
 
@@ -660,31 +660,16 @@ function AirbnbHeader() {
 
           {/* Right User Menu */}
           <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
-            <div className="order-3 basis-full md:hidden min-w-0">
-              <GlassCard
-                variant="light"
-                className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full max-w-[360px] flex flex-row items-center gap-2 border border-white/30"
+            {/* Become a Partner — near the menu (Airbnb-style). Tablet/desktop; phones use the drawer entry. */}
+            {(!isAuthenticated || activeRole?.role_type === 'traveller') && (
+              <Button
+                variant="ghost"
+                className="hidden md:inline-flex h-9 rounded-full px-4 font-semibold text-foreground hover:bg-muted"
+                onClick={() => navigate('/partner/onboarding')}
               >
-                <button
-                  data-tour="search-bar"
-                  type="button"
-                  className="flex-1 px-4 flex items-center gap-2 min-w-0"
-                  onClick={() => setIsSearchOverlayOpen(true)}
-                  aria-label="Open search"
-                >
-                  <Search className="w-4 h-4 text-primary" />
-                  <span className="truncate font-bold text-foreground text-sm">Where to next?</span>
-                </button>
-
-                <Button
-                  type="button"
-                  onClick={() => setIsSearchOverlayOpen(true)}
-                  className="px-5 h-10 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 shrink-0"
-                >
-                  Explore Now
-                </Button>
-              </GlassCard>
-            </div>
+                Become a Partner
+              </Button>
+            )}
 
             {!isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-2">
@@ -705,6 +690,34 @@ function AirbnbHeader() {
             ) : (
               <RoleBasedDrawer />
             )}
+          </div>
+
+          {/* Mobile Search Bar — full-width row below the logo/menu on phones (was nested in the
+              right menu, which squeezed the drawer trigger off-screen in portrait). */}
+          <div className="order-3 basis-full md:hidden min-w-0">
+            <GlassCard
+              variant="light"
+              className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full flex flex-row items-center gap-2 border border-white/30"
+            >
+              <button
+                data-tour="search-bar"
+                type="button"
+                className="flex-1 px-4 flex items-center gap-2 min-w-0"
+                onClick={() => setIsSearchOverlayOpen(true)}
+                aria-label="Open search"
+              >
+                <Search className="w-4 h-4 text-primary" />
+                <span className="truncate font-bold text-foreground text-sm">Where to next?</span>
+              </button>
+
+              <Button
+                type="button"
+                onClick={() => setIsSearchOverlayOpen(true)}
+                className="px-5 h-10 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 shrink-0"
+              >
+                Explore Now
+              </Button>
+            </GlassCard>
           </div>
         </div>
       </header>
