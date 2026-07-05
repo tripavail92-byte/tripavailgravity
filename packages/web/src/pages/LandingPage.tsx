@@ -232,7 +232,9 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
     return interleaved.slice(0, total)
   }, [hotelPackages, tours, kind])
 
-  const viewAllHref = kind === 'new' ? '/explore?filter=new' : '/explore?filter=top-rated'
+  // 'New Arrivals' / 'Top Rated' are mixed hotel+tour rows — send "View All" to the
+  // Hotels page (the /explore landing page was removed).
+  const viewAllHref = '/hotels'
 
   return (
     <section>
