@@ -68,24 +68,16 @@ export default function LandingPage() {
 
       <div className="container mx-auto max-w-7xl px-4 pt-28 md:pt-24 pb-6">
         <div className="space-y-8 pb-20">
-          {/* Conversion Hero (compact — headline on one line, subtitle + CTA share a row on desktop) */}
+          {/* Conversion Hero (compact — headline + subtitle only) */}
           <section className="pt-1">
             <div className="max-w-4xl">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
                 Premium travel packages, curated for real moments.
               </h1>
-              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm sm:text-base text-muted-foreground">
-                  Boutique stays, romantic escapes &amp; family getaways — transparent pricing,
-                  instant confirmation.
-                </p>
-                <Button
-                  onClick={() => navigate('/explore')}
-                  className="shrink-0 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8"
-                >
-                  Explore Packages
-                </Button>
-              </div>
+              <p className="mt-3 text-sm sm:text-base text-muted-foreground">
+                Boutique stays, romantic escapes &amp; family getaways — transparent pricing,
+                instant confirmation.
+              </p>
             </div>
           </section>
 
