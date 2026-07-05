@@ -232,9 +232,8 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
     return interleaved.slice(0, total)
   }, [hotelPackages, tours, kind])
 
-  // 'New Arrivals' / 'Top Rated' are mixed hotel+tour rows — send "View All" to the
-  // Hotels page (the /explore landing page was removed).
-  const viewAllHref = '/hotels'
+  // 'New Arrivals' / 'Top Rated' → full-grid collection page (mixed hotels + tours).
+  const viewAllHref = `/collections/${kind}`
 
   return (
     <section>
