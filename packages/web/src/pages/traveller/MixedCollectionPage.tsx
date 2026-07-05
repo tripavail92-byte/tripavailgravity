@@ -1,10 +1,11 @@
 import { ArrowLeft } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useHomepageMixPackages } from '@/queries/packageQueries'
@@ -75,6 +76,15 @@ export default function MixedCollectionPage() {
     })
   }, [hotelPackages, tours, key])
 
+  // Reveal in pages so a large category doesn't render hundreds of cards at once.
+  const PAGE_SIZE = 16
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [key])
+  const visible = merged.slice(0, visibleCount)
+  const hasMore = visibleCount < merged.length
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <div className="container mx-auto max-w-7xl px-4 pt-6 pb-24">
@@ -116,8 +126,9 @@ export default function MixedCollectionPage() {
               Unable to load experiences right now.
             </Card>
           ) : merged.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {merged.map((item) =>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {visible.map((item) =>
                 item.type === 'hotel' ? (
                   <PackageCard
                     key={`hotel-${item.id}`}
@@ -166,7 +177,22 @@ export default function MixedCollectionPage() {
                   />
                 ),
               )}
-            </div>
+              </div>
+              {hasMore && (
+                <div className="mt-8 flex flex-col items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-8"
+                    onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  >
+                    Load more
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Showing {visible.length} of {merged.length}
+                  </p>
+                </div>
+              )}
+            </>
           ) : (
             <Card className="rounded-2xl border border-border/60 p-6">
               <div className="text-sm text-muted-foreground">No experiences available yet.</div>
