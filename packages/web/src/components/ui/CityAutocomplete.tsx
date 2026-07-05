@@ -137,7 +137,7 @@ export function CityAutocomplete({
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser')
+      toast.error('Geolocation is not supported by your browser')
       return
     }
 
@@ -175,7 +175,7 @@ export function CityAutocomplete({
       (error) => {
         console.error('Error getting location:', error)
         setIsSearching(false)
-        alert('Unable to get your current location')
+        toast.error('Unable to get your current location')
       },
     )
   }, [onCitySelect])
@@ -204,6 +204,7 @@ export function CityAutocomplete({
             <button
               type="button"
               onClick={detectLocation}
+              aria-label="Detect current location"
               className="p-2 hover:bg-primary/10 rounded-lg text-muted-foreground/50 hover:text-primary transition-all active:scale-95"
               title="Detect current location"
             >
@@ -227,6 +228,7 @@ export function CityAutocomplete({
               <button
                 key={prediction.key}
                 onClick={() => handlePredictionClick(prediction)}
+                aria-label={`Select ${prediction.label}`}
                 className="w-full px-4 py-3.5 text-left hover:bg-muted/60 flex items-center gap-3 transition-colors group border-b border-border/50 last:border-b-0"
               >
                 <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center group-hover:bg-primary/10 transition-all flex-shrink-0">

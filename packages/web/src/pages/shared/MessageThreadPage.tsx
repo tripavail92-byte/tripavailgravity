@@ -593,13 +593,21 @@ export default function MessageThreadPage() {
           </DialogHeader>
 
           <div className="space-y-4">
+            <label htmlFor="report-reason" className="sr-only">
+              Reason for report
+            </label>
             <Input
+              id="report-reason"
               value={reportReason}
               onChange={(event) => setReportReason(event.target.value)}
               placeholder="Reason, for example harassment or unsafe request"
               className="rounded-2xl border-border/60 bg-background/80"
             />
+            <label htmlFor="report-details" className="sr-only">
+              Supporting detail for the moderation team
+            </label>
             <Textarea
+              id="report-details"
               value={reportDetails}
               onChange={(event) => setReportDetails(event.target.value)}
               placeholder="Add supporting detail for the moderation team"
@@ -640,7 +648,11 @@ export default function MessageThreadPage() {
             </DialogDescription>
           </DialogHeader>
 
+          <label htmlFor="escalation-reason" className="sr-only">
+            What support should step in on
+          </label>
           <Textarea
+            id="escalation-reason"
             value={escalationReason}
             onChange={(event) => setEscalationReason(event.target.value)}
             placeholder="Summarize what support should step in on"
@@ -1039,6 +1051,7 @@ function MessageBubble({
             <button
               key={emoji}
               type="button"
+              aria-label={`React with ${emoji}`}
               className="rounded-full border border-border/60 bg-background px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
               onClick={() => onReaction(emoji)}
             >
@@ -1048,7 +1061,7 @@ function MessageBubble({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+              <Button type="button" variant="ghost" size="icon" aria-label="More actions" className="h-8 w-8 rounded-full">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

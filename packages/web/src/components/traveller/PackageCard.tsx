@@ -120,7 +120,10 @@ export function PackageCard({
           </div>
 
           <div className="absolute top-3 right-3">
-            <button className="p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-white hover:text-red-500 transition-colors">
+            <button
+              aria-label="Save to wishlist"
+              className="p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-white hover:text-red-500 transition-colors"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
