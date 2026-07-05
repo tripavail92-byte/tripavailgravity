@@ -22,6 +22,7 @@ import LandingPage from '@/pages/LandingPage'
 // Lazy load all other pages
 const PartnerSelectionPage = lazy(() => import('@/pages/partner/PartnerSelectionPage'))
 const HotelDetailsPage = lazy(() => import('@/pages/traveller/HotelDetailsPage'))
+const MixedCollectionPage = lazy(() => import('@/pages/traveller/MixedCollectionPage'))
 const SearchPage = lazy(() => import('@/pages/traveller/SearchPage'))
 const ListHotelPage = lazy(() => import('@/pages/manager/ListHotelPage'))
 const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
@@ -237,6 +238,8 @@ function App() {
               <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
               <Route path="/packages/:id" element={<PackageDetailsPage />} />
               <Route path="/stays/:id" element={<PackageDetailsPage />} />
+              {/* Full-grid "View All" for the home mixed rows: /collections/new, /collections/top-rated */}
+              <Route path="/collections/:kind" element={<MixedCollectionPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/hotel/:id" element={<HotelDetailsPage />} />
               <Route path="/tours/:id" element={<TourDetailsPage />} />
