@@ -12,14 +12,14 @@ const glassButtonVariants = cva(
         default:
           'glass-button text-foreground hover:opacity-90 hover:shadow-md hover:shadow-primary/20',
         light:
-          'bg-white/20 backdrop-blur-md hover:bg-white/30 border border-white/30 hover:border-white/50 text-foreground hover:shadow-lg hover:shadow-white/20',
+          'bg-foreground/10 backdrop-blur-md hover:bg-foreground/20 border border-border/60 hover:border-border text-foreground hover:shadow-lg hover:shadow-foreground/10',
         dark: 'bg-black/20 backdrop-blur-md hover:bg-black/30 border border-white/20 hover:border-white/30 text-white hover:shadow-lg hover:shadow-black/20',
         outline:
-          'bg-white/10 backdrop-blur-sm border border-white/30 text-foreground hover:bg-white/20 hover:shadow-md',
+          'bg-foreground/5 backdrop-blur-sm border border-border/60 text-foreground hover:bg-foreground/10 hover:shadow-md',
         ghost:
-          'bg-transparent backdrop-blur-none text-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:shadow-sm',
+          'bg-transparent backdrop-blur-none text-foreground hover:bg-foreground/10 hover:backdrop-blur-sm hover:shadow-sm',
         floating:
-          'bg-white/90 backdrop-blur-lg text-foreground shadow-lg hover:shadow-2xl hover:-translate-y-1 border border-white/50 hover:scale-105',
+          'bg-card/90 backdrop-blur-lg text-card-foreground shadow-lg hover:shadow-2xl hover:-translate-y-1 border border-border/60 hover:scale-105',
       },
       size: {
         default: 'h-9 px-4 py-2',

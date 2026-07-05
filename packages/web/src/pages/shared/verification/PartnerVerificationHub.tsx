@@ -299,7 +299,7 @@ export function PartnerVerificationHub() {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        <p className="mt-4 text-gray-500 font-medium">Initializing verification hub...</p>
+        <p className="mt-4 text-muted-foreground font-medium">Initializing verification hub...</p>
       </div>
     )
   }
@@ -308,14 +308,14 @@ export function PartnerVerificationHub() {
     return (
       <div className="text-center py-12 space-y-6">
         <div className="flex justify-center">
-          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 bg-green-50 dark:bg-green-900/30 rounded-full flex items-center justify-center">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
           </div>
         </div>
-        <h2 className="text-3xl font-black text-gray-900 italic uppercase">
+        <h2 className="text-3xl font-black text-foreground italic uppercase">
           Verification Submitted
         </h2>
-        <p className="text-gray-500 max-w-md mx-auto">
+        <p className="text-muted-foreground max-w-md mx-auto">
           Your documents have been received and are now under manual review. This typically takes
           48-72 hours.
         </p>
@@ -337,14 +337,14 @@ export function PartnerVerificationHub() {
           <ShieldCheck className="w-4 h-4" />
           High-Trust Verification
         </div>
-        <h2 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">
+        <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">
           {step === 'identity'
             ? 'Identity Verification'
             : step === 'docs'
               ? 'Business Compliance'
               : 'Property Authentication'}
         </h2>
-        <p className="text-gray-500 mt-2 font-medium">
+        <p className="text-muted-foreground mt-2 font-medium">
           {step === 'identity'
             ? 'Submit CNIC front/back for OCR and manual review'
             : step === 'docs'
@@ -377,7 +377,7 @@ export function PartnerVerificationHub() {
                       <p className="text-sm font-black uppercase tracking-widest text-red-500 mb-1">
                         Verification Rejected
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                      <p className="text-sm text-muted-foreground font-medium leading-relaxed">
                         {rejectedKycNotes
                           ? rejectedKycNotes
                           : 'Your documents did not pass review. Please re-upload clearer, well-lit photos of your CNIC.'}
@@ -407,7 +407,7 @@ export function PartnerVerificationHub() {
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => setStep('identity')}
-                  className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
                 >
                   ← Back to Identity
                 </button>
@@ -424,7 +424,7 @@ export function PartnerVerificationHub() {
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => setStep('docs')}
-                  className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-primary transition-colors"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
                 >
                   ← Back to Business Docs
                 </button>
@@ -439,15 +439,15 @@ export function PartnerVerificationHub() {
       </AnimatePresence>
 
       {/* Privacy Shield */}
-      <Card className="mt-12 p-6 bg-gray-50/50 border-gray-100 rounded-2xl flex gap-4 items-start">
-        <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-100">
-          <ShieldCheck className="w-5 h-5 text-gray-400" />
+      <Card className="mt-12 p-6 bg-muted/50 border-border rounded-2xl flex gap-4 items-start">
+        <div className="p-2 bg-card rounded-xl shadow-sm border border-border">
+          <ShieldCheck className="w-5 h-5 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400 italic mb-1">
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground italic mb-1">
             Encrypted & Secure
           </p>
-          <p className="text-xs text-gray-500 leading-relaxed font-medium">
+          <p className="text-xs text-muted-foreground leading-relaxed font-medium">
             Your documents are processed via end-to-end encryption. TripAvail compliance officers
             only view these files to verify legal eligibility.
           </p>
@@ -458,8 +458,8 @@ export function PartnerVerificationHub() {
       {activityLogs.length > 0 && (
         <div className="max-w-2xl mx-auto space-y-6 pt-12 pb-20">
           <div className="flex items-center gap-3 px-2">
-            <History className="w-5 h-5 text-gray-400" />
-            <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
+            <History className="w-5 h-5 text-muted-foreground" />
+            <h4 className="text-sm font-black text-muted-foreground uppercase tracking-[0.2em]">
               Verification History
             </h4>
           </div>
@@ -467,13 +467,13 @@ export function PartnerVerificationHub() {
             {activityLogs.map((log) => (
               <Card
                 key={log.id}
-                className="p-6 border-0 shadow-sm bg-white/50 backdrop-blur-sm rounded-3xl flex items-start gap-4"
+                className="p-6 border-0 shadow-sm bg-card/50 backdrop-blur-sm rounded-3xl flex items-start gap-4"
               >
                 <div
                   className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
                     log.status === 'success'
-                      ? 'bg-green-50 text-green-500'
-                      : 'bg-red-50 text-red-500'
+                      ? 'bg-green-50 dark:bg-green-900/30 text-green-500'
+                      : 'bg-red-50 dark:bg-red-900/30 text-red-500'
                   }`}
                 >
                   {log.event_type === 'document_validation' ? (
@@ -484,15 +484,15 @@ export function PartnerVerificationHub() {
                 </div>
                 <div className="flex-1 space-y-1">
                   <div className="flex justify-between items-start">
-                    <p className="font-bold text-gray-900 capitalize">
+                    <p className="font-bold text-foreground capitalize">
                       {log.event_type.replace('_', ' ')}
                     </p>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
                       <Clock className="w-3 h-3" />
                       {new Date(log.created_at).toLocaleString()}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                  <p className="text-sm text-muted-foreground leading-relaxed font-medium">
                     {log.details?.reason ||
                       (log.status === 'success'
                         ? 'Verification step completed successfully.'
@@ -500,13 +500,13 @@ export function PartnerVerificationHub() {
                   </p>
                   {log.details?.score && (
                     <div className="pt-2 flex items-center gap-2">
-                      <div className="h-1.5 min-w-[100px] bg-gray-100 rounded-full overflow-hidden flex-1">
+                      <div className="h-1.5 min-w-[100px] bg-muted rounded-full overflow-hidden flex-1">
                         <div
                           className={`h-full transition-all ${log.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
                           style={{ width: `${log.details.score}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-black text-gray-900 whitespace-nowrap">
+                      <span className="text-[10px] font-black text-foreground whitespace-nowrap">
                         {log.details.score}% match
                       </span>
                     </div>

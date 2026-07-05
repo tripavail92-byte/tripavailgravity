@@ -8,11 +8,11 @@ import { fetchAdminBookings, type AdminBookingRow } from '@/features/admin/servi
 type BookingRow = AdminBookingRow
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed:  'bg-green-100 text-green-800 border-green-200',
-  pending:    'bg-amber-100 text-amber-800 border-amber-200',
-  cancelled:  'bg-red-100 text-red-800 border-red-200',
-  expired:    'bg-slate-100 text-slate-600 border-slate-200',
-  completed:  'bg-blue-100 text-blue-800 border-blue-200',
+  confirmed:  'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 border-green-200 dark:border-green-900',
+  pending:    'bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
+  cancelled:  'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900',
+  expired:    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  completed:  'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-900',
 }
 
 function shortId(v: string | null) {

@@ -610,8 +610,8 @@ export default function TravelerBookingDetailPage() {
               ) : null}
 
               {hasPromo ? (
-                <div className="mt-6 rounded-3xl border border-emerald-200/80 bg-emerald-50/80 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                <div className="mt-6 rounded-3xl border border-emerald-200/80 bg-emerald-50/80 p-5 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
                     Promo pricing locked at booking time
                   </p>
                   <h2 className="mt-1 text-xl font-semibold text-foreground">

@@ -743,7 +743,7 @@ export function TourPricingStep({
                         <div className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider mb-1">
                           Preview
                         </div>
-                        <div className="h-11 flex items-center text-lg font-bold text-emerald-600 bg-emerald-50/50 px-3 rounded-xl border border-emerald-100/50 flex-shrink-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                        <div className="h-11 flex items-center text-lg font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 px-3 rounded-xl border border-emerald-100/50 dark:border-emerald-900/40 flex-shrink-0 overflow-hidden text-ellipsis whitespace-nowrap">
                           {data.currency || '$'} {tier.pricePerPerson}
                         </div>
                       </div>

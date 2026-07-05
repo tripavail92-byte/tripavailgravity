@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
       </p>
 
       {error && (
-        <div className="mt-6 p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+        <div className="mt-6 p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
           Failed to load stats: {error}
         </div>
       )}
