@@ -23,6 +23,7 @@ import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { CurrencySwitcher } from '@/components/CurrencySwitcher'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -654,7 +655,8 @@ function AirbnbHeader() {
 
           {/* Right User Menu */}
           <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
-            {/* Dark / light mode toggle — always visible in the top bar */}
+            {/* Currency picker + dark/light toggle — always in the top bar */}
+            <CurrencySwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
 
             {/* Become a Partner — near the menu (Airbnb-style). Tablet/desktop; phones use the drawer entry. */}
