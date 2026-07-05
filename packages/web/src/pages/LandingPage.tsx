@@ -314,7 +314,7 @@ function MixedHomepageRow({ kind, title }: { kind: 'new' | 'top-rated'; title: s
                     }
                     title={item.tour.title}
                     location={item.tour.location}
-                    duration={'Multi-day'}
+                    duration={item.tour.durationDays ? `${item.tour.durationDays} days` : 'Multi-day'}
                     rating={item.tour.rating}
                     price={typeof item.tour.tourPrice === 'number' ? item.tour.tourPrice : 0}
                     currency={item.tour.currency || 'PKR'}
@@ -478,7 +478,7 @@ function CuratedToursRow({
                   }
                   title={tour.title}
                   location={tour.location}
-                  duration={'Multi-day'}
+                  duration={tour.durationDays ? `${tour.durationDays} days` : 'Multi-day'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency={tour.currency || 'PKR'}
@@ -554,7 +554,7 @@ function PakistanNorthernToursRow() {
                   }
                   title={tour.title}
                   location={tour.location}
-                  duration={'Multi-day'}
+                  duration={tour.durationDays ? `${tour.durationDays} days` : 'Multi-day'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency={tour.currency || 'PKR'}

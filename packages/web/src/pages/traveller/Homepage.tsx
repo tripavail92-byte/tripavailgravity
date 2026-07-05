@@ -406,7 +406,7 @@ export default function Homepage() {
                   }
                   title={tour.title}
                   location={tour.location}
-                  duration={'5 days'}
+                  duration={tour.durationDays ? `${tour.durationDays} days` : 'Multi-day'}
                   rating={tour.rating}
                   price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
                   currency={tour.currency || 'PKR'}

@@ -6,6 +6,7 @@ import {
   INCLUDED_FEATURE_OPTIONS,
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
+import { clampDepositPercentage } from '@/features/booking/utils/tourPaymentTerms'
 
 export interface Tour {
   id: string
@@ -259,7 +260,7 @@ export const tourService = {
     console.log('Creating tour with data:', tourData)
     const normalizedPrice = Number.isFinite(Number(tourData.price)) ? Number(tourData.price) : 0
     const normalizedDepositRequired = true
-    const normalizedDepositPercentage = Math.max(20, Number(tourData.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(Number(tourData.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (tourData.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -331,7 +332,7 @@ export const tourService = {
     console.log(`Updating tour ${id}:`, updates)
     const normalizedPrice = Number.isFinite(Number(updates.price)) ? Number(updates.price) : 0
     const normalizedDepositRequired = true
-    const normalizedDepositPercentage = Math.max(20, Number(updates.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(Number(updates.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (updates.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -594,7 +595,7 @@ export const tourService = {
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
     const normalizedDepositRequired = true
-    const normalizedDepositPercentage = Math.max(20, Number(data.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -797,7 +798,7 @@ export const tourService = {
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
     const normalizedDepositRequired = true
-    const normalizedDepositPercentage = Math.max(20, Number(data.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 0))
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'

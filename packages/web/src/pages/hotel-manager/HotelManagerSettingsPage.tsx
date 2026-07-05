@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
@@ -48,6 +49,7 @@ interface SettingsCategory {
   badge: string | null
   badgeVariant: 'primary' | 'info' | 'light' | 'warning'
   screen: string
+  route: string | null
 }
 
 const settingsCategories: SettingsCategory[] = [
@@ -60,6 +62,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: null,
     badgeVariant: 'primary',
     screen: 'pricing-settings',
+    route: null,
   },
   {
     id: 'business',
@@ -70,6 +73,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: null,
     badgeVariant: 'primary',
     screen: 'business-info',
+    route: null,
   },
   {
     id: 'payment',
@@ -80,6 +84,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: null,
     badgeVariant: 'primary',
     screen: 'payment-settings',
+    route: null,
   },
   {
     id: 'cancellation',
@@ -90,6 +95,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: 'Flexible',
     badgeVariant: 'info',
     screen: 'cancellation-policy',
+    route: null,
   },
   {
     id: 'notifications',
@@ -100,6 +106,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: '8 Active',
     badgeVariant: 'primary',
     screen: 'notifications-settings',
+    route: null,
   },
   {
     id: 'analytics',
@@ -110,6 +117,7 @@ const settingsCategories: SettingsCategory[] = [
     badge: null,
     badgeVariant: 'light',
     screen: 'analytics',
+    route: null,
   },
   {
     id: 'security',
@@ -120,11 +128,13 @@ const settingsCategories: SettingsCategory[] = [
     badge: null,
     badgeVariant: 'primary',
     screen: 'security-settings',
+    route: '/manager/verification',
   },
 ]
 
 export default function HotelManagerSettingsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [settings, setSettings] = useState<HotelManagerSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -322,47 +332,59 @@ export default function HotelManagerSettingsPage() {
         {/* Category Cards */}
         <div className="pt-4">
           <h2 className="text-lg font-semibold text-foreground mb-3">Settings Sections</h2>
-          {settingsCategories.map((category, index) => (
-            <GlassCard
-              key={category.id}
-              variant="card"
-              className="rounded-2xl overflow-hidden cursor-pointer mb-2"
-              interactive
-              asMotion
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <category.icon size={24} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
-                        {category.hasWarning && (
-                          <AlertTriangle size={16} className="text-primary flex-shrink-0" />
-                        )}
+          {settingsCategories.map((category, index) => {
+            const isEnabled = Boolean(category.route)
+            return (
+              <GlassCard
+                key={category.id}
+                variant="card"
+                className={`rounded-2xl overflow-hidden mb-2 ${
+                  isEnabled ? 'cursor-pointer' : 'opacity-60 cursor-not-allowed'
+                }`}
+                interactive={isEnabled}
+                onClick={isEnabled ? () => navigate(category.route!) : undefined}
+                asMotion
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                        <category.icon size={24} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-foreground">{category.title}</h3>
+                          {category.hasWarning && (
+                            <AlertTriangle size={16} className="text-primary flex-shrink-0" />
+                          )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {isEnabled ? (
+                        category.badge && (
+                          <GlassBadge variant={category.badgeVariant} size="sm">
+                            {category.badge}
+                          </GlassBadge>
+                        )
+                      ) : (
+                        <GlassBadge variant="light" size="sm">
+                          Coming soon
+                        </GlassBadge>
+                      )}
+                      {isEnabled && <ChevronRight className="w-5 h-5 text-muted-foreground" />}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {category.badge && (
-                      <GlassBadge variant={category.badgeVariant} size="sm">
-                        {category.badge}
-                      </GlassBadge>
-                    )}
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed pl-16">
+                    {category.description}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed pl-16">
-                  {category.description}
-                </p>
-              </div>
-            </GlassCard>
-          ))}
+              </GlassCard>
+            )
+          })}
         </div>
 
         {/* Support Section */}
@@ -384,7 +406,13 @@ export default function HotelManagerSettingsPage() {
                 Our partnership team is available 24/7 to help you maximize your hotel's potential
                 on TripAvail.
               </p>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto" disabled={isSaving}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={isSaving}
+                onClick={() => navigate('/help')}
+              >
                 Get Help
               </Button>
             </div>
@@ -397,6 +425,7 @@ export default function HotelManagerSettingsPage() {
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
             disabled={isSaving}
+            onClick={() => navigate('/legal')}
           >
             Partner Agreement
           </Button>
@@ -404,6 +433,7 @@ export default function HotelManagerSettingsPage() {
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
             disabled={isSaving}
+            onClick={() => navigate('/legal')}
           >
             Commission Terms
           </Button>

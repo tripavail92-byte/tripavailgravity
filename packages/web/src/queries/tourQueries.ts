@@ -62,6 +62,7 @@ export interface MappedTour {
   images: string[]
   badge: string
   shortDescription?: string | null
+  durationDays?: number | null
 }
 
 export interface HomepageMixTour {
@@ -78,6 +79,7 @@ export interface HomepageMixTour {
   isFeatured: boolean
   badge: string
   shortDescription?: string | null
+  durationDays?: number | null
 }
 
 function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
@@ -148,7 +150,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
   const { data, error } = await supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,images,created_at,updated_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,duration_days,images,created_at,updated_at',
     )
     .eq('is_active', true)
     .eq('is_published', true)
@@ -204,6 +206,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
       isFeatured,
       badge: 'Tour Experience',
       shortDescription: tour.short_description ?? null,
+      durationDays: tour.duration_days ?? null,
     }
   })
 }
@@ -228,7 +231,7 @@ export function useHomepageMixTours(
 async function fetchFeaturedTours(): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -272,6 +275,7 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
       shortDescription: tour.short_description ?? null,
+      durationDays: tour.duration_days ?? null,
     }
   })
 }
@@ -284,7 +288,7 @@ async function fetchToursByCategory(
 
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -328,6 +332,7 @@ async function fetchToursByCategory(
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
       shortDescription: tour.short_description ?? null,
+      durationDays: tour.duration_days ?? null,
     }
   })
 }
@@ -335,7 +340,7 @@ async function fetchToursByCategory(
 async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,images,created_at')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -380,6 +385,7 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
       images,
       badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
       shortDescription: tour.short_description ?? null,
+      durationDays: tour.duration_days ?? null,
     }
   })
 }

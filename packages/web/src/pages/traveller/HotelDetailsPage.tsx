@@ -1,63 +1,81 @@
-import {
-  Car,
-  ChevronLeft,
-  Coffee,
-  Heart,
-  MapPin,
-  Share,
-  Star,
-  Users,
-  Utensils,
-  Wifi,
-} from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft, Heart, MapPin, Share, Star, Users, Wifi } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { hotelService } from '@/features/hotel-listing/services/hotelService'
 
-// Mock Data (Replace with API later)
-const HOTEL_DATA = {
-  id: '1',
-  name: 'Azure Shores Resort',
-  location: 'Bali, Indonesia',
-  rating: 4.9,
-  reviews: 128,
-  price: 599,
-  description:
-    'Experience the ultimate tropical getaway at Azure Shores Resort. Nestled along the pristine coastline of Bali, our resort offers breathtaking ocean views, luxurious amenities, and world-class service. Whether you represent a couple seeking a romantic escape or a family looking for adventure, our resort handles every need with grace and style.',
-  images: [
-    'https://images.unsplash.com/photo-1580450997544-8846a39f3dfa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waWNhbCUyMHJlc29ydCUyMGJlYWNofGVufDF8fHx8MTc1NzMzODQzMHww&ixlib=rb-4.1.0&q=80&w=1080',
-    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHJlc29ydCUyMHBvb2x8ZW58MXx8fHwxNzU3MzM4NDMwfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    'https://images.unsplash.com/photo-1582719508461-905c673771fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjBob3RlbHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    'https://images.unsplash.com/photo-1540541338287-481bf13a79f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwb29sJTIwdmlld3xlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    'https://images.unsplash.com/photo-1566073771259-6a8506099945?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxodXh1cnklMjBob3RlbHxlbnwxfHx8fDE3NTMzMzg0MzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-  ],
-  amenities: [
-    { icon: Wifi, label: 'Fast Wifi' },
-    { icon: Car, label: 'Free Parking' },
-    { icon: Coffee, label: 'Breakfast' },
-    { icon: Utensils, label: 'Restaurant' },
-  ],
-  host: {
-    name: 'Sarah Jenkins',
-    role: 'Superhost',
-    image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100',
-  },
+// Fields fetched from the hotels table
+const HOTEL_SELECT =
+  'id, name, location, description, star_rating, base_price_per_night, main_image_url, images, amenities'
+
+interface HotelRecord {
+  id?: string
+  name?: string | null
+  location?: string | null
+  description?: string | null
+  star_rating?: number | null
+  base_price_per_night?: number | null
+  main_image_url?: string | null
+  images?: string[] | null
+  amenities?: string[] | null
 }
 
 export default function HotelDetailsPage() {
-  // const { id } = useParams(); // Removed unused
   const navigate = useNavigate()
   const { id } = useParams()
 
-  // Simulate usage of ID
-  void id
+  const {
+    data: hotel,
+    isLoading,
+    isError,
+  } = useQuery<HotelRecord | null>({
+    queryKey: ['hotel', id],
+    queryFn: () => hotelService.getHotelById(id as string, HOTEL_SELECT) as Promise<HotelRecord | null>,
+    enabled: !!id,
+  })
 
-  // In a real app, useQuery hook here to fetch by ID
-  const hotel = HOTEL_DATA
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-muted-foreground">We couldn&apos;t load this hotel. Please try again.</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Go back
+        </Button>
+      </div>
+    )
+  }
+
+  if (!hotel) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="text-muted-foreground">Hotel not found.</p>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Go back
+        </Button>
+      </div>
+    )
+  }
+
+  // Derived, safe-fallback view fields
+  const gallery: string[] = [
+    ...(hotel.main_image_url ? [hotel.main_image_url] : []),
+    ...(Array.isArray(hotel.images) ? hotel.images : []),
+  ]
+  const amenities: string[] = Array.isArray(hotel.amenities) ? hotel.amenities : []
+  const price = hotel.base_price_per_night ?? 0
+  const rating = hotel.star_rating ?? '—'
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -84,18 +102,17 @@ export default function HotelDetailsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-2xl md:text-3xl font-bold mb-2"
           >
-            {hotel.name}
+            {hotel.name || '—'}
           </motion.h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-primary text-primary" />
-              <span className="font-medium text-foreground">{hotel.rating}</span>
-              <span className="underline cursor-pointer">{hotel.reviews} reviews</span>
+              <span className="font-medium text-foreground">{rating}</span>
             </div>
             <span>•</span>
             <div className="flex items-center gap-1">
               <MapPin className="w-4 h-4" />
-              <span className="underline cursor-pointer">{hotel.location}</span>
+              <span className="underline cursor-pointer">{hotel.location || '—'}</span>
             </div>
           </div>
         </div>
@@ -105,7 +122,7 @@ export default function HotelDetailsPage() {
           {/* Main Large Image */}
           <div className="col-span-2 row-span-2 relative cursor-pointer">
             <ImageWithFallback
-              src={hotel.images[0]}
+              src={gallery[0] || ''}
               alt="Main view"
               className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
@@ -113,28 +130,28 @@ export default function HotelDetailsPage() {
           {/* Smaller Images */}
           <div className="hidden md:block relative cursor-pointer">
             <ImageWithFallback
-              src={hotel.images[1]}
+              src={gallery[1] || ''}
               alt="View 2"
               className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
           </div>
           <div className="hidden md:block relative cursor-pointer rounded-tr-2xl">
             <ImageWithFallback
-              src={hotel.images[2]}
+              src={gallery[2] || ''}
               alt="View 3"
               className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
           </div>
           <div className="hidden md:block relative cursor-pointer">
             <ImageWithFallback
-              src={hotel.images[3]}
+              src={gallery[3] || ''}
               alt="View 4"
               className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
           </div>
           <div className="hidden md:block relative cursor-pointer rounded-br-2xl">
             <ImageWithFallback
-              src={hotel.images[4]}
+              src={gallery[4] || ''}
               alt="View 5"
               className="w-full h-full object-cover hover:brightness-95 transition-all"
             />
@@ -152,44 +169,25 @@ export default function HotelDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column: Details */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Host Info */}
-            <div className="flex items-center justify-between border-b pb-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-1">Hosted by {hotel.host.name}</h2>
-                <p className="text-muted-foreground text-sm">{hotel.host.role} • 2 years hosting</p>
-              </div>
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-muted">
-                <img
-                  src={hotel.host.image}
-                  alt={hotel.host.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
             {/* Description */}
             <div className="border-b pb-6">
-              <p className="text-foreground/80 leading-relaxed">{hotel.description}</p>
-              <Button variant="link" className="px-0 mt-2 font-semibold underline">
-                Show more
-              </Button>
+              <p className="text-foreground/80 leading-relaxed">{hotel.description || '—'}</p>
             </div>
 
             {/* Amenities */}
-            <div className="border-b pb-6">
-              <h3 className="text-xl font-semibold mb-4">What this place offers</h3>
-              <div className="grid grid-cols-2 gap-4">
-                {hotel.amenities.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-foreground/80">
-                    <item.icon className="w-5 h-5 text-muted-foreground" />
-                    <span>{item.label}</span>
-                  </div>
-                ))}
+            {amenities.length > 0 && (
+              <div className="border-b pb-6">
+                <h3 className="text-xl font-semibold mb-4">What this place offers</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {amenities.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 text-foreground/80">
+                      <Wifi className="w-5 h-5 text-muted-foreground" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Button variant="outline" className="mt-6 w-full md:w-auto">
-                Show all 32 amenities
-              </Button>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Booking Card (Sticky) */}
@@ -197,13 +195,12 @@ export default function HotelDetailsPage() {
             <Card className="sticky top-20 z-30 p-6 shadow-lg border-border/50">
               <div className="flex justify-between items-end mb-6">
                 <div>
-                  <span className="text-2xl font-bold">${hotel.price}</span>
+                  <span className="text-2xl font-bold">${price}</span>
                   <span className="text-muted-foreground"> / night</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Star className="w-3 h-3 fill-primary text-primary" />
-                  <span className="font-semibold">{hotel.rating}</span>
-                  <span className="text-muted-foreground">({hotel.reviews})</span>
+                  <span className="font-semibold">{rating}</span>
                 </div>
               </div>
 
@@ -245,9 +242,9 @@ export default function HotelDetailsPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="underline decoration-muted-foreground">
-                    ${hotel.price} x 5 nights
+                    ${price} x 5 nights
                   </span>
-                  <span>${hotel.price * 5}</span>
+                  <span>${price * 5}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="underline decoration-muted-foreground">Cleaning fee</span>
@@ -259,7 +256,7 @@ export default function HotelDetailsPage() {
                 </div>
                 <div className="border-t pt-3 mt-3 flex justify-between font-bold text-base">
                   <span>Total before taxes</span>
-                  <span>${hotel.price * 5 + 60 + 85}</span>
+                  <span>${price * 5 + 60 + 85}</span>
                 </div>
               </div>
             </Card>

@@ -24,7 +24,7 @@ export default function WishlistPage() {
   const loadWishlist = async () => {
     try {
       setIsLoading(true)
-      const wishlist = await wishlistService.getWishlist()
+      const wishlist = await wishlistService.getWishlist(user?.id)
 
       if (wishlist.length === 0) {
         setItems([])
@@ -64,7 +64,7 @@ export default function WishlistPage() {
 
   const handleRemove = async (id: string, type: string) => {
     try {
-      await wishlistService.toggleWishlist(id, type as 'tour' | 'package')
+      await wishlistService.toggleWishlist(id, type as 'tour' | 'package', user?.id)
       setItems((prev) => prev.filter((item) => item.id !== id))
       toast.success('Removed from wishlist')
     } catch (error) {

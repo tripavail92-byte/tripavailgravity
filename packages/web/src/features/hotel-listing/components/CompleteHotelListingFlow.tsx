@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -383,7 +384,7 @@ export default function CompleteHotelListingFlow({
 
     if (!user?.id) {
       console.error('❌ No user ID found - cannot publish')
-      alert('Error: You must be logged in to publish. Please log in and try again.')
+      toast.error('You must be logged in to publish. Please log in and try again.')
       return
     }
 
@@ -396,11 +397,13 @@ export default function CompleteHotelListingFlow({
       console.log('📡 hotelService response:', result)
 
       console.log('✅ Published successfully!', result.hotelId)
-      alert(`Success! Hotel published with ID: ${result.hotelId}`)
+      toast.success('Your hotel listing has been published successfully.')
       if (onComplete) onComplete(hotelData)
     } catch (error) {
       console.error('❌ Publish error:', error)
-      alert(`Error publishing hotel: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(
+        `Failed to publish hotel: ${error instanceof Error ? error.message : 'Please try again.'}`,
+      )
     } finally {
       console.log('🏁 Publishing complete, resetting state')
       setIsPublishing(false)
