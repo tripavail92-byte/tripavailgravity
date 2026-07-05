@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import { toast } from 'react-hot-toast'
 
 import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
@@ -83,9 +84,7 @@ export function CompletePackageCreationFlow() {
       console.log('✅ Package published successfully!', publishedPackage)
 
       // Success feedback
-      alert(
-        `✅ Package "${publishedPackage.name}" published successfully with ID: ${publishedPackage.id}`,
-      )
+      toast.success(`Package "${publishedPackage.name}" published successfully.`)
 
       // TODO: Redirect to dashboard or package detail page
       // window.location.href = `/hotel-manager/packages/${publishedPackage.id}`;
@@ -93,7 +92,7 @@ export function CompletePackageCreationFlow() {
       console.error('❌ Failed to publish package:', error)
       const errorMessage = error.message || 'Failed to publish package. Please try again.'
       setPublishError(errorMessage)
-      alert(`❌ Error: ${errorMessage}`)
+      toast.error(errorMessage)
     } finally {
       setIsPublishing(false)
     }

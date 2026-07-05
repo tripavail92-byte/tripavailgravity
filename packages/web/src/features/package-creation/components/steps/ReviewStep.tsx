@@ -346,7 +346,7 @@ export function ReviewStep({
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -354,7 +354,7 @@ export function ReviewStep({
         <button
           onClick={onBack}
           disabled={isPublishing}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors disabled:opacity-50"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors disabled:opacity-50"
         >
           Back
         </button>
@@ -362,7 +362,7 @@ export function ReviewStep({
           onClick={onSubmit}
           disabled={completionPercentage < 100 || isPublishing}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800 flex items-center justify-center min-w-[170px]',
+            'px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-primary/90 flex items-center justify-center min-w-[170px]',
             (completionPercentage < 100 || isPublishing) &&
               'opacity-50 cursor-not-allowed hover:transform-none',
           )}

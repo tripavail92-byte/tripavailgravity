@@ -61,8 +61,6 @@ export const hotelService = {
     }
 
     try {
-      console.log('📤 Inserting hotel with payload:', JSON.stringify(hotelPayload, null, 2))
-
       // 2. Insert Hotel
       const { data: hotel, error: hotelError } = await supabase
         .from('hotels')
@@ -74,8 +72,6 @@ export const hotelService = {
         console.error('❌ Hotel insert error:', hotelError)
         throw hotelError
       }
-
-      console.log('✅ Hotel inserted successfully:', hotel.id)
 
       // 3. Insert Rooms
       if (data.rooms && data.rooms.length > 0) {
@@ -97,19 +93,14 @@ export const hotelService = {
           images: [],
         }))
 
-        console.log('📤 Inserting rooms with payload:', JSON.stringify(roomsPayload, null, 2))
-
         const { error: roomsError } = await supabase.from('rooms').insert(roomsPayload)
 
         if (roomsError) {
           console.error('❌ Rooms insert error:', roomsError)
           throw roomsError
         }
-
-        console.log(`✅ Inserted ${roomsPayload.length} room(s) successfully`)
       }
 
-      console.log('🎉 Hotel publishing complete! Hotel ID:', hotel.id)
       return { success: true, hotelId: hotel.id }
     } catch (error) {
       console.error('❌ FATAL ERROR in publishListing:', error)

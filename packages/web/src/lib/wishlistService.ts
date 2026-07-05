@@ -62,15 +62,16 @@ export const wishlistService = {
    */
   async getWishlist(
     userId?: string,
-  ): Promise<{ item_id: string; item_type: 'tour' | 'package' }[]> {
+  ): Promise<{ item_id: string; item_type: 'tour' | 'package'; created_at?: string }[]> {
     if (userId) {
       const { data, error } = await supabase
         .from('wishlist')
-        .select('item_id, item_type')
+        .select('item_id, item_type, created_at')
         .eq('user_id', userId)
+        .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data as { item_id: string; item_type: 'tour' | 'package' }[]
+      return data as { item_id: string; item_type: 'tour' | 'package'; created_at?: string }[]
     } else {
       return this.getLocalWishlist()
     }

@@ -23,11 +23,13 @@ import { getPackagesByIds } from '@/features/package-creation/services/packageSe
 import { tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { wishlistService } from '@/lib/wishlistService'
+import { userProfileService } from '@/services/userProfileService'
 
 export default function TravelerDashboardPage() {
   const { user } = useAuth()
   const [nextTrip, setNextTrip] = useState<any>(null)
   const [recentWishlist, setRecentWishlist] = useState<any[]>([])
+  const [profileCompletion, setProfileCompletion] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function TravelerDashboardPage() {
       setNextTrip(upcoming)
 
       // 2. Fetch Wishlist and get last 2 items
-      const wishlist = await wishlistService.getWishlist()
+      const wishlist = await wishlistService.getWishlist(user?.id)
       if (wishlist.length > 0) {
         const recent = wishlist.slice(0, 2)
         const tourIds = recent.filter((i) => i.item_type === 'tour').map((i) => i.item_id)
@@ -79,6 +81,12 @@ export default function TravelerDashboardPage() {
           ...packages.map((p) => ({ ...p, type: 'package' })),
         ]
         setRecentWishlist(items)
+      }
+
+      // 3. Fetch profile and compute real completion percentage
+      const profile = await userProfileService.getProfile()
+      if (profile) {
+        setProfileCompletion(userProfileService.calculateCompletion(profile))
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
@@ -304,10 +312,13 @@ export default function TravelerDashboardPage() {
                 <div className="space-y-2 mb-6">
                   <div className="flex justify-between text-xs font-black text-primary uppercase tracking-widest">
                     <span>Current Progress</span>
-                    <span>40%</span>
+                    <span>{profileCompletion}%</span>
                   </div>
                   <div className="h-2 w-full bg-background rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-[40%] rounded-full" />
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${profileCompletion}%` }}
+                    />
                   </div>
                 </div>
 

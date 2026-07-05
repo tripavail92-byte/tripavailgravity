@@ -60,11 +60,6 @@ export default function LoginPage() {
   }, [searchParams])
 
   useEffect(() => {
-    console.log('[LoginPage] Auth state changed:', {
-      user: !!user,
-      activeRole: activeRole?.role_type,
-    })
-
     if (redirectedRef.current) return
 
     // 1) Enterprise deep-link: if a redirect is present (or persisted), honor it ASAP.
@@ -94,7 +89,6 @@ export default function LoginPage() {
         } catch {
           // ignore
         }
-        console.log('[LoginPage] Redirecting to deep-link:', target)
         navigate(target)
         return
       }
@@ -106,20 +100,16 @@ export default function LoginPage() {
         // Role-based default routing
         switch (activeRole.role_type) {
           case 'admin':
-            console.log('[LoginPage] Navigating to admin dashboard')
             navigate('/admin/dashboard')
             break
           case 'hotel_manager':
-            console.log('[LoginPage] Navigating to hotel manager dashboard')
             navigate('/manager/dashboard')
             break
           case 'tour_operator':
-            console.log('[LoginPage] Navigating to tour operator dashboard')
             navigate('/operator/dashboard')
             break
           case 'traveller':
           default:
-            console.log('[LoginPage] Navigating to homepage')
             navigate('/')
             break
         }
@@ -127,7 +117,6 @@ export default function LoginPage() {
     } else if (user && !activeRole && !isLoading) {
       // User authenticated but role not yet resolved: do nothing.
       // This avoids breaking deep-links while roles are still loading.
-      console.log('[LoginPage] User authenticated but role not resolved yet')
     }
   }, [user, activeRole, navigate, searchParams, isLoading])
 

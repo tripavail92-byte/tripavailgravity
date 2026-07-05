@@ -470,6 +470,7 @@ export const tourBookingService = {
       .update({ status: 'expired' })
       .eq('status', 'pending')
       .lt('expires_at', new Date().toISOString())
+      .not('payment_status', 'in', '(paid,partially_paid,balance_pending)')
       .select()
 
     if (error) throw error
@@ -645,6 +646,7 @@ export const packageBookingService = {
       .update({ status: 'expired' })
       .eq('status', 'pending')
       .lt('expires_at', new Date().toISOString())
+      .not('payment_status', 'in', '(paid,partially_paid,balance_pending)')
       .select()
 
     if (error) throw error

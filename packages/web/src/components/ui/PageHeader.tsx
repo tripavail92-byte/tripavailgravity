@@ -44,6 +44,7 @@ export function PageHeader({
             variant="ghost"
             size="icon"
             onClick={handleBack}
+            aria-label="Go back"
             className="shrink-0 h-10 w-10 rounded-full hover:bg-muted"
           >
             <ArrowLeft className="h-5 w-5" />

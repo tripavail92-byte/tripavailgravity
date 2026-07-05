@@ -368,6 +368,7 @@ export default function HotelManagerBookingsPage() {
                   </p>
                 </div>
               ) : (
+                <div className="w-full overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -514,6 +515,7 @@ export default function HotelManagerBookingsPage() {
                     })}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </GlassCard>
           </TabsContent>
