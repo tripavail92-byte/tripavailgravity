@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ROLE_NAVIGATION } from '@/config/navigation'
@@ -264,7 +265,7 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
               >
                 {/* Profile Header - Horizontal */}
                 <div className="p-4 pb-0 [@media(max-height:820px)]:p-3 [@media(max-height:820px)]:pb-0">
-                  <div className="flex justify-start">
+                  <div className="flex items-center justify-between">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -278,6 +279,9 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
                     >
                       <X size={16} />
                     </motion.button>
+
+                    {/* Dark / light mode toggle — reachable in the drawer on every authed page */}
+                    <ThemeToggle inverted={inverted} className="h-8 w-8" />
                   </div>
 
                   <div className="mt-3 mb-3 flex items-center gap-4 [@media(max-height:740px)]:mt-2.5 [@media(max-height:740px)]:mb-2.5">

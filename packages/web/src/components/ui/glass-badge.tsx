@@ -10,19 +10,19 @@ const glassBadgeVariants = cva(
       variant: {
         default: 'glass-badge text-foreground hover:shadow-sm',
         light:
-          'bg-surface-card/90 backdrop-blur-md border border-border-subtle/30 text-default shadow-sm hover:shadow-md hover:bg-surface-card',
+          'bg-card/90 backdrop-blur-md border border-border/30 text-foreground',
         dark: 'bg-black/70 backdrop-blur-md border border-white/20 text-white hover:bg-black/80 hover:shadow-md hover:shadow-black/30',
         primary:
           'bg-primary/80 backdrop-blur-md text-primary-foreground border border-primary/40 hover:bg-primary/90 hover:shadow-md hover:shadow-primary/30',
         secondary:
           'bg-secondary/80 backdrop-blur-md text-secondary-foreground border border-secondary/40 hover:bg-secondary/90 hover:shadow-md',
         success:
-          'bg-status-success/80 backdrop-blur-md text-white border border-status-success/40 hover:bg-status-success/90 hover:shadow-md hover:shadow-status-success/30 animate-pulse-subtle',
+          'bg-success/80 text-success-foreground border border-success/40',
         warning:
-          'bg-status-warning/80 backdrop-blur-md text-white border border-status-warning/40 hover:bg-status-warning/90 hover:shadow-md hover:shadow-status-warning/30 animate-pulse-subtle',
+          'bg-warning/80 text-warning-foreground border border-warning/40',
         error:
-          'bg-status-error/80 backdrop-blur-md text-white border border-status-error/40 hover:bg-status-error/90 hover:shadow-md hover:shadow-status-error/30 animate-pulse-subtle',
-        info: 'bg-status-info/80 backdrop-blur-md text-white border border-status-info/40 hover:bg-status-info/90 hover:shadow-md hover:shadow-status-info/30',
+          'bg-error/80 text-error-foreground border border-error/40',
+        info: 'bg-primary/80 text-primary-foreground border border-primary/40',
         outline:
           'bg-white/20 backdrop-blur-sm border border-white/40 text-foreground hover:bg-white/30 hover:shadow-sm',
         ghost:

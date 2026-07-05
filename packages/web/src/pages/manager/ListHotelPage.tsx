@@ -91,9 +91,9 @@ export default function ListHotelPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
             T
@@ -114,7 +114,7 @@ export default function ListHotelPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 mb-6 leading-tight">
+              <h1 className="text-5xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
                 List your <br />
                 <span className="text-primary">property</span> on <br />
                 TripAvail
@@ -152,7 +152,7 @@ export default function ListHotelPage() {
                   <div className="w-12 h-12 rounded-full bg-white shadow-sm border flex items-center justify-center">
                     <step.icon size={24} />
                   </div>
-                  <span className="text-xs font-medium text-gray-500">{step.label}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{step.label}</span>
                 </motion.div>
               ))}
             </div>

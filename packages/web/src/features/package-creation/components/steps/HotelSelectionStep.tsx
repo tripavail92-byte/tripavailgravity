@@ -43,12 +43,21 @@ export function HotelSelectionStep({
     setLoading(true)
     setError(null)
     try {
-      console.log('🏨 HotelSelectionStep: Fetching user hotels from Supabase')
+      // Only the signed-in manager's own hotels — never other tenants' properties.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        setError('Please sign in again to load your hotels.')
+        setLoading(false)
+        return
+      }
 
-      // Fetch published hotels from Supabase (selecting only core columns)
+      // Fetch this owner's published hotels from Supabase (selecting only core columns)
       const { data: hotelsData, error: fetchError } = await supabase
         .from('hotels')
         .select('id, name, address, location, is_published')
+        .eq('owner_id', user.id)
         .eq('is_published', true)
         .order('created_at', { ascending: false })
 

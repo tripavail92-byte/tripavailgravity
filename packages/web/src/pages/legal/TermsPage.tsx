@@ -7,8 +7,8 @@ export default function TermsPage() {
     <div className="min-h-screen bg-background">
       <main className="max-w-3xl mx-auto px-4 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Terms of Service</h1>
-          <p className="mt-2 text-sm text-gray-600">Last updated: February 10, 2026</p>
+          <h1 className="text-3xl font-bold text-foreground">Terms of Service</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Last updated: February 10, 2026</p>
         </div>
 
         <div className="prose prose-gray max-w-none">

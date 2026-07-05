@@ -297,31 +297,38 @@ export default function PaymentMethodsPage() {
                       <p className="text-sm text-muted-foreground font-medium mb-6">
                         Secure Stripe integration will appear here for card entry.
                       </p>
-                      <Button
-                        disabled={isSubmitting}
-                        onClick={async () => {
-                          setIsSubmitting(true)
-                          // Mock adding a card
-                          await new Promise((r) => setTimeout(r, 1000))
-                          await paymentMethodService.savePaymentMethod({
-                            method_type: 'card',
-                            provider: 'stripe',
-                            label: 'Visa ending in 4242',
-                            last_four: '4242',
-                            card_brand: 'visa',
-                            exp_month: 12,
-                            exp_year: 2025,
-                            is_default: methods.length === 0,
-                          })
-                          setIsSubmitting(false)
-                          setIsAddingCard(false)
-                          loadMethods()
-                          toast.success('Card added (Simulated)')
-                        }}
-                        className="w-full rounded-2xl h-12"
-                      >
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Simulate Add Card'}
-                      </Button>
+                      {import.meta.env.DEV ? (
+                        <Button
+                          disabled={isSubmitting}
+                          onClick={async () => {
+                            setIsSubmitting(true)
+                            // Mock adding a card (dev only — never ships to production)
+                            await new Promise((r) => setTimeout(r, 1000))
+                            await paymentMethodService.savePaymentMethod({
+                              method_type: 'card',
+                              provider: 'stripe',
+                              label: 'Visa ending in 4242',
+                              last_four: '4242',
+                              card_brand: 'visa',
+                              exp_month: 12,
+                              exp_year: 2025,
+                              is_default: methods.length === 0,
+                            })
+                            setIsSubmitting(false)
+                            setIsAddingCard(false)
+                            loadMethods()
+                            toast.success('Card added (Simulated)')
+                          }}
+                          className="w-full rounded-2xl h-12"
+                        >
+                          {isSubmitting ? <Loader2 className="animate-spin" /> : 'Simulate Add Card'}
+                        </Button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Card payments are coming soon. Use a mobile wallet below to save a payment
+                          method.
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : (

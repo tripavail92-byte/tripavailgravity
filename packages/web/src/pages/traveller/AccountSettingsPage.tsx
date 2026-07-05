@@ -25,9 +25,11 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { useAuth } from '@/hooks/useAuth'
 import { type AccountSettings, accountSettingsService } from '@/services/accountSettingsService'
+import { useTheme } from '@/theme/ThemeContext'
 
 export default function AccountSettingsPage() {
   const { user } = useAuth()
+  const { setMode } = useTheme()
   const [settings, setSettings] = useState<AccountSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<
@@ -328,7 +330,10 @@ export default function AccountSettingsPage() {
                     {['light', 'dark', 'auto'].map((theme) => (
                       <button
                         key={theme}
-                        onClick={() => handleToggle('theme', theme)}
+                        onClick={() => {
+                          setMode(theme === 'auto' ? 'system' : (theme as 'light' | 'dark'))
+                          handleToggle('theme', theme)
+                        }}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition ${
                           settings.theme === theme
                             ? 'border-primary bg-primary/5'

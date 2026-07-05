@@ -34,7 +34,7 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
         <div className="flex justify-between items-start mb-1">
           <h3 className="font-semibold text-lg line-clamp-1">{hotel.name}</h3>
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-current text-black" />
+            <Star className="w-4 h-4 fill-current text-foreground" />
             <span className="text-sm font-medium">{hotel.rating || 'New'}</span>
           </div>
         </div>

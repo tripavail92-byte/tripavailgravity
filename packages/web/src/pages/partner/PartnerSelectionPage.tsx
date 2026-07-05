@@ -69,7 +69,7 @@ export default function PartnerSelectionPage() {
   const requestSelectPartner = (mode: 'hotel_manager' | 'tour_operator') => {
     // If not logged in, redirect to auth with selected role
     if (!activeRole) {
-      navigate(`/auth?role=${mode}`)
+      navigate('/auth?redirect=/partner/onboarding')
       return
     }
 

@@ -2,6 +2,7 @@ import { Search } from 'lucide-react'
 
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -71,6 +72,9 @@ export function DashboardHeader() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
+            {/* Dark / light mode toggle */}
+            <ThemeToggle inverted={isPartnerChrome} />
+
             {/* Notifications */}
             <NotificationBell inverted={isPartnerChrome} />
 

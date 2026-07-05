@@ -14,12 +14,12 @@ export function GlassProgress({ currentStep, totalSteps, className }: GlassProgr
   return (
     <div
       className={cn(
-        'w-full h-2 bg-surface-raised/50 backdrop-blur-sm rounded-full overflow-hidden border border-border-subtle/20 shadow-inner',
+        'w-full h-2 bg-muted/50 backdrop-blur-sm rounded-full overflow-hidden border border-border/20 shadow-inner',
         className,
       )}
     >
       <motion.div
-        className="h-full bg-primary shadow-[0_0_15px_rgba(var(--primary),0.5)]"
+        className="h-full bg-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)]"
         initial={{ width: 0 }}
         animate={{ width: `${progress}%` }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
