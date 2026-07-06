@@ -700,6 +700,7 @@ export default function OperatorCommercialPage() {
           latestBillingRow?.membership_fee ??
           tier?.monthly_fee ??
           0,
+        (profile as any)?.currency ?? 'PKR',
       ),
       caption: `Next billing date: ${formatDate(profile?.next_billing_date)}`,
     },

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 
+import { isoFromPhone } from '@/features/verification/partnerCountry'
 import type {
   OperatorFleetAsset,
   OperatorGalleryItem,
@@ -254,6 +255,9 @@ export const tourOperatorService = {
 
     const { firstName, lastName } = splitFullName(data.personalInfo?.operatorName || '')
     const categories = normalizeCategories(data.services)
+    // Derive the operator's country from the phone dial code (a UAE operator picks +971).
+    // NULL means unknown/legacy — the DB treats NULL as Pakistan.
+    const countryCode = isoFromPhone(data.personalInfo?.phone)
 
     const profilePayload = {
       user_id: userId,
@@ -261,6 +265,7 @@ export const tourOperatorService = {
       last_name: lastName,
       email: data.personalInfo?.email,
       phone_number: data.personalInfo?.phone,
+      ...(countryCode ? { country_code: countryCode } : {}),
       contact_person: data.personalInfo?.contactPerson,
       profile_picture_url: data.profilePicture,
       company_logo_url: data.businessInfo?.companyLogo,

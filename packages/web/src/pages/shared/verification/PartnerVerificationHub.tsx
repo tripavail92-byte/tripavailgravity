@@ -43,6 +43,9 @@ export function PartnerVerificationHub() {
 
   const [activityLogs, setActivityLogs] = useState<any[]>([])
   const [rejectedKycNotes, setRejectedKycNotes] = useState<string | null>(null)
+  // Partner country drives which business documents are required (PK → SECP/DTS/NTN,
+  // else a generic registration + tax set). NULL falls back to the Pakistan set.
+  const [country, setCountry] = useState<string | null>(null)
 
   const role = activeRole?.role_type
   const service = role === 'tour_operator' ? tourOperatorService : hotelManagerService
@@ -94,6 +97,19 @@ export function PartnerVerificationHub() {
       if (!user?.id) return
       try {
         const data = await service.getOnboardingData(user.id)
+
+        // Country drives the required business-document set (foreign partners skip PK docs).
+        try {
+          const table = role === 'tour_operator' ? 'tour_operator_profiles' : 'hotel_manager_profiles'
+          const { data: ccRow } = await supabase
+            .from(table)
+            .select('country_code')
+            .eq('user_id', user.id)
+            .maybeSingle()
+          setCountry((ccRow as any)?.country_code ?? null)
+        } catch {
+          // ignore — defaults to the Pakistan document set
+        }
 
         const fromProfile = (data?.verification as any) ?? null
         const sessionRole = role === 'tour_operator' ? 'tour_operator' : 'hotel_manager'
@@ -415,6 +431,7 @@ export function PartnerVerificationHub() {
               <BusinessDocsSubFlow
                 onComplete={handleDocsComplete}
                 initialData={verificationData?.businessDocs}
+                country={country}
               />
             </div>
           )}

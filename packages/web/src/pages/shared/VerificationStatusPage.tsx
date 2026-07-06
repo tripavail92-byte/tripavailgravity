@@ -259,7 +259,7 @@ function ApprovedView({
                 Business documents still required
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                Your identity (CNIC) is verified, but the following compliance documents are
+                Your identity is verified, but the following compliance documents are
                 missing. Please upload them to remain in good standing.
               </p>
             </div>
