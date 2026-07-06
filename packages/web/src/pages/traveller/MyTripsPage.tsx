@@ -32,6 +32,16 @@ export default function MyTripsPage() {
       setIsLoading(true)
       const data = await bookingService.getTravelerBookings(user!.id)
       setBookings(data)
+
+      // Smart default: landing on an empty "Upcoming" while past trips exist
+      // reads as "my trips didn't load" — start on the tab that has content.
+      const hasUpcoming = data.some((b: any) => {
+        const date = b.tour_schedules?.start_time || b.booking_date || b.start_time || b.check_in_date
+        return new Date(date) >= new Date() && b.status !== 'cancelled'
+      })
+      if (!hasUpcoming && data.length > 0) {
+        setActiveTab('past')
+      }
     } catch (error) {
       console.error('Failed to load bookings:', error)
       toast.error('Failed to load your trips')
@@ -104,7 +114,7 @@ export default function MyTripsPage() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {tab}
+                  {tab} ({tab === 'upcoming' ? upcomingTrips.length : pastTrips.length})
               </button>
             ))}
             </div>
@@ -128,7 +138,9 @@ export default function MyTripsPage() {
               <h2 className="text-xl font-bold text-foreground mb-2">No {activeTab} trips found</h2>
               <p className="text-muted-foreground max-w-xs mx-auto mb-8">
                 {activeTab === 'upcoming'
-                  ? "Looks like you haven't booked any adventures yet. Time to start planning!"
+                  ? pastTrips.length > 0
+                    ? `No upcoming trips right now — your ${pastTrips.length} previous trip${pastTrips.length === 1 ? '' : 's'} are under Past. Time to plan the next one!`
+                    : "Looks like you haven't booked any adventures yet. Time to start planning!"
                   : "You don't have any past trips in your history."}
               </p>
               {activeTab === 'upcoming' && (

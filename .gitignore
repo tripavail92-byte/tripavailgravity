@@ -4,6 +4,10 @@ stripe-export.env
 supabase-secrets.env
 supabase/.temp/
 tools/
+# Sensitive key/secret files
+face-api-secret.tmp
+*.tmp
+total-practice-472712-d9-c72f2954ee35.json
 # Dependencies
 node_modules
 .pnpm-store
@@ -50,3 +54,12 @@ STRIPE_EXPORT.md
 !*config*.json
 !.vscode/*.json
 supabase/.branches/
+# Expo mobile
+packages/mobile/.expo/
+packages/mobile/android/
+packages/mobile/ios/
+packages/mobile/.env.local
+# Local debug artifacts (device screenshots / APK builds dropped at repo root)
+/.*.png
+/.*.apk
+*.apk

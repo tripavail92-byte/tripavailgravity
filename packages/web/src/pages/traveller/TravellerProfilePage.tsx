@@ -69,12 +69,14 @@ export default function TravellerProfilePage() {
   const [phoneOTP, setPhoneOTP] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
 
-  // Load profile on mount
+  // Load profile on mount. Depend on the id (not the object) — useAuth returns
+  // a fresh user reference per render, which made this effect loop forever.
   useEffect(() => {
     if (user) {
       loadProfile()
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const loadProfile = async () => {
     try {

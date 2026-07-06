@@ -207,7 +207,7 @@ export function renderBookingConfirmed(title: string, body: string): EmailTempla
       ${bodyText(body || 'Your reservation has been confirmed and is now active in your TripAvail account.')}
       ${divider()}
       <div style="text-align:center;">
-        ${ctaButton('https://tripavail-web-production.up.railway.app/trips', 'View My Trips', '#10b981')}
+        ${ctaButton('https://tripavail.com/trips', 'View My Trips', '#10b981')}
       </div>
     `),
   }
@@ -224,7 +224,7 @@ export function renderBookingReceived(title: string, body: string): EmailTemplat
       ${bodyText(body || 'A traveler confirmed a booking. Open your dashboard to review details and prepare the experience.')}
       ${divider()}
       <div style="text-align:center;">
-        ${ctaButton('https://tripavail-web-production.up.railway.app/operator/dashboard', 'Open Dashboard', '#0f766e')}
+        ${ctaButton('https://tripavail.com/operator/dashboard', 'Open Dashboard', '#0f766e')}
       </div>
     `),
   }
@@ -241,7 +241,7 @@ export function renderBookingMessageReceived(title: string, body: string): Email
       ${bodyText(body || 'A new booking message is waiting in your TripAvail inbox.')}
       ${divider()}
       <div style="text-align:center;">
-        ${ctaButton('https://tripavail-web-production.up.railway.app/messages', 'Open Messages', '#e11d48')}
+        ${ctaButton('https://tripavail.com/messages', 'Open Messages', '#e11d48')}
       </div>
     `),
   }
@@ -258,7 +258,7 @@ export function renderGenericNotification(title: string, body: string): EmailTem
       ${bodyText(body || 'There is a new update waiting in your TripAvail dashboard.')}
       ${divider()}
       <div style="text-align:center;">
-        ${ctaButton('https://tripavail-web-production.up.railway.app', 'Open TripAvail', '#111827')}
+        ${ctaButton('https://tripavail.com', 'Open TripAvail', '#111827')}
       </div>
     `),
   }
