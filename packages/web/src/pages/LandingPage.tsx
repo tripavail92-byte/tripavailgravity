@@ -619,20 +619,38 @@ function AirbnbHeader() {
         <div className="container mx-auto max-w-7xl min-h-20 px-4 py-3 md:py-0 md:h-20 md:px-6 lg:px-10 flex flex-wrap items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
           {/* Logo */}
           <div className="flex items-center shrink-0 order-1">
-            <div className="flex items-center gap-1 cursor-pointer">
-              {/* TripAvail Logo Icon (Rose) */}
+            <div className="flex items-center gap-1.5 cursor-pointer">
+              {/* TripAvail brand mark — pin (trip) + check (avail) */}
               <svg
-                viewBox="0 0 32 32"
-                className="block h-8 w-8 fill-current text-primary"
+                viewBox="0 0 64 64"
+                className="block h-8 w-8"
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
                 role="presentation"
                 focusable="false"
               >
-                <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 3.162.717 4.698-.217 1.722-1.077 3.325-2.678 4.318-1.554.965-3.328 1.5-5.36 1.5-4.137 0-7.38-2.676-8.917-6.236l-.089-.283C10.706 28.164 7.426 31 3.092 31c-1.996 0-3.79-.536-5.267-1.501-1.636-.998-2.5-2.597-2.73-4.318-.21-1.62.062-3.193.754-4.836L16 1zm0 2c-1.137 0-2.31 1.258-3.416 3.46l-.37.747c-1.897 3.906-5.83 12.276-6.818 14.594l-.152.365c-.56 1.39-.757 2.628-.584 3.79.166 1.118.916 2.372 2.148 3.174 2.822 1.838 6.463-1.054 9.18-5.34l.112-.178.65-.965.674 1.134c2.81 4.512 6.55 7.189 9.387 5.353 1.18-.763 1.956-2.023 2.152-3.175.176-1.16-.011-2.396-.566-3.743l-.15-.355c-1.028-2.336-4.9-10.372-6.84-14.414L20.897 6.48C19.79 4.258 17.137 3 16 3z"></path>
+                <defs>
+                  <linearGradient id="ta-rose-hdr" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#FF5D77" />
+                    <stop offset="1" stopColor="#E11D48" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M32 4C19.85 4 10 13.85 10 26c0 9.5 5.9 17.6 12.3 24a92 92 0 0 0 8.3 7.3c.85.62 1.95.62 2.8 0a92 92 0 0 0 8.3-7.3C48.1 43.6 54 35.5 54 26 54 13.85 44.15 4 32 4Z"
+                  fill="url(#ta-rose-hdr)"
+                />
+                <path
+                  d="M23 27l6.4 6.4L41 20.8"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
-              <span className="hidden md:block font-bold text-xl text-primary tracking-tighter">
-                tripavail
+              <span className="hidden md:block font-bold text-xl tracking-tighter">
+                <span className="text-foreground">trip</span>
+                <span className="text-[#FF385C]">avail</span>
               </span>
             </div>
           </div>
