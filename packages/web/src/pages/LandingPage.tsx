@@ -578,7 +578,8 @@ function AirbnbHeader() {
     if (_filters.priceRange[0] !== 0) params.set('minPrice', _filters.priceRange[0].toString())
     if (_filters.priceRange[1] !== 5000) params.set('maxPrice', _filters.priceRange[1].toString())
     if (_filters.minRating > 0) params.set('minRating', _filters.minRating.toString())
-    if (_filters.experienceType.length > 0) params.set('types', _filters.experienceType.join(','))
+    // NOTE: `types` is reserved for the listing-type contract (tour/package) that
+    // /search consumes — do not serialise experience themes into it.
 
     setIsSearchOverlayOpen(false)
     navigate(`/search?${params.toString()}`)

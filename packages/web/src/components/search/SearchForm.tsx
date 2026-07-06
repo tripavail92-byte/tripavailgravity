@@ -87,7 +87,8 @@ export function SearchForm({
     if (filters.priceRange[0] !== 0) params.set('minPrice', filters.priceRange[0].toString())
     if (filters.priceRange[1] !== 5000) params.set('maxPrice', filters.priceRange[1].toString())
     if (filters.minRating > 0) params.set('minRating', filters.minRating.toString())
-    if (filters.experienceType.length > 0) params.set('types', filters.experienceType.join(','))
+    // NOTE: `types` is reserved for the listing-type contract (tour/package) that
+    // /search consumes — do not serialise experience themes into it.
 
     navigate(`/search?${params.toString()}`)
     setIsSearchOverlayOpen(false)
