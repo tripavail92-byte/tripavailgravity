@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { fetchAdminBookings, type AdminBookingRow } from '@/features/admin/services/adminService'
+import { formatMoney } from '@tripavail/shared/utils/money'
 
 type BookingRow = AdminBookingRow
 
@@ -27,7 +28,8 @@ function fmt(v: string | null) {
 
 function fmtPrice(v: number | null) {
   if (v == null) return '—'
-  return `PKR ${v.toLocaleString()}`
+  // TODO: use booking currency once plumbed.
+  return formatMoney(v, 'PKR')
 }
 
 function travelerLabel(row: BookingRow) {

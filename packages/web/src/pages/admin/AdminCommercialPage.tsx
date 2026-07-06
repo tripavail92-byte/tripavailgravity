@@ -33,16 +33,19 @@ import {
   type OperatorCommercialProfile,
   type OperatorPayoutDisputeCase,
 } from '@/features/commercial/services/commercialService'
+import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
 const MIN_ADMIN_ACTION_REASON_LENGTH = 10
 
 function formatMoney(value: number) {
-  return `PKR ${value.toLocaleString()}`
+  // TODO: use row currency once plumbed.
+  return formatMoneyShared(value, 'PKR')
 }
 
 function formatSignedMoney(value: number) {
   const prefix = value > 0 ? '+' : value < 0 ? '-' : ''
-  return `${prefix}PKR ${Math.abs(value).toLocaleString()}`
+  // TODO: use row currency once plumbed.
+  return `${prefix}${formatMoneyShared(Math.abs(value), 'PKR')}`
 }
 
 function formatDate(value?: string | null) {
@@ -1491,7 +1494,7 @@ export default function AdminCommercialPage() {
       )
       if (result?.remaining_recovery_amount) {
         toast.success(
-          `Recovery updated. PKR ${result.remaining_recovery_amount.toLocaleString()} still outstanding`,
+          `Recovery updated. ${formatMoney(result.remaining_recovery_amount)} still outstanding`,
         )
       } else {
         toast.success('Recovery completed and payout item closed')
@@ -2560,8 +2563,8 @@ export default function AdminCommercialPage() {
                           <TableCell>{promotion.is_active ? 'Active' : 'Inactive'}</TableCell>
                           <TableCell className="text-right">
                             {promotion.discount_type === 'percentage'
-                              ? `${promotion.discount_value}%${promotion.max_discount_value ? ` capped at PKR ${promotion.max_discount_value.toLocaleString()}` : ''}`
-                              : `PKR ${promotion.discount_value.toLocaleString()}`}
+                              ? `${promotion.discount_value}%${promotion.max_discount_value ? ` capped at ${formatMoney(promotion.max_discount_value)}` : ''}`
+                              : formatMoney(promotion.discount_value)}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

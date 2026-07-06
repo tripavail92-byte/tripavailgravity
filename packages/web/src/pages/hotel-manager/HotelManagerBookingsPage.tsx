@@ -38,6 +38,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { bookingService, type PackageBooking } from '@/features/booking/services/bookingService'
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
@@ -325,7 +326,8 @@ export default function HotelManagerBookingsPage() {
             <StatCard icon={AlertTriangle} label="Needs review" value={String(stats.cancellationRequests)} />
           </GlassCard>
           <GlassCard variant="card" className="rounded-3xl p-5">
-            <StatCard icon={Receipt} label="Revenue" value={`PKR ${stats.revenue.toLocaleString()}`} />
+            {/* TODO: use booking currency once plumbed. */}
+            <StatCard icon={Receipt} label="Revenue" value={formatMoney(stats.revenue, 'PKR')} />
           </GlassCard>
         </div>
 
@@ -443,11 +445,13 @@ export default function HotelManagerBookingsPage() {
                                   {booking.payment_status || 'unpaid'}
                                 </span>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Paid online: PKR {paidOnlineAmount(booking).toLocaleString()}
+                                  {/* TODO: use booking currency once plumbed. */}
+                                  Paid online: {formatMoney(paidOnlineAmount(booking), 'PKR')}
                                 </p>
                                 {refundAmount(booking) > 0 ? (
                                   <p className="mt-1 text-xs text-muted-foreground">
-                                    Refunded: PKR {refundAmount(booking).toLocaleString()}
+                                    {/* TODO: use booking currency once plumbed. */}
+                                    Refunded: {formatMoney(refundAmount(booking), 'PKR')}
                                   </p>
                                 ) : null}
                               </div>
@@ -505,7 +509,8 @@ export default function HotelManagerBookingsPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-semibold text-foreground">
-                            <p>PKR {booking.total_price.toLocaleString()}</p>
+                            {/* TODO: use booking currency once plumbed. */}
+                            <p>{formatMoney(booking.total_price, 'PKR')}</p>
                             <p className="mt-1 text-xs font-medium text-muted-foreground">
                               Guests: {booking.guest_count}
                             </p>

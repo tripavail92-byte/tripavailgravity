@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import { useMoney } from '@/hooks/useMoney'
 
 interface TourCardProps {
   id: string
@@ -48,6 +49,10 @@ export function TourCard({
   })
   const showsDeposit = Boolean(depositRequired) && paymentTerms.remainingAmount > 0
 
+  const money = useMoney()
+  const depositMoney = money(paymentTerms.upfrontAmount, currency)
+  const mainMoney = money(showsDeposit ? paymentTerms.upfrontAmount : price, currency)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -76,7 +81,7 @@ export function TourCard({
               ) : null}
               {showsDeposit ? (
                 <Badge className="bg-background/90 text-foreground border border-white/30 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
-                  Pay {currency} {paymentTerms.upfrontAmount.toLocaleString()} now
+                  Pay {depositMoney.text} now
                 </Badge>
               ) : null}
             </div>
@@ -139,7 +144,8 @@ export function TourCard({
               <div className="flex flex-col min-w-0">
                 <span className="text-xs text-muted-foreground">{showsDeposit ? 'Pay now' : 'From'}</span>
                 <span className="font-bold text-lg text-foreground truncate">
-                  {currency} {(showsDeposit ? paymentTerms.upfrontAmount : price).toLocaleString()}
+                  {mainMoney.estimate ? '≈ ' : ''}
+                  {mainMoney.text}
                 </span>
                 <span className="text-[11px] text-muted-foreground">
                   {showsDeposit ? 'Balance paid before departure' : 'Per traveler'}

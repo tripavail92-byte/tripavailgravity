@@ -45,6 +45,7 @@ import {
   operatorPortalService,
 } from '@/features/tour-operator/services/operatorPortalService'
 import { useAuth } from '@/hooks/useAuth'
+import { formatMoney } from '@tripavail/shared/utils/money'
 
 type BookingAction = 'cancel' | 'complete' | 'resend_confirmation'
 
@@ -263,7 +264,8 @@ export default function OperatorBookingsPage() {
             <StatCard
               icon={Receipt}
               label="Revenue"
-              value={`PKR ${stats.revenue.toLocaleString()}`}
+              /* TODO: use booking currency once plumbed */
+              value={formatMoney(stats.revenue, 'PKR')}
             />
           </GlassCard>
           <GlassCard variant="card" className="rounded-3xl p-5">
@@ -526,13 +528,15 @@ export default function OperatorBookingsPage() {
                               </span>
                               {Number(booking.remaining_amount || 0) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Balance due: PKR{' '}
-                                  {Number(booking.remaining_amount || 0).toLocaleString()}
+                                  {/* TODO: use booking currency once plumbed */}
+                                  Balance due:{' '}
+                                  {formatMoney(Number(booking.remaining_amount || 0), 'PKR')}
                                 </p>
                               ) : null}
                               {refundedAmountForBooking(booking) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Refunded: PKR {refundedAmountForBooking(booking).toLocaleString()}
+                                  {/* TODO: use booking currency once plumbed */}
+                                  Refunded: {formatMoney(refundedAmountForBooking(booking), 'PKR')}
                                 </p>
                               ) : null}
                             </div>
@@ -597,31 +601,38 @@ export default function OperatorBookingsPage() {
                         </TableCell>
                         <TableCell className="text-right font-semibold text-foreground">
                           <div>
-                            <p>PKR {booking.total_price.toLocaleString()}</p>
+                            {/* TODO: use booking currency once plumbed */}
+                            <p>{formatMoney(booking.total_price, 'PKR')}</p>
                             {Number(booking.promo_discount_value || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-emerald-700">
-                                Promo: {booking.promo_owner || 'Applied'} · -PKR{' '}
-                                {Number(booking.promo_discount_value || 0).toLocaleString()}
+                                {/* TODO: use booking currency once plumbed */}
+                                Promo: {booking.promo_owner || 'Applied'} · -
+                                {formatMoney(Number(booking.promo_discount_value || 0), 'PKR')}
                               </p>
                             ) : null}
                             {Number(booking.promo_discount_value || 0) > 0 &&
                             Number(booking.price_before_promo || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-muted-foreground">
-                                Original total: PKR{' '}
-                                {Number(booking.price_before_promo || 0).toLocaleString()} ·{' '}
+                                {/* TODO: use booking currency once plumbed */}
+                                Original total:{' '}
+                                {formatMoney(Number(booking.price_before_promo || 0), 'PKR')} ·{' '}
                                 {booking.promo_funding_source === 'platform'
                                   ? 'TripAvail funded'
                                   : 'Operator funded'}
                               </p>
                             ) : null}
                             <p className="mt-1 text-xs font-medium text-muted-foreground">
-                              Paid online: PKR{' '}
-                              {Number(
-                                (booking.amount_paid_online ??
-                                  booking.upfront_amount ??
-                                  booking.total_price) ||
-                                  0,
-                              ).toLocaleString()}
+                              {/* TODO: use booking currency once plumbed */}
+                              Paid online:{' '}
+                              {formatMoney(
+                                Number(
+                                  (booking.amount_paid_online ??
+                                    booking.upfront_amount ??
+                                    booking.total_price) ||
+                                    0,
+                                ),
+                                'PKR',
+                              )}
                             </p>
                           </div>
                         </TableCell>

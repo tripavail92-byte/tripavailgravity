@@ -49,6 +49,7 @@ import {
   type TravelerBookingOutcomeSummary,
   type TravelerBookingSettlementState,
 } from '@/features/booking/utils/travelerBookingPresentation'
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { useAuth } from '@/hooks/useAuth'
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { queryClient } from '@/lib/queryClient'
@@ -825,9 +826,10 @@ function TravelerBookingStatusCard({
         <div className="space-y-3 text-sm">
           <MetaRow label="Booking status" value={bookingStatus || 'Unknown'} />
           <MetaRow label="Payment status" value={paymentStatus || 'Unknown'} />
-          <MetaRow label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
-          <MetaRow label="Refunded amount" value={`PKR ${refundedAmount.toLocaleString()}`} />
-          <MetaRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+          {/* TODO: use booking currency once plumbed */}
+          <MetaRow label="Paid online" value={formatMoney(paidOnline, 'PKR')} />
+          <MetaRow label="Refunded amount" value={formatMoney(refundedAmount, 'PKR')} />
+          <MetaRow label="Remaining balance" value={formatMoney(remainingAmount, 'PKR')} />
           {cancellationLabel ? <MetaRow label="Request state" value={cancellationLabel} /> : null}
         </div>
       ) : null}
@@ -908,7 +910,8 @@ function PartnerCancellationReviewCard({
       ) : null}
       {typeof review?.refundAmount === 'number' && review.refundAmount > 0 ? (
         <p className="text-sm text-muted-foreground">
-          Refunded online: PKR {review.refundAmount.toLocaleString()}
+          {/* TODO: use booking currency once plumbed */}
+          Refunded online: {formatMoney(review.refundAmount, 'PKR')}
         </p>
       ) : null}
 

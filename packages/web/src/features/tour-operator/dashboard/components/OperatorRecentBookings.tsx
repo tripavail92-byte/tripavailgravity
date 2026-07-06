@@ -9,6 +9,7 @@ import {
   type OperatorBookingRecord,
   operatorPortalService,
 } from '@/features/tour-operator/services/operatorPortalService'
+import { formatMoney } from '@tripavail/shared/utils/money'
 
 interface OperatorRecentBookingsProps {
   operatorId?: string
@@ -25,10 +26,12 @@ function paymentLabel(booking: OperatorBookingRecord) {
   if (booking.payment_collection_mode === 'partial_online') {
     const paid = Number(booking.amount_paid_online ?? booking.upfront_amount ?? 0)
     const due = Number(booking.amount_due_to_operator ?? booking.remaining_amount ?? 0)
-    return `Deposit PKR ${paid.toLocaleString()} · Due PKR ${due.toLocaleString()}`
+    // TODO: use booking currency once plumbed.
+    return `Deposit ${formatMoney(paid, 'PKR')} · Due ${formatMoney(due, 'PKR')}`
   }
 
-  return `PKR ${booking.total_price.toLocaleString()}`
+  // TODO: use booking currency once plumbed.
+  return formatMoney(booking.total_price, 'PKR')
 }
 
 export function OperatorRecentBookings({ operatorId }: OperatorRecentBookingsProps) {

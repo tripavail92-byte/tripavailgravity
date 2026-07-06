@@ -48,6 +48,7 @@ import { Tour, TourSchedule, tourService } from '@/features/tour-operator/servic
 import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
 import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
+import { useMoney } from '@/hooks/useMoney'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
@@ -146,6 +147,7 @@ function useValuePulse(value: number, duration = 260) {
 export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const money = useMoney()
   const [tour, setTour] = useState<Tour | null>(null)
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
@@ -242,11 +244,6 @@ export default function TourDetailsPage() {
       hour: 'numeric',
       minute: '2-digit',
     })
-  }
-
-  const formatMoney = (value: number) => {
-    const normalized = Number.isFinite(value) ? value : 0
-    return new Intl.NumberFormat('en-PK').format(normalized)
   }
 
   const cancellationPolicy = (tour?.cancellation_policy || 'flexible') as
@@ -480,7 +477,7 @@ export default function TourDetailsPage() {
       <div className="pointer-events-none absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-primary/5 blur-3xl" />
       <GlassHeader>
         <GlassTitle className="type-h2 text-foreground">
-          {tour.currency} {formatMoney(effectiveUnitPrice)}
+          {(() => { const m = money(effectiveUnitPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
           <span className="type-body-sm text-muted-foreground"> / person</span>
         </GlassTitle>
       </GlassHeader>
@@ -589,14 +586,14 @@ export default function TourDetailsPage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-muted-foreground">
-                {tour.currency} {formatMoney(effectiveUnitPrice)} × {selectedSeats}
+                {(() => { const m = money(effectiveUnitPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} × {selectedSeats}
               </span>
               <span
                 className={`font-black tabular-nums text-foreground transition-all duration-200 ${
                   isTotalPulsing ? 'scale-[1.03] text-primary' : ''
                 }`}
               >
-                {tour.currency} {formatMoney(animatedLiveTotalPrice)}
+                {(() => { const m = money(animatedLiveTotalPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
               </span>
             </div>
             {currentTotalSavings > 0 ? (
@@ -606,10 +603,10 @@ export default function TourDetailsPage() {
                     isSavingsPulsing ? 'scale-[1.02]' : ''
                   }`}
                 >
-                  Discount Applied · You save {tour.currency} {formatMoney(animatedCurrentTotalSavings)}
+                  Discount Applied · You save {(() => { const m = money(animatedCurrentTotalSavings, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
                 </p>
                 <p className="mt-1 type-caption tabular-nums text-success/90">
-                  {tour.currency} {formatMoney(animatedCurrentSavingsPerPerson)} saved per person vs standard rate
+                  {(() => { const m = money(animatedCurrentSavingsPerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} saved per person vs standard rate
                 </p>
               </div>
             ) : null}
@@ -619,9 +616,9 @@ export default function TourDetailsPage() {
                   Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
                 </p>
                 <p className="mt-1 type-caption text-muted-foreground">
-                  Save up to {tour.currency} {formatMoney(nextTierTotalSavingsAtUnlock)} at {nextGroupTier.minPeople} people
+                  Save up to {(() => { const m = money(nextTierTotalSavingsAtUnlock, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} at {nextGroupTier.minPeople} people
                   {nextTierExtraSavingsPerPerson > 0
-                    ? ` (${tour.currency} ${formatMoney(nextTierExtraSavingsPerPerson)} more per person)`
+                    ? ` (${(() => { const m = money(nextTierExtraSavingsPerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} more per person)`
                     : ''}
                 </p>
               </div>
@@ -636,16 +633,16 @@ export default function TourDetailsPage() {
               <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Upfront payment</p>
                 <p className="mt-1 text-lg font-black text-foreground">{paymentTerms.upfrontPercentage}%</p>
-                <p className="text-xs text-muted-foreground">Pay now: {tour.currency} {formatMoney(payNowPerTraveler)} per traveler</p>
+                <p className="text-xs text-muted-foreground">Pay now: {(() => { const m = money(payNowPerTraveler, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per traveler</p>
               </div>
               <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Pay later</p>
-                <p className="mt-1 text-lg font-black text-foreground">{tour.currency} {formatMoney(payLaterPerTraveler)} per traveler</p>
+                <p className="mt-1 text-lg font-black text-foreground">{(() => { const m = money(payLaterPerTraveler, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per traveler</p>
                 <p className="text-xs text-muted-foreground">Paid directly to operator before departure</p>
               </div>
             </div>
             <p className="type-caption text-muted-foreground">
-              Pay {tour.currency} {formatMoney(paymentTerms.upfrontAmount)} now to confirm your booking. Remaining {tour.currency} {formatMoney(paymentTerms.remainingAmount)} will be paid directly to the tour operator before departure.
+              Pay {(() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} now to confirm your booking. Remaining {(() => { const m = money(paymentTerms.remainingAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} will be paid directly to the tour operator before departure.
             </p>
           </div>
         ) : null}
@@ -661,14 +658,14 @@ export default function TourDetailsPage() {
               : schedule && availableSlots === 0
                 ? 'Sold Out'
                 : requiresDeposit
-                  ? `Pay ${tour.currency} ${formatMoney(paymentTerms.upfrontAmount)} & Confirm Booking`
-                  : `Pay ${tour.currency} ${formatMoney(paymentTerms.totalAmount)} & Confirm Booking`}
+                  ? `Pay ${(() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} & Confirm Booking`
+                  : `Pay ${(() => { const m = money(paymentTerms.totalAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} & Confirm Booking`}
           </Button>
         </motion.div>
 
         {requiresDeposit && canBookNow ? (
           <p className="text-center type-caption text-muted-foreground">
-            Remaining {tour.currency} {formatMoney(paymentTerms.remainingAmount)} will be paid to the operator before departure.
+            Remaining {(() => { const m = money(paymentTerms.remainingAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} will be paid to the operator before departure.
           </p>
         ) : null}
 
@@ -1111,7 +1108,7 @@ export default function TourDetailsPage() {
                           Starting From
                         </p>
                         <p className="text-lg font-black text-foreground">
-                          {tour.currency} {formatMoney(basePrice)}
+                          {(() => { const m = money(basePrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
@@ -1127,7 +1124,7 @@ export default function TourDetailsPage() {
                           Pay Today
                         </p>
                         <p className="text-lg font-black text-foreground">
-                          {tour.currency} {formatMoney(payToday)}
+                          {(() => { const m = money(payToday, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
                         </p>
                       </div>
                     </div>
@@ -1173,7 +1170,7 @@ export default function TourDetailsPage() {
                                   </p>
                                   {savings > 0 ? (
                                     <p className="text-xs text-success font-semibold">
-                                      Save {tour.currency} {formatMoney(savings)} per person
+                                      Save {(() => { const m = money(savings, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per person
                                     </p>
                                   ) : (
                                     <p className="text-xs text-muted-foreground font-medium">
@@ -1189,11 +1186,11 @@ export default function TourDetailsPage() {
                                   ) : null}
                                   {savings > 0 ? (
                                     <p className="text-[11px] text-muted-foreground line-through font-semibold">
-                                      {tour.currency} {formatMoney(basePrice)}
+                                      {(() => { const m = money(basePrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
                                     </p>
                                   ) : null}
                                   <p className="text-sm md:text-base font-black text-primary">
-                                    {tour.currency} {formatMoney(tier.pricePerPerson)}
+                                    {(() => { const m = money(tier.pricePerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
                                   </p>
                                 </div>
                               </div>
@@ -1369,7 +1366,7 @@ export default function TourDetailsPage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ready to book</p>
               <p className="mt-1 text-sm font-semibold text-foreground">
-                {schedule ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${tour.currency} ${formatMoney(animatedLiveTotalPrice)}` : 'No departure dates available'}
+                {schedule ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => { const m = money(animatedLiveTotalPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}` : 'No departure dates available'}
               </p>
             </div>
             {schedule ? (

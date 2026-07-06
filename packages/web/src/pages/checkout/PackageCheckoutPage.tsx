@@ -1,4 +1,5 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { format } from 'date-fns'
 import { ArrowLeft, Calendar, Clock, Loader2, Shield, Users } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -325,7 +326,7 @@ export default function PackageCheckoutPage() {
   const paymentPolicyText =
     pendingBooking?.payment_policy_text ??
     (usesDeposit
-      ? `Pay ${packageCurrency} ${payNowAmount.toLocaleString()} now to confirm this reservation. The remaining ${packageCurrency} ${remainingAmount.toLocaleString()} is paid directly to the operator before check-in.`
+      ? `Pay ${formatMoney(payNowAmount, packageCurrency)} now to confirm this reservation. The remaining ${formatMoney(remainingAmount, packageCurrency)} is paid directly to the operator before check-in.`
       : FULL_ONLINE_POLICY_TEXT)
   const isStayLengthValid = stayNights > 0 && stayNights >= minNights && stayNights <= maxNights
   const stayLengthMessage = !isStayLengthValid
@@ -433,9 +434,9 @@ export default function PackageCheckoutPage() {
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div className="flex justify-between">
                     <span>
-                      {packageCurrency} {(pricing?.price_per_night || 0).toLocaleString()} × {nights} night{nights !== 1 ? 's' : ''}
+                      {formatMoney(pricing?.price_per_night || 0, packageCurrency)} × {nights} night{nights !== 1 ? 's' : ''}
                     </span>
-                    <span>{packageCurrency} {bookingTotal.toLocaleString()}</span>
+                    <span>{formatMoney(bookingTotal, packageCurrency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Payment mode</span>
@@ -445,15 +446,15 @@ export default function PackageCheckoutPage() {
                     <span>
                       Pay now{usesDeposit ? ` (${depositPercentage}%)` : ''}
                     </span>
-                    <span>{packageCurrency} {payNowAmount.toLocaleString()}</span>
+                    <span>{formatMoney(payNowAmount, packageCurrency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Pay later to operator</span>
-                    <span>{packageCurrency} {remainingAmount.toLocaleString()}</span>
+                    <span>{formatMoney(remainingAmount, packageCurrency)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-foreground pt-2 border-t border-border">
                     <span>Total</span>
-                    <span>{packageCurrency} {bookingTotal.toLocaleString()}</span>
+                    <span>{formatMoney(bookingTotal, packageCurrency)}</span>
                   </div>
                 </div>
 
@@ -485,19 +486,19 @@ export default function PackageCheckoutPage() {
                         <div className="flex items-center justify-between">
                           <span>Booking total</span>
                           <span className="font-semibold text-foreground">
-                            {packageCurrency} {bookingTotal.toLocaleString()}
+                            {formatMoney(bookingTotal, packageCurrency)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Charged online now</span>
                           <span className="font-semibold text-foreground">
-                            {packageCurrency} {payNowAmount.toLocaleString()}
+                            {formatMoney(payNowAmount, packageCurrency)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span>Remaining to operator</span>
                           <span className="font-semibold text-foreground">
-                            {packageCurrency} {remainingAmount.toLocaleString()}
+                            {formatMoney(remainingAmount, packageCurrency)}
                           </span>
                         </div>
                       </div>
@@ -529,7 +530,7 @@ export default function PackageCheckoutPage() {
                     <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                       <Shield className="w-4 h-4 text-emerald-500" />
                       {usesDeposit
-                        ? `Your reservation expires when the timer ends. You will pay ${packageCurrency} ${payNowAmount.toLocaleString()} now and the remaining ${packageCurrency} ${remainingAmount.toLocaleString()} directly to the operator before check-in.`
+                        ? `Your reservation expires when the timer ends. You will pay ${formatMoney(payNowAmount, packageCurrency)} now and the remaining ${formatMoney(remainingAmount, packageCurrency)} directly to the operator before check-in.`
                         : 'Your reservation expires when the timer ends.'}
                     </div>
                   </>
@@ -619,7 +620,7 @@ function PackagePaymentForm(props: { bookingId: string; total: number; currency:
       >
         {submitting
           ? 'Processing...'
-          : `Pay ${props.currency} ${Number(props.total || 0).toLocaleString()}`}
+          : `Pay ${formatMoney(Number(props.total || 0), props.currency)}`}
       </Button>
     </div>
   )

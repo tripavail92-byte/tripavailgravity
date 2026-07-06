@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useMoney } from '@/hooks/useMoney'
 import { cn } from '@/lib/utils'
 import type { UnifiedExperience } from '@/types/experience'
 
@@ -29,7 +30,11 @@ export function UnifiedExperienceCard({
     hasSavings && experience.originalPrice
       ? Math.round((savingsAmount / experience.originalPrice) * 100)
       : 0
-  const displayCurrency = experience.currency || 'PKR'
+
+  const money = useMoney()
+  const originalMoney = money(experience.originalPrice, experience.currency)
+  const priceMoney = money(experience.price, experience.currency)
+  const savingsMoney = money(savingsAmount, experience.currency)
 
   const rating = typeof experience.rating === 'number' ? experience.rating : null
   const reviewCount = typeof experience.reviewCount === 'number' ? experience.reviewCount : null
@@ -93,21 +98,25 @@ export function UnifiedExperienceCard({
                 <>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-muted-foreground line-through">
-                      {displayCurrency} {Math.round(experience.originalPrice!).toLocaleString()}
+                      {originalMoney.estimate ? '≈ ' : ''}
+                      {originalMoney.text}
                     </span>
                     <span className="font-bold text-lg text-foreground">
-                      {displayCurrency} {Math.round(experience.price!).toLocaleString()}
+                      {priceMoney.estimate ? '≈ ' : ''}
+                      {priceMoney.text}
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Save {displayCurrency} {savingsAmount.toLocaleString()}
+                    Save {savingsMoney.estimate ? '≈ ' : ''}
+                    {savingsMoney.text}
                     {savingsPercent > 0 ? ` (${savingsPercent}%)` : ''}
                   </div>
                 </>
               ) : typeof experience.price === 'number' && experience.price > 0 ? (
                 <div className="flex items-baseline gap-2">
                   <span className="font-bold text-lg text-foreground">
-                    {displayCurrency} {Math.round(experience.price).toLocaleString()}
+                    {priceMoney.estimate ? '≈ ' : ''}
+                    {priceMoney.text}
                   </span>
                 </div>
               ) : (

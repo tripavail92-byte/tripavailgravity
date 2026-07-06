@@ -16,6 +16,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { GeoHomeHero } from '@/components/home/GeoHomeHero'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
@@ -23,6 +24,7 @@ import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import { CurrencySwitcher } from '@/components/CurrencySwitcher'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -68,18 +70,9 @@ export default function LandingPage() {
 
       <div className="container mx-auto max-w-7xl px-4 pt-28 md:pt-24 pb-6">
         <div className="space-y-8 pb-20">
-          {/* Conversion Hero (compact — headline + subtitle only) */}
-          <section className="pt-1">
-            <div className="max-w-4xl">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground text-balance">
-                Premium travel packages, curated for real moments.
-              </h1>
-              <p className="mt-3 text-sm sm:text-base text-muted-foreground">
-                Boutique stays, romantic escapes &amp; family getaways — transparent pricing,
-                instant confirmation.
-              </p>
-            </div>
-          </section>
+          {/* Geo-adaptive hero — reshapes to the visitor's country (real supply → "Discover
+              {country}"; no supply yet → honest "expanding" band; unknown → global default). */}
+          <GeoHomeHero />
 
           {/* Curated Rows (real Supabase data) */}
           <div className="space-y-12">
@@ -654,7 +647,8 @@ function AirbnbHeader() {
 
           {/* Right User Menu */}
           <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
-            {/* Dark / light mode toggle — always visible in the top bar */}
+            {/* Currency picker + dark/light toggle — always in the top bar */}
+            <CurrencySwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
 
             {/* Become a Partner — near the menu (Airbnb-style). Tablet/desktop; phones use the drawer entry. */}

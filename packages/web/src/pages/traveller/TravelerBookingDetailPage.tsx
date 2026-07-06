@@ -1,3 +1,4 @@
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { format } from 'date-fns'
 import {
   AlertTriangle,
@@ -170,7 +171,7 @@ export default function TravelerBookingDetailPage() {
   const totalGuests = booking?.pax_count ?? booking?.guest_count ?? 0
   const settlementState = getTravelerBookingSettlementState(booking)
   const outcome = getTravelerBookingOutcomeSummary(settlementState)
-  const formatMoney = (value: number) => `PKR ${value.toLocaleString()}`
+  const bookingCurrency = booking?.currency || 'PKR' // TODO: use booking currency once plumbed
   const totalAmount = settlementState.totalAmount
   const paidOnline = settlementState.paidOnline
   const remainingAmount = settlementState.remainingAmount
@@ -242,9 +243,9 @@ export default function TravelerBookingDetailPage() {
           { label: 'Booking status', value: booking.status || 'confirmed' },
           { label: 'Payment status', value: booking.payment_status || 'paid' },
           { label: 'Guests', value: String(totalGuests) },
-          { label: 'Total booking amount', value: formatMoney(totalAmount) },
-          { label: 'Paid online', value: formatMoney(paidOnline) },
-          { label: 'Remaining balance', value: formatMoney(remainingAmount) },
+          { label: 'Total booking amount', value: formatMoney(totalAmount, bookingCurrency) },
+          { label: 'Paid online', value: formatMoney(paidOnline, bookingCurrency) },
+          { label: 'Remaining balance', value: formatMoney(remainingAmount, bookingCurrency) },
           {
             label: 'Balance payment method',
             value: remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online',
@@ -259,7 +260,7 @@ export default function TravelerBookingDetailPage() {
             ? `Message your ${counterpartLabel} directly from the booking workspace.`
             : 'Messaging unlocks automatically after payment clears.',
           remainingAmount > 0
-            ? `Remaining balance due before departure: ${formatMoney(remainingAmount)}.`
+            ? `Remaining balance due before departure: ${formatMoney(remainingAmount, bookingCurrency)}.`
             : 'This reservation is fully settled online.',
         ],
       },
@@ -487,7 +488,7 @@ export default function TravelerBookingDetailPage() {
                 />
                 <SummaryTile icon={MapPin} label="Location" value={locationLabel} />
                 <SummaryTile icon={Users} label="Guests" value={String(totalGuests)} />
-                <SummaryTile icon={CreditCard} label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
+                <SummaryTile icon={CreditCard} label="Paid online" value={formatMoney(paidOnline, bookingCurrency)} />
               </div>
 
               <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
@@ -618,7 +619,7 @@ export default function TravelerBookingDetailPage() {
                     {booking?.promo_owner || 'Promo applied'}
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Original total: PKR {priceBeforePromo.toLocaleString()} · Discount: PKR {promoDiscountValue.toLocaleString()} · Final booking total: PKR {totalAmount.toLocaleString()}
+                    Original total: {formatMoney(priceBeforePromo, bookingCurrency)} · Discount: {formatMoney(promoDiscountValue, bookingCurrency)} · Final booking total: {formatMoney(totalAmount, bookingCurrency)}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Funding: {booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'}
@@ -636,9 +637,9 @@ export default function TravelerBookingDetailPage() {
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">{outcome.message}</p>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <InfoRow label="Paid online" value={`PKR ${paidOnline.toLocaleString()}`} />
-                    <InfoRow label="Refunded amount" value={`PKR ${refundAmount.toLocaleString()}`} />
-                    <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
+                    <InfoRow label="Paid online" value={formatMoney(paidOnline, bookingCurrency)} />
+                    <InfoRow label="Refunded amount" value={formatMoney(refundAmount, bookingCurrency)} />
+                    <InfoRow label="Remaining balance" value={formatMoney(remainingAmount, bookingCurrency)} />
                     <InfoRow label="Booking status" value={booking.status} />
                     {refundReason ? <InfoRow label="Reason" value={refundReason} /> : null}
                     {refundTimestamp ? (
@@ -678,14 +679,14 @@ export default function TravelerBookingDetailPage() {
                     <InfoRow label="Booked on" value={format(new Date(booking.booking_date), 'MMM d, yyyy')} />
                     <InfoRow label="Payment status" value={booking.payment_status || 'paid'} />
                     <InfoRow label="Guests" value={String(totalGuests)} />
-                    <InfoRow label="Total" value={`PKR ${totalAmount.toLocaleString()}`} />
-                    {hasPromo ? <InfoRow label="Original total" value={`PKR ${priceBeforePromo.toLocaleString()}`} /> : null}
-                    {hasPromo ? <InfoRow label="Promo discount" value={`PKR ${promoDiscountValue.toLocaleString()}`} /> : null}
+                    <InfoRow label="Total" value={formatMoney(totalAmount, bookingCurrency)} />
+                    {hasPromo ? <InfoRow label="Original total" value={formatMoney(priceBeforePromo, bookingCurrency)} /> : null}
+                    {hasPromo ? <InfoRow label="Promo discount" value={formatMoney(promoDiscountValue, bookingCurrency)} /> : null}
                     {hasPromo ? <InfoRow label="Promo funding" value={booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'} /> : null}
                     {hasPromo ? <InfoRow label="Promo source" value={booking?.promo_owner || 'Promo applied'} /> : null}
-                    <InfoRow label="Upfront paid" value={`PKR ${paidOnline.toLocaleString()}`} />
-                    <InfoRow label="Remaining balance" value={`PKR ${remainingAmount.toLocaleString()}`} />
-                    {isRefunded ? <InfoRow label="Refunded amount" value={`PKR ${refundAmount.toLocaleString()}`} /> : null}
+                    <InfoRow label="Upfront paid" value={formatMoney(paidOnline, bookingCurrency)} />
+                    <InfoRow label="Remaining balance" value={formatMoney(remainingAmount, bookingCurrency)} />
+                    {isRefunded ? <InfoRow label="Refunded amount" value={formatMoney(refundAmount, bookingCurrency)} /> : null}
                     {refundReason ? <InfoRow label="Refund reason" value={refundReason} /> : null}
                     <InfoRow label="Balance payment method" value={remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online'} />
                     <InfoRow label="Due timing" value={remainingAmount > 0 ? 'Before departure' : 'Paid in full'} />
