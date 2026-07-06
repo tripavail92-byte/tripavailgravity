@@ -153,12 +153,20 @@ async function buildSitemap() {
 }
 
 const serve = sirv(distDir, {
-  dev: true,
+  dev: false,
   single: true,
   etag: true,
-  setHeaders(res, servedPath) {
+  setHeaders(res, pathname) {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v)
-    if (servedPath.endsWith('.html')) res.setHeader('Cache-Control', 'no-store')
+    if (pathname.startsWith('/assets/')) {
+      // Content-hashed build assets — safe to cache forever.
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+    } else if (/\.(svg|png|jpe?g|webp|gif|ico|txt|xml|woff2?)$/i.test(pathname)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+    } else {
+      // The HTML shell (and SPA fallback) must always fetch the newest asset hashes.
+      res.setHeader('Cache-Control', 'no-store')
+    }
   },
 })
 
