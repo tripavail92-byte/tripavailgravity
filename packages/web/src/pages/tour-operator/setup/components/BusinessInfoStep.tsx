@@ -1,4 +1,4 @@
-import { Building, Loader2, Upload } from 'lucide-react'
+import { Building, Loader2, Sparkles, Upload } from 'lucide-react'
 import { ChangeEvent, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
@@ -23,17 +23,55 @@ interface StepProps {
 
 const DESCRIPTION_MAX_CHARS = 500
 
-/** Soft check: a bare 10-13 digit number (optionally +country-code) is almost certainly a
- * phone number, not a business registration number. Non-blocking — registration formats
- * vary by country — but worth a nudge. */
+/** A bare 10-13 digit number (optionally +country-code) is almost certainly a phone
+ * number, not a business registration number. */
 function looksLikePhoneNumber(value: string | null | undefined): boolean {
   const v = (value || '').replace(/[\s-]/g, '')
   return /^(\+?\d{10,13})$/.test(v) && (v.startsWith('03') || v.startsWith('+') || v.startsWith('92'))
 }
 
+/**
+ * Registration-number format check. Lengths genuinely vary (SECP CUIN, trade licences,
+ * foreign registries), so we don't enforce a fixed length — just a sane shape:
+ * 4-30 chars, letters/digits with - / . separators, and not a phone number.
+ * Returns an error message, or null when acceptable (empty is allowed — field is optional).
+ */
+export function registrationNumberError(value: string | null | undefined): string | null {
+  const v = (value || '').trim()
+  if (!v) return null
+  if (looksLikePhoneNumber(v))
+    return 'This looks like a phone number — enter your official business registration number (e.g. SECP / trade licence no.).'
+  if (!/^[A-Za-z0-9][A-Za-z0-9\-/. ]{2,28}[A-Za-z0-9]$/.test(v))
+    return 'Enter a valid registration number — letters and digits, optionally separated by dashes or slashes (e.g. 12345-67890).'
+  return null
+}
+
+/** Ready-made description starters — the operator picks one and personalises it.
+ * Deliberately template-based (no live AI call): instant, predictable, free. */
+function buildDescriptionSuggestions(businessName: string, yearsInBusiness: string): string[] {
+  const name = businessName?.trim() || 'Our company'
+  const exp =
+    yearsInBusiness === '5-plus'
+      ? 'over five years'
+      : yearsInBusiness === '3-5'
+        ? 'more than three years'
+        : yearsInBusiness === '1-3'
+          ? 'several years'
+          : 'a passion for travel'
+
+  return [
+    `${name} crafts unforgettable journeys across Pakistan's most breathtaking destinations. With ${exp} of experience, we handle every detail — transport, stays, and local guides — so travellers can simply enjoy the adventure.`,
+    `${name} specialises in small-group tours led by local experts. From serene valleys to bustling bazaars, we design each itinerary around authentic experiences, comfort, and safety.`,
+    `At ${name}, we believe travel should be effortless. Backed by ${exp} in the field, our team plans seamless trips with verified accommodation, reliable transport, and 24/7 on-tour support.`,
+    `${name} is a family-friendly tour operator offering curated day trips, weekend getaways, and multi-day adventures. Transparent pricing, flexible bookings, and genuine local hospitality on every tour.`,
+    `Adventure is our speciality — ${name} runs guided hiking, trekking, and sightseeing tours with experienced crews, quality equipment, and routes suited to every fitness level.`,
+  ]
+}
+
 export function BusinessInfoStep({ onUpdate, data }: StepProps) {
   const { user } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [formData, setFormData] = useState(
     data.businessInfo || {
       businessName: '',
@@ -160,10 +198,9 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             placeholder="e.g. 12345-67890"
             className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
-          {looksLikePhoneNumber(formData.registrationNumber) ? (
-            <p className="text-xs text-amber-600 dark:text-amber-500 ml-1">
-              This looks like a phone number — enter your official business registration number
-              (e.g. SECP / trade licence no.).
+          {registrationNumberError(formData.registrationNumber) ? (
+            <p className="text-xs text-destructive ml-1">
+              {registrationNumberError(formData.registrationNumber)}
             </p>
           ) : null}
         </div>
@@ -226,12 +263,49 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
         </div>
 
         <div className="space-y-3">
-          <Label
-            htmlFor="description"
-            className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
-          >
-            Business Description
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="description"
+              className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
+            >
+              Business Description
+            </Label>
+            <button
+              type="button"
+              onClick={() => setShowSuggestions((s) => !s)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/15 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI Suggest
+            </button>
+          </div>
+
+          {showSuggestions ? (
+            <div className="space-y-2 rounded-2xl border border-primary/20 bg-primary/[0.04] p-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                Pick a starting point — you can edit it after
+              </p>
+              {buildDescriptionSuggestions(formData.businessName, formData.yearsInBusiness).map(
+                (suggestion, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      handleInputChange(
+                        'businessDescription',
+                        suggestion.slice(0, DESCRIPTION_MAX_CHARS),
+                      )
+                      setShowSuggestions(false)
+                    }}
+                    className="block w-full rounded-xl border border-border/60 bg-background p-3 text-left text-sm text-foreground leading-relaxed hover:border-primary/50 hover:bg-primary/[0.03] transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ),
+              )}
+            </div>
+          ) : null}
+
           <Textarea
             id="description"
             rows={4}

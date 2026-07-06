@@ -16,7 +16,11 @@ export function DashboardHeader() {
       : activeRole?.role_type === 'admin'
         ? 'Administrator'
         : 'Traveler'
-  const isPartnerChrome = activeRole?.role_type === 'hotel_manager'
+  // Both partner roles share the premium dark chrome — previously only hotel_manager did,
+  // which left tour operators with a translucent light drawer over the dark scrim
+  // (washed-out, low-contrast — the "Colouring" issue in the team's QA report).
+  const isPartnerChrome =
+    activeRole?.role_type === 'hotel_manager' || activeRole?.role_type === 'tour_operator'
   const isTourOperator = activeRole?.role_type === 'tour_operator'
 
   return (

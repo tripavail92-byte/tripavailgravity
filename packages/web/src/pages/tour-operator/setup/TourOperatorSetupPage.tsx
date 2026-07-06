@@ -13,7 +13,7 @@ import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOpe
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
-import { BusinessInfoStep } from './components/BusinessInfoStep'
+import { BusinessInfoStep, registrationNumberError } from './components/BusinessInfoStep'
 import { CompletionStep } from './components/CompletionStep'
 import { LockedSetupView } from './components/LockedSetupView'
 import { CoverageAreaStep } from './components/CoverageAreaStep'
@@ -151,6 +151,8 @@ export default function TourOperatorSetupPage() {
         const b = d.businessInfo || {}
         if (!b.businessName?.trim())
           return 'Please enter your registered business name before continuing.'
+        const regError = registrationNumberError(b.registrationNumber)
+        if (regError) return regError
         return null
       }
       case 'coverage': {
