@@ -8,45 +8,35 @@ import {
   ScrollText,
   Upload,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { tourOperatorService } from '@/features/tour-operator/services/tourOperatorService'
+import { type RequiredDoc, requiredBusinessDocs } from '@/features/verification/partnerCountry'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 interface BusinessDocsSubFlowProps {
   onComplete: (data: Record<string, string>) => void
   initialData?: any
+  /** ISO-3166 alpha-2 of the partner's country; NULL/PK → Pakistan document set. */
+  country?: string | null
 }
 
-const REQUIRED_DOCS = [
-  {
-    id: 'secp_certificate',
-    title: 'SECP Certificate',
-    desc: 'Company incorporation doc',
-    icon: ScrollText,
-  },
-  {
-    id: 'tourism_license',
-    title: 'Tourism License',
-    desc: 'DTS government permit',
-    icon: FileCheck,
-  },
-  {
-    id: 'tax_certificate',
-    title: 'Tax Registration (NTN)',
-    desc: 'FBR registration document',
-    icon: FileText,
-  },
-]
+const DOC_ICONS = {
+  incorporation: ScrollText,
+  license: FileCheck,
+  tax: FileText,
+} as const
 
-export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSubFlowProps) {
+export function BusinessDocsSubFlow({ onComplete, initialData, country }: BusinessDocsSubFlowProps) {
   const { user } = useAuth()
   const [urls, setUrls] = useState<Record<string, string>>(initialData || {})
   const [isUploading, setIsUploading] = useState<string | null>(null)
+
+  const REQUIRED_DOCS: RequiredDoc[] = useMemo(() => requiredBusinessDocs(country), [country])
 
   const handleUpload = async (id: string, file: File) => {
     if (!user?.id) return
@@ -63,7 +53,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
     }
   }
 
-  const isAllComplete = REQUIRED_DOCS.every((doc) => !!urls[doc.id])
+  const isAllComplete = REQUIRED_DOCS.filter((doc) => !doc.optional).every((doc) => !!urls[doc.id])
 
   return (
     <div className="max-w-2xl mx-auto py-8">
@@ -80,7 +70,9 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
       </div>
 
       <div className="space-y-4">
-        {REQUIRED_DOCS.map((doc) => (
+        {REQUIRED_DOCS.map((doc) => {
+          const Icon = DOC_ICONS[doc.icon]
+          return (
           <Card
             key={doc.id}
             className={cn(
@@ -98,10 +90,17 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
                       : 'bg-muted/60 text-muted-foreground/70',
                   )}
                 >
-                  <doc.icon className="w-6 h-6" />
+                  <Icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="font-extrabold text-foreground text-base">{doc.title}</p>
+                  <p className="font-extrabold text-foreground text-base">
+                    {doc.title}
+                    {doc.optional && (
+                      <span className="ml-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                        Optional
+                      </span>
+                    )}
+                  </p>
                   <p className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest leading-none mt-1">
                     {doc.desc}
                   </p>
@@ -141,7 +140,8 @@ export function BusinessDocsSubFlow({ onComplete, initialData }: BusinessDocsSub
               </div>
             </div>
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       <div className="mt-12 flex justify-center">
