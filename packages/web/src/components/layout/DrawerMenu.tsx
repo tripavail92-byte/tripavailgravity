@@ -181,7 +181,7 @@ export function DrawerMenu() {
         {
           icon: CreditCard,
           label: 'Payment Methods',
-          path: '/payments',
+          path: '/payment-methods',
           color: 'from-emerald-400 to-teal-500',
         },
         partnerShortcut
@@ -205,7 +205,9 @@ export function DrawerMenu() {
         {
           icon: Building2,
           label: 'My Properties',
-          path: '/properties',
+          // No dedicated /properties route exists — the manager dashboard is
+          // the properties workspace. '/properties' fell through to home.
+          path: '/manager/dashboard',
           color: 'from-purple-500 to-violet-600',
         },
         {
@@ -217,7 +219,7 @@ export function DrawerMenu() {
         {
           icon: Settings,
           label: 'Settings',
-          path: '/settings',
+          path: '/manager/settings',
           color: 'from-gray-500 to-slate-600',
         },
       ]
@@ -233,13 +235,16 @@ export function DrawerMenu() {
         {
           icon: MapPin,
           label: 'My Tours',
-          path: '/tours',
+          // '/tours' is the public traveller browse grid — the operator's own
+          // tours live on the operator dashboard.
+          path: '/operator/dashboard',
           color: 'from-pink-500 to-rose-600',
         },
         {
           icon: Briefcase,
           label: 'Bookings',
-          path: '/bookings',
+          // '/bookings' has no route (fell through to home).
+          path: '/operator/bookings',
           color: 'from-emerald-500 to-teal-600',
         },
         {
@@ -251,7 +256,7 @@ export function DrawerMenu() {
         {
           icon: Settings,
           label: 'Settings',
-          path: '/settings',
+          path: '/operator/settings',
           color: 'from-gray-500 to-slate-600',
         },
       ]

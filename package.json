@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node server.mjs",
     "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@tripavail/web",
+    "dev:mobile": "turbo run dev --filter=@tripavail/mobile",
     "build": "turbo run build --force",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
