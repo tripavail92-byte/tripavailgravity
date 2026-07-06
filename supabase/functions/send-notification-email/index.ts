@@ -67,6 +67,7 @@ Deno.serve(async (req: Request) => {
     const serviceRoleKey   = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const resendApiKey     = Deno.env.get('RESEND_API_KEY')
     const emailFrom        = Deno.env.get('EMAIL_FROM') ?? 'TripAvail <no-reply@tripavail.com>'
+    const emailReplyTo     = Deno.env.get('EMAIL_REPLY_TO') ?? 'support@tripavail.com'
 
     if (!supabaseUrl || !serviceRoleKey || !resendApiKey) {
       throw new Error('Missing required environment variables')
@@ -119,10 +120,12 @@ Deno.serve(async (req: Request) => {
 
     // ── 6. Send via Resend ───────────────────────────────────────────────
     const resendResponse = await sendEmail(resendApiKey, {
-      from:    emailFrom,
-      to:      toEmail,
-      subject: template.subject,
-      html:    template.html,
+      from:     emailFrom,
+      to:       toEmail,
+      subject:  template.subject,
+      html:     template.html,
+      // Replies land in the support inbox instead of dead-ending at no-reply.
+      reply_to: emailReplyTo,
     })
 
     console.log(`[send-notification-email] Sent ${notification.type} to ${toEmail} — Resend ID: ${resendResponse.id}`)
