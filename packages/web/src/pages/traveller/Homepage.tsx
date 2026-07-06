@@ -1,7 +1,7 @@
 import { Briefcase, Mountain, Palmtree, Search, Tent, Waves } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
@@ -15,7 +15,14 @@ import { useFeaturedTours, useHomepageMixTours } from '@/queries/tourQueries'
 
 export default function Homepage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const [heroQuery, setHeroQuery] = useState('')
   const filter = searchParams.get('filter')
+
+  const runSearch = (term: string) => {
+    const t = term.trim()
+    navigate(t ? `/search?q=${encodeURIComponent(t)}` : '/search')
+  }
 
   const showMergedList = filter === 'new' || filter === 'top-rated'
 
@@ -241,11 +248,19 @@ export default function Homepage() {
                 <Search className="w-5 h-5 text-primary" />
                 <input
                   type="text"
+                  value={heroQuery}
+                  onChange={(e) => setHeroQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') runSearch(heroQuery)
+                  }}
                   placeholder="Where to next?"
                   className="w-full bg-transparent border-none outline-none font-bold text-foreground placeholder:text-muted-foreground"
                 />
               </div>
-              <Button className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground type-button transition-all hover:scale-[1.02] shadow-xl shadow-primary/20">
+              <Button
+                onClick={() => runSearch(heroQuery)}
+                className="w-full md:w-auto px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground type-button transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
+              >
                 Explore Now
               </Button>
             </GlassCard>
@@ -260,6 +275,7 @@ export default function Homepage() {
             {categories.map((cat) => (
               <button
                 key={cat.name}
+                onClick={() => runSearch(cat.name)}
                 className="group flex flex-col items-center gap-3 p-4 transition-all hover:scale-110"
               >
                 <div className="w-16 h-16 rounded-3xl bg-muted/60 flex items-center justify-center group-hover:bg-primary/10 group-hover:rotate-12 transition-all duration-500 shadow-sm">
