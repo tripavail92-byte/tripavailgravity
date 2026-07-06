@@ -1,4 +1,4 @@
-import { Camera, Check, Heart, Map, Mountain, PartyPopper, Plane, Plus, X } from 'lucide-react'
+import { Bus, Camera, Check, Heart, Map, Mountain, PartyPopper, Plus, X } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -12,7 +12,7 @@ interface StepProps {
 }
 
 const SERVICES = [
-  { id: 'day-trip', name: 'Day Trips', icon: Plane, desc: 'Single-day excursions' },
+  { id: 'day-trip', name: 'Day Trips', icon: Bus, desc: 'Single-day excursions' },
   { id: 'weekend', name: 'Weekend Getaways', icon: Map, desc: '2-3 day short trips' },
   { id: 'hiking', name: 'Hiking & Trekking', icon: Mountain, desc: 'Mountain & nature trails' },
   { id: 'sightseeing', name: 'Sightseeing', icon: Camera, desc: 'Cultural & city tours' },
