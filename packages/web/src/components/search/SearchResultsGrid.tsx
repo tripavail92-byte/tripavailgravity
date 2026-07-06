@@ -2,6 +2,7 @@ import { MapPin } from 'lucide-react'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
+import { useT } from '@/hooks/useT'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { SearchListing } from '@/queries/searchQueries'
@@ -71,6 +72,7 @@ export function SearchResultsGrid({
   isLoading: boolean
   showDistance?: boolean
 }) {
+  const t = useT()
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -96,10 +98,8 @@ export function SearchResultsGrid({
   if (items.length === 0) {
     return (
       <Card className="rounded-2xl border border-border/60 p-10 text-center">
-        <p className="text-lg font-semibold text-foreground">No experiences match your search</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Try a different destination, widen your price range, or clear a filter.
-        </p>
+        <p className="text-lg font-semibold text-foreground">{t('search.noResults')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('search.noResultsSub')}</p>
       </Card>
     )
   }
