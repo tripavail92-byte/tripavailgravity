@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- TripAvail brand mark — location pin (trip) + checkmark (avail/confirmed). -->
+  <defs>
+    <linearGradient id="ta-rose" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF5D77"/>
+      <stop offset="1" stop-color="#E11D48"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 4C19.85 4 10 13.85 10 26c0 9.5 5.9 17.6 12.3 24a92 92 0 0 0 8.3 7.3c.85.62 1.95.62 2.8 0a92 92 0 0 0 8.3-7.3C48.1 43.6 54 35.5 54 26 54 13.85 44.15 4 32 4Z" fill="url(#ta-rose)"/>
+  <path d="M23 27l6.4 6.4L41 20.8" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
