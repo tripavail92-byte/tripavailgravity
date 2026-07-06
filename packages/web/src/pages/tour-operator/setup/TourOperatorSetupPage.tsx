@@ -9,6 +9,7 @@ import {
   TourOperatorOnboardingData,
   tourOperatorService,
 } from '@/features/tour-operator/services/tourOperatorService'
+import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
@@ -24,7 +25,7 @@ import { ProfilePictureStep } from './components/ProfilePictureStep'
 import { ServicesStep } from './components/ServicesStep'
 import { WelcomeStep } from './components/WelcomeStep'
 
-const STEPS = [
+const STEPS: Array<{ id: string; title: string; component: any }> = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },
   { id: 'personal', title: 'Personal Info', component: PersonalInfoStep },
   { id: 'profile-pic', title: 'Profile Picture', component: ProfilePictureStep },
@@ -46,6 +47,9 @@ export default function TourOperatorSetupPage() {
   const { user, activeRole } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  // Same tier gate the tour-creation wizard reads, so a feature (e.g. Google Maps) doesn't
+  // appear to work during onboarding and then vanish once the operator starts creating tours.
+  const commercialGate = useOperatorCommercialGate(user?.id)
 
   // Handle deep linking to specific steps
   useEffect(() => {
@@ -273,7 +277,12 @@ export default function TourOperatorSetupPage() {
                   {isLocked ? (
                     <LockedSetupView data={setupData} onEdit={() => setIsLocked(false)} />
                   ) : (
-                    <CurrentStepComponent onNext={handleNext} onUpdate={updateData} data={setupData} />
+                    <CurrentStepComponent
+                      onNext={handleNext}
+                      onUpdate={updateData}
+                      data={setupData}
+                      allowGoogleMaps={commercialGate.googleMapsEnabled}
+                    />
                   )}
                 </div>
 

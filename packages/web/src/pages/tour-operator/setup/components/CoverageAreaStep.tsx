@@ -4,6 +4,7 @@ import { motion } from 'motion/react'
 import { useState } from 'react'
 
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || ''
@@ -12,6 +13,9 @@ interface StepProps {
   onNext: () => void
   onUpdate: (data: any) => void
   data: any
+  /** Membership-tier feature gate — same one the tour-creation wizard reads. Defaults to
+   * true so this step still works if a caller doesn't pass it. */
+  allowGoogleMaps?: boolean
 }
 
 const COVERAGE_OPTIONS = [
@@ -21,7 +25,7 @@ const COVERAGE_OPTIONS = [
   { id: 'national', title: 'National', radius: 'Country', desc: 'Global packages' },
 ]
 
-export function CoverageAreaStep({ onUpdate, data }: StepProps) {
+export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: StepProps) {
   const [formData, setFormData] = useState(
     data.coverage || {
       primaryLocation: '',
@@ -41,8 +45,7 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
     update('radii', next)
   }
 
-  return (
-    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+  const content = (
       <div className="space-y-10">
         <div>
           <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
@@ -61,11 +64,25 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
             >
               Primary Operating City *
             </Label>
-            <CityAutocomplete
-              value={formData.primaryLocation}
-              onCitySelect={(city) => update('primaryLocation', city)}
-              placeholder="e.g. Islamabad, Pakistan"
-            />
+            {allowGoogleMaps ? (
+              <CityAutocomplete
+                value={formData.primaryLocation}
+                onCitySelect={(city) => update('primaryLocation', city)}
+                placeholder="e.g. Islamabad, Pakistan"
+              />
+            ) : (
+              <Input
+                value={formData.primaryLocation}
+                onChange={(e) => update('primaryLocation', e.target.value)}
+                placeholder="e.g. Islamabad, Pakistan"
+                className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+              />
+            )}
+            {!allowGoogleMaps ? (
+              <p className="text-xs text-muted-foreground">
+                Google Maps search is not enabled for your current membership tier. Enter the city name manually.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-6">
@@ -142,6 +159,15 @@ export function CoverageAreaStep({ onUpdate, data }: StepProps) {
           </div>
         </div>
       </div>
-    </APIProvider>
   )
+
+  if (allowGoogleMaps) {
+    return (
+      <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places']}>
+        {content}
+      </APIProvider>
+    )
+  }
+
+  return content
 }

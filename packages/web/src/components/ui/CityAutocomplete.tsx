@@ -1,10 +1,13 @@
-import { Loader2, LocateFixed, MapPin } from 'lucide-react'
+import { AlertTriangle, Loader2, LocateFixed, MapPin } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { Input } from '@/components/ui/input'
+import { useGoogleMapsUnavailable } from '@/hooks/useGoogleMapsStatus'
 import { cn } from '@/lib/utils'
+
+const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || ''
 
 interface CityAutocompleteProps {
   value: string
@@ -28,6 +31,7 @@ export function CityAutocomplete({
   const [showSuggestions, setShowSuggestions] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const sessionTokenRef = useRef<any>(null)
+  const mapsUnavailable = useGoogleMapsUnavailable(Boolean(GOOGLE_MAPS_API_KEY))
 
   // Close on outside click
   useEffect(() => {
@@ -51,9 +55,20 @@ export function CityAutocomplete({
       return
     }
 
+    if (mapsUnavailable) {
+      // Google Maps failed to load/authenticate — don't spin forever waiting on a request
+      // that can never succeed; let the caller type the city name manually instead.
+      setIsSearching(false)
+      setPredictions([])
+      return
+    }
+
     setIsSearching(true)
     const timeoutId = setTimeout(async () => {
-      if (!window.google) return
+      if (!window.google) {
+        setIsSearching(false)
+        return
+      }
       try {
         // Prefer Autocomplete (New) if available; fall back to legacy for older projects.
         const hasNewAutocomplete =
@@ -122,7 +137,7 @@ export function CityAutocomplete({
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchQuery, value])
+  }, [searchQuery, value, mapsUnavailable])
 
   const handlePredictionClick = useCallback(
     (prediction: { label: string }) => {
@@ -136,6 +151,10 @@ export function CityAutocomplete({
   )
 
   const detectLocation = useCallback(() => {
+    if (mapsUnavailable) {
+      toast.error('Location search is temporarily unavailable')
+      return
+    }
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser')
       return
@@ -178,7 +197,7 @@ export function CityAutocomplete({
         toast.error('Unable to get your current location')
       },
     )
-  }, [onCitySelect])
+  }, [onCitySelect, mapsUnavailable])
 
   return (
     <div ref={containerRef} className={cn('relative w-full', className)}>
@@ -200,6 +219,11 @@ export function CityAutocomplete({
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {isSearching ? (
             <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          ) : mapsUnavailable ? (
+            <AlertTriangle
+              className="w-4 h-4 text-amber-500"
+              aria-hidden="true"
+            />
           ) : (
             <button
               type="button"
@@ -213,6 +237,12 @@ export function CityAutocomplete({
           )}
         </div>
       </div>
+
+      {mapsUnavailable && (
+        <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-500">
+          Map search unavailable right now — type the city name manually.
+        </p>
+      )}
 
       {/* Suggestions Dropdown */}
       <AnimatePresence>
