@@ -21,6 +21,16 @@ interface StepProps {
   data: any
 }
 
+const DESCRIPTION_MAX_CHARS = 500
+
+/** Soft check: a bare 10-13 digit number (optionally +country-code) is almost certainly a
+ * phone number, not a business registration number. Non-blocking — registration formats
+ * vary by country — but worth a nudge. */
+function looksLikePhoneNumber(value: string | null | undefined): boolean {
+  const v = (value || '').replace(/[\s-]/g, '')
+  return /^(\+?\d{10,13})$/.test(v) && (v.startsWith('03') || v.startsWith('+') || v.startsWith('92'))
+}
+
 export function BusinessInfoStep({ onUpdate, data }: StepProps) {
   const { user } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
@@ -150,6 +160,12 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             placeholder="e.g. 12345-67890"
             className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base"
           />
+          {looksLikePhoneNumber(formData.registrationNumber) ? (
+            <p className="text-xs text-amber-600 dark:text-amber-500 ml-1">
+              This looks like a phone number — enter your official business registration number
+              (e.g. SECP / trade licence no.).
+            </p>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-6">
@@ -220,10 +236,25 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             id="description"
             rows={4}
             value={formData.businessDescription}
-            onChange={(e) => handleInputChange('businessDescription', e.target.value)}
+            onChange={(e) =>
+              handleInputChange(
+                'businessDescription',
+                e.target.value.slice(0, DESCRIPTION_MAX_CHARS),
+              )
+            }
+            maxLength={DESCRIPTION_MAX_CHARS}
             placeholder="Describe your specialties and experience..."
             className="rounded-xl border-border/60 bg-background min-h-[140px] focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base p-4"
           />
+          <p
+            className={`text-xs ml-1 ${
+              (formData.businessDescription?.length ?? 0) >= DESCRIPTION_MAX_CHARS
+                ? 'text-amber-600 dark:text-amber-500 font-semibold'
+                : 'text-muted-foreground'
+            }`}
+          >
+            {formData.businessDescription?.length ?? 0} / {DESCRIPTION_MAX_CHARS} characters
+          </p>
         </div>
       </div>
     </div>

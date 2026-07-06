@@ -114,7 +114,9 @@ export const DEFAULT_MEMBERSHIP_TIER_CONFIGS: Record<MembershipTierCode, Members
     minimumDepositPercent: 20,
     monthlyPublishLimit: 5,
     pickupMultiCityEnabled: false,
-    googleMapsEnabled: false,
+    // Google Maps is available on every tier — tiers differentiate on publish limits
+    // (and commission/deposit terms), not on core listing tooling.
+    googleMapsEnabled: true,
     aiItineraryEnabled: false,
     aiMonthlyCredits: 0,
     supportPriority: 1,

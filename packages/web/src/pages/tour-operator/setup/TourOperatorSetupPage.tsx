@@ -136,7 +136,41 @@ export default function TourOperatorSetupPage() {
     [user?.id, currentStep],
   )
 
+  /** Required-field check for the current step — the wizard previously advanced even with
+   * starred fields empty. Only enforces fields visibly marked required (*) in each step. */
+  const stepValidationError = (stepId: string): string | null => {
+    const d = setupData as any
+    switch (stepId) {
+      case 'personal': {
+        const p = d.personalInfo || {}
+        if (!p.operatorName?.trim()) return 'Please enter your full name before continuing.'
+        if (!p.phone?.trim()) return 'Please add your phone number before continuing.'
+        return null
+      }
+      case 'business': {
+        const b = d.businessInfo || {}
+        if (!b.businessName?.trim())
+          return 'Please enter your registered business name before continuing.'
+        return null
+      }
+      case 'coverage': {
+        const c = d.coverage || {}
+        if (!c.primaryLocation?.trim())
+          return 'Please enter your primary operating city before continuing.'
+        return null
+      }
+      default:
+        return null
+    }
+  }
+
   const handleNext = async () => {
+    const validationError = stepValidationError(STEPS[currentStep].id)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
+
     const nextStep = currentStep + 1
     const isFinal = currentStep === STEPS.length - 2
     // Save data + the step we're advancing TO so resume lands on the right step

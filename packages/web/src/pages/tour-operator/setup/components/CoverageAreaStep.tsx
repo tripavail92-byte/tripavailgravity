@@ -1,5 +1,5 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Check, Globe } from 'lucide-react'
+import { Building2, Check, Globe, Map, MapPin } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -19,10 +19,10 @@ interface StepProps {
 }
 
 const COVERAGE_OPTIONS = [
-  { id: 'city', title: 'City Only', radius: '15 km', desc: 'Tours within city limits' },
-  { id: 'region', title: 'Regional', radius: '50 km', desc: 'Nearby towns & nature' },
-  { id: 'province', title: 'Provincial', radius: 'Province', desc: 'Multi-day state tours' },
-  { id: 'national', title: 'National', radius: 'Country', desc: 'Global packages' },
+  { id: 'city', title: 'City Only', radius: '15 km', desc: 'Tours within city limits', icon: Building2 },
+  { id: 'region', title: 'Regional', radius: '50 km', desc: 'Nearby towns & nature', icon: MapPin },
+  { id: 'province', title: 'Provincial', radius: 'Province', desc: 'Multi-day state tours', icon: Map },
+  { id: 'national', title: 'National', radius: 'Country', desc: 'Global packages', icon: Globe },
 ]
 
 export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: StepProps) {
@@ -113,7 +113,7 @@ export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: Ste
                               : 'bg-muted text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary'
                           }`}
                         >
-                          <Globe className="w-7 h-7" aria-hidden="true" />
+                          <opt.icon className="w-7 h-7" aria-hidden="true" />
                         </div>
                         {isSelected && (
                           <div className="bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-background/30">

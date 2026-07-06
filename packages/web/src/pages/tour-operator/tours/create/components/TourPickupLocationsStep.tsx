@@ -1342,7 +1342,7 @@ export function TourPickupLocationsStep({
                             <Input
                               value={searchQuery}
                               onChange={(event) => setSearchQuery(event.target.value)}
-                              placeholder="Manual search unavailable on this tier"
+                              placeholder="Map search unavailable — enter the pickup details below"
                               className="rounded-2xl"
                               disabled
                             />
