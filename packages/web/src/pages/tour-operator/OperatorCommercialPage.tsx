@@ -46,6 +46,7 @@ import {
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
 import { useAuth } from '@/hooks/useAuth'
+import { DEFAULT_MEMBERSHIP_TIER_CONFIGS } from '@tripavail/shared/commercial/engine'
 import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
 // TODO: use operator_commercial_profiles.currency once plumbed into this view.
@@ -1324,6 +1325,95 @@ export default function OperatorCommercialPage() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Membership tiers — shows the operator which tier they're on and what an
+                upgrade unlocks. Upgrades are handled by the TripAvail team (no self-serve
+                billing yet), so the CTA routes to support. */}
+            <Card className="glass-card rounded-3xl border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Gem className="h-5 w-5" />
+                  Membership &amp; upgrades
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {Object.values(DEFAULT_MEMBERSHIP_TIER_CONFIGS).map((t) => {
+                    const isCurrent = (profile?.membership_tier_code ?? 'gold') === t.code
+                    return (
+                      <div
+                        key={t.code}
+                        className={`relative flex flex-col rounded-3xl border p-5 transition-all ${
+                          isCurrent
+                            ? 'border-primary bg-primary/[0.06] shadow-lg shadow-primary/10'
+                            : 'border-border/60 bg-background/60'
+                        }`}
+                      >
+                        {isCurrent ? (
+                          <Badge className="absolute -top-2.5 right-4 border-0 bg-primary text-primary-foreground">
+                            Your tier
+                          </Badge>
+                        ) : null}
+                        <p className="text-lg font-black tracking-tight text-foreground">
+                          {t.label}
+                        </p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {formatMoney(t.monthlyFee)} / month
+                        </p>
+                        <ul className="mt-4 space-y-2 text-sm text-muted-foreground flex-1">
+                          <li>
+                            <span className="font-semibold text-foreground">
+                              {t.monthlyPublishLimit} tours
+                            </span>{' '}
+                            published per month
+                          </li>
+                          <li>
+                            <span className="font-semibold text-foreground">
+                              {t.commissionRate}%
+                            </span>{' '}
+                            platform commission
+                          </li>
+                          <li>
+                            Minimum deposit{' '}
+                            <span className="font-semibold text-foreground">
+                              {t.minimumDepositPercent}%
+                            </span>
+                          </li>
+                          <li>Google Maps tools included</li>
+                          <li className={t.pickupMultiCityEnabled ? '' : 'line-through opacity-50'}>
+                            Multi-city pickup locations
+                          </li>
+                          <li className={t.aiItineraryEnabled ? '' : 'line-through opacity-50'}>
+                            AI itinerary tools
+                            {t.aiItineraryEnabled ? ` (${t.aiMonthlyCredits} credits/mo)` : ''}
+                          </li>
+                          <li>
+                            {t.supportPriority >= 3
+                              ? 'Dedicated priority support'
+                              : t.supportPriority === 2
+                                ? 'Priority support'
+                                : 'Standard support'}
+                          </li>
+                        </ul>
+                        {!isCurrent ? (
+                          <Button asChild className="mt-5 w-full rounded-2xl" variant="outline">
+                            <Link to="/help">Upgrade to {t.label}</Link>
+                          </Button>
+                        ) : (
+                          <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/10 py-2 text-center text-sm font-semibold text-primary">
+                            Active
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Tier upgrades are handled by the TripAvail team — contact us via Help &amp;
+                  Support and we&apos;ll switch you over.
+                </p>
+              </CardContent>
+            </Card>
 
             <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
               <Card className="glass-card rounded-3xl border-border/50">
