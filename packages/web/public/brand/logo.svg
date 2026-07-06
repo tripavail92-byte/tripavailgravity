@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 72" width="340" height="72">
-  <!-- TripAvail lockup — adaptive: "trip" flips dark/light with the viewer's color scheme,
-       "avail" and the mark stay brand rose. Works standalone and in <img>. -->
+  <!-- TripAvail lockup — Gateway mark + adaptive two-tone wordmark ("trip" flips with the
+       viewer's color scheme, "avail" and the mark stay brand rose). -->
   <defs>
     <linearGradient id="ta-rose-lk" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FF5D77"/>
@@ -12,9 +12,9 @@
       .ta-wm { font: 700 44px 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.035em; }
     </style>
   </defs>
-  <g transform="translate(4 4) scale(1)">
-    <path d="M32 4C19.85 4 10 13.85 10 26c0 9.5 5.9 17.6 12.3 24a92 92 0 0 0 8.3 7.3c.85.62 1.95.62 2.8 0a92 92 0 0 0 8.3-7.3C48.1 43.6 54 35.5 54 26 54 13.85 44.15 4 32 4Z" fill="url(#ta-rose-lk)"/>
-    <path d="M23 27l6.4 6.4L41 20.8" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(4 4)">
+    <path d="M18.5 53V32.5C18.5 24 24.5 18 32 18s13.5 6 13.5 14.5V53" fill="none" stroke="url(#ta-rose-lk)" stroke-width="7.5" stroke-linecap="round"/>
+    <circle cx="32" cy="41" r="5.4" fill="url(#ta-rose-lk)"/>
   </g>
   <text x="76" y="51" class="ta-wm ta-trip">trip</text>
   <text x="145" y="51" class="ta-wm" fill="#FF385C">avail</text>
