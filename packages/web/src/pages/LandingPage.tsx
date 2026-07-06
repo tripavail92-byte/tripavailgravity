@@ -18,6 +18,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { GeoHomeHero } from '@/components/home/GeoHomeHero'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
+import { useSeo } from '@/hooks/useSeo'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
@@ -54,6 +55,30 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
   const isAuthenticated = Boolean(user && activeRole)
+
+  useSeo({
+    canonicalPath: '/',
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'TripAvail',
+        url: 'https://tripavail.com',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: 'https://tripavail.com/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: 'TripAvail',
+        url: 'https://tripavail.com',
+        logo: 'https://tripavail.com/favicon.svg',
+      },
+    ],
+  })
 
   const handlePackageSelect = (packageId: string) => {
     navigate(`/packages/${packageId}`)
