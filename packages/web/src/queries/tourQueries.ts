@@ -35,6 +35,7 @@ export const tourKeys = {
   curated: () => [...tourKeys.all, 'curated'] as const,
   category: (category: string) => [...tourKeys.curated(), 'category', category] as const,
   pakistanNorthern: () => [...tourKeys.curated(), 'pakistan_northern'] as const,
+  byCountry: (country: string) => [...tourKeys.curated(), 'by_country', country] as const,
   homepageMerge: (take: number) => [...tourKeys.all, 'homepage_merge', take] as const,
   homepageMix: (take: number) => [...tourKeys.all, 'homepage_mix', take] as const,
 }
@@ -387,6 +388,84 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
       shortDescription: tour.short_description ?? null,
       durationDays: tour.duration_days ?? null,
     }
+  })
+}
+
+/**
+ * Fetch live tours whose stored country matches `country` (tours.location.country).
+ * Powers the geo-adaptive "Popular in {country}" home rail. Returns [] for markets
+ * with no supply yet — the caller falls back to global content (never fabricated).
+ */
+async function fetchToursByCountry(country: string, take: number = 12): Promise<MappedTour[]> {
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
+    .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    // PostgREST JSON path filter — matches how country is stored on the listing
+    .eq('location->>country', country)
+    .order('is_featured', { ascending: false })
+    .order('rating', { ascending: false })
+    .limit(take)
+
+  if (error) {
+    if (isAbortError(error)) {
+      return []
+    }
+    console.error('[tourQueries] Error fetching tours by country:', { country, error })
+    throw error
+  }
+
+  if (!data) return []
+
+  return data.map((tour: any) => {
+    const locationObj = tour.location || {}
+    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
+    const location = destinationCities.length > 1
+      ? destinationCities.join(' · ')
+      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
+
+    const images = Array.isArray(tour.images)
+      ? tour.images
+      : [
+          'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=1080',
+        ]
+
+    return {
+      id: tour.id,
+      slug: tour.slug,
+      title: tour.title || 'Unnamed Tour',
+      location: location || country,
+      tourPrice: Number(tour.price) > 0 ? Number(tour.price) : 'Contact',
+      currency: String(tour.currency || 'PKR'),
+      rating: Number(tour.rating) || 0,
+      images,
+      badge: tour.is_featured ? 'Featured' : tour.tour_type || 'Tour',
+      shortDescription: tour.short_description ?? null,
+      durationDays: tour.duration_days ?? null,
+    }
+  })
+}
+
+/**
+ * Popular tours in the visitor's country for the geo-adaptive home. Disabled (no fetch)
+ * until a country is known; empty result → caller shows the "expanding" / global fallback.
+ */
+export function usePopularInCountryTours(
+  country: string | null | undefined,
+  take: number = 12,
+  options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: tourKeys.byCountry(country ?? ''),
+    queryFn: () => fetchToursByCountry(country as string, take),
+    enabled: Boolean(country),
+    staleTime: 8 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    ...options,
   })
 }
 
