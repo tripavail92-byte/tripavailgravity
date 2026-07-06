@@ -38,6 +38,7 @@ import { packageBookingService } from '@/features/booking'
 import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons'
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
+import { useMoney } from '@/hooks/useMoney'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -63,6 +64,7 @@ const getAmenityConfig = (amenityStr: string) => {
 export default function PackageDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const money = useMoney()
   const [packageData, setPackageData] = useState<any>(null)
   const [roomData, setRoomData] = useState<any[]>([])
   const [aggregatedAmenities, setAggregatedAmenities] = useState<string[]>([])
@@ -358,7 +360,6 @@ export default function PackageDetailsPage() {
   const basePrice = Number(packageData?.base_price_per_night || 0)
   const displayBasePrice = priceQuote?.price_per_night || basePrice
   const totalPrice = priceQuote?.total_price || 0
-  const packageCurrency = String(packageData?.currency || 'PKR')
   const maxGuests = packageData?.max_guests || 4
 
   const handleRequestToBook = async () => {
@@ -691,13 +692,29 @@ export default function PackageDetailsPage() {
                                 {offer.name}
                               </div>
                               <div className="flex items-center gap-2 mt-1">
-                                <span className="line-through text-muted-foreground/70 text-xs">
-                                  {packageCurrency} {Number(offer.originalPrice || 0).toLocaleString()}
-                                </span>
-                                <span className="font-black text-success text-sm">
-                                  {packageCurrency}{' '}
-                                  {(Number(offer.originalPrice || 0) * (1 - Number(offer.discount || 0) / 100)).toFixed(0)}
-                                </span>
+                                {(() => {
+                                  const orig = money(
+                                    Number(offer.originalPrice || 0),
+                                    packageData?.currency,
+                                  )
+                                  const discounted = money(
+                                    Number(offer.originalPrice || 0) *
+                                      (1 - Number(offer.discount || 0) / 100),
+                                    packageData?.currency,
+                                  )
+                                  return (
+                                    <>
+                                      <span className="line-through text-muted-foreground/70 text-xs">
+                                        {orig.estimate ? '≈ ' : ''}
+                                        {orig.text}
+                                      </span>
+                                      <span className="font-black text-success text-sm">
+                                        {discounted.estimate ? '≈ ' : ''}
+                                        {discounted.text}
+                                      </span>
+                                    </>
+                                  )
+                                })()}
                               </div>
                             </div>
                             <GlassBadge variant="warning" size="sm" className="font-black">
@@ -836,7 +853,10 @@ export default function PackageDetailsPage() {
               <div className="flex items-end gap-2 mb-8 relative">
                 <span className="type-h1 text-foreground tracking-tight">
                   {displayBasePrice > 0
-                    ? `${packageCurrency} ${displayBasePrice.toLocaleString()}`
+                    ? (() => {
+                        const m = money(displayBasePrice, packageData?.currency)
+                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                      })()
                     : 'Price on request'}
                 </span>
                 {displayBasePrice > 0 && (
@@ -1024,20 +1044,31 @@ export default function PackageDetailsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="pt-6 border-t border-border/50 space-y-4"
                   >
-                    <div className="flex justify-between items-center type-overline text-muted-foreground">
-                      <span>
-                        {packageCurrency} {displayBasePrice.toLocaleString()} × {nights} night{nights > 1 ? 's' : ''}
-                      </span>
-                      <span className="text-foreground">{packageCurrency} {totalPrice.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-muted/40 p-4 rounded-2xl">
-                      <span className="type-overline text-foreground">
-                        Total Cost
-                      </span>
-                      <span className="type-h2 text-primary">
-                        {packageCurrency} {totalPrice.toLocaleString()}
-                      </span>
-                    </div>
+                    {(() => {
+                      const perNight = money(displayBasePrice, packageData?.currency)
+                      const total = money(totalPrice, packageData?.currency)
+                      return (
+                        <>
+                          <div className="flex justify-between items-center type-overline text-muted-foreground">
+                            <span>
+                              {perNight.estimate ? '≈ ' : ''}
+                              {perNight.text} × {nights} night{nights > 1 ? 's' : ''}
+                            </span>
+                            <span className="text-foreground">
+                              {total.estimate ? '≈ ' : ''}
+                              {total.text}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center bg-muted/40 p-4 rounded-2xl">
+                            <span className="type-overline text-foreground">Total Cost</span>
+                            <span className="type-h2 text-primary">
+                              {total.estimate ? '≈ ' : ''}
+                              {total.text}
+                            </span>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </motion.div>
                 )}
               </div>

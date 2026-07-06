@@ -46,9 +46,11 @@ import {
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
 import { useAuth } from '@/hooks/useAuth'
+import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
-function formatMoney(value: number) {
-  return `PKR ${value.toLocaleString()}`
+// TODO: use operator_commercial_profiles.currency once plumbed into this view.
+function formatMoney(value: number, currency: string = 'PKR') {
+  return formatMoneyShared(value, currency)
 }
 
 function formatDate(value?: string | null) {
@@ -2483,8 +2485,8 @@ export default function OperatorCommercialPage() {
                             <TableCell>{promotion.is_active ? 'Active' : 'Inactive'}</TableCell>
                             <TableCell className="text-right">
                               {promotion.discount_type === 'percentage'
-                                ? `${promotion.discount_value}%${promotion.max_discount_value ? ` capped at PKR ${promotion.max_discount_value.toLocaleString()}` : ''}`
-                                : `PKR ${promotion.discount_value.toLocaleString()}`}
+                                ? `${promotion.discount_value}%${promotion.max_discount_value ? ` capped at ${formatMoney(promotion.max_discount_value)}` : ''}`
+                                : formatMoney(promotion.discount_value)}
                             </TableCell>
                             <TableCell className="text-right">
                               <Button

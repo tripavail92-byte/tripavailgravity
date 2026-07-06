@@ -1,4 +1,5 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { formatMoney } from '@tripavail/shared/utils/money'
 import {
   AlertCircle,
   ArrowLeft,
@@ -663,7 +664,7 @@ export default function TourCheckoutPage() {
                       <div className="flex items-center justify-between text-lg">
                         <span className="text-foreground font-bold">Total booking amount</span>
                         <span className="font-black text-primary">
-                          {tour.currency} {Number(pendingBooking.total_price || totalPrice).toFixed(2)}
+                          {formatMoney(Number(pendingBooking.total_price || totalPrice), tour.currency)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -671,20 +672,20 @@ export default function TourCheckoutPage() {
                           Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
                         </span>
                         <span className="font-bold text-foreground">
-                          {tour.currency} {Number(pendingBooking.upfront_amount ?? payNowAmount).toFixed(2)}
+                          {formatMoney(Number(pendingBooking.upfront_amount ?? payNowAmount), tour.currency)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground font-medium">Pay later to operator</span>
                         <span className="font-bold text-foreground">
-                          {tour.currency} {Number(pendingBooking.remaining_amount ?? payLaterAmount).toFixed(2)}
+                          {formatMoney(Number(pendingBooking.remaining_amount ?? payLaterAmount), tour.currency)}
                         </span>
                       </div>
                     </div>
 
                     {usesDeposit ? (
                       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-                        You are paying only {tour.currency} {Number(pendingBooking.upfront_amount ?? payNowAmount).toFixed(2)} now to confirm your booking. The remaining {tour.currency} {Number(pendingBooking.remaining_amount ?? payLaterAmount).toFixed(2)} will be paid directly to the tour operator before departure.
+                        You are paying only {formatMoney(Number(pendingBooking.upfront_amount ?? payNowAmount), tour.currency)} now to confirm your booking. The remaining {formatMoney(Number(pendingBooking.remaining_amount ?? payLaterAmount), tour.currency)} will be paid directly to the tour operator before departure.
                       </div>
                     ) : null}
 
@@ -780,7 +781,7 @@ export default function TourCheckoutPage() {
                         {appliedPromotion ? (
                           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                             <p className="font-semibold">
-                              {appliedPromotion.code} applied: {tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)} off
+                              {appliedPromotion.code} applied: {formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)} off
                             </p>
                             <p className="mt-1 text-xs text-emerald-800">
                               {appliedPromotion.ownerLabel} · {appliedPromotion.fundingSource === 'platform' ? 'TripAvail funded' : 'Operator funded'}
@@ -794,7 +795,7 @@ export default function TourCheckoutPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground font-medium">Tour price</span>
                       <span className="text-foreground font-bold">
-                        {tour.currency} {effectiveUnitPrice.toFixed(2)} per person
+                        {formatMoney(effectiveUnitPrice, tour.currency)} per person
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -811,13 +812,13 @@ export default function TourCheckoutPage() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground font-medium">Original booking total</span>
                           <span className="text-foreground font-bold">
-                            {tour.currency} {basePaymentTerms.totalAmount.toFixed(2)}
+                            {formatMoney(basePaymentTerms.totalAmount, tour.currency)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground font-medium">Promo discount</span>
                           <span className="font-bold text-emerald-700">
-                            -{tour.currency} {appliedPromotion.appliedDiscountValue.toFixed(2)}
+                            -{formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)}
                           </span>
                         </div>
                         <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-900">
@@ -829,7 +830,7 @@ export default function TourCheckoutPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground font-medium">Total booking amount</span>
                       <span className="text-foreground font-bold">
-                        {tour.currency} {totalPrice.toFixed(2)}
+                        {formatMoney(totalPrice, tour.currency)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -837,24 +838,24 @@ export default function TourCheckoutPage() {
                         Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
                       </span>
                       <span className="text-foreground font-bold">
-                        {tour.currency} {payNowAmount.toFixed(2)}
+                        {formatMoney(payNowAmount, tour.currency)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground font-medium">Pay later to operator</span>
                       <span className="text-foreground font-bold">
-                        {tour.currency} {payLaterAmount.toFixed(2)}
+                        {formatMoney(payLaterAmount, tour.currency)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-foreground font-bold">Payment Summary</span>
                       <span className="type-h2 text-primary">
-                        {tour.currency} {payNowAmount.toFixed(2)}
+                        {formatMoney(payNowAmount, tour.currency)}
                       </span>
                     </div>
                     {usesDeposit ? (
                       <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-                        You pay {tour.currency} {payNowAmount.toFixed(2)} now. Remaining {tour.currency} {payLaterAmount.toFixed(2)} will be paid directly to the tour operator before departure.
+                        You pay {formatMoney(payNowAmount, tour.currency)} now. Remaining {formatMoney(payLaterAmount, tour.currency)} will be paid directly to the tour operator before departure.
                       </div>
                     ) : null}
                   </div>
@@ -875,7 +876,7 @@ export default function TourCheckoutPage() {
                         </>
                       ) : (
                         <>
-                          Pay {tour.currency} {payNowAmount.toFixed(2)} & Confirm Booking
+                          Pay {formatMoney(payNowAmount, tour.currency)} & Confirm Booking
                           <ChevronRight className="w-4 h-4 ml-2" />
                         </>
                       )}
@@ -1081,11 +1082,11 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
       >
         {submitting
           ? 'Processing...'
-          : `Pay ${props.currency} ${Number(props.chargeAmount || 0).toFixed(2)} & Confirm Booking`}
+          : `Pay ${formatMoney(Number(props.chargeAmount || 0), props.currency)} & Confirm Booking`}
       </Button>
       {props.remainingAmount > 0 ? (
         <p className="text-center text-xs text-muted-foreground">
-          Remaining {props.currency} {Number(props.remainingAmount || 0).toFixed(2)} will be paid directly to the tour operator before departure.
+          Remaining {formatMoney(Number(props.remainingAmount || 0), props.currency)} will be paid directly to the tour operator before departure.
         </p>
       ) : null}
     </div>

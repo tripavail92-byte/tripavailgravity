@@ -2,6 +2,7 @@ import { Hotel } from '@tripavail/shared/services/searchService'
 import { Heart, Star } from 'lucide-react'
 
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
+import { useMoney } from '@/hooks/useMoney'
 
 interface HotelCardProps {
   hotel: Hotel
@@ -9,6 +10,9 @@ interface HotelCardProps {
 }
 
 export function HotelCard({ hotel, onClick }: HotelCardProps) {
+  const money = useMoney()
+  const price = money(hotel.base_price_per_night)
+
   // Fallback image if none provided
   const image =
     hotel.main_image_url ||
@@ -46,7 +50,10 @@ export function HotelCard({ hotel, onClick }: HotelCardProps) {
 
       <CardFooter className="p-4 pt-0">
         <div className="flex items-baseline gap-1">
-          <span className="font-bold text-lg">${hotel.base_price_per_night}</span>
+          <span className="font-bold text-lg">
+            {price.estimate ? '≈ ' : ''}
+            {price.text}
+          </span>
           <span className="text-muted-foreground text-sm">night</span>
         </div>
       </CardFooter>
