@@ -10,6 +10,7 @@ import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useT } from '@/hooks/useT'
 import { useVisitorCountry } from '@/lib/visitorGeo'
 import { usePopularInCountryTours } from '@/queries/tourQueries'
 
@@ -25,6 +26,7 @@ import { usePopularInCountryTours } from '@/queries/tourQueries'
  */
 export function GeoHomeHero() {
   const navigate = useNavigate()
+  const t = useT()
   const [searchOpen, setSearchOpen] = useState(false)
   const country = useVisitorCountry()
   const { data: popular = [], isLoading } = usePopularInCountryTours(country?.name, 12)
@@ -42,20 +44,19 @@ export function GeoHomeHero() {
     navigate(`/search?${params.toString()}`)
   }
 
-  // Copy variants
-  let eyebrow = 'Curated worldwide'
-  let headline = 'Premium travel, curated for real moments.'
-  let subline =
-    'Boutique stays, romantic escapes & family getaways — transparent pricing, instant confirmation.'
+  // Copy variants (localized; country name interpolated)
+  let eyebrow = t('hero.curatedWorldwide')
+  let headline = t('hero.defaultTitle')
+  let subline = t('hero.defaultSub')
 
   if (country && hasSupply) {
-    eyebrow = `Popular in ${country.name}`
-    headline = `Discover ${country.name}.`
-    subline = `Handpicked stays & experiences across ${country.name} — transparent pricing, instant confirmation.`
+    eyebrow = t('hero.popularInEyebrow', { country: country.name })
+    headline = t('hero.discoverTitle', { country: country.name })
+    subline = t('hero.discoverSub', { country: country.name })
   } else if (country && !resolving && !hasSupply) {
-    eyebrow = `Coming soon to ${country.name}`
-    headline = `We're expanding to ${country.name}.`
-    subline = `Verified stays & tours are on their way to ${country.name}. In the meantime, explore top experiences worldwide.`
+    eyebrow = t('hero.comingSoonEyebrow', { country: country.name })
+    headline = t('hero.expandingTitle', { country: country.name })
+    subline = t('hero.expandingSub', { country: country.name })
   }
 
   return (
@@ -83,7 +84,7 @@ export function GeoHomeHero() {
             <div className="max-w-2xl text-white">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-sm px-3 py-1 text-xs sm:text-sm font-semibold ring-1 ring-white/25">
                 {country ? <MapPin className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
-                {resolving ? 'Finding experiences near you…' : eyebrow}
+                {resolving ? t('hero.finding') : eyebrow}
               </div>
 
               <h1 className="mt-4 text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-balance drop-shadow-sm">
@@ -100,9 +101,9 @@ export function GeoHomeHero() {
                   aria-label="Search experiences"
                 >
                   <Search className="w-4 h-4 text-primary" />
-                  <span className="font-semibold text-sm">Where to next?</span>
+                  <span className="font-semibold text-sm">{t('search.whereToNext')}</span>
                   <span className="ml-1 inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-                    Explore
+                    {t('hero.explore')}
                   </span>
                 </button>
 
@@ -112,7 +113,7 @@ export function GeoHomeHero() {
                     variant="outline"
                     className="h-11 rounded-full border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
                   >
-                    <Link to="/hotels">Browse worldwide</Link>
+                    <Link to="/hotels">{t('hero.browseWorldwide')}</Link>
                   </Button>
                 )}
               </div>
@@ -127,13 +128,13 @@ export function GeoHomeHero() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Popular in {country.name}
+                {t('hero.popularInTitle', { country: country.name })}
               </h2>
-              <p className="text-muted-foreground mt-1">Trending experiences near you</p>
+              <p className="text-muted-foreground mt-1">{t('hero.trendingNearYou')}</p>
             </div>
             {hasSupply && (
               <Button asChild variant="link" className="px-0">
-                <Link to="/tours">View All</Link>
+                <Link to="/tours">{t('common.viewAll')}</Link>
               </Button>
             )}
           </div>

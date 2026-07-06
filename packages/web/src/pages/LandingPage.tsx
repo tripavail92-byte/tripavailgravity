@@ -26,6 +26,8 @@ import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { CurrencySwitcher } from '@/components/CurrencySwitcher'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { useT } from '@/hooks/useT'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -590,6 +592,7 @@ function PakistanNorthernToursRow() {
 // Airbnb Header Component
 function AirbnbHeader() {
   const navigate = useNavigate()
+  const t = useT()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const { user, activeRole } = useAuth()
   const isAuthenticated = Boolean(user && activeRole)
@@ -655,7 +658,7 @@ function AirbnbHeader() {
                   type="text"
                   readOnly
                   value=""
-                  placeholder="Where to next?"
+                  placeholder={t('search.whereToNext')}
                   className="w-full bg-transparent border-none outline-none font-bold text-foreground placeholder:text-muted-foreground"
                   onFocus={() => setIsSearchOverlayOpen(true)}
                 />
@@ -666,14 +669,15 @@ function AirbnbHeader() {
                 onClick={() => setIsSearchOverlayOpen(true)}
                 className="px-10 h-14 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
               >
-                Explore Now
+                {t('nav.exploreNow')}
               </Button>
             </GlassCard>
           </div>
 
           {/* Right User Menu */}
           <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
-            {/* Currency picker + dark/light toggle — always in the top bar */}
+            {/* Language + currency picker + dark/light toggle — always in the top bar */}
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <CurrencySwitcher className="hidden sm:inline-flex" />
             <ThemeToggle />
 
@@ -684,7 +688,7 @@ function AirbnbHeader() {
                 className="hidden md:inline-flex h-9 rounded-full px-4 font-semibold text-foreground hover:bg-muted"
                 onClick={() => navigate('/partner/onboarding')}
               >
-                Become a Partner
+                {t('nav.becomePartner')}
               </Button>
             )}
 
@@ -695,13 +699,13 @@ function AirbnbHeader() {
                   className="h-9 rounded-full px-4"
                   onClick={() => navigate('/auth?mode=login')}
                 >
-                  Log In
+                  {t('nav.login')}
                 </Button>
                 <Button
                   className="h-9 rounded-full px-4 text-primary-foreground"
                   onClick={() => navigate('/auth?mode=signup')}
                 >
-                  Sign Up
+                  {t('nav.signup')}
                 </Button>
               </div>
             ) : (
@@ -724,7 +728,9 @@ function AirbnbHeader() {
                 aria-label="Open search"
               >
                 <Search className="w-4 h-4 text-primary" />
-                <span className="truncate font-bold text-foreground text-sm">Where to next?</span>
+                <span className="truncate font-bold text-foreground text-sm">
+                  {t('search.whereToNext')}
+                </span>
               </button>
 
               <Button
@@ -732,7 +738,7 @@ function AirbnbHeader() {
                 onClick={() => setIsSearchOverlayOpen(true)}
                 className="px-5 h-10 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 shrink-0"
               >
-                Explore Now
+                {t('nav.exploreNow')}
               </Button>
             </GlassCard>
           </div>
