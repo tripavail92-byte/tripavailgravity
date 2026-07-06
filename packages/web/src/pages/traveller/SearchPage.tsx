@@ -1,5 +1,5 @@
 import { Search, SlidersHorizontal, Star } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { SearchOverlay } from '@/components/search/SearchOverlay'
@@ -17,6 +17,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
+import { useTravellerCityStore } from '@/store/travellerCityStore'
 import {
   type SearchListingType,
   type SearchSort,
@@ -39,16 +40,28 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const { coords } = useTravellerCoords()
+  const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
 
   // ---- read filters from the URL --------------------------------------------
   const q = searchParams.get('q') || ''
   const location = searchParams.get('location') || ''
   const effectiveQuery = [q, location].map((s) => s.trim()).filter(Boolean).join(' ')
 
-  const typesParam = (searchParams.get('types') || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s): s is SearchListingType => s === 'tour' || s === 'package')
+  const typesParam = useMemo(
+    () =>
+      (searchParams.get('types') || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s): s is SearchListingType => s === 'tour' || s === 'package'),
+    [searchParams],
+  )
+
+  // Seed the shared geo origin from a searched place (non-destructive: only sets coords
+  // when the term matches a known city, so "nearest" sort uses the searched destination).
+  useEffect(() => {
+    const seed = (location || q).trim()
+    if (seed) setSelectedCityByName(seed)
+  }, [location, q, setSelectedCityByName])
   const country = searchParams.get('country') || ''
   const category = searchParams.get('category') || ''
   const minPrice = numOrNull(searchParams.get('minPrice'))
@@ -86,7 +99,9 @@ export default function SearchPage() {
   const { data: facets } = useSearchFacets(baseFilters)
 
   const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.rows), [data])
-  const total = data?.pages?.[0]?.total ?? facets?.total ?? 0
+  // Header count comes from facets (a single consistent snapshot); pagination is driven
+  // by the per-page window total below.
+  const total = facets?.total ?? data?.pages?.[0]?.total ?? 0
 
   const tourCount = facets?.types?.tour ?? 0
   const packageCount = facets?.types?.package ?? 0
@@ -104,19 +119,26 @@ export default function SearchPage() {
     typesParam.length === 1 ? typesParam[0] : 'all'
 
   const activeFilterCount =
-    (minPrice != null ? 1 : 0) + (maxPrice != null ? 1 : 0) + (minRating ? 1 : 0) + (country ? 1 : 0)
+    (minPrice != null ? 1 : 0) +
+    (maxPrice != null ? 1 : 0) +
+    (minRating ? 1 : 0) +
+    (country ? 1 : 0) +
+    (category ? 1 : 0)
 
+  // The overlay/search bar owns q/location/category/price/rating. Merge onto the current
+  // URL so it never wipes the active type, sort or country selection.
   const handleAdvancedSearch = (filters: SearchFilters) => {
-    const next = new URLSearchParams()
-    if (filters.query) next.set('q', filters.query)
-    if (filters.location) next.set('location', filters.location)
-    if (filters.category && filters.category !== 'all') next.set('category', filters.category)
-    if (filters.priceRange[0] !== 0) next.set('minPrice', String(filters.priceRange[0]))
-    if (filters.priceRange[1] !== 5000) next.set('maxPrice', String(filters.priceRange[1]))
-    if (filters.minRating > 0) next.set('minRating', String(filters.minRating))
-    // keep the current type + sort selection
-    if (typesParam.length === 1) next.set('types', typesParam[0])
-    if (sort) next.set('sort', sort)
+    const next = new URLSearchParams(searchParams)
+    const put = (key: string, value: string | null | undefined) =>
+      value ? next.set(key, value) : next.delete(key)
+
+    put('q', filters.query)
+    put('location', filters.location)
+    put('category', filters.category && filters.category !== 'all' ? filters.category : null)
+    put('minPrice', filters.priceRange[0] !== 0 ? String(filters.priceRange[0]) : null)
+    put('maxPrice', filters.priceRange[1] !== 5000 ? String(filters.priceRange[1]) : null)
+    put('minRating', filters.minRating > 0 ? String(filters.minRating) : null)
+
     setSearchParams(next)
     setIsSearchOverlayOpen(false)
   }

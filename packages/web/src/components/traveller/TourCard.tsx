@@ -142,14 +142,24 @@ export function TourCard({
             {/* Thin divider before price (align baseline with PackageCard) */}
             <div className="pt-3 flex items-center justify-between border-t border-border/60">
               <div className="flex flex-col min-w-0">
-                <span className="text-xs text-muted-foreground">{showsDeposit ? 'Pay now' : 'From'}</span>
-                <span className="font-bold text-lg text-foreground truncate">
-                  {mainMoney.estimate ? '≈ ' : ''}
-                  {mainMoney.text}
-                </span>
-                <span className="text-[11px] text-muted-foreground">
-                  {showsDeposit ? 'Balance paid before departure' : 'Per traveler'}
-                </span>
+                {price > 0 ? (
+                  <>
+                    <span className="text-xs text-muted-foreground">{showsDeposit ? 'Pay now' : 'From'}</span>
+                    <span className="font-bold text-lg text-foreground truncate">
+                      {mainMoney.estimate ? '≈ ' : ''}
+                      {mainMoney.text}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {showsDeposit ? 'Balance paid before departure' : 'Per traveler'}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs text-muted-foreground">Pricing</span>
+                    <span className="font-bold text-lg text-foreground truncate">On request</span>
+                    <span className="text-[11px] text-muted-foreground">Contact the operator</span>
+                  </>
+                )}
               </div>
 
               <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
