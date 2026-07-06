@@ -1,11 +1,8 @@
-import { MapPin, Search, Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { MapPin, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
-import { SearchOverlay } from '@/components/search/SearchOverlay'
-import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -25,24 +22,13 @@ import { usePopularInCountryTours } from '@/queries/tourQueries'
  * QA: append `?geo=AE` to force a market (or `?geo=none` for the global default).
  */
 export function GeoHomeHero() {
-  const navigate = useNavigate()
   const t = useT()
-  const [searchOpen, setSearchOpen] = useState(false)
   const country = useVisitorCountry()
   const { data: popular = [], isLoading } = usePopularInCountryTours(country?.name, 12)
 
   const hasSupply = popular.length > 0
   const resolving = Boolean(country) && isLoading
   const heroImage = hasSupply ? popular[0]?.images?.[0] : undefined
-
-  const handleSearch = (f: SearchFilters) => {
-    const params = new URLSearchParams()
-    if (f.query) params.set('q', f.query)
-    if (f.location) params.set('location', f.location)
-    if (f.category && f.category !== 'all') params.set('category', f.category)
-    setSearchOpen(false)
-    navigate(`/search?${params.toString()}`)
-  }
 
   // Copy variants (localized; country name interpolated)
   let eyebrow = t('hero.curatedWorldwide')
@@ -92,27 +78,15 @@ export function GeoHomeHero() {
               </h1>
               <p className="mt-3 text-sm sm:text-base text-white/90 max-w-xl">{subline}</p>
 
-              {/* Search entry (search-first) */}
+              {/* Primary CTA — one purposeful action. Search lives in the header, so the
+                  hero doesn't duplicate it. */}
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(true)}
-                  className="group inline-flex items-center gap-3 rounded-full bg-white text-foreground pl-5 pr-2 py-2 shadow-xl shadow-black/20 transition-transform hover:scale-[1.02]"
-                  aria-label="Search experiences"
-                >
-                  <Search className="w-4 h-4 text-primary" />
-                  <span className="font-semibold text-sm">{t('search.whereToNext')}</span>
-                  <span className="ml-1 inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
-                    {t('hero.explore')}
-                  </span>
-                </button>
-
-                {country && !hasSupply && !resolving && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="h-11 rounded-full border-white/40 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-                  >
+                {country && hasSupply ? (
+                  <Button asChild className="h-12 rounded-full px-8 text-base font-bold shadow-xl shadow-black/20">
+                    <Link to="/tours">{t('hero.exploreCountry', { country: country.name })}</Link>
+                  </Button>
+                ) : (
+                  <Button asChild className="h-12 rounded-full px-8 text-base font-bold shadow-xl shadow-black/20">
                     <Link to="/hotels">{t('hero.browseWorldwide')}</Link>
                   </Button>
                 )}
@@ -185,12 +159,6 @@ export function GeoHomeHero() {
           </div>
         </section>
       )}
-
-      <SearchOverlay
-        isOpen={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onSearch={handleSearch}
-      />
     </>
   )
 }

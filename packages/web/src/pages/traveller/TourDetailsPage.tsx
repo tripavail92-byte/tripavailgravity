@@ -50,6 +50,7 @@ import { operatorPublicService } from '@/features/tour-operator/services/operato
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
+import { useT } from '@/hooks/useT'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
@@ -149,6 +150,7 @@ export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const money = useMoney()
+  const t = useT()
   const [tour, setTour] = useState<Tour | null>(null)
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
@@ -704,8 +706,8 @@ export default function TourDetailsPage() {
               : schedule && availableSlots === 0
                 ? 'Sold Out'
                 : requiresDeposit
-                  ? `Pay ${(() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} & Confirm Booking`
-                  : `Pay ${(() => { const m = money(paymentTerms.totalAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} & Confirm Booking`}
+                  ? t('detail.payAndConfirm', { amount: (() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })() })
+                  : t('detail.payAndConfirm', { amount: (() => { const m = money(paymentTerms.totalAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })() })}
           </Button>
         </motion.div>
 

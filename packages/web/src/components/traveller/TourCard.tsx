@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { useMoney } from '@/hooks/useMoney'
+import { useT } from '@/hooks/useT'
 
 interface TourCardProps {
   id: string
@@ -50,6 +51,7 @@ export function TourCard({
   const showsDeposit = Boolean(depositRequired) && paymentTerms.remainingAmount > 0
 
   const money = useMoney()
+  const t = useT()
   const depositMoney = money(paymentTerms.upfrontAmount, currency)
   const mainMoney = money(showsDeposit ? paymentTerms.upfrontAmount : price, currency)
 
@@ -144,20 +146,22 @@ export function TourCard({
               <div className="flex flex-col min-w-0">
                 {price > 0 ? (
                   <>
-                    <span className="text-xs text-muted-foreground">{showsDeposit ? 'Pay now' : 'From'}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {showsDeposit ? t('detail.payNow') : t('detail.from')}
+                    </span>
                     <span className="font-bold text-lg text-foreground truncate">
                       {mainMoney.estimate ? '≈ ' : ''}
                       {mainMoney.text}
                     </span>
                     <span className="text-[11px] text-muted-foreground">
-                      {showsDeposit ? 'Balance paid before departure' : 'Per traveler'}
+                      {showsDeposit ? t('detail.balanceLater') : t('detail.perPerson')}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-muted-foreground">Pricing</span>
-                    <span className="font-bold text-lg text-foreground truncate">On request</span>
-                    <span className="text-[11px] text-muted-foreground">Contact the operator</span>
+                    <span className="text-xs text-muted-foreground">{t('detail.pricing')}</span>
+                    <span className="font-bold text-lg text-foreground truncate">{t('detail.onRequest')}</span>
+                    <span className="text-[11px] text-muted-foreground">{t('detail.contactOperator')}</span>
                   </>
                 )}
               </div>

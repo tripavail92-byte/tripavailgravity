@@ -40,6 +40,7 @@ import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
+import { useT } from '@/hooks/useT'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -66,6 +67,7 @@ export default function PackageDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const money = useMoney()
+  const t = useT()
   const [packageData, setPackageData] = useState<any>(null)
   const [roomData, setRoomData] = useState<any[]>([])
   const [aggregatedAmenities, setAggregatedAmenities] = useState<string[]>([])
@@ -1068,7 +1070,7 @@ export default function PackageDetailsPage() {
                     {isCheckingAvailability ? (
                       <Loader2 className="animate-spin" />
                     ) : (
-                      'Confirm Booking'
+                      t('detail.confirmBooking')
                     )}
                   </Button>
                 </motion.div>

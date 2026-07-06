@@ -17,6 +17,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { useSeo } from '@/hooks/useSeo'
+import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 import {
@@ -26,18 +27,19 @@ import {
   useUnifiedSearch,
 } from '@/queries/searchQueries'
 
-const SORT_OPTIONS: { value: SearchSort | ''; label: string }[] = [
-  { value: '', label: 'Recommended' },
-  { value: 'nearest', label: 'Nearest to me' },
-  { value: 'price_asc', label: 'Price: low to high' },
-  { value: 'price_desc', label: 'Price: high to low' },
-  { value: 'rating', label: 'Top rated' },
-  { value: 'newest', label: 'Newest' },
+const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
+  { value: '', labelKey: 'search.sortRecommended' },
+  { value: 'nearest', labelKey: 'search.sortNearest' },
+  { value: 'price_asc', labelKey: 'search.sortPriceLow' },
+  { value: 'price_desc', labelKey: 'search.sortPriceHigh' },
+  { value: 'rating', labelKey: 'search.sortRating' },
+  { value: 'newest', labelKey: 'search.sortNewest' },
 ]
 
 const RATINGS = [0, 3, 4, 4.5]
 
 export default function SearchPage() {
+  const t = useT()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const { coords } = useTravellerCoords()
@@ -145,10 +147,10 @@ export default function SearchPage() {
   }
 
   const heading = effectiveQuery
-    ? `Results for “${effectiveQuery}”`
+    ? t('search.resultsFor', { query: effectiveQuery })
     : country
-      ? `Experiences in ${country}`
-      : 'Explore everything'
+      ? t('search.experiencesIn', { country })
+      : t('search.exploreEverything')
 
   useSeo({
     title: effectiveQuery ? `Search: ${effectiveQuery}` : 'Search tours & stays',
@@ -175,7 +177,7 @@ export default function SearchPage() {
             className="md:hidden flex items-center gap-2 px-4 py-2 glass-chip rounded-full text-sm font-medium"
           >
             <Search className="w-4 h-4" />
-            Search destinations...
+            {t('search.searchDestinations')}
           </button>
 
           {/* Sort */}
@@ -187,7 +189,7 @@ export default function SearchPage() {
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value || 'auto'} value={o.value}>
-                {o.label}
+                {t(o.labelKey)}
               </option>
             ))}
           </select>
@@ -197,7 +199,7 @@ export default function SearchPage() {
             <SheetTrigger asChild>
               <Button variant="outline" className="gap-2 shrink-0">
                 <SlidersHorizontal className="w-4 h-4" />
-                Filters
+                {t('search.filters')}
                 {activeFilterCount > 0 && (
                   <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
                     {activeFilterCount}
@@ -207,17 +209,17 @@ export default function SearchPage() {
             </SheetTrigger>
             <SheetContent>
               <SheetHeader>
-                <SheetTitle>Filters</SheetTitle>
+                <SheetTitle>{t('search.filters')}</SheetTitle>
               </SheetHeader>
               <Separator className="my-4" />
               <div className="space-y-6">
                 <div>
-                  <Label>Price range</Label>
+                  <Label>{t('search.priceRange')}</Label>
                   <div className="flex items-center gap-2 mt-2">
                     <Input
                       type="number"
                       inputMode="numeric"
-                      placeholder="Min"
+                      placeholder={t('search.min')}
                       defaultValue={minPrice ?? ''}
                       onBlur={(e) => setParam('minPrice', e.target.value || null)}
                     />
@@ -225,21 +227,21 @@ export default function SearchPage() {
                     <Input
                       type="number"
                       inputMode="numeric"
-                      placeholder="Max"
+                      placeholder={t('search.max')}
                       defaultValue={maxPrice ?? ''}
                       onBlur={(e) => setParam('maxPrice', e.target.value || null)}
                     />
                   </div>
                   {facets?.priceMin != null && facets?.priceMax != null && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Available: {Math.round(facets.priceMin).toLocaleString()} –{' '}
+                      {t('search.available')}: {Math.round(facets.priceMin).toLocaleString()} –{' '}
                       {Math.round(facets.priceMax).toLocaleString()}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label>Minimum rating</Label>
+                  <Label>{t('search.minRating')}</Label>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {RATINGS.map((r) => (
                       <button
@@ -251,7 +253,7 @@ export default function SearchPage() {
                             : 'border-border bg-background hover:bg-muted'
                         }`}
                       >
-                        {r === 0 ? 'Any' : (
+                        {r === 0 ? t('search.any') : (
                           <>
                             {r}
                             <Star className="h-3.5 w-3.5 fill-current" />+
@@ -264,7 +266,7 @@ export default function SearchPage() {
 
                 {facets && facets.countries.length > 0 && (
                   <div>
-                    <Label>Country</Label>
+                    <Label>{t('search.country')}</Label>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         onClick={() => setParam('country', null)}
@@ -272,7 +274,7 @@ export default function SearchPage() {
                           !country ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:bg-muted'
                         }`}
                       >
-                        All
+                        {t('search.all')}
                       </button>
                       {facets.countries.map((c) => (
                         <button
@@ -307,25 +309,25 @@ export default function SearchPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{heading}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLoading ? 'Searching…' : `${total.toLocaleString()} ${total === 1 ? 'result' : 'results'}`}
+              {isLoading ? t('search.searching') : t('search.results', { count: total.toLocaleString() })}
             </p>
           </div>
 
           {/* Type toggle with facet counts */}
           <div className="inline-flex rounded-full border border-border bg-background p-1 self-start">
             {[
-              { key: 'all' as const, label: `All ${facets ? `(${tourCount + packageCount})` : ''}` },
-              { key: 'tour' as const, label: `Tours ${facets ? `(${tourCount})` : ''}` },
-              { key: 'package' as const, label: `Stays ${facets ? `(${packageCount})` : ''}` },
-            ].map((t) => (
+              { key: 'all' as const, label: `${t('search.all')} ${facets ? `(${tourCount + packageCount})` : ''}` },
+              { key: 'tour' as const, label: `${t('search.tours')} ${facets ? `(${tourCount})` : ''}` },
+              { key: 'package' as const, label: `${t('search.stays')} ${facets ? `(${packageCount})` : ''}` },
+            ].map((tab) => (
               <button
-                key={t.key}
-                onClick={() => setParam('types', t.key === 'all' ? null : t.key)}
+                key={tab.key}
+                onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
                 className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                  activeType === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  activeType === tab.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {t.label.trim()}
+                {tab.label.trim()}
               </button>
             ))}
           </div>
@@ -334,7 +336,7 @@ export default function SearchPage() {
         <div className="mt-6">
           {isError ? (
             <div className="rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
-              Something went wrong loading results. Please try again.
+              {t('search.error')}
             </div>
           ) : (
             <SearchResultsGrid items={items} isLoading={isLoading} showDistance={showDistance} />
@@ -350,7 +352,7 @@ export default function SearchPage() {
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage ? 'Loading…' : 'Load more'}
+              {isFetchingNextPage ? t('search.loading') : t('search.loadMore')}
             </Button>
           </div>
         )}
