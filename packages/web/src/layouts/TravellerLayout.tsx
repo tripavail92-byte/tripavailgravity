@@ -2,10 +2,12 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { useCurrencyAutoDetect } from '@/store/currencyStore'
 
 export default function TravellerLayout() {
-  // We can also enforce the data-role attribute here if needed,
-  // but CSS variables in the wrapper is cleaner for scoped theming.
+  // Auto-pick the traveller's display currency from their locale on first visit
+  // (a UAE visitor lands on AED); an explicit switcher choice always wins.
+  useCurrencyAutoDetect()
 
   return (
     <div
