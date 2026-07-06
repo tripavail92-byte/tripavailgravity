@@ -16,6 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { useSeo } from '@/hooks/useSeo'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 import {
@@ -148,6 +149,13 @@ export default function SearchPage() {
     : country
       ? `Experiences in ${country}`
       : 'Explore everything'
+
+  useSeo({
+    title: effectiveQuery ? `Search: ${effectiveQuery}` : 'Search tours & stays',
+    description: 'Search tours and hotel stays across every destination on TripAvail.',
+    canonicalPath: '/search',
+    noindex: true, // filtered result URLs shouldn't be indexed
+  })
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">

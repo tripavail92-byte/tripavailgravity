@@ -49,6 +49,7 @@ import { reviewService, type TourReviewWithReply } from '@/features/booking/serv
 import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { useMoney } from '@/hooks/useMoney'
+import { useSeo } from '@/hooks/useSeo'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
@@ -230,6 +231,51 @@ export default function TourDetailsPage() {
       .then((prof) => setOperatorSlug(prof?.slug ?? null))
       .catch(() => {})
   }, [tour?.operator_id])
+
+  // ── SEO: per-tour title/description/OG + schema.org Product structured data ──────
+  const seoImgs = Array.isArray(tour?.images) ? (tour!.images as unknown[]) : []
+  const seoImage = typeof seoImgs[0] === 'string' ? (seoImgs[0] as string) : undefined
+  const seoDesc = (tour?.short_description || tour?.description || '') as string
+  const seoSlug = (tour?.slug || tour?.id || id || '') as string
+  const seoPrice = Number(tour?.price) || 0
+  const seoRating = Number(tour?.rating) || 0
+  const seoReviews = Number((tour as any)?.review_count) || 0
+  useSeo({
+    title: tour?.title || undefined,
+    description: seoDesc ? seoDesc.slice(0, 200) : undefined,
+    canonicalPath: seoSlug ? `/tours/${seoSlug}` : undefined,
+    image: seoImage,
+    type: 'product',
+    jsonLd: tour?.title
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: tour.title,
+          ...(seoDesc ? { description: seoDesc } : {}),
+          ...(seoImage ? { image: [seoImage] } : {}),
+          ...(seoPrice > 0
+            ? {
+                offers: {
+                  '@type': 'Offer',
+                  price: seoPrice,
+                  priceCurrency: tour.currency || 'PKR',
+                  availability: 'https://schema.org/InStock',
+                  url: `https://tripavail.com/tours/${seoSlug}`,
+                },
+              }
+            : {}),
+          ...(seoReviews > 0 && seoRating > 0
+            ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: seoRating,
+                  reviewCount: seoReviews,
+                },
+              }
+            : {}),
+        }
+      : undefined,
+  })
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

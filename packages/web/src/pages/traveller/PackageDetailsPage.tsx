@@ -39,6 +39,7 @@ import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityI
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useMoney } from '@/hooks/useMoney'
+import { useSeo } from '@/hooks/useSeo'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
@@ -70,6 +71,56 @@ export default function PackageDetailsPage() {
   const [aggregatedAmenities, setAggregatedAmenities] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // ── SEO: per-package title/description/OG + schema.org Product structured data ──
+  const seoPkgImgs =
+    Array.isArray(packageData?.media_urls) && packageData.media_urls.length > 0
+      ? packageData.media_urls
+      : packageData?.cover_image
+        ? [packageData.cover_image]
+        : []
+  const seoPkgImage = typeof seoPkgImgs[0] === 'string' ? seoPkgImgs[0] : undefined
+  const seoPkgDesc = (packageData?.description || '') as string
+  const seoPkgSlug = (packageData?.slug || packageData?.id || id || '') as string
+  const seoPkgPrice = Number(packageData?.base_price_per_night) || 0
+  const seoPkgRating = Number(packageData?.hotel?.rating ?? packageData?.rating) || 0
+  const seoPkgReviews = Number(packageData?.hotel?.review_count ?? packageData?.review_count) || 0
+  useSeo({
+    title: packageData?.name || undefined,
+    description: seoPkgDesc ? seoPkgDesc.slice(0, 200) : undefined,
+    canonicalPath: seoPkgSlug ? `/packages/${seoPkgSlug}` : undefined,
+    image: seoPkgImage,
+    type: 'product',
+    jsonLd: packageData?.name
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: packageData.name,
+          ...(seoPkgDesc ? { description: seoPkgDesc } : {}),
+          ...(seoPkgImage ? { image: [seoPkgImage] } : {}),
+          ...(seoPkgPrice > 0
+            ? {
+                offers: {
+                  '@type': 'Offer',
+                  price: seoPkgPrice,
+                  priceCurrency: packageData?.currency || 'PKR',
+                  availability: 'https://schema.org/InStock',
+                  url: `https://tripavail.com/packages/${seoPkgSlug}`,
+                },
+              }
+            : {}),
+          ...(seoPkgReviews > 0 && seoPkgRating > 0
+            ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: seoPkgRating,
+                  reviewCount: seoPkgReviews,
+                },
+              }
+            : {}),
+        }
+      : undefined,
+  })
 
   // Booking State
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
