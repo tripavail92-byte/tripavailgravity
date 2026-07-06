@@ -620,7 +620,8 @@ function AirbnbHeader() {
           {/* Logo */}
           <div className="flex items-center shrink-0 order-1">
             <div className="flex items-center gap-1.5 cursor-pointer">
-              {/* TripAvail brand mark — pin (trip) + check (avail) */}
+              {/* TripAvail brand mark — the Gateway: arch portal (an abstract "A" for
+                  Avail) + traveller orb */}
               <svg
                 viewBox="0 0 64 64"
                 className="block h-8 w-8"
@@ -636,17 +637,13 @@ function AirbnbHeader() {
                   </linearGradient>
                 </defs>
                 <path
-                  d="M32 4C19.85 4 10 13.85 10 26c0 9.5 5.9 17.6 12.3 24a92 92 0 0 0 8.3 7.3c.85.62 1.95.62 2.8 0a92 92 0 0 0 8.3-7.3C48.1 43.6 54 35.5 54 26 54 13.85 44.15 4 32 4Z"
-                  fill="url(#ta-rose-hdr)"
-                />
-                <path
-                  d="M23 27l6.4 6.4L41 20.8"
+                  d="M18.5 53V32.5C18.5 24 24.5 18 32 18s13.5 6 13.5 14.5V53"
                   fill="none"
-                  stroke="#fff"
-                  strokeWidth="6"
+                  stroke="url(#ta-rose-hdr)"
+                  strokeWidth="7.5"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
+                <circle cx="32" cy="41" r="5.4" fill="url(#ta-rose-hdr)" />
               </svg>
               <span className="hidden md:block font-bold text-xl tracking-tighter">
                 <span className="text-foreground">trip</span>
