@@ -1,5 +1,5 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Building2, Check, Globe, Map, MapPin } from 'lucide-react'
+import { Building2, Check, Compass, Globe, Map, MapPin } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -47,21 +47,27 @@ export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: Ste
 
   const content = (
       <div className="space-y-10">
-        <div>
-          <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
-            Coverage Area
-          </h3>
-          <p className="text-muted-foreground leading-relaxed font-medium">
-            Where do you operate your tours?
-          </p>
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <Map className="w-6 h-6 text-primary" aria-hidden="true" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
+              Coverage Area
+            </h3>
+            <p className="text-muted-foreground leading-relaxed font-medium">
+              Where do you operate your tours?
+            </p>
+          </div>
         </div>
 
           <div className="space-y-10 p-6 rounded-2xl bg-muted/30 border border-border/50">
           <div className="space-y-4">
             <Label
               htmlFor="location"
-              className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
             >
+              <Building2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               Primary Operating City *
             </Label>
             {allowGoogleMaps ? (
@@ -86,7 +92,8 @@ export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: Ste
           </div>
 
           <div className="space-y-6">
-            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+            <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+              <Compass className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               Service Coverage Range — select all that apply
             </Label>
             <div className="grid grid-cols-2 gap-6">
