@@ -18,6 +18,7 @@
 __pycache__
 *.pyc
 /.venv/
-# Large artifacts / mobile app — not needed to build or serve the web bundle
 *.apk
-/packages/mobile/
+# NOTE: packages/mobile IS uploaded so its package.json is present for the frozen pnpm
+# install; the build only compiles @tripavail/web and the install is scoped via --filter,
+# so mobile RN/Expo deps are never fetched on the web build.

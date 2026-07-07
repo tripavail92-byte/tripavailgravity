@@ -2,7 +2,7 @@
 nixPkgs = ["node", "pnpm"]
 
 [phases.install]
-cmds = ["pnpm install --frozen-lockfile"]
+cmds = ["pnpm install --frozen-lockfile --filter @tripavail/web..."]
 
 [phases.build]
 cmds = [
