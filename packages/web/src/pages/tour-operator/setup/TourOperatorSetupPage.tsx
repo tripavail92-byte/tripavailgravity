@@ -44,6 +44,9 @@ export default function TourOperatorSetupPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+  // Furthest step the operator has reached — the progress bar lets them jump back to any
+  // already-visited step, but not skip ahead past steps they haven't validated yet.
+  const [maxStepReached, setMaxStepReached] = useState(0)
   const { user, activeRole } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -62,6 +65,11 @@ export default function TourOperatorSetupPage() {
   // Scroll to top whenever the step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [currentStep])
+
+  // Remember the furthest step visited (covers resume + deep-link + normal advance)
+  useEffect(() => {
+    setMaxStepReached((m) => Math.max(m, currentStep))
   }, [currentStep])
 
   // Enforce Tour Operator theme on mount
@@ -195,6 +203,12 @@ export default function TourOperatorSetupPage() {
     }
   }
 
+  /** Jump straight to a step by tapping the progress bar — only to steps already reached. */
+  const goToStep = (index: number) => {
+    if (index === currentStep || index > maxStepReached) return
+    setCurrentStep(index)
+  }
+
   const handleSaveAndExit = async () => {
     const saved = await saveProgress(setupData, false, currentStep)
     if (saved) toast.success('Progress saved — you can resume anytime')
@@ -272,18 +286,33 @@ export default function TourOperatorSetupPage() {
       {!isCompletionStep && !isLocked && (
         <div className="max-w-2xl mx-auto w-full px-6 pt-5 pb-1">
           <div className="flex gap-1.5 mb-2">
-            {STEPS.slice(0, STEPS.length - 1).map((step, i) => (
-              <div
-                key={step.id}
-                className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                  i < currentStep
-                    ? 'bg-primary shadow-sm shadow-primary/30'
-                    : i === currentStep
-                      ? 'bg-primary/50'
-                      : 'bg-muted'
-                }`}
-              />
-            ))}
+            {STEPS.slice(0, STEPS.length - 1).map((step, i) => {
+              const reached = i <= maxStepReached
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => goToStep(i)}
+                  disabled={!reached}
+                  aria-label={`Go to ${step.title}`}
+                  aria-current={i === currentStep ? 'step' : undefined}
+                  title={reached ? step.title : undefined}
+                  className={`group flex-1 py-2.5 -my-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                    reached ? 'cursor-pointer' : 'cursor-default'
+                  }`}
+                >
+                  <span
+                    className={`block h-1 rounded-full transition-all duration-300 ${
+                      i < currentStep
+                        ? 'bg-primary shadow-sm shadow-primary/30 group-hover:brightness-110'
+                        : i === currentStep
+                          ? 'bg-primary/50 group-hover:bg-primary/70'
+                          : 'bg-muted'
+                    } ${reached ? 'group-hover:h-1.5' : ''}`}
+                  />
+                </button>
+              )
+            })}
           </div>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
