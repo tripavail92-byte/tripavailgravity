@@ -31,6 +31,9 @@ export function CityAutocomplete({
   const [showSuggestions, setShowSuggestions] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const sessionTokenRef = useRef<any>(null)
+  // Set true right after a suggestion click / geolocation fill so the effect below doesn't
+  // immediately re-open the dropdown on the value we just committed.
+  const justSelectedRef = useRef(false)
   const mapsUnavailable = useGoogleMapsUnavailable(Boolean(GOOGLE_MAPS_API_KEY))
 
   // Close on outside click
@@ -44,13 +47,19 @@ export function CityAutocomplete({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Sync with external value
+  // Sync with external value (e.g. resumed/prefilled data) without clobbering active typing.
   useEffect(() => {
-    setSearchQuery(value)
+    setSearchQuery((prev) => (prev === value ? prev : value))
   }, [value])
 
   useEffect(() => {
-    if (!searchQuery.trim() || searchQuery === value) {
+    if (!searchQuery.trim()) {
+      setPredictions([])
+      return
+    }
+    // Don't re-search the value we just committed via a click / geolocation.
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false
       setPredictions([])
       return
     }
@@ -70,62 +79,76 @@ export function CityAutocomplete({
         return
       }
       try {
-        // Prefer Autocomplete (New) if available; fall back to legacy for older projects.
+        type Prediction = { key: string; label: string; secondary?: string; placePrediction?: any }
+
+        // Legacy AutocompleteService — only needs the classic "Places API", which is
+        // enabled on the project. Used as the reliable fallback.
+        const fetchLegacy = async (): Promise<Prediction[]> => {
+          const service = new google.maps.places.AutocompleteService()
+          const response = await service.getPlacePredictions({
+            input: searchQuery,
+            types: ['(cities)'],
+          })
+          return (response.predictions || []).map((p) => ({
+            key: p.place_id,
+            label: p.structured_formatting.main_text,
+            secondary: p.structured_formatting.secondary_text,
+          }))
+        }
+
+        // Prefer Autocomplete (New) when the project has it enabled, but never let it be a
+        // dead end: if "Places API (New)" is disabled/unbilled it throws, so fall back to legacy.
         const hasNewAutocomplete =
           typeof (google.maps as any).importLibrary === 'function' &&
           (google.maps as any).places?.AutocompleteSuggestion
 
+        let next: Prediction[] | null = null
+
         if (hasNewAutocomplete) {
-          const lib = (await (google.maps as any).importLibrary('places')) as any
-          const AutocompleteSuggestion = lib?.AutocompleteSuggestion
-          const AutocompleteSessionToken = lib?.AutocompleteSessionToken
+          try {
+            const lib = (await (google.maps as any).importLibrary('places')) as any
+            const AutocompleteSuggestion = lib?.AutocompleteSuggestion
+            const AutocompleteSessionToken = lib?.AutocompleteSessionToken
 
-          if (!AutocompleteSuggestion) {
-            setPredictions([])
-            return
-          }
-
-          if (!sessionTokenRef.current && AutocompleteSessionToken) {
-            sessionTokenRef.current = new AutocompleteSessionToken()
-          }
-
-          const request: any = {
-            input: searchQuery,
-            includedPrimaryTypes: ['locality'],
-          }
-          if (sessionTokenRef.current) {
-            request.sessionToken = sessionTokenRef.current
-          }
-
-          const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
-          const next = (suggestions ?? [])
-            .map((s: any) => s?.placePrediction)
-            .filter(Boolean)
-            .map((placePrediction: any) => {
-              const text = placePrediction?.text?.toString?.() ?? ''
-              return {
-                key: placePrediction?.placeId || text,
-                label: text,
-                secondary: '',
-                placePrediction,
+            if (AutocompleteSuggestion) {
+              if (!sessionTokenRef.current && AutocompleteSessionToken) {
+                sessionTokenRef.current = new AutocompleteSessionToken()
               }
-            })
 
-          setPredictions(next)
-          return
+              const request: any = {
+                input: searchQuery,
+                includedPrimaryTypes: ['locality'],
+              }
+              if (sessionTokenRef.current) {
+                request.sessionToken = sessionTokenRef.current
+              }
+
+              const { suggestions } =
+                await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
+              next = (suggestions ?? [])
+                .map((s: any) => s?.placePrediction)
+                .filter(Boolean)
+                .map((placePrediction: any) => {
+                  const text = placePrediction?.text?.toString?.() ?? ''
+                  return {
+                    key: placePrediction?.placeId || text,
+                    label: text,
+                    secondary: '',
+                    placePrediction,
+                  }
+                })
+            }
+          } catch (newErr) {
+            // Most common cause: "Places API (New)" is not enabled on the Cloud project.
+            // Fall back to the legacy service instead of silently showing nothing.
+            console.warn('Places Autocomplete (New) unavailable, using legacy service:', newErr)
+            next = null
+          }
         }
 
-        const service = new google.maps.places.AutocompleteService()
-        const response = await service.getPlacePredictions({
-          input: searchQuery,
-          types: ['(cities)'],
-        })
-
-        const next = (response.predictions || []).map((p) => ({
-          key: p.place_id,
-          label: p.structured_formatting.main_text,
-          secondary: p.structured_formatting.secondary_text,
-        }))
+        if (next === null) {
+          next = await fetchLegacy()
+        }
 
         setPredictions(next)
       } catch (error) {
@@ -137,11 +160,12 @@ export function CityAutocomplete({
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [searchQuery, value, mapsUnavailable])
+  }, [searchQuery, mapsUnavailable])
 
   const handlePredictionClick = useCallback(
     (prediction: { label: string }) => {
       const cityName = prediction.label
+      justSelectedRef.current = true
       setSearchQuery(cityName)
       onCitySelect(cityName)
       setShowSuggestions(false)
@@ -182,6 +206,7 @@ export function CityAutocomplete({
               const locationName = countryComponent
                 ? `${cityComponent.long_name}, ${countryComponent.long_name}`
                 : cityComponent.long_name
+              justSelectedRef.current = true
               setSearchQuery(locationName)
               onCitySelect(locationName)
             }
@@ -209,7 +234,11 @@ export function CityAutocomplete({
         <Input
           value={searchQuery}
           onChange={(e) => {
-            setSearchQuery(e.target.value)
+            const v = e.target.value
+            setSearchQuery(v)
+            // Commit the raw text upward too — so the city counts as entered even when the
+            // operator types it fully instead of picking a dropdown suggestion.
+            onCitySelect(v)
             setShowSuggestions(true)
           }}
           onFocus={() => setShowSuggestions(true)}
