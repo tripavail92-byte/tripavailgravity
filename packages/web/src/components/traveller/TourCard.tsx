@@ -105,13 +105,13 @@ export function TourCard({
               ) : null}
             </div>
 
-            <div className="absolute bottom-3 left-3 right-3 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 opacity-0 group-hover:opacity-100">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/80">
-                  View Details
-                </span>
-                <ArrowRight className="w-5 h-5" />
-              </div>
+            {/* View-details affordance on hover — pinned top-right so it never collides with
+                the always-visible title/rating row along the bottom edge. */}
+            <div className="absolute top-3 right-3 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+              <span className="inline-flex items-center gap-1 rounded-full bg-black/45 backdrop-blur-sm px-3 py-1 border border-white/15 text-white text-[10px] font-bold uppercase tracking-widest">
+                View Details
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
             </div>
           </div>
 
