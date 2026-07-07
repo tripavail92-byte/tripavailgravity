@@ -77,7 +77,7 @@ export default function LandingPage() {
         '@type': 'Organization',
         name: 'TripAvail',
         url: 'https://tripavail.com',
-        logo: 'https://tripavail.com/favicon.svg',
+        logo: 'https://tripavail.com/brand/logo-emblem-512.png',
       },
     ],
   })
@@ -620,32 +620,18 @@ function AirbnbHeader() {
           {/* Logo */}
           <div className="flex items-center shrink-0 order-1">
             <div className="flex items-center gap-1.5 cursor-pointer">
-              {/* TripAvail brand mark — the Gateway: arch portal (an abstract "A" for
-                  Avail) + traveller orb */}
-              <svg
-                viewBox="0 0 64 64"
-                className="block h-8 w-8"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                role="presentation"
-                focusable="false"
+              {/* TripAvail — gold "ta" monogram badge + Fraunces wordmark */}
+              <img
+                src="/brand/logo-emblem-256.png"
+                alt="TripAvail"
+                width={32}
+                height={32}
+                className="block h-8 w-8 shrink-0 rounded-[7px]"
+              />
+              <span
+                className="hidden md:block text-2xl tracking-tight leading-none"
+                style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}
               >
-                <defs>
-                  <linearGradient id="ta-rose-hdr" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#FF5D77" />
-                    <stop offset="1" stopColor="#E11D48" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M18.5 53V32.5C18.5 24 24.5 18 32 18s13.5 6 13.5 14.5V53"
-                  fill="none"
-                  stroke="url(#ta-rose-hdr)"
-                  strokeWidth="7.5"
-                  strokeLinecap="round"
-                />
-                <circle cx="32" cy="41" r="5.4" fill="url(#ta-rose-hdr)" />
-              </svg>
-              <span className="hidden md:block font-bold text-xl tracking-tighter">
                 <span className="text-foreground">trip</span>
                 <span className="text-[#FF385C]">avail</span>
               </span>
