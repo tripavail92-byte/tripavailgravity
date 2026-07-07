@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Role brand defaults (traveller = Airbnb rose). The ThemeProvider overrides
+ * these per active role via NativeWind `vars()`. Declaring them here guarantees
+ * a correct rose fallback even before/outside the provider.
+ */
+:root {
+  --primary: 350.5 100% 60%;
+  --primary-light: 350.5 100% 70%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Neutral defaults = light mode. ThemeProvider swaps these for dark mode. */
+  --surface-page: 210 40% 98%;
+  --surface-card: 0 0% 100%;
+  --surface-sunken: 210 40% 96%;
+  --ink: 222 47% 11%;
+  --ink-muted: 215 16% 47%;
+  --ink-soft: 215 20% 65%;
+  --line: 214 32% 91%;
+}
