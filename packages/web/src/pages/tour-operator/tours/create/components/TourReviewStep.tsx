@@ -3,7 +3,9 @@ import {
   CheckCircle,
   DollarSign,
   Info,
+  Loader2,
   MapPin,
+  Send,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -16,6 +18,8 @@ interface TourReviewStepProps {
   data: Partial<Tour>
   onBack: () => void
   onPublish: () => void
+  onSubmitForReview?: () => void
+  isSubmitting?: boolean
   membershipTierLabel?: string
   minimumDepositPercent?: number
   canPublish?: boolean
@@ -68,6 +72,8 @@ export function TourReviewStep({
   data,
   onBack,
   onPublish,
+  onSubmitForReview,
+  isSubmitting = false,
   membershipTierLabel = 'Gold',
   minimumDepositPercent = 0,
   canPublish = true,
@@ -264,7 +270,7 @@ export function TourReviewStep({
         </div>
       ) : null}
 
-      <div className="flex justify-between pt-6 border-t border-border/60">
+      <div className="flex flex-col gap-3 pt-6 border-t border-border/60 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="outline"
           onClick={onBack}
@@ -273,14 +279,32 @@ export function TourReviewStep({
         >
           Back
         </Button>
-        <Button
-          onClick={onPublish}
-          disabled={!canPublish}
-          size="lg"
-          className="px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
-        >
-          🚀 Publish Tour
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            variant="outline"
+            onClick={onPublish}
+            disabled={!canPublish || isSubmitting}
+            size="lg"
+            className="px-8 font-bold bg-background/75 border-border/60 hover:bg-background backdrop-blur-sm"
+          >
+            Publish now
+          </Button>
+          {onSubmitForReview ? (
+            <Button
+              onClick={onSubmitForReview}
+              disabled={isSubmitting}
+              size="lg"
+              className="px-10 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Confirm & submit for review
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   )

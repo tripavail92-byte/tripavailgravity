@@ -1,5 +1,28 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { CalendarDays, ChevronDown, ChevronUp, Clock, MapPin, Plus, Sparkles, X } from 'lucide-react'
+import {
+  BedDouble,
+  Bus,
+  CalendarDays,
+  Camera,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Coffee,
+  Compass,
+  Hourglass,
+  Landmark,
+  type LucideIcon,
+  MapPin,
+  Mountain,
+  Pencil,
+  Plane,
+  Plus,
+  ShoppingBag,
+  Sparkles,
+  Utensils,
+  Waves,
+  X,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
@@ -41,20 +64,20 @@ interface ItineraryDay {
 }
 
 // ─── Activity Type Config ─────────────────────────────────────────────────────
-const ACTIVITY_TYPES: { type: ActivityType; emoji: string; label: string; color: string }[] = [
-  { type: 'transport', emoji: '🚐', label: 'Transport', color: 'bg-primary/10 text-primary border-primary/25' },
-  { type: 'departure_arrival', emoji: '✈️', label: 'Departure/Arrival', color: 'bg-accent text-accent-foreground border-border' },
-  { type: 'meal', emoji: '🍽️', label: 'Meal', color: 'bg-muted text-foreground border-border' },
-  { type: 'tea_break', emoji: '🍵', label: 'Tea/Snack Break', color: 'bg-muted text-muted-foreground border-border' },
-  { type: 'sightseeing', emoji: '🏞️', label: 'Sightseeing', color: 'bg-primary/10 text-primary border-primary/25' },
-  { type: 'guided_tour', emoji: '🧭', label: 'Guided Tour', color: 'bg-accent text-accent-foreground border-border' },
-  { type: 'adventure', emoji: '🏄', label: 'Adventure', color: 'bg-primary/10 text-primary border-primary/25' },
-  { type: 'photo_stop', emoji: '📸', label: 'Photo Stop', color: 'bg-accent text-accent-foreground border-border' },
-  { type: 'shopping', emoji: '🛍️', label: 'Shopping', color: 'bg-muted text-muted-foreground border-border' },
-  { type: 'cultural', emoji: '🎭', label: 'Cultural', color: 'bg-accent text-accent-foreground border-border' },
-  { type: 'free_time', emoji: '⏳', label: 'Free Time', color: 'bg-muted text-muted-foreground border-border' },
-  { type: 'accommodation', emoji: '🏨', label: 'Hotel/Stay', color: 'bg-primary/10 text-primary border-primary/25' },
-  { type: 'custom', emoji: '✏️', label: 'Custom', color: 'bg-muted text-muted-foreground border-border' },
+const ACTIVITY_TYPES: { type: ActivityType; Icon: LucideIcon; label: string; color: string }[] = [
+  { type: 'transport', Icon: Bus, label: 'Transport', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'departure_arrival', Icon: Plane, label: 'Departure/Arrival', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'meal', Icon: Utensils, label: 'Meal', color: 'bg-muted text-foreground border-border' },
+  { type: 'tea_break', Icon: Coffee, label: 'Tea/Snack Break', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'sightseeing', Icon: Mountain, label: 'Sightseeing', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'guided_tour', Icon: Compass, label: 'Guided Tour', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'adventure', Icon: Waves, label: 'Adventure', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'photo_stop', Icon: Camera, label: 'Photo Stop', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'shopping', Icon: ShoppingBag, label: 'Shopping', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'cultural', Icon: Landmark, label: 'Cultural', color: 'bg-accent text-accent-foreground border-border' },
+  { type: 'free_time', Icon: Hourglass, label: 'Free Time', color: 'bg-muted text-muted-foreground border-border' },
+  { type: 'accommodation', Icon: BedDouble, label: 'Hotel/Stay', color: 'bg-primary/10 text-primary border-primary/25' },
+  { type: 'custom', Icon: Pencil, label: 'Custom', color: 'bg-muted text-muted-foreground border-border' },
 ]
 
 const getTypeConfig = (type: ActivityType) =>
@@ -355,8 +378,8 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                                 key={act.id}
                                 className="flex items-start gap-3 p-3 rounded-xl bg-background/75 border border-border/60"
                               >
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg border text-xs font-bold flex-shrink-0 ${cfg.color}`}>
-                                  {cfg.emoji}
+                                <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg border flex-shrink-0 ${cfg.color}`}>
+                                  <cfg.Icon className="w-4 h-4" aria-hidden="true" />
                                 </span>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -415,7 +438,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                                       : 'bg-background/80 border-border/60 text-muted-foreground hover:border-primary/30'
                                   }`}
                                 >
-                                  <span>{t.emoji}</span>
+                                  <t.Icon className="w-3.5 h-3.5" aria-hidden="true" />
                                   <span>{t.label}</span>
                                 </button>
                               ))}
@@ -443,36 +466,22 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                             />
                           </div>
 
-                          {/* Time (optional) */}
+                          {/* Time (required) */}
                           <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                Time
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (showTimePicker) {
-                                    setDraft((prev) => ({ ...prev, time: undefined }))
-                                  }
-                                  setShowTimePicker((p) => !p)
-                                }}
-                                className="text-xs font-semibold text-primary hover:underline"
-                              >
-                                {showTimePicker ? '− Remove time' : '+ Add time (optional)'}
-                              </button>
-                              {draft.time && !showTimePicker && (
-                                <span className="text-xs font-bold text-primary">{draft.time}</span>
-                              )}
+                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                              Time <span className="text-destructive">*</span>
+                            </label>
+                            <div className="p-3 rounded-xl bg-background/80 border border-border/60">
+                              <TimeWheelPicker
+                                value={draft.time}
+                                onChange={(t) => setDraft((prev) => ({ ...prev, time: t }))}
+                              />
                             </div>
-                            {showTimePicker && (
-                              <div className="p-3 rounded-xl bg-background/80 border border-border/60">
-                                <TimeWheelPicker
-                                  value={draft.time}
-                                  onChange={(t) => setDraft((prev) => ({ ...prev, time: t }))}
-                                />
-                              </div>
-                            )}
+                            {!draft.time ? (
+                              <p className="mt-1.5 text-xs text-muted-foreground">
+                                Set a start time so travellers know when this activity happens.
+                              </p>
+                            ) : null}
                           </div>
 
                           {/* Description */}
@@ -505,7 +514,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               type="button"
                               size="sm"
                               onClick={() => commitActivity(day.day)}
-                              disabled={!draft.title?.trim()}
+                              disabled={!draft.title?.trim() || !draft.time}
                               className="bg-primary text-primary-foreground font-bold"
                             >
                               Add Activity

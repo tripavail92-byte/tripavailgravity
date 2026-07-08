@@ -174,6 +174,8 @@ export function TourBasicsStep({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const SHORT_DESC_MAX = 200
+
   const isValid =
     !!data.title &&
     !!(data.tour_type || data.custom_category_label) &&
@@ -183,11 +185,24 @@ export function TourBasicsStep({
     data.max_participants > 0 &&
     hasPrimarySchedule
 
-  useEffect(() => {
-    if (!allowAiItinerary && showAiPanel) {
-      setShowAiPanel(false)
-    }
-  }, [allowAiItinerary, showAiPanel])
+  // Client-side teaser suggestions so AI Suggest is useful on every tier, even when the
+  // template library has no rows for this tone/category combination.
+  const fallbackSuggestions = useMemo(() => {
+    const title = data.title?.trim() || 'this tour'
+    const rawType =
+      data.tour_type && data.tour_type !== 'Custom'
+        ? data.tour_type
+        : data.custom_category_label || 'experience'
+    const type = rawType.toLowerCase()
+    const city = data.location?.city?.trim()
+    const where = city ? ` in ${city}` : ''
+    return [
+      `Discover ${title}${where} — a ${type} experience crafted for unforgettable moments.`,
+      `Join ${title}${where}: standout sights, real comfort, and expert local guides every step of the way.`,
+      `${title}${where} blends iconic highlights with authentic ${type} moments — ideal for first-timers and returning travellers alike.`,
+      `A hand-picked ${type} escape${where}. Small groups, genuine stories, and the very best of the region.`,
+    ]
+  }, [data.title, data.tour_type, data.custom_category_label, data.location?.city])
 
   // Fetch templates whenever the panel opens, tone, or tour_type changes
   useEffect(() => {
@@ -213,7 +228,7 @@ export function TourBasicsStep({
   }, [showAiPanel, selectedTone, data.tour_type])
 
   function applyTemplate(text: string) {
-    onUpdate({ short_description: text })
+    onUpdate({ short_description: text.slice(0, SHORT_DESC_MAX) })
     setShowAiPanel(false)
   }
 
@@ -616,26 +631,23 @@ export function TourBasicsStep({
                 size="sm"
                 className="gap-1.5 text-xs h-7 px-3 border-primary/40 text-primary hover:bg-primary/5"
                 onClick={() => setShowAiPanel((v) => !v)}
-                disabled={!allowAiItinerary}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 AI Suggest
               </Button>
             </div>
 
-            {!allowAiItinerary ? (
-              <p className="text-xs text-muted-foreground">
-                AI-assisted description suggestions are available on Diamond and Platinum memberships.
-              </p>
-            ) : null}
-
             <Textarea
               placeholder="A brief teaser for the tour card"
               value={data.short_description || ''}
-              onChange={(e) => onUpdate({ short_description: e.target.value })}
+              onChange={(e) => onUpdate({ short_description: e.target.value.slice(0, SHORT_DESC_MAX) })}
               rows={3}
+              maxLength={SHORT_DESC_MAX}
               className="border-input focus:border-primary/50 focus:ring-primary/20 resize-none"
             />
+            <p className="text-[11px] text-muted-foreground text-right tabular-nums">
+              {(data.short_description || '').length}/{SHORT_DESC_MAX}
+            </p>
 
             {/* AI Suggest panel */}
             <AnimatePresence>
@@ -682,8 +694,21 @@ export function TourBasicsStep({
                       Loading suggestions...
                     </div>
                   ) : templates.length === 0 ? (
-                    <div className="text-sm text-muted-foreground text-center py-4">
-                      No templates for this combination yet.
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      <p className="text-xs text-muted-foreground">
+                        Tap a suggestion to use it, then tweak the wording to match your tour.
+                      </p>
+                      {fallbackSuggestions.map((text, i) => (
+                        <motion.button
+                          key={i}
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                          onClick={() => applyTemplate(text)}
+                          className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+                        >
+                          <p className="text-sm text-foreground leading-relaxed">{text}</p>
+                        </motion.button>
+                      ))}
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto pr-1">

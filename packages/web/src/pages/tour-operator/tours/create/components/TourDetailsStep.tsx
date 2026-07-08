@@ -1,4 +1,4 @@
-import { Activity, Check, ChevronDown } from 'lucide-react'
+import { Activity, Check, ChevronDown, Footprints, Mountain, MountainSnow } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -32,57 +32,19 @@ const DIFFICULTY_LEVELS = [
     id: 'easy',
     label: 'Easy',
     description: 'Relaxed pace',
-    icon: () => (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M5 16h14" />
-        <path d="M9 16v-2a2 2 0 012-2h2a2 2 0 012 2v2" />
-      </svg>
-    ),
+    icon: Footprints,
   },
   {
     id: 'moderate',
     label: 'Moderate',
     description: 'Active walking',
-    icon: () => (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M5 16h4l3-5 3 5h4" />
-        <circle cx="12" cy="8" r="1.5" />
-      </svg>
-    ),
+    icon: Mountain,
   },
   {
     id: 'difficult',
     label: 'Difficult',
     description: 'Strenuous effort',
-    icon: () => (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="w-6 h-6"
-      >
-        <path d="M4 18l4-10 4 6 4-8 4 12" />
-      </svg>
-    ),
+    icon: MountainSnow,
   },
 ]
 
@@ -161,10 +123,10 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-4 [&_svg]:!h-4 ${
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-colors duration-300 [&_svg]:!w-5 [&_svg]:!h-5 ${
                         isSelected
                           ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted/50 text-muted-foreground group-hover:bg-muted'
+                          : 'bg-muted/60 text-foreground/70 group-hover:bg-muted group-hover:text-foreground'
                       }`}
                     >
                       <level.icon />
@@ -368,10 +330,14 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
           <Textarea
             placeholder="e.g. Any custom requirements not covered above..."
             value={data.description || ''}
-            onChange={(e) => onUpdate({ description: e.target.value })}
+            onChange={(e) => onUpdate({ description: e.target.value.slice(0, 600) })}
             rows={4}
+            maxLength={600}
             className="border-border focus:border-primary focus:ring-primary/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-muted-foreground"
           />
+          <p className="text-[11px] text-muted-foreground text-right tabular-nums">
+            {(data.description || '').length}/600
+          </p>
         </div>
       </Card>
 
