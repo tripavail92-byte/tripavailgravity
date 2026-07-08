@@ -49,6 +49,24 @@ const OPERATOR_RETURN_PATHS = new Set([
   '/operator/bookings',
 ])
 
+/** Turn a raw backend code like "MINIMUM_DEPOSIT_NOT_MET" into "Minimum deposit not met." */
+function humanizeBackendCode(raw: string): string {
+  const words = raw.trim().replace(/[_-]+/g, ' ').toLowerCase()
+  if (!words) return ''
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)}.`
+}
+
+/** Known backend/RPC error codes → friendly, operator-facing sentences. */
+const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
+  { match: 'publish_limit_reached', message: 'You’ve reached the maximum number of published tours for your membership tier this cycle. Upgrade your plan or unpublish another tour to add more.' },
+  { match: 'minimum_deposit_not_met', message: 'Your deposit percentage is below the minimum required for your membership tier. Raise it on the Pricing & Policies step, then try again.' },
+  { match: 'setup_not_completed', message: 'Finish your operator setup before publishing tours.' },
+  { match: 'tour_not_found', message: 'We couldn’t find this tour. Reload the page and try again.' },
+  { match: 'not_authorized', message: 'You don’t have permission to make this change.' },
+  { match: 'unauthorized', message: 'You don’t have permission to make this change.' },
+  { match: 'row-level security', message: 'You don’t have permission to make this change.' },
+]
+
 function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
   const details =
     typeof error === 'object' && error !== null
@@ -61,18 +79,21 @@ function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): s
 
   const normalizedMessage = details.join(' ').toLowerCase()
 
-  if (
-    normalizedMessage.includes('publish_limit_reached')
-    || normalizedMessage.includes('publish limit')
-  ) {
-    return 'You have reached the maximum number of published trips for your membership tier.'
+  if (normalizedMessage.includes('publish limit')) {
+    return TOUR_ERROR_MESSAGES[0].message
+  }
+  if (normalizedMessage.includes('deposit') && normalizedMessage.includes('membership')) {
+    return TOUR_ERROR_MESSAGES[1].message
   }
 
-  if (
-    normalizedMessage.includes('minimum_deposit_not_met')
-    || (normalizedMessage.includes('deposit') && normalizedMessage.includes('membership'))
-  ) {
-    return details[1] || details[2] || 'Deposit percentage is below the minimum required for your membership tier.'
+  for (const { match, message } of TOUR_ERROR_MESSAGES) {
+    if (normalizedMessage.includes(match)) return message
+  }
+
+  // Never surface a raw SNAKE_CASE code to the operator — humanize it as a last resort.
+  const firstDetail = details[0]?.trim()
+  if (firstDetail && /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/.test(firstDetail)) {
+    return humanizeBackendCode(firstDetail)
   }
 
   return fallbackMessage
@@ -482,7 +503,7 @@ export default function CreateTourPage() {
     { field: 'cancellation_policy', label: 'Cancellation policy' },
   ]
 
-  const handleSubmitForReview = async () => {
+  const performSubmitForReview = async () => {
     if (!user) return
     setSubmitAttempted(true)
     const schedules = Array.isArray(tourData.schedules) ? tourData.schedules : []
@@ -497,7 +518,13 @@ export default function CreateTourPage() {
     const missing = REQUIRED_FOR_SUBMIT.filter(
       ({ field }) => !(tourData as any)[field]
     )
-    const pickupCount = Number((tourData as any)?.draft_data?.pickup_locations_count ?? 0)
+    // Read the actual saved pickup array too — the count field can lag behind if the
+    // operator saved a pickup and jumped straight here without advancing step-by-step.
+    const draftForCheck = (tourData as any)?.draft_data ?? {}
+    const pickupArrCount = Array.isArray(draftForCheck.pickup_locations)
+      ? draftForCheck.pickup_locations.length
+      : 0
+    const pickupCount = Math.max(Number(draftForCheck.pickup_locations_count ?? 0), pickupArrCount)
     if (pickupCount <= 0) missing.push({ field: 'pickup_locations', label: 'Pickup locations' })
     if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
@@ -532,6 +559,20 @@ export default function CreateTourPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const reviewStepIndex = STEPS.findIndex((step) => step.id === 'review')
+
+  // The header "Submit for Review" first sends the operator to the Review step so they can
+  // check & confirm every field; the actual submit fires from that screen's confirm button.
+  const handleSubmitForReview = () => {
+    if (reviewStepIndex >= 0 && currentStep !== reviewStepIndex) {
+      setVisitedSteps((prev) => new Set(prev).add(reviewStepIndex))
+      setCurrentStep(reviewStepIndex)
+      toast('Give everything a final check, then confirm your submission.', { icon: '📋' })
+      return
+    }
+    void performSubmitForReview()
   }
 
   const handleNext = () => {
@@ -876,6 +917,8 @@ export default function CreateTourPage() {
                 onNext={handleNext}
                 onBack={handleBack}
                 onPublish={handlePublish}
+                onSubmitForReview={performSubmitForReview}
+                isSubmitting={isSubmitting}
                 membershipTierLabel={commercialGate.tierLabel}
                 minimumDepositPercent={commercialGate.minimumDepositPercent}
                 allowGoogleMaps={commercialGate.googleMapsEnabled}
