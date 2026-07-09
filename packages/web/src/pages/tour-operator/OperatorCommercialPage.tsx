@@ -4,14 +4,17 @@ import {
   BarChart3,
   Check,
   CheckCircle2,
+  Clock,
   CreditCard,
   Download,
   Gem,
+  Loader2,
   Rocket,
   Scale,
   ShieldAlert,
   Wallet,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -47,10 +50,16 @@ import {
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
 import { membershipTierService } from '@/features/commercial/services/membershipTierService'
+import {
+  tierChangeRequestService,
+  type TierChangeRequest,
+} from '@/features/commercial/services/tierChangeRequestService'
+import { TierUpgradeDialog } from '@/features/tour-operator/components/tier/TierUpgradeDialog'
 import { useAuth } from '@/hooks/useAuth'
 import {
   DEFAULT_MEMBERSHIP_TIER_CONFIGS,
   describeTierUpgrade,
+  type MembershipTierCode,
   type MembershipTierConfig,
 } from '@tripavail/shared/commercial/engine'
 import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
@@ -414,6 +423,9 @@ export default function OperatorCommercialPage() {
       null,
     )
   const [catalogueTiers, setCatalogueTiers] = useState<MembershipTierConfig[]>([])
+  const [pendingRequest, setPendingRequest] = useState<TierChangeRequest | null>(null)
+  const [upgradeTarget, setUpgradeTarget] = useState<MembershipTierConfig | null>(null)
+  const [isCancellingRequest, setIsCancellingRequest] = useState(false)
   const [performance, setPerformance] =
     useState<
       Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['performance']
@@ -459,22 +471,25 @@ export default function OperatorCommercialPage() {
 
       try {
         setLoading(true)
-        const [overview, nextPromotions, nextTours, nextDisputeCases, nextCatalogue] = await Promise.all([
-          commercialService.getOperatorCommercialOverview(user.id),
-          commercialService.listOperatorPromotions(user.id),
-          commercialService.listCommercialTours(user.id),
-          commercialService.listOperatorPayoutDisputeCases(user.id),
-          // The plan comparison renders from the live, admin-edited catalogue. Falling back to
-          // the built-in configs keeps the section useful if the catalogue can't be read.
-          membershipTierService
-            .listPublicTiers()
-            .catch(() => Object.values(DEFAULT_MEMBERSHIP_TIER_CONFIGS)),
-        ])
+        const [overview, nextPromotions, nextTours, nextDisputeCases, nextCatalogue, nextPending] =
+          await Promise.all([
+            commercialService.getOperatorCommercialOverview(user.id),
+            commercialService.listOperatorPromotions(user.id),
+            commercialService.listCommercialTours(user.id),
+            commercialService.listOperatorPayoutDisputeCases(user.id),
+            // The plan comparison renders from the live, admin-edited catalogue. Falling back to
+            // the built-in configs keeps the section useful if the catalogue can't be read.
+            membershipTierService
+              .listPublicTiers()
+              .catch(() => Object.values(DEFAULT_MEMBERSHIP_TIER_CONFIGS)),
+            tierChangeRequestService.getPending(user.id).catch(() => null),
+          ])
         if (cancelled) return
 
         setProfile(overview.profile)
         setTier(overview.tier)
         setCatalogueTiers(nextCatalogue)
+        setPendingRequest(nextPending)
         setPerformance(overview.performance)
         setBillingRows(overview.billingRows)
         setPayoutRows(overview.payoutRows)
@@ -617,6 +632,36 @@ export default function OperatorCommercialPage() {
         .reduce((sum, row) => sum + row.recovery_amount, 0),
     [payoutRows],
   )
+
+  const refreshPendingRequest = async () => {
+    if (!user?.id) return
+    try {
+      setPendingRequest(await tierChangeRequestService.getPending(user.id))
+    } catch (error) {
+      console.error('[OperatorCommercialPage] Failed to refresh tier change request', error)
+    }
+  }
+
+  const handleCancelTierRequest = async () => {
+    if (!pendingRequest) return
+    setIsCancellingRequest(true)
+    try {
+      await tierChangeRequestService.cancel(pendingRequest.id)
+      setPendingRequest(null)
+      toast.success('Request withdrawn.')
+    } catch (error) {
+      console.error('[OperatorCommercialPage] Failed to cancel tier change request', error)
+      toast.error(error instanceof Error ? error.message : 'Could not withdraw the request.')
+    } finally {
+      setIsCancellingRequest(false)
+    }
+  }
+
+  /** The operator's live tier, resolved from the catalogue so the dialog compares real values. */
+  const currentTierConfig = useMemo(() => {
+    const code = (profile?.membership_tier_code ?? 'gold') as MembershipTierCode
+    return catalogueTiers.find((entry) => entry.code === code) ?? DEFAULT_MEMBERSHIP_TIER_CONFIGS[code]
+  }, [catalogueTiers, profile?.membership_tier_code])
 
   const resolvedTierName =
     tier?.display_name ??
@@ -1441,10 +1486,17 @@ export default function OperatorCommercialPage() {
                         ) : null}
 
                         {!isCurrent ? (
-                          <Button asChild className="mt-5 w-full rounded-2xl" variant="outline">
-                            <Link to="/help">
-                              {isUpgrade ? `Upgrade to ${t.label}` : `Switch to ${t.label}`}
-                            </Link>
+                          <Button
+                            className="mt-5 w-full rounded-2xl"
+                            variant="outline"
+                            disabled={Boolean(pendingRequest)}
+                            onClick={() => setUpgradeTarget(t)}
+                          >
+                            {pendingRequest
+                              ? 'Request pending'
+                              : isUpgrade
+                                ? `Upgrade to ${t.label}`
+                                : `Switch to ${t.label}`}
                           </Button>
                         ) : (
                           <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/10 py-2 text-center text-sm font-semibold text-primary">
@@ -1455,10 +1507,40 @@ export default function OperatorCommercialPage() {
                     )
                   })}
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Tier upgrades are handled by the TripAvail team — contact us via Help &amp;
-                  Support and we&apos;ll switch you over.
-                </p>
+
+                {pendingRequest ? (
+                  <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <Clock className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" aria-hidden="true" />
+                      <div>
+                        <p className="text-sm font-semibold text-warning">
+                          Change to{' '}
+                          {catalogueTiers.find((t) => t.code === pendingRequest.requested_tier_code)?.label ??
+                            pendingRequest.requested_tier_code}{' '}
+                          requested — pending review
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Submitted {format(new Date(pendingRequest.created_at), 'd MMM yyyy')}. Our team
+                          will confirm before anything changes.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={isCancellingRequest}
+                      onClick={handleCancelTierRequest}
+                      className="flex-shrink-0 text-warning hover:bg-warning/15"
+                    >
+                      {isCancellingRequest ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+                      Withdraw request
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Request a change and our team reviews it — nothing is charged until we confirm.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -2647,6 +2729,16 @@ export default function OperatorCommercialPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {upgradeTarget ? (
+        <TierUpgradeDialog
+          open={Boolean(upgradeTarget)}
+          onOpenChange={(open) => !open && setUpgradeTarget(null)}
+          currentTier={currentTierConfig}
+          targetTier={upgradeTarget}
+          onSubmitted={refreshPendingRequest}
+        />
+      ) : null}
     </div>
   )
 }

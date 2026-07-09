@@ -36,6 +36,7 @@ import {
 import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
 import { AdminTierEditor } from './components/AdminTierEditor'
+import { AdminTierRequestQueue } from './components/AdminTierRequestQueue'
 
 const MIN_ADMIN_ACTION_REASON_LENGTH = 10
 
@@ -1601,6 +1602,7 @@ export default function AdminCommercialPage() {
         </TabsList>
 
         <TabsContent value="tiers" className="space-y-6 pt-4">
+          <AdminTierRequestQueue />
           <AdminTierEditor />
         </TabsContent>
 
