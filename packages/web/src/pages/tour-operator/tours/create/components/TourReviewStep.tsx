@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { Tour } from '@/features/tour-operator/services/tourService'
-import { getTourPricingPromoDraft } from '../promoDraft'
 
 interface TourReviewStepProps {
   data: Partial<Tour>
@@ -91,7 +90,6 @@ export function TourReviewStep({
   const languages = Array.isArray(data.languages) ? data.languages : []
   const inclusions = Array.isArray(data.inclusions) ? data.inclusions : []
   const exclusions = Array.isArray(data.exclusions) ? data.exclusions : []
-  const promoDraft = getTourPricingPromoDraft(data.draft_data)
   const paymentTerms = getTourPaymentTerms({
     basePrice: Number(data.price || 0),
     guestCount: 1,
@@ -203,12 +201,6 @@ export function TourReviewStep({
               value={`${data.currency || 'PKR'} ${paymentTerms.remainingAmount.toLocaleString() || 0} per traveler`}
             />
             <ReviewRow label="Payment Policy" value={paymentTerms.paymentPolicyText} />
-            <ReviewRow
-              label="Launch Promo"
-              value={promoDraft.enabled
-                ? `${promoDraft.code || 'Draft promo'} · ${promoDraft.discountType === 'percentage' ? `${promoDraft.discountValue || 0}%` : `${data.currency || 'PKR'} ${promoDraft.discountValue || 0}`}`
-                : 'Not configured'}
-            />
             <ReviewRow label="Cancellation Policy" value={data.cancellation_policy || '—'} />
             <ReviewRow
               label="Inclusions"

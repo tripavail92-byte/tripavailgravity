@@ -3,7 +3,9 @@
 A plan to turn the two long, scroll-heavy operator wizards into short, one-question-at-a-time
 screens with a visible sense of progress ("Personal Information · 2 of 4").
 
-Nothing is implemented yet. This is the study + design, per the request to read everything first.
+> **Status: Phase 0 and Phase 1 are shipped.** Decisions taken: Profile Picture stays its own
+> stage; Launch Promo removed from the wizard; Primary Contact Person removed; Continue is never
+> blocked — missing fields go red, the sub-step dot goes red, and focus jumps to the first one.
 
 ---
 
@@ -204,6 +206,16 @@ A single reusable layer, used by both wizards, so we never hand-maintain two ste
 
 ## 9. Phasing
 
+- ✅ **Phase 0 — machinery.** `features/wizard/{types,useSubStepFlow,WizardScreen,SubStepProgress}`,
+  workflow snapshot v2 (`subSteps` keyed by stage id, v1 degrades to sub-step 0).
+- ✅ **Phase 1 — Pricing & Policies** split into 6 screens; Launch Promo deleted.
+- ⬜ Phase 2 — Basics (5) and Requirements (3).
+- ⬜ Phase 3 — Setup wizard: Personal Information, Business Details, Policies.
+- ⬜ Phase 4 — Repeaters adopt the progressive pattern.
+- ⬜ Phase 5 — Polish.
+
+<details><summary>Original phase notes</summary>
+
 - **Phase 0 — machinery.** `wizardFlow.ts`, `useWizardFlow`, `<WizardScreen>`, header sub-counter,
   persistence v2. No visible split yet; both wizards run with 1 sub-step per stage. Ship + verify
   that resume, deep links and autosave are untouched.
@@ -223,3 +235,5 @@ Each phase is independently shippable and independently revertible.
 - Every existing validation rule still fires, at the sub-step that owns its field.
 - The `STEPS` ↔ `SETUP_STEP_SLUGS` DEV assertion still passes; a new one guards stage↔flow drift.
 - Autosave fires on each Continue, not on every keystroke.
+
+</details>

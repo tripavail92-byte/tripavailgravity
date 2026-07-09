@@ -16,7 +16,6 @@ import { PublishLimitBanner } from '@/features/tour-operator/components/tier/Pub
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
-import { commercialService } from '@/features/commercial/services/commercialService'
 
 import { TourBasicsStep } from './components/TourBasicsStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
@@ -24,7 +23,6 @@ import { TourItineraryStep } from './components/TourItineraryStep'
 import { TourMediaStep } from './components/TourMediaStep'
 import { TourPricingStep } from './components/TourPricingStep'
 import { TourReviewStep } from './components/TourReviewStep'
-import { getTourPricingPromoDraft, validateTourPricingPromoDraft } from './promoDraft'
 import { deriveStepWorkflow, StepId } from './stepWorkflow'
 
 const LazyTourPickupLocationsStep = lazy(() =>
@@ -32,6 +30,9 @@ const LazyTourPickupLocationsStep = lazy(() =>
     default: m.TourPickupLocationsStep,
   })),
 )
+
+/** Index of the deposit screen inside the Pricing stage's sub-steps (price, deposit, ...). */
+const PRICING_DEPOSIT_SUBSTEP = 1
 
 const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },
@@ -140,6 +141,8 @@ export default function CreateTourPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
+  /** Sub-step position within each stage, keyed by stage id. Persisted in the workflow snapshot. */
+  const [subStepByStage, setSubStepByStage] = useState<Record<string, number>>({})
   /** Set when the failure can't be fixed by retrying (e.g. the account isn't verified yet). */
   const autosaveBlockedRef = useRef(false)
   const verificationToastShownRef = useRef(false)
@@ -223,8 +226,11 @@ export default function CreateTourPage() {
     toast.error(
       `Deposit must be at least ${commercialGate.minimumDepositPercent}% for ${commercialGate.tierLabel} membership.`,
     )
-    setVisitedSteps((prev) => new Set(prev).add(3))
-    setCurrentStep(3)
+    const pricingIndex = STEPS.findIndex((step) => step.id === 'pricing')
+    setVisitedSteps((prev) => new Set(prev).add(pricingIndex))
+    setCurrentStep(pricingIndex)
+    // Land on the deposit screen itself, not wherever the operator last left the pricing stage.
+    setSubStepByStage((prev) => ({ ...prev, pricing: PRICING_DEPOSIT_SUBSTEP }))
     return false
   }, [commercialGate.minimumDepositPercent, commercialGate.tierLabel, tourData.deposit_percentage])
 
@@ -284,6 +290,17 @@ export default function CreateTourPage() {
               setVisitedSteps(new Set(sanitized))
             }
           }
+
+          // v2 snapshots carry the sub-step within each stage. A v1 snapshot has none, and
+          // defaulting to 0 lands the operator at the top of the correct stage — safe, not wrong.
+          if (workflow.subSteps && typeof workflow.subSteps === 'object') {
+            const sanitized: Record<string, number> = {}
+            for (const [stageId, value] of Object.entries(workflow.subSteps)) {
+              const index = Number(value)
+              if (Number.isInteger(index) && index >= 0) sanitized[stageId] = index
+            }
+            setSubStepByStage(sanitized)
+          }
         }
       } catch (error) {
         console.error('Error loading tour for edit:', error)
@@ -312,10 +329,12 @@ export default function CreateTourPage() {
 
   const createWorkflowSnapshot = useCallback(
     () => ({
-      version: 1,
+      // v2 adds `subSteps`. Stage indices are unchanged, so a v1 reader still resumes correctly.
+      version: 2,
       currentStep,
       currentStepId: STEPS[currentStep]?.id,
       visitedSteps: Array.from(visitedSteps),
+      subSteps: subStepByStage,
       stepStatuses: stepWorkflow.map((step) => ({
         id: step.id,
         status: step.status,
@@ -324,8 +343,12 @@ export default function CreateTourPage() {
       })),
       updatedAt: new Date().toISOString(),
     }),
-    [currentStep, visitedSteps, stepWorkflow],
+    [currentStep, visitedSteps, subStepByStage, stepWorkflow],
   )
+
+  const handleSubStepChange = useCallback((stageId: string, index: number) => {
+    setSubStepByStage((prev) => (prev[stageId] === index ? prev : { ...prev, [stageId]: index }))
+  }, [])
 
   // Initialise currentTourId from route/param
   useEffect(() => {
@@ -654,16 +677,6 @@ export default function CreateTourPage() {
     }
     if (!ensureDepositPolicySatisfied()) return
 
-    const promoDraft = getTourPricingPromoDraft(tourData.draft_data)
-    const promoValidationError = validateTourPricingPromoDraft(promoDraft)
-
-    if (promoValidationError) {
-      toast.error(promoValidationError)
-      setVisitedSteps((prev) => new Set(prev).add(3))
-      setCurrentStep(3)
-      return
-    }
-
     setIsSaving(true)
     try {
       const hadExistingTourId = Boolean(currentTourIdRef.current)
@@ -689,58 +702,8 @@ export default function CreateTourPage() {
         rememberTourId(savedTour.id)
       }
 
-      if (promoDraft.enabled) {
-        const promoPayload = {
-          operator_user_id: user.id,
-          applicable_tour_id: savedTour.id,
-          title: promoDraft.title.trim(),
-          code: promoDraft.code.trim().toUpperCase(),
-          description: promoDraft.description.trim() || null,
-          owner_label: promoDraft.code.trim().toUpperCase(),
-          funding_source: 'operator' as const,
-          discount_type: promoDraft.discountType,
-          discount_value: Number(promoDraft.discountValue),
-          max_discount_value:
-            promoDraft.discountType === 'percentage' && promoDraft.maxDiscountValue.trim().length > 0
-              ? Number(promoDraft.maxDiscountValue)
-              : null,
-          is_active: promoDraft.isActive,
-        }
-
-        let promotionId = promoDraft.promotionId
-
-        if (promotionId) {
-          await commercialService.updatePromotion(promotionId, promoPayload)
-        } else {
-          const createdPromotion = await commercialService.createPromotion(promoPayload)
-          promotionId = createdPromotion.id
-        }
-
-        const nextDraftData = {
-          ...(tourData.draft_data && typeof tourData.draft_data === 'object' ? tourData.draft_data : {}),
-          pricing_promo: {
-            ...promoDraft,
-            promotionId,
-          },
-        }
-
-        const { error: draftUpdateError } = await supabase
-          .from('tours')
-          .update({
-            draft_data: nextDraftData,
-            updated_at: new Date().toISOString(),
-            last_edited_at: new Date().toISOString(),
-          } as any)
-          .eq('id', savedTour.id)
-          .eq('operator_id', user.id)
-
-        if (draftUpdateError) {
-          throw draftUpdateError
-        }
-      }
-
       setHasUnsaved(false)
-  toast.success(promoDraft.enabled ? 'Tour and promo published successfully!' : hadExistingTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
+      toast.success(hadExistingTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
@@ -1008,6 +971,10 @@ export default function CreateTourPage() {
                 isEditingPublishedTour={isEditingPublishedTour}
                 tourId={currentTourId}
                 ensureTourDraft={ensureTourDraftForMedia}
+                subStep={subStepByStage[STEPS[currentStep].id] ?? 0}
+                onSubStepChange={(index: number) =>
+                  handleSubStepChange(STEPS[currentStep].id, index)
+                }
               />
             </Suspense>
           </motion.div>
