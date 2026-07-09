@@ -3,9 +3,9 @@
 A design + implementation plan, grounded in how the tier system actually works today
 (`packages/shared/src/commercial/engine.ts`, `useOperatorCommercialGate`, `operator_commercial_profiles`).
 
-> **Status: Phase A is built, plus full admin control of every tier variable.**
-> See §6 "What shipped" at the bottom. Phase B (upgrade-request flow) and Phase C
-> (self-serve billing) remain as designed below.
+> **Status: Phase A and Phase B are built, plus full admin control of every tier variable.**
+> See §6 "What shipped" at the bottom. Phase C (self-serve billing) remains as designed
+> below, blocked on payment credentials.
 
 ---
 
@@ -118,7 +118,7 @@ When Stripe (or JazzCash/EasyPaisa for PKR) is ready:
 1. ✅ Dashboard "Your plan" card + wizard entry banner (Phase A #1–2) — biggest pain, least work
 2. ✅ Publish-blocked messaging with reset date + upgrade delta (A #4)
 3. ✅ Pickup-step inline upsell (A #3)
-4. ⬜ Upgrade-request flow (Phase B)
+4. ✅ Upgrade-request flow (Phase B)
 5. ✅ Gate error state (no more silent Gold downgrade) · ⬜ cycle-reset job verification
 6. ⬜ Self-serve billing (Phase C, when credentials exist)
 
@@ -174,6 +174,29 @@ operator's next page load — no deploy. Publish limits remain enforced in the d
 - Upgrade comparison on `/operator/commercial` now renders from the live catalogue (taglines,
   perks, colours) and shows a computed **"You would gain"** list via `describeTierUpgrade()`,
   so the sales copy can never contradict the configured values.
+
+### Phase B — the tier change request queue (shipped)
+`20260710000003_tier_change_requests.sql`. A `tier_change_requests` table with a
+pending/approved/rejected/cancelled state machine, a partial unique index enforcing one open
+request per operator, and a CHECK that the requested tier differs from the current one.
+
+RLS grants **SELECT only** — the operator sees their own rows, admins see all. Every write goes
+through a `SECURITY DEFINER` RPC, so the state machine cannot be bypassed from the client:
+`request_membership_tier_change()`, `cancel_membership_tier_change_request()`, and
+`admin_review_membership_tier_change()`. All three are revoked from `PUBLIC`/`anon`.
+
+Approval **reuses the existing `admin_assign_operator_membership_tier()`**, so the tier swap,
+the commission/fee resync, `operator_tier_change_log`, and `admin_log_action` all behave exactly
+as they do for a manual assignment — no second code path to keep in sync. Approving therefore
+requires `super_admin` or `finance_admin`, checked up front rather than failing mid-transaction;
+rejecting only requires being an admin. Both sides get a notification.
+
+Operator side: the upgrade CTA opens a confirm dialog showing the fee delta and a computed
+"what changes" list (from `describeTierUpgrade`, i.e. the live configs). A pending request
+renders as a status banner with a withdraw action, and all other upgrade buttons disable.
+
+Admin side: a "Tier change requests" queue at the top of the Tiers tab — approve or reject with
+a note (a reason is required to reject), plus resolved history.
 
 ### Adding a fourth tier
 Tier *values* are fully admin-controlled; tier *codes* are still enum-bound. A new code needs a
