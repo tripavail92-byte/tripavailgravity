@@ -68,7 +68,24 @@ const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
   { match: 'row-level security', message: 'You don’t have permission to make this change.' },
 ]
 
+/**
+ * A tour INSERT is gated on `can_partner_operate()`, which requires
+ * `user_roles.verification_status = 'approved'`. An unverified operator therefore gets an RLS
+ * denial on the very first autosave of a brand-new tour — before typing anything. Detect that
+ * precisely so we can explain it instead of showing a bare "Save failed".
+ */
+function isVerificationBlockedError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false
+  const code = (error as { code?: string }).code
+  const message = String((error as { message?: string }).message ?? '').toLowerCase()
+  return code === '42501' || message.includes('row-level security')
+}
+
 function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (isVerificationBlockedError(error)) {
+    return 'Your operator account is still pending verification, so tours cannot be saved yet. Check your verification status.'
+  }
+
   const details =
     typeof error === 'object' && error !== null
       ? [
@@ -122,6 +139,11 @@ export default function CreateTourPage() {
   const [hasUnsaved, setHasUnsaved] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
+  /** Set when the failure can't be fixed by retrying (e.g. the account isn't verified yet). */
+  const autosaveBlockedRef = useRef(false)
+  const verificationToastShownRef = useRef(false)
+  const [isVerificationBlocked, setIsVerificationBlocked] = useState(false)
   const [showExitModal, setShowExitModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitAttempted, setSubmitAttempted] = useState(false)
@@ -361,6 +383,10 @@ export default function CreateTourPage() {
         const showOverlay = options?.showOverlay === true
         const source = options?.source ?? 'auto'
 
+        // A verification block never clears by retrying; only an explicit save attempt should.
+        if (autosaveBlockedRef.current && source === 'auto') return false
+        if (source === 'manual') autosaveBlockedRef.current = false
+
         if (showOverlay) setIsSaving(true)
         setAutosaveStatus('saving')
 
@@ -379,6 +405,8 @@ export default function CreateTourPage() {
           if (currentTourIdRef.current !== savedId) rememberTourId(savedId)
           setLastSavedAt(new Date())
           setHasUnsaved(false)
+          setSaveErrorMessage(null)
+          setIsVerificationBlocked(false)
           setAutosaveStatus('saved')
           setTimeout(() => setAutosaveStatus('idle'), 3000)
 
@@ -387,8 +415,21 @@ export default function CreateTourPage() {
         } catch (error) {
           console.error('Error saving draft:', error)
           setAutosaveStatus('error')
-          if (source === 'manual') {
-            toast.error(getTourMutationErrorMessage(error, 'Failed to save. Please try again.'))
+
+          const message = getTourMutationErrorMessage(error, 'Failed to save. Please try again.')
+          setSaveErrorMessage(message)
+
+          if (isVerificationBlockedError(error)) {
+            // Retrying every few seconds can never succeed — the account isn't approved yet.
+            // Stop the loop and say so once, rather than flashing a silent "Save failed".
+            autosaveBlockedRef.current = true
+            setIsVerificationBlocked(true)
+            if (!verificationToastShownRef.current) {
+              verificationToastShownRef.current = true
+              toast.error(message, { duration: 8000 })
+            }
+          } else if (source === 'manual') {
+            toast.error(message)
           }
           return false
         } finally {
@@ -761,7 +802,10 @@ export default function CreateTourPage() {
                 </span>
               )}
               {autosaveStatus === 'error' && (
-                <span className="flex items-center gap-1 text-xs text-destructive shrink-0">
+                <span
+                  className="flex items-center gap-1 text-xs text-destructive shrink-0"
+                  title={saveErrorMessage ?? undefined}
+                >
                   <AlertCircle className="w-3 h-3" /> Save failed
                 </span>
               )}
@@ -895,6 +939,31 @@ export default function CreateTourPage() {
 
       {/* Content */}
       <div className="relative mx-auto flex-1 w-full max-w-5xl p-6 md:p-8">
+        {/* The database rejects tour inserts until the operator is approved. Say so plainly —
+            otherwise the only signal is a silent "Save failed" next to the title. */}
+        {isVerificationBlocked ? (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" aria-hidden="true" />
+              <div>
+                <p className="font-semibold text-destructive">Nothing is being saved</p>
+                <p className="mt-0.5 text-sm text-destructive/90">
+                  {saveErrorMessage ??
+                    'Your operator account is still pending verification, so tours cannot be saved yet.'}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0 border-destructive/40"
+              onClick={() => navigate('/operator/verification')}
+            >
+              Check verification
+            </Button>
+          </div>
+        ) : null}
+
         {/* Surfaced before any work is invested — not after the operator finishes step 7. */}
         {!isEditingPublishedTour ? (
           <PublishLimitBanner gate={commercialGate} className="mb-6" />
