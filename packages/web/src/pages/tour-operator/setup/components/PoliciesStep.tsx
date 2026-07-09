@@ -67,6 +67,20 @@ const POLICY_TEMPLATES = [
   },
 ]
 
+const ACCEPTED_POLICY_EXTENSIONS = ['pdf', 'doc', 'docx']
+const POLICY_ACCEPT_ATTR = '.pdf,.doc,.docx'
+const MAX_POLICY_FILE_BYTES = 10 * 1024 * 1024
+const REQUIRED_POLICY_DOCS = ['cancellation_signed', 'safety_manual'] as const
+
+/** A stored document. `true` is the legacy shape, from before the URL was persisted. */
+type PolicyUpload = { url: string; name: string; uploadedAt: string }
+type PolicyUploadValue = PolicyUpload | true | undefined
+
+const isPolicyUploaded = (value: PolicyUploadValue) => Boolean(value)
+const policyFileName = (value: PolicyUploadValue) =>
+  value && value !== true ? value.name : 'Document on file'
+const policyFileUrl = (value: PolicyUploadValue) => (value && value !== true ? value.url : null)
+
 export function PoliciesStep({ onUpdate, data }: StepProps) {
   const [accepted, setAccepted] = useState(data.policies?.accepted || false)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -77,8 +91,13 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
   const [customPolicies, setCustomPolicies] = useState<Record<string, string>>(
     data.policies?.custom || {},
   )
-  const [uploads, setUploads] = useState<Record<string, boolean>>(data.policies?.uploads || {})
+  const [uploads, setUploads] = useState<Record<string, PolicyUploadValue>>(
+    data.policies?.uploads || {},
+  )
   const [isUploading, setIsUploading] = useState<string | null>(null)
+
+  /** The next required document still missing — what the big "Select Files" button targets. */
+  const nextRequiredDoc = REQUIRED_POLICY_DOCS.find((id) => !isPolicyUploaded(uploads[id])) ?? null
 
   const updateAllData = (newData: any) => {
     onUpdate({
@@ -109,18 +128,34 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
   }
 
   const handleUpload = async (id: string, file: File) => {
-    if (!user?.id) return
+    if (!user?.id) {
+      toast.error('Please sign in again before uploading.')
+      return
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
+    if (!ACCEPTED_POLICY_EXTENSIONS.includes(extension)) {
+      toast.error('Upload a PDF or Word document (.pdf, .doc, .docx).')
+      return
+    }
+
+    if (file.size > MAX_POLICY_FILE_BYTES) {
+      toast.error('That file is over 10 MB. Please upload a smaller document.')
+      return
+    }
 
     setIsUploading(id)
     try {
-      await tourOperatorService.uploadAsset(user.id, file, `policies/${id}`)
-      const next = { ...uploads, [id]: true }
+      // Keep the returned URL — without it the document is uploaded but unreachable, so the
+      // compliance team has nothing to review.
+      const url = await tourOperatorService.uploadAsset(user.id, file, `policies/${id}`)
+      const next = { ...uploads, [id]: { url, name: file.name, uploadedAt: new Date().toISOString() } }
       setUploads(next)
       updateAllData({ uploads: next })
-      toast.success('Policy document uploaded!')
+      toast.success(`${file.name} uploaded`)
     } catch (error) {
       console.error('Policy upload error:', error)
-      toast.error('Failed to upload policy document')
+      toast.error(error instanceof Error ? error.message : 'Failed to upload policy document')
     } finally {
       setIsUploading(null)
     }
@@ -339,7 +374,15 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
           </div>
         ) : (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="p-12 border-2 border-dashed border-border/50 rounded-3xl bg-muted/30 flex flex-col items-center justify-center text-center group hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-500">
+            <div
+              className="p-12 border-2 border-dashed border-border/50 rounded-3xl bg-muted/30 flex flex-col items-center justify-center text-center group hover:border-primary/30 hover:bg-primary/[0.03] transition-all duration-500"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault()
+                const file = e.dataTransfer.files?.[0]
+                if (file && nextRequiredDoc) void handleUpload(nextRequiredDoc, file)
+              }}
+            >
               <div className="w-20 h-20 bg-muted border border-border/50 rounded-[28px] flex items-center justify-center text-muted-foreground/40 group-hover:text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 mb-6">
                 <FileUp className="w-10 h-10" />
               </div>
@@ -347,28 +390,62 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                 Upload Policy Documents
               </h5>
               <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed mb-8 font-medium">
-                Upload your PDF or Word documents containing all your tour policies for our
-                compliance team to review.
+                Drag a file here, or browse. PDF or Word, up to 10 MB, for our compliance team to
+                review.
               </p>
-              <Button className="rounded-2xl font-black uppercase tracking-widest h-14 px-10 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                Select Files
-              </Button>
+
+              {/* This button used to do nothing at all — no input, no handler. It now targets the
+                  next required document, matching the two cards below. */}
+              <input
+                type="file"
+                id="policy-upload-primary"
+                className="hidden"
+                accept={POLICY_ACCEPT_ATTR}
+                disabled={!!isUploading || !nextRequiredDoc}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file && nextRequiredDoc) void handleUpload(nextRequiredDoc, file)
+                  e.target.value = ''
+                }}
+              />
+              {nextRequiredDoc ? (
+                <Button
+                  asChild
+                  className="rounded-2xl font-black uppercase tracking-widest h-14 px-10 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                >
+                  <label htmlFor="policy-upload-primary" className="cursor-pointer">
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Uploading…
+                      </>
+                    ) : (
+                      `Upload ${nextRequiredDoc === 'safety_manual' ? 'safety manual' : 'signed cancellation policy'}`
+                    )}
+                  </label>
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 text-sm font-bold text-primary uppercase tracking-widest">
+                  <Check className="w-5 h-5 stroke-[3]" />
+                  All documents uploaded
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {['cancellation_signed', 'safety_manual'].map((id) => (
+              {REQUIRED_POLICY_DOCS.map((id) => (
                 <div
                   key={id}
                   className={cn(
                     'p-5 border rounded-2xl flex items-center justify-between transition-all border-border/50 bg-muted/30',
-                    uploads[id] && 'bg-primary/15 border-primary/30',
+                    isPolicyUploaded(uploads[id]) && 'bg-primary/15 border-primary/30',
                   )}
                 >
                   <div className="flex items-center gap-5">
                     <div
                       className={cn(
                           'w-12 h-12 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300',
-                          uploads[id]
+                          isPolicyUploaded(uploads[id])
                             ? 'bg-primary text-primary-foreground rotate-6'
                             : 'bg-muted text-muted-foreground/40',
                       )}
@@ -382,25 +459,39 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
                           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                           .join(' ')}
                       </p>
-                      <p
-                        className={cn(
-                          'text-[10px] uppercase tracking-widest font-black mt-1',
-                          uploads[id] ? 'text-primary' : 'text-muted-foreground/40',
-                        )}
-                      >
-                        {uploads[id] ? 'Verified' : 'Required'}
-                      </p>
+                      {isPolicyUploaded(uploads[id]) ? (
+                        policyFileUrl(uploads[id]) ? (
+                          <a
+                            href={policyFileUrl(uploads[id]) as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 block max-w-[180px] truncate text-[10px] font-black uppercase tracking-widest text-primary underline-offset-2 hover:underline"
+                          >
+                            {policyFileName(uploads[id])}
+                          </a>
+                        ) : (
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-primary">
+                            Document on file
+                          </p>
+                        )
+                      ) : (
+                        <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+                          Required
+                        </p>
+                      )}
                     </div>
                   </div>
-                  {!uploads[id] ? (
+                  {!isPolicyUploaded(uploads[id]) ? (
                     <div className="relative">
                       <input
                         type="file"
                         id={`upload-${id}`}
                         className="hidden"
+                        accept={POLICY_ACCEPT_ATTR}
                         onChange={(e) => {
                           const file = e.target.files?.[0]
-                          if (file) handleUpload(id, file)
+                          if (file) void handleUpload(id, file)
+                          e.target.value = ''
                         }}
                         disabled={!!isUploading}
                       />
