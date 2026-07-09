@@ -7,6 +7,8 @@ import {
   calculatePayoutReleaseDate,
   evaluateOperatorCancellationPenalty,
   canPublishAnotherTrip,
+  describeTierUpgrade,
+  getMembershipTierConfig,
   getMinimumDepositForTier,
   resolveFeatureGate,
   validateDepositPolicyForTier,
@@ -298,14 +300,62 @@ describe('commercial engine', () => {
   })
 
   it('blocks Gold-only locked premium features', () => {
+    // Google Maps is included on every tier — tiers differentiate on publish limits and
+    // commercial terms, not on core listing tooling.
     expect(resolveFeatureGate('gold', 'google_maps')).toEqual({
-      allowed: false,
-      reason: 'Gold tier does not include Google Maps support',
+      allowed: true,
+      reason: null,
     })
     expect(resolveFeatureGate('diamond', 'google_maps')).toEqual({
       allowed: true,
       reason: null,
     })
+    expect(resolveFeatureGate('gold', 'ai_itinerary')).toEqual({
+      allowed: false,
+      reason: 'Gold tier does not include AI itinerary access',
+    })
+    expect(resolveFeatureGate('gold', 'pickup_multi_city')).toEqual({
+      allowed: false,
+      reason: 'Gold tier does not include multi-city pickup support',
+    })
+  })
+
+  it('honours an admin-edited tier config over the built-in defaults', () => {
+    // The admin dashboard writes tier rows; every gate must read them, so raising a limit or
+    // unlocking a feature takes effect without a client deploy.
+    const customGold = {
+      ...getMembershipTierConfig('gold'),
+      label: 'Starter',
+      monthlyPublishLimit: 12,
+      aiItineraryEnabled: true,
+    }
+
+    expect(canPublishAnotherTrip(customGold, 11)).toEqual({ allowed: true, reason: null })
+    expect(canPublishAnotherTrip(customGold, 12)).toEqual({
+      allowed: false,
+      reason: 'Starter tier publish limit reached for this cycle',
+    })
+    expect(resolveFeatureGate(customGold, 'ai_itinerary')).toEqual({ allowed: true, reason: null })
+    expect(getMinimumDepositForTier(customGold)).toBe(20)
+  })
+
+  it('describes what an upgrade actually unlocks', () => {
+    const delta = describeTierUpgrade('gold', 'diamond')
+
+    expect(delta.extraPublishSlots).toBe(20)
+    expect(delta.commissionPointsSaved).toBe(7)
+    expect(delta.depositPointsLowered).toBe(5)
+    expect(delta.unlocksMultiCityPickup).toBe(true)
+    expect(delta.unlocksAiItinerary).toBe(true)
+    expect(delta.monthlyFeeDifference).toBe(15000)
+    expect(delta.highlights.length).toBeGreaterThan(0)
+
+    // A downgrade gains nothing — the copy must not invent benefits.
+    const downgrade = describeTierUpgrade('platinum', 'gold')
+    expect(downgrade.extraPublishSlots).toBe(0)
+    expect(downgrade.commissionPointsSaved).toBe(0)
+    expect(downgrade.unlocksAiItinerary).toBe(false)
+    expect(downgrade.monthlyFeeDifference).toBe(-35000)
   })
 
   it('enforces publish limits by tier', () => {

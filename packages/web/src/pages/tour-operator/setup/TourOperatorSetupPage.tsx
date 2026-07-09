@@ -10,6 +10,7 @@ import {
   tourOperatorService,
 } from '@/features/tour-operator/services/tourOperatorService'
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
+import { SETUP_STEP_SLUGS, type SetupStepSlug } from '@/features/tour-operator/constants/setupSteps'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
@@ -25,7 +26,7 @@ import { ProfilePictureStep } from './components/ProfilePictureStep'
 import { ServicesStep } from './components/ServicesStep'
 import { WelcomeStep } from './components/WelcomeStep'
 
-const STEPS: Array<{ id: string; title: string; component: any }> = [
+const STEPS: Array<{ id: SetupStepSlug; title: string; component: any }> = [
   { id: 'welcome', title: 'Welcome', component: WelcomeStep },
   { id: 'personal', title: 'Personal Info', component: PersonalInfoStep },
   { id: 'profile-pic', title: 'Profile Picture', component: ProfilePictureStep },
@@ -37,6 +38,17 @@ const STEPS: Array<{ id: string; title: string; component: any }> = [
   { id: 'policies', title: 'Policies', component: PoliciesStep },
   { id: 'completion', title: 'Complete', component: CompletionStep },
 ]
+
+// The dashboard turns a saved step index into a deep link using SETUP_STEP_SLUGS. If these two
+// ever diverge again, "Resume Setup" silently lands the operator on the wrong step — so fail loudly.
+if (import.meta.env.DEV) {
+  const drift = STEPS.map((s) => s.id).join(',') !== SETUP_STEP_SLUGS.join(',')
+  if (drift) {
+    throw new Error(
+      'Setup wizard STEPS no longer match SETUP_STEP_SLUGS. Update features/tour-operator/constants/setupSteps.ts.',
+    )
+  }
+}
 
 export default function TourOperatorSetupPage() {
   const [currentStep, setCurrentStep] = useState(0)
