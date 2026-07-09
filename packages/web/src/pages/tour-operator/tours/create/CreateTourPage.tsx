@@ -15,8 +15,6 @@ import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOpe
 import { PublishLimitBanner } from '@/features/tour-operator/components/tier/PublishLimitBanner'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
-import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { commercialService } from '@/features/commercial/services/commercialService'
 
@@ -799,13 +797,6 @@ export default function CreateTourPage() {
                 {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">Submit for Review</span>
               </Button>
-
-              {/* Same chrome as the setup wizard — theme and account menu are reachable
-                  from every operator surface, not just the dashboard. */}
-              <div className="ml-1 flex items-center gap-2 border-l border-border/60 pl-3">
-                <ThemeToggle />
-                <RoleBasedDrawer />
-              </div>
             </div>
           </div>
 
