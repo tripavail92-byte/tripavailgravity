@@ -3,6 +3,10 @@
 A design + implementation plan, grounded in how the tier system actually works today
 (`packages/shared/src/commercial/engine.ts`, `useOperatorCommercialGate`, `operator_commercial_profiles`).
 
+> **Status: Phase A is built, plus full admin control of every tier variable.**
+> See §6 "What shipped" at the bottom. Phase B (upgrade-request flow) and Phase C
+> (self-serve billing) remain as designed below.
+
 ---
 
 ## 1. What the system enforces today
@@ -111,9 +115,73 @@ When Stripe (or JazzCash/EasyPaisa for PKR) is ready:
 
 ## 5. Priority order
 
-1. Dashboard "Your plan" card + wizard entry banner (Phase A #1–2) — biggest pain, least work
-2. Publish-blocked panel with upgrade delta (A #4)
-3. Pickup-step inline upsell (A #3)
-4. Upgrade-request flow (Phase B)
-5. Cycle-reset verification + gate error state (guardrails)
-6. Self-serve billing (Phase C, when credentials exist)
+1. ✅ Dashboard "Your plan" card + wizard entry banner (Phase A #1–2) — biggest pain, least work
+2. ✅ Publish-blocked messaging with reset date + upgrade delta (A #4)
+3. ✅ Pickup-step inline upsell (A #3)
+4. ⬜ Upgrade-request flow (Phase B)
+5. ✅ Gate error state (no more silent Gold downgrade) · ⬜ cycle-reset job verification
+6. ⬜ Self-serve billing (Phase C, when credentials exist)
+
+---
+
+## 6. What shipped — admin-controlled tiers
+
+**The core architectural change: `commercial_membership_tiers` is now the single source of truth.**
+Previously the table was unreachable from the app — only `service_role` could write it and only
+admins could *read* it, so tier values were effectively frozen in code
+(`DEFAULT_MEMBERSHIP_TIER_CONFIGS`), and **operators could not read their own tier row at all**
+(their entitlements card rendered every feature as disabled and the publish limit as
+"Not configured yet"). That is fixed.
+
+### Migration — `supabase/migrations/20260710000001_admin_tier_management.sql`
+- **Adds admin-editable presentation columns**: `tagline`, `badge_hex`, `perks` (jsonb array),
+  `currency`, `sort_order`, `is_active`, `is_publicly_listed`, `updated_by`.
+- **Fixes RLS**: authenticated users can now *read* the catalogue (pricing isn't secret — an
+  operator must see the plan they pay for); **admins can now UPDATE and INSERT**. No DELETE
+  policy: tiers are referenced by operator profiles, so deactivate rather than delete.
+- **Audit trail**: `commercial_tier_config_log` + a trigger that records only the columns that
+  actually changed, with `auth.uid()` as `changed_by`.
+- **Safety trigger**: deactivating a tier that still has operators assigned raises an exception
+  instead of stranding them.
+- Guard constraints: commission ≤ 100%, `perks` must be a JSON array.
+
+### Admin UI — "Tiers" tab on `/admin/commercial`
+`pages/admin/components/AdminTierEditor.tsx`. Every variable is editable per tier: name, tagline,
+badge colour, monthly fee, commission %, minimum deposit %, publish limit, AI credits, ranking
+weight, support priority, the three feature toggles (multi-city pickup / Google Maps / AI
+itinerary), a free-form perks list, public listing, and active state. Saving validates before
+write (e.g. it refuses "AI enabled with 0 credits", which would show operators a tool they can't
+use) and reports what the database actually accepted.
+
+### How a change propagates
+`commercial_membership_tiers` → `mapTierRowToConfig()` → `useOperatorCommercialGate` → every
+wizard gate, the dashboard plan card, and the upgrade comparison. **Every gate function now takes
+a resolved tier config, not just a tier code** (`TierLike = MembershipTierCode |
+MembershipTierConfig`), so raising a publish limit in the admin dashboard takes effect on the
+operator's next page load — no deploy. Publish limits remain enforced in the database
+(`PUBLISH_LIMIT_REACHED`), so the client gate is UX, never the security boundary.
+
+### Operator-facing surfaces added
+- `OperatorPlanCard` — dashboard card: tier badge, publish-slot meter, AI-credit meter,
+  commission, monthly fee, upgrade CTA, and an explicit error state with Retry.
+- `PublishLimitBanner` — top of the create-tour wizard: silent under 80% usage, amber warning
+  near the limit, red explainer once exhausted ("you can keep drafting; publishing unlocks
+  <reset date> or with an upgrade").
+- `TierLockedFeature` — inline, *before* the operator acts (used on the pickup step), replacing
+  the old error-toast-after-the-fact.
+- `UsageMeter` / `TierBadge` / `formatCycleReset` — shared primitives; a limit is always paired
+  with when it resets.
+- Upgrade comparison on `/operator/commercial` now renders from the live catalogue (taglines,
+  perks, colours) and shows a computed **"You would gain"** list via `describeTierUpgrade()`,
+  so the sales copy can never contradict the configured values.
+
+### Adding a fourth tier
+Tier *values* are fully admin-controlled; tier *codes* are still enum-bound. A new code needs a
+one-line migration (`ALTER TYPE membership_tier_code_enum ADD VALUE 'silver'`) plus an INSERT —
+after that it is editable from the dashboard like the rest.
+
+### Pre-migration safety
+The client reads the tier row defensively (`select *`, optional columns) and falls back to the
+built-in configs when the row is unreadable. So the code above is safe to deploy *before* the
+migration is applied: operators keep today's behavior, and the admin Tiers tab loads read-only
+and reports a clear permission error on save until the RLS policies land.

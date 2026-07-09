@@ -3,6 +3,12 @@
 Every operator-facing page was read end-to-end. Findings are ordered by severity within each page.
 Severity: **HIGH** = broken behavior a real operator will hit · **MED** = wrong/confusing but survivable · **LOW** = polish.
 
+> **Update (July 2026):** the items marked ✅ below are fixed and merged. A further HIGH bug was
+> found while implementing: `commercial_membership_tiers` RLS granted SELECT to admins only, so
+> **no operator could read their own tier row** — the entitlements card showed every feature as
+> disabled and the publish limit as "Not configured yet". Fixed in
+> `20260710000001_admin_tier_management.sql`. See `OPERATOR_TIER_LIMITS_AND_UPGRADES.md` §6.
+
 Routes covered: `/operator/dashboard`, `/operator/bookings`, `/operator/calendar`, `/operator/commercial`,
 `/operator/reviews`, `/operator/reputation`, `/operator/analytics`, `/operator/settings`,
 `/operator-dashboard/business-profile`, `/operator-dashboard/fleet`, `/operator/setup` (wizard),
@@ -14,7 +20,7 @@ Routes covered: `/operator/dashboard`, `/operator/bookings`, `/operator/calendar
 
 | Sev | Finding | Where |
 |---|---|---|
-| **HIGH** | **"Resume Setup" resumes at the wrong step.** `STEP_SLUGS` lists 8 steps but the setup wizard has 10 (`fleet` and `guides` are missing from the list). Any operator whose saved step is ≥ 6 gets deep-linked to the wrong step — e.g. saved at *Fleet* (index 6) resumes at *Policies*. | `TourOperatorDashboard.tsx:35-44` vs `setup/TourOperatorSetupPage.tsx` STEPS |
+| ✅ **HIGH** | **"Resume Setup" resumed at the wrong step.** `STEP_SLUGS` had 8 entries while the wizard has 10 (`fleet`, `guides` missing), so anyone saved at step ≥ 6 was deep-linked to the wrong step. *Fixed:* both sites now import `SETUP_STEP_SLUGS`, with a DEV assertion that fails loudly on future drift. | `constants/setupSteps.ts` |
 | MED | **Dead "View all" button** above Active Tour Packages — rendered with hover styles but no `onClick`/`Link`. | `:651` |
 | LOW | Draft-count stat uses `continuableTours.length \|\| drafts.length` — shows a different number than the DraftsAlert below it when continuable = 0. | `:184` |
 | LOW | `Active Tours` shows `—` when the count is 0 (`length \|\| '—'`); 0 is a real value. | `:178` |
@@ -80,8 +86,9 @@ Routes covered: `/operator/dashboard`, `/operator/bookings`, `/operator/calendar
 
 | Sev | Finding | Where |
 |---|---|---|
-| MED | **Four of seven "Settings Sections" cards link to the page itself** (`href: '/operator/settings'`): *Tour Pricing & Discounts*, *Cancellation & Refund Policy*, *Notifications*, *Security & Team Access*. Clicking them just re-navigates to the same page — reads as broken. | `:72-143` |
+| ✅ MED | **Four of seven "Settings Sections" cards linked to the page itself** — *Tour Pricing*, *Cancellation*, *Notifications*, *Security* all had `href: '/operator/settings'`. *Fixed:* they now deep-link to anchors for the sections that already live on this page (`#tour-defaults`, `#cancellation`, `#notifications`, `#security`), and the page scrolls to them. | `:72-143` |
 | MED | **Two-Factor Authentication toggle is cosmetic** — it persists a `two_factor_enabled` flag but no 2FA enrollment/challenge exists anywhere. Gives operators a false sense of security. | `:509-515` |
+| ✅ LOW | **"Base Tour Price" rendered `undefined 0.00`** when currency was null, and "Payment & Earnings" always showed an unexplained warning triangle. *Fixed:* `formatMoney` with a PKR fallback; the unconditional `hasWarning` is gone. | `:396-408`, `:98` |
 | LOW | "Base Tour Price" and "Max Group Size" are displayed but not editable anywhere on the page (the card that should edit them is one of the self-links). | `:396-408` |
 | LOW | "Payment & Earnings" `hasWarning` triangle renders in `text-primary` and nothing explains what the warning is. | `:98`, `:758` |
 
@@ -93,7 +100,7 @@ Overall in good shape (tier hero, `X/Y publish slots used` caption, entitlements
 
 | Sev | Finding | Where |
 |---|---|---|
-| MED | **Gate hook fails open to Gold:** `useOperatorCommercialGate` falls back to Gold limits on any fetch error — a Platinum operator on a flaky connection gets gold gates (1 pickup, 5-publish limit) with no indication anything went wrong. Should retry / surface "couldn't load your plan" instead of silently downgrading. | `useOperatorCommercialGate.ts:103-106` |
+| ✅ MED | **Gate hook failed open to Gold** on any fetch error — a Platinum operator on a flaky connection silently got Gold gates. *Fixed:* the hook exposes `status: 'loading' \| 'ready' \| 'error'` and the plan card shows "Couldn't load your plan" + Retry instead of applying the wrong limits. | `useOperatorCommercialGate.ts` |
 | LOW | Money assumes PKR everywhere (engine values are PKR-denominated but unlabeled in places). | — |
 
 ## 9. Setup wizard — reviewed + hardened this session
@@ -117,10 +124,10 @@ Fixed this week: Lucide activity icons, mandatory activity time, submit-routes-t
 
 ## Suggested fix order
 
-1. `STEP_SLUGS` resume bug (2-line fix, real user impact)
-2. Settings self-links + cosmetic 2FA (trust)
-3. Reputation/analytics silent-failure states
-4. Bookings revenue/upcoming stat math
-5. Copy sweep (jargon)
-6. Analytics event cap + light-mode tones + teal remnants
-7. The tier-visibility work (companion doc)
+1. ✅ `STEP_SLUGS` resume bug (2-line fix, real user impact)
+2. ✅ Settings self-links — ⬜ cosmetic 2FA toggle still to remove/build
+3. ⬜ Reputation/analytics silent-failure states
+4. ⬜ Bookings revenue/upcoming stat math
+5. ⬜ Copy sweep (jargon)
+6. ⬜ Analytics event cap + light-mode tones + teal remnants
+7. ✅ The tier-visibility work (companion doc) — Phase A + admin control shipped

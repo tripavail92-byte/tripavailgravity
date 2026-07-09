@@ -20,6 +20,7 @@ import {
   Trash2,
   TrendingUp,
 } from 'lucide-react'
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useLocation } from 'react-router-dom'
@@ -78,7 +79,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    href: '/operator/settings',
+    href: '/operator/settings#tour-defaults',
   },
   {
     id: 'business',
@@ -95,7 +96,7 @@ const settingsCategories: SettingsCategory[] = [
     title: 'Payment & Earnings',
     description: 'Configure payment methods, commission structure, and payout settings',
     icon: CreditCard,
-    hasWarning: true,
+    hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
     href: '/operator/commercial',
@@ -108,7 +109,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: 'Flexible',
     badgeVariant: 'info',
-    href: '/operator/settings',
+    href: '/operator/settings#cancellation',
   },
   {
     id: 'notifications',
@@ -118,7 +119,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    href: '/operator/settings',
+    href: '/operator/settings#notifications',
   },
   {
     id: 'analytics',
@@ -138,7 +139,7 @@ const settingsCategories: SettingsCategory[] = [
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    href: '/operator/settings',
+    href: '/operator/settings#security',
   },
 ]
 
@@ -156,6 +157,14 @@ export default function TourOperatorSettingsPage() {
     if (location.pathname === '/operator-dashboard/fleet') return 'fleet-guides'
     return 'all'
   }, [location.pathname])
+
+  // The settings-section cards jump to sections that live on this same page. React Router doesn't
+  // scroll for a hash change on its own, so do it here — otherwise those cards look like dead links.
+  useEffect(() => {
+    if (!location.hash || isLoading) return
+    const target = document.getElementById(location.hash.slice(1))
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [location.hash, isLoading])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-role', 'tour_operator')
@@ -392,11 +401,11 @@ export default function TourOperatorSettingsPage() {
         />
         {storefrontSection === 'all' && (<>
         {/* Quick Settings Overview */}
-        <div className="grid grid-cols-2 gap-3">
+        <div id="tour-defaults" className="grid grid-cols-2 gap-3 scroll-mt-24">
           <GlassCard variant="card" className="rounded-xl p-4">
             <div className="text-xs text-muted-foreground mb-1">Base Tour Price</div>
             <div className="text-lg font-semibold text-foreground">
-              {settings?.currency} {settings?.base_tour_price?.toFixed(2) || '0.00'}
+              {formatMoney(settings?.base_tour_price ?? 0, settings?.currency || 'PKR')}
             </div>
           </GlassCard>
           <GlassCard variant="card" className="rounded-xl p-4">
@@ -436,7 +445,7 @@ export default function TourOperatorSettingsPage() {
         </GlassCard>
 
         {/* Notification Toggles */}
-        <GlassCard variant="card" className="rounded-2xl p-6">
+        <GlassCard id="notifications" variant="card" className="rounded-2xl p-6 scroll-mt-24">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Bell size={20} className="text-primary" />
             Notification Preferences ({notificationBadgeCount} Active)
@@ -474,7 +483,7 @@ export default function TourOperatorSettingsPage() {
         </GlassCard>
 
         {/* Analytics & Policies */}
-        <GlassCard variant="card" className="rounded-2xl p-6">
+        <GlassCard id="cancellation" variant="card" className="rounded-2xl p-6 scroll-mt-24">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp size={20} className="text-primary" />
             Analytics & Policies
@@ -501,7 +510,7 @@ export default function TourOperatorSettingsPage() {
         </GlassCard>
 
         {/* Security */}
-        <GlassCard variant="card" className="rounded-2xl p-6">
+        <GlassCard id="security" variant="card" className="rounded-2xl p-6 scroll-mt-24">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield size={20} className="text-primary" />
             Security

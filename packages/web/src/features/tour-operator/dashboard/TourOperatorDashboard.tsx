@@ -22,6 +22,9 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { commercialService } from '@/features/commercial/services/commercialService'
+import { OperatorPlanCard } from '@/features/tour-operator/components/tier/OperatorPlanCard'
+import { setupStepSlugForIndex } from '@/features/tour-operator/constants/setupSteps'
+import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 import { useAuth } from '@/hooks/useAuth'
@@ -32,16 +35,7 @@ import { ActiveToursGrid } from './components/ActiveToursGrid'
 import { DraftsAlert } from './components/DraftsAlert'
 import { OperatorRecentBookings } from './components/OperatorRecentBookings'
 
-const STEP_SLUGS = [
-  'welcome',
-  'personal',
-  'profile-pic',
-  'business',
-  'services',
-  'coverage',
-  'policies',
-  'completion',
-]
+// Slugs live in one place — see setupStepSlugForIndex's doc comment for why.
 
 function clearKycProcessingHint() {
   try {
@@ -64,6 +58,7 @@ export function TourOperatorDashboard() {
   const [loading, setLoading] = useState(true)
   const [setupCompleted, setSetupCompleted] = useState<boolean | null>(null)
   const [setupCurrentStep, setSetupCurrentStep] = useState<number>(0)
+  const commercialGate = useOperatorCommercialGate(user?.id)
 
   // Apply tour operator coral theme
   useEffect(() => {
@@ -422,7 +417,7 @@ export function TourOperatorDashboard() {
                 onClick={() =>
                   navigate(
                     setupCurrentStep > 0
-                      ? `/operator/setup?step=${STEP_SLUGS[setupCurrentStep] ?? 'welcome'}`
+                      ? `/operator/setup?step=${setupStepSlugForIndex(setupCurrentStep)}`
                       : '/operator/setup',
                   )
                 }
@@ -686,8 +681,9 @@ export function TourOperatorDashboard() {
               )}
             </div>
 
-            {/* Right: Recent Activity */}
-            <div className="lg:col-span-1">
+            {/* Right: Plan + Recent Activity */}
+            <div className="lg:col-span-1 space-y-6">
+              <OperatorPlanCard gate={commercialGate} />
               <div className="glass-card border border-border/50 rounded-3xl p-6">
                 <OperatorRecentBookings operatorId={user?.id} />
               </div>

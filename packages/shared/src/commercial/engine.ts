@@ -18,6 +18,146 @@ export interface MembershipTierConfig {
   aiMonthlyCredits: number
   supportPriority: number
   rankingWeight: number
+  /** Admin-editable presentation. Absent when falling back to the built-in defaults. */
+  tagline?: string | null
+  badgeHex?: string | null
+  perks?: string[]
+  currency?: string
+  sortOrder?: number
+  isActive?: boolean
+  isPubliclyListed?: boolean
+}
+
+/**
+ * Either a resolved tier (normally a row from `commercial_membership_tiers`, which the
+ * admin edits) or just its code — in which case the built-in defaults apply. Every gate
+ * accepts both, so changing a tier in the admin dashboard changes behavior without a deploy.
+ */
+export type TierLike = MembershipTierCode | MembershipTierConfig
+
+/** Raw `commercial_membership_tiers` row, as returned by PostgREST. */
+export interface MembershipTierRow {
+  code: string
+  display_name: string
+  monthly_fee: number | string
+  commission_rate: number | string
+  minimum_deposit_percent: number | string
+  monthly_publish_limit: number | string
+  pickup_multi_city_enabled: boolean
+  google_maps_enabled: boolean
+  ai_itinerary_enabled: boolean
+  ai_monthly_credits: number | string
+  support_priority?: number | string
+  ranking_weight?: number | string
+  tagline?: string | null
+  badge_hex?: string | null
+  perks?: unknown
+  currency?: string | null
+  sort_order?: number | string | null
+  is_active?: boolean | null
+  is_publicly_listed?: boolean | null
+}
+
+function toNum(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'string' ? Number.parseFloat(value) : Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+/**
+ * Maps a database tier row onto the config the gates consume. Columns added by later
+ * migrations are read defensively, so a client deployed ahead of its migration still works.
+ */
+export function mapTierRowToConfig(row: MembershipTierRow): MembershipTierConfig {
+  const code = row.code as MembershipTierCode
+  const fallback = DEFAULT_MEMBERSHIP_TIER_CONFIGS[code] ?? DEFAULT_MEMBERSHIP_TIER_CONFIGS.gold
+
+  return {
+    code,
+    label: row.display_name || fallback.label,
+    monthlyFee: toNum(row.monthly_fee, fallback.monthlyFee),
+    commissionRate: toNum(row.commission_rate, fallback.commissionRate),
+    minimumDepositPercent: toNum(row.minimum_deposit_percent, fallback.minimumDepositPercent),
+    monthlyPublishLimit: toNum(row.monthly_publish_limit, fallback.monthlyPublishLimit),
+    pickupMultiCityEnabled: Boolean(row.pickup_multi_city_enabled),
+    googleMapsEnabled: Boolean(row.google_maps_enabled),
+    aiItineraryEnabled: Boolean(row.ai_itinerary_enabled),
+    aiMonthlyCredits: toNum(row.ai_monthly_credits, fallback.aiMonthlyCredits),
+    supportPriority: toNum(row.support_priority, fallback.supportPriority),
+    rankingWeight: toNum(row.ranking_weight, fallback.rankingWeight),
+    tagline: row.tagline ?? null,
+    badgeHex: row.badge_hex ?? null,
+    perks: Array.isArray(row.perks) ? row.perks.filter((p): p is string => typeof p === 'string') : [],
+    currency: row.currency ?? 'PKR',
+    sortOrder: toNum(row.sort_order, 0),
+    isActive: row.is_active ?? true,
+    isPubliclyListed: row.is_publicly_listed ?? true,
+  }
+}
+
+/** Normalizes a code-or-config into a config. */
+export function resolveTier(tier: TierLike): MembershipTierConfig {
+  return typeof tier === 'string' ? getMembershipTierConfig(tier) : tier
+}
+
+export interface TierUpgradeDelta {
+  extraPublishSlots: number
+  commissionPointsSaved: number
+  depositPointsLowered: number
+  unlocksMultiCityPickup: boolean
+  unlocksAiItinerary: boolean
+  extraAiCredits: number
+  monthlyFeeDifference: number
+  /** Short human-readable reasons to upgrade, ready to render as bullets. */
+  highlights: string[]
+}
+
+/**
+ * What an operator actually gains by moving from `from` to `to`. Values come from the
+ * (admin-editable) configs, so the upgrade copy always matches the live tier settings.
+ */
+export function describeTierUpgrade(from: TierLike, to: TierLike): TierUpgradeDelta {
+  const a = resolveTier(from)
+  const b = resolveTier(to)
+
+  const extraPublishSlots = Math.max(0, b.monthlyPublishLimit - a.monthlyPublishLimit)
+  const commissionPointsSaved = Math.max(0, a.commissionRate - b.commissionRate)
+  const depositPointsLowered = Math.max(0, a.minimumDepositPercent - b.minimumDepositPercent)
+  const unlocksMultiCityPickup = !a.pickupMultiCityEnabled && b.pickupMultiCityEnabled
+  const unlocksAiItinerary = !a.aiItineraryEnabled && b.aiItineraryEnabled
+  const extraAiCredits = Math.max(0, b.aiMonthlyCredits - a.aiMonthlyCredits)
+
+  const highlights: string[] = []
+  if (extraPublishSlots > 0) {
+    highlights.push(`Publish ${b.monthlyPublishLimit} tours per month instead of ${a.monthlyPublishLimit}`)
+  }
+  if (commissionPointsSaved > 0) {
+    highlights.push(`Pay ${b.commissionRate}% commission instead of ${a.commissionRate}%`)
+  }
+  if (depositPointsLowered > 0) {
+    highlights.push(`Take deposits as low as ${b.minimumDepositPercent}% (down from ${a.minimumDepositPercent}%)`)
+  }
+  if (unlocksMultiCityPickup) highlights.push('Add multi-city pickup locations')
+  if (unlocksAiItinerary) {
+    highlights.push(
+      b.aiMonthlyCredits > 0
+        ? `Unlock AI itinerary tools (${b.aiMonthlyCredits} credits/month)`
+        : 'Unlock AI itinerary tools',
+    )
+  } else if (extraAiCredits > 0) {
+    highlights.push(`${b.aiMonthlyCredits} AI credits per month (up from ${a.aiMonthlyCredits})`)
+  }
+  if (b.rankingWeight > a.rankingWeight) highlights.push('Higher placement in search results')
+
+  return {
+    extraPublishSlots,
+    commissionPointsSaved,
+    depositPointsLowered,
+    unlocksMultiCityPickup,
+    unlocksAiItinerary,
+    extraAiCredits,
+    monthlyFeeDifference: normalizeMoney(b.monthlyFee - a.monthlyFee),
+    highlights,
+  }
 }
 
 export interface MembershipAdjustmentInput {
@@ -197,12 +337,12 @@ export function calculateCommissionCollection(
   }
 }
 
-export function getMinimumDepositForTier(tier: MembershipTierCode): number {
-  return getMembershipTierConfig(tier).minimumDepositPercent
+export function getMinimumDepositForTier(tier: TierLike): number {
+  return resolveTier(tier).minimumDepositPercent
 }
 
 export function validateDepositPolicyForTier(
-  tier: MembershipTierCode,
+  tier: TierLike,
   depositRequired: boolean,
   depositPercentage: number,
 ): DepositPolicyValidationResult {
@@ -224,7 +364,7 @@ export function validateDepositPolicyForTier(
     }
   }
 
-  const config = getMembershipTierConfig(tier)
+  const config = resolveTier(tier)
   return {
     allowed: false,
     minimumDepositPercent,
@@ -330,30 +470,30 @@ export function evaluateOperatorCancellationPenalty(input: {
   }
 }
 
-export function getPublishLimitForTier(tier: MembershipTierCode): number {
-  return getMembershipTierConfig(tier).monthlyPublishLimit
+export function getPublishLimitForTier(tier: TierLike): number {
+  return resolveTier(tier).monthlyPublishLimit
 }
 
 export function canPublishAnotherTrip(
-  tier: MembershipTierCode,
+  tier: TierLike,
   alreadyPublishedThisCycle: number,
 ): FeatureGateResult {
-  const limit = getPublishLimitForTier(tier)
-  if (alreadyPublishedThisCycle < limit) {
+  const config = resolveTier(tier)
+  if (alreadyPublishedThisCycle < config.monthlyPublishLimit) {
     return { allowed: true, reason: null }
   }
 
   return {
     allowed: false,
-    reason: `${getMembershipTierConfig(tier).label} tier publish limit reached for this cycle`,
+    reason: `${config.label} tier publish limit reached for this cycle`,
   }
 }
 
 export function resolveFeatureGate(
-  tier: MembershipTierCode,
+  tier: TierLike,
   feature: CommercialFeatureKey,
 ): FeatureGateResult {
-  const config = getMembershipTierConfig(tier)
+  const config = resolveTier(tier)
 
   switch (feature) {
     case 'pickup_multi_city':

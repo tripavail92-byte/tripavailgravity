@@ -35,6 +35,8 @@ import {
 } from '@/features/commercial/services/commercialService'
 import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
+import { AdminTierEditor } from './components/AdminTierEditor'
+
 const MIN_ADMIN_ACTION_REASON_LENGTH = 10
 
 function formatMoney(value: number) {
@@ -1589,6 +1591,7 @@ export default function AdminCommercialPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
         <TabsList className="h-auto p-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tiers">Tiers</TabsTrigger>
           <TabsTrigger value="operators">Operators</TabsTrigger>
           <TabsTrigger value="billing">Billing</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
@@ -1596,6 +1599,10 @@ export default function AdminCommercialPage() {
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tiers" className="space-y-6 pt-4">
+          <AdminTierEditor />
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6 pt-4">
           <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">

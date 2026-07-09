@@ -12,6 +12,7 @@ import {
   tourService,
 } from '@/features/tour-operator/services/tourService'
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
+import { PublishLimitBanner } from '@/features/tour-operator/components/tier/PublishLimitBanner'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -185,8 +186,10 @@ export default function CreateTourPage() {
     () =>
       isEditingPublishedTour
         ? { allowed: true, reason: null }
-        : canPublishAnotherTrip(commercialGate.tierCode, commercialGate.publishedToursThisCycle),
-    [commercialGate.publishedToursThisCycle, commercialGate.tierCode, isEditingPublishedTour],
+        : // Pass the resolved tier (not just its code) so an admin-edited publish limit
+          // applies immediately, without a client deploy.
+          canPublishAnotherTrip(commercialGate.tier, commercialGate.publishedToursThisCycle),
+    [commercialGate.publishedToursThisCycle, commercialGate.tier, isEditingPublishedTour],
   )
 
   const ensureDepositPolicySatisfied = useCallback(() => {
@@ -892,6 +895,11 @@ export default function CreateTourPage() {
 
       {/* Content */}
       <div className="relative mx-auto flex-1 w-full max-w-5xl p-6 md:p-8">
+        {/* Surfaced before any work is invested — not after the operator finishes step 7. */}
+        {!isEditingPublishedTour ? (
+          <PublishLimitBanner gate={commercialGate} className="mb-6" />
+        ) : null}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}

@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Tour } from '@/features/tour-operator/services/tourService'
+import { TierLockedFeature } from '@/features/tour-operator/components/tier/TierLockedFeature'
 
 import { PickupMap } from './PickupMap'
 import { TimeWheelPicker } from './TimeWheelPicker'
@@ -58,6 +59,8 @@ interface TourPickupLocationsStepProps {
   onBack: () => void
   allowGoogleMaps?: boolean
   allowPickupMultiCity?: boolean
+  /** The operator's plan name, used when explaining what a higher tier unlocks. */
+  membershipTierLabel?: string
   tourId?: string | null
   ensureTourDraft?: () => Promise<string>
 }
@@ -643,6 +646,7 @@ export function TourPickupLocationsStep({
   onBack,
   allowGoogleMaps = true,
   allowPickupMultiCity = true,
+  membershipTierLabel = 'your current plan',
   tourId,
   ensureTourDraft,
 }: TourPickupLocationsStepProps) {
@@ -1310,6 +1314,16 @@ export function TourPickupLocationsStep({
                 </Button>
               </div>
             </div>
+
+            {/* Stated up front, so a single-pickup plan never surprises the operator with an
+                error toast the moment they try to add a second stop. */}
+            {!allowPickupMultiCity ? (
+              <TierLockedFeature
+                feature="Multi-city pickup locations"
+                currentTierLabel={membershipTierLabel}
+                description="Collect travellers from more than one pickup point per tour."
+              />
+            ) : null}
 
             <div className="space-y-4">
                 <div className="rounded-[28px] border border-border/60 bg-background/70 p-4 shadow-sm sm:p-6">

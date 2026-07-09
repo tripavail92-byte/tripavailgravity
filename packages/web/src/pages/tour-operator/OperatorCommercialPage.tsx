@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import {
   AlertTriangle,
   BarChart3,
+  Check,
   CheckCircle2,
   CreditCard,
   Download,
@@ -45,8 +46,13 @@ import {
   type OperatorPayoutDisputeCase,
   type OperatorPayoutReportRow,
 } from '@/features/commercial/services/commercialService'
+import { membershipTierService } from '@/features/commercial/services/membershipTierService'
 import { useAuth } from '@/hooks/useAuth'
-import { DEFAULT_MEMBERSHIP_TIER_CONFIGS } from '@tripavail/shared/commercial/engine'
+import {
+  DEFAULT_MEMBERSHIP_TIER_CONFIGS,
+  describeTierUpgrade,
+  type MembershipTierConfig,
+} from '@tripavail/shared/commercial/engine'
 import { formatMoney as formatMoneyShared } from '@tripavail/shared/utils/money'
 
 // TODO: use operator_commercial_profiles.currency once plumbed into this view.
@@ -407,6 +413,7 @@ export default function OperatorCommercialPage() {
     useState<Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['tier']>(
       null,
     )
+  const [catalogueTiers, setCatalogueTiers] = useState<MembershipTierConfig[]>([])
   const [performance, setPerformance] =
     useState<
       Awaited<ReturnType<typeof commercialService.getOperatorCommercialOverview>>['performance']
@@ -452,16 +459,22 @@ export default function OperatorCommercialPage() {
 
       try {
         setLoading(true)
-        const [overview, nextPromotions, nextTours, nextDisputeCases] = await Promise.all([
+        const [overview, nextPromotions, nextTours, nextDisputeCases, nextCatalogue] = await Promise.all([
           commercialService.getOperatorCommercialOverview(user.id),
           commercialService.listOperatorPromotions(user.id),
           commercialService.listCommercialTours(user.id),
           commercialService.listOperatorPayoutDisputeCases(user.id),
+          // The plan comparison renders from the live, admin-edited catalogue. Falling back to
+          // the built-in configs keeps the section useful if the catalogue can't be read.
+          membershipTierService
+            .listPublicTiers()
+            .catch(() => Object.values(DEFAULT_MEMBERSHIP_TIER_CONFIGS)),
         ])
         if (cancelled) return
 
         setProfile(overview.profile)
         setTier(overview.tier)
+        setCatalogueTiers(nextCatalogue)
         setPerformance(overview.performance)
         setBillingRows(overview.billingRows)
         setPayoutRows(overview.payoutRows)
@@ -1338,8 +1351,17 @@ export default function OperatorCommercialPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-3">
-                  {Object.values(DEFAULT_MEMBERSHIP_TIER_CONFIGS).map((t) => {
-                    const isCurrent = (profile?.membership_tier_code ?? 'gold') === t.code
+                  {catalogueTiers.map((t) => {
+                    const currentCode = profile?.membership_tier_code ?? 'gold'
+                    const isCurrent = currentCode === t.code
+                    const currentTier =
+                      catalogueTiers.find((entry) => entry.code === currentCode) ??
+                      DEFAULT_MEMBERSHIP_TIER_CONFIGS[currentCode]
+                    // "What do I actually gain?" — computed from the live tier values, so the
+                    // copy can never contradict what the admin configured.
+                    const upgrade = isCurrent ? null : describeTierUpgrade(currentTier, t)
+                    const isUpgrade = (upgrade?.monthlyFeeDifference ?? 0) > 0
+
                     return (
                       <div
                         key={t.code}
@@ -1354,12 +1376,18 @@ export default function OperatorCommercialPage() {
                             Your tier
                           </Badge>
                         ) : null}
-                        <p className="text-lg font-black tracking-tight text-foreground">
+                        <p
+                          className="text-lg font-black tracking-tight text-foreground"
+                          style={t.badgeHex ? { color: t.badgeHex } : undefined}
+                        >
                           {t.label}
                         </p>
                         <p className="mt-0.5 text-sm text-muted-foreground">
-                          {formatMoney(t.monthlyFee)} / month
+                          {formatMoney(t.monthlyFee, t.currency)} / month
                         </p>
+                        {t.tagline ? (
+                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground/80">{t.tagline}</p>
+                        ) : null}
                         <ul className="mt-4 space-y-2 text-sm text-muted-foreground flex-1">
                           <li>
                             <span className="font-semibold text-foreground">
@@ -1379,25 +1407,44 @@ export default function OperatorCommercialPage() {
                               {t.minimumDepositPercent}%
                             </span>
                           </li>
-                          <li>Google Maps tools included</li>
+                          <li className={t.googleMapsEnabled ? '' : 'line-through opacity-50'}>
+                            Google Maps tools
+                          </li>
                           <li className={t.pickupMultiCityEnabled ? '' : 'line-through opacity-50'}>
                             Multi-city pickup locations
                           </li>
                           <li className={t.aiItineraryEnabled ? '' : 'line-through opacity-50'}>
                             AI itinerary tools
-                            {t.aiItineraryEnabled ? ` (${t.aiMonthlyCredits} credits/mo)` : ''}
+                            {t.aiItineraryEnabled && t.aiMonthlyCredits > 0
+                              ? ` (${t.aiMonthlyCredits} credits/mo)`
+                              : ''}
                           </li>
-                          <li>
-                            {t.supportPriority >= 3
-                              ? 'Dedicated priority support'
-                              : t.supportPriority === 2
-                                ? 'Priority support'
-                                : 'Standard support'}
-                          </li>
+                          {(t.perks ?? []).map((perk) => (
+                            <li key={perk}>{perk}</li>
+                          ))}
                         </ul>
+
+                        {upgrade && isUpgrade && upgrade.highlights.length > 0 ? (
+                          <div className="mt-4 rounded-2xl border border-border/60 bg-muted/30 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                              You would gain
+                            </p>
+                            <ul className="mt-1.5 space-y-1">
+                              {upgrade.highlights.slice(0, 3).map((highlight) => (
+                                <li key={highlight} className="flex items-start gap-1.5 text-xs text-foreground">
+                                  <Check className="mt-0.5 h-3 w-3 flex-shrink-0 text-primary" aria-hidden="true" />
+                                  {highlight}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+
                         {!isCurrent ? (
                           <Button asChild className="mt-5 w-full rounded-2xl" variant="outline">
-                            <Link to="/help">Upgrade to {t.label}</Link>
+                            <Link to="/help">
+                              {isUpgrade ? `Upgrade to ${t.label}` : `Switch to ${t.label}`}
+                            </Link>
                           </Button>
                         ) : (
                           <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/10 py-2 text-center text-sm font-semibold text-primary">
