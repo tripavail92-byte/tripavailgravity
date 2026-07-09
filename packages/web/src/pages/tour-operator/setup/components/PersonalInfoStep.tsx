@@ -414,13 +414,9 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
           )}
         </div>
 
-        {/* Primary Contact Person */}
-        <div className="space-y-3">
-          <Label htmlFor="contactPerson" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Primary Contact Person</Label>
-          <Input id="contactPerson" value={formData.contactPerson} onChange={(e) => handleChange('contactPerson', e.target.value)}
-            placeholder="Name of the person managing the account"
-            className="rounded-xl border-border/60 bg-background py-7 focus-visible:ring-primary/20 focus-visible:border-primary/50 transition-all text-base" />
-        </div>
+        {/* Primary Contact Person was removed from the wizard — one fewer thing to answer.
+            The value still round-trips (and the `contact_person` column still feeds the admin and
+            commercial views), it is simply no longer asked for here. */}
       </div>
 
       {!phoneVerified && (

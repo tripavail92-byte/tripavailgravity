@@ -1,16 +1,19 @@
 import {
   DollarSign,
-  Info,
   Percent,
   Plus,
   Trash2,
   Users,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 
 import { useFxRates } from '@/queries/fxQueries'
+import { SubStepProgress } from '@/features/wizard/SubStepProgress'
+import { WizardScreen } from '@/features/wizard/WizardScreen'
+import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
+import { fieldId, type SubStepDef } from '@/features/wizard/types'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -28,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import {
   CANCELLATION_ICON_BY_POLICY,
@@ -39,11 +41,6 @@ import {
 } from '@/features/tour-operator/assets/TourIconRegistry'
 import { Tour } from '@/features/tour-operator/services/tourService'
 import { clampDepositPercentage, getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
-import {
-  DEFAULT_TOUR_PRICING_PROMO_DRAFT,
-  getTourPricingPromoDraft,
-  validateTourPricingPromoDraft,
-} from '../promoDraft'
 
 interface TourPricingStepProps {
   data: Partial<Tour>
@@ -52,6 +49,9 @@ interface TourPricingStepProps {
   onBack: () => void
   membershipTierLabel?: string
   minimumDepositPercent?: number
+  /** Restored sub-step index, persisted in the tour draft's workflow snapshot. */
+  subStep?: number
+  onSubStepChange?: (index: number) => void
 }
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'AED']
@@ -92,6 +92,8 @@ export function TourPricingStep({
   onBack,
   membershipTierLabel = 'Gold',
   minimumDepositPercent = 0,
+  subStep = 0,
+  onSubStepChange,
 }: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
   const { data: fxRates, isLoading: isLoadingFx } = useFxRates()
@@ -99,7 +101,8 @@ export function TourPricingStep({
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
   const [depositPolicyAcknowledged, setDepositPolicyAcknowledged] = useState(false)
   const [depositPolicyConfirmed, setDepositPolicyConfirmed] = useState(false)
-  const promoDraft = getTourPricingPromoDraft(data.draft_data)
+  /** True when the dialog was opened by pressing Next, so confirming should also advance. */
+  const [advanceAfterConfirm, setAdvanceAfterConfirm] = useState(false)
   const selectedInclusionLabels = new Set([
     ...(Array.isArray(data.inclusions) ? data.inclusions : []),
     ...((Array.isArray((data as any).included_features)
@@ -171,8 +174,6 @@ export function TourPricingStep({
     hasSavedDepositPercentage ? rawDepositPercentage : effectiveMinimumDeposit,
   )
   const isDepositBelowTierMinimum = normalizedDepositPercentage < effectiveMinimumDeposit
-  const promoValidationError = validateTourPricingPromoDraft(promoDraft)
-  const isPromoEnabled = Boolean(promoDraft.enabled)
   const hasGroupDiscounts = Boolean(data.group_discounts)
   const hasSeasonalPricing = Boolean(data.seasonal_pricing)
   const availableDepositOptions = Array.from(
@@ -219,18 +220,6 @@ export function TourPricingStep({
     normalizedDepositPercentage,
     rawDepositPercentage,
   ])
-
-  const updatePromoDraft = (updates: Partial<typeof DEFAULT_TOUR_PRICING_PROMO_DRAFT>) => {
-    onUpdate({
-      draft_data: {
-        ...(data.draft_data && typeof data.draft_data === 'object' ? data.draft_data : {}),
-        pricing_promo: {
-          ...promoDraft,
-          ...updates,
-        },
-      },
-    } as Partial<Tour>)
-  }
 
   const addPricingTier = () => {
     const defaultDiscount = 10 // 10% default
@@ -296,20 +285,12 @@ export function TourPricingStep({
     handleInputChange('deposit_percentage', Math.max(effectiveMinimumDeposit, clampDepositPercentage(value)))
   }
 
+  /**
+   * Continue is never blocked on a missing field — those are surfaced as issues and the stage
+   * reports "needs attention". The deposit acknowledgement is different: it is an explicit
+   * confirmation of a money policy, so it is asked for as the operator leaves the deposit screen.
+   */
   const handleContinue = () => {
-    if (isDepositBelowTierMinimum) {
-      return
-    }
-
-    if (!depositPolicyConfirmed) {
-      setIsDepositDialogOpen(true)
-      return
-    }
-
-    if (promoValidationError) {
-      return
-    }
-
     onNext()
   }
 
@@ -319,24 +300,116 @@ export function TourPricingStep({
     }).format(value)
   }
 
+  const subSteps = useMemo<SubStepDef<Partial<Tour>>[]>(
+    () => [
+      {
+        id: 'price',
+        title: 'What does this tour cost?',
+        description: 'The base price one traveller pays, in the currency you are paid in.',
+        validate: (d) =>
+          Number(d.price) > 0
+            ? []
+            : [{ field: fieldId('price'), message: 'Enter a base price per person' }],
+      },
+      {
+        id: 'deposit',
+        title: 'How much is due when they book?',
+        description: 'Travellers pay this share upfront; you collect the rest before departure.',
+        validate: (d) =>
+          clampDepositPercentage(Number(d.deposit_percentage || 0)) >= effectiveMinimumDeposit
+            ? []
+            : [
+                {
+                  field: fieldId('deposit'),
+                  message: `Deposit must be at least ${effectiveMinimumDeposit}% on ${membershipTierLabel}`,
+                },
+              ],
+      },
+      {
+        id: 'cancellation',
+        title: 'What happens if a traveller cancels?',
+        description: 'This policy is shown before anyone books.',
+        validate: (d) =>
+          d.cancellation_policy
+            ? []
+            : [{ field: fieldId('cancellation'), message: 'Choose a cancellation policy' }],
+      },
+      {
+        id: 'groups',
+        title: 'Do you offer group discounts?',
+        description: 'Optional. Lower the per-person price as the group grows.',
+        optional: true,
+      },
+      {
+        id: 'seasonal',
+        title: 'Does your price change by season?',
+        description: 'Optional. Set peak and off-season multipliers.',
+        optional: true,
+      },
+      {
+        id: 'inclusions',
+        title: "What's included, and what isn't?",
+        description: 'Travellers compare on this more than on price.',
+        optional: true,
+      },
+    ],
+    [effectiveMinimumDeposit, membershipTierLabel],
+  )
+
+  const flow = useSubStepFlow<Partial<Tour>>({
+    subSteps,
+    data,
+    initialIndex: subStep,
+    onIndexChange: onSubStepChange,
+    onExitForward: handleContinue,
+    onExitBack: onBack,
+  })
+
+  /**
+   * The deposit acknowledgement is asked for as the operator leaves the deposit screen — not
+   * four screens later on "What's included?", which is where a stage-exit hook would surface it.
+   */
+  const handleNext = () => {
+    if (flow.current.id === 'deposit' && basePrice > 0 && !depositPolicyConfirmed) {
+      setAdvanceAfterConfirm(true)
+      setIsDepositDialogOpen(true)
+      return
+    }
+    flow.goNext()
+  }
+
+  const issueIndices = Object.entries(flow.issuesByIndex)
+    .filter(([, issues]) => issues.length > 0)
+    .map(([index]) => Number(index))
+
+  const invalidFields = new Set(flow.showIssues ? flow.issues.map((issue) => issue.field) : [])
+  const isInvalid = (name: string) => invalidFields.has(fieldId(name))
+  const stepId = flow.current.id
+
   return (
     <div className="space-y-6">
-      {/* Legend Header */}
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl overflow-hidden">
-        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
-        <div className="relative flex items-center gap-4">
-          <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
-            <DollarSign className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Tour Pricing</h2>
-            <p className="text-primary-foreground/90 text-sm font-medium">
-              Set competitive pricing and booking policies for your tour.
-            </p>
-          </div>
-        </div>
-      </div>
+      <SubStepProgress
+        stageTitle="Pricing & Policies"
+        index={flow.index}
+        total={flow.total}
+        issueIndices={issueIndices}
+        onSelect={(index) => flow.goTo(index)}
+      />
 
+      <WizardScreen
+        index={flow.index}
+        total={flow.total}
+        title={flow.current.title}
+        description={flow.current.description}
+        issues={flow.issues}
+        showIssues={flow.showIssues}
+        onIssueClick={flow.focusField}
+        onBack={flow.goBack}
+        onNext={handleNext}
+        nextLabel={flow.isLast ? 'Continue' : undefined}
+      >
+        {stepId === 'price' ? (
+          <>
       {/* Base Pricing */}
       <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
         <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-6 flex items-center gap-2">
@@ -352,8 +425,12 @@ export function TourPricingStep({
                 {data.currency || 'PKR'}
               </div>
               <Input
+                id={fieldId('price')}
                 type="number"
-                className="pl-16 h-12 rounded-xl border-border bg-muted/40 focus:border-primary focus:ring-primary/20 text-lg font-medium"
+                aria-invalid={isInvalid('price') || undefined}
+                className={`pl-16 h-12 rounded-xl bg-muted/40 text-lg font-medium focus:border-primary focus:ring-primary/20 ${
+                  isInvalid('price') ? 'border-destructive ring-1 ring-destructive/30' : 'border-border'
+                }`}
                 placeholder="0.00"
                 value={data.price || ''}
                 onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
@@ -386,13 +463,11 @@ export function TourPricingStep({
           </div>
         </div>
       </div>
+          </>
+        ) : null}
 
-      <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
-        <h3 className="text-[14px] font-bold text-foreground uppercase tracking-widest pl-1 mb-8 flex items-center gap-2">
-          <Info className="w-5 h-5 text-primary" /> Booking Terms
-        </h3>
-
-        <div className="space-y-6">
+        {stepId === 'deposit' ? (
+          <>
           <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
             <div className="pl-2">
               <label className="text-sm font-bold text-foreground">Deposit Collection</label>
@@ -437,12 +512,16 @@ export function TourPricingStep({
                     <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2">
                       <span className="text-sm font-semibold text-muted-foreground">Custom</span>
                       <Input
+                        id={fieldId('deposit')}
                         type="number"
                         min={effectiveMinimumDeposit}
                         max={50}
+                        aria-invalid={isInvalid('deposit') || undefined}
                         value={normalizedDepositPercentage}
                         onChange={(event) => handleDepositPercentageChange(Number(event.target.value || 0))}
-                        className="h-7 w-20 border-0 bg-transparent p-0 text-right font-semibold shadow-none focus-visible:ring-0"
+                        className={`h-7 w-20 border-0 bg-transparent p-0 text-right font-semibold shadow-none focus-visible:ring-0 ${
+                          isInvalid('deposit') ? 'text-destructive' : ''
+                        }`}
                       />
                       <span className="text-sm font-semibold text-muted-foreground">%</span>
                     </div>
@@ -507,7 +586,10 @@ export function TourPricingStep({
                     type="button"
                     variant={depositPolicyConfirmed ? 'outline' : 'default'}
                     className="rounded-2xl"
-                    onClick={() => setIsDepositDialogOpen(true)}
+                    onClick={() => {
+                      setAdvanceAfterConfirm(false)
+                      setIsDepositDialogOpen(true)
+                    }}
                     disabled={basePrice <= 0}
                   >
                     {depositPolicyConfirmed ? 'Deposit Policy Confirmed' : 'Confirm Deposit Policy'}
@@ -519,142 +601,28 @@ export function TourPricingStep({
                   ) : null}
                 </div>
               </div>
+          </>
+        ) : null}
 
-          <Separator className="bg-border/60" />
-
-          <div className="space-y-5 px-2">
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4">
-              <div>
-                <label className="text-sm font-bold text-foreground">Launch Promo</label>
-                <p className="text-xs text-muted-foreground font-medium">
-                  Create an operator-funded promo for this tour as part of publish.
-                </p>
-              </div>
-              <Switch
-                checked={isPromoEnabled}
-                onCheckedChange={(enabled) => updatePromoDraft({ enabled })}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
-
-            <AnimatePresence>
-              {isPromoEnabled ? (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden space-y-4"
-                >
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Promo Title
-                      </label>
-                      <Input
-                        value={promoDraft.title}
-                        onChange={(event) => updatePromoDraft({ title: event.target.value })}
-                        placeholder="Summer launch discount"
-                        className="h-11 rounded-xl border-border bg-muted/40"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Promo Code
-                      </label>
-                      <Input
-                        value={promoDraft.code}
-                        onChange={(event) => updatePromoDraft({ code: event.target.value.toUpperCase() })}
-                        placeholder="SUMMER25"
-                        className="h-11 rounded-xl border-border bg-muted/40"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Discount Type
-                      </label>
-                      <Select
-                        value={promoDraft.discountType}
-                        onValueChange={(value) => updatePromoDraft({ discountType: value as 'fixed_amount' | 'percentage' })}
-                      >
-                        <SelectTrigger className="h-11 rounded-xl border-border bg-muted/40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="percentage">Percentage</SelectItem>
-                          <SelectItem value="fixed_amount">Fixed amount</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Discount Value
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          min="0"
-                          value={promoDraft.discountValue}
-                          onChange={(event) => updatePromoDraft({ discountValue: event.target.value })}
-                          placeholder={promoDraft.discountType === 'percentage' ? '15' : '5000'}
-                          className="h-11 rounded-xl border-border bg-muted/40 pr-10"
-                        />
-                        {promoDraft.discountType === 'percentage' ? (
-                          <Percent className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        ) : null}
-                      </div>
-                    </div>
-                    {promoDraft.discountType === 'percentage' ? (
-                      <div className="space-y-2">
-                        <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                          Max Discount
-                        </label>
-                        <Input
-                          type="number"
-                          min="0"
-                          value={promoDraft.maxDiscountValue}
-                          onChange={(event) => updatePromoDraft({ maxDiscountValue: event.target.value })}
-                          placeholder="Optional PKR cap"
-                          className="h-11 rounded-xl border-border bg-muted/40"
-                        />
-                      </div>
-                    ) : null}
-                    <div className="space-y-2 md:col-span-2">
-                      <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Description
-                      </label>
-                      <Input
-                        value={promoDraft.description}
-                        onChange={(event) => updatePromoDraft({ description: event.target.value })}
-                        placeholder="Explain the traveler-facing offer for this tour."
-                        className="h-11 rounded-xl border-border bg-muted/40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/60 bg-background p-4 text-sm text-muted-foreground">
-                    This promo will be created as an operator-funded campaign and scoped to this tour when you publish.
-                  </div>
-
-                  {promoValidationError ? (
-                    <div className="rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
-                      {promoValidationError}
-                    </div>
-                  ) : null}
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </div>
-
-          <Separator className="bg-border/60" />
-
+        {stepId === 'cancellation' ? (
+          <>
           <div className="space-y-3 px-2">
             <label className="text-[11px] uppercase font-bold text-muted-foreground tracking-wider block">
               Cancellation Policy
             </label>
-            <div className="space-y-3">
+            {/* No pre-selection: the old UI highlighted "flexible" before the operator had chosen
+                anything, so a required choice looked already made. */}
+            <div
+              id={fieldId('cancellation')}
+              tabIndex={-1}
+              className="space-y-3 outline-none"
+              role="radiogroup"
+              aria-label="Cancellation policy"
+              aria-invalid={isInvalid('cancellation') || undefined}
+            >
               {CANCELLATION_POLICIES.map((policy) => {
                 const Icon = getTourIconComponent(policy.iconKey)
-                const isSelected = (data.cancellation_policy || 'flexible') === policy.value
+                const isSelected = data.cancellation_policy === policy.value
 
                 return (
                   <button
@@ -683,9 +651,11 @@ export function TourPricingStep({
               })}
             </div>
           </div>
-        </div>
-      </div>
+          </>
+        ) : null}
 
+        {stepId === 'groups' ? (
+          <>
       {/* Group Discounts */}
       <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
         <div className="flex items-start justify-between mb-8">
@@ -830,7 +800,11 @@ export function TourPricingStep({
           )}
         </AnimatePresence>
       </div>
+          </>
+        ) : null}
 
+        {stepId === 'seasonal' ? (
+          <>
       {/* Seasonal Pricing */}
       <div className="glass-card rounded-[24px] p-8 shadow-sm border border-border/60 bg-background">
         <div className="flex items-start justify-between mb-4">
@@ -895,7 +869,11 @@ export function TourPricingStep({
           )}
         </AnimatePresence>
       </div>
+          </>
+        ) : null}
 
+        {stepId === 'inclusions' ? (
+          <>
       {/* Inclusions & Exclusions - Vertically Stacked Sections */}
       <div className="space-y-8">
         {/* What's Included */}
@@ -980,24 +958,9 @@ export function TourPricingStep({
           </div>
         </div>
       </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-8 border-t border-border/60">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="px-8 h-12 rounded-xl text-muted-foreground font-bold border-border hover:bg-muted/30 transition-all shadow-sm"
-        >
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          disabled={isDepositBelowTierMinimum || Boolean(promoValidationError)}
-          className="px-8 h-12 rounded-xl min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-all shadow-lg shadow-primary/25 border-0"
-        >
-          Continue
-        </Button>
-      </div>
+          </>
+        ) : null}
+      </WizardScreen>
 
       <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
         <DialogContent className="rounded-3xl border-border/60 bg-background/95 sm:max-w-xl">
@@ -1034,7 +997,15 @@ export function TourPricingStep({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setIsDepositDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={() => {
+                setAdvanceAfterConfirm(false)
+                setIsDepositDialogOpen(false)
+              }}
+            >
               Back
             </Button>
             <Button
@@ -1044,6 +1015,11 @@ export function TourPricingStep({
               onClick={() => {
                 setDepositPolicyConfirmed(true)
                 setIsDepositDialogOpen(false)
+                // Confirming after pressing Next means "yes, continue" — don't demand a second press.
+                if (advanceAfterConfirm) {
+                  setAdvanceAfterConfirm(false)
+                  flow.goNext()
+                }
               }}
             >
               Confirm policy
@@ -1054,3 +1030,4 @@ export function TourPricingStep({
     </div>
   )
 }
+
