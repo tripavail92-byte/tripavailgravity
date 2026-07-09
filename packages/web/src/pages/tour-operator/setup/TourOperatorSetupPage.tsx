@@ -1,9 +1,11 @@
-import { ChevronLeft, ChevronRight, Loader2, Plane, Save } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import {
   TourOperatorOnboardingData,
@@ -240,9 +242,13 @@ export default function TourOperatorSetupPage() {
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           className="flex flex-col items-center gap-5"
         >
-          <div className="w-14 h-14 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-lg">
-            <Plane className="w-7 h-7 text-primary" />
-          </div>
+          <img
+            src="/brand/logo-emblem-256.png"
+            alt=""
+            width={56}
+            height={56}
+            className="block h-14 w-14 rounded-2xl shadow-lg"
+          />
           <p className="text-muted-foreground font-semibold tracking-widest text-sm uppercase">
             Loading your profile…
           </p>
@@ -260,37 +266,49 @@ export default function TourOperatorSetupPage() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Nav Header */}
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30 ring-2 ring-primary/20">
-              <Plane className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-black text-foreground tracking-tight text-sm leading-none">
-                TripAvail
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src="/brand/logo-emblem-256.png"
+              alt=""
+              width={36}
+              height={36}
+              className="block h-9 w-9 shrink-0 rounded-[8px]"
+            />
+            <div className="min-w-0">
+              <h1
+                className="text-lg leading-none tracking-tight"
+                style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}
+              >
+                <span className="text-foreground">trip</span>
+                <span className="text-primary">avail</span>
               </h1>
-              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mt-0.5">
+              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mt-0.5 truncate">
                 {isLocked ? 'Operator Profile' : 'Operator Setup'}
               </p>
             </div>
           </div>
 
-          {!hideHeaderActions && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60 rounded-xl h-9 px-4 font-semibold transition-all"
-              onClick={handleSaveAndExit}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-              ) : (
-                <Save className="w-3.5 h-3.5 mr-2" />
-              )}
-              Save & Exit
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {!hideHeaderActions && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60 rounded-xl h-9 px-4 font-semibold transition-all"
+                onClick={handleSaveAndExit}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                ) : (
+                  <Save className="w-3.5 h-3.5 mr-2" />
+                )}
+                <span className="hidden sm:inline">Save &amp; Exit</span>
+              </Button>
+            )}
+            <ThemeToggle />
+            <RoleBasedDrawer />
+          </div>
         </div>
       </div>
 
