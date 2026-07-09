@@ -8,7 +8,9 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
+import { useFxRates } from '@/queries/fxQueries'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -92,6 +94,8 @@ export function TourPricingStep({
   minimumDepositPercent = 0,
 }: TourPricingStepProps) {
   const [pricingTiers, setPricingTiers] = useState(data.pricing_tiers || [])
+  const { data: fxRates, isLoading: isLoadingFx } = useFxRates()
+  const hasFxRates = Boolean(fxRates && Object.keys(fxRates).length > 0)
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false)
   const [depositPolicyAcknowledged, setDepositPolicyAcknowledged] = useState(false)
   const [depositPolicyConfirmed, setDepositPolicyConfirmed] = useState(false)
@@ -112,6 +116,50 @@ export function TourPricingStep({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (field: keyof Tour, value: any) => {
     onUpdate({ [field]: value })
+  }
+
+  /**
+   * Switching currency converts the money the operator already typed, rather than silently
+   * relabelling it — "30,000 PKR" must not become "30,000 USD". Group-tier prices are recomputed
+   * from the converted base so their discount percentages stay exact.
+   */
+  const handleCurrencyChange = (nextCurrency: string) => {
+    const fromCurrency = data.currency || 'PKR'
+    if (nextCurrency === fromCurrency) return
+
+    const currentPrice = Number(data.price || 0)
+
+    if (!currentPrice) {
+      handleInputChange('currency', nextCurrency)
+      return
+    }
+
+    const rate = fxRates?.[`${fromCurrency}->${nextCurrency}`]
+    if (!rate || !Number.isFinite(rate)) {
+      // Never guess a rate. Switch the label and tell the operator the amount is unchanged.
+      handleInputChange('currency', nextCurrency)
+      toast(`No ${fromCurrency}→${nextCurrency} rate available — please re-enter the price.`, {
+        icon: '⚠️',
+      })
+      return
+    }
+
+    const convertedPrice = Math.round(currentPrice * rate * 100) / 100
+    const convertedTiers = pricingTiers.map((tier: any) => ({
+      ...tier,
+      pricePerPerson: Math.round(convertedPrice * (1 - (Number(tier.discountPercentage) || 0) / 100)),
+    }))
+
+    setPricingTiers(convertedTiers)
+    onUpdate({
+      currency: nextCurrency,
+      price: convertedPrice,
+      ...(convertedTiers.length ? { pricing_tiers: convertedTiers } : {}),
+    } as Partial<Tour>)
+
+    toast.success(
+      `Converted ${fromCurrency} ${currentPrice.toLocaleString()} → ${nextCurrency} ${convertedPrice.toLocaleString()}`,
+    )
   }
 
   const basePrice = Number(data.price || 0)
@@ -316,10 +364,7 @@ export function TourPricingStep({
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">
               Currency
             </label>
-            <Select
-              value={data.currency || 'PKR'}
-              onValueChange={(v) => handleInputChange('currency', v)}
-            >
+            <Select value={data.currency || 'PKR'} onValueChange={handleCurrencyChange}>
               <SelectTrigger className="h-12 rounded-xl border-border bg-muted/40 text-base font-medium focus:ring-primary/20">
                 <SelectValue />
               </SelectTrigger>
@@ -331,6 +376,13 @@ export function TourPricingStep({
                 ))}
               </SelectContent>
             </Select>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {isLoadingFx
+                ? 'Loading exchange rates…'
+                : hasFxRates
+                  ? 'Changing currency converts the price you entered.'
+                  : 'Exchange rates unavailable — changing currency will not convert the price.'}
+            </p>
           </div>
         </div>
       </div>
