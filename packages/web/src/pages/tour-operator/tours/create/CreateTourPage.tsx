@@ -999,8 +999,8 @@ export default function CreateTourPage() {
 
       {/* Content */}
       <div className="relative mx-auto flex-1 w-full max-w-5xl p-6 md:p-8">
-        {/* The database rejects tour inserts until the operator is approved. Say so plainly —
-            otherwise the only signal is a silent "Save failed" next to the title. */}
+        {/* A save that can never succeed by retrying. Say what actually failed, and show the raw
+            Postgres code — guessing at the cause is what produced the wrong diagnosis before. */}
         {isVerificationBlocked ? (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -1008,9 +1008,11 @@ export default function CreateTourPage() {
               <div>
                 <p className="font-semibold text-destructive">Nothing is being saved</p>
                 <p className="mt-0.5 text-sm text-destructive/90">
-                  {saveErrorMessage ??
-                    'Your operator account is still pending verification, so tours cannot be saved yet.'}
+                  {saveErrorMessage ?? 'This save cannot succeed by retrying.'}
                 </p>
+                {saveErrorDetail ? (
+                  <p className="mt-1 font-mono text-xs text-destructive/70">{saveErrorDetail}</p>
+                ) : null}
               </div>
             </div>
             <Button

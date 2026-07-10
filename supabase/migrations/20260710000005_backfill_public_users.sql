@@ -20,16 +20,24 @@
 -- a unique violation the whole trigger aborted, and the account was left without its public.users
 -- row. Each insert is now individually forgiving.
 --
--- ── Diagnostic — run this FIRST; it is read-only and tells you whether this is your bug ────────
+-- ── STATUS: this is NOT the cause of "Save failed" ────────────────────────────
+--
+-- Checked against production on 2026-07-10:
+--
 --   SELECT au.id, au.email, au.created_at
 --   FROM auth.users au
 --   LEFT JOIN public.users pu ON pu.id = au.id
---   WHERE pu.id IS NULL
---   ORDER BY au.created_at DESC;
+--   WHERE pu.id IS NULL;
 --
---   Any row returned is an account that cannot create a tour, a hotel, or a package. If the
---   operator hitting "Save failed" appears here, this migration fixes them. If the table comes
---   back empty, the foreign key is NOT the cause and this migration is a harmless no-op.
+-- returned ZERO rows. Every auth user already has a public.users row, so the operator_id foreign
+-- key resolves and the backfill below is a no-op today. The wizard's "Save failed" has some other
+-- cause, still unidentified.
+--
+-- The migration is kept anyway for the trigger hardening in step (2): handle_new_user() currently
+-- aborts entirely if any one of its three inserts hits a unique violation, which is exactly how an
+-- account ends up without its public.users row. 20260323000008 already had to repair that damage
+-- once for admin accounts. This makes each insert individually forgiving so it cannot recur, and
+-- the backfill in step (1) covers anyone already affected.
 -- ============================================================================
 
 BEGIN;
