@@ -188,6 +188,8 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
   )
   const [expandedDays, setExpandedDays] = useState<Set<number>>(() => new Set([1]))
   const [addingFor, setAddingFor] = useState<number | null>(null)
+  /** When set, the draft is editing this existing activity in place, not appending a new one. */
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Partial<Activity>>(blankDraft())
   const [suggesting, setSuggesting] = useState(false)
   const prevDuration = useRef(durationDays)
@@ -215,15 +217,46 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
   const updateDayTitle = (dayNum: number, title: string) =>
     setDays((prev) => prev.map((d) => (d.day === dayNum ? { ...d, title } : d)))
 
-  const removeActivity = (dayNum: number, actId: string) =>
+  const removeActivity = (dayNum: number, actId: string) => {
+    // If the activity being removed is the one open for editing, close the editor too.
+    if (editingId === actId) resetDraft()
     setDays((prev) =>
       prev.map((d) =>
         d.day === dayNum ? { ...d, activities: d.activities.filter((a) => a.id !== actId) } : d,
       ),
     )
+  }
 
   const commitActivity = (dayNum: number) => {
     if (!draft.title?.trim() || !draft.type) return
+
+    if (editingId) {
+      // Editing in place: keep the id, overwrite the fields.
+      setDays((prev) =>
+        prev.map((d) =>
+          d.day === dayNum
+            ? {
+                ...d,
+                activities: d.activities.map((a) =>
+                  a.id === editingId
+                    ? {
+                        ...a,
+                        type: draft.type as ActivityType,
+                        custom_type_label: draft.custom_type_label,
+                        title: draft.title!.trim(),
+                        time: draft.time,
+                        description: draft.description?.trim() || undefined,
+                      }
+                    : a,
+                ),
+              }
+            : d,
+        ),
+      )
+      resetDraft()
+      return
+    }
+
     const newAct: Activity = {
       id: crypto.randomUUID(),
       type: draft.type as ActivityType,
@@ -237,19 +270,35 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
         d.day === dayNum ? { ...d, activities: [...d.activities, newAct] } : d,
       ),
     )
-    setAddingFor(null)
-    setDraft(blankDraft())
-      }
+    resetDraft()
+  }
 
-  const cancelAdd = () => {
+  const resetDraft = () => {
     setAddingFor(null)
+    setEditingId(null)
     setDraft(blankDraft())
-      }
+  }
+
+  const cancelAdd = () => resetDraft()
 
   const openAdd = (dayNum: number) => {
+    setEditingId(null)
     setAddingFor(dayNum)
     setDraft(blankDraft())
-        setExpandedDays((prev) => new Set([...prev, dayNum]))
+    setExpandedDays((prev) => new Set([...prev, dayNum]))
+  }
+
+  const openEdit = (dayNum: number, act: Activity) => {
+    setAddingFor(dayNum)
+    setEditingId(act.id)
+    setDraft({
+      type: act.type,
+      custom_type_label: act.custom_type_label,
+      title: act.title,
+      time: act.time,
+      description: act.description,
+    })
+    setExpandedDays((prev) => new Set([...prev, dayNum]))
   }
 
   const handleAISuggest = () => {
@@ -258,8 +307,9 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       const plan = generateAIPlan(durationDays, destination)
       setDays(plan)
       setExpandedDays(new Set([1]))
+      resetDraft()
       setSuggesting(false)
-      toast.success('Itinerary plan generated!')
+      toast.success('Itinerary drafted — tap any activity to edit it')
     }, 800)
   }
 
@@ -270,6 +320,140 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
 
   const totalActivities = days.reduce((sum, d) => sum + d.activities.length, 0)
   const filledDays = days.filter((d) => d.activities.length > 0).length
+
+  // The activity form, shared by "add a new activity" (rendered at the foot of a day) and
+  // "edit this one" (rendered inline in place of the activity's card). One form, two callers, so
+  // an AI-drafted plan is edited with exactly the same controls that built it.
+  const renderDraftForm = (dayNum: number) => (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4"
+    >
+      <p className="text-xs font-black uppercase tracking-wider text-primary">
+        {editingId ? 'Edit Activity' : 'New Activity'}
+      </p>
+
+      {/* One question at a time — the type unlocks the title, the title unlocks the time, and the
+          time unlocks the optional description. When editing, the draft is already filled, so every
+          stage is revealed at once. */}
+      <RevealStage index={1} title="What kind of activity is it?" complete={draftHasType}>
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+            Activity Type
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {ACTIVITY_TYPES.map((t) => (
+              <button
+                key={t.type}
+                type="button"
+                onClick={() => setDraft((prev) => ({ ...prev, type: t.type, custom_type_label: undefined }))}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                  draft.type === t.type
+                    ? t.color + ' ring-2 ring-primary/40 scale-105'
+                    : 'bg-background/80 border-border/60 text-muted-foreground hover:border-primary/30'
+                }`}
+              >
+                <t.Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+          {draft.type === 'custom' && (
+            <Input
+              className="mt-2 bg-background/80 border-border/60"
+              placeholder="Enter custom activity type name…"
+              value={draft.custom_type_label ?? ''}
+              onChange={(e) => setDraft((prev) => ({ ...prev, custom_type_label: e.target.value }))}
+            />
+          )}
+        </div>
+      </RevealStage>
+
+      {draftHasType ? (
+        <RevealStage index={2} title="What is it called?" complete={draftHasTitle}>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Activity Title <span className="text-destructive">*</span>
+            </label>
+            <Input
+              value={draft.title ?? ''}
+              onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="e.g. Drive to Siran Valley, Welcome Lunch…"
+              className="bg-background/80 backdrop-blur-sm border-border/60 font-medium"
+            />
+          </div>
+        </RevealStage>
+      ) : null}
+
+      {draftHasTitle ? (
+        <RevealStage
+          index={3}
+          title="When does it happen?"
+          description="Travellers see this on their booking confirmation."
+          complete={draftHasTime}
+        >
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+              Time <span className="text-destructive">*</span>
+            </label>
+            <div className="p-3 rounded-xl bg-background/80 border border-border/60">
+              <TimeWheelPicker
+                value={draft.time}
+                onChange={(t) => setDraft((prev) => ({ ...prev, time: t }))}
+              />
+            </div>
+            {!draft.time ? (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Set a start time so travellers know when this activity happens.
+              </p>
+            ) : null}
+          </div>
+        </RevealStage>
+      ) : null}
+
+      {draftHasTime ? (
+        <RevealStage index={4} title="Anything travellers should know?">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Description{' '}
+              <span className="normal-case font-normal text-muted-foreground/50">(optional)</span>
+            </label>
+            <Textarea
+              value={draft.description ?? ''}
+              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief details — scenic route, what's included, highlights…"
+              rows={2}
+              className="bg-background/80 backdrop-blur-sm border-border/60 resize-none text-sm"
+            />
+          </div>
+        </RevealStage>
+      ) : null}
+
+      {/* Actions live OUTSIDE the reveal: an operator who has not set a time yet must still be able
+          to abandon. Save stays disabled until the required title and time exist. */}
+      <div className="flex gap-2 justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={cancelAdd}
+          className="bg-background/75 border-border/60"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => commitActivity(dayNum)}
+          disabled={!draft.title?.trim() || !draft.time}
+          className="bg-primary text-primary-foreground font-bold"
+        >
+          {editingId ? 'Save Changes' : 'Add Activity'}
+        </Button>
+      </div>
+    </motion.div>
+  )
 
   return (
     <motion.div
@@ -316,7 +500,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       <div className="space-y-3">
         {days.map((day) => {
           const isExpanded = expandedDays.has(day.day)
-          const isAdding = addingFor === day.day
+          const isAdding = addingFor === day.day && !editingId
 
           return (
             <motion.div
@@ -375,16 +559,25 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                       {day.activities.length > 0 && (
                         <div className="space-y-2">
                           {day.activities.map((act) => {
+                            // The activity being edited swaps its read-only card for the form, in place.
+                            if (editingId === act.id) {
+                              return <div key={act.id}>{renderDraftForm(day.day)}</div>
+                            }
                             const cfg = getTypeConfig(act.type)
                             return (
                               <div
                                 key={act.id}
-                                className="flex items-start gap-3 p-3 rounded-xl bg-background/75 border border-border/60"
+                                className="group flex items-start gap-3 p-3 rounded-xl bg-background/75 border border-border/60 hover:border-primary/30 transition-colors"
                               >
                                 <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg border flex-shrink-0 ${cfg.color}`}>
                                   <cfg.Icon className="w-4 h-4" aria-hidden="true" />
                                 </span>
-                                <div className="flex-1 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => openEdit(day.day, act)}
+                                  className="flex-1 min-w-0 text-left"
+                                  aria-label={`Edit ${act.title}`}
+                                >
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-sm text-foreground">{act.title}</span>
                                     {act.type === 'custom' && act.custom_type_label && (
@@ -400,150 +593,35 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                                   {act.description && (
                                     <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{act.description}</p>
                                   )}
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeActivity(day.day, act.id)}
-                                  className="text-muted-foreground/40 hover:text-destructive transition-colors flex-shrink-0 p-0.5"
-                                  aria-label="Remove activity"
-                                >
-                                  <X className="w-4 h-4" />
                                 </button>
+                                <div className="flex items-center gap-0.5 flex-shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEdit(day.day, act)}
+                                    className="text-muted-foreground/50 hover:text-primary transition-colors p-1 rounded-md opacity-70 group-hover:opacity-100"
+                                    aria-label={`Edit ${act.title}`}
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeActivity(day.day, act.id)}
+                                    className="text-muted-foreground/40 hover:text-destructive transition-colors p-1 rounded-md"
+                                    aria-label={`Remove ${act.title}`}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
                             )
                           })}
                         </div>
                       )}
 
-                      {/* Inline add form */}
+                      {/* Inline add form (a separate one from any in-place edit above) */}
                       {isAdding ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4"
-                        >
-                          <p className="text-xs font-black uppercase tracking-wider text-primary">New Activity</p>
-
-                          {/* One question at a time — the type unlocks the title, the title unlocks
-                              the time, and the time unlocks the optional description. */}
-                          <RevealStage index={1} title="What kind of activity is it?" complete={draftHasType}>
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                              Activity Type
-                            </label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {ACTIVITY_TYPES.map((t) => (
-                                <button
-                                  key={t.type}
-                                  type="button"
-                                  onClick={() => setDraft((prev) => ({ ...prev, type: t.type, custom_type_label: undefined }))}
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                                    draft.type === t.type
-                                      ? t.color + ' ring-2 ring-primary/40 scale-105'
-                                      : 'bg-background/80 border-border/60 text-muted-foreground hover:border-primary/30'
-                                  }`}
-                                >
-                                  <t.Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                                  <span>{t.label}</span>
-                                </button>
-                              ))}
-                            </div>
-                            {draft.type === 'custom' && (
-                              <Input
-                                className="mt-2 bg-background/80 border-border/60"
-                                placeholder="Enter custom activity type name…"
-                                value={draft.custom_type_label ?? ''}
-                                onChange={(e) => setDraft((prev) => ({ ...prev, custom_type_label: e.target.value }))}
-                              />
-                            )}
-                          </div>
-                          </RevealStage>
-
-                          {draftHasType ? (
-                            <RevealStage index={2} title="What is it called?" complete={draftHasTitle}>
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                              Activity Title <span className="text-destructive">*</span>
-                            </label>
-                            <Input
-                              value={draft.title ?? ''}
-                              onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))}
-                              placeholder="e.g. Drive to Siran Valley, Welcome Lunch…"
-                              className="bg-background/80 backdrop-blur-sm border-border/60 font-medium"
-                            />
-                          </div>
-                            </RevealStage>
-                          ) : null}
-
-                          {draftHasTitle ? (
-                            <RevealStage
-                              index={3}
-                              title="When does it happen?"
-                              description="Travellers see this on their booking confirmation."
-                              complete={draftHasTime}
-                            >
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                              Time <span className="text-destructive">*</span>
-                            </label>
-                            <div className="p-3 rounded-xl bg-background/80 border border-border/60">
-                              <TimeWheelPicker
-                                value={draft.time}
-                                onChange={(t) => setDraft((prev) => ({ ...prev, time: t }))}
-                              />
-                            </div>
-                            {!draft.time ? (
-                              <p className="mt-1.5 text-xs text-muted-foreground">
-                                Set a start time so travellers know when this activity happens.
-                              </p>
-                            ) : null}
-                          </div>
-                            </RevealStage>
-                          ) : null}
-
-                          {draftHasTime ? (
-                            <RevealStage index={4} title="Anything travellers should know?">
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                              Description{' '}
-                              <span className="normal-case font-normal text-muted-foreground/50">(optional)</span>
-                            </label>
-                            <Textarea
-                              value={draft.description ?? ''}
-                              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
-                              placeholder="Brief details — scenic route, what's included, highlights…"
-                              rows={2}
-                              className="bg-background/80 backdrop-blur-sm border-border/60 resize-none text-sm"
-                            />
-                          </div>
-                            </RevealStage>
-                          ) : null}
-
-                          {/* Actions live OUTSIDE the reveal: an operator who has not set a time yet
-                              must still be able to abandon the activity. Add stays disabled until
-                              the required title and time exist. */}
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={cancelAdd}
-                              className="bg-background/75 border-border/60"
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => commitActivity(day.day)}
-                              disabled={!draft.title?.trim() || !draft.time}
-                              className="bg-primary text-primary-foreground font-bold"
-                            >
-                              Add Activity
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ) : (
+                        renderDraftForm(day.day)
+                      ) : editingId && addingFor === day.day ? null : (
                         <button
                           type="button"
                           onClick={() => openAdd(day.day)}
