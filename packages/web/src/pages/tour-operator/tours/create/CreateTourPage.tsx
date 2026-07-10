@@ -113,7 +113,10 @@ function errorText(error: unknown): string {
  */
 function isPermanentSaveError(error: unknown): boolean {
   const code = errorCode(error)
-  return code === '42501' || code === '23503'
+  // P0001 is a deliberate RAISE EXCEPTION from a tours trigger — MINIMUM_DEPOSIT_NOT_MET or
+  // PUBLISH_LIMIT_REACHED. Neither clears by retrying; both clear when the operator changes
+  // the offending value, which the deposit effect below watches for.
+  return code === '42501' || code === '23503' || code === 'P0001'
 }
 
 function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
@@ -126,6 +129,11 @@ function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): s
   }
   if (code === '42501') {
     return 'The database refused this save under a permission rule (42501). Retrying will not help.'
+  }
+  // The trigger puts the human-readable explanation in DETAIL, not MESSAGE.
+  if (code === 'P0001') {
+    const detail = typeof error === 'object' && error ? (error as { details?: string }).details : ''
+    if (detail) return detail
   }
 
   const details =
@@ -602,6 +610,18 @@ export default function CreateTourPage() {
   }
 
   const handleUpdate = (data: Partial<Tour>) => {
+    // A P0001 block is about one specific value. Touching the deposit means the operator is
+    // fixing it, so let autosave try again rather than staying dead until a manual save.
+    if (
+      autosaveBlockedRef.current &&
+      (data.deposit_percentage !== undefined || data.require_deposit !== undefined)
+    ) {
+      autosaveBlockedRef.current = false
+      setIsVerificationBlocked(false)
+      setSaveErrorMessage(null)
+      setSaveErrorCode(null)
+      setSaveErrorDetail(null)
+    }
     setTourData((prev) => ({ ...prev, ...data }))
   }
 
