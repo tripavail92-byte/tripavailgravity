@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { canPublishAnotherTrip } from '@tripavail/shared/commercial/engine'
 
+import { celebrateStage } from '@/features/wizard/celebrateStage'
 import { supabase } from '@/lib/supabase'
 import {
   Tour,
@@ -692,6 +693,10 @@ export default function CreateTourPage() {
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
       const nextStep = currentStep + 1
+      // Only on the way out to new ground — re-walking a finished draft is not an achievement.
+      if (!visitedSteps.has(nextStep)) {
+        celebrateStage(STEPS[currentStep].title, STEPS.length - 1 - currentStep)
+      }
       setVisitedSteps((prev) => {
         const copy = new Set(prev)
         copy.add(currentStep)

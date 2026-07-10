@@ -5,6 +5,7 @@ import {
   Compass,
   Edit3,
   Loader2,
+  Map,
   MapPin,
   Package,
   Plus,
@@ -170,13 +171,13 @@ export function TourOperatorDashboard() {
   const quickStats = [
     {
       label: 'Active Tours',
-      value: publishedTours.length || '—',
+      value: publishedTours.length,
       icon: MapPin,
       glow: 'shadow-primary/20',
     },
     {
       label: 'Draft Tours',
-      value: continuableTours.length || drafts.length || '—',
+      value: continuableTours.length || drafts.length,
       icon: Clock,
       glow: 'shadow-amber-500/20',
     },
@@ -232,7 +233,7 @@ export function TourOperatorDashboard() {
                     <h1 className="text-2xl font-black text-foreground tracking-tight">
                       Welcome back, {operatorName}
                     </h1>
-                    <span className="text-2xl">🎒</span>
+                    <Compass className="h-6 w-6 text-primary" aria-hidden="true" />
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary/80">
@@ -642,11 +643,8 @@ export function TourOperatorDashboard() {
                     </Badge>
                   )}
                 </h2>
-                {publishedTours.length > 0 && (
-                  <button className="text-primary hover:text-primary/80 text-xs font-bold uppercase tracking-widest transition-colors">
-                    View all
-                  </button>
-                )}
+                {/* "View all" was a button with hover styles and no handler. There is no
+                    all-tours route to send the operator to, so it is gone rather than fake. */}
               </div>
 
               {loading ? (
@@ -663,7 +661,7 @@ export function TourOperatorDashboard() {
               ) : (
                 <div className="glass-card border border-border/50 rounded-3xl p-12 text-center">
                   <div className="w-20 h-20 rounded-3xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-6">
-                    <span className="text-4xl">🗺️</span>
+                    <Map className="h-10 w-10 text-primary" aria-hidden="true" />
                   </div>
                   <h3 className="text-xl font-black text-foreground mb-2">No active tours yet</h3>
                   <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium text-sm">

@@ -94,7 +94,7 @@ export default function OperatorCalendarPage() {
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <PageHeader
           title="Calendar & Availability"
-          subtitle="Airbnb-style departure planning with booking pressure and seat visibility across your upcoming tours."
+          subtitle="Plan departures, watch demand, and keep an eye on remaining seats across your tours."
           showBackButton={false}
           actions={
             <Button asChild className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
@@ -181,7 +181,7 @@ export default function OperatorCalendarPage() {
             </div>
             <h2 className="text-xl font-black text-foreground">No departures yet</h2>
             <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-              Follow the Booking.com availability pattern: publish predictable departure slots, keep seat counts current, and surface demand early.
+              Publish departures on a predictable rhythm, keep seat counts current, and travellers will find you earlier.
             </p>
             <Button asChild className="mt-6 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
               <Link to="/operator/tours/new?returnTo=%2Foperator%2Fcalendar">Create your first scheduled tour</Link>
@@ -209,7 +209,7 @@ export default function OperatorCalendarPage() {
                     <h2 className="text-lg font-black text-foreground">
                       {selectedDate ? format(selectedDate, 'EEEE, MMM d') : 'Selected day'}
                     </h2>
-                    <p className="text-sm text-muted-foreground">Live departure board inspired by Airbnb experience host calendars.</p>
+                    <p className="text-sm text-muted-foreground">Your live departure board.</p>
                   </div>
                   <Badge variant="outline" className="border-border/60 bg-background/60 text-foreground">
                     {daySchedules.length} departure{daySchedules.length === 1 ? '' : 's'}

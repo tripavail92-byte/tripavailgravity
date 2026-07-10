@@ -515,13 +515,12 @@ export default function TourOperatorSettingsPage() {
             <Shield size={20} className="text-primary" />
             Security
           </h2>
-          <ToggleSetting
-            label="Two-Factor Authentication"
-            description="Add an extra layer of security to your account"
-            enabled={settings?.two_factor_enabled || false}
-            onChange={(value) => handleToggle('two_factor_enabled', value)}
-            disabled={isSaving}
-          />
+          {/* The two-factor toggle used to persist `two_factor_enabled` while no enrolment or
+              challenge existed anywhere in the product — an operator could switch it on and believe
+              their account was protected. It stays hidden until real 2FA ships. */}
+          <p className="text-sm text-muted-foreground">
+            Your account is secured by your email sign-in. Two-factor authentication is coming soon.
+          </p>
         </GlassCard>
         </>)}
 
