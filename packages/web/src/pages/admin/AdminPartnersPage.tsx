@@ -94,6 +94,8 @@ type PartnerRow = {
   company_name?: string | null
   account_status: string | null
   created_at: string
+  /** From admin_list_operator_identities: false = registered but no profile row yet (setup not started). */
+  has_profile?: boolean | null
   // enriched after fetch
   verification_status?: string | null
 }
@@ -1381,7 +1383,11 @@ function AllPartnersTab() {
                     row.business_name ||
                     row.company_name ||
                     [u?.first_name, u?.last_name].filter(Boolean).join(' ') ||
+                    u?.email ||
                     'Unknown'
+                  // has_profile is false for an operator who registered but never started setup —
+                  // previously these were invisible to admin entirely.
+                  const setupNotStarted = row.has_profile === false
 
                   const isSuspended = row.account_status === 'suspended'
                   const isDeleted = row.account_status === 'deleted'
@@ -1398,6 +1404,11 @@ function AllPartnersTab() {
                         {isDeleted && (
                           <span className="ml-2 text-xs text-red-600 font-semibold uppercase tracking-wider">
                             (Deleted)
+                          </span>
+                        )}
+                        {setupNotStarted && (
+                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                            Setup not started
                           </span>
                         )}
                       </TableCell>
