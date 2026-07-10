@@ -1,10 +1,11 @@
-import { AlertCircle, AlertTriangle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
+import { AlertCircle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { canPublishAnotherTrip } from '@tripavail/shared/commercial/engine'
 
+import { StageRail, type StageStatus } from '@/features/wizard/StageRail'
 import { celebrateStage } from '@/features/wizard/celebrateStage'
 import { supabase } from '@/lib/supabase'
 import {
@@ -924,96 +925,18 @@ export default function CreateTourPage() {
             </div>
           </div>
 
-          {/* Visual stepper */}
-          <div className="flex items-center justify-center overflow-x-auto pb-1 gap-0">
-            {STEPS.map((step, idx) => {
-              const workflow = stepWorkflow[idx]
-              const isCompleted = workflow?.status === 'complete'
-              const isNeedsAttention = workflow?.status === 'needs_attention'
-              const isInProgress = workflow?.status === 'in_progress'
-              const isCurrent = idx === currentStep
-              return (
-                <div key={step.title} className="flex items-center shrink-0">
-                  {/* Circle + label */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setVisitedSteps((prev) => {
-                        const copy = new Set(prev)
-                        copy.add(idx)
-                        return copy
-                      })
-                      setCurrentStep(idx)
-                    }}
-                    className="flex flex-col items-center gap-1"
-                  >
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                        isCompleted
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : isNeedsAttention
-                            ? 'bg-destructive/10 text-destructive border-2 border-destructive/40'
-                            : isCurrent || isInProgress
-                              ? 'bg-primary/15 text-primary border-2 border-primary'
-                              : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <svg viewBox="0 0 12 12" className="w-3.5 h-3.5" fill="currentColor">
-                          <path d="M1.5 6 L4.5 9 L10.5 3" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : isNeedsAttention ? (
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      ) : (
-                        idx + 1
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap ${
-                        isNeedsAttention
-                          ? 'text-destructive'
-                          : isCurrent || isInProgress
-                            ? 'text-primary'
-                            : isCompleted
-                              ? 'text-primary/70'
-                              : 'text-muted-foreground'
-                      }`}
-                    >
-                      {step.title}
-                    </span>
-                    <span
-                      className={`text-[9px] uppercase tracking-wide font-semibold ${
-                        isNeedsAttention
-                          ? 'text-destructive/80'
-                          : isCompleted
-                            ? 'text-primary/70'
-                            : isCurrent || isInProgress
-                              ? 'text-primary/70'
-                              : 'text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? 'Complete' : isNeedsAttention ? 'Needs attention' : isCurrent || isInProgress ? 'In progress' : 'Not started'}
-                    </span>
-                  </button>
-
-                  {/* Connector line (not after last step) */}
-                  {idx < STEPS.length - 1 && (
-                    <div
-                      className={`h-0.5 w-8 mx-1 mb-7 rounded-full transition-all duration-300 ${
-                        isCompleted
-                          ? 'bg-primary'
-                          : isNeedsAttention
-                            ? 'bg-destructive/40'
-                            : isCurrent
-                              ? 'bg-primary/30'
-                              : 'bg-border'
-                      }`}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          {/* One stage, named once, centred. See StageRail for why the numbered rail went away. */}
+          <StageRail
+            stages={STEPS.map((step, idx) => ({
+              title: step.title,
+              status: (stepWorkflow[idx]?.status ?? (idx === currentStep ? 'in_progress' : 'not_started')) as StageStatus,
+            }))}
+            currentIndex={currentStep}
+            onSelect={(idx) => {
+              setVisitedSteps((prev) => new Set(prev).add(idx))
+              setCurrentStep(idx)
+            }}
+          />
         </div>
       </div>
 
