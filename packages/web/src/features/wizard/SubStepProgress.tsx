@@ -1,5 +1,3 @@
-import { Check } from 'lucide-react'
-
 import { cn } from '@/lib/utils'
 
 interface SubStepProgressProps {
@@ -15,12 +13,17 @@ interface SubStepProgressProps {
 }
 
 /**
- * One dot per screen: checked once passed, hollow ahead, red when that screen was left with
+ * One dot per screen: filled once passed, hollow ahead, red when that screen was left with
  * something missing — the operator can always see, and reach, what they skipped.
  *
- * Deliberately carries NO text. The stage name is already in the page's stage rail and the
- * "Step 2 of 6" count is already in WizardScreen's heading block; this component used to print
- * both again, so the same number appeared three times on one card.
+ * Deliberately carries no text and no digits. The stage name lives in the stage rail, and the only
+ * count on the page is "Step 2 of 6" in WizardScreen's heading block. This component used to print
+ * the stage name, the count, AND a number inside every dot, so one card showed the same figure
+ * three times over.
+ *
+ * A skipped screen is therefore signalled by colour alone here, which is not enough on its own —
+ * so its dot is also larger and ringed, it announces "needs attention" to screen readers, and the
+ * footer says so in words when you are standing on it.
  */
 export function SubStepProgress({
   stageTitle,
@@ -49,22 +52,22 @@ export function SubStepProgress({
                 aria-label={`Go to step ${i + 1} of ${total}${hasIssue ? ' — needs attention' : ''}`}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  'flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold transition-all',
+                  'block rounded-full transition-all',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   // "You are here" must always win over "this one is missing something", otherwise
                   // the operator loses track of the screen they are actually on.
+                  isCurrent ? 'h-2.5 w-6' : hasIssue ? 'h-2.5 w-2.5' : 'h-2 w-2',
                   isCurrent
-                    ? 'bg-primary text-primary-foreground scale-110'
+                    ? hasIssue
+                      ? 'bg-destructive'
+                      : 'bg-primary'
                     : hasIssue
-                      ? 'bg-destructive/15 text-destructive'
+                      ? 'bg-destructive ring-2 ring-destructive/30'
                       : isPassed
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-muted text-muted-foreground/60',
-                  hasIssue && 'ring-1 ring-destructive/50',
+                        ? 'bg-primary/50'
+                        : 'bg-muted',
                 )}
-              >
-                {isPassed && !hasIssue ? <Check className="h-3 w-3" /> : i + 1}
-              </button>
+              />
             </li>
           )
         })}

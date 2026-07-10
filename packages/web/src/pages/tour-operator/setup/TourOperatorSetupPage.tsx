@@ -14,6 +14,7 @@ import {
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import { SETUP_STEP_SLUGS, type SetupStepSlug } from '@/features/tour-operator/constants/setupSteps'
 import { celebrateStage } from '@/features/wizard/celebrateStage'
+import { StageRail, type StageStatus } from '@/features/wizard/StageRail'
 import { SubStepProgress } from '@/features/wizard/SubStepProgress'
 import { WizardScreen } from '@/features/wizard/WizardScreen'
 import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
@@ -389,43 +390,21 @@ export default function TourOperatorSetupPage() {
       {/* Step progress bar */}
       {!isCompletionStep && !isLocked && (
         <div className="max-w-2xl mx-auto w-full px-6 pt-5 pb-1">
-          <div className="flex gap-1.5 mb-2">
-            {STEPS.slice(0, STEPS.length - 1).map((step, i) => {
-              const reached = i <= maxStepReached
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => goToStep(i)}
-                  disabled={!reached}
-                  aria-label={`Go to ${step.title}`}
-                  aria-current={i === currentStep ? 'step' : undefined}
-                  title={reached ? step.title : undefined}
-                  className={`group flex-1 py-2.5 -my-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
-                    reached ? 'cursor-pointer' : 'cursor-default'
-                  }`}
-                >
-                  <span
-                    className={`block h-1 rounded-full transition-all duration-300 ${
-                      i < currentStep
-                        ? 'bg-primary shadow-sm shadow-primary/30 group-hover:brightness-110'
-                        : i === currentStep
-                          ? 'bg-primary/50 group-hover:bg-primary/70'
-                          : 'bg-muted'
-                    } ${reached ? 'group-hover:h-1.5' : ''}`}
-                  />
-                </button>
-              )
-            })}
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
-              {STEPS[currentStep].title}
-            </p>
-            <p className="text-muted-foreground/70 text-[10px] font-semibold">
-              {currentStep + 1} of {STEPS.length - 1}
-            </p>
-          </div>
+          {/* One stage, named once, centred — the same rail the create-tour wizard uses. The
+              "N of 9" that used to sit here was a second count competing with the card's own. */}
+          <StageRail
+            stages={STEPS.slice(0, STEPS.length - 1).map((step, i) => ({
+              title: step.title,
+              status: (i < currentStep
+                ? 'complete'
+                : i === currentStep
+                  ? 'in_progress'
+                  : 'not_started') as StageStatus,
+            }))}
+            currentIndex={currentStep}
+            onSelect={goToStep}
+            canSelect={(i) => i <= maxStepReached}
+          />
         </div>
       )}
 
