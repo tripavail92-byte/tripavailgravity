@@ -1,19 +1,14 @@
-import {
-  Award,
-  ChevronUp,
-  Clock,
-  Globe,
-  PenLine,
-  Plus,
-  Trash2,
-  Users,
-} from 'lucide-react'
+import { Award, Clock, Globe, Pencil, Plus, Save, Trash2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RevealStage } from '@/features/wizard/RevealStage'
 import type { OperatorGuideProfile } from '@/features/tour-operator/types/operatorProfile'
+import { cn } from '@/lib/utils'
 
 interface StepProps {
   onNext: () => void
@@ -45,289 +40,319 @@ function splitCommaValues(raw: string): string[] {
   return raw.split(',').map((s) => s.trim()).filter(Boolean)
 }
 
-// ── Guide Profile Card ────────────────────────────────────────────────────────
-
-function GuideCard({
-  guide,
-  index,
-  onUpdate,
-  onRemove,
-}: {
-  guide: OperatorGuideProfile
-  index: number
-  onUpdate: (updates: Partial<OperatorGuideProfile>) => void
-  onRemove: () => void
-}) {
-  const [expanded, setExpanded] = useState(!guide.name)
-  const initials = guide.name
-    ? guide.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
-    : `G${index + 1}`
-  const avatarColor = AVATAR_COLORS[index % AVATAR_COLORS.length]
-
+function initialsOf(name: string) {
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-      transition={{ duration: 0.25 }}
-      className="rounded-2xl border border-border/50 bg-card overflow-hidden"
-    >
-      <div className="flex items-start gap-4 p-4">
-        <div
-          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${avatarColor} border flex items-center justify-center flex-shrink-0 shadow-sm`}
-        >
-          <span className="text-sm font-black text-foreground/80">{initials}</span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground text-sm">{guide.name || `Guide ${index + 1}`}</p>
-          {guide.yearsExperience != null && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <Clock className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">{guide.yearsExperience} yrs experience</span>
-            </div>
-          )}
-          {guide.languages.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {guide.languages.map((lang) => (
-                <span
-                  key={lang}
-                  className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-semibold"
-                >
-                  <Globe className="w-2.5 h-2.5" aria-hidden="true" />
-                  {lang}
-                </span>
-              ))}
-            </div>
-          )}
-          {guide.specialties.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {guide.specialties.map((s) => (
-                <span key={s} className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-semibold">
-                  {s}
-                </span>
-              ))}
-            </div>
-          )}
-          {guide.certifications.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {guide.certifications.map((c) => (
-                <span key={c} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-semibold">
-                  <Award className="w-2.5 h-2.5" aria-hidden="true" />
-                  {c}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
-            aria-label={expanded ? 'Collapse' : 'Edit guide'}
-          >
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 border border-destructive/20 flex items-center justify-center text-destructive/60 hover:text-destructive transition-all"
-            aria-label="Remove guide"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            key="expand"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 pt-1 border-t border-border/40 space-y-3 bg-muted/20">
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full Name</p>
-                  <Input
-                    value={guide.name}
-                    onChange={(e) => onUpdate({ name: e.target.value })}
-                    placeholder="Ahmed Khan"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Years Experience</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={guide.yearsExperience ?? ''}
-                    onChange={(e) =>
-                      onUpdate({ yearsExperience: e.target.value ? Number(e.target.value) : null })
-                    }
-                    placeholder="5"
-                    className="h-9 text-sm"
-                  />
-                </div>
-
-                <div className="col-span-2 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Languages (comma-separated)</p>
-                  <Input
-                    value={guide.languages.join(', ')}
-                    onChange={(e) => onUpdate({ languages: splitCommaValues(e.target.value) })}
-                    placeholder="English, Urdu, Punjabi"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Specialties (comma-separated)</p>
-                  <Input
-                    value={guide.specialties.join(', ')}
-                    onChange={(e) => onUpdate({ specialties: splitCommaValues(e.target.value) })}
-                    placeholder="Hiking, Wildlife, Cultural Tours"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Certifications (comma-separated)</p>
-                  <Input
-                    value={guide.certifications.join(', ')}
-                    onChange={(e) => onUpdate({ certifications: splitCommaValues(e.target.value) })}
-                    placeholder="First Aid, Wilderness Rescue, PTDC Licensed"
-                    className="h-9 text-sm"
-                  />
-                </div>
-
-                <div className="col-span-2 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bio</p>
-                  <Textarea
-                    rows={2}
-                    value={guide.bio}
-                    onChange={(e) => onUpdate({ bio: e.target.value })}
-                    placeholder="A short bio about this guide's background and passion for travel…"
-                    className="text-sm resize-none"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                <ChevronUp className="w-3.5 h-3.5" /> Collapse
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || '?'
   )
 }
 
-// ── Step ──────────────────────────────────────────────────────────────────────
+/** A guide already saved, shown as a compact card once the editor collapses. */
+function GuideSummaryCard({
+  guide,
+  colorIndex,
+  onEdit,
+  onRemove,
+}: {
+  guide: OperatorGuideProfile
+  colorIndex: number
+  onEdit: () => void
+  onRemove: () => void
+}) {
+  return (
+    <motion.article
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background p-4 shadow-sm"
+    >
+      <div
+        className={cn(
+          'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br text-sm font-black text-foreground',
+          AVATAR_COLORS[colorIndex % AVATAR_COLORS.length],
+        )}
+      >
+        {initialsOf(guide.name)}
+      </div>
 
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-bold tracking-tight text-foreground">
+          {guide.name?.trim() || 'Unnamed guide'}
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {typeof guide.yearsExperience === 'number' ? (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" aria-hidden="true" />
+              {guide.yearsExperience} yrs
+            </span>
+          ) : null}
+          {guide.languages.length > 0 ? (
+            <span className="inline-flex items-center gap-1">
+              <Globe className="h-3 w-3" aria-hidden="true" />
+              {guide.languages.join(', ')}
+            </span>
+          ) : null}
+          {guide.certifications.length > 0 ? (
+            <span className="inline-flex items-center gap-1">
+              <Award className="h-3 w-3" aria-hidden="true" />
+              {guide.certifications.length}
+            </span>
+          ) : null}
+        </p>
+      </div>
+
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onEdit}
+          aria-label={`Edit ${guide.name || 'guide'}`}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          aria-label={`Remove ${guide.name || 'guide'}`}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </motion.article>
+  )
+}
+
+/**
+ * Guides is a repeater, so it uses the progressive pattern rather than sub-steps: one question at a
+ * time, save the guide, collapse to a summary card, then "Add another". It also no longer persists
+ * on every keystroke — a half-typed guide used to be written straight into the operator's profile.
+ */
 export function GuidesStep({ onNext, onUpdate, data }: StepProps) {
   const [guides, setGuides] = useState<OperatorGuideProfile[]>(data.guideProfiles ?? [])
+  const [draft, setDraft] = useState<OperatorGuideProfile>(newGuide)
+  const [isEditorOpen, setIsEditorOpen] = useState(() => (data.guideProfiles?.length ?? 0) === 0)
 
-  function updateGuides(next: OperatorGuideProfile[]) {
+  const commit = (next: OperatorGuideProfile[]) => {
     setGuides(next)
     onUpdate({ guideProfiles: next })
   }
 
-  function addGuide() {
-    updateGuides([...guides, newGuide()])
+  const update = (updates: Partial<OperatorGuideProfile>) =>
+    setDraft((prev) => ({ ...prev, ...updates }))
+
+  const hasName = Boolean(draft.name?.trim())
+  const hasLanguages = hasName && draft.languages.length > 0
+
+  const isEditingExisting = guides.some((guide) => guide.id === draft.id)
+
+  const saveDraft = () => {
+    if (!hasName) return
+    commit(
+      isEditingExisting
+        ? guides.map((guide) => (guide.id === draft.id ? draft : guide))
+        : [...guides, draft],
+    )
+    setDraft(newGuide())
+    setIsEditorOpen(false)
   }
 
-  function updateGuide(id: string, updates: Partial<OperatorGuideProfile>) {
-    updateGuides(guides.map((g) => (g.id === id ? { ...g, ...updates } : g)))
+  const editGuide = (id: string) => {
+    const found = guides.find((guide) => guide.id === id)
+    if (!found) return
+    setDraft(found)
+    setIsEditorOpen(true)
   }
 
-  function removeGuide(id: string) {
-    updateGuides(guides.filter((g) => g.id !== id))
+  const removeGuide = (id: string) => {
+    commit(guides.filter((guide) => guide.id !== id))
+    if (draft.id === id) {
+      setDraft(newGuide())
+      setIsEditorOpen(guides.length <= 1)
+    }
+  }
+
+  const cancelEditor = () => {
+    setDraft(newGuide())
+    setIsEditorOpen(false)
   }
 
   return (
-    <div className="space-y-10">
-      {/* Header */}
+    <div className="space-y-8">
       <div>
-        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
-          Meet Your Guides
-        </h3>
-        <p className="text-muted-foreground leading-relaxed font-medium">
-          Introduce your team. Travellers love knowing who they'll adventure with.
+        <h3 className="mb-1.5 text-2xl font-black tracking-tight text-foreground">Meet Your Guides</h3>
+        <p className="font-medium leading-relaxed text-muted-foreground">
+          Travellers book people, not itineraries. Introduce the guides who run your tours.
         </p>
       </div>
 
-      {/* Guide list */}
-      <div className="space-y-3">
-        <AnimatePresence initial={false}>
-          {guides.map((guide, i) => (
-            <GuideCard
-              key={guide.id}
-              guide={guide}
-              index={i}
-              onUpdate={(updates) => updateGuide(guide.id, updates)}
-              onRemove={() => removeGuide(guide.id)}
-            />
-          ))}
-        </AnimatePresence>
+      {guides.length > 0 ? (
+        <div className="space-y-3">
+          <AnimatePresence initial={false}>
+            {guides.map((guide, index) => (
+              <GuideSummaryCard
+                key={guide.id}
+                guide={guide}
+                colorIndex={index}
+                onEdit={() => editGuide(guide.id)}
+                onRemove={() => removeGuide(guide.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      ) : null}
 
-        {guides.length === 0 ? (
-          <button
-            type="button"
-            onClick={addGuide}
-            className="w-full group rounded-2xl border-2 border-dashed border-border/50 hover:border-primary/40 bg-muted/10 hover:bg-primary/5 transition-all py-10 flex flex-col items-center gap-3"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 flex items-center justify-center transition-all">
-              <Users className="w-6 h-6 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" aria-hidden="true" />
+      {isEditorOpen ? (
+        <div className="space-y-3">
+          <RevealStage index={1} title="Who is this guide?" complete={hasName}>
+            <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Full name
+                </Label>
+                <Input
+                  value={draft.name}
+                  onChange={(e) => update({ name: e.target.value })}
+                  placeholder="Ahmed Khan"
+                  className="rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Years guiding
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={draft.yearsExperience ?? ''}
+                  onChange={(e) =>
+                    update({
+                      yearsExperience: e.target.value.trim() === '' ? null : Number(e.target.value),
+                    })
+                  }
+                  placeholder="5"
+                  className="rounded-xl"
+                />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground/60 group-hover:text-foreground transition-colors">No guides added yet</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Tap to introduce your first guide</p>
-            </div>
-            <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
-              <Plus className="w-3 h-3" aria-hidden="true" />
-              Add Guide
-            </div>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={addGuide}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/25 text-primary text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            Add Another Guide
-          </button>
-        )}
-      </div>
+          </RevealStage>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/30">
-        <button
-          type="button"
-          onClick={onNext}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
-        >
-          Skip for now →
-        </button>
-        {guides.length > 0 && (
+          {hasName ? (
+            <RevealStage
+              index={2}
+              title="What languages do they speak?"
+              description="Separate with commas. This is what travellers filter on."
+              complete={hasLanguages}
+            >
+              <Input
+                value={draft.languages.join(', ')}
+                onChange={(e) => update({ languages: splitCommaValues(e.target.value) })}
+                placeholder="English, Urdu, Punjabi"
+                className="rounded-xl"
+              />
+            </RevealStage>
+          ) : null}
+
+          {hasLanguages ? (
+            <RevealStage
+              index={3}
+              title="What are they known for?"
+              description="Optional — specialities, certifications, and a short bio."
+            >
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Specialities
+                  </Label>
+                  <Input
+                    value={draft.specialties.join(', ')}
+                    onChange={(e) => update({ specialties: splitCommaValues(e.target.value) })}
+                    placeholder="Hiking, Wildlife, Cultural Tours"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Certifications
+                  </Label>
+                  <Input
+                    value={draft.certifications.join(', ')}
+                    onChange={(e) => update({ certifications: splitCommaValues(e.target.value) })}
+                    placeholder="First Aid, Wilderness Rescue, PTDC Licensed"
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Short bio
+                  </Label>
+                  <Textarea
+                    value={draft.bio}
+                    onChange={(e) => update({ bio: e.target.value })}
+                    placeholder="A short bio about this guide's background and passion for travel…"
+                    rows={3}
+                    className="resize-none rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-border/50 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {isEditingExisting ? 'Updating an existing guide.' : 'This guide will be added to your team.'}
+                </p>
+                <div className="flex gap-2">
+                  {guides.length > 0 ? (
+                    <Button type="button" variant="ghost" onClick={cancelEditor}>
+                      Cancel
+                    </Button>
+                  ) : null}
+                  <Button type="button" onClick={saveDraft} className="gap-2 font-bold">
+                    <Save className="h-4 w-4" />
+                    Save guide
+                  </Button>
+                </div>
+              </div>
+            </RevealStage>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setDraft(newGuide())
+              setIsEditorOpen(true)
+            }}
+            className="gap-2 rounded-2xl border-dashed"
+          >
+            <Plus className="h-4 w-4" />
+            Add another guide
+          </Button>
+        </div>
+      )}
+
+      {/* Navigation lives in the page footer — this step only offers the escape hatch. */}
+      {guides.length === 0 ? (
+        <div className="flex justify-end border-t border-border/30 pt-4">
           <button
             type="button"
             onClick={onNext}
-            className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]"
+            className="text-sm text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
           >
-            Save & Continue
+            Skip for now →
           </button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }

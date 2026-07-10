@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import type { Tour } from '@/features/tour-operator/services/tourService'
 import { TierLockedFeature } from '@/features/tour-operator/components/tier/TierLockedFeature'
+import { RevealStage } from '@/features/wizard/RevealStage'
 
 import { PickupMap } from './PickupMap'
 import { TimeWheelPicker } from './TimeWheelPicker'
@@ -639,46 +640,6 @@ function newEmptyPickup(): DraftPickup {
   }
 }
 
-/**
- * One revealed step of the pickup flow. Later stages only appear once the previous one is
- * answered, so the operator sees a single question at a time instead of a wall of fields.
- */
-function Stage({
-  index,
-  title,
-  description,
-  complete = false,
-  children,
-}: {
-  index: number
-  title: string
-  description?: string
-  complete?: boolean
-  children: ReactNode
-}) {
-  return (
-    <section className="rounded-[24px] border border-border/60 bg-background/70 p-5 shadow-sm sm:p-6">
-      <div className="flex items-start gap-4">
-        <div
-          className={cn(
-            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300',
-            complete ? 'bg-primary text-primary-foreground' : 'bg-primary/15 text-primary',
-          )}
-          aria-hidden="true"
-        >
-          {complete ? <Check className="h-4 w-4" /> : index}
-        </div>
-        <div className="min-w-0 flex-1 space-y-4">
-          <div>
-            <h3 className="text-base font-bold leading-tight text-foreground">{title}</h3>
-            {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
-          </div>
-          {children}
-        </div>
-      </div>
-    </section>
-  )
-}
 
 export function TourPickupLocationsStep({
   data,
@@ -1379,7 +1340,7 @@ export function TourPickupLocationsStep({
             {isEditorOpen ? (
             <div className="space-y-3">
               {/* 1 — the single line the operator starts from */}
-              <Stage
+              <RevealStage
                 index={1}
                 title="Where do travellers meet you?"
                 description={
@@ -1404,11 +1365,11 @@ export function TourPickupLocationsStep({
                     isSaving={isSaving}
                   />
                 )}
-              </Stage>
+              </RevealStage>
 
               {/* 2 — map appears only after a place is picked */}
               {hasLocation ? (
-                <Stage
+                <RevealStage
                   index={2}
                   title="Is this the exact spot?"
                   description="Drag the pin or click the map to fine-tune where the vehicle waits."
@@ -1455,12 +1416,12 @@ export function TourPickupLocationsStep({
                       />
                     </div>
                   </div>
-                </Stage>
+                </RevealStage>
               ) : null}
 
               {/* 3 — time, once the stop has a name */}
               {hasName ? (
-                <Stage
+                <RevealStage
                   index={3}
                   title="What time is the pickup?"
                   description="Shown to travellers on their booking confirmation."
@@ -1488,12 +1449,12 @@ export function TourPickupLocationsStep({
                       </Button>
                     ) : null}
                   </div>
-                </Stage>
+                </RevealStage>
               ) : null}
 
               {/* 4 — notes and save */}
               {hasTime ? (
-                <Stage
+                <RevealStage
                   index={4}
                   title="Anything travellers should know?"
                   description="Optional — the entrance to use, where to wait, how to spot the vehicle."
@@ -1522,7 +1483,7 @@ export function TourPickupLocationsStep({
                       Save pickup
                     </Button>
                   </div>
-                </Stage>
+                </RevealStage>
               ) : null}
             </div>
             ) : null}

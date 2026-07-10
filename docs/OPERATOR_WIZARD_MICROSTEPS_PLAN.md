@@ -3,7 +3,7 @@
 A plan to turn the two long, scroll-heavy operator wizards into short, one-question-at-a-time
 screens with a visible sense of progress ("Personal Information · 2 of 4").
 
-> **Status: Phases 0–3 are shipped.** Decisions taken: Profile Picture stays its own
+> **Status: Phases 0–4 are shipped.** Decisions taken: Profile Picture stays its own
 > stage; Launch Promo removed from the wizard; Primary Contact Person removed; Continue is never
 > blocked — missing fields go red, the sub-step dot goes red, and focus jumps to the first one.
 
@@ -214,7 +214,9 @@ A single reusable layer, used by both wizards, so we never hand-maintain two ste
 - ✅ **Phase 3 — Setup wizard**: Personal Information (2), Business Details (3), Policies (2).
   Sub-step lives in the **URL** (`?step=business&sub=1`), not a new DB column — `setup_current_step`
   still stores the stage, so no migration was needed and deep links/reload/back all survive.
-- ⬜ Phase 4 — Repeaters adopt the progressive pattern.
+- ✅ **Phase 4 — Repeaters**: Fleet, Guides and the Itinerary activity editor adopt the progressive
+  pattern (`features/wizard/RevealStage`, extracted from the pickup step). Submit for Review now
+  routes to the exact sub-step that is missing something, not just the stage.
 - ⬜ Phase 5 — Polish.
 
 <details><summary>Original phase notes</summary>

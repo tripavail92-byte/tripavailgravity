@@ -3,11 +3,11 @@ import {
   Bike,
   Bus,
   Car,
-  ChevronUp,
   Mountain,
-  PenLine,
+  Pencil,
   Plane,
   Plus,
+  Save,
   Ship,
   Tent,
   Trash2,
@@ -17,9 +17,13 @@ import {
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { RevealStage } from '@/features/wizard/RevealStage'
 import type { OperatorFleetAsset } from '@/features/tour-operator/types/operatorProfile'
+import { cn } from '@/lib/utils'
 
 interface StepProps {
   onNext: () => void
@@ -56,270 +60,304 @@ const VEHICLE_TYPE_OPTIONS = [
   'Van', 'Hi-Ace', 'Motorbike', 'Raft / Boat', 'Helicopter', 'Camping Gear', 'Other',
 ]
 
-// ── Fleet Asset Card ──────────────────────────────────────────────────────────
-
-function FleetCard({
+/** A vehicle already saved, shown as a compact card once the editor collapses. */
+function FleetSummaryCard({
   asset,
-  index,
-  onUpdate,
+  onEdit,
   onRemove,
 }: {
   asset: OperatorFleetAsset
-  index: number
-  onUpdate: (updates: Partial<OperatorFleetAsset>) => void
+  onEdit: () => void
   onRemove: () => void
 }) {
-  const [expanded, setExpanded] = useState(!asset.name && !asset.type)
-  const VehicleIcon = getVehicleIcon(asset.type || '')
-  const displayName = asset.name || asset.type || `Vehicle ${index + 1}`
-  const displayType = asset.type || 'Transport Asset'
+  const Icon = getVehicleIcon(asset.type || asset.name)
 
   return (
-    <motion.div
+    <motion.article
       layout
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-      transition={{ duration: 0.25 }}
-      className="rounded-2xl border border-border/50 bg-card overflow-hidden"
+      exit={{ opacity: 0, y: -8 }}
+      className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background p-4 shadow-sm"
     >
-      <div className="flex items-center gap-4 p-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
-          <VehicleIcon className="w-5 h-5 text-primary" aria-hidden="true" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground text-sm truncate">{displayName}</p>
-          <p className="text-xs text-muted-foreground truncate">{displayType}</p>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {(asset.capacity ?? 0) > 0 && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/60 border border-border/50">
-              <Users className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
-              <span className="text-[10px] font-bold text-foreground tabular-nums">{asset.capacity}</span>
-            </div>
-          )}
-          {asset.quantity > 0 && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted/60 border border-border/50">
-              <span className="text-[10px] text-muted-foreground font-medium">×</span>
-              <span className="text-[10px] font-bold text-foreground tabular-nums">{asset.quantity}</span>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="w-8 h-8 rounded-lg bg-muted/50 hover:bg-muted border border-border/40 flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
-            aria-label={expanded ? 'Collapse' : 'Edit'}
-          >
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <PenLine className="w-3.5 h-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 border border-destructive/20 flex items-center justify-center text-destructive/60 hover:text-destructive transition-all"
-            aria-label="Remove vehicle"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+        <Icon className="h-6 w-6" aria-hidden="true" />
       </div>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            key="expand"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 pt-1 border-t border-border/40 space-y-3 bg-muted/20">
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <div className="col-span-2 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Vehicle Type</p>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {VEHICLE_TYPE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => onUpdate({ type: opt })}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all ${
-                          asset.type === opt
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-muted/50 text-muted-foreground border-border/50 hover:bg-primary/10 hover:text-primary hover:border-primary/30'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                  <Input
-                    value={asset.type}
-                    onChange={(e) => onUpdate({ type: e.target.value })}
-                    placeholder="Or type a custom vehicle type…"
-                    className="h-9 text-sm"
-                  />
-                </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-bold tracking-tight text-foreground">
+          {asset.name?.trim() || asset.type || 'Unnamed vehicle'}
+        </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {asset.type ? (
+            <span className="font-semibold uppercase tracking-widest">{asset.type}</span>
+          ) : null}
+          <span>×{asset.quantity}</span>
+          {typeof asset.capacity === 'number' ? (
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-3 w-3" aria-hidden="true" />
+              {asset.capacity} seats
+            </span>
+          ) : null}
+        </p>
+      </div>
 
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Name / Model</p>
-                  <Input
-                    value={asset.name}
-                    onChange={(e) => onUpdate({ name: e.target.value })}
-                    placeholder="Toyota Land Cruiser 200"
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quantity</p>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={asset.quantity}
-                      onChange={(e) => onUpdate({ quantity: Math.max(1, Number(e.target.value || 1)) })}
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Capacity</p>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={asset.capacity ?? ''}
-                      onChange={(e) =>
-                        onUpdate({ capacity: e.target.value ? Math.max(1, Number(e.target.value)) : null })
-                      }
-                      placeholder="7"
-                      className="h-9 text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="col-span-2 space-y-1.5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Details & Features</p>
-                  <Textarea
-                    rows={2}
-                    value={asset.details}
-                    onChange={(e) => onUpdate({ details: e.target.value })}
-                    placeholder="4×4, AC, roof carrier, camping equipment, first aid kit…"
-                    className="text-sm resize-none"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setExpanded(false)}
-                className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                <ChevronUp className="w-3.5 h-3.5" /> Collapse
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onEdit}
+          aria-label={`Edit ${asset.name || 'vehicle'}`}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          aria-label={`Remove ${asset.name || 'vehicle'}`}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+    </motion.article>
   )
 }
 
-// ── Step ──────────────────────────────────────────────────────────────────────
-
+/**
+ * Fleet is a repeater, so it takes the progressive pattern rather than sub-steps: ask one question,
+ * reveal the next once it is answered, save the vehicle, collapse to a summary card, then offer
+ * "Add another". Splitting a repeater across sub-steps becomes torture on the third vehicle.
+ *
+ * This also stops persisting on every keystroke. Before, a half-typed vehicle was already written
+ * into the operator's profile and every card sat expanded as a six-field form.
+ */
 export function FleetStep({ onNext, onUpdate, data }: StepProps) {
   const [assets, setAssets] = useState<OperatorFleetAsset[]>(data.fleetAssets ?? [])
+  const [draft, setDraft] = useState<OperatorFleetAsset>(newAsset)
+  const [isEditorOpen, setIsEditorOpen] = useState(() => (data.fleetAssets?.length ?? 0) === 0)
 
-  function updateAssets(next: OperatorFleetAsset[]) {
+  const commit = (next: OperatorFleetAsset[]) => {
     setAssets(next)
     onUpdate({ fleetAssets: next })
   }
 
-  function addAsset() {
-    updateAssets([...assets, newAsset()])
+  const update = (updates: Partial<OperatorFleetAsset>) =>
+    setDraft((prev) => ({ ...prev, ...updates }))
+
+  // Each answer unlocks the next question.
+  const hasType = Boolean(draft.type?.trim())
+  const hasName = hasType && Boolean(draft.name?.trim())
+  const hasCounts = hasName && Number(draft.quantity) > 0
+
+  const isEditingExisting = assets.some((asset) => asset.id === draft.id)
+
+  const saveDraft = () => {
+    if (!hasName) return
+    commit(
+      isEditingExisting
+        ? assets.map((asset) => (asset.id === draft.id ? draft : asset))
+        : [...assets, draft],
+    )
+    setDraft(newAsset())
+    setIsEditorOpen(false)
   }
 
-  function updateAsset(id: string, updates: Partial<OperatorFleetAsset>) {
-    updateAssets(assets.map((a) => (a.id === id ? { ...a, ...updates } : a)))
+  const editAsset = (id: string) => {
+    const found = assets.find((asset) => asset.id === id)
+    if (!found) return
+    setDraft(found)
+    setIsEditorOpen(true)
   }
 
-  function removeAsset(id: string) {
-    updateAssets(assets.filter((a) => a.id !== id))
+  const removeAsset = (id: string) => {
+    commit(assets.filter((asset) => asset.id !== id))
+    if (draft.id === id) {
+      setDraft(newAsset())
+      setIsEditorOpen(assets.length <= 1)
+    }
+  }
+
+  const cancelEditor = () => {
+    setDraft(newAsset())
+    setIsEditorOpen(false)
   }
 
   return (
-    <div className="space-y-10">
-      {/* Header */}
+    <div className="space-y-8">
       <div>
-        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
-          Fleet & Vehicles
-        </h3>
-        <p className="text-muted-foreground leading-relaxed font-medium">
+        <h3 className="mb-1.5 text-2xl font-black tracking-tight text-foreground">Fleet & Vehicles</h3>
+        <p className="font-medium leading-relaxed text-muted-foreground">
           What vehicles do you use for your tours? This helps travellers know what to expect.
         </p>
       </div>
 
-      {/* Asset list */}
-      <div className="space-y-3">
-        <AnimatePresence initial={false}>
-          {assets.map((asset, i) => (
-            <FleetCard
-              key={asset.id}
-              asset={asset}
-              index={i}
-              onUpdate={(updates) => updateAsset(asset.id, updates)}
-              onRemove={() => removeAsset(asset.id)}
+      {assets.length > 0 ? (
+        <div className="space-y-3">
+          <AnimatePresence initial={false}>
+            {assets.map((asset) => (
+              <FleetSummaryCard
+                key={asset.id}
+                asset={asset}
+                onEdit={() => editAsset(asset.id)}
+                onRemove={() => removeAsset(asset.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      ) : null}
+
+      {isEditorOpen ? (
+        <div className="space-y-3">
+          <RevealStage index={1} title="What kind of vehicle is it?" complete={hasType}>
+            <div className="flex flex-wrap gap-2">
+              {VEHICLE_TYPE_OPTIONS.map((option) => {
+                const selected = draft.type === option
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => update({ type: option })}
+                    aria-pressed={selected}
+                    className={cn(
+                      'rounded-full border px-4 py-2 text-sm font-semibold transition-all',
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                        : 'border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                    )}
+                  >
+                    {option}
+                  </button>
+                )
+              })}
+            </div>
+            <Input
+              value={VEHICLE_TYPE_OPTIONS.includes(draft.type) ? '' : draft.type}
+              onChange={(e) => update({ type: e.target.value })}
+              placeholder="Or type a custom vehicle type…"
+              className="rounded-xl"
             />
-          ))}
-        </AnimatePresence>
+          </RevealStage>
 
-        {/* Empty state / Add button */}
-        {assets.length === 0 ? (
-          <button
-            type="button"
-            onClick={addAsset}
-            className="w-full group rounded-2xl border-2 border-dashed border-border/50 hover:border-primary/40 bg-muted/10 hover:bg-primary/5 transition-all py-10 flex flex-col items-center gap-3"
-          >
-            <div className="w-14 h-14 rounded-2xl bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 flex items-center justify-center transition-all">
-              <Truck className="w-6 h-6 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" aria-hidden="true" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-semibold text-foreground/60 group-hover:text-foreground transition-colors">No vehicles added yet</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Tap to add your first vehicle</p>
-            </div>
-            <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
-              <Plus className="w-3 h-3" aria-hidden="true" />
-              Add Vehicle
-            </div>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={addAsset}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/25 text-primary text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            Add Another Vehicle
-          </button>
-        )}
-      </div>
+          {hasType ? (
+            <RevealStage
+              index={2}
+              title="What is it called?"
+              description="The model travellers will see."
+              complete={hasName}
+            >
+              <Input
+                value={draft.name}
+                onChange={(e) => update({ name: e.target.value })}
+                placeholder="Toyota Land Cruiser 200"
+                className="rounded-xl"
+              />
+            </RevealStage>
+          ) : null}
 
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/30">
-        <button
-          type="button"
-          onClick={onNext}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
-        >
-          Skip for now →
-        </button>
-        {assets.length > 0 && (
+          {hasName ? (
+            <RevealStage index={3} title="How many, and how many seats?" complete={hasCounts}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    How many of these
+                  </Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.quantity}
+                    onChange={(e) => update({ quantity: Math.max(1, Number(e.target.value) || 1) })}
+                    placeholder="1"
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Seats each (optional)
+                  </Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.capacity ?? ''}
+                    onChange={(e) =>
+                      update({
+                        capacity: e.target.value.trim() === '' ? null : Number(e.target.value),
+                      })
+                    }
+                    placeholder="7"
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+            </RevealStage>
+          ) : null}
+
+          {hasCounts ? (
+            <RevealStage
+              index={4}
+              title="Anything else worth mentioning?"
+              description="Optional — features, equipment, condition."
+            >
+              <Textarea
+                value={draft.details}
+                onChange={(e) => update({ details: e.target.value })}
+                placeholder="4×4, AC, roof carrier, camping equipment, first aid kit…"
+                rows={3}
+                className="resize-none rounded-xl"
+              />
+
+              <div className="flex flex-col gap-3 border-t border-border/50 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {isEditingExisting
+                    ? 'Updating an existing vehicle.'
+                    : 'This will be added to your fleet.'}
+                </p>
+                <div className="flex gap-2">
+                  {assets.length > 0 ? (
+                    <Button type="button" variant="ghost" onClick={cancelEditor}>
+                      Cancel
+                    </Button>
+                  ) : null}
+                  <Button type="button" onClick={saveDraft} className="gap-2 font-bold">
+                    <Save className="h-4 w-4" />
+                    Save vehicle
+                  </Button>
+                </div>
+              </div>
+            </RevealStage>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setDraft(newAsset())
+              setIsEditorOpen(true)
+            }}
+            className="gap-2 rounded-2xl border-dashed"
+          >
+            <Plus className="h-4 w-4" />
+            Add another vehicle
+          </Button>
+        </div>
+      )}
+
+      {/* Navigation lives in the page footer — this step only offers the escape hatch. */}
+      {assets.length === 0 ? (
+        <div className="flex justify-end border-t border-border/30 pt-4">
           <button
             type="button"
             onClick={onNext}
-            className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]"
+            className="text-sm text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline"
           >
-            Save & Continue
+            Skip for now →
           </button>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }
