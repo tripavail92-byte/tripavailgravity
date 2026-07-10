@@ -36,15 +36,21 @@
 -- edit a tour that is already live. They CAN take it down — an update whose new row has
 -- both flags false is allowed — they just cannot keep it public while editing it.
 --
--- ── Before applying, settle which world production is in ──────────────────────
+-- ── Confirmed against production, 2026-07-10 ──────────────────────────────────
 --   SELECT policyname, cmd, permissive, qual, with_check
---   FROM pg_policies WHERE schemaname='public' AND tablename='tours'
---   ORDER BY cmd, policyname;
+--   FROM pg_policies WHERE schemaname='public' AND tablename='tours' ORDER BY cmd, policyname;
 --
---   A row `Operators manage own tours` with cmd=ALL means the old gate was never
---   enforced, so the reported 42501 has some other cause and is worth understanding
---   before trusting this fix. Its absence means production already diverged from this
---   history. Either way the SQL below is correct and safe to run.
+--   returned 8 rows, all PERMISSIVE, including:
+--     Operators manage own tours | ALL | PERMISSIVE | (auth.uid() = operator_id)
+--
+--   So the FOR ALL policy IS live and the INSERT gate has never actually been enforced.
+--   Today, any authenticated operator who owns a tour row can set is_published or
+--   is_active to true no matter what their verification status is. This file is not
+--   loosening a restriction — it is closing a hole that has been open since 20260210000013.
+--
+--   It also means the 42501 that motivated this file cannot have come from an
+--   authenticated operator's INSERT into public.tours. That diagnosis was wrong and the
+--   real cause of the wizard's "Save failed" is still open.
 --
 -- ── After applying, this must return exactly two rows ─────────────────────────
 --   SELECT policyname, cmd, qual, with_check

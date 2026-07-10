@@ -3,7 +3,8 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SubStepProgressProps {
-  /** Stage name, e.g. "Pricing & Policies". */
+  /** Stage name, e.g. "Pricing & Policies". Labels the rail for screen readers only — the visible
+   *  stage name already lives in the page's stage rail, and printing it twice is noise. */
   stageTitle: string
   index: number
   total: number
@@ -14,9 +15,12 @@ interface SubStepProgressProps {
 }
 
 /**
- * "Pricing & Policies · 2 of 6" plus a dot per screen. A dot is filled once passed, hollow ahead,
- * and red when that screen was left with something missing — the operator can always see, and
- * reach, what they skipped.
+ * One dot per screen: checked once passed, hollow ahead, red when that screen was left with
+ * something missing — the operator can always see, and reach, what they skipped.
+ *
+ * Deliberately carries NO text. The stage name is already in the page's stage rail and the
+ * "Step 2 of 6" count is already in WizardScreen's heading block; this component used to print
+ * both again, so the same number appeared three times on one card.
  */
 export function SubStepProgress({
   stageTitle,
@@ -30,16 +34,8 @@ export function SubStepProgress({
   const issues = new Set(issueIndices)
 
   return (
-    <div className={cn('flex flex-wrap items-center justify-between gap-3', className)}>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-        {stageTitle}
-        <span className="mx-1.5 text-muted-foreground/50">·</span>
-        <span className="text-foreground">
-          {index + 1} of {total}
-        </span>
-      </p>
-
-      <ol className="flex items-center gap-1.5">
+    <div className={cn('flex flex-wrap items-center justify-end gap-3', className)}>
+      <ol className="flex items-center gap-1.5" aria-label={`${stageTitle} steps`}>
         {Array.from({ length: total }, (_, i) => {
           const isCurrent = i === index
           const isPassed = i < index
