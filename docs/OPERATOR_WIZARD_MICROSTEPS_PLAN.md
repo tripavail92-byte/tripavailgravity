@@ -3,7 +3,7 @@
 A plan to turn the two long, scroll-heavy operator wizards into short, one-question-at-a-time
 screens with a visible sense of progress ("Personal Information · 2 of 4").
 
-> **Status: Phases 0–2 are shipped.** Decisions taken: Profile Picture stays its own
+> **Status: Phases 0–3 are shipped.** Decisions taken: Profile Picture stays its own
 > stage; Launch Promo removed from the wizard; Primary Contact Person removed; Continue is never
 > blocked — missing fields go red, the sub-step dot goes red, and focus jumps to the first one.
 
@@ -84,8 +84,9 @@ substep = ephemeral screen within a stage, 0-based                    (e.g. 1 of
 ```
 
 Persistence changes, both backward-compatible:
-- `setup_current_step` keeps meaning **stage index**. Add `setup_current_substep INTEGER DEFAULT 0`
-  (nullable, ignored by old clients).
+- `setup_current_step` keeps meaning **stage index**. The sub-step rides in the URL query
+  (`?step=business&sub=1`) instead of a new column — it survives reload and the back button, and
+  needs no migration. *(Shipped this way; the column below was the original proposal.)*
 - `_workflow.version` → `2`, adding `subStep: number`. A v1 snapshot loads with `subStep = 0`,
   which lands the operator at the top of the right stage — a correct, safe fallback.
 
@@ -210,7 +211,9 @@ A single reusable layer, used by both wizards, so we never hand-maintain two ste
   workflow snapshot v2 (`subSteps` keyed by stage id, v1 degrades to sub-step 0).
 - ✅ **Phase 1 — Pricing & Policies** split into 6 screens; Launch Promo deleted.
 - ✅ **Phase 2 — Basics** (5 screens) and **Requirements** (3 screens).
-- ⬜ Phase 3 — Setup wizard: Personal Information, Business Details, Policies.
+- ✅ **Phase 3 — Setup wizard**: Personal Information (2), Business Details (3), Policies (2).
+  Sub-step lives in the **URL** (`?step=business&sub=1`), not a new DB column — `setup_current_step`
+  still stores the stage, so no migration was needed and deep links/reload/back all survive.
 - ⬜ Phase 4 — Repeaters adopt the progressive pattern.
 - ⬜ Phase 5 — Polish.
 

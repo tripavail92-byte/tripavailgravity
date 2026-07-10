@@ -22,6 +22,11 @@ interface WizardScreenProps {
   onNext: () => void
   backLabel?: string
   nextLabel?: string
+  /**
+   * The setup wizard already owns a page-level Back/Continue footer, and two footers is worse
+   * than one. It renders the heading + error summary and drives the flow from its own buttons.
+   */
+  hideFooter?: boolean
 
   children: ReactNode
 }
@@ -43,6 +48,7 @@ export function WizardScreen({
   onNext,
   backLabel = 'Back',
   nextLabel,
+  hideFooter = false,
   children,
 }: WizardScreenProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -122,6 +128,7 @@ export function WizardScreen({
 
       <div className="space-y-6">{children}</div>
 
+      {hideFooter ? null : (
       <footer
         className={cn(
           'sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t border-border/60',
@@ -149,6 +156,7 @@ export function WizardScreen({
           </Button>
         </div>
       </footer>
+      )}
     </div>
   )
 }

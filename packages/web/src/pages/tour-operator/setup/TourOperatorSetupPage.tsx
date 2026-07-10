@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -13,6 +13,12 @@ import {
 } from '@/features/tour-operator/services/tourOperatorService'
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import { SETUP_STEP_SLUGS, type SetupStepSlug } from '@/features/tour-operator/constants/setupSteps'
+import { SubStepProgress } from '@/features/wizard/SubStepProgress'
+import { WizardScreen } from '@/features/wizard/WizardScreen'
+import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
+import type { SubStepDef } from '@/features/wizard/types'
+
+import { SETUP_SUB_STEPS } from './subSteps'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
@@ -63,18 +69,46 @@ export default function TourOperatorSetupPage() {
   const [maxStepReached, setMaxStepReached] = useState(0)
   const { user, activeRole } = useAuth()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   // Same tier gate the tour-creation wizard reads, so a feature (e.g. Google Maps) doesn't
   // appear to work during onboarding and then vanish once the operator starts creating tours.
   const commercialGate = useOperatorCommercialGate(user?.id)
 
-  // Handle deep linking to specific steps
+  // Handle deep linking to specific steps (and, optionally, a sub-step within them)
   useEffect(() => {
     const stepId = searchParams.get('step')
     if (!stepId) return
     const idx = STEPS.findIndex((s) => s.id === stepId)
     if (idx >= 0) setCurrentStep(idx)
   }, [searchParams])
+
+  /**
+   * The sub-step index lives in the URL rather than the database: `setup_current_step` stores the
+   * STAGE, and adding a column would need a migration for something a query param already survives
+   * (reload, back button, and the dashboard's "Resume Setup" deep link).
+   */
+  const subStepFromUrl = Math.max(0, Number(searchParams.get('sub') ?? 0) || 0)
+
+  /**
+   * Writes BOTH the stage and the sub-step. Writing only the sub-step used to leave a stale
+   * `?step=` behind, which the deep-link effect above would then replay — bouncing the operator
+   * back to the stage they had just left.
+   */
+  const syncUrl = useCallback(
+    (stageIndex: number, subIndex: number) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('step', STEPS[stageIndex]?.id ?? 'welcome')
+          if (subIndex > 0) next.set('sub', String(subIndex))
+          else next.delete('sub')
+          return next
+        },
+        { replace: true },
+      )
+    },
+    [setSearchParams],
+  )
 
   // Scroll to top whenever the step changes
   useEffect(() => {
@@ -188,38 +222,76 @@ export default function TourOperatorSetupPage() {
     }
   }
 
-  const handleNext = async () => {
-    const validationError = stepValidationError(STEPS[currentStep].id)
-    if (validationError) {
-      toast.error(validationError)
-      return
-    }
-
-    const nextStep = currentStep + 1
-    const isFinal = currentStep === STEPS.length - 2
-    // Save data + the step we're advancing TO so resume lands on the right step
-    await saveProgress(setupData, isFinal, isFinal ? 0 : nextStep)
-
-    if (currentStep < STEPS.length - 1) {
-      setCurrentStep(nextStep)
-    }
-  }
-
   /** Where to land after leaving the setup wizard */
   const exitDestination =
     activeRole?.role_type === 'tour_operator' ? '/operator/dashboard' : '/'
 
-  const handleBack = () => {
+  const stageId = STEPS[currentStep].id
+  const stageSubSteps = useMemo<SubStepDef<any>[]>(
+    () =>
+      SETUP_SUB_STEPS[stageId] ?? [
+        { id: 'main', title: STEPS[currentStep].title },
+      ],
+    [stageId, currentStep],
+  )
+
+  const advanceStage = useCallback(async () => {
+    const nextStep = currentStep + 1
+    const isFinal = currentStep === STEPS.length - 2
+    await saveProgress(setupData, isFinal, isFinal ? 0 : nextStep)
+    if (currentStep < STEPS.length - 1) {
+      syncUrl(nextStep, 0)
+      setCurrentStep(nextStep)
+    }
+  }, [currentStep, setupData, saveProgress, syncUrl])
+
+  const retreatStage = useCallback(() => {
     if (currentStep > 0) {
+      syncUrl(currentStep - 1, 0)
       setCurrentStep(currentStep - 1)
     } else {
       navigate(exitDestination)
     }
-  }
+  }, [currentStep, navigate, exitDestination, syncUrl])
+
+  const flow = useSubStepFlow<any>({
+    subSteps: stageSubSteps,
+    data: setupData,
+    initialIndex: subStepFromUrl,
+    onIndexChange: (index) => syncUrl(currentStep, index),
+    // Within a stage, Continue never blocks. Leaving the stage does: setup collects the identity
+    // and consent a marketplace legally needs, so we walk the operator to the missing field
+    // instead of letting an incomplete profile through.
+    onExitForward: () => {
+      if (flowRef.current?.hasOutstandingIssues) {
+        flowRef.current.jumpToFirstIssue()
+        toast.error('Please complete the highlighted field before continuing.')
+        return
+      }
+      // Backstop: the page has had a per-stage rule since before sub-steps existed.
+      const validationError = stepValidationError(STEPS[currentStep].id)
+      if (validationError) {
+        toast.error(validationError)
+        return
+      }
+      void advanceStage()
+    },
+    onExitBack: retreatStage,
+  })
+
+  const flowRef = useRef<typeof flow | null>(null)
+  flowRef.current = flow
+
+  /** Continue: advance one screen, or leave the stage from the last one. */
+  const handleNext = () => flow.goNext()
+
+  /** Back: retreat one screen, or leave the stage from the first one. */
+  const handleBack = () => flow.goBack()
 
   /** Jump straight to a step by tapping the progress bar — only to steps already reached. */
   const goToStep = (index: number) => {
     if (index === currentStep || index > maxStepReached) return
+    syncUrl(index, 0)
     setCurrentStep(index)
   }
 
@@ -372,12 +444,51 @@ export default function TourOperatorSetupPage() {
                   {isLocked ? (
                     <LockedSetupView data={setupData} onEdit={() => setIsLocked(false)} />
                   ) : (
-                    <CurrentStepComponent
-                      onNext={handleNext}
-                      onUpdate={updateData}
-                      data={setupData}
-                      allowGoogleMaps={commercialGate.googleMapsEnabled}
-                    />
+                    flow.total <= 1 ? (
+                      <CurrentStepComponent
+                        onNext={handleNext}
+                        onUpdate={updateData}
+                        data={setupData}
+                        subStep={0}
+                        allowGoogleMaps={commercialGate.googleMapsEnabled}
+                      />
+                    ) : (
+                    <>
+                      <SubStepProgress
+                        stageTitle={STEPS[currentStep].title}
+                        index={flow.index}
+                        total={flow.total}
+                        issueIndices={Object.entries(flow.issuesByIndex)
+                          .filter(([, issues]) => issues.length > 0)
+                          .map(([index]) => Number(index))}
+                        onSelect={(index) => flow.goTo(index)}
+                        className="mb-6"
+                      />
+
+                      {/* The page owns Back/Continue, so the screen shell renders only its heading
+                          and error summary — two footers would be worse than one. */}
+                      <WizardScreen
+                        index={flow.index}
+                        total={flow.total}
+                        title={flow.current.title}
+                        description={flow.current.description}
+                        issues={flow.issues}
+                        showIssues={flow.showIssues}
+                        onIssueClick={flow.focusField}
+                        onBack={handleBack}
+                        onNext={handleNext}
+                        hideFooter
+                      >
+                        <CurrentStepComponent
+                          onNext={handleNext}
+                          onUpdate={updateData}
+                          data={setupData}
+                          subStep={flow.index}
+                          allowGoogleMaps={commercialGate.googleMapsEnabled}
+                        />
+                      </WizardScreen>
+                    </>
+                    )
                   )}
                 </div>
 
@@ -390,17 +501,16 @@ export default function TourOperatorSetupPage() {
                       className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-12 px-6 font-semibold transition-all"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1.5" />
-                      {currentStep === 0 ? 'Dashboard' : 'Back'}
+                      {currentStep === 0 && flow.isFirst ? 'Dashboard' : 'Back'}
                     </Button>
 
                     <Button
                       onClick={handleNext}
-                      disabled={isSaving || (currentStep === 1 && !(setupData as any).phoneVerified)}
-                      title={(currentStep === 1 && !(setupData as any).phoneVerified) ? 'Verify your phone number to continue' : undefined}
+                      disabled={isSaving}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20 flex-1 max-w-[220px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
                     >
                       {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                      {isLastContentStep ? 'Finish Setup' : 'Continue'}
+                      {isLastContentStep && flow.isLast ? 'Finish Setup' : 'Continue'}
                       {!isSaving && <ChevronRight className="w-4 h-4 ml-1.5" />}
                     </Button>
                   </div>

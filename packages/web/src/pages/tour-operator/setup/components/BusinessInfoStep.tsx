@@ -19,6 +19,8 @@ interface StepProps {
   onNext: () => void
   onUpdate: (data: any) => void
   data: any
+  /** Which sub-screen of this stage to render. The setup page owns the navigation. */
+  subStep?: number
 }
 
 const DESCRIPTION_MAX_CHARS = 500
@@ -68,7 +70,7 @@ function buildDescriptionSuggestions(businessName: string, yearsInBusiness: stri
   ]
 }
 
-export function BusinessInfoStep({ onUpdate, data }: StepProps) {
+export function BusinessInfoStep({ onUpdate, data, subStep = 0 }: StepProps) {
   const { user } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -108,66 +110,9 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
-          Business Details
-        </h3>
-        <p className="text-muted-foreground leading-relaxed font-medium">
-          Tell travelers about your tour business operation.
-        </p>
-      </div>
-
       <div className="space-y-8 p-6 rounded-2xl bg-muted/30 border border-border/50">
-        <div className="space-y-4">
-          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
-            Company Logo
-          </Label>
-          <div className="flex items-center gap-6 p-6 border-2 border-dashed border-border/50 rounded-2xl bg-muted/30 transition-colors hover:bg-muted/50">
-            <div className="w-24 h-24 bg-muted rounded-2xl flex items-center justify-center overflow-hidden border border-border/50 flex-shrink-0 shadow-sm">
-              {isUploading ? (
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              ) : formData.companyLogo ? (
-                <img
-                  src={formData.companyLogo}
-                  alt="Business Logo"
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <Building className="w-8 h-8 text-muted-foreground/30" aria-hidden="true" />
-              )}
-            </div>
-            <div className="flex-1 space-y-3">
-              <input
-                type="file"
-                id="logo-upload"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-                disabled={isUploading}
-                aria-label="Upload Company Logo"
-              />
-              <label
-                htmlFor="logo-upload"
-                className={`inline-flex items-center gap-2 px-5 py-2.5 bg-primary/5 hover:bg-primary-hover hover:text-primary-foreground text-primary rounded-xl cursor-pointer transition-all font-bold text-sm border border-primary/20 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" aria-hidden="true" />
-                )}
-                {isUploading
-                  ? 'Uploading...'
-                  : formData.companyLogo
-                    ? 'Change Logo'
-                    : 'Upload Logo'}
-              </label>
-              <p className="text-xs text-muted-foreground/70 font-medium">
-                PNG or SVG (max. 2MB). Squarish format looks best.
-              </p>
-            </div>
-          </div>
-        </div>
-
+        {subStep === 0 ? (
+          <>
         <div className="space-y-3">
           <Label
             htmlFor="businessName"
@@ -204,7 +149,11 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             </p>
           ) : null}
         </div>
+          </>
+        ) : null}
 
+        {subStep === 1 ? (
+          <>
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
             <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
@@ -261,7 +210,13 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             </Select>
           </div>
         </div>
+          </>
+        ) : null}
 
+        {/* Description before logo: the suggestions read the name and years entered on the
+            previous two screens, so this reads as the natural last step. */}
+        {subStep === 2 ? (
+          <>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label
@@ -330,6 +285,58 @@ export function BusinessInfoStep({ onUpdate, data }: StepProps) {
             {formData.businessDescription?.length ?? 0} / {DESCRIPTION_MAX_CHARS} characters
           </p>
         </div>
+
+        <div className="space-y-4">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+            Company Logo
+          </Label>
+          <div className="flex items-center gap-6 p-6 border-2 border-dashed border-border/50 rounded-2xl bg-muted/30 transition-colors hover:bg-muted/50">
+            <div className="w-24 h-24 bg-muted rounded-2xl flex items-center justify-center overflow-hidden border border-border/50 flex-shrink-0 shadow-sm">
+              {isUploading ? (
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              ) : formData.companyLogo ? (
+                <img
+                  src={formData.companyLogo}
+                  alt="Business Logo"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <Building className="w-8 h-8 text-muted-foreground/30" aria-hidden="true" />
+              )}
+            </div>
+            <div className="flex-1 space-y-3">
+              <input
+                type="file"
+                id="logo-upload"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+                disabled={isUploading}
+                aria-label="Upload Company Logo"
+              />
+              <label
+                htmlFor="logo-upload"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 bg-primary/5 hover:bg-primary-hover hover:text-primary-foreground text-primary rounded-xl cursor-pointer transition-all font-bold text-sm border border-primary/20 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" aria-hidden="true" />
+                )}
+                {isUploading
+                  ? 'Uploading...'
+                  : formData.companyLogo
+                    ? 'Change Logo'
+                    : 'Upload Logo'}
+              </label>
+              <p className="text-xs text-muted-foreground/70 font-medium">
+                PNG or SVG (max. 2MB). Squarish format looks best.
+              </p>
+            </div>
+          </div>
+        </div>
+          </>
+        ) : null}
       </div>
     </div>
   )

@@ -28,6 +28,8 @@ interface StepProps {
   onNext: () => void
   onUpdate: (data: any) => void
   data: any
+  /** Which sub-screen of this stage to render. The setup page owns the navigation. */
+  subStep?: number
 }
 
 const PLATFORM_TERMS = [
@@ -81,7 +83,7 @@ const policyFileName = (value: PolicyUploadValue) =>
   value && value !== true ? value.name : 'Document on file'
 const policyFileUrl = (value: PolicyUploadValue) => (value && value !== true ? value.url : null)
 
-export function PoliciesStep({ onUpdate, data }: StepProps) {
+export function PoliciesStep({ onUpdate, data, subStep = 0 }: StepProps) {
   const [accepted, setAccepted] = useState(data.policies?.accepted || false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const { user } = useAuth()
@@ -163,16 +165,8 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
 
   return (
     <div className="space-y-12">
-      <div>
-        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">
-          Terms & Policies
-        </h3>
-        <p className="text-muted-foreground leading-relaxed font-medium">
-          Define how you operate and ensure a safe experience for travelers.
-        </p>
-      </div>
-
-      {/* Platform Terms Section */}
+      {subStep === 0 ? (
+        <>
       <section className="space-y-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center text-primary">
@@ -246,9 +240,19 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
         </div>
 
         <div
+          id="platform-agreement"
+          tabIndex={-1}
+          role="checkbox"
+          aria-checked={accepted}
           onClick={toggleAccepted}
+          onKeyDown={(e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+              e.preventDefault()
+              toggleAccepted()
+            }
+          }}
           className={cn(
-            'p-6 cursor-pointer border-2 transition-all rounded-2xl mt-6 flex items-center gap-5 group',
+            'p-6 cursor-pointer border-2 transition-all rounded-2xl mt-6 flex items-center gap-5 group outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
             accepted
               ? 'border-primary bg-primary/20 shadow-lg shadow-primary/10'
               : 'border-border/50 bg-muted/30 hover:border-border',
@@ -275,9 +279,29 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
         </div>
       </section>
 
-      <hr className="border-border/50" />
+          {/* The compliance note is about how we audit your operation, so it belongs with the
+              agreement the operator is accepting — not buried under the upload dropzone. */}
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 flex gap-5 group transition-all hover:bg-amber-500/15">
+        <div className="w-12 h-12 bg-amber-500/20 border border-amber-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Shield className="w-6 h-6 text-amber-600" />
+        </div>
+        <div className="space-y-1.5">
+          <p className="font-bold text-amber-700 uppercase tracking-widest text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            Platform Compliance
+          </p>
+          <p className="text-sm text-amber-700/70 leading-relaxed font-medium">
+            TripAvail reserves the right to audit your tour operations to ensure safety standards
+            and insurance requirements are met. Your listed prices must match your publicly
+            advertised rates.
+          </p>
+        </div>
+      </div>
+        </>
+      ) : null}
 
-      {/* Operator Policies Section */}
+      {subStep === 1 ? (
+        <>
       <section className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -525,24 +549,8 @@ export function PoliciesStep({ onUpdate, data }: StepProps) {
           </div>
         )}
       </section>
-
-      {/* Helper Alert */}
-      <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 flex gap-5 group transition-all hover:bg-amber-500/15">
-        <div className="w-12 h-12 bg-amber-500/20 border border-amber-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
-          <Shield className="w-6 h-6 text-amber-600" />
-        </div>
-        <div className="space-y-1.5">
-          <p className="font-bold text-amber-700 uppercase tracking-widest text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            Platform Compliance
-          </p>
-          <p className="text-sm text-amber-700/70 leading-relaxed font-medium">
-            TripAvail reserves the right to audit your tour operations to ensure safety standards
-            and insurance requirements are met. Your listed prices must match your publicly
-            advertised rates.
-          </p>
-        </div>
-      </div>
+        </>
+      ) : null}
     </div>
   )
 }
