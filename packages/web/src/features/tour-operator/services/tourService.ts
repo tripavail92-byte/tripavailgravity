@@ -59,6 +59,8 @@ export interface Tour {
   peak_season_multiplier: number
   off_season_multiplier: number
   deposit_required: boolean
+  /** Canonical column; `deposit_required` is the legacy alias the DB trigger keeps in sync. */
+  require_deposit?: boolean | null
   deposit_percentage: number
   cancellation_policy: 'flexible' | 'moderate' | 'strict' | 'non-refundable'
 
@@ -259,8 +261,15 @@ export const tourService = {
   async createTour(tourData: Partial<Tour>) {
     console.log('Creating tour with data:', tourData)
     const normalizedPrice = Number.isFinite(Number(tourData.price)) ? Number(tourData.price) : 0
-    const normalizedDepositRequired = true
     const normalizedDepositPercentage = clampDepositPercentage(Number(tourData.deposit_percentage || 0))
+    // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
+    // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
+    // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
+    // draft has no percentage yet, so hardcoding true killed the wizard's very first autosave —
+    // "Save failed" on an empty form, retried forever. Require a deposit only once there is one.
+    const normalizedDepositRequired =
+      (tourData.require_deposit ?? tourData.deposit_required ?? true) !== false &&
+      normalizedDepositPercentage > 0
     const normalizedCancellationPolicy =
       (tourData.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -331,8 +340,15 @@ export const tourService = {
   async updateTour(id: string, updates: Partial<Tour>) {
     console.log(`Updating tour ${id}:`, updates)
     const normalizedPrice = Number.isFinite(Number(updates.price)) ? Number(updates.price) : 0
-    const normalizedDepositRequired = true
     const normalizedDepositPercentage = clampDepositPercentage(Number(updates.deposit_percentage || 0))
+    // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
+    // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
+    // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
+    // draft has no percentage yet, so hardcoding true killed the wizard's very first autosave —
+    // "Save failed" on an empty form, retried forever. Require a deposit only once there is one.
+    const normalizedDepositRequired =
+      (updates.require_deposit ?? updates.deposit_required ?? true) !== false &&
+      normalizedDepositPercentage > 0
     const normalizedCancellationPolicy =
       (updates.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -594,8 +610,15 @@ export const tourService = {
         : null
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
-    const normalizedDepositRequired = true
     const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 0))
+    // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
+    // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
+    // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
+    // draft has no percentage yet, so hardcoding true killed the wizard's very first autosave —
+    // "Save failed" on an empty form, retried forever. Require a deposit only once there is one.
+    const normalizedDepositRequired =
+      (data.require_deposit ?? data.deposit_required ?? true) !== false &&
+      normalizedDepositPercentage > 0
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'
@@ -797,8 +820,15 @@ export const tourService = {
     if (!operatorId) throw new Error('Operator ID required')
 
     const normalizedPrice = Number.isFinite(Number(data.price)) ? Number(data.price) : 0
-    const normalizedDepositRequired = true
     const normalizedDepositPercentage = clampDepositPercentage(Number(data.deposit_percentage || 0))
+    // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
+    // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
+    // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
+    // draft has no percentage yet, so hardcoding true killed the wizard's very first autosave —
+    // "Save failed" on an empty form, retried forever. Require a deposit only once there is one.
+    const normalizedDepositRequired =
+      (data.require_deposit ?? data.deposit_required ?? true) !== false &&
+      normalizedDepositPercentage > 0
     const normalizedCancellationPolicy =
       (data.cancellation_policy || 'moderate') as
         | 'flexible'
