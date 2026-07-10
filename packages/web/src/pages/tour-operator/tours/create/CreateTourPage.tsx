@@ -586,8 +586,15 @@ export default function CreateTourPage() {
     { field: 'cancellation_policy', label: 'Cancellation policy' },
   ]
 
-  /** Navigate to the screen that owns `field`, and focus the control once it has rendered. */
-  const goToMissingField = useCallback((field: string) => {
+  /**
+   * Navigate to the screen that owns `field`, and focus the control once it has rendered.
+   *
+   * A plain function, deliberately. This sits below the `setupCompleted === null` early return, so
+   * a useCallback here runs on some renders and not others — React counts one more hook after the
+   * setup check resolves and throws "Rendered more hooks than during the previous render". Only
+   * event handlers call this, so there is nothing to memoise for anyway.
+   */
+  const goToMissingField = (field: string) => {
     const route = SUBMIT_FIELD_ROUTES[field]
     if (!route) return
 
@@ -610,7 +617,7 @@ export default function CreateTourPage() {
     window.setTimeout(() => {
       if (!focus()) window.setTimeout(focus, 120)
     }, 0)
-  }, [])
+  }
 
   const performSubmitForReview = async () => {
     if (!user) return
