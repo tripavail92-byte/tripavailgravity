@@ -83,6 +83,23 @@ export function useSubStepFlow<TData>({
   /** Sub-steps the operator has tried to leave — only those show red. */
   const [revealed, setRevealed] = useState<Set<number>>(() => new Set())
 
+  // Adjust state during render rather than in an effect (the pattern React documents for
+  // "derive from props"): an effect would render the stale screen for one frame first.
+  const [lastInitialIndex, setLastInitialIndex] = useState(initialIndex)
+  if (initialIndex !== lastInitialIndex) {
+    // The caller drives the position from outside — the setup wizard keeps it in the URL.
+    setLastInitialIndex(initialIndex)
+    setIndex(clamp(initialIndex))
+  }
+
+  const [lastLength, setLastLength] = useState(subSteps.length)
+  if (subSteps.length !== lastLength) {
+    // A different stage with fewer screens would otherwise leave `subSteps[index]` undefined.
+    setLastLength(subSteps.length)
+    setIndex((current) => clamp(current))
+    setRevealed(new Set())
+  }
+
   const issuesByIndex = useMemo(() => {
     const map: Record<number, FieldIssue[]> = {}
     subSteps.forEach((step, i) => {

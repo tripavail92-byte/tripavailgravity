@@ -20,6 +20,8 @@ interface StepProps {
   onNext: () => void
   onUpdate: (data: any) => void
   data: any
+  /** Which sub-screen of this stage to render. The setup page owns the navigation. */
+  subStep?: number
 }
 
 const COUNTRY_OPTIONS = [
@@ -159,7 +161,7 @@ function OtpInput({ onComplete }: { onComplete: (code: string) => void }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function PersonalInfoStep({ onUpdate, data }: StepProps) {
+export function PersonalInfoStep({ onUpdate, data, subStep = 0 }: StepProps) {
   const { user } = useAuth()
 
   const accountEmail = user?.email ?? ''
@@ -306,15 +308,9 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h3 className="text-2xl font-black text-foreground mb-1.5 tracking-tight">Personal Information</h3>
-        <p className="text-muted-foreground leading-relaxed font-medium">
-          Your identity is tied to your account. Email is locked to your login for security.
-        </p>
-      </div>
-
       <div className="space-y-6 p-6 rounded-2xl bg-muted/30 border border-border/50">
-
+        {subStep === 0 ? (
+          <>
         {/* Full Name */}
         <div className="space-y-3">
           <Label htmlFor="operatorName" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Your Full Name *</Label>
@@ -339,7 +335,11 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             This is your login email — it is used for security, payouts and audit logs. It cannot be changed here.
           </p>
         </div>
+          </>
+        ) : null}
 
+        {subStep === 1 ? (
+          <>
         {/* Phone Number + WhatsApp Verification */}
         <div className="space-y-3">
           <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Phone Number *</Label>
@@ -413,20 +413,18 @@ export function PersonalInfoStep({ onUpdate, data }: StepProps) {
             </div>
           )}
         </div>
-
-        {/* Primary Contact Person was removed from the wizard — one fewer thing to answer.
-            The value still round-trips (and the `contact_person` column still feeds the admin and
-            commercial views), it is simply no longer asked for here. */}
+          </>
+        ) : null}
       </div>
 
-      {!phoneVerified && (
+      {subStep === 1 && !phoneVerified ? (
         <div className="flex gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
           <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 text-amber-600 font-black text-sm">!</div>
           <p className="text-sm text-amber-700/80 leading-relaxed font-medium">
             Phone verification is required before you can continue. We use it for booking alerts, payouts and account security.
           </p>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
