@@ -85,22 +85,47 @@ const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
   { match: 'row-level security', message: 'You don’t have permission to make this change.' },
 ]
 
+/** Postgres error code, when the failure came from the database rather than the network. */
+function errorCode(error: unknown): string {
+  if (typeof error !== 'object' || error === null) return ''
+  return String((error as { code?: string }).code ?? '')
+}
+
+function errorText(error: unknown): string {
+  if (typeof error !== 'object' || error === null) return ''
+  const e = error as { message?: string; details?: string; hint?: string }
+  return [e.message, e.details, e.hint].filter(Boolean).join(' ').toLowerCase()
+}
+
 /**
- * A tour INSERT is gated on `can_partner_operate()`, which requires
- * `user_roles.verification_status = 'approved'`. An unverified operator therefore gets an RLS
- * denial on the very first autosave of a brand-new tour — before typing anything. Detect that
- * precisely so we can explain it instead of showing a bare "Save failed".
+ * Does retrying this save stand any chance of succeeding?
+ *
+ * Autosave fires on a timer, so a permanent failure means an endless loop of red flashes. Two
+ * failures are permanent: the database refused on a permission rule (42501), or the row cannot be
+ * linked to this user at all (23503 on tours.operator_id, whose FK points at public.users — a
+ * user with no row there can never own a tour until one is created).
+ *
+ * This used to read `code === '42501' || message includes 'row-level security'` and then tell the
+ * operator their account was pending verification. That was wrong twice over: production's
+ * permissive FOR ALL policy on tours means an owner's INSERT is authorised whatever their
+ * verification status, and any unrelated 42501 — from an RPC, from another table — was reported as
+ * a verification problem. Never infer a cause from a code that has many causes.
  */
-function isVerificationBlockedError(error: unknown): boolean {
-  if (typeof error !== 'object' || error === null) return false
-  const code = (error as { code?: string }).code
-  const message = String((error as { message?: string }).message ?? '').toLowerCase()
-  return code === '42501' || message.includes('row-level security')
+function isPermanentSaveError(error: unknown): boolean {
+  const code = errorCode(error)
+  return code === '42501' || code === '23503'
 }
 
 function getTourMutationErrorMessage(error: unknown, fallbackMessage: string): string {
-  if (isVerificationBlockedError(error)) {
-    return 'Your operator account is still pending verification, so tours cannot be saved yet. Check your verification status.'
+  const code = errorCode(error)
+  const text = errorText(error)
+
+  // Name the failure. Do NOT guess at verification status — see isPermanentSaveError.
+  if (code === '23503' && text.includes('operator_id')) {
+    return 'Your account is missing its user record, so a tour cannot be linked to you yet. Contact support — retrying will not help.'
+  }
+  if (code === '42501') {
+    return 'The database refused this save under a permission rule (42501). Retrying will not help.'
   }
 
   const details =
@@ -157,6 +182,9 @@ export default function CreateTourPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
+  /** Raw Postgres code + message, surfaced on the label so a screenshot is enough to diagnose. */
+  const [saveErrorCode, setSaveErrorCode] = useState<string | null>(null)
+  const [saveErrorDetail, setSaveErrorDetail] = useState<string | null>(null)
   /** Sub-step position within each stage, keyed by stage id. Persisted in the workflow snapshot. */
   const [subStepByStage, setSubStepByStage] = useState<Record<string, number>>({})
   /** Set when the failure can't be fixed by retrying (e.g. the account isn't verified yet). */
@@ -445,6 +473,8 @@ export default function CreateTourPage() {
           setLastSavedAt(new Date())
           setHasUnsaved(false)
           setSaveErrorMessage(null)
+          setSaveErrorCode(null)
+          setSaveErrorDetail(null)
           setIsVerificationBlocked(false)
           setAutosaveStatus('saved')
           setTimeout(() => setAutosaveStatus('idle'), 3000)
@@ -457,10 +487,15 @@ export default function CreateTourPage() {
 
           const message = getTourMutationErrorMessage(error, 'Failed to save. Please try again.')
           setSaveErrorMessage(message)
+          const code = errorCode(error)
+          setSaveErrorCode(code || null)
+          setSaveErrorDetail(
+            [code, (error as { message?: string })?.message].filter(Boolean).join(' — ') || null,
+          )
 
-          if (isVerificationBlockedError(error)) {
-            // Retrying every few seconds can never succeed — the account isn't approved yet.
-            // Stop the loop and say so once, rather than flashing a silent "Save failed".
+          if (isPermanentSaveError(error)) {
+            // Retrying every few seconds cannot succeed. Stop the loop and say so once, rather
+            // than flashing a silent "Save failed" forever.
             autosaveBlockedRef.current = true
             setIsVerificationBlocked(true)
             if (!verificationToastShownRef.current) {
@@ -826,9 +861,12 @@ export default function CreateTourPage() {
               {autosaveStatus === 'error' && (
                 <span
                   className="flex items-center gap-1 text-xs text-destructive shrink-0"
-                  title={saveErrorMessage ?? undefined}
+                  title={saveErrorDetail ?? saveErrorMessage ?? undefined}
                 >
                   <AlertCircle className="w-3 h-3" /> Save failed
+                  {saveErrorCode ? (
+                    <code className="font-mono text-[10px] opacity-70">{saveErrorCode}</code>
+                  ) : null}
                 </span>
               )}
               {hasUnsaved && autosaveStatus === 'idle' && (
