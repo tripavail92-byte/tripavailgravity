@@ -1,5 +1,5 @@
 import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -53,11 +53,28 @@ export function WizardScreen({
 }: WizardScreenProps) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const summaryRef = useRef<HTMLDivElement>(null)
+  const screenRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // W3C multi-page forms: move focus to the new step's heading so a keyboard or screen-reader
     // user is told where they landed, instead of being left on the previous Continue button.
     headingRef.current?.focus()
+  }, [index])
+
+  useLayoutEffect(() => {
+    // Slide the new screen in.
+    //
+    // A CSS animation, restarted by hand, rather than a JS-driven one. Two reasons. It must not
+    // remount: the stage components below hold real state (a half-finished upload, a phone number
+    // mid-typing). And its resting state must be *visible* — a JS animation that parks the screen
+    // at opacity 0 and relies on a frame loop to bring it back leaves the operator staring at a
+    // blank wizard the moment that loop stalls (requestAnimationFrame is throttled to zero in a
+    // background tab). Here a stalled animation degrades to no animation, which is fine.
+    const el = screenRef.current
+    if (!el) return
+    el.classList.remove('wizard-screen-enter')
+    void el.offsetWidth // force a reflow, otherwise re-adding the class is a no-op
+    el.classList.add('wizard-screen-enter')
   }, [index])
 
   const hasIssues = showIssues && issues.length > 0
@@ -78,6 +95,7 @@ export function WizardScreen({
 
   return (
     <div className="space-y-6">
+      <div ref={screenRef} className="space-y-6">
       <header className="space-y-1">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           Step {index + 1} of {total}
@@ -127,6 +145,7 @@ export function WizardScreen({
       ) : null}
 
       <div className="space-y-6">{children}</div>
+      </div>
 
       {hideFooter ? null : (
       <footer

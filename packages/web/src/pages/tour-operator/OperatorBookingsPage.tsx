@@ -113,11 +113,24 @@ export default function OperatorBookingsPage() {
     const now = new Date()
     const confirmed = bookings.filter((booking) => booking.status === 'confirmed')
     const pending = bookings.filter((booking) => booking.status === 'pending')
-    const upcoming = bookings.filter((booking) =>
-      isAfter(new Date(booking.tour_schedules.start_time), now),
+
+    // "Upcoming" means a departure the operator still has to run. A cancelled or unconfirmed
+    // booking with a future date was inflating this — the filter used to be date-only.
+    const upcoming = bookings.filter(
+      (booking) =>
+        booking.status === 'confirmed' &&
+        isAfter(new Date(booking.tour_schedules.start_time), now),
     )
-    const revenue = confirmed.reduce((sum, booking) => sum + booking.total_price, 0)
-    const travellers = bookings.reduce((sum, booking) => sum + booking.pax_count, 0)
+
+    // Revenue must not drop the moment a tour is marked completed. Earned revenue is every
+    // booking the operator actually delivered or is contracted to deliver.
+    const earned = bookings.filter(
+      (booking) => booking.status === 'confirmed' || booking.status === 'completed',
+    )
+    const revenue = earned.reduce((sum, booking) => sum + booking.total_price, 0)
+
+    // Cancelled bookings shouldn't count as travellers you hosted either.
+    const travellers = earned.reduce((sum, booking) => sum + booking.pax_count, 0)
 
     return {
       confirmed: confirmed.length,
@@ -237,7 +250,7 @@ export default function OperatorBookingsPage() {
       <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         <PageHeader
           title="Bookings"
-          subtitle="Booking.com-style reservation board with payment state, safe traveler contact, and operational actions for each tour booking."
+          subtitle="Every reservation, its payment state, and the actions you can take — in one place."
           showBackButton={false}
           actions={
             <Button
@@ -287,9 +300,8 @@ export default function OperatorBookingsPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">Safe traveler contact</p>
               <p className="text-sm text-muted-foreground">
-                Direct email and phone are only shown when the traveler opted in and the channel is
-                verified. Otherwise the reservation stays in a messaging-required state until the
-                dedicated messenger service is shipped.
+                Direct email and phone are shown only when the traveller opted in and the channel is
+                verified. Otherwise, reach them through TripAvail so their details stay protected.
               </p>
             </div>
             <Badge
@@ -431,7 +443,7 @@ export default function OperatorBookingsPage() {
                               <p className="mt-1 text-xs text-muted-foreground">
                                 {booking.traveler.contact_mode === 'direct'
                                   ? 'Direct contact approved'
-                                  : 'Messaging rollout required'}
+                                  : 'Contact via TripAvail'}
                               </p>
                             </div>
                             <div className="flex flex-wrap gap-2">

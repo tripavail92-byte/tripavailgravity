@@ -88,6 +88,13 @@ type TourJourneyRow = {
   lastActivityAt: string | null
 }
 
+/**
+ * Charts are drawn from raw events while the stat cards are computed server-side. Fetch enough
+ * events to cover the widest window, and say so plainly if we still hit the ceiling — silently
+ * charting a truncated slice made the graphs disagree with the cards above them.
+ */
+const EVENT_FETCH_LIMIT = 5000
+
 export default function OperatorStorefrontAnalyticsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -99,18 +106,20 @@ export default function OperatorStorefrontAnalyticsPage() {
   const [events, setEvents] = useState<OperatorStorefrontEvent[]>([])
   const [tourTitles, setTourTitles] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user?.id) return
 
     let alive = true
     setLoading(true)
+    setLoadError(null)
 
     Promise.all([
       operatorPublicService.getProfileById(user.id),
       operatorPublicService.getStorefrontAnalytics(user.id, days),
       operatorPublicService.getStorefrontResponseMetrics(user.id),
-      operatorPublicService.listStorefrontEvents(user.id, 250),
+      operatorPublicService.listStorefrontEvents(user.id, EVENT_FETCH_LIMIT, days),
       operatorPublicService.getPublishedTours(user.id),
     ])
       .then(([currentProfile, currentAnalytics, currentResponseMetrics, currentEvents, tours]) => {
@@ -125,7 +134,10 @@ export default function OperatorStorefrontAnalyticsPage() {
           ),
         )
       })
-      .catch(console.error)
+      .catch((error) => {
+        console.error('[OperatorStorefrontAnalytics] Failed to load', error)
+        if (alive) setLoadError('We could not load your storefront analytics.')
+      })
       .finally(() => {
         if (alive) setLoading(false)
       })
@@ -141,6 +153,9 @@ export default function OperatorStorefrontAnalyticsPage() {
     return events.filter((event) => new Date(event.created_at) >= cutoff)
   }, [days, events])
 
+  /** True when the window holds more events than we fetched — the charts show only the newest. */
+  const eventsTruncated = events.length >= EVENT_FETCH_LIMIT
+
   const breakdown = useMemo(() => {
     const counts = {
       profile_view: 0,
@@ -150,7 +165,8 @@ export default function OperatorStorefrontAnalyticsPage() {
     }
 
     filteredEvents.forEach((event) => {
-      counts[event.event_type] += 1
+      // A new event_type shipped by the backend would otherwise make this NaN.
+      if (event.event_type in counts) counts[event.event_type] += 1
     })
 
     return counts
@@ -316,6 +332,20 @@ export default function OperatorStorefrontAnalyticsPage() {
             subtitle="Track public profile views, traveler interest, and bookings that follow a profile visit."
             showBackButton={false}
           />
+
+          {loadError ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              {loadError}
+            </div>
+          ) : null}
+
+          {eventsTruncated ? (
+            <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
+              This window has more than {EVENT_FETCH_LIMIT.toLocaleString()} events. The charts below
+              show the most recent {EVENT_FETCH_LIMIT.toLocaleString()}; the totals above cover
+              everything.
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-2">
             {DAY_FILTERS.map((option) => (
@@ -513,7 +543,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                           })}
 
                           {[
-                            { key: 'profile_view', color: '#14b8a6' },
+                            { key: 'profile_view', color: 'hsl(var(--primary))' },
                             { key: 'cta_click', color: '#34d399' },
                             { key: 'tour_click', color: '#fbbf24' },
                             { key: 'booking_start', color: '#fb7185' },
@@ -559,7 +589,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                         </svg>
 
                         <div className="flex flex-wrap gap-3 text-xs font-medium text-muted-foreground">
-                          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-teal-500" />Profile views</span>
+                          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-primary" />Profile views</span>
                           <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />CTA clicks</span>
                           <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" />Tour clicks</span>
                           <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-rose-400" />Booking starts</span>
@@ -576,9 +606,9 @@ export default function OperatorStorefrontAnalyticsPage() {
                   <CardContent className="space-y-3">
                     {([
                       { label: 'Profile views', value: breakdown.profile_view, tone: 'bg-primary/15 text-primary border-primary/30' },
-                      { label: 'CTA clicks', value: breakdown.cta_click, tone: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
-                      { label: 'Tour clicks', value: breakdown.tour_click, tone: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-                      { label: 'Booking starts', value: breakdown.booking_start, tone: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
+                      { label: 'CTA clicks', value: breakdown.cta_click, tone: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+                      { label: 'Tour clicks', value: breakdown.tour_click, tone: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+                      { label: 'Booking starts', value: breakdown.booking_start, tone: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30' },
                     ]).map((row) => (
                       <div key={row.label} className="flex items-center justify-between rounded-2xl border border-border/50 bg-background/30 px-4 py-3">
                         <span className="text-sm font-medium text-foreground">{row.label}</span>

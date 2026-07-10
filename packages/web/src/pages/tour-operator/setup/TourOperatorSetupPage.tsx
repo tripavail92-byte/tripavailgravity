@@ -13,6 +13,7 @@ import {
 } from '@/features/tour-operator/services/tourOperatorService'
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import { SETUP_STEP_SLUGS, type SetupStepSlug } from '@/features/tour-operator/constants/setupSteps'
+import { celebrateStage } from '@/features/wizard/celebrateStage'
 import { SubStepProgress } from '@/features/wizard/SubStepProgress'
 import { WizardScreen } from '@/features/wizard/WizardScreen'
 import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
@@ -274,6 +275,7 @@ export default function TourOperatorSetupPage() {
         toast.error(validationError)
         return
       }
+      celebrateStage(STEPS[currentStep].title, STEPS.length - 1 - currentStep)
       void advanceStage()
     },
     onExitBack: retreatStage,

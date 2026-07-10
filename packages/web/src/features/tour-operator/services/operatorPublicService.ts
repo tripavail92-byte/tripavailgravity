@@ -255,11 +255,28 @@ export const operatorPublicService = {
     return (row ?? null) as OperatorStorefrontResponseMetrics | null
   },
 
-  async listStorefrontEvents(operatorId: string, limit = 200): Promise<OperatorStorefrontEvent[]> {
-    const { data, error } = await supabase
+  /**
+   * `sinceDays` scopes the query to the window the caller is charting. Without it the caller had to
+   * over-fetch and filter client-side, so a busy operator's 90-day charts silently ran on a
+   * truncated slice while the stat cards above them were computed server-side over everything.
+   */
+  async listStorefrontEvents(
+    operatorId: string,
+    limit = 200,
+    sinceDays?: number,
+  ): Promise<OperatorStorefrontEvent[]> {
+    let query = supabase
       .from('operator_storefront_events')
       .select('id, operator_id, event_type, slug, tour_id, session_id, metadata, created_at')
       .eq('operator_id', operatorId)
+
+    if (typeof sinceDays === 'number' && sinceDays > 0) {
+      const since = new Date()
+      since.setDate(since.getDate() - sinceDays)
+      query = query.gte('created_at', since.toISOString())
+    }
+
+    const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(limit)
 

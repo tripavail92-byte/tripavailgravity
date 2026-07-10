@@ -1,8 +1,10 @@
 import {
+  AlertTriangle,
   Award,
   BarChart2,
   ExternalLink,
   MessageSquare,
+  RefreshCw,
   Star,
   TrendingUp,
   Users,
@@ -114,32 +116,51 @@ export default function OperatorReputationPage() {
   const [storefrontAnalytics, setStorefrontAnalytics] = useState<OperatorStorefrontAnalytics | null>(null)
   const [responseMetrics, setResponseMetrics] = useState<OperatorStorefrontResponseMetrics | null>(null)
   const [loading, setLoading] = useState(true)
+  const [failedSections, setFailedSections] = useState<string[]>([])
+  const [reloadNonce, setReloadNonce] = useState(0)
 
   useEffect(() => {
     if (!user?.id) return
     let alive = true
     setLoading(true)
-    Promise.all([
-      operatorPublicService.getMetrics(user.id),
-      operatorPublicService.getProfileById(user.id),
-      operatorReviewService.listMyReviews(),
-      operatorPublicService.getStorefrontAnalytics(user.id),
-      operatorPublicService.getStorefrontResponseMetrics(user.id),
-    ])
-      .then(([m, p, r, analytics, response]) => {
-        if (!alive) return
-        setMetrics(m)
-        setProfile(p)
-        setReviews(r)
-        setStorefrontAnalytics(analytics)
-        setResponseMetrics(response)
+    setFailedSections([])
+
+    /**
+     * `Promise.all` used to abort all five requests when any one rejected, so a single failing
+     * endpoint rendered the entire page as zeros and dashes — with only a console line to say why.
+     * Settle them independently: each section fills in on its own, and the ones that failed are
+     * named with a Retry.
+     */
+    const sections = [
+      { label: 'Reputation metrics', run: () => operatorPublicService.getMetrics(user.id), apply: setMetrics },
+      { label: 'Storefront profile', run: () => operatorPublicService.getProfileById(user.id), apply: setProfile },
+      { label: 'Reviews', run: () => operatorReviewService.listMyReviews(), apply: setReviews },
+      { label: 'Storefront analytics', run: () => operatorPublicService.getStorefrontAnalytics(user.id), apply: setStorefrontAnalytics },
+      { label: 'Response times', run: () => operatorPublicService.getStorefrontResponseMetrics(user.id), apply: setResponseMetrics },
+    ] as const
+
+    Promise.allSettled(sections.map((section) => section.run())).then((results) => {
+      if (!alive) return
+
+      const failures: string[] = []
+      results.forEach((result, index) => {
+        const section = sections[index]
+        if (result.status === 'fulfilled') {
+          ;(section.apply as (value: unknown) => void)(result.value)
+        } else {
+          failures.push(section.label)
+          console.error(`[OperatorReputationPage] ${section.label} failed`, result.reason)
+        }
       })
-      .catch(console.error)
-      .finally(() => alive && setLoading(false))
+
+      setFailedSections(failures)
+      setLoading(false)
+    })
+
     return () => {
       alive = false
     }
-  }, [user?.id])
+  }, [user?.id, reloadNonce])
 
   // histogram buckets
   const histogram = useMemo(() => {
@@ -189,6 +210,33 @@ export default function OperatorReputationPage() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {failedSections.length > 0 ? (
+          <div className="flex flex-col gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" aria-hidden="true" />
+              <div>
+                <p className="font-semibold text-warning">
+                  {failedSections.length === 1
+                    ? `${failedSections[0]} could not be loaded`
+                    : `${failedSections.length} sections could not be loaded`}
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {failedSections.join(' · ')} — everything else on this page is up to date.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0 gap-2 border-warning/40"
+              onClick={() => setReloadNonce((n) => n + 1)}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Retry
+            </Button>
+          </div>
+        ) : null}
+
         {/* ── PAGE HEADER ── */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -378,7 +426,7 @@ export default function OperatorReputationPage() {
                 <ExternalLink className="w-4 h-4 text-primary" />
                 Storefront Analytics (30 Days)
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-8 gap-5 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 mb-1">
                     Profile Views
