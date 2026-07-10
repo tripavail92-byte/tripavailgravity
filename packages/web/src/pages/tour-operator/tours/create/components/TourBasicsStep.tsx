@@ -1,10 +1,13 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Calendar, Check, ChevronDown, Clock3, Info, Plus, Sparkles, X } from 'lucide-react'
+import { Calendar, Check, Clock3, Plus, Sparkles, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { SubStepProgress } from '@/features/wizard/SubStepProgress'
+import { WizardScreen } from '@/features/wizard/WizardScreen'
+import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
+import { fieldId, type SubStepDef } from '@/features/wizard/types'
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,8 +42,12 @@ interface TourBasicsStepProps {
   data: Partial<Tour>
   onUpdate: (data: Partial<Tour>) => void
   onNext: () => void
+  onBack: () => void
   allowGoogleMaps?: boolean
   allowAiItinerary?: boolean
+  /** Restored sub-step index, persisted in the tour draft's workflow snapshot. */
+  subStep?: number
+  onSubStepChange?: (index: number) => void
 }
 
 const CATEGORIES = [
@@ -122,15 +129,15 @@ export function TourBasicsStep({
   data,
   onUpdate,
   onNext,
+  onBack,
   allowGoogleMaps = true,
-  allowAiItinerary = true,
+  subStep = 0,
+  onSubStepChange,
 }: TourBasicsStepProps) {
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [selectedTone, setSelectedTone] = useState<string>('general')
   const [templates, setTemplates] = useState<Template[]>([])
   const [loadingTemplates, setLoadingTemplates] = useState(false)
-  const [isCategoryOpen, setIsCategoryOpen] = useState(true)
-  const [isDatesAvailabilityOpen, setIsDatesAvailabilityOpen] = useState(true)
 
   const schedules = Array.isArray(data.schedules) ? data.schedules : []
   const primarySchedule = schedules[0] || {}
@@ -176,14 +183,6 @@ export function TourBasicsStep({
 
   const SHORT_DESC_MAX = 200
 
-  const isValid =
-    !!data.title &&
-    !!(data.tour_type || data.custom_category_label) &&
-    (data.duration_days != null && data.duration_days >= 1) &&
-    !!data.location?.city &&
-    !!data.max_participants &&
-    data.max_participants > 0 &&
-    hasPrimarySchedule
 
   // Client-side teaser suggestions so AI Suggest is useful on every tier, even when the
   // template library has no rows for this tone/category combination.
@@ -232,64 +231,135 @@ export function TourBasicsStep({
     setShowAiPanel(false)
   }
 
-  const content = (
-      <div className="space-y-6">
-        {/* Header card */}
-        <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
-          <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
-          <div className="relative flex items-center gap-4">
-            <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Info className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Tour Basics</h2>
-              <p className="text-primary-foreground/80 text-sm">
-                Start with the fundamental details of your tour package.
-              </p>
-            </div>
-          </div>
-        </Card>
+  /**
+   * Mirrors `evaluateBasics` in stepWorkflow.ts, so a sub-step's red dot and the stage's
+   * "needs attention" badge can never disagree.
+   */
+  const subSteps = useMemo<SubStepDef<Partial<Tour>>[]>(
+    () => [
+      {
+        id: 'title',
+        title: 'What is your tour called?',
+        description: 'This is the first thing a traveller reads.',
+        validate: (d) =>
+          d.title?.trim() ? [] : [{ field: fieldId('title'), message: 'Give your tour a title' }],
+      },
+      {
+        id: 'category',
+        title: 'What kind of experience is it?',
+        description: 'Travellers filter by this before anything else.',
+        validate: (d) =>
+          d.tour_type || d.custom_category_label
+            ? []
+            : [{ field: fieldId('category'), message: 'Choose a tour category' }],
+      },
+      {
+        id: 'destination',
+        title: 'Where does it go, and for how long?',
+        description: 'Add the main city, any extra stops, and the trip length.',
+        validate: (d) => {
+          const issues = []
+          if (!d.location?.city) {
+            issues.push({ field: fieldId('city'), message: 'Choose a destination city' })
+          }
+          if (!(Number(d.duration_days) >= 1)) {
+            issues.push({ field: fieldId('duration'), message: 'Set the tour duration' })
+          }
+          return issues
+        },
+      },
+      {
+        id: 'departure',
+        title: 'When does it depart, and how many can join?',
+        description: 'You can add more departure dates later from the calendar.',
+        validate: (d) => {
+          const issues = []
+          if (!(Number(d.max_participants) > 0)) {
+            issues.push({ field: fieldId('capacity'), message: 'Set how many seats you offer' })
+          }
+          const first = Array.isArray(d.schedules) ? (d.schedules[0] as any) : null
+          if (!first?.date || !first?.time) {
+            issues.push({ field: fieldId('departure'), message: 'Pick a departure date and time' })
+          }
+          return issues
+        },
+      },
+      {
+        id: 'description',
+        title: 'How would you describe it in a sentence?',
+        description: 'Optional, but tours with a short description get booked more.',
+        optional: true,
+      },
+    ],
+    [],
+  )
 
-        <div className="grid gap-6">
-          {/* Tour Title */}
+  const flow = useSubStepFlow<Partial<Tour>>({
+    subSteps,
+    data,
+    initialIndex: subStep,
+    onIndexChange: onSubStepChange,
+    onExitForward: onNext,
+    onExitBack: onBack,
+  })
+
+  const issueIndices = Object.entries(flow.issuesByIndex)
+    .filter(([, issues]) => issues.length > 0)
+    .map(([index]) => Number(index))
+
+  const invalidFields = new Set(flow.showIssues ? flow.issues.map((issue) => issue.field) : [])
+  const isInvalid = (name: string) => invalidFields.has(fieldId(name))
+  const stepId = flow.current.id
+
+  const content = (
+    <div className="space-y-6">
+      <SubStepProgress
+        stageTitle="Basics"
+        index={flow.index}
+        total={flow.total}
+        issueIndices={issueIndices}
+        onSelect={(index) => flow.goTo(index)}
+      />
+
+      <WizardScreen
+        index={flow.index}
+        total={flow.total}
+        title={flow.current.title}
+        description={flow.current.description}
+        issues={flow.issues}
+        showIssues={flow.showIssues}
+        onIssueClick={flow.focusField}
+        onBack={flow.goBack}
+        onNext={flow.goNext}
+      >
+        {stepId === 'title' ? (
+          <>
           <div className="space-y-2">
             <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
               Tour Title *
             </Label>
             <Input
+              id={fieldId('title')}
+              aria-invalid={isInvalid('title') || undefined}
               placeholder="e.g. Historic City Walk"
               value={data.title || ''}
               onChange={(e) => onUpdate({ title: e.target.value })}
               className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
             />
           </div>
+          </>
+        ) : null}
 
-          <div className="glass-card rounded-2xl border border-border/60 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setIsCategoryOpen((prev) => !prev)}
-              className="w-full p-4 flex items-center justify-between bg-background/70 backdrop-blur-md hover:bg-background/85 transition-colors"
-            >
-              <div className="text-left">
-                <h3 className="text-base font-bold text-foreground">Tour Category *</h3>
-                <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Choose the experience type travelers will see first.
-                </p>
-              </div>
-              <ChevronDown
-                className={`w-5 h-5 text-primary transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            <AnimatePresence>
-              {isCategoryOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="overflow-hidden"
-                >
+        {/* The category grid, duration scroller, city autocomplete and wheel pickers are custom
+            components that don't forward `id` to a focusable node, so the focus target is a
+            wrapper with tabIndex={-1} — same approach as the pricing step's radiogroup. */}
+        {stepId === 'category' ? (
+          <div
+            id={fieldId('category')}
+            tabIndex={-1}
+            className="outline-none"
+            aria-invalid={isInvalid('category') || undefined}
+          >
                   <div className="p-4 space-y-4">
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
                       {CATEGORIES.map((cat) => (
@@ -358,38 +428,17 @@ export function TourBasicsStep({
                       )}
                     </AnimatePresence>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
+        ) : null}
 
-          <div className="glass-card rounded-2xl border border-border/60 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setIsDatesAvailabilityOpen((prev) => !prev)}
-              className="w-full p-4 flex items-center justify-between bg-background/70 backdrop-blur-md hover:bg-background/85 transition-colors"
+        {stepId === 'destination' ? (
+          <div className="space-y-5">
+            <div
+              id={fieldId('duration')}
+              tabIndex={-1}
+              className="outline-none"
+              aria-invalid={isInvalid('duration') || undefined}
             >
-              <div className="text-left">
-                <h3 className="text-base font-bold text-foreground">Dates & Availability *</h3>
-                <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Set primary departure date, start time, and seats.
-                </p>
-              </div>
-              <ChevronDown
-                className={`w-5 h-5 text-primary transition-transform duration-200 ${isDatesAvailabilityOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-
-            <AnimatePresence>
-              {isDatesAvailabilityOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="overflow-hidden"
-                >
-                  <div className="p-3 md:p-4 space-y-4 md:space-y-5">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
                         Duration *
@@ -404,7 +453,13 @@ export function TourBasicsStep({
                         }
                       />
                     </div>
-
+            </div>
+            <div
+              id={fieldId('city')}
+              tabIndex={-1}
+              className="outline-none"
+              aria-invalid={isInvalid('city') || undefined}
+            >
                     <div className="space-y-2">
                       <div>
                         <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
@@ -526,16 +581,23 @@ export function TourBasicsStep({
                         Add another city
                       </button>
                     </div>
+            </div>
+          </div>
+        ) : null}
 
+        {stepId === 'departure' ? (
+          <div className="space-y-5">
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
                         Capacity / Seats *
                       </Label>
                       <div className="relative max-w-xs">
                         <Input
+                          id={fieldId('capacity')}
                           type="number"
                           min={1}
                           max={MAX_CAPACITY}
+                          aria-invalid={isInvalid('capacity') || undefined}
                           placeholder="e.g. 30"
                           value={data.max_participants || ''}
                           onChange={(e) => {
@@ -563,7 +625,12 @@ export function TourBasicsStep({
                         Set your default total seats (1–{MAX_CAPACITY}).
                       </p>
                     </div>
-
+            <div
+              id={fieldId('departure')}
+              tabIndex={-1}
+              className="outline-none"
+              aria-invalid={isInvalid('departure') || undefined}
+            >
                     <div className="space-y-4 md:space-y-5">
                       <div className="space-y-2">
                         <div className="inline-flex items-center gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
@@ -609,17 +676,15 @@ export function TourBasicsStep({
                         />
                       </div>
                     </div>
-
+            </div>
                     <p className="text-xs text-muted-foreground font-medium">
                       Arrival date is calculated automatically from the departure date and {durationDays} day{durationDays !== 1 ? 's' : ''} of trip duration.
                     </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
+        ) : null}
 
-          {/* Short Description + AI Suggest */}
+        {stepId === 'description' ? (
+          <>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
@@ -738,21 +803,12 @@ export function TourBasicsStep({
               )}
             </AnimatePresence>
           </div>
-        </div>
-
-        {/* Next button */}
-        <div className="flex justify-end pt-4">
-          <Button
-            onClick={onNext}
-            size="lg"
-            className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/30 border-0"
-            disabled={!isValid}
-          >
-            Next Step
-          </Button>
-        </div>
-      </div>
+          </>
+        ) : null}
+      </WizardScreen>
+    </div>
   )
+
 
   if (allowGoogleMaps) {
     return (

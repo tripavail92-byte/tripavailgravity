@@ -1,8 +1,11 @@
-import { Activity, Check, ChevronDown, Footprints, Mountain, MountainSnow } from 'lucide-react'
+import { Check, ChevronDown, Footprints, Mountain, MountainSnow } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { Button } from '@/components/ui/button'
+import { SubStepProgress } from '@/features/wizard/SubStepProgress'
+import { WizardScreen } from '@/features/wizard/WizardScreen'
+import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
+import { fieldId, type SubStepDef } from '@/features/wizard/types'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -12,11 +15,22 @@ import { getTourIconComponent } from '@/features/tour-operator/assets/TourIconRe
 
 import { RequirementCategory, TOUR_REQUIREMENTS } from './RequirementsData'
 
+/**
+ * The slider used `defaultValue`, so it displayed a range while `min_age`/`max_age` stayed
+ * undefined — the operator saw "0 - 100 years" on a step the wizard considered incomplete.
+ * It is now controlled, and the range is seeded on mount so what is shown is what is stored.
+ */
+const DEFAULT_MIN_AGE = 5
+const DEFAULT_MAX_AGE = 80
+
 interface TourDetailsStepProps {
   data: Partial<Tour>
   onUpdate: (data: Partial<Tour>) => void
   onNext: () => void
   onBack: () => void
+  /** Restored sub-step index, persisted in the tour draft's workflow snapshot. */
+  subStep?: number
+  onSubStepChange?: (index: number) => void
 }
 
 const LANGUAGES = [
@@ -48,7 +62,14 @@ const DIFFICULTY_LEVELS = [
   },
 ]
 
-export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsStepProps) {
+export function TourDetailsStep({
+  data,
+  onUpdate,
+  onNext,
+  onBack,
+  subStep = 0,
+  onSubStepChange,
+}: TourDetailsStepProps) {
   const selectedRequirements = Array.isArray(data.requirements) ? data.requirements : []
 
   const [openCategories, setOpenCategories] = useState<Set<RequirementCategory>>(() => {
@@ -64,6 +85,16 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
     return initial
   })
 
+  useEffect(() => {
+    if (typeof data.min_age === 'number' && typeof data.max_age === 'number') return
+    onUpdate({
+      min_age: data.min_age ?? DEFAULT_MIN_AGE,
+      max_age: data.max_age ?? DEFAULT_MAX_AGE,
+    })
+    // Seed once; afterwards the slider owns the values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const toggleLanguage = (lang: string) => {
     const current = data.languages || []
     const updated = current.includes(lang) ? current.filter((l) => l !== lang) : [...current, lang]
@@ -78,24 +109,102 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
     onUpdate({ requirements: updated })
   }
 
+  // Mirrors `evaluateDetails` in stepWorkflow.ts — difficulty, an age band, at least one
+  // language, and the requirements text are what count this stage as complete.
+  const subSteps = useMemo<SubStepDef<Partial<Tour>>[]>(
+    () => [
+      {
+        id: 'difficulty',
+        title: 'How demanding is this tour?',
+        description: 'Travellers use this to judge whether it suits them.',
+        validate: (d) =>
+          d.difficulty_level
+            ? []
+            : [{ field: fieldId('difficulty'), message: 'Choose a difficulty level' }],
+      },
+      {
+        id: 'audience',
+        title: 'Who can join?',
+        description: 'The age range you accept, and the languages your guides speak.',
+        validate: (d) => {
+          const issues = []
+          const hasAgeBand =
+            typeof d.min_age === 'number' &&
+            typeof d.max_age === 'number' &&
+            Number(d.max_age) >= Number(d.min_age)
+          if (!hasAgeBand) {
+            issues.push({ field: fieldId('age'), message: 'Set an age range' })
+          }
+          if ((d.languages?.length ?? 0) === 0) {
+            issues.push({ field: fieldId('languages'), message: 'Pick at least one language' })
+          }
+          return issues
+        },
+      },
+      {
+        id: 'requirements',
+        title: 'What should travellers prepare for?',
+        description: 'Kit, fitness, permits — anything they need to know before booking.',
+        validate: (d) =>
+          d.description?.trim()
+            ? []
+            : [
+                {
+                  field: fieldId('extraRequirements'),
+                  message: 'Describe the physical requirements or logistics',
+                },
+              ],
+      },
+    ],
+    [],
+  )
+
+  const flow = useSubStepFlow<Partial<Tour>>({
+    subSteps,
+    data,
+    initialIndex: subStep,
+    onIndexChange: onSubStepChange,
+    onExitForward: onNext,
+    onExitBack: onBack,
+  })
+
+  const issueIndices = Object.entries(flow.issuesByIndex)
+    .filter(([, issues]) => issues.length > 0)
+    .map(([index]) => Number(index))
+
+  const invalidFields = new Set(flow.showIssues ? flow.issues.map((issue) => issue.field) : [])
+  const isInvalid = (name: string) => invalidFields.has(fieldId(name))
+  const stepId = flow.current.id
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
-        <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
-        <div className="relative flex items-center gap-5">
-          <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
-            <Activity className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Requirements &amp; Logistics</h2>
-            <p className="text-primary-foreground/90 text-sm font-medium">
-              Define who can participate and the physical demands.
-            </p>
-          </div>
-        </div>
-      </Card>
+      <SubStepProgress
+        stageTitle="Requirements"
+        index={flow.index}
+        total={flow.total}
+        issueIndices={issueIndices}
+        onSelect={(index) => flow.goTo(index)}
+      />
 
-      <Card className="p-8 bg-background border-none shadow-sm rounded-[24px] space-y-10">
+      <WizardScreen
+        index={flow.index}
+        total={flow.total}
+        title={flow.current.title}
+        description={flow.current.description}
+        issues={flow.issues}
+        showIssues={flow.showIssues}
+        onIssueClick={flow.focusField}
+        onBack={flow.goBack}
+        onNext={flow.goNext}
+      >
+        <Card className="p-8 bg-background border-none shadow-sm rounded-[24px] space-y-10">
+          {stepId === 'difficulty' ? (
+            <div
+              id={fieldId('difficulty')}
+              tabIndex={-1}
+              className="outline-none"
+              aria-invalid={isInvalid('difficulty') || undefined}
+            >
         <div className="space-y-4">
           <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1">
             Difficulty Level
@@ -158,19 +267,29 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             })}
           </div>
         </div>
+            </div>
+          ) : null}
 
+          {stepId === 'audience' ? (
+            <>
+              <div
+                id={fieldId('age')}
+                tabIndex={-1}
+                className="outline-none"
+                aria-invalid={isInvalid('age') || undefined}
+              >
         <div className="space-y-5">
           <div className="flex items-center justify-between pl-1">
             <Label className="text-xs font-bold text-foreground uppercase tracking-widest">
               Age Range
             </Label>
             <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold tracking-wide">
-              {data.min_age || 0} - {data.max_age || 100} years
+              {data.min_age ?? DEFAULT_MIN_AGE} - {data.max_age ?? DEFAULT_MAX_AGE} years
             </div>
           </div>
           <div className="px-2 pt-2">
             <Slider
-              defaultValue={[data.min_age || 0, data.max_age || 100]}
+              value={[data.min_age ?? DEFAULT_MIN_AGE, data.max_age ?? DEFAULT_MAX_AGE]}
               max={100}
               min={0}
               step={1}
@@ -185,7 +304,13 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             <span>100 yrs</span>
           </div>
         </div>
-
+              </div>
+              <div
+                id={fieldId('languages')}
+                tabIndex={-1}
+                className="outline-none"
+                aria-invalid={isInvalid('languages') || undefined}
+              >
         <div className="space-y-4 pt-4">
           <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1">
             Languages Provided
@@ -214,7 +339,12 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             </AnimatePresence>
           </div>
         </div>
+              </div>
+            </>
+          ) : null}
 
+          {stepId === 'requirements' ? (
+            <>
         <div className="space-y-4 pt-4 border-t border-border/60">
           <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
             Tour-Specific Requirements
@@ -322,12 +452,13 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             })}
           </div>
         </div>
-
+              <div aria-invalid={isInvalid('extraRequirements') || undefined}>
         <div className="space-y-4 pt-8 border-t border-border/60">
           <Label className="text-xs font-bold text-foreground uppercase tracking-widest pl-1 block">
             Additional Physical Requirements / Logistics
           </Label>
           <Textarea
+            id={fieldId('extraRequirements')}
             placeholder="e.g. Any custom requirements not covered above..."
             value={data.description || ''}
             onChange={(e) => onUpdate({ description: e.target.value.slice(0, 600) })}
@@ -339,25 +470,11 @@ export function TourDetailsStep({ data, onUpdate, onNext, onBack }: TourDetailsS
             {(data.description || '').length}/600
           </p>
         </div>
-      </Card>
-
-      <div className="flex items-center justify-between pt-6 border-t border-border/60">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          size="lg"
-          className="px-8 bg-background/75 border-border/60 hover:bg-background"
-        >
-          Back
-        </Button>
-        <Button
-          onClick={onNext}
-          size="lg"
-          className="px-8 min-w-[140px] bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg border-0"
-        >
-          Next Step
-        </Button>
-      </div>
+              </div>
+            </>
+          ) : null}
+        </Card>
+      </WizardScreen>
     </div>
   )
 }
