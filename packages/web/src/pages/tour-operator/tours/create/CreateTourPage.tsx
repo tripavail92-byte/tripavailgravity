@@ -259,6 +259,33 @@ export default function CreateTourPage() {
     checkSetup()
   }, [activeRole?.verification_status, navigate, user?.id])
 
+  // Heal a stale, below-floor deposit at the PAGE level, not only inside the pricing sub-step.
+  //
+  // A tier's minimum deposit is a hard floor the DB trigger enforces. An older draft can carry a
+  // value below it (e.g. a legacy 10% default). The pricing step raises it to the floor, but only
+  // while that step is mounted and only after the async commercial gate resolves — so an operator
+  // who resumes and submits without landing on the deposit screen carries the stale value straight
+  // into the gate and the DB, and is blocked demanding the very floor they appear to already meet.
+  // Lifting it here, once the gate is ready, runs no matter which step is on screen. It can only
+  // raise an invalid sub-floor value to the floor; a valid value and a no-deposit tour are untouched.
+  useEffect(() => {
+    if (commercialGate.status !== 'ready') return
+    const min = commercialGate.minimumDepositPercent
+    if (!(min > 0)) return
+    const requiresDeposit =
+      (tourData.require_deposit ?? tourData.deposit_required ?? true) !== false
+    if (!requiresDeposit) return
+    const current = Number(tourData.deposit_percentage || 0)
+    if (current >= min) return
+    setTourData((prev) => ({ ...prev, deposit_percentage: min, deposit_required: true, require_deposit: true }))
+  }, [
+    commercialGate.status,
+    commercialGate.minimumDepositPercent,
+    tourData.deposit_percentage,
+    tourData.require_deposit,
+    tourData.deposit_required,
+  ])
+
   const isEditingPublishedTour = Boolean(tourIdToEdit && tourData.is_published === true)
   const publishGate = useMemo(
     () =>

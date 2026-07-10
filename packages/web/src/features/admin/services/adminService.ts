@@ -337,22 +337,34 @@ export async function fetchHotelManagers(limit = 100, status: string | null = nu
  * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
 export async function fetchTourOperators(limit = 100, status: string | null = null) {
+  // Prefer the identity-based list: it enumerates operators by user_roles, so an operator who
+  // registered but has no tour_operator_profiles row (a real production case — see
+  // 20260711000001) still appears, flagged has_profile=false, instead of being invisible to admin.
   try {
-    const { data, error } = await (supabase as any).rpc('admin_list_tour_operators', {
+    const { data, error } = await (supabase as any).rpc('admin_list_operator_identities', {
       p_status: status,
     })
     if (error) throw error
     return (data || []).slice(0, limit)
   } catch {
-    // Fallback: direct query (may miss suspended rows if RLS filters them)
-    const { data, error } = await supabase
-      .from('tour_operator_profiles')
-      .select('user_id, company_name, account_status, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    // Falls here when the identity RPC is not yet deployed. Keep the previous behaviour.
+    try {
+      const { data, error } = await (supabase as any).rpc('admin_list_tour_operators', {
+        p_status: status,
+      })
+      if (error) throw error
+      return (data || []).slice(0, limit)
+    } catch {
+      // Last resort: direct query (may miss suspended rows if RLS filters them).
+      const { data, error } = await supabase
+        .from('tour_operator_profiles')
+        .select('user_id, company_name, account_status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit)
 
-    if (error) throw error
-    return data || []
+      if (error) throw error
+      return data || []
+    }
   }
 }
 
