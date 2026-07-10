@@ -30,6 +30,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { RevealStage } from '@/features/wizard/RevealStage'
+
 import { TimeWheelPicker } from './TimeWheelPicker'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -187,7 +189,6 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
   const [expandedDays, setExpandedDays] = useState<Set<number>>(() => new Set([1]))
   const [addingFor, setAddingFor] = useState<number | null>(null)
   const [draft, setDraft] = useState<Partial<Activity>>(blankDraft())
-  const [showTimePicker, setShowTimePicker] = useState(false)
   const [suggesting, setSuggesting] = useState(false)
   const prevDuration = useRef(durationDays)
 
@@ -238,20 +239,17 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
     )
     setAddingFor(null)
     setDraft(blankDraft())
-    setShowTimePicker(false)
-  }
+      }
 
   const cancelAdd = () => {
     setAddingFor(null)
     setDraft(blankDraft())
-    setShowTimePicker(false)
-  }
+      }
 
   const openAdd = (dayNum: number) => {
     setAddingFor(dayNum)
     setDraft(blankDraft())
-    setShowTimePicker(false)
-    setExpandedDays((prev) => new Set([...prev, dayNum]))
+        setExpandedDays((prev) => new Set([...prev, dayNum]))
   }
 
   const handleAISuggest = () => {
@@ -264,6 +262,11 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       toast.success('Itinerary plan generated!')
     }, 800)
   }
+
+  // Progressive reveal inside the draft. `custom` needs its label before it counts as chosen.
+  const draftHasType = Boolean(draft.type) && (draft.type !== 'custom' || Boolean(draft.custom_type_label?.trim()))
+  const draftHasTitle = draftHasType && Boolean(draft.title?.trim())
+  const draftHasTime = draftHasTitle && Boolean(draft.time)
 
   const totalActivities = days.reduce((sum, d) => sum + d.activities.length, 0)
   const filledDays = days.filter((d) => d.activities.length > 0).length
@@ -421,7 +424,9 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                         >
                           <p className="text-xs font-black uppercase tracking-wider text-primary">New Activity</p>
 
-                          {/* Type picker */}
+                          {/* One question at a time — the type unlocks the title, the title unlocks
+                              the time, and the time unlocks the optional description. */}
+                          <RevealStage index={1} title="What kind of activity is it?" complete={draftHasType}>
                           <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                               Activity Type
@@ -452,8 +457,10 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               />
                             )}
                           </div>
+                          </RevealStage>
 
-                          {/* Title */}
+                          {draftHasType ? (
+                            <RevealStage index={2} title="What is it called?" complete={draftHasTitle}>
                           <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                               Activity Title <span className="text-destructive">*</span>
@@ -465,8 +472,16 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               className="bg-background/80 backdrop-blur-sm border-border/60 font-medium"
                             />
                           </div>
+                            </RevealStage>
+                          ) : null}
 
-                          {/* Time (required) */}
+                          {draftHasTitle ? (
+                            <RevealStage
+                              index={3}
+                              title="When does it happen?"
+                              description="Travellers see this on their booking confirmation."
+                              complete={draftHasTime}
+                            >
                           <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                               Time <span className="text-destructive">*</span>
@@ -483,8 +498,11 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               </p>
                             ) : null}
                           </div>
+                            </RevealStage>
+                          ) : null}
 
-                          {/* Description */}
+                          {draftHasTime ? (
+                            <RevealStage index={4} title="Anything travellers should know?">
                           <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                               Description{' '}
@@ -498,8 +516,12 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                               className="bg-background/80 backdrop-blur-sm border-border/60 resize-none text-sm"
                             />
                           </div>
+                            </RevealStage>
+                          ) : null}
 
-                          {/* Actions */}
+                          {/* Actions live OUTSIDE the reveal: an operator who has not set a time yet
+                              must still be able to abandon the activity. Add stays disabled until
+                              the required title and time exist. */}
                           <div className="flex gap-2 justify-end">
                             <Button
                               type="button"

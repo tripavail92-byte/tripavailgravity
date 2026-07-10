@@ -34,6 +34,21 @@ const LazyTourPickupLocationsStep = lazy(() =>
 /** Index of the deposit screen inside the Pricing stage's sub-steps (price, deposit, ...). */
 const PRICING_DEPOSIT_SUBSTEP = 1
 
+/**
+ * Where each submit-time requirement actually lives, now that stages have sub-steps. Submit used to
+ * name the missing fields in a toast and leave the operator to hunt for them; it now walks them to
+ * the exact screen and focuses the control.
+ */
+const SUBMIT_FIELD_ROUTES: Record<string, { stage: StepId; subStep: number; focus?: string }> = {
+  title: { stage: 'basics', subStep: 0, focus: 'wz-title' },
+  schedules: { stage: 'basics', subStep: 3, focus: 'wz-departure' },
+  pickup_locations: { stage: 'pickup', subStep: 0 },
+  itinerary: { stage: 'itinerary', subStep: 0 },
+  price: { stage: 'pricing', subStep: 0, focus: 'wz-price' },
+  cancellation_policy: { stage: 'pricing', subStep: 2, focus: 'wz-cancellation' },
+  images: { stage: 'media', subStep: 0 },
+}
+
 const STEPS: Array<{ id: StepId; title: string; component: any }> = [
   { id: 'basics', title: 'Basics', component: TourBasicsStep },
   { id: 'pickup', title: 'Pickup Locations', component: LazyTourPickupLocationsStep },
@@ -570,6 +585,32 @@ export default function CreateTourPage() {
     { field: 'cancellation_policy', label: 'Cancellation policy' },
   ]
 
+  /** Navigate to the screen that owns `field`, and focus the control once it has rendered. */
+  const goToMissingField = useCallback((field: string) => {
+    const route = SUBMIT_FIELD_ROUTES[field]
+    if (!route) return
+
+    const stageIndex = STEPS.findIndex((step) => step.id === route.stage)
+    if (stageIndex < 0) return
+
+    setVisitedSteps((prev) => new Set(prev).add(stageIndex))
+    setSubStepByStage((prev) => ({ ...prev, [route.stage]: route.subStep }))
+    setCurrentStep(stageIndex)
+
+    if (!route.focus) return
+    // The target stage mounts on the next commit; retry rather than guess a delay.
+    const focus = () => {
+      const el = document.getElementById(route.focus as string)
+      if (!el) return false
+      el.focus({ preventScroll: true })
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return true
+    }
+    window.setTimeout(() => {
+      if (!focus()) window.setTimeout(focus, 120)
+    }, 0)
+  }, [])
+
   const performSubmitForReview = async () => {
     if (!user) return
     setSubmitAttempted(true)
@@ -597,7 +638,13 @@ export default function CreateTourPage() {
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
     if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
     if (missing.length > 0) {
-      toast.error(`Please complete: ${missing.map(m => m.label).join(', ')}`)
+      const [first, ...rest] = missing
+      toast.error(
+        rest.length > 0
+          ? `${first.label} is missing — ${rest.length} more to complete.`
+          : `${first.label} is missing.`,
+      )
+      goToMissingField(first.field)
       return
     }
     if (!ensureDepositPolicySatisfied()) return
