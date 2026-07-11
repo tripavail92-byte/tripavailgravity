@@ -33,9 +33,6 @@ const LazyTourPickupLocationsStep = lazy(() =>
   })),
 )
 
-/** Index of the deposit screen inside the Pricing stage's sub-steps (price, deposit, ...). */
-const PRICING_DEPOSIT_SUBSTEP = 1
-
 /**
  * Where each submit-time requirement actually lives, now that stages have sub-steps. Submit used to
  * name the missing fields in a toast and leave the operator to hunt for them; it now walks them to
@@ -259,32 +256,18 @@ export default function CreateTourPage() {
     checkSetup()
   }, [activeRole?.verification_status, navigate, user?.id])
 
-  // Heal a stale, below-floor deposit at the PAGE level, not only inside the pricing sub-step.
-  //
-  // A tier's minimum deposit is a hard floor the DB trigger enforces. An older draft can carry a
-  // value below it (e.g. a legacy 10% default). The pricing step raises it to the floor, but only
-  // while that step is mounted and only after the async commercial gate resolves — so an operator
-  // who resumes and submits without landing on the deposit screen carries the stale value straight
-  // into the gate and the DB, and is blocked demanding the very floor they appear to already meet.
-  // Lifting it here, once the gate is ready, runs no matter which step is on screen. It can only
-  // raise an invalid sub-floor value to the floor; a valid value and a no-deposit tour are untouched.
+  // Keep the on-screen deposit at or above the tier floor once the gate resolves, so the pricing
+  // screen shows a valid value no matter which step the operator opened. This is cosmetic; the
+  // authoritative floor is applied in the save/submit payload below (depositFloorFields), which
+  // runs even when this effect cannot — the gate still loading, or a require_deposit=false draft.
   useEffect(() => {
     if (commercialGate.status !== 'ready') return
     const min = commercialGate.minimumDepositPercent
     if (!(min > 0)) return
-    const requiresDeposit =
-      (tourData.require_deposit ?? tourData.deposit_required ?? true) !== false
-    if (!requiresDeposit) return
     const current = Number(tourData.deposit_percentage || 0)
     if (current >= min) return
     setTourData((prev) => ({ ...prev, deposit_percentage: min, deposit_required: true, require_deposit: true }))
-  }, [
-    commercialGate.status,
-    commercialGate.minimumDepositPercent,
-    tourData.deposit_percentage,
-    tourData.require_deposit,
-    tourData.deposit_required,
-  ])
+  }, [commercialGate.status, commercialGate.minimumDepositPercent, tourData.deposit_percentage])
 
   const isEditingPublishedTour = Boolean(tourIdToEdit && tourData.is_published === true)
   const publishGate = useMemo(
@@ -297,22 +280,29 @@ export default function CreateTourPage() {
     [commercialGate.publishedToursThisCycle, commercialGate.tier, isEditingPublishedTour],
   )
 
-  const ensureDepositPolicySatisfied = useCallback(() => {
-    const depositPercentage = Number(tourData.deposit_percentage || 0)
-    if (depositPercentage >= commercialGate.minimumDepositPercent) {
-      return true
+  /**
+   * The deposit fields to write, with the value lifted to the operator's tier floor.
+   *
+   * The tier minimum is a hard floor the DB trigger enforces (P0001 below it). We used to *block*
+   * submission when the deposit read below the floor and bounce the operator to the deposit screen
+   * — but that stranded anyone whose stored value was stale (an older draft), or whose commercial
+   * gate hadn't resolved, or whose tour carried require_deposit=false: they saw "must be at least
+   * 20%" on a tour that appeared to already satisfy it, with no way forward. Below-floor is not a
+   * state the operator can validly choose (the pricing screen always requires a deposit and never
+   * offers below the floor), so lifting to the floor as we save is the only correct interpretation
+   * and it always succeeds. Coercing in the payload — not via async state — means it holds no
+   * matter the gate's timing.
+   */
+  const depositFloorFields = useCallback(() => {
+    const clamp = (n: number) => Math.max(0, Math.min(50, Math.round(Number(n) || 0)))
+    const floor = clamp(commercialGate.minimumDepositPercent)
+    const raw = clamp(tourData.deposit_percentage ?? 0)
+    return {
+      deposit_percentage: floor > 0 ? Math.max(raw, floor) : raw,
+      deposit_required: true,
+      require_deposit: true,
     }
-
-    toast.error(
-      `Deposit must be at least ${commercialGate.minimumDepositPercent}% for ${commercialGate.tierLabel} membership.`,
-    )
-    const pricingIndex = STEPS.findIndex((step) => step.id === 'pricing')
-    setVisitedSteps((prev) => new Set(prev).add(pricingIndex))
-    setCurrentStep(pricingIndex)
-    // Land on the deposit screen itself, not wherever the operator last left the pricing stage.
-    setSubStepByStage((prev) => ({ ...prev, pricing: PRICING_DEPOSIT_SUBSTEP }))
-    return false
-  }, [commercialGate.minimumDepositPercent, commercialGate.tierLabel, tourData.deposit_percentage])
+  }, [commercialGate.minimumDepositPercent, tourData.deposit_percentage])
 
   useEffect(() => {
     const loadTourForEdit = async () => {
@@ -738,11 +728,10 @@ export default function CreateTourPage() {
       goToMissingField(first.field)
       return
     }
-    if (!ensureDepositPolicySatisfied()) return
     setIsSubmitting(true)
     try {
-      // First save everything
-      const draftPayload = buildDraftPayload(tourData)
+      // First save everything, with the deposit lifted to the tier floor so the DB never rejects.
+      const draftPayload = { ...buildDraftPayload(tourData), ...depositFloorFields() }
       const pct = calculateCompletionPercentage(draftPayload)
       const result = await tourService.saveWorkflowDraft(
         draftPayload,
@@ -817,15 +806,13 @@ export default function CreateTourPage() {
       toast.error(publishGate.reason || 'Your membership tier has reached its publish limit for this cycle.')
       return
     }
-    if (!ensureDepositPolicySatisfied()) return
-
     setIsSaving(true)
     try {
       const hadExistingTourId = Boolean(currentTourIdRef.current)
       const dataToSave: any = {
         ...tourData,
         operator_id: user.id,
-        deposit_required: true,
+        ...depositFloorFields(),
         is_active: true,
         is_published: true,
         is_verified: false,
