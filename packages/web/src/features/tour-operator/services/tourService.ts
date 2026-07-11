@@ -317,6 +317,10 @@ export const tourService = {
       excluded_features: normalizedExcludedFeatures,
     }
 
+    // Same reason as updateTour: `...tourData` above can carry the GENERATED ALWAYS `search_vector`
+    // when publishing a tour that was loaded from the DB, and inserting a value into it raises 428C9.
+    stripDbManagedTourColumns(payload as Record<string, unknown>)
+
     // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
     let createResponse = await supabase
       .from('tours')
