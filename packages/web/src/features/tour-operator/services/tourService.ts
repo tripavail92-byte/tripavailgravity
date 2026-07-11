@@ -137,6 +137,19 @@ function isSlugConstraintError(error: any, constraintName: string) {
   return error?.code === '23505' && String(error?.message || '').includes(constraintName)
 }
 
+/**
+ * Columns on public.tours that Postgres computes itself. A GENERATED ALWAYS column rejects any
+ * written value with SQLSTATE 428C9 ("column can only be updated to DEFAULT"). When an operator
+ * edits a tour, the whole row is loaded into state and spread back into the update payload — so
+ * these must be dropped first, or publishing an edited tour fails. `search_vector` is the
+ * unified-search tsvector added in 20260706000001; add any future generated column here.
+ */
+const DB_MANAGED_TOUR_COLUMNS = ['search_vector'] as const
+
+function stripDbManagedTourColumns(payload: Record<string, unknown>) {
+  for (const col of DB_MANAGED_TOUR_COLUMNS) delete payload[col]
+}
+
 function buildFallbackSlug(title: string | null | undefined) {
   const base = String(title || 'tour')
     .toLowerCase()
@@ -384,6 +397,12 @@ export const tourService = {
       updated_at: new Date().toISOString(),
       last_edited_at: new Date().toISOString(),
     }
+
+    // Editing spreads the whole loaded row into `updates`, which carries columns Postgres computes
+    // itself. Writing any value to a GENERATED ALWAYS column raises 428C9 ("column can only be
+    // updated to DEFAULT"). `search_vector` (the unified-search tsvector, 20260706000001) is one;
+    // drop every DB-managed column before the update so an edited tour can be saved and published.
+    stripDbManagedTourColumns(payload as Record<string, unknown>)
 
     const { data, error } = await supabase
       .from('tours')
