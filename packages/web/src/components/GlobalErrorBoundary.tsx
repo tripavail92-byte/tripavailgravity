@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { isChunkLoadError, reloadForFreshAssets } from '@/lib/chunkReload'
 
 interface Props {
   children: ReactNode
@@ -18,19 +19,28 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
+  isStaleChunk: boolean
 }
 
 export class GlobalErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, isStaleChunk: false }
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error, isStaleChunk: isChunkLoadError(error) }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // A failed lazy import is almost always a stale deploy, not a real crash: this tab loaded an
+    // index.html that references a route chunk a newer deploy has since removed. Reload to fresh
+    // assets rather than dead-ending the user. Guarded to reload at most once, so a chunk that is
+    // truly broken shows the error below instead of looping.
+    if (isChunkLoadError(error)) {
+      reloadForFreshAssets()
+      return
+    }
     console.error('Uncaught error:', error, errorInfo)
   }
 
@@ -40,6 +50,31 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      // Stale-chunk case: a reload is already in flight (or the operator can trigger it). Show a
+      // calm "new version" message, never the red "something went wrong" — nothing is broken.
+      if (this.state.isStaleChunk) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <Card className="w-full max-w-md shadow-lg">
+              <CardHeader className="text-center">
+                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <RefreshCcw className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Updating to the latest version</CardTitle>
+                <CardDescription>
+                  A newer version of TripAvail is available. Reloading to get it…
+                </CardDescription>
+              </CardHeader>
+              <CardFooter className="flex justify-center">
+                <Button onClick={this.handleReload} variant="default" className="w-full sm:w-auto">
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Reload now
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        )
+      }
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
           <Card className="w-full max-w-md shadow-lg border-red-100">
