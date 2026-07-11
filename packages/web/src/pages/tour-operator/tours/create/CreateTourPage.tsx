@@ -692,9 +692,11 @@ export default function CreateTourPage() {
     }, 0)
   }
 
-  const performSubmitForReview = async () => {
-    if (!user) return
-    setSubmitAttempted(true)
+  /**
+   * Everything a tour needs before it can go for review OR be published. Returns the missing items
+   * (label + the field key that SUBMIT_FIELD_ROUTES knows how to navigate to). Empty means ready.
+   */
+  const collectMissingFields = (): Array<{ field: string; label: string }> => {
     const schedules = Array.isArray(tourData.schedules) ? tourData.schedules : []
     const hasValidSchedule = schedules.some(
       (schedule: any) =>
@@ -704,11 +706,9 @@ export default function CreateTourPage() {
         schedule.time.trim().length > 0,
     )
 
-    const missing = REQUIRED_FOR_SUBMIT.filter(
-      ({ field }) => !(tourData as any)[field]
-    )
-    // Read the actual saved pickup array too — the count field can lag behind if the
-    // operator saved a pickup and jumped straight here without advancing step-by-step.
+    const missing = REQUIRED_FOR_SUBMIT.filter(({ field }) => !(tourData as any)[field])
+    // Read the saved pickup array too — the count field can lag if the operator saved a pickup
+    // and jumped straight here without advancing step-by-step.
     const draftForCheck = (tourData as any)?.draft_data ?? {}
     const pickupArrCount = Array.isArray(draftForCheck.pickup_locations)
       ? draftForCheck.pickup_locations.length
@@ -718,16 +718,32 @@ export default function CreateTourPage() {
     if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
     if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
-    if (missing.length > 0) {
-      const [first, ...rest] = missing
-      toast.error(
-        rest.length > 0
-          ? `${first.label} is missing — ${rest.length} more to complete.`
-          : `${first.label} is missing.`,
-      )
-      goToMissingField(first.field)
-      return
-    }
+    return missing
+  }
+
+  /**
+   * Shared pre-flight for both "Submit for review" and "Publish now": if anything required is
+   * missing, name the first one, walk the operator straight to its step, and return true so the
+   * caller stops. Publishing used to skip this and fail with a bare "check all fields" — the
+   * operator was told to look but not where.
+   */
+  const routeToFirstMissingField = (): boolean => {
+    const missing = collectMissingFields()
+    if (missing.length === 0) return false
+    const [first, ...rest] = missing
+    toast.error(
+      rest.length > 0
+        ? `${first.label} is missing — ${rest.length} more to complete.`
+        : `${first.label} is missing.`,
+    )
+    goToMissingField(first.field)
+    return true
+  }
+
+  const performSubmitForReview = async () => {
+    if (!user) return
+    setSubmitAttempted(true)
+    if (routeToFirstMissingField()) return
     setIsSubmitting(true)
     try {
       // First save everything, with the deposit lifted to the tier floor so the DB never rejects.
@@ -749,7 +765,11 @@ export default function CreateTourPage() {
       navigate(returnPath)
     } catch (error) {
       console.error('Error submitting for review:', error)
-      toast.error(getTourMutationErrorMessage(error, 'Submission failed. Please try again.'))
+      {
+        const msg = getTourMutationErrorMessage(error, 'Could not submit this tour for review.')
+        const code = errorCode(error)
+        toast.error(code && !msg.includes(code) ? `${msg} (${code})` : msg)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -806,6 +826,10 @@ export default function CreateTourPage() {
       toast.error(publishGate.reason || 'Your membership tier has reached its publish limit for this cycle.')
       return
     }
+    setSubmitAttempted(true)
+    // Same pre-flight as Submit-for-review: if a required field is missing, take the operator to it
+    // instead of attempting the save and failing with a bare "check all fields".
+    if (routeToFirstMissingField()) return
     setIsSaving(true)
     try {
       const hadExistingTourId = Boolean(currentTourIdRef.current)
@@ -836,7 +860,12 @@ export default function CreateTourPage() {
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
-      toast.error(getTourMutationErrorMessage(error, 'Failed to publish tour. Please check all fields.'))
+      // Surface the raw DB code alongside the message: the pre-flight above already caught every
+      // KNOWN missing field, so anything that throws here is a real backend error, and a bare
+      // "check all fields" sends the operator hunting with no clue. The code makes it diagnosable.
+      const msg = getTourMutationErrorMessage(error, 'Could not publish this tour.')
+      const code = errorCode(error)
+      toast.error(code && !msg.includes(code) ? `${msg} (${code})` : msg)
     } finally {
       setIsSaving(false)
     }
