@@ -7,13 +7,16 @@ export type Locale = 'en' | 'ar'
 
 export interface LocaleMeta {
   code: Locale
+  /** Full name, kept for the accessible label / title. */
   label: string
+  /** Compact code shown in the switcher chip (EN, AR). */
+  short: string
   dir: 'ltr' | 'rtl'
 }
 
 export const LOCALES: LocaleMeta[] = [
-  { code: 'en', label: 'English', dir: 'ltr' },
-  { code: 'ar', label: 'العربية', dir: 'rtl' },
+  { code: 'en', label: 'English', short: 'EN', dir: 'ltr' },
+  { code: 'ar', label: 'العربية', short: 'AR', dir: 'rtl' },
 ]
 
 export const dictionaries: Record<Locale, Record<string, string>> = {
