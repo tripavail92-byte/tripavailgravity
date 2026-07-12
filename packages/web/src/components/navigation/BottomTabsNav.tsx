@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import {
-  BedTabIcon,
+  HikerTabIcon,
   HomeTabIcon,
-  MountainTabIcon,
+  HotelTabIcon,
   type TabIconProps,
   UserTabIcon,
 } from '@/components/navigation/tabIcons'
@@ -49,8 +49,8 @@ export function BottomTabsNav() {
 
   const tabs: Tab[] = [
     { label: 'Home', icon: HomeTabIcon, to: '/' },
-    { label: 'Trips', icon: MountainTabIcon, to: '/tours' },
-    { label: 'Hotels', icon: BedTabIcon, to: '/hotels', match: ['/hotel'] },
+    { label: 'Trips', icon: HikerTabIcon, to: '/tours' },
+    { label: 'Hotels', icon: HotelTabIcon, to: '/hotels', match: ['/hotel'] },
     {
       label: 'Profile',
       icon: UserTabIcon,
