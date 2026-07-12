@@ -18,8 +18,8 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       )}
     >
       {LOCALES.map((l) => (
-        <option key={l.code} value={l.code}>
-          {l.label}
+        <option key={l.code} value={l.code} title={l.label}>
+          {l.short}
         </option>
       ))}
     </select>

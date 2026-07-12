@@ -623,8 +623,10 @@ function AirbnbHeader() {
             <Logo />
           </div>
 
-          {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}
-          <div className="hidden md:flex justify-center min-w-0">
+          {/* Centered Search Bar (Hidden on mobile, visible on tablet+). order-2 keeps it in the
+              MIDDLE grid column — without it, its default order:0 sorted it before the order-1 logo,
+              rendering search-left / logo-center. */}
+          <div className="hidden md:flex justify-center min-w-0 order-2">
             <GlassCard
               variant="light"
               className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl w-full flex flex-row items-center gap-2 border border-white/30"
@@ -661,7 +663,7 @@ function AirbnbHeader() {
           </div>
 
           {/* Right User Menu */}
-          <div className="flex items-center justify-end gap-2 shrink-0 order-2 ml-auto md:ml-0">
+          <div className="flex items-center justify-end gap-2 shrink-0 order-3 ml-auto md:ml-0">
             {/* Language + currency picker + dark/light toggle — always in the top bar */}
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <CurrencySwitcher className="hidden sm:inline-flex" />
@@ -701,7 +703,7 @@ function AirbnbHeader() {
 
           {/* Mobile Search Bar — full-width row below the logo/menu on phones (was nested in the
               right menu, which squeezed the drawer trigger off-screen in portrait). */}
-          <div className="order-3 basis-full md:hidden min-w-0">
+          <div className="order-4 basis-full md:hidden min-w-0">
             <GlassCard
               variant="light"
               className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full flex flex-row items-center gap-2 border border-white/30"

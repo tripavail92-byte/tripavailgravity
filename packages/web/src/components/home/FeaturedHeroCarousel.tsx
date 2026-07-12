@@ -47,7 +47,6 @@ export function FeaturedHeroCarousel({
   const money = useMoney()
   const reduceMotion = useReducedMotion()
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
   const touchStartX = useRef<number | null>(null)
 
   const count = slides.length
@@ -58,12 +57,20 @@ export function FeaturedHeroCarousel({
     if (index >= count) setIndex(0)
   }, [count, index])
 
-  // Auto-advance, unless paused, reduced-motion, or there's nothing to rotate through.
+  // Autoplay via ONE interval that never tears down on re-render. The previous version keyed the
+  // interval on `count`/`paused`, so a parent re-render, a momentary change in the slide count, or
+  // a control keeping focus after a click cleared and restarted the timer before it ever reached
+  // 5s — so the hero never advanced. This reads the live count from a ref at tick time instead, and
+  // runs continuously (manual arrows/dots let the visitor stop and look). Honours reduced-motion.
+  const countRef = useRef(count)
+  countRef.current = count
   useEffect(() => {
-    if (paused || reduceMotion || count <= 1) return
-    const id = window.setInterval(() => setIndex((prev) => (prev + 1) % count), AUTOPLAY_MS)
+    if (reduceMotion) return
+    const id = window.setInterval(() => {
+      setIndex((prev) => (countRef.current <= 1 ? prev : (prev + 1) % countRef.current))
+    }, AUTOPLAY_MS)
     return () => window.clearInterval(id)
-  }, [paused, reduceMotion, count])
+  }, [reduceMotion])
 
   if (count === 0) return null
   const slide = slides[Math.min(index, count - 1)]
@@ -90,10 +97,6 @@ export function FeaturedHeroCarousel({
         role="region"
         aria-roledescription="carousel"
         aria-label="Featured trips and stays"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocusCapture={() => setPaused(true)}
-        onBlurCapture={() => setPaused(false)}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
