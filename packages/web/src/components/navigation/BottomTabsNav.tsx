@@ -1,13 +1,20 @@
-import { BedDouble, Home, Mountain, UserRound } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import {
+  BedTabIcon,
+  HomeTabIcon,
+  MountainTabIcon,
+  type TabIconProps,
+  UserTabIcon,
+} from '@/components/navigation/tabIcons'
+
+type TabIcon = (props: TabIconProps) => JSX.Element
 
 interface Tab {
   label: string
-  icon: LucideIcon
+  icon: TabIcon
   to: string
   /** Extra path prefixes that should also light this tab up. */
   match?: string[]
@@ -26,9 +33,8 @@ function isActive(pathname: string, to: string, match?: string[]) {
  * Mounted once in TravellerLayout (never on operator/manager/admin shells), hidden on desktop
  * where the collapsible sidebar takes over, and only shown to anonymous visitors and travellers.
  *
- * Premium treatment: the active tab's glyph goes duotone (solid primary stroke + a soft primary
- * fill) inside a rounded highlight chip, with a colour + weight shift on the label — the iOS/Airbnb
- * pattern — while inactive tabs stay as light muted outlines.
+ * Uses the custom two-state glyphs in tabIcons.tsx: the active tab's icon is a solid rose
+ * silhouette that lifts slightly, inactive tabs are light muted outlines. No background chip.
  */
 export function BottomTabsNav() {
   const { pathname } = useLocation()
@@ -42,12 +48,12 @@ export function BottomTabsNav() {
   const isAuthenticated = Boolean(user && activeRole)
 
   const tabs: Tab[] = [
-    { label: 'Home', icon: Home, to: '/' },
-    { label: 'Trips', icon: Mountain, to: '/tours' },
-    { label: 'Hotels', icon: BedDouble, to: '/hotels', match: ['/hotel'] },
+    { label: 'Home', icon: HomeTabIcon, to: '/' },
+    { label: 'Trips', icon: MountainTabIcon, to: '/tours' },
+    { label: 'Hotels', icon: BedTabIcon, to: '/hotels', match: ['/hotel'] },
     {
       label: 'Profile',
-      icon: UserRound,
+      icon: UserTabIcon,
       to: isAuthenticated ? '/profile' : '/auth?mode=login',
       match: ['/profile', '/dashboard', '/trips', '/wishlist', '/settings', '/payment-methods'],
     },
@@ -66,27 +72,15 @@ export function BottomTabsNav() {
             key={tab.label}
             to={tab.to}
             aria-current={active ? 'page' : undefined}
-            className="group flex flex-1 flex-col items-center justify-center gap-0.5 pb-1.5 pt-1.5"
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-2"
           >
-            <span
+            <Icon
+              active={active}
               className={cn(
-                'flex h-9 w-[3.25rem] items-center justify-center rounded-2xl transition-all duration-200 ease-out',
-                active
-                  ? 'bg-primary/10 -translate-y-0.5'
-                  : 'bg-transparent group-active:bg-muted/60',
+                'h-[26px] w-[26px] transition-all duration-200 ease-out',
+                active ? 'text-primary -translate-y-0.5' : 'text-muted-foreground',
               )}
-            >
-              <Icon
-                className={cn(
-                  'h-[22px] w-[22px] transition-colors duration-200',
-                  active ? 'text-primary' : 'text-muted-foreground',
-                )}
-                // Duotone when active: solid primary stroke over a soft primary wash.
-                fill={active ? 'currentColor' : 'none'}
-                fillOpacity={active ? 0.16 : 0}
-                strokeWidth={active ? 2.1 : 1.8}
-              />
-            </span>
+            />
             <span
               className={cn(
                 'text-[10px] leading-none tracking-wide transition-colors duration-200',
