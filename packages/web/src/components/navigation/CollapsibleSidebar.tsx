@@ -52,7 +52,20 @@ export function CollapsibleSidebar() {
   }
 
   return (
-    <aside
+    <>
+      {/* When the rail expands ON HOVER it overlays the page (content only reserves the collapsed
+          width, so it doesn't reflow on every mouse-over). Dim + blur the page behind it so the
+          overlay reads as intentional rather than broken. Pinned needs no scrim — the layout
+          reserves the full width and pushes content instead. Purely visual (pointer-events-none),
+          so it never blocks a click. */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          'fixed inset-0 z-30 hidden bg-black/40 backdrop-blur-sm transition-opacity duration-200 lg:block',
+          expanded && !pinned ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+      <aside
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       aria-label={`${roleLabel} navigation`}
@@ -180,5 +193,6 @@ export function CollapsibleSidebar() {
         ) : null}
       </div>
     </aside>
+    </>
   )
 }
