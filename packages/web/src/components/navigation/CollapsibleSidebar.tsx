@@ -2,6 +2,7 @@ import { ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-reac
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { Logo } from '@/components/brand/Logo'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ROLE_NAVIGATION, type NavItem } from '@/config/navigation'
@@ -75,24 +76,31 @@ export function CollapsibleSidebar() {
         expanded ? 'w-64 shadow-2xl shadow-black/10' : 'w-16',
       )}
     >
-      {/* Role header */}
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border/50 px-3">
-        <Avatar className="h-9 w-9 shrink-0 ring-2 ring-primary/30">
-          <AvatarImage src={user?.user_metadata?.avatar_url} alt={displayName} />
-          <AvatarFallback className="bg-primary/15 text-sm font-bold text-primary">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+      {/* Brand + home. The emblem is always visible (the home button the dashboards were missing);
+          the wordmark is clipped by the rail's overflow-hidden until it expands. */}
+      <div className="shrink-0 border-b border-border/50">
+        <div className="flex h-16 items-center px-3">
+          <Logo variant="full" alwaysShowWordmark emblemClassName="h-9 w-9" />
+        </div>
+        {/* Who's signed in — only when expanded. */}
         <div
           className={cn(
-            'min-w-0 transition-opacity duration-150',
-            expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
+            'flex items-center gap-2 overflow-hidden px-3 transition-all duration-150',
+            expanded ? 'max-h-16 pb-3 opacity-100' : 'max-h-0 pb-0 opacity-0',
           )}
         >
-          <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
-          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-primary">
-            {roleLabel}
-          </p>
+          <Avatar className="h-7 w-7 shrink-0 ring-2 ring-primary/30">
+            <AvatarImage src={user?.user_metadata?.avatar_url} alt={displayName} />
+            <AvatarFallback className="bg-primary/15 text-xs font-bold text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-bold text-foreground">{displayName}</p>
+            <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-primary">
+              {roleLabel}
+            </p>
+          </div>
         </div>
       </div>
 

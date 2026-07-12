@@ -16,6 +16,7 @@ import { motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { Logo } from '@/components/brand/Logo'
 import { GeoHomeHero } from '@/components/home/GeoHomeHero'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { useSeo } from '@/hooks/useSeo'
@@ -617,25 +618,9 @@ function AirbnbHeader() {
     <>
       <header className="fixed top-0 left-0 right-0 bg-background border-b z-50">
         <div className="container mx-auto max-w-7xl min-h-20 px-4 py-3 md:py-0 md:h-20 md:px-6 lg:px-10 flex flex-wrap items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
-          {/* Logo */}
+          {/* Logo — central Logo component, links home. */}
           <div className="flex items-center shrink-0 order-1">
-            <div className="flex items-center gap-1.5 cursor-pointer">
-              {/* TripAvail — gold "ta" monogram badge + Fraunces wordmark */}
-              <img
-                src="/brand/logo-emblem-256.png"
-                alt="TripAvail"
-                width={32}
-                height={32}
-                className="block h-8 w-8 shrink-0 rounded-[7px]"
-              />
-              <span
-                className="hidden md:block text-2xl tracking-tight leading-none"
-                style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}
-              >
-                <span className="text-foreground">trip</span>
-                <span className="text-[#FF385C]">avail</span>
-              </span>
-            </div>
+            <Logo />
           </div>
 
           {/* Centered Search Bar (Hidden on mobile, visible on tablet+) */}

@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 
+import { Logo } from '@/components/brand/Logo'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -34,21 +35,13 @@ export function DashboardHeader() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo/Brand */}
-          <div className="flex items-center">
-            <div>
-              <p
-                className={cn(
-                  'text-[11px] font-bold uppercase tracking-[0.24em]',
-                  isPartnerChrome ? 'text-white/55' : 'text-muted-foreground',
-                )}
-              >
-                TripAvail
-              </p>
-              <h2 className={cn('text-xl font-semibold', isPartnerChrome ? 'text-white' : 'text-foreground')}>
-                {roleTitle}
-              </h2>
-            </div>
+          {/* Logo (home) + role title. The emblem is the home button — it works on any header
+              background, so it's safe on the dark partner chrome too. */}
+          <div className="flex items-center gap-3">
+            <Logo variant="emblem" emblemClassName="h-9 w-9" />
+            <h2 className={cn('text-xl font-semibold', isPartnerChrome ? 'text-white' : 'text-foreground')}>
+              {roleTitle}
+            </h2>
           </div>
 
           {/* Search Bar — hidden for tour operators (not relevant in operator console) */}
