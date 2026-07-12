@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 
-import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -102,7 +101,7 @@ export default function HotelsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-7xl mx-auto px-4 py-10 pb-24">
+      <main className="max-w-7xl mx-auto px-4 py-10">
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Hotels</h1>
@@ -130,8 +129,6 @@ export default function HotelsPage() {
           </div>
         )}
       </main>
-
-      <BottomTabsNav />
     </div>
   )
 }

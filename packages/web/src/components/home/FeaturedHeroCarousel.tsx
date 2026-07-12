@@ -93,7 +93,7 @@ export function FeaturedHeroCarousel({
   return (
     <section className={cn('pt-1', className)}>
       <div
-        className="relative overflow-hidden rounded-3xl border border-border/60 min-h-[300px] sm:min-h-[360px] md:min-h-[400px] flex"
+        className="relative overflow-hidden rounded-3xl border border-border/60 min-h-[240px] sm:min-h-[320px] md:min-h-[400px] flex"
         role="region"
         aria-roledescription="carousel"
         aria-label="Featured trips and stays"

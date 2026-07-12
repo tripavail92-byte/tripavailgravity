@@ -18,11 +18,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { GeoHomeHero } from '@/components/home/GeoHomeHero'
+import { HomeCategoryFeed } from '@/components/home/HomeCategoryFeed'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { useSeo } from '@/hooks/useSeo'
 import { ImageSlider } from '@/components/ImageSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
-import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
@@ -97,33 +97,15 @@ export default function LandingPage() {
       <AirbnbHeader />
 
       <div className="container mx-auto max-w-7xl px-4 pt-28 md:pt-24 pb-6">
-        <div className="space-y-8 pb-20">
+        <div className="space-y-8">
           {/* Geo-adaptive hero — reshapes to the visitor's country (real supply → "Discover
               {country}"; no supply yet → honest "expanding" band; unknown → global default). */}
           <GeoHomeHero />
 
-          {/* Curated Rows (real Supabase data) */}
-          <div className="space-y-12">
-            <MixedHomepageRow kind="new" title="New Arrivals" />
-            <MixedHomepageRow kind="top-rated" title="Top Rated" />
-            <CuratedPackagesRow kind="best_for_couples" title="Best for Couples" />
-            <CuratedPackagesRow kind="family_friendly" title="Family Friendly" />
-            <CuratedPackagesRow kind="weekend_getaways" title="Weekend Getaways" />
-
-            <CuratedToursRow
-              category="adventure-trips"
-              title="Adventure Trips"
-              subtitle="Curated from live listings"
-            />
-            <CuratedToursRow
-              category="hiking-trips"
-              title="Hiking Trips"
-              subtitle="Curated from live listings"
-            />
-          </div>
-
+          {/* Category chips + one vertical feed of full-width cards (replaces the old stack of
+              horizontal category rows — mobile scrolls straight down, one listing per row). */}
           <QueryErrorBoundaryWrapper>
-            <PakistanNorthernToursRow />
+            <HomeCategoryFeed />
           </QueryErrorBoundaryWrapper>
 
           {/* Trust Strip — moved below the listings so experiences lead the page */}
@@ -165,8 +147,6 @@ export default function LandingPage() {
           </section>
         </div>
       </div>
-
-      <BottomTabsNav />
     </div>
   )
 }
