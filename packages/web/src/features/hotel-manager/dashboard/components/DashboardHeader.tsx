@@ -82,8 +82,11 @@ export function DashboardHeader() {
             {/* Notifications */}
             <NotificationBell inverted={isPartnerChrome} />
 
-            {/* Role-Based Drawer Menu (Profile Pill) */}
-            <RoleBasedDrawer inverted={isPartnerChrome} />
+            {/* The hamburger drawer is the MOBILE menu only — on desktop the collapsible sidebar
+                (rendered by the layout) replaces it. */}
+            <div className="lg:hidden">
+              <RoleBasedDrawer inverted={isPartnerChrome} />
+            </div>
           </div>
         </div>
       </div>
