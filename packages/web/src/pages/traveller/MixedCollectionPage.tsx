@@ -2,7 +2,6 @@ import { ArrowLeft } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -87,7 +86,7 @@ export default function MixedCollectionPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <div className="container mx-auto max-w-7xl px-4 pt-6 pb-24">
+      <div className="container mx-auto max-w-7xl px-4 pt-6">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -200,8 +199,6 @@ export default function MixedCollectionPage() {
           )}
         </div>
       </div>
-
-      <BottomTabsNav />
     </div>
   )
 }

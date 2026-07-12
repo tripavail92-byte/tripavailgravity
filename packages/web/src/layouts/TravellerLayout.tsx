@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { CollapsibleSidebar } from '@/components/navigation/CollapsibleSidebar'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { useAuth } from '@/hooks/useAuth'
@@ -64,6 +65,10 @@ export default function TravellerLayout() {
       <div
         className={cn(
           'transition-[padding] duration-200',
+          // Clear the fixed mobile bottom bar. Applied only below lg (where the bar shows); a
+          // directional max-lg class avoids the arbitrary-value-vs-responsive ordering clash that
+          // let a plain `lg:pb-0` lose to `pb-[calc(...)]`.
+          'max-lg:pb-[calc(4rem+env(safe-area-inset-bottom))]',
           showSidebar ? (pinned ? 'lg:pl-64' : 'lg:pl-16') : '',
         )}
       >
@@ -73,6 +78,9 @@ export default function TravellerLayout() {
 
         <SiteFooter />
       </div>
+
+      {/* Global mobile tab bar (storefront + traveller only; self-gates role + hides on desktop). */}
+      <BottomTabsNav />
     </div>
   )
 }

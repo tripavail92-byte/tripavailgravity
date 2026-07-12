@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -180,7 +179,7 @@ export default function ToursPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-7xl mx-auto px-4 py-10 pb-24">
+      <main className="max-w-7xl mx-auto px-4 py-10">
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Tours</h1>
@@ -255,8 +254,6 @@ export default function ToursPage() {
           </div>
         )}
       </main>
-
-      <BottomTabsNav />
     </div>
   )
 }

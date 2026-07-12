@@ -3,12 +3,8 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { FeaturedHeroCarousel, type HeroSlide } from '@/components/home/FeaturedHeroCarousel'
-import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
-import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useT } from '@/hooks/useT'
 import { useVisitorCountry } from '@/lib/visitorGeo'
 import { useFeaturedPackages } from '@/queries/packageQueries'
@@ -152,69 +148,6 @@ export function GeoHomeHero() {
       </section>
       )}
 
-      {/* Popular-in-country rail — only when the visitor's country has live supply. */}
-      {country && (hasSupply || resolving) && (
-        <section>
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 sm:gap-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                {t('hero.popularInTitle', { country: country.name })}
-              </h2>
-              <p className="text-muted-foreground mt-1">{t('hero.trendingNearYou')}</p>
-            </div>
-            {hasSupply && (
-              <Button asChild variant="link" className="px-0">
-                <Link to="/tours">{t('common.viewAll')}</Link>
-              </Button>
-            )}
-          </div>
-
-          <div className="mt-6">
-            {resolving ? (
-              <HorizontalPreviewSlider>
-                {[0, 1, 2, 3].map((i) => (
-                  <Card
-                    key={i}
-                    className="rounded-3xl border border-border/60 overflow-hidden shrink-0 w-[260px] sm:w-[280px]"
-                  >
-                    <div className="aspect-[4/5]">
-                      <Skeleton className="w-full h-full" />
-                    </div>
-                    <div className="p-4 space-y-3">
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-6 w-1/2" />
-                    </div>
-                  </Card>
-                ))}
-              </HorizontalPreviewSlider>
-            ) : (
-              <HorizontalPreviewSlider>
-                {popular.slice(0, 10).map((tour) => (
-                  <div key={tour.id} className="shrink-0 w-[260px] sm:w-[280px]">
-                    <TourCard
-                      id={tour.id}
-                      slug={tour.slug ?? undefined}
-                      image={
-                        tour.images?.[0] ||
-                        'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
-                      }
-                      title={tour.title}
-                      location={tour.location}
-                      duration={tour.durationDays ? `${tour.durationDays} days` : 'Multi-day'}
-                      rating={tour.rating}
-                      price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                      currency={tour.currency || 'PKR'}
-                      type={tour.badge}
-                      isFeatured={tour.badge === 'Featured'}
-                    />
-                  </div>
-                ))}
-              </HorizontalPreviewSlider>
-            )}
-          </div>
-        </section>
-      )}
     </>
   )
 }
