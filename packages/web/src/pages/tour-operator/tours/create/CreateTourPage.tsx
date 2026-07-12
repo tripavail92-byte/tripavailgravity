@@ -83,6 +83,24 @@ const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
   { match: 'row-level security', message: 'You don’t have permission to make this change.' },
 ]
 
+/**
+ * Has the operator entered anything worth persisting yet? Used to stop the autosave from minting an
+ * empty "Untitled Tour" row the moment the wizard mounts (which is how junk drafts piled up). A
+ * default title, a deposit the floor-effect wrote, and workflow bookkeeping do NOT count as input.
+ */
+function hasMeaningfulTourInput(d: Partial<Tour>): boolean {
+  const title = String(d.title ?? '').trim().toLowerCase()
+  if (title && title !== 'untitled tour') return true
+  if (Array.isArray(d.images) && d.images.length > 0) return true
+  if (Array.isArray((d as any).itinerary) && (d as any).itinerary.length > 0) return true
+  if (Array.isArray((d as any).schedules) && (d as any).schedules.length > 0) return true
+  if (Number(d.price) > 0) return true
+  if (String((d as any).short_description ?? '').trim()) return true
+  if (String((d as any).description ?? '').trim()) return true
+  if (Array.isArray(d.destination_cities) && d.destination_cities.filter(Boolean).length > 0) return true
+  return false
+}
+
 /** Postgres error code, when the failure came from the database rather than the network. */
 function errorCode(error: unknown): string {
   if (typeof error !== 'object' || error === null) return ''
@@ -479,6 +497,15 @@ export default function CreateTourPage() {
         // A verification block never clears by retrying; only an explicit save attempt should.
         if (autosaveBlockedRef.current && source === 'auto') return false
         if (source === 'manual') autosaveBlockedRef.current = false
+
+        // Don't create a brand-new draft on autosave until the operator has actually entered
+        // something — otherwise the wizard mints an empty "Untitled Tour" row on mount, with no
+        // consent, and those junk drafts pile up. A manual "Save Draft" always persists (that IS
+        // the consent); autosave still keeps updating a draft that already exists.
+        if (source === 'auto' && !currentTourIdRef.current && !hasMeaningfulTourInput(tourData)) {
+          setAutosaveStatus('idle')
+          return false
+        }
 
         if (showOverlay) setIsSaving(true)
         setAutosaveStatus('saving')

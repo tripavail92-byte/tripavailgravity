@@ -100,7 +100,7 @@ export function LockedSetupView({ data, onEdit }: LockedSetupViewProps) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
           <div className="flex items-center gap-1.5 mb-1.5">

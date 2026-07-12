@@ -12,11 +12,13 @@ import {
   ShieldAlert,
   ShieldCheck,
   Star,
+  Trash2,
   Users,
   XCircle,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
 import { NotificationBell } from '@/components/notifications/NotificationBell'
@@ -33,7 +35,6 @@ import { supabase } from '@/lib/supabase'
 
 import { Tour, tourService } from '../services/tourService'
 import { ActiveToursGrid } from './components/ActiveToursGrid'
-import { DraftsAlert } from './components/DraftsAlert'
 import { OperatorRecentBookings } from './components/OperatorRecentBookings'
 
 // Slugs live in one place — see setupStepSlugForIndex's doc comment for why.
@@ -53,7 +54,6 @@ export function TourOperatorDashboard() {
   const [isKycProcessing, setIsKycProcessing] = useState(false)
   const [isKycPendingAdminReview, setIsKycPendingAdminReview] = useState(false)
   const [publishedTours, setPublishedTours] = useState<Tour[]>([])
-  const [drafts, setDrafts] = useState<Tour[]>([])
   const [continuableTours, setContinuableTours] = useState<Partial<Tour>[]>([])
   const [confirmedBookings, setConfirmedBookings] = useState<number>(0)
   const [loading, setLoading] = useState(true)
@@ -123,14 +123,12 @@ export function TourOperatorDashboard() {
         setSetupCompleted(hasCompletedTourOperatorSetup(profile, verificationStatus))
         setSetupCurrentStep(profile?.setup_current_step ?? 0)
 
-        const [pub, drf, cont, commercialOverview] = await Promise.all([
+        const [pub, cont, commercialOverview] = await Promise.all([
           tourService.fetchPublishedTours(user.id),
-          tourService.fetchDraftTours(user.id),
           tourService.fetchContinuableTours(user.id),
           commercialService.getOperatorCommercialOverview(user.id),
         ])
         setPublishedTours(pub)
-        setDrafts(drf)
         setContinuableTours(cont)
         setConfirmedBookings(commercialOverview.performance?.confirmed_bookings ?? 0)
       } catch (error) {
@@ -152,6 +150,27 @@ export function TourOperatorDashboard() {
   const handleEditTour = (tour: Tour) =>
     navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
   const handleViewTour = (tour: Tour) => window.open(`/tours/${tour.id}`, '_blank')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDeleteDraft = async (tour: Partial<Tour>) => {
+    if (!user || !tour.id || deletingId) return
+    if (
+      !window.confirm(
+        `Delete "${tour.title || 'Untitled Tour'}"? This draft can't be recovered.`,
+      )
+    )
+      return
+    setDeletingId(tour.id)
+    try {
+      await tourService.deleteTour(tour.id, user.id)
+      setContinuableTours((prev) => prev.filter((t) => t.id !== tour.id))
+      toast.success('Draft deleted')
+    } catch {
+      toast.error("Couldn't delete the draft. Please try again.")
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const operatorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Partner'
   const ratedTours = publishedTours.filter((tour) => tour.rating > 0)
@@ -177,7 +196,7 @@ export function TourOperatorDashboard() {
     },
     {
       label: 'Draft Tours',
-      value: continuableTours.length || drafts.length,
+      value: continuableTours.length,
       icon: Clock,
       glow: 'shadow-amber-500/20',
     },
@@ -485,7 +504,6 @@ export function TourOperatorDashboard() {
             )}
 
           {/* ── DRAFTS ALERT ── */}
-          {drafts.length > 0 && <DraftsAlert drafts={drafts} />}
 
           {/* ── CONTINUE EDITING ── */}
           {continuableTours.length > 0 && (
@@ -604,18 +622,34 @@ export function TourOperatorDashboard() {
                           <Clock className="w-3 h-3" />
                           {lastEdited}
                         </span>
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            navigate(
-                              `/operator/tours/new?tour_id=${encodeURIComponent(tour.id ?? '')}`,
-                            )
-                          }
-                          className="h-8 px-4 rounded-xl text-xs font-bold gap-1.5 bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-all"
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          Resume
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDraft(tour)}
+                            disabled={deletingId === tour.id}
+                            aria-label={`Delete ${tour.title || 'draft tour'}`}
+                            title="Delete draft"
+                            className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                          >
+                            {deletingId === tour.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/operator/tours/new?tour_id=${encodeURIComponent(tour.id ?? '')}`,
+                              )
+                            }
+                            className="h-8 px-4 rounded-xl text-xs font-bold gap-1.5 bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-all"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            Resume
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )

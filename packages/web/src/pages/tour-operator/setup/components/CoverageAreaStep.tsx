@@ -96,7 +96,7 @@ export function CoverageAreaStep({ onUpdate, data, allowGoogleMaps = true }: Ste
               <Compass className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               Service Coverage Range — select all that apply
             </Label>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {COVERAGE_OPTIONS.map((opt) => {
                 const isSelected = (formData.radii || []).includes(opt.id)
                 return (
