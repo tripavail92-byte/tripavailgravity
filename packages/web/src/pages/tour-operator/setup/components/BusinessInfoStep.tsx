@@ -154,7 +154,7 @@ export function BusinessInfoStep({ onUpdate, data, subStep = 0 }: StepProps) {
 
         {subStep === 1 ? (
           <>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-3">
             <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
               Experience

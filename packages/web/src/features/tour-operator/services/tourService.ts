@@ -563,22 +563,6 @@ export const tourService = {
     return this.getOperatorTours(operatorId)
   },
 
-  async fetchDraftTours(operatorId: string) {
-    const { data, error } = await supabase
-      .from('tours')
-      .select('*')
-      .eq('operator_id', operatorId)
-      .eq('is_published', false)
-      .order('updated_at', { ascending: false })
-
-    if (error) {
-      console.error(`Error fetching drafts for operator ${operatorId}:`, error)
-      throw error
-    }
-
-    return data as unknown as Tour[]
-  },
-
   /** Returns tours the operator can still edit: draft, in_progress, rejected */
   async fetchContinuableTours(operatorId: string) {
     const { data, error } = await supabase
@@ -595,6 +579,25 @@ export const tourService = {
     }
 
     return (data ?? []) as unknown as Partial<Tour>[]
+  },
+
+  /**
+   * Delete a tour the operator owns. RLS restricts this to `auth.uid() = operator_id`
+   * (governance_hardening), and the child rows (media, pickups, schedules) cascade. Lets an
+   * operator clean up drafts — the dashboard only offers it for draft/in_progress/rejected tours.
+   */
+  async deleteTour(tourId: string, operatorId: string) {
+    const { error } = await supabase
+      .from('tours')
+      .delete()
+      .eq('id', tourId)
+      .eq('operator_id', operatorId)
+
+    if (error) {
+      console.error(`Error deleting tour ${tourId}:`, error)
+      throw error
+    }
+    return { success: true }
   },
 
   /** Save current form state as draft/in_progress — creates or updates */

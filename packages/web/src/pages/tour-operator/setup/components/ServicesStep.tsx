@@ -59,7 +59,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {SERVICES.map((s) => {
           const isSelected = selected.includes(s.id)
           return (

@@ -528,7 +528,20 @@ export default function OperatorCommercialPage() {
   }, [user?.id])
 
   const handlePromoFormChange = (field: keyof OperatorPromoFormState, value: string) => {
-    setPromoForm((current) => ({ ...current, [field]: value }))
+    setPromoForm((current) => {
+      const next = { ...current, [field]: value }
+      // A percentage can never exceed 100. Clamp it both when the operator types the value and
+      // when they flip the type from "fixed amount" (which can leave a large amount, e.g. 2344,
+      // behind). Save is also validated, but this stops the field ever showing an impossible %.
+      const percentageNow =
+        field === 'discountType' ? value === 'percentage' : current.discountType === 'percentage'
+      if (percentageNow) {
+        const raw = field === 'discountValue' ? value : next.discountValue
+        const n = Number(raw)
+        if (Number.isFinite(n) && n > 100) next.discountValue = '100'
+      }
+      return next
+    })
   }
 
   const resetPromoForm = () => {
@@ -2577,6 +2590,7 @@ export default function OperatorCommercialPage() {
                         placeholder={promoForm.discountType === 'percentage' ? '15' : '5000'}
                         type="number"
                         min="0"
+                        max={promoForm.discountType === 'percentage' ? 100 : undefined}
                         className="rounded-2xl"
                       />
                     </div>
