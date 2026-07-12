@@ -1,10 +1,10 @@
-import { ChevronRight, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ChevronRight, Compass, LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ROLE_NAVIGATION, type NavItem } from '@/config/navigation'
+import { PUBLIC_NAVIGATION, ROLE_NAVIGATION, type NavItem } from '@/config/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { useSidebarStore } from '@/store/sidebarStore'
@@ -26,9 +26,9 @@ function isItemActive(pathname: string, href: string): boolean {
  * a slim icon rail that expands to full labels on hover, or stays open when pinned. Mobile is
  * untouched (this whole component is `hidden lg:flex`); the drawer remains the mobile menu.
  *
- * The menu is ALWAYS `ROLE_NAVIGATION[activeRole]`, so each role sees only its own navigation —
- * operator, manager and traveller menus can never mix. Renders nothing without an active role
- * (e.g. an anonymous visitor), so it only appears in the signed-in dashboard/account areas.
+ * A signed-in role ALWAYS gets its own `ROLE_NAVIGATION[activeRole]`, so operator, manager and
+ * traveller menus can never mix. An anonymous visitor on the public storefront falls back to
+ * `PUBLIC_NAVIGATION` (browse + sign in). Renders nothing only if there are no items at all.
  */
 export function CollapsibleSidebar() {
   const { user, activeRole, signOut } = useAuth()
@@ -38,13 +38,13 @@ export function CollapsibleSidebar() {
   const [hovered, setHovered] = useState(false)
 
   const roleType = activeRole?.role_type
-  const items: NavItem[] = roleType ? (ROLE_NAVIGATION[roleType] ?? []) : []
-  if (!roleType || items.length === 0) return null
+  const items: NavItem[] = roleType ? (ROLE_NAVIGATION[roleType] ?? []) : PUBLIC_NAVIGATION
+  if (items.length === 0) return null
 
   const expanded = pinned || hovered
-  const roleLabel = ROLE_LABELS[roleType] ?? roleType
-  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Account'
-  const initials = displayName.slice(0, 2).toUpperCase()
+  const roleLabel = roleType ? (ROLE_LABELS[roleType] ?? roleType) : 'Explore TripAvail'
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Guest'
+  const initials = user ? displayName.slice(0, 2).toUpperCase() : ''
 
   const handleSignOut = async () => {
     await signOut()
@@ -67,7 +67,7 @@ export function CollapsibleSidebar() {
         <Avatar className="h-9 w-9 shrink-0 ring-2 ring-primary/30">
           <AvatarImage src={user?.user_metadata?.avatar_url} alt={displayName} />
           <AvatarFallback className="bg-primary/15 text-sm font-bold text-primary">
-            {initials}
+            {user ? initials : <Compass className="h-4 w-4" aria-hidden="true" />}
           </AvatarFallback>
         </Avatar>
         <div
@@ -155,22 +155,40 @@ export function CollapsibleSidebar() {
           ) : null}
         </div>
 
-        <button
-          type="button"
-          onClick={handleSignOut}
-          title={expanded ? undefined : 'Sign out'}
-          className="flex w-full items-center rounded-xl px-2.5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-        >
-          <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
-          <span
-            className={cn(
-              'ml-3 truncate transition-opacity duration-150',
-              expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
-            )}
+        {user ? (
+          <button
+            type="button"
+            onClick={handleSignOut}
+            title={expanded ? undefined : 'Sign out'}
+            className="flex w-full items-center rounded-xl px-2.5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
           >
-            Sign out
-          </span>
-        </button>
+            <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span
+              className={cn(
+                'ml-3 truncate transition-opacity duration-150',
+                expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
+              )}
+            >
+              Sign out
+            </span>
+          </button>
+        ) : (
+          <Link
+            to="/auth"
+            title={expanded ? undefined : 'Sign in'}
+            className="flex w-full items-center rounded-xl px-2.5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <LogIn className="h-5 w-5 shrink-0" aria-hidden="true" />
+            <span
+              className={cn(
+                'ml-3 truncate transition-opacity duration-150',
+                expanded ? 'opacity-100' : 'pointer-events-none opacity-0',
+              )}
+            >
+              Sign in
+            </span>
+          </Link>
+        )}
 
         {/* A hint chevron on the collapsed rail, so it reads as expandable. */}
         {!expanded ? (
