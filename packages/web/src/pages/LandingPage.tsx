@@ -681,33 +681,26 @@ function AirbnbHeader() {
             )}
           </div>
 
-          {/* Mobile Search Bar — full-width row below the logo/menu on phones (was nested in the
-              right menu, which squeezed the drawer trigger off-screen in portrait). */}
+          {/* Mobile Search Bar — a single compact pill below the logo/menu row on phones. The
+              "Explore Now" CTA was dropped here (tapping the pill already opens search) so the row
+              stays slim and doesn't eat vertical space. */}
           <div className="order-4 basis-full md:hidden min-w-0">
             <GlassCard
               variant="light"
-              className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 w-full flex flex-row items-center gap-2 border border-white/30"
+              className="w-full rounded-full border border-white/30 p-1 shadow-lg shadow-black/10"
             >
               <button
                 data-tour="search-bar"
                 type="button"
-                className="flex-1 px-4 flex items-center gap-2 min-w-0"
+                className="flex w-full min-w-0 items-center gap-2.5 rounded-full px-3.5 py-2"
                 onClick={() => setIsSearchOverlayOpen(true)}
                 aria-label="Open search"
               >
-                <Search className="w-4 h-4 text-primary" />
-                <span className="truncate font-bold text-foreground text-sm">
+                <Search className="h-4 w-4 shrink-0 text-primary" />
+                <span className="truncate text-sm font-semibold text-foreground">
                   {t('search.whereToNext')}
                 </span>
               </button>
-
-              <Button
-                type="button"
-                onClick={() => setIsSearchOverlayOpen(true)}
-                className="px-5 h-10 rounded-3xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm transition-all hover:scale-[1.02] shadow-xl shadow-primary/20 shrink-0"
-              >
-                {t('nav.exploreNow')}
-              </Button>
             </GlassCard>
           </div>
         </div>
