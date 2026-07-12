@@ -2,15 +2,23 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { CollapsibleSidebar } from '@/components/navigation/CollapsibleSidebar'
+import { useAuth } from '@/hooks/useAuth'
 import { useLocaleDirection } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
 import { useCurrencyAutoDetect } from '@/store/currencyStore'
 import { useLocaleAutoDetect } from '@/store/localeStore'
 import { useSidebarStore } from '@/store/sidebarStore'
 
-// The sidebar rides the whole storefront + account area. The only exceptions are the focused
-// conversion flows — checkout and booking confirmation — where a nav rail is a distraction.
-const NO_SIDEBAR_PREFIXES = ['/checkout', '/booking']
+// The signed-in traveller ACCOUNT area gets the sidebar; the public storefront (home, browse,
+// search, listing details, checkout) stays a clean top-nav storefront. Matched by path prefix.
+const ACCOUNT_PREFIXES = [
+  '/dashboard',
+  '/profile',
+  '/trips',
+  '/wishlist',
+  '/payment-methods',
+  '/settings',
+]
 
 export default function TravellerLayout() {
   // Auto-pick the traveller's display currency from their locale on first visit
@@ -21,11 +29,13 @@ export default function TravellerLayout() {
   useLocaleDirection()
 
   const location = useLocation()
+  const { activeRole } = useAuth()
   const pinned = useSidebarStore((s) => s.pinned)
 
-  const showSidebar = !NO_SIDEBAR_PREFIXES.some(
+  const isAccountRoute = ACCOUNT_PREFIXES.some(
     (p) => location.pathname === p || location.pathname.startsWith(p + '/'),
   )
+  const showSidebar = isAccountRoute && activeRole?.role_type === 'traveller'
 
   return (
     <div
@@ -39,8 +49,7 @@ export default function TravellerLayout() {
         } as React.CSSProperties
       }
     >
-      {/* Storefront + account. Signed-in visitors get their role menu; anonymous visitors get the
-          public browse menu. Hidden only on the focused checkout/booking flows. */}
+      {/* Only in the account area — never on the public storefront. */}
       {showSidebar ? <CollapsibleSidebar /> : null}
       <div
         className={cn(

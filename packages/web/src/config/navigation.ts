@@ -2,16 +2,13 @@ import { RoleType } from '@tripavail/shared/roles/types'
 import {
   BarChart3,
   BookCheck,
-  Briefcase,
   Building2,
   Calendar,
   CircleDollarSign,
-  Compass,
   CreditCard,
   Globe,
   Heart,
   HelpCircle,
-  Home,
   LayoutDashboard,
   MapPin,
   MessageSquare,
@@ -29,19 +26,6 @@ export interface NavItem {
   href: string
   subtext?: string
 }
-
-/**
- * The sidebar menu for a visitor with no active role — the public storefront. A signed-in
- * traveller/operator/manager always gets their own ROLE_NAVIGATION instead.
- */
-export const PUBLIC_NAVIGATION: NavItem[] = [
-  { label: 'Home', icon: Home, href: '/' },
-  { label: 'Hotels', icon: Building2, href: '/hotels' },
-  { label: 'Tours', icon: MapPin, href: '/tours' },
-  { label: 'Explore', icon: Compass, href: '/explore' },
-  { label: 'Become a Partner', icon: Briefcase, href: '/partner/onboarding' },
-  { label: 'Help & Support', icon: HelpCircle, href: '/help' },
-]
 
 export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
   admin: [],
