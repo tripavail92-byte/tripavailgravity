@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { Logo, LOGO_EMBLEM_SRC } from '@/components/brand/Logo'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Button } from '@/components/ui/button'
@@ -318,7 +319,7 @@ export default function TourOperatorSetupPage() {
           className="flex flex-col items-center gap-5"
         >
           <img
-            src="/brand/logo-emblem-256.png"
+            src={LOGO_EMBLEM_SRC}
             alt=""
             width={56}
             height={56}
@@ -343,25 +344,11 @@ export default function TourOperatorSetupPage() {
       <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-6 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <img
-              src="/brand/logo-emblem-256.png"
-              alt=""
-              width={36}
-              height={36}
-              className="block h-9 w-9 shrink-0 rounded-[8px]"
-            />
-            <div className="min-w-0">
-              <h1
-                className="text-lg leading-none tracking-tight"
-                style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 600 }}
-              >
-                <span className="text-foreground">trip</span>
-                <span className="text-primary">avail</span>
-              </h1>
-              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mt-0.5 truncate">
-                {isLocked ? 'Operator Profile' : 'Operator Setup'}
-              </p>
-            </div>
+            <Logo variant="full" alwaysShowWordmark to="/" emblemClassName="h-9 w-9" />
+            <span className="hidden h-6 w-px shrink-0 bg-border sm:block" />
+            <p className="hidden text-muted-foreground text-[10px] font-bold uppercase tracking-widest truncate sm:block">
+              {isLocked ? 'Operator Profile' : 'Operator Setup'}
+            </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
