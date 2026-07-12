@@ -1,4 +1,4 @@
-import { Building2, Home, Mountain, UserCircle } from 'lucide-react'
+import { BedDouble, Home, Mountain, UserRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
@@ -25,6 +25,10 @@ function isActive(pathname: string, to: string, match?: string[]) {
  * Mobile bottom tab bar — the app-shell primary nav for the storefront + traveller experience.
  * Mounted once in TravellerLayout (never on operator/manager/admin shells), hidden on desktop
  * where the collapsible sidebar takes over, and only shown to anonymous visitors and travellers.
+ *
+ * Premium treatment: the active tab's glyph goes duotone (solid primary stroke + a soft primary
+ * fill) inside a rounded highlight chip, with a colour + weight shift on the label — the iOS/Airbnb
+ * pattern — while inactive tabs stay as light muted outlines.
  */
 export function BottomTabsNav() {
   const { pathname } = useLocation()
@@ -40,10 +44,10 @@ export function BottomTabsNav() {
   const tabs: Tab[] = [
     { label: 'Home', icon: Home, to: '/' },
     { label: 'Trips', icon: Mountain, to: '/tours' },
-    { label: 'Hotels', icon: Building2, to: '/hotels', match: ['/hotel'] },
+    { label: 'Hotels', icon: BedDouble, to: '/hotels', match: ['/hotel'] },
     {
       label: 'Profile',
-      icon: UserCircle,
+      icon: UserRound,
       to: isAuthenticated ? '/profile' : '/auth?mode=login',
       match: ['/profile', '/dashboard', '/trips', '/wishlist', '/settings', '/payment-methods'],
     },
@@ -62,13 +66,35 @@ export function BottomTabsNav() {
             key={tab.label}
             to={tab.to}
             aria-current={active ? 'page' : undefined}
-            className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-              active ? 'text-primary' : 'text-muted-foreground',
-            )}
+            className="group flex flex-1 flex-col items-center justify-center gap-0.5 pb-1.5 pt-1.5"
           >
-            <Icon className={cn('h-6 w-6', active && 'fill-primary/10')} strokeWidth={active ? 2.4 : 2} />
-            <span>{tab.label}</span>
+            <span
+              className={cn(
+                'flex h-9 w-[3.25rem] items-center justify-center rounded-2xl transition-all duration-200 ease-out',
+                active
+                  ? 'bg-primary/10 -translate-y-0.5'
+                  : 'bg-transparent group-active:bg-muted/60',
+              )}
+            >
+              <Icon
+                className={cn(
+                  'h-[22px] w-[22px] transition-colors duration-200',
+                  active ? 'text-primary' : 'text-muted-foreground',
+                )}
+                // Duotone when active: solid primary stroke over a soft primary wash.
+                fill={active ? 'currentColor' : 'none'}
+                fillOpacity={active ? 0.16 : 0}
+                strokeWidth={active ? 2.1 : 1.8}
+              />
+            </span>
+            <span
+              className={cn(
+                'text-[10px] leading-none tracking-wide transition-colors duration-200',
+                active ? 'font-semibold text-primary' : 'font-medium text-muted-foreground',
+              )}
+            >
+              {tab.label}
+            </span>
           </Link>
         )
       })}
