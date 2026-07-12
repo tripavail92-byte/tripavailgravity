@@ -1,6 +1,8 @@
 import { MapPin, Sparkles } from 'lucide-react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
+import { FeaturedHeroCarousel, type HeroSlide } from '@/components/home/FeaturedHeroCarousel'
 import { HorizontalPreviewSlider } from '@/components/home/HorizontalPreviewSlider'
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { TourCard } from '@/components/traveller/TourCard'
@@ -9,6 +11,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useT } from '@/hooks/useT'
 import { useVisitorCountry } from '@/lib/visitorGeo'
+import { useFeaturedPackages } from '@/queries/packageQueries'
 import { usePopularInCountryTours } from '@/queries/tourQueries'
 
 /**
@@ -30,6 +33,51 @@ export function GeoHomeHero() {
   const resolving = Boolean(country) && isLoading
   const heroImage = hasSupply ? popular[0]?.images?.[0] : undefined
 
+  // Featured stays join the hero so it showcases both trips and packages. Global (not geo-scoped),
+  // so the hero has real content even in a market with tours but no listed packages, and vice-versa.
+  const { data: featuredPackages = [] } = useFeaturedPackages()
+
+  const heroSlides = useMemo<HeroSlide[]>(() => {
+    const tourSlides: HeroSlide[] = popular
+      .filter((tr) => tr.images?.[0])
+      .map((tr) => ({
+        id: `tour-${tr.id}`,
+        kind: 'tour',
+        title: tr.title,
+        subtitle: tr.location,
+        image: tr.images[0],
+        price: tr.tourPrice,
+        currency: tr.currency || 'PKR',
+        rating: tr.rating,
+        href: `/tours/${tr.id}`,
+        badge: tr.badge,
+      }))
+
+    const pkgSlides: HeroSlide[] = featuredPackages
+      .filter((pk) => pk.images?.[0])
+      .map((pk) => ({
+        id: `pkg-${pk.id}`,
+        kind: 'package',
+        title: pk.title,
+        subtitle: pk.hotelName ? `${pk.hotelName} · ${pk.location}` : pk.location,
+        image: pk.images[0],
+        price: pk.packagePrice,
+        currency: pk.currency || 'PKR',
+        rating: pk.rating,
+        href: `/packages/${pk.slug || pk.id}`,
+        badge: pk.badge,
+      }))
+
+    // Interleave trips and stays so the hero alternates types, capped at 6 to keep the loop short.
+    const out: HeroSlide[] = []
+    const maxLen = Math.max(tourSlides.length, pkgSlides.length)
+    for (let i = 0; i < maxLen && out.length < 6; i++) {
+      if (tourSlides[i]) out.push(tourSlides[i])
+      if (pkgSlides[i] && out.length < 6) out.push(pkgSlides[i])
+    }
+    return out
+  }, [popular, featuredPackages])
+
   // Copy variants (localized; country name interpolated)
   let eyebrow = t('hero.curatedWorldwide')
   let headline = t('hero.defaultTitle')
@@ -47,6 +95,13 @@ export function GeoHomeHero() {
 
   return (
     <>
+      {heroSlides.length > 0 ? (
+        <FeaturedHeroCarousel
+          slides={heroSlides}
+          eyebrow={resolving ? t('hero.finding') : eyebrow}
+          hasCountry={Boolean(country)}
+        />
+      ) : (
       <section className="pt-1">
         <div className="relative overflow-hidden rounded-3xl border border-border/60 min-h-[280px] sm:min-h-[340px] md:min-h-[380px] flex">
           {/* Backdrop: a real listing photo when we have local supply, else a brand gradient (never fabricated art). */}
@@ -95,6 +150,7 @@ export function GeoHomeHero() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Popular-in-country rail — only when the visitor's country has live supply. */}
       {country && (hasSupply || resolving) && (
