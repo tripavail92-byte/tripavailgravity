@@ -13,6 +13,7 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  Pencil,
   Phone,
   Share2,
   Shield,
@@ -644,6 +645,14 @@ export default function OperatorProfilePage() {
                   <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700">
                     {metrics.verified_badge_count} trust badge{metrics.verified_badge_count === 1 ? '' : 's'}
                   </Badge>
+                ) : null}
+                {/* Owner-only: this operator viewing their own public storefront gets an Edit shortcut. */}
+                {user && profile.user_id === user.id ? (
+                  <Button asChild size="sm" variant="outline" className="rounded-full">
+                    <Link to="/operator/setup">
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit storefront
+                    </Link>
+                  </Button>
                 ) : null}
               </div>
 
