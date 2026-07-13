@@ -9,7 +9,6 @@ import {
   Heart,
   Loader2,
   MapPin,
-  Share2,
   Shield,
   Sparkles,
   Star,
@@ -21,6 +20,7 @@ import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import { ShareButton } from '@/components/share/ShareButton'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
@@ -478,9 +478,13 @@ export default function PackageDetailsPage() {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <GlassButton variant="ghost" size="icon" className="rounded-full">
-              <Share2 size={18} />
-            </GlassButton>
+            <ShareButton
+              variant="icon"
+              url={typeof window !== 'undefined' ? window.location.pathname : '/'}
+              title={name}
+              text={`Check out this stay on TripAvail: ${name}`}
+              className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
+            />
             <GlassButton variant="ghost" size="icon" className="rounded-full">
               <Heart size={18} className="text-primary" />
             </GlassButton>

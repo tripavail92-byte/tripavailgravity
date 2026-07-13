@@ -29,6 +29,7 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog'
+import { ShareButton } from '@/components/share/ShareButton'
 import {
   GlassBadge,
   GlassButton,
@@ -825,13 +826,19 @@ export default function TourDetailsPage() {
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
                     <GlassBadge variant="primary" size="lg" className="capitalize">
                       {tour.tour_type?.replace('-', ' ') || 'Tour'}
                     </GlassBadge>
                     <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
                       Verified Operator
                     </GlassBadge>
+                    <ShareButton
+                      url={`/tours/${(tour as any).slug || tour.id}`}
+                      title={tour.title}
+                      text={`Check out this trip on TripAvail: ${tour.title}`}
+                      className="ml-auto"
+                    />
                   </div>
 
                   <h1 className="type-display text-foreground mb-2 break-words">
