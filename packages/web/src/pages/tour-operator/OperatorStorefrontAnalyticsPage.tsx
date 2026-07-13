@@ -411,7 +411,7 @@ export default function OperatorStorefrontAnalyticsPage() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.05 }}
-              className="grid grid-cols-2 lg:grid-cols-6 gap-4"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
             >
               {[
                 {
@@ -692,7 +692,7 @@ export default function OperatorStorefrontAnalyticsPage() {
                           </div>
                           <Badge variant="outline" className="w-fit">{row.bookingsAfterProfileView} bookings after profile views</Badge>
                         </div>
-                        <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
+                        <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
                           <div>
                             <p className="text-[10px] uppercase tracking-widest text-muted-foreground/80">Tour clicks</p>
                             <p className="font-semibold text-foreground">{row.tourClicks}</p>

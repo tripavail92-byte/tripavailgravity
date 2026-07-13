@@ -1014,7 +1014,7 @@ export default function PackageDetailsPage() {
                       </div>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-[300px] p-6 rounded-3xl shadow-2xl border-none"
+                      className="w-[min(300px,calc(100vw-2rem))] p-6 rounded-3xl shadow-2xl border-none"
                       align="start"
                     >
                       <div className="flex items-center justify-between">

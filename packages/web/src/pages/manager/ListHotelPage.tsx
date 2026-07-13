@@ -134,7 +134,7 @@ export default function ListHotelPage() {
             </motion.div>
 
             {/* Steps Preview */}
-            <div className="grid grid-cols-5 gap-4 pt-8">
+            <div className="grid grid-cols-3 gap-4 pt-8 sm:grid-cols-5">
               {[
                 { icon: PropertyTypeIcon, label: 'Type' },
                 { icon: LocationIcon, label: 'Location' },
