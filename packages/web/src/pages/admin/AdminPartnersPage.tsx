@@ -112,16 +112,29 @@ const MIN_REASON_LEN = 12
 //   approved            | suspended      | ❌ No (suspended)
 //   pending/rejected    | *              | ❌ No (not verified)
 //
-type OperativeStatus = 'operative' | 'suspended' | 'not_verified' | 'unknown'
+type OperativeStatus =
+  | 'operative'
+  | 'suspended'
+  | 'deleted'
+  | 'under_review'
+  | 'not_started'
+  | 'not_verified'
+  | 'unknown'
 
 function getOperativeStatus(
   verificationStatus: string | null | undefined,
   accountStatus: string | null | undefined,
 ): OperativeStatus {
-  if (verificationStatus !== 'approved') return 'not_verified'
-  if (accountStatus === 'suspended' || accountStatus === 'deleted') return 'suspended'
-  if (accountStatus === 'active') return 'operative'
-  return 'unknown'
+  // Account governance wins FIRST — a suspend/soft-delete must be visible in the badge even for a
+  // partner that was never verification-approved. (Previously this checked verification first, so a
+  // successful suspend/delete left the badge reading "Not Verified" → looked like nothing happened.)
+  if (accountStatus === 'deleted') return 'deleted'
+  if (accountStatus === 'suspended') return 'suspended'
+  // Then the verification lifecycle. 'incomplete' = never submitted (NOT "under review").
+  if (verificationStatus === 'approved') return 'operative'
+  if (verificationStatus === 'pending') return 'under_review'
+  if (verificationStatus === 'incomplete') return 'not_started'
+  return 'not_verified' // rejected / unknown
 }
 
 function OperativeBadge({
@@ -137,6 +150,15 @@ function OperativeBadge({
     suspended: {
       label: '⚠️ Suspended',
       className: 'bg-orange-100 text-orange-800 border-orange-200',
+    },
+    deleted: { label: '🗑️ Deleted', className: 'bg-red-100 text-red-700 border-red-200' },
+    under_review: {
+      label: '🕓 Under Review',
+      className: 'bg-amber-100 text-amber-800 border-amber-200',
+    },
+    not_started: {
+      label: '⚪ Not Started',
+      className: 'bg-slate-100 text-slate-500 border-slate-200',
     },
     not_verified: {
       label: '🔒 Not Verified',
