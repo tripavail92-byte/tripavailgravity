@@ -646,10 +646,12 @@ export default function OperatorProfilePage() {
                     {metrics.verified_badge_count} trust badge{metrics.verified_badge_count === 1 ? '' : 's'}
                   </Badge>
                 ) : null}
-                {/* Owner-only: this operator viewing their own public storefront gets an Edit shortcut. */}
+                {/* Owner-only: this operator viewing their own public storefront gets an Edit shortcut
+                    into the Business Profile dashboard (gallery/guides/fleet/policies/trust links —
+                    the ongoing editor, not the one-time setup wizard). */}
                 {user && profile.user_id === user.id ? (
                   <Button asChild size="sm" variant="outline" className="rounded-full">
-                    <Link to="/operator/setup">
+                    <Link to="/operator-dashboard/business-profile">
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit storefront
                     </Link>
                   </Button>
