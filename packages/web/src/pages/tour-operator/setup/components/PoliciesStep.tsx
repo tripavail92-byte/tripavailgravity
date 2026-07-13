@@ -435,7 +435,7 @@ export function PoliciesStep({ onUpdate, data, subStep = 0 }: StepProps) {
               {nextRequiredDoc ? (
                 <Button
                   asChild
-                  className="rounded-2xl font-black uppercase tracking-widest h-14 px-10 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                  className="rounded-2xl font-black uppercase tracking-widest h-14 w-full sm:w-auto px-6 sm:px-10 shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
                 >
                   <label htmlFor="policy-upload-primary" className="cursor-pointer">
                     {isUploading ? (

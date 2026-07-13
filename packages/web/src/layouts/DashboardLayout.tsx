@@ -28,7 +28,7 @@ export default function DashboardLayout() {
   }, [activeRole?.role_type])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-clip bg-background">
       {/* Desktop: a collapsed icon rail that expands on hover / when pinned. Mobile is untouched —
           the header keeps its hamburger drawer. Reserve the rail's width so content never sits
           under it (pl-16 collapsed, pl-64 pinned). */}

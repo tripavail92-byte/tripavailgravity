@@ -542,7 +542,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </Card>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { icon: Camera,     label: 'Scan QR',    desc: 'Open phone camera' },
                 { icon: CreditCard, label: 'Capture CNIC',  desc: 'Front + Back' },
