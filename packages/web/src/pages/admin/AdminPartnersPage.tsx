@@ -1,6 +1,7 @@
 import {
   Award,
   AlertTriangle,
+  ArrowLeft,
   BarChart3,
   CheckCircle,
   Clock,
@@ -735,15 +736,34 @@ function StorefrontVerificationDialog({
     }
   }
 
+  if (!open) return null
+
+  // Full page (not a modal): the reputation inspector is far too long for a centered popup — a
+  // fixed, self-scrolling panel with a sticky header keeps the title/Back button in view and
+  // scrolls like a normal page.
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Storefront Verification Review</DialogTitle>
-          <DialogDescription>
-            Review submitted storefront documents for <span className="font-semibold text-foreground">{partner?.name || 'operator'}</span> and set the public verification flags.
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+      <div className="sticky top-0 z-10 flex items-start gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mt-0.5 h-9 w-9 shrink-0"
+          onClick={() => onOpenChange(false)}
+          aria-label="Back to partners"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-foreground">Storefront Verification Review</h1>
+          <p className="text-sm text-muted-foreground">
+            Review submitted storefront documents for{' '}
+            <span className="font-semibold text-foreground">{partner?.name || 'operator'}</span> and
+            set the public verification flags.
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-4xl px-4 py-6">
 
         {loading ? (
           <div className="space-y-3 py-4">
@@ -1107,8 +1127,8 @@ function StorefrontVerificationDialog({
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   )
 }
 
