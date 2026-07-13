@@ -1383,11 +1383,11 @@ function AllPartnersTab() {
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
                 <TableHead>Partner</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead className="hidden md:table-cell">Contact</TableHead>
+                <TableHead className="hidden sm:table-cell">Type</TableHead>
+                <TableHead className="hidden lg:table-cell">Joined</TableHead>
                 <TableHead>Governance</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
+                <TableHead className="w-[52px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1433,14 +1433,20 @@ function AllPartnersTab() {
                             Setup not started
                           </span>
                         )}
+                        {/* On phones the Contact/Type columns are hidden — surface the email here. */}
+                        <div className="mt-0.5 truncate text-xs font-normal text-muted-foreground md:hidden">
+                          {u?.email || '—'}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{u?.email || '—'}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {u?.email || '—'}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline" className="font-normal">
                           {row.roleType === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
+                      <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
                         {row.created_at ? new Date(row.created_at).toLocaleDateString() : '—'}
                       </TableCell>
                       <TableCell>
