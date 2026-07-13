@@ -11,7 +11,6 @@ import {
   MapPin,
   Navigation,
   Minus,
-  Share2,
   Shield,
   Sparkles,
   Star,
@@ -738,9 +737,13 @@ export default function TourDetailsPage() {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <GlassButton variant="ghost" size="icon" className="rounded-full">
-              <Share2 size={18} />
-            </GlassButton>
+            <ShareButton
+              variant="icon"
+              url={`/tours/${(tour as any).slug || tour.id}`}
+              title={tour.title}
+              text={`Check out this trip on TripAvail: ${tour.title}`}
+              className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
+            />
             <GlassButton variant="ghost" size="icon" className="rounded-full">
               <Heart size={18} className="text-primary" />
             </GlassButton>
@@ -826,19 +829,13 @@ export default function TourDetailsPage() {
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-4">
                     <GlassBadge variant="primary" size="lg" className="capitalize">
                       {tour.tour_type?.replace('-', ' ') || 'Tour'}
                     </GlassBadge>
                     <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
                       Verified Operator
                     </GlassBadge>
-                    <ShareButton
-                      url={`/tours/${(tour as any).slug || tour.id}`}
-                      title={tour.title}
-                      text={`Check out this trip on TripAvail: ${tour.title}`}
-                      className="ml-auto"
-                    />
                   </div>
 
                   <h1 className="type-display text-foreground mb-2 break-words">
