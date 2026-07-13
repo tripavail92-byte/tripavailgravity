@@ -41,7 +41,7 @@ export default function TravellerLayout() {
 
   return (
     <div
-      className="min-h-screen bg-background font-sans"
+      className="min-h-screen overflow-x-clip bg-background font-sans"
       style={
         {
           // Override Primary Color to Airbnb Rose for Traveller Experience

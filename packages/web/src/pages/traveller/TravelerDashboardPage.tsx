@@ -164,7 +164,7 @@ export default function TravelerDashboardPage() {
                         alt="Trip"
                       />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-xl font-black text-foreground mb-2">
                         {(nextTrip.tours || nextTrip.packages)?.title ||
                           (nextTrip.tours || nextTrip.packages)?.name}

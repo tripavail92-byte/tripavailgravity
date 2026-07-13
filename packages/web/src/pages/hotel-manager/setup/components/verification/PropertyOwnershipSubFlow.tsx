@@ -106,7 +106,7 @@ export function PropertyOwnershipSubFlow({
               />
               <Button
                 asChild
-                className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                className="rounded-2xl w-full sm:w-auto px-6 sm:px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
               >
                 <label htmlFor="deed-upload" className="cursor-pointer">
                   {isUploading ? (
@@ -155,7 +155,7 @@ export function PropertyOwnershipSubFlow({
               />
               <Button
                 asChild
-                className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                className="rounded-2xl w-full sm:w-auto px-6 sm:px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
               >
                 <label htmlFor="bill-upload" className="cursor-pointer">
                   {isUploading ? (
@@ -211,7 +211,7 @@ export function PropertyOwnershipSubFlow({
               />
               <Button
                 asChild
-                className="rounded-2xl px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                className="rounded-2xl w-full sm:w-auto px-6 sm:px-10 h-14 bg-primary-gradient text-white font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
               >
                 <label htmlFor="live-upload" className="cursor-pointer">
                   {isUploading ? (

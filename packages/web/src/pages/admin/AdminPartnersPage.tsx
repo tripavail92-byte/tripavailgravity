@@ -1812,7 +1812,7 @@ function RankedOperatorsTab() {
                     </div>
                   </div>
 
-                  <div className="grid min-w-[280px] grid-cols-2 gap-3 text-sm lg:max-w-md">
+                  <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:max-w-md">
                     <div className="rounded-lg border border-border p-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">Marketplace score</p>
                       <p className="mt-1 text-2xl font-black text-foreground">{row.qualityScore?.total_score ?? 'N/A'}</p>

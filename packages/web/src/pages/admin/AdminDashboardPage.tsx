@@ -217,7 +217,7 @@ export default function AdminDashboardPage() {
                           <p className="text-[11px] text-muted-foreground">marketplace score</p>
                         </div>
                       </div>
-                      <div className="mt-3 grid grid-cols-5 gap-3 text-sm">
+                      <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
                         <div>
                           <p className="text-[10px] uppercase tracking-widest text-muted-foreground/80">Views</p>
                           <p className="font-semibold text-foreground">{row.profile_views}</p>

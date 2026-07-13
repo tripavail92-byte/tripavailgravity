@@ -83,7 +83,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground flex">
       {/* Mobile top bar + collapsible nav */}
       <div className="md:hidden w-full border-b border-border bg-background">
         <div className="px-4 py-3 flex items-center justify-between">
