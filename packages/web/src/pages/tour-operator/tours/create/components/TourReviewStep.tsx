@@ -228,15 +228,15 @@ export function TourReviewStep({
               value={schedules[0]?.date ? formatDateDisplay(deriveArrivalDate(schedules[0].date, durationDays)) : '—'}
             />
             {schedulePreview.length > 0 ? (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground grid grid-cols-4 gap-2 pb-1">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1 overflow-x-auto">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground grid grid-cols-4 gap-2 min-w-[22rem] pb-1">
                   <span>Departure</span>
                   <span>Arrival</span>
                   <span>Time</span>
                   <span className="text-right">Capacity</span>
                 </div>
                 {schedulePreview.map((schedule, index) => (
-                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-4 gap-2">
+                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-4 gap-2 min-w-[22rem]">
                     <span>{schedule.dateText}</span>
                     <span>{schedule.arrivalText}</span>
                     <span>{schedule.timeText}</span>

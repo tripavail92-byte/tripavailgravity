@@ -102,7 +102,7 @@ export function ReviewStep({
             )}
           </p>
           {packageData.photos && packageData.photos.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {packageData.photos.slice(0, 4).map((photo, idx) => (
                 <img
                   key={idx}

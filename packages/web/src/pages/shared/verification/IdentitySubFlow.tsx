@@ -711,7 +711,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               </p>
               {submissionResult?.ok ? (
                 <Button
-                  className="mt-10 rounded-2xl h-14 bg-primary-gradient text-primary-foreground px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
+                  className="mt-10 rounded-2xl h-14 w-full sm:w-auto bg-primary-gradient text-primary-foreground px-6 sm:px-12 font-black uppercase tracking-widest border-0 shadow-lg shadow-primary/20"
                   onClick={() => {
                     const token = kycSession?.session_token
                     if (!token) return
@@ -728,7 +728,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
                 </Button>
               ) : (
                 <Button
-                  className="mt-10 rounded-2xl h-14 bg-foreground px-12 font-black uppercase tracking-widest text-background"
+                  className="mt-10 rounded-2xl h-14 w-full sm:w-auto bg-foreground px-6 sm:px-12 font-black uppercase tracking-widest text-background"
                   onClick={() => setSubStep(isMobile ? 'id_upload' : 'choose')}
                 >
                   Try Again
