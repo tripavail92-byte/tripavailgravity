@@ -16,6 +16,7 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import TravellerLayout from '@/layouts/TravellerLayout'
 import { queryClient } from '@/lib/queryClient'
 import { supabase } from '@/lib/supabase'
+import { useAppVersionWatcher } from '@/lib/useAppVersionWatcher'
 import LoginPage from '@/pages/auth/LoginPage'
 import LandingPage from '@/pages/LandingPage'
 
@@ -176,6 +177,9 @@ function OperatorPublicPreviewRedirect() {
 
 function App() {
   const { initialize, initialized, activeRole } = useAuth()
+
+  // Prompt a one-click refresh when a newer build is deployed while this tab is open.
+  useAppVersionWatcher()
 
   useEffect(() => {
     initialize()
