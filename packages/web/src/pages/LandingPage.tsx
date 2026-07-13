@@ -49,7 +49,7 @@ export default function LandingPage() {
       {/* Airbnb Header (Fixed) */}
       <AirbnbHeader />
 
-      <div className="container mx-auto max-w-7xl px-4 pt-28 md:pt-24 pb-6">
+      <div className="container mx-auto max-w-7xl px-4 pt-20 md:pt-24 pb-6">
         <div className="space-y-8">
           {/* Geo-adaptive hero — reshapes to the visitor's country (real supply → "Discover
               {country}"; no supply yet → honest "expanding" band; unknown → global default). */}
@@ -131,19 +131,19 @@ function AirbnbHeader() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 bg-background border-b z-50">
-        <div className="container mx-auto max-w-7xl min-h-20 px-4 py-3 md:py-0 md:h-20 md:px-6 lg:px-10 flex flex-wrap items-center gap-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-3">
-          {/* Logo — central Logo component, links home. */}
-          <div className="flex items-center shrink-0 order-1">
+        <div className="container mx-auto max-w-7xl grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3 min-h-[60px] px-4 py-2 md:h-20 md:py-0 md:px-6 lg:px-10">
+          {/* Logo — central Logo component, links home (emblem-only on phones). */}
+          <div className="flex items-center shrink-0">
             <Logo />
           </div>
 
-          {/* Centered Search Bar (Hidden on mobile, visible on tablet+). order-2 keeps it in the
-              MIDDLE grid column — without it, its default order:0 sorted it before the order-1 logo,
-              rendering search-left / logo-center. */}
-          <div className="hidden md:flex justify-center min-w-0 order-2">
+          {/* Search — the CENTRE column at every width: logo (left) · search (centre) · menu
+              (right). Desktop shows the full glass search; phones get a compact pill in the same
+              slot (both live here so the search stays centred instead of a separate mobile row). */}
+          <div className="flex min-w-0 justify-center px-1 md:px-0">
             <GlassCard
               variant="light"
-              className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl w-full flex flex-row items-center gap-2 border border-white/30"
+              className="p-2 rounded-[2rem] shadow-2xl shadow-black/20 max-w-3xl w-full hidden md:flex flex-row items-center gap-2 border border-white/30"
             >
               <button
                 data-tour="search-bar"
@@ -174,10 +174,24 @@ function AirbnbHeader() {
                 {t('nav.exploreNow')}
               </Button>
             </GlassCard>
+
+            {/* Mobile: a compact search pill occupying the same centre slot. */}
+            <button
+              data-tour="search-bar"
+              type="button"
+              onClick={() => setIsSearchOverlayOpen(true)}
+              aria-label="Open search"
+              className="flex w-full min-w-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-2 md:hidden"
+            >
+              <Search className="h-4 w-4 shrink-0 text-primary" />
+              <span className="truncate text-sm font-medium text-muted-foreground">
+                {t('search.whereToNext')}
+              </span>
+            </button>
           </div>
 
-          {/* Right User Menu */}
-          <div className="flex items-center justify-end gap-2 shrink-0 order-3 ml-auto md:ml-0">
+          {/* Right User Menu (drawer + toggles) */}
+          <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
             {/* Language + currency picker + dark/light toggle — always in the top bar */}
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <CurrencySwitcher className="hidden sm:inline-flex" />
@@ -215,28 +229,6 @@ function AirbnbHeader() {
             )}
           </div>
 
-          {/* Mobile Search Bar — a single compact pill below the logo/menu row on phones. The
-              "Explore Now" CTA was dropped here (tapping the pill already opens search) so the row
-              stays slim and doesn't eat vertical space. */}
-          <div className="order-4 basis-full md:hidden min-w-0">
-            <GlassCard
-              variant="light"
-              className="w-full rounded-full border border-white/30 p-1 shadow-lg shadow-black/10"
-            >
-              <button
-                data-tour="search-bar"
-                type="button"
-                className="flex w-full min-w-0 items-center gap-2.5 rounded-full px-3.5 py-2"
-                onClick={() => setIsSearchOverlayOpen(true)}
-                aria-label="Open search"
-              >
-                <Search className="h-4 w-4 shrink-0 text-primary" />
-                <span className="truncate text-sm font-semibold text-foreground">
-                  {t('search.whereToNext')}
-                </span>
-              </button>
-            </GlassCard>
-          </div>
         </div>
       </header>
 

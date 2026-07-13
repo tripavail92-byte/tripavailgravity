@@ -1,8 +1,7 @@
 // Custom premium tab glyphs for the mobile bottom bar. Each renders a solid silhouette (filled with
 // currentColor) when active and a clean outline when idle — the two-state iOS look, no background
 // chip. Colour comes from the parent via `currentColor`, so text-primary / text-muted-foreground
-// on the <svg> drive the active/idle tint. The thin same-colour stroke on the active fill keeps the
-// silhouette corners softly rounded.
+// on the <svg> drive the active/idle tint.
 
 export interface TabIconProps {
   active?: boolean
@@ -29,18 +28,50 @@ export function HomeTabIcon({ active, className }: TabIconProps) {
   )
 }
 
-export function MountainTabIcon({ active, className }: TabIconProps) {
+/** Trips — a hiking figure mid-stride holding a trekking pole. Line-art figure (limbs stay stroked);
+ *  the head fills and strokes thicken when active. */
+export function HikerTabIcon({ active, className }: TabIconProps) {
   return (
-    <svg className={className} {...svgProps(active)}>
-      <path d="M2.5 19.5 L8.5 7.9 a1 1 0 0 1 1.78 0 L13 13 L15.7 8.3 a1 1 0 0 1 1.78 .02 L21.5 19.5 Z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 2.1 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="10" cy="4" r="2.1" fill={active ? 'currentColor' : 'none'} />
+      {/* torso + both legs */}
+      <path d="M10.4 6.3 L11.3 12.9 L8.4 20.5 M11.3 12.9 L14.2 16 L15 20.5" />
+      {/* back arm + front arm reaching to the pole */}
+      <path d="M10.6 8.1 L8.2 11.6 M10.6 8.1 L14.6 10.9" />
+      {/* trekking pole */}
+      <path d="M15.3 6.6 L17.2 20.6" />
     </svg>
   )
 }
 
-export function BedTabIcon({ active, className }: TabIconProps) {
+/** Hotels — a hotel building. Solid silhouette with window + doorway cut-outs when active (evenodd),
+ *  a clean outline when idle. */
+export function HotelTabIcon({ active, className }: TabIconProps) {
   return (
-    <svg className={className} {...svgProps(active)}>
-      <path d="M2.5 18 v-3 a3 3 0 0 1 3-3 h5.5 v-1.5 a2.5 2.5 0 0 1 2.5-2.5 h3.5 a3 3 0 0 1 3 3 V18 a1 1 0 0 1-2 0 v-.5 H4.5 V18 a1 1 0 0 1-2 0 Z" />
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill={active ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={active ? 1.2 : 1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M4.5 21 V6 A1.5 1.5 0 0 1 6 4.5 H18 A1.5 1.5 0 0 1 19.5 6 V21 H14 V17.5 A1.5 1.5 0 0 0 12.5 16 H11.5 A1.5 1.5 0 0 0 10 17.5 V21 Z M6.2 7 H8.2 V9 H6.2 Z M11 7 H13 V9 H11 Z M15.8 7 H17.8 V9 H15.8 Z M6.2 11 H8.2 V13 H6.2 Z M15.8 11 H17.8 V13 H15.8 Z"
+      />
     </svg>
   )
 }
