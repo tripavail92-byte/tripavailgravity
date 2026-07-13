@@ -752,7 +752,7 @@ function StorefrontVerificationDialog({
             <Skeleton className="h-24 w-full" />
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-6">
             <div className="space-y-4">
               {STOREFRONT_VERIFICATION_FIELDS.map((field) => {
                 const docUrl = verificationUrls[field.urlKey]
