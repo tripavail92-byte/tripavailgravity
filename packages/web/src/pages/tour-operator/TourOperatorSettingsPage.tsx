@@ -610,45 +610,60 @@ export default function TourOperatorSettingsPage() {
 
             {(storefrontSection === 'all' || storefrontSection === 'business-profile') ? (
               <>
-            {/* ── Business identity — read-only, sourced from setup wizard ── */}
+            {/* ── Business identity — editable in place; this page IS the storefront hub (no setup round-trip) ── */}
             <div className="rounded-2xl border border-border/60 bg-muted/20 p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Business identity</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    These values come from your setup wizard. To change them, return to setup.
-                  </p>
-                </div>
-                <Link
-                  to="/operator/setup"
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg border border-border/60 bg-background text-xs font-semibold text-foreground hover:bg-muted transition-colors"
-                >
-                  Edit in Setup →
-                </Link>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Business identity</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  This is how travelers see your business on your public storefront. Edit any field, then hit
+                  &ldquo;Save storefront&rdquo; above to publish.
+                </p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {([
-                  { label: 'Business name', value: publicProfile.businessName },
-                  { label: 'Primary city', value: publicProfile.primaryCity },
-                  { label: 'Coverage range', value: publicProfile.coverageRange },
-                  { label: 'Years experience', value: publicProfile.yearsExperience },
-                  { label: 'Team size', value: publicProfile.teamSize },
-                  { label: 'Registration number', value: publicProfile.registrationNumber },
-                  { label: 'Support phone', value: publicProfile.phoneNumber },
-                  { label: 'Support email', value: publicProfile.email },
-                ] as const).map(({ label, value }) => (
-                  <div key={label}>
+                  { key: 'businessName', label: 'Business name', placeholder: 'e.g. Northern Summit Expeditions' },
+                  { key: 'primaryCity', label: 'Primary city', placeholder: 'e.g. Islamabad, Pakistan' },
+                  { key: 'coverageRange', label: 'Coverage range', placeholder: 'e.g. national, city, region' },
+                  { key: 'yearsExperience', label: 'Years experience', placeholder: 'e.g. 1-3 years experience' },
+                  { key: 'teamSize', label: 'Team size', placeholder: 'e.g. 6-15' },
+                  { key: 'phoneNumber', label: 'Support phone', placeholder: 'e.g. +92 300 1234567' },
+                  { key: 'email', label: 'Support email', placeholder: 'e.g. hello@youroperator.com' },
+                ] as const).map(({ key, label, placeholder }) => (
+                  <div key={key} className="space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-                    {value
-                      ? <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
-                      : <p className="text-sm italic text-muted-foreground/60 mt-0.5">Not set</p>}
+                    <Input
+                      value={publicProfile[key]}
+                      onChange={(e) => updatePublicProfileField(key, e.target.value)}
+                      onBlur={
+                        key === 'coverageRange'
+                          ? (e) =>
+                              updatePublicProfileField(
+                                'coverageRange',
+                                e.target.value.split(',').map((s) => s.trim()).filter(Boolean).join(', '),
+                              )
+                          : undefined
+                      }
+                      placeholder={placeholder}
+                    />
                   </div>
                 ))}
-                <div className="sm:col-span-2">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Registration number</p>
+                  <Input
+                    value={publicProfile.registrationNumber}
+                    onChange={(e) => updatePublicProfileField('registrationNumber', e.target.value)}
+                    placeholder="Business registration / license no."
+                  />
+                  <p className="text-[11px] text-muted-foreground/70">Used for verification — not shown on your public page.</p>
+                </div>
+                <div className="sm:col-span-2 space-y-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Public description</p>
-                  {publicProfile.description
-                    ? <p className="text-sm font-medium text-foreground mt-0.5 leading-relaxed">{publicProfile.description}</p>
-                    : <p className="text-sm italic text-muted-foreground/60 mt-0.5">Not set</p>}
+                  <Textarea
+                    rows={4}
+                    value={publicProfile.description}
+                    onChange={(e) => updatePublicProfileField('description', e.target.value)}
+                    placeholder="Tell travelers what makes your trips distinctive — routes, safety, pacing, what's included…"
+                  />
                 </div>
               </div>
             </div>
