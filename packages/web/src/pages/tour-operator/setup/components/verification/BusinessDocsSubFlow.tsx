@@ -42,12 +42,15 @@ export function BusinessDocsSubFlow({ onComplete, initialData, country }: Busine
     if (!user?.id) return
     setIsUploading(id)
     try {
-      const url = await tourOperatorService.uploadAsset(user.id, file, `verification/${id}`)
-      const nextUrls = { ...urls, [id]: url }
+      // `id` (secp_certificate, business_registration, tourism_license, …) is a valid kyc_documents
+      // document_type. Upload to the PRIVATE kyc bucket — never a public URL. We track presence with a
+      // marker; the actual file is read later via a signed URL by owner/admin.
+      await tourOperatorService.uploadTrustDoc(file, id, 'tour_operator')
+      const nextUrls = { ...urls, [id]: 'uploaded' }
       setUrls(nextUrls)
       toast.success('Document uploaded!')
-    } catch (error) {
-      toast.error('Upload failed')
+    } catch (error: any) {
+      toast.error(error?.message || 'Upload failed')
     } finally {
       setIsUploading(null)
     }
