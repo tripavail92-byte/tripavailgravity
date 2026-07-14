@@ -102,13 +102,13 @@ function formatTeamSize(value: string | null | undefined): string {
 }
 
 function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerificationBadge[] {
-  const verification = profile.verification_documents || {}
-  const links = profile.verification_urls || null
+  // Trust signals arrive as server-derived booleans from operator_public_storefront_v — the raw
+  // verification_documents / verification_urls / registration_number never reach the client.
   const guideProfiles = parseGuides(profile.guide_profiles)
   const fleetAssets = parseAssets(profile.fleet_assets)
   const badges: OperatorVerificationBadge[] = []
 
-  if (verification.kycStatus === 'approved' || verification.kycVerifiedAt) {
+  if (profile.has_identity_verified) {
     badges.push({
       id: 'identity-verified',
       label: 'Identity verified',
@@ -117,14 +117,14 @@ function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerif
     })
   }
 
-  if (verification.businessRegistrationVerified) {
+  if (profile.has_business_registration_verified) {
     badges.push({
       id: 'business-registration-verified',
       label: 'Business registration verified',
       tone: 'verified',
       description: 'Business registration has been reviewed and confirmed by the admin team.',
     })
-  } else if (profile.registration_number || links?.businessRegistration) {
+  } else if (profile.has_business_registration_on_file) {
     badges.push({
       id: 'business-registration-submitted',
       label: 'Business registration on file',
@@ -133,14 +133,14 @@ function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerif
     })
   }
 
-  if (verification.insuranceVerified) {
+  if (profile.has_insurance_verified) {
     badges.push({
       id: 'insurance-verified',
       label: 'Insurance verified',
       tone: 'verified',
       description: 'Insurance documents were reviewed and marked valid.',
     })
-  } else if (links?.insurance) {
+  } else if (profile.has_insurance_on_file) {
     badges.push({
       id: 'insurance-on-file',
       label: 'Insurance on file',
@@ -149,14 +149,14 @@ function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerif
     })
   }
 
-  if (verification.vehicleDocsVerified) {
+  if (profile.has_fleet_verified) {
     badges.push({
       id: 'fleet-verified',
       label: 'Fleet docs verified',
       tone: 'verified',
       description: 'Vehicle documentation has been reviewed for listed fleet assets.',
     })
-  } else if (links?.vehicleDocs || fleetAssets.length > 0) {
+  } else if (profile.has_fleet_docs_on_file || fleetAssets.length > 0) {
     badges.push({
       id: 'fleet-listed',
       label: 'Fleet details listed',
@@ -165,14 +165,14 @@ function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerif
     })
   }
 
-  if (verification.guideLicenseVerified) {
+  if (profile.has_guide_verified) {
     badges.push({
       id: 'guide-license-verified',
       label: 'Guide credentials verified',
       tone: 'verified',
       description: 'Guide credentials have been reviewed by the admin team.',
     })
-  } else if (links?.guideLicense || guideProfiles.some((guide) => guide.certifications.length > 0)) {
+  } else if (profile.has_guide_credentials_on_file || guideProfiles.some((guide) => guide.certifications.length > 0)) {
     badges.push({
       id: 'guide-credentials-listed',
       label: 'Guide credentials listed',

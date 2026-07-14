@@ -461,8 +461,9 @@ export const tourService = {
         .select('business_name')
         .eq('operator_id', data.operator_id)
         .maybeSingle(),
-      supabase
-        .from('tour_operator_profiles')
+      // Anon-reachable (traveller viewing a public tour). Reads the storefront view, not the base
+      // table, so it survives dropping the base-table public-read policy (migration 20260714000003).
+      (supabase.from('operator_public_storefront_v' as any) as any)
         .select('company_name, first_name, last_name, account_status')
         .eq('user_id', data.operator_id)
         .maybeSingle(),

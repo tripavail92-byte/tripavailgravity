@@ -26,17 +26,26 @@ export interface OperatorPublicProfile {
   categories: string[] | null
   years_experience: string | null
   team_size: string | null
-  registration_number: string | null
   phone_number: string | null
   email: string | null
-  verification_documents: Record<string, any> | null
-  verification_urls: OperatorProfileDocumentLinks | null
   fleet_assets: OperatorFleetAsset[] | null
   guide_profiles: OperatorGuideProfile[] | null
   gallery_media: OperatorGalleryItem[] | null
   public_policies: OperatorPublicPolicies | null
   is_public: boolean
   setup_completed: boolean
+  // Derived trust signals from the operator_public_storefront_v view. The raw
+  // verification_documents / verification_urls / registration_number columns are
+  // reduced to booleans server-side so no confidential PII reaches the client.
+  has_identity_verified: boolean
+  has_business_registration_verified: boolean
+  has_business_registration_on_file: boolean
+  has_insurance_verified: boolean
+  has_insurance_on_file: boolean
+  has_fleet_verified: boolean
+  has_fleet_docs_on_file: boolean
+  has_guide_verified: boolean
+  has_guide_credentials_on_file: boolean
 }
 
 export interface OperatorVerificationReview {
@@ -115,15 +124,13 @@ function getOrCreateStorefrontSessionId(): string | null {
 export const operatorPublicService = {
   async getProfileBySlug(slug: string): Promise<OperatorPublicProfile | null> {
     const { data, error } = await supabase
-      .from('tour_operator_profiles')
+      // Reads the derived-boolean storefront view (migration 20260714000002), NOT the base table.
+      // The view exposes safe columns + has_* trust flags only; the raw confidential columns
+      // (verification_documents/urls, registration_number, kyc_*) are reduced to booleans server-side,
+      // so no PII can reach the client or the raw REST endpoint.
+      .from('operator_public_storefront_v' as any)
       .select(
-        // SECURITY: do NOT select confidential columns here. This query runs as `anon`/`authenticated`
-        // on the public storefront, so any column named here is shipped to every visitor's browser (and
-        // is reachable via the raw REST endpoint). registration_number / verification_documents (which
-        // embeds the KYC CNIC, DOB, father's name) / verification_urls (private trust-doc links) must
-        // never be exposed publicly. Trust badges are derived from safe signals only until the
-        // server-side derived-boolean view lands (see public_operator_storefront migration).
-        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
+        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed, has_identity_verified, has_business_registration_verified, has_business_registration_on_file, has_insurance_verified, has_insurance_on_file, has_fleet_verified, has_fleet_docs_on_file, has_guide_verified, has_guide_credentials_on_file',
       )
       .eq('slug', slug)
       .eq('is_public', true)
@@ -135,15 +142,13 @@ export const operatorPublicService = {
 
   async getProfileById(operatorId: string): Promise<OperatorPublicProfile | null> {
     const { data, error } = await supabase
-      .from('tour_operator_profiles')
+      // Reads the derived-boolean storefront view (migration 20260714000002), NOT the base table.
+      // The view exposes safe columns + has_* trust flags only; the raw confidential columns
+      // (verification_documents/urls, registration_number, kyc_*) are reduced to booleans server-side,
+      // so no PII can reach the client or the raw REST endpoint.
+      .from('operator_public_storefront_v' as any)
       .select(
-        // SECURITY: do NOT select confidential columns here. This query runs as `anon`/`authenticated`
-        // on the public storefront, so any column named here is shipped to every visitor's browser (and
-        // is reachable via the raw REST endpoint). registration_number / verification_documents (which
-        // embeds the KYC CNIC, DOB, father's name) / verification_urls (private trust-doc links) must
-        // never be exposed publicly. Trust badges are derived from safe signals only until the
-        // server-side derived-boolean view lands (see public_operator_storefront migration).
-        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
+        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed, has_identity_verified, has_business_registration_verified, has_business_registration_on_file, has_insurance_verified, has_insurance_on_file, has_fleet_verified, has_fleet_docs_on_file, has_guide_verified, has_guide_credentials_on_file',
       )
       .eq('user_id', operatorId)
       .maybeSingle()
