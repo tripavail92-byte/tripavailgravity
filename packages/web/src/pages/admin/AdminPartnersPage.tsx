@@ -438,6 +438,27 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
               )}
             </div>
           )}
+          {req.partner_type === 'hotel_manager' && (
+            <div className="mb-4 p-3 rounded-lg bg-muted/50 space-y-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Property documents
+              </p>
+              {([
+                { type: 'title_deed', label: 'Title deed / lease', legacy: (vd.ownership_docs as any)?.titleDeedUrl },
+                { type: 'utility_bill', label: 'Utility bill', legacy: (vd.ownership_docs as any)?.utilityBillUrl },
+                { type: 'property_photo', label: 'Live property photo', legacy: (vd.ownership_docs as any)?.propertyLivePhotoUrl },
+              ] as const).map((d) => (
+                <button
+                  key={d.type}
+                  type="button"
+                  onClick={() => viewReqDoc(d.type, d.legacy)}
+                  className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                >
+                  📄 {d.label}
+                </button>
+              ))}
+            </div>
+          )}
           {sd?.business_address && (
             <p className="text-xs text-muted-foreground mb-3">📍 {sd.business_address}</p>
           )}
