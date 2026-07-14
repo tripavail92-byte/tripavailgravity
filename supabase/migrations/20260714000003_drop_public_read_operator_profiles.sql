@@ -1,0 +1,42 @@
+-- =====================================================================
+-- Phase 2 / Workstream 1 — Step 1.3: close the `authenticated` leak.
+--
+-- WHY
+--   The anon hotfix (20260714000001) closed the anonymous vector, but the
+--   `public_read_operator_profiles` policy (USING is_public = true) still let
+--   ANY logged-in (`authenticated`) user SELECT the confidential columns
+--   (verification_documents / verification_urls / registration_number / kyc_*)
+--   of any public operator directly off tour_operator_profiles. This drops that
+--   last public read path to the base table.
+--
+-- WHAT KEEPS WORKING
+--   * Public storefront + tour detail now read the SECURITY DEFINER view
+--     operator_public_storefront_v (steps 1.1 + 1.2), which never exposes the
+--     confidential columns.
+--   * Operator self-service editing: the owner SELECT policy (user_id = auth.uid())
+--     and the table-wide GRANT SELECT TO authenticated remain, so an owner still
+--     reads all of their OWN columns.
+--   * Admin KYC / partner review: the admin SELECT policy remains.
+--
+-- ⚠️  PRE-REQUISITE — ORDERING IS LOAD-BEARING
+--   Run this ONLY after step 1.2 (client reading the view) is DEPLOYED and
+--   verified in production. Dropping this policy while the old client is still
+--   live zeroes its anon/authenticated base-table reads for the storefront AND
+--   the tour-detail operator lookup -> "operator not found" / missing operator
+--   name on tour pages. Never run 1.1 -> 1.2 -> 1.3 out of order or collapsed.
+-- =====================================================================
+
+DROP POLICY IF EXISTS "public_read_operator_profiles" ON public.tour_operator_profiles;
+
+-- Note: the anon column-grants from 20260714000001 become moot once anon has no
+-- row-level policy on the base table at all, but they are harmless to leave.
+
+-- ---------------------------------------------------------------------
+-- VERIFY (as anon, via REST) after applying:
+--   1. Base table is fully closed to anon:
+--        GET /rest/v1/tour_operator_profiles?is_public=eq.true&select=slug
+--        -> 200 with an EMPTY array (no policy grants any row to anon).
+--   2. Storefront + tour detail still resolve via the view:
+--        GET /rest/v1/operator_public_storefront_v?slug=eq.<slug>&select=slug
+--        -> 200 with the row.
+-- ---------------------------------------------------------------------
