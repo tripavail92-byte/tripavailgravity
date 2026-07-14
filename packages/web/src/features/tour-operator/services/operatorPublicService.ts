@@ -117,7 +117,13 @@ export const operatorPublicService = {
     const { data, error } = await supabase
       .from('tour_operator_profiles')
       .select(
-        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, registration_number, phone_number, email, verification_documents, verification_urls, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
+        // SECURITY: do NOT select confidential columns here. This query runs as `anon`/`authenticated`
+        // on the public storefront, so any column named here is shipped to every visitor's browser (and
+        // is reachable via the raw REST endpoint). registration_number / verification_documents (which
+        // embeds the KYC CNIC, DOB, father's name) / verification_urls (private trust-doc links) must
+        // never be exposed publicly. Trust badges are derived from safe signals only until the
+        // server-side derived-boolean view lands (see public_operator_storefront migration).
+        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
       )
       .eq('slug', slug)
       .eq('is_public', true)
@@ -131,7 +137,13 @@ export const operatorPublicService = {
     const { data, error } = await supabase
       .from('tour_operator_profiles')
       .select(
-        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, registration_number, phone_number, email, verification_documents, verification_urls, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
+        // SECURITY: do NOT select confidential columns here. This query runs as `anon`/`authenticated`
+        // on the public storefront, so any column named here is shipped to every visitor's browser (and
+        // is reachable via the raw REST endpoint). registration_number / verification_documents (which
+        // embeds the KYC CNIC, DOB, father's name) / verification_urls (private trust-doc links) must
+        // never be exposed publicly. Trust badges are derived from safe signals only until the
+        // server-side derived-boolean view lands (see public_operator_storefront migration).
+        'user_id, slug, company_name, business_name, company_logo_url, description, primary_city, coverage_range, categories, years_experience, team_size, phone_number, email, fleet_assets, guide_profiles, gallery_media, public_policies, is_public, setup_completed',
       )
       .eq('user_id', operatorId)
       .maybeSingle()
