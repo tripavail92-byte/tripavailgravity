@@ -420,4 +420,57 @@ export const tourOperatorService = {
       throw error
     }
   },
+
+  // ── Trust documents (business registration, insurance, vehicle docs, guide licence, …) ──
+  // These are CONFIDENTIAL and go to the PRIVATE kyc bucket via the operator-doc-upload edge
+  // function (never the public tour-operator-assets bucket / a public URL). Reads are short-lived
+  // signed URLs via kyc-signed-url; the owner's document list comes from kyc_documents (RLS-scoped).
+
+  async uploadTrustDoc(
+    file: File,
+    documentType: string,
+    subjectRole: 'tour_operator' | 'hotel_manager' = 'tour_operator',
+  ): Promise<void> {
+    const form = new FormData()
+    form.append('subject_role', subjectRole)
+    form.append('document_type', documentType)
+    form.append('image', file)
+
+    const { data, error } = await supabase.functions.invoke('operator-doc-upload', { body: form })
+    if (error) {
+      // supabase-js wraps a non-2xx as FunctionsHttpError; surface our function's error message.
+      let serverMsg = ''
+      try {
+        serverMsg = ((await (error as any).context?.json?.()) as any)?.error || ''
+      } catch {
+        /* ignore — fall back to the generic message */
+      }
+      throw new Error(serverMsg || error.message || 'Upload failed')
+    }
+    if (data && (data as any).uploaded !== true) {
+      throw new Error((data as any)?.error || 'Upload failed')
+    }
+  },
+
+  /** Short-lived signed URL for a stored trust document (owner or admin). null if none/failed. */
+  async getTrustDocUrl(operatorId: string, documentType: string): Promise<string | null> {
+    const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
+      body: { doc_type: documentType, operator_id: operatorId },
+    })
+    if (error) return null
+    return (data?.signedUrl as string) || null
+  },
+
+  /** The operator's current trust documents (one per type). RLS restricts to the owner. */
+  async listTrustDocs(
+    operatorId: string,
+  ): Promise<Array<{ document_type: string; status: string; version: number; uploaded_at: string }>> {
+    const { data, error } = await supabase
+      .from('kyc_documents')
+      .select('document_type, status, version, uploaded_at')
+      .eq('operator_id', operatorId)
+      .eq('is_current', true)
+    if (error) throw new Error(error.message)
+    return (data || []) as Array<{ document_type: string; status: string; version: number; uploaded_at: string }>
+  },
 }

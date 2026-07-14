@@ -28,6 +28,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
 import { FleetGuidesSection } from './components/FleetGuidesSection'
+import { TrustDocsSection } from './components/TrustDocsSection'
 import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Textarea } from '@/components/ui/textarea'
@@ -255,13 +256,6 @@ export default function TourOperatorSettingsPage() {
     ))
   }
 
-  const updateDocumentLink = (key: keyof OperatorPublicProfileEditorData['verificationUrls'], value: string) => {
-    setPublicProfile((prev) => (
-      prev
-        ? { ...prev, verificationUrls: { ...prev.verificationUrls, [key]: value } }
-        : prev
-    ))
-  }
 
   const updateFleetAsset = (index: number, updates: Partial<OperatorFleetAsset>) => {
     setPublicProfile((prev) => {
@@ -668,48 +662,7 @@ export default function TourOperatorSettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-4 rounded-2xl border border-border/60 p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">Verification documents & trust inputs</h3>
-                  <p className="text-sm text-muted-foreground">These links power the public trust section. They do not override admin verification status.</p>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Business registration doc URL</p>
-                  <Input
-                    value={publicProfile.verificationUrls.businessRegistration}
-                    onChange={(e) => updateDocumentLink('businessRegistration', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Insurance doc URL</p>
-                  <Input
-                    value={publicProfile.verificationUrls.insurance}
-                    onChange={(e) => updateDocumentLink('insurance', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Vehicle docs URL</p>
-                  <Input
-                    value={publicProfile.verificationUrls.vehicleDocs}
-                    onChange={(e) => updateDocumentLink('vehicleDocs', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Guide license URL</p>
-                  <Input
-                    value={publicProfile.verificationUrls.guideLicense}
-                    onChange={(e) => updateDocumentLink('guideLicense', e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-            </div>
+            {user && <TrustDocsSection userId={user.id} />}
               </>
             ) : null}
 
