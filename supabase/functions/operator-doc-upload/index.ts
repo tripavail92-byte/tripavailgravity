@@ -39,12 +39,18 @@ const KYC_BUCKET = "kyc";
 // Trust documents only. Identity docs (cnic_front/back, selfie) intentionally excluded —
 // those are produced by the KYC capture flow, not this generic uploader.
 const TRUST_DOC_TYPES = new Set([
+  // operator settings-page trust docs
   "business_registration",
   "insurance",
   "vehicle_docs",
   "guide_license",
+  // operator setup-wizard business docs (requiredBusinessDocs — PK + generic sets)
+  "secp_certificate",
   "tourism_license",
   "tax_certificate",
+  "tax_registration",
+  "tour_license",
+  // hotel setup-wizard property docs
   "title_deed",
   "utility_bill",
   "property_photo",

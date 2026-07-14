@@ -296,6 +296,21 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
   const kycCnic = vd.cnic_number as string | undefined
   const kycExpiry = vd.expiry_date as string | undefined
 
+  // Open a submitted trust document. The verification_urls keys are kyc_documents document_types, so
+  // prefer a private signed URL (admin-authorised); fall back to a legacy public URL for old submissions.
+  const viewReqDoc = async (docType: string, legacyUrl?: string) => {
+    const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
+      body: { doc_type: docType, operator_id: req.user_id },
+    })
+    if (!error && data?.signedUrl) {
+      window.open(data.signedUrl as string, '_blank', 'noopener,noreferrer')
+    } else if (legacyUrl && /^https?:\/\//i.test(legacyUrl)) {
+      window.open(legacyUrl, '_blank', 'noopener,noreferrer')
+    } else {
+      toast.error('No document available')
+    }
+  }
+
   const legacyIdentityDocs = [
     { key: 'id_card_url', label: 'CNIC Front', emoji: '🪪' },
     { key: 'id_back_url', label: 'CNIC Back', emoji: '🔄' },
@@ -411,15 +426,14 @@ function PendingReviewCard({ req }: { req: VerificationRequest }) {
               </p>
               {Object.entries(sd.verification_urls as Record<string, string>).map(
                 ([docType, url]) => (
-                  <a
+                  <button
                     key={docType}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    type="button"
+                    onClick={() => viewReqDoc(docType, url)}
                     className="flex items-center gap-1.5 text-sm text-primary hover:underline"
                   >
                     📄 {docType.replace(/_/g, ' ')}
-                  </a>
+                  </button>
                 ),
               )}
             </div>
@@ -669,7 +683,7 @@ function StorefrontVerificationDialog({
       })
       if (!error && data?.signedUrl) {
         window.open(data.signedUrl as string, '_blank', 'noopener,noreferrer')
-      } else if (legacyUrl) {
+      } else if (legacyUrl && /^https?:\/\//i.test(legacyUrl)) {
         window.open(legacyUrl, '_blank', 'noopener,noreferrer')
       } else {
         toast.error('No document uploaded for this item')

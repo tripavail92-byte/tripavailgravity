@@ -46,24 +46,23 @@ export function PropertyOwnershipSubFlow({
     if (!user?.id) return
     setIsUploading(true)
     try {
-      const url = await hotelManagerService.uploadAsset(
-        user.id,
-        file,
-        `verification/property/${type}`,
-      )
+      // Upload to the PRIVATE kyc bucket (never a public URL). We track presence with a marker; the
+      // file is read later via a signed URL by owner/admin.
+      const docType = type === 'deed' ? 'title_deed' : type === 'bill' ? 'utility_bill' : 'property_photo'
+      await hotelManagerService.uploadTrustDoc(file, docType, 'hotel_manager')
       if (type === 'deed') {
-        setTitleDeedUrl(url)
+        setTitleDeedUrl('uploaded')
         setStep('bill')
       } else if (type === 'bill') {
-        setUtilityBillUrl(url)
+        setUtilityBillUrl('uploaded')
         setStep('live')
       } else {
-        setPropertyLivePhotoUrl(url)
+        setPropertyLivePhotoUrl('uploaded')
         setStep('summary')
       }
       toast.success('Document uploaded!')
-    } catch (error) {
-      toast.error('Upload failed. Try again.')
+    } catch (error: any) {
+      toast.error(error?.message || 'Upload failed. Try again.')
     } finally {
       setIsUploading(false)
     }
@@ -254,13 +253,13 @@ export function PropertyOwnershipSubFlow({
 
               <div className="mt-8 grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Deed', url: titleDeedUrl },
-                  { label: 'Bill', url: utilityBillUrl },
-                  { label: 'Live', url: propertyLivePhotoUrl },
+                  { label: 'Deed', done: Boolean(titleDeedUrl) },
+                  { label: 'Bill', done: Boolean(utilityBillUrl) },
+                  { label: 'Live', done: Boolean(propertyLivePhotoUrl) },
                 ].map((item, idx) => (
                   <div key={idx} className="bg-white p-3 rounded-2xl border border-gray-100">
-                    <div className="w-full aspect-square bg-gray-50 rounded-xl overflow-hidden mb-2">
-                      <img src={item.url} alt={item.label} className="w-full h-full object-cover" />
+                    <div className="w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center mb-2">
+                      <Check className={`w-8 h-8 ${item.done ? 'text-primary' : 'text-gray-300'}`} />
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
                       {item.label}
