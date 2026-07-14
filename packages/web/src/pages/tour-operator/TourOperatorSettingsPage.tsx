@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { GlassBadge, GlassCard } from '@/components/ui/glass'
 import { FleetGuidesSection } from './components/FleetGuidesSection'
 import { TrustDocsSection } from './components/TrustDocsSection'
+import { COMPANY } from '@/config/company'
 import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Textarea } from '@/components/ui/textarea'
@@ -774,8 +775,10 @@ export default function TourOperatorSettingsPage() {
                 Get dedicated support to grow your tour business and maximize your earnings on
                 TripAvail.
               </p>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto" disabled={isSaving}>
-                Contact Partner Manager
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
+                <a href={`mailto:${COMPANY.supportEmail}?subject=Partner%20support%20request`}>
+                  Contact Partner Manager
+                </a>
               </Button>
             </div>
           </div>
@@ -784,18 +787,18 @@ export default function TourOperatorSettingsPage() {
         {/* Account Actions */}
         <div className="pt-4 space-y-3">
           <Button
+            asChild
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
-            disabled={isSaving}
           >
-            Partner Agreement
+            <Link to="/legal">Partner Agreement</Link>
           </Button>
           <Button
+            asChild
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
-            disabled={isSaving}
           >
-            Commission & Fees
+            <Link to="/operator/commercial">Commission & Fees</Link>
           </Button>
           <Button
             variant="outline"
