@@ -5,6 +5,8 @@ import {
   BarChart3,
   CheckCircle,
   Clock,
+  Eye,
+  Loader2,
   MessageSquare,
   MoreHorizontal,
   RefreshCw,
@@ -531,30 +533,36 @@ const STOREFRONT_VERIFICATION_FIELDS: Array<{
   label: string
   description: string
   urlKey: 'businessRegistration' | 'insurance' | 'vehicleDocs' | 'guideLicense'
+  /** kyc_documents.document_type for the private uploaded doc (preferred over the legacy public URL). */
+  docType: string
 }> = [
   {
     key: 'businessRegistrationVerified',
     label: 'Business registration',
     description: 'Review company registration and legal business identity documents.',
     urlKey: 'businessRegistration',
+    docType: 'business_registration',
   },
   {
     key: 'insuranceVerified',
     label: 'Insurance',
     description: 'Confirm the insurance document is valid and current.',
     urlKey: 'insurance',
+    docType: 'insurance',
   },
   {
     key: 'vehicleDocsVerified',
     label: 'Vehicle documents',
     description: 'Confirm vehicle ownership or operating documentation for listed fleet assets.',
     urlKey: 'vehicleDocs',
+    docType: 'vehicle_docs',
   },
   {
     key: 'guideLicenseVerified',
     label: 'Guide credentials',
     description: 'Confirm guide licensing or qualification documents.',
     urlKey: 'guideLicense',
+    docType: 'guide_license',
   },
 ]
 
@@ -648,6 +656,28 @@ function StorefrontVerificationDialog({
 
   const verificationDocuments = (profile?.verification_documents || {}) as Record<string, any>
   const verificationUrls = (profile?.verification_urls || {}) as Record<string, string>
+  const [viewingDoc, setViewingDoc] = useState<string | null>(null)
+
+  // Open a trust document. Prefer the PRIVATE uploaded doc (short-lived signed URL via kyc-signed-url,
+  // admin-authorised); fall back to a legacy public verification_urls link for un-migrated operators.
+  const viewTrustDoc = async (docType: string, legacyUrl?: string) => {
+    if (!partner?.id) return
+    setViewingDoc(docType)
+    try {
+      const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
+        body: { doc_type: docType, operator_id: partner.id },
+      })
+      if (!error && data?.signedUrl) {
+        window.open(data.signedUrl as string, '_blank', 'noopener,noreferrer')
+      } else if (legacyUrl) {
+        window.open(legacyUrl, '_blank', 'noopener,noreferrer')
+      } else {
+        toast.error('No document uploaded for this item')
+      }
+    } finally {
+      setViewingDoc(null)
+    }
+  }
 
   const refreshAwardData = async () => {
     if (!partner?.id) return
@@ -792,14 +822,24 @@ function StorefrontVerificationDialog({
                       </Badge>
                     </div>
 
-                    <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
-                      {docUrl ? (
-                        <a href={docUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          Open submitted document
-                        </a>
-                      ) : (
-                        <span>No public document URL submitted.</span>
-                      )}
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        disabled={viewingDoc === field.docType}
+                        onClick={() => viewTrustDoc(field.docType, docUrl)}
+                      >
+                        {viewingDoc === field.docType ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        View document
+                      </Button>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Private — opened via a short-lived signed link (falls back to a legacy link if present).
+                      </p>
                     </div>
 
                     <Textarea
