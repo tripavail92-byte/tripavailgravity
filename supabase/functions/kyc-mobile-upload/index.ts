@@ -82,11 +82,12 @@ async function nextVersion(
 /** Build the deterministic storage path for a KYC document */
 function buildStoragePath(
   operatorId: string,
-  docType: 'cnic_front' | 'cnic_back',
+  docType: 'cnic_front' | 'cnic_back' | 'selfie',
   version: number,
   ext: string,
 ): string {
-  // e.g. kyc/tour_operators/{uuid}/cnic/front_v2.jpg
+  // e.g. kyc/tour_operators/{uuid}/cnic/front_v2.jpg  |  kyc/tour_operators/{uuid}/selfie/v1.jpg
+  if (docType === 'selfie') return `kyc/tour_operators/${operatorId}/selfie/v${version}.${ext}`;
   const dir  = docType === 'cnic_front' ? 'front' : 'back';
   return `kyc/tour_operators/${operatorId}/cnic/${dir}_v${version}.${ext}`;
 }
@@ -130,7 +131,7 @@ serve(async (req) => {
   try {
     const { sessionToken, field, imageBytes, ext } = await parseBody(req);
 
-    const validFields = ['id_front', 'id_back'];
+    const validFields = ['id_front', 'id_back', 'selfie'];
     if (!sessionToken || !field || !validFields.includes(field)) {
       return new Response(JSON.stringify({ error: 'Invalid session_token or field' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -140,7 +141,7 @@ serve(async (req) => {
     // ── Load and validate session ─────────────────────────────────────────────
     const { data: session, error: sessErr } = await admin
       .from('kyc_sessions')
-      .select('id, user_id, status, expires_at, id_front_path, id_back_path')
+      .select('id, user_id, status, expires_at, id_front_path, id_back_path, selfie_url')
       .eq('session_token', sessionToken)
       .single();
 
@@ -161,7 +162,8 @@ serve(async (req) => {
     }
 
     const operatorId = session.user_id as string;
-    const docType: 'cnic_front' | 'cnic_back' = field === 'id_front' ? 'cnic_front' : 'cnic_back';
+    const docType: 'cnic_front' | 'cnic_back' | 'selfie' =
+      field === 'id_front' ? 'cnic_front' : field === 'id_back' ? 'cnic_back' : 'selfie';
 
     // ── Determine version (enterprise: never overwrite originals) ─────────────
     const version = await nextVersion(admin, operatorId, docType);
@@ -206,14 +208,18 @@ serve(async (req) => {
     }
 
     // ── Patch the session row ─────────────────────────────────────────────────
-    const pathField  = field === 'id_front' ? 'id_front_path' : 'id_back_path';
-    const willHaveFront = (pathField === 'id_front_path') || !!session.id_front_path;
-    const willHaveBack  = (pathField === 'id_back_path')  || !!session.id_back_path;
-    const bothUploaded  = willHaveFront && willHaveBack;
+    // selfie is stored on kyc_sessions.selfie_url (reused as a storage-path column).
+    const pathField =
+      field === 'id_front' ? 'id_front_path' : field === 'id_back' ? 'id_back_path' : 'selfie_url';
+    const willHaveFront  = field === 'id_front' || !!session.id_front_path;
+    const willHaveBack   = field === 'id_back'  || !!session.id_back_path;
+    const willHaveSelfie = field === 'selfie'   || !!session.selfie_url;
+    // Only advance to OCR/admin-review once ID front + back + selfie are all captured.
+    const allUploaded    = willHaveFront && willHaveBack && willHaveSelfie;
 
     const sessionPatch: Record<string, unknown> = {
       [pathField]:   storagePath,
-      status:        bothUploaded ? 'processing' : 'uploading',
+      status:        allUploaded ? 'processing' : 'uploading',
       failure_code:  null,
       failure_reason: null,
     };
@@ -230,8 +236,8 @@ serve(async (req) => {
     // polls for sessions in this state, runs OCR, extracts all fields, and
     // moves the session to 'pending_admin_review' when done.
     // We do NOT call verify-identity or any external AI API here.
-    if (bothUploaded) {
-      console.log('[kyc-mobile-upload] Both images uploaded — session queued for OCR worker', session.id);
+    if (allUploaded) {
+      console.log('[kyc-mobile-upload] ID front+back+selfie uploaded — session queued for OCR worker', session.id);
     }
 
     return new Response(
