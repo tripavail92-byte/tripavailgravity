@@ -23,10 +23,11 @@ import { PartnerVerificationHub } from './verification/PartnerVerificationHub'
 
 // ─── Required business docs (tour operators only) ───────────────────────────
 
+// Only the required step-1 doc gates completeness. Tour licence is optional and the
+// NTN / tax document is no longer collected — must stay in lockstep with partnerCountry.ts
+// or approved operators get nagged forever for a doc the flow never asks for.
 const REQUIRED_TOUR_OP_DOCS: { id: string; title: string }[] = [
   { id: 'secp_certificate', title: 'SECP Certificate' },
-  { id: 'tourism_license',  title: 'Tourism License (DTS)' },
-  { id: 'tax_certificate',  title: 'Tax Registration (NTN)' },
 ]
 
 async function fetchProfileVerificationUrls(
