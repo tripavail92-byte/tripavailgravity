@@ -798,7 +798,7 @@ export default function TourOperatorSettingsPage() {
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
           >
-            <Link to="/operator/commercial">Commission & Fees</Link>
+            <Link to="/legal">Commission & Fees</Link>
           </Button>
           <Button
             variant="outline"
