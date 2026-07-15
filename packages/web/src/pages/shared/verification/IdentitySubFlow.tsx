@@ -33,6 +33,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
+import { CameraCapture } from './MobileKYCPage'
 import { IDCaptureWidget } from './IDCaptureWidget'
 
 interface IdentitySubFlowProps {
@@ -112,8 +113,10 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   const [subStep, setSubStep] = useState<SubStep>(isMobile ? 'id_upload' : 'choose')
   const [idCardUrl, setIdCardUrl] = useState<string>(initialData?.idCardUrl || '')
   const [idBackUrl, setIdBackUrl] = useState<string>(initialData?.idBackUrl || '')
+  const [selfieUrl, setSelfieUrl] = useState<string>(initialData?.selfieUrl || '')
   const [isUploadingFront,  setIsUploadingFront]  = useState(false)
   const [isUploadingBack,   setIsUploadingBack]   = useState(false)
+  const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
   const [submissionResult, setSubmissionResult] = useState<{
     ok: boolean
     status: KycSession['status']
@@ -353,7 +356,7 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
   }
 
   // â”€â”€ Desktop-direct upload handlers (private storage via edge function) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const uploadKycImage = async (token: string, field: 'id_front' | 'id_back', file: File) => {
+  const uploadKycImage = async (token: string, field: 'id_front' | 'id_back' | 'selfie', file: File) => {
     const form = new FormData()
     form.append('session_token', token)
     form.append('field', field)
@@ -414,33 +417,77 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
       await uploadKycImage(session.session_token, 'id_back', file)
       setIdBackUrl('uploaded')
       toast.success('ID Back uploaded!')
-
-      unsubRef.current?.()
-      const realtime = subscribeToKycSession(session.session_token, (updated) => {
-        setKycSession(updated)
-        if (['pending_admin_review', 'approved'].includes(updated.status)) {
-          unsubRef.current?.()
-          setSubmissionResult({
-            ok: true,
-            status: updated.status,
-            cnicNumber: updated.cnic_number ?? null,
-            expiryDate: updated.expiry_date ?? null,
-          })
-          setSubStep('result')
-        }
-        if (updated.status === 'failed') {
-          unsubRef.current?.()
-          setSubmissionResult({ ok: false, status: 'failed', reason: updated.failure_reason || 'Processing failed.' })
-          setSubStep('result')
-        }
-      })
-      unsubRef.current = realtime
-      setSubStep('processing')
     } catch { toast.error('Upload failed. Try again.') }
     finally { setIsUploadingBack(false) }
   }
 
-  const canProceed = idCardUrl && idBackUrl
+  const handleSelfieUpload = async (file: File) => {
+    if (!user?.id) return
+    setIsUploadingSelfie(true)
+    try {
+      const session = await ensureSession()
+      await uploadKycImage(session.session_token, 'selfie', file)
+      setSelfieUrl('uploaded')
+      toast.success('Selfie captured!')
+    } catch { toast.error('Upload failed. Try again.') }
+    finally { setIsUploadingSelfie(false) }
+  }
+
+  // Submit once ID front + back + selfie are all captured. Subscribe for the OCR/admin outcome,
+  // then show the processing screen (server only flips to 'processing' after all three are stored).
+  const handleSubmit = async () => {
+    const session = kycSession ?? (await ensureSession())
+    const token = session.session_token
+    setSubStep('processing')
+
+    const finish = (v: {
+      status: KycSession['status']
+      cnic_number?: string | null
+      expiry_date?: string | null
+      failure_reason?: string | null
+    }): boolean => {
+      if (['pending_admin_review', 'approved'].includes(v.status)) {
+        unsubRef.current?.()
+        setSubmissionResult({ ok: true, status: v.status, cnicNumber: v.cnic_number ?? null, expiryDate: v.expiry_date ?? null })
+        setSubStep('result')
+        return true
+      }
+      if (v.status === 'failed') {
+        unsubRef.current?.()
+        setSubmissionResult({ ok: false, status: 'failed', reason: v.failure_reason || 'Processing failed.' })
+        setSubStep('result')
+        return true
+      }
+      return false
+    }
+
+    // The server flips to 'processing' at selfie upload, so the OCR outcome may already be in by the
+    // time we get here — check immediately, then keep a realtime sub + polling net (mirrors the QR
+    // path) so a missed/past transition never leaves the user stuck on the processing screen.
+    try {
+      const full = await getKycSessionByToken(token)
+      if (full && finish(full)) return
+    } catch {
+      /* fall through to realtime + poll */
+    }
+
+    unsubRef.current?.()
+    const realtime = subscribeToKycSession(token, (updated) => {
+      setKycSession(updated)
+      finish(updated)
+    })
+    const intervalId = setInterval(async () => {
+      try {
+        const view = await fetchKycTokenSessionView(token)
+        finish(view)
+      } catch {
+        /* transient — retry next tick */
+      }
+    }, 3000)
+    unsubRef.current = () => { realtime(); clearInterval(intervalId) }
+  }
+
+  const canProceed = idCardUrl && idBackUrl && selfieUrl
 
   // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
@@ -663,11 +710,43 @@ export function IdentitySubFlow({ onComplete, initialData, role }: IdentitySubFl
               )
             )}
 
+            {/* SELFIE */}
+            {idCardUrl && idBackUrl && (
+              selfieUrl ? (
+                <Card className="p-6 border-2 bg-success/10 border-success/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-success/20 text-success"><Check className="w-6 h-6" /></div>
+                      <div><h5 className="font-bold text-foreground uppercase text-sm">Selfie</h5><p className="text-xs text-muted-foreground font-medium">Captured for manual review</p></div>
+                    </div>
+                    <Button variant="outline" size="sm" className="rounded-xl border-success/20 text-success hover:bg-success/10" onClick={() => setSelfieUrl('')}>Retake</Button>
+                  </div>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Camera className="w-4 h-4 text-primary" />
+                    <h5 className="font-bold text-foreground uppercase text-sm">Selfie — Your Face</h5>
+                  </div>
+                  <CameraCapture
+                    label="selfie" facingMode="user" variant="selfie"
+                    hint="Look straight at the camera. Our team will match your face to your ID."
+                    onCapture={handleSelfieUpload} disabled={isUploadingSelfie}
+                  />
+                  {isUploadingSelfie && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-1">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Uploading...
+                    </div>
+                  )}
+                </div>
+              )
+            )}
+
             <div className="pt-4 space-y-3">
               <Button
                 className="w-full h-14 rounded-2xl font-black uppercase tracking-widest bg-primary-gradient shadow-lg shadow-primary/20"
                 disabled={!canProceed}
-                onClick={() => setSubStep('processing')}
+                onClick={handleSubmit}
               >
                 Submit for Review <ArrowRight className="ml-2 w-5 h-5" />
               </Button>

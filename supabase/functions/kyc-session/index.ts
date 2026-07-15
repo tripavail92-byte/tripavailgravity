@@ -66,7 +66,7 @@ serve(async (req) => {
     const { data: session, error } = await admin
       .from("kyc_sessions")
       .select(
-        "id, status, expires_at, id_front_path, id_back_path, failure_code, failure_reason",
+        "id, status, expires_at, id_front_path, id_back_path, selfie_url, failure_code, failure_reason",
       )
       .eq("session_token", sessionToken)
       .single();
@@ -92,6 +92,7 @@ serve(async (req) => {
         expires_at: session.expires_at,
         has_id_front: !!session.id_front_path,
         has_id_back: !!session.id_back_path,
+        has_selfie: !!session.selfie_url,
         failure_code: session.failure_code,
         failure_reason: session.failure_reason,
       }),

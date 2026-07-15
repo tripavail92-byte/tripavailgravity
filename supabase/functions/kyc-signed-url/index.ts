@@ -114,9 +114,9 @@ serve(async (req) => {
       });
     }
 
-    // ── Path B: session-based lookup (field: id_front | id_back) ────────────
-    if (!field || !["id_front", "id_back"].includes(field)) {
-      return new Response(JSON.stringify({ error: "field must be id_front or id_back, or provide doc_type + operator_id" }), {
+    // ── Path B: session-based lookup (field: id_front | id_back | selfie) ────
+    if (!field || !["id_front", "id_back", "selfie"].includes(field)) {
+      return new Response(JSON.stringify({ error: "field must be id_front, id_back or selfie, or provide doc_type + operator_id" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -129,7 +129,7 @@ serve(async (req) => {
 
     const query = admin
       .from("kyc_sessions")
-      .select("id, user_id, id_front_path, id_back_path")
+      .select("id, user_id, id_front_path, id_back_path, selfie_url")
       .limit(1);
 
     const { data: session, error: sessionErr } = sessionId
@@ -149,7 +149,11 @@ serve(async (req) => {
       });
     }
 
-    const path = field === "id_front" ? session.id_front_path : session.id_back_path;
+    const path = field === "id_front"
+      ? session.id_front_path
+      : field === "id_back"
+        ? session.id_back_path
+        : session.selfie_url;
     if (!path) {
       return new Response(JSON.stringify({ error: "Image not uploaded" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },

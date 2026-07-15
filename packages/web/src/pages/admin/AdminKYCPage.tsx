@@ -19,6 +19,7 @@ type KycRow = {
   expires_at: string | null
   id_front_path: string | null
   id_back_path: string | null
+  selfie_url: string | null
   cnic_number: string | null
   full_name: string | null
   father_name: string | null
@@ -140,7 +141,7 @@ function KycCard({
   onBlockCnic: (row: KycRow) => void
   onEnforce: (row: KycRow, action: EnforceAction, reason: string) => Promise<void>
 }) {
-  const [images, setImages] = useState<{ front?: string; back?: string; loading?: boolean }>({})
+  const [images, setImages] = useState<{ front?: string; back?: string; selfie?: string; loading?: boolean }>({})
   const isBusy = busyId === row.id
   const isPending = row.status === 'pending_admin_review'
 
@@ -207,7 +208,7 @@ function KycCard({
     }
   }
 
-  const sign = async (field: 'id_front' | 'id_back') => {
+  const sign = async (field: 'id_front' | 'id_back' | 'selfie') => {
     const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
       body: { session_id: row.id, field },
     })
@@ -217,7 +218,7 @@ function KycCard({
   }
 
   /** Open signed URL in new tab (browser will show/download the image) */
-  const downloadImage = async (field: 'id_front' | 'id_back', label: string) => {
+  const downloadImage = async (field: 'id_front' | 'id_back' | 'selfie', label: string) => {
     setImages((p) => ({ ...p, loading: true }))
     try {
       const url = await sign(field)
@@ -232,11 +233,12 @@ function KycCard({
   const loadImages = async () => {
     setImages({ loading: true })
     try {
-      const [front, back] = await Promise.all([
+      const [front, back, selfie] = await Promise.all([
         row.id_front_path ? sign('id_front') : Promise.resolve(undefined),
         row.id_back_path ? sign('id_back') : Promise.resolve(undefined),
+        row.selfie_url ? sign('selfie') : Promise.resolve(undefined),
       ])
-      setImages({ front, back, loading: false })
+      setImages({ front, back, selfie, loading: false })
     } catch (err: any) {
       toast.error(err?.message || 'Failed to load images')
       setImages({ loading: false })
@@ -518,7 +520,19 @@ function KycCard({
               Download CNIC Back
             </Button>
           )}
-          {(row.id_front_path || row.id_back_path) && !images.front && !images.back && (
+          {row.selfie_url && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs"
+              onClick={() => downloadImage('selfie', 'Selfie')}
+              disabled={Boolean(images.loading)}
+            >
+              <Download className="h-3 w-3" />
+              Download Selfie
+            </Button>
+          )}
+          {(row.id_front_path || row.id_back_path || row.selfie_url) && !images.front && !images.back && !images.selfie && (
             <Button
               size="sm"
               variant="ghost"
@@ -543,8 +557,8 @@ function KycCard({
         </div>
 
         {/* Inline image preview (only after clicking Preview Inline) */}
-        {(images.front || images.back) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        {(images.front || images.back || images.selfie) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
             <div className="space-y-1">
               <p className="text-xs font-semibold">CNIC Front</p>
               {images.front ? (
@@ -557,6 +571,14 @@ function KycCard({
               <p className="text-xs font-semibold">CNIC Back</p>
               {images.back ? (
                 <img src={images.back} alt="CNIC back" className="w-full rounded-md border" />
+              ) : (
+                <p className="text-xs text-muted-foreground">Not available</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-semibold">Selfie</p>
+              {images.selfie ? (
+                <img src={images.selfie} alt="Selfie" className="w-full rounded-md border" />
               ) : (
                 <p className="text-xs text-muted-foreground">Not available</p>
               )}
@@ -634,7 +656,7 @@ export default function AdminKYCPage() {
         .from('kyc_sessions' as any)
         .select(
           'id,user_id,role,status,created_at,expires_at,' +
-          'id_front_path,id_back_path,' +
+          'id_front_path,id_back_path,selfie_url,' +
           'cnic_number,full_name,father_name,date_of_birth,expiry_date,gender,address,' +
           'failure_code,failure_reason,reviewed_by,reviewed_at,review_notes',
         )

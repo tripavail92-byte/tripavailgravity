@@ -16,6 +16,7 @@ type MobileStep =
   | 'expired'
   | 'id_front'
   | 'id_back'
+  | 'selfie'
   | 'processing'
   | 'done'
   | 'failed'
@@ -27,6 +28,7 @@ type TokenSessionView = {
   expires_at: string
   has_id_front: boolean
   has_id_back: boolean
+  has_selfie: boolean
   failure_code: string | null
   failure_reason: string | null
 }
@@ -74,7 +76,7 @@ async function fetchSessionByToken(token: string): Promise<TokenSessionView> {
 // ── Upload a captured file via the edge function ──────────────────────────────
 async function uploadKycImage(
   token: string,
-  field: 'id_front' | 'id_back',
+  field: 'id_front' | 'id_back' | 'selfie',
   file: File,
 ): Promise<{ path: string; status: string }> {
   const form = new FormData()
@@ -138,18 +140,21 @@ function getGuideColors(state: DetectionState) {
 }
 
 // ── Camera capture helper ─────────────────────────────────────────────────────
-function CameraCapture({
+export function CameraCapture({
   label,
   hint,
   onCapture,
   disabled,
   facingMode = 'environment',
+  variant = 'card',
 }: {
   label: string
   hint: string
   onCapture: (file: File) => void
   disabled?: boolean
   facingMode?: 'environment' | 'user'
+  /** 'card' = auto-detect + capture a document; 'selfie' = plain face capture, tap to shoot. */
+  variant?: 'card' | 'selfie'
 }) {
   const videoRef       = useRef<HTMLVideoElement>(null)
   const canvasRef      = useRef<HTMLCanvasElement>(null)
@@ -205,8 +210,9 @@ function CameraCapture({
   useEffect(() => { captureRef.current = capture }, [capture])
 
   // ── Laplacian-variance + brightness analysis loop (~15 fps) ───────────────
+  // Only for document capture — a selfie is captured manually via the button.
   useEffect(() => {
-    if (!streaming) return
+    if (!streaming || variant === 'selfie') return
 
     const FRAME_INTERVAL_MS = 66          // ~15 fps analysis
     const STABLE_FRAMES_NEEDED = 10       // ~660 ms of consecutive good frames
@@ -316,31 +322,40 @@ function CameraCapture({
           <>
             <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
 
-            {/* ── Card guide frame + corner brackets ─────────────────────────── */}
-            <div className={cn('absolute inset-4 border-2 rounded-xl pointer-events-none transition-colors duration-200', outer)}>
-              {/* Top-left */}
-              <div className={cn(cornerBase, 'top-0 left-0 border-t-4 border-l-4 rounded-tl-xl', corner)} />
-              {/* Top-right */}
-              <div className={cn(cornerBase, 'top-0 right-0 border-t-4 border-r-4 rounded-tr-xl', corner)} />
-              {/* Bottom-left */}
-              <div className={cn(cornerBase, 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-xl', corner)} />
-              {/* Bottom-right */}
-              <div className={cn(cornerBase, 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-xl', corner)} />
+            {/* ── Card guide frame + corner brackets (document capture) ──────── */}
+            {variant === 'card' && (
+              <div className={cn('absolute inset-4 border-2 rounded-xl pointer-events-none transition-colors duration-200', outer)}>
+                <div className={cn(cornerBase, 'top-0 left-0 border-t-4 border-l-4 rounded-tl-xl', corner)} />
+                <div className={cn(cornerBase, 'top-0 right-0 border-t-4 border-r-4 rounded-tr-xl', corner)} />
+                <div className={cn(cornerBase, 'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-xl', corner)} />
+                <div className={cn(cornerBase, 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-xl', corner)} />
 
-              {/* ── Status pill ──────────────────────────────────────────────── */}
-              {streaming && (
-                <div className={cn(
-                  'absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200',
-                  detection === 'locked'     ? 'bg-green-500 text-white' :
-                  detection === 'ready'      ? 'bg-yellow-400 text-black' :
-                  detection === 'idle'       ? 'bg-white/20 text-white' :
-                                               'bg-red-500 text-white',
-                )}>
-                  {detection === 'locked' && <span className="mr-1">✓</span>}
-                  {DETECTION_LABELS[detection]}
-                </div>
-              )}
-            </div>
+                {streaming && (
+                  <div className={cn(
+                    'absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200',
+                    detection === 'locked'     ? 'bg-green-500 text-white' :
+                    detection === 'ready'      ? 'bg-yellow-400 text-black' :
+                    detection === 'idle'       ? 'bg-white/20 text-white' :
+                                                 'bg-red-500 text-white',
+                  )}>
+                    {detection === 'locked' && <span className="mr-1">✓</span>}
+                    {DETECTION_LABELS[detection]}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Face guide (selfie capture) ────────────────────────────────── */}
+            {variant === 'selfie' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-44 h-56 rounded-[50%] border-2 border-white/70" />
+                {streaming && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold bg-white/20 text-white whitespace-nowrap">
+                    Center your face &amp; tap capture
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Spinner while camera warms up */}
             {!streaming && (
@@ -385,10 +400,11 @@ function CameraCapture({
 }
 
 // ── Progress step indicator ───────────────────────────────────────────────────
-function StepDots({ current }: { current: 0 | 1 }) {
+function StepDots({ current }: { current: 0 | 1 | 2 }) {
+  const labels = ['ID Front', 'ID Back', 'Selfie']
   return (
     <div className="flex items-center gap-2 justify-center mb-6">
-      {['ID Front', 'ID Back'].map((label, i) => (
+      {labels.map((label, i) => (
         <div key={label} className="flex items-center gap-2">
           <div className={cn(
             'w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all',
@@ -398,7 +414,7 @@ function StepDots({ current }: { current: 0 | 1 }) {
           )}>
             {i < current ? <Check className="w-4 h-4" /> : i + 1}
           </div>
-          {i < 1 && <div className={cn('h-0.5 w-6 rounded', i < current ? 'bg-success' : 'bg-muted')} />}
+          {i < labels.length - 1 && <div className={cn('h-0.5 w-6 rounded', i < current ? 'bg-success' : 'bg-muted')} />}
         </div>
       ))}
     </div>
@@ -443,7 +459,8 @@ export default function MobileKYCPage() {
       }
 
       setSession(s)
-      if (s.has_id_back) setStep('processing')
+      if (s.has_id_front && s.has_id_back && s.has_selfie) setStep('processing')
+      else if (s.has_id_front && s.has_id_back) setStep('selfie')
       else if (s.has_id_front) setStep('id_back')
       else setStep('id_front')
     }
@@ -499,6 +516,19 @@ export default function MobileKYCPage() {
     try {
       await uploadKycImage(token, 'id_back', file)
       toast.success('ID Back captured!')
+      setStep('selfie')
+    } catch (e: any) {
+      toast.error(e.message || 'Upload failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleSelfie = async (file: File) => {
+    setBusy(true)
+    try {
+      await uploadKycImage(token, 'selfie', file)
+      toast.success('Selfie captured!')
       setStep('processing')
     } catch (e: any) {
       toast.error(e.message || 'Upload failed')
@@ -604,6 +634,28 @@ export default function MobileKYCPage() {
             </motion.div>
           )}
 
+          {/* Selfie */}
+          {step === 'selfie' && (
+            <motion.div key="selfie" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <StepDots current={2} />
+              <div className="text-center mb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-3">
+                  <Camera className="w-7 h-7" />
+                </div>
+                <h2 className="text-xl font-black uppercase tracking-tight">Selfie</h2>
+                <p className="text-sm text-muted-foreground mt-1 font-medium">A quick photo of your face, so our team can match it to your ID.</p>
+              </div>
+              <CameraCapture
+                label="selfie" facingMode="user" variant="selfie"
+                hint="Look straight at the camera in good lighting. Make sure your whole face is visible."
+                onCapture={handleSelfie} disabled={busy}
+              />
+              <button onClick={() => setStep('id_back')} className="w-full text-center text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                ← Retake ID Back
+              </button>
+            </motion.div>
+          )}
+
           {/* Processing */}
           {step === 'processing' && (
             <motion.div key="processing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-64 gap-6 text-center">
@@ -655,6 +707,10 @@ export default function MobileKYCPage() {
                   <div className="flex items-center gap-3">
                     <Check className="w-4 h-4 text-success shrink-0" />
                     <span className="text-sm font-medium">ID Back uploaded</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Check className="w-4 h-4 text-success shrink-0" />
+                    <span className="text-sm font-medium">Selfie uploaded</span>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">You can close this page.</p>
