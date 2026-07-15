@@ -36,18 +36,20 @@ export interface RequiredDoc {
   /** Icon key resolved to a component in the UI. */
   icon: 'incorporation' | 'license' | 'tax'
   optional?: boolean
+  /** Which step of the 2-step business-docs flow this doc belongs to. */
+  step: 1 | 2
 }
 
+// Two steps only: (1) business registration — required, (2) tour licence — optional.
+// The NTN / tax registration document is intentionally NOT collected.
 const PK_DOCS: RequiredDoc[] = [
-  { id: 'secp_certificate', title: 'SECP Certificate', desc: 'Company incorporation doc', icon: 'incorporation' },
-  { id: 'tourism_license', title: 'Tourism License', desc: 'DTS government permit', icon: 'license' },
-  { id: 'tax_certificate', title: 'Tax Registration (NTN)', desc: 'FBR registration document', icon: 'tax' },
+  { id: 'secp_certificate', title: 'SECP Certificate', desc: 'Company incorporation doc', icon: 'incorporation', step: 1 },
+  { id: 'tourism_license', title: 'Tourism License', desc: 'DTS government permit — optional', icon: 'license', optional: true, step: 2 },
 ]
 
 const GENERIC_DOCS: RequiredDoc[] = [
-  { id: 'business_registration', title: 'Business Registration', desc: 'Company incorporation / trade license', icon: 'incorporation' },
-  { id: 'tax_registration', title: 'Tax Registration', desc: 'VAT / tax ID document', icon: 'tax' },
-  { id: 'tour_license', title: 'Tourism License', desc: 'Travel/tourism permit — if required in your country', icon: 'license', optional: true },
+  { id: 'business_registration', title: 'Business Registration', desc: 'Company incorporation / trade license', icon: 'incorporation', step: 1 },
+  { id: 'tour_license', title: 'Tourism License', desc: 'Travel/tourism permit — if required in your country', icon: 'license', optional: true, step: 2 },
 ]
 
 /** Business-credential documents required for a partner's country. NULL/PK → Pakistan set. */
