@@ -9,6 +9,7 @@ from supabase import create_client, Client
 import requests
 import tempfile
 import re
+import difflib
 from datetime import date, datetime
 import hashlib
 
@@ -245,6 +246,47 @@ def _clean_name(raw: str) -> str:
     cleaned = re.sub(r"[^A-Za-z\s]", " ", raw)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned.upper()
+
+
+def _registered_name(user_id: str, role: str | None) -> str | None:
+    """The partner's registered PERSON name (first + last) — the identity we expect the ID to match.
+    Company name is intentionally NOT used (that's a business, not the ID holder)."""
+    table = "hotel_manager_profiles" if role == "hotel_manager" else "tour_operator_profiles"
+    try:
+        rows = (
+            supabase.table(table)
+            .select("first_name,last_name")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+            .data
+        )
+    except Exception as e:
+        logger.warning("name-match: %s lookup failed for %s: %s", table, user_id, e)
+        return None
+    if not rows:
+        return None
+    row = rows[0]
+    name = f"{(row.get('first_name') or '').strip()} {(row.get('last_name') or '').strip()}".strip()
+    return name or None
+
+
+def _names_match(ocr_name: str, registered_name: str) -> bool:
+    """Lenient token-set + ratio match. Tolerates extra middle names, father-name bleed, and
+    word reordering — EasyOCR is noisy, so this is deliberately forgiving to avoid false rejects."""
+    a = _clean_name(ocr_name)
+    b = _clean_name(registered_name)
+    if not a or not b:
+        return True  # can't compare -> don't fail
+    a_tokens = set(a.split())
+    b_tokens = set(b.split())
+    if not b_tokens:
+        return True
+    # Fraction of the registered-name tokens found anywhere in the OCR'd name…
+    subset = len(a_tokens & b_tokens) / len(b_tokens)
+    # …or a high overall string similarity.
+    ratio = difflib.SequenceMatcher(None, a, b).ratio()
+    return subset >= 0.6 or ratio >= 0.82
 
 
 def _extract_cnic_fields(components: list[str], raw_text: str) -> dict:
@@ -495,6 +537,37 @@ def process_session(session):
                 "cnic_number":   cnic_number,
                 "date_of_birth": dob.isoformat() if dob else None,
                 "expiry_date":   expiry.isoformat() if expiry else None,
+            })
+            return
+
+        # ── Validation: ID name must match the partner's registered name ──────
+        # We only reach here with a readable Pakistani CNIC, so foreign passports (which fail
+        # 'cnic_unreadable' earlier) never hit this gate. Skip when we can't reliably compare —
+        # no OCR name, or a missing / single-word registered name — to avoid false rejects.
+        # Kept retryable (status='failed') because EasyOCR is noisy.
+        registered_name = _registered_name(user_id, session.get("role"))
+        ocr_name = fields.get("full_name")
+        if (
+            registered_name
+            and len(registered_name.split()) >= 2
+            and ocr_name
+            and not _names_match(ocr_name, registered_name)
+        ):
+            logger.info(
+                "Session %s name mismatch — id='%s' registered='%s'",
+                session_token, ocr_name, registered_name,
+            )
+            _update_session(session_token, {
+                "status": "failed",
+                "failure_code": "name_mismatch",
+                "failure_reason": (
+                    f"The name on your ID (“{ocr_name}”) does not match your registered "
+                    f"name (“{registered_name}”). Please upload your own government ID, or "
+                    f"correct your name in your profile, then try again."
+                ),
+                "ocr_result":  ocr_payload,
+                "cnic_number": cnic_number,
+                "full_name":   ocr_name,
             })
             return
 
