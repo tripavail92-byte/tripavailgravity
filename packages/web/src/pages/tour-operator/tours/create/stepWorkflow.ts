@@ -106,11 +106,14 @@ function evaluateDetails(data: Partial<Tour>) {
   const hasAgeBand =
     hasNumber(data.min_age) && hasNumber(data.max_age) && Number(data.max_age) >= Number(data.min_age)
 
+  // This step's free-text field is physical_requirements, NOT description (which belongs to
+  // Basics). It used to be bound to description — the bug that made physical requirements show
+  // up on the live tour page as "About the Journey".
   const checks = [
     hasText(data.difficulty_level),
     (data.languages?.length ?? 0) > 0,
     hasAgeBand,
-    hasText(data.description),
+    hasText((data as any).physical_requirements),
   ]
 
   const hasAnyInput =
@@ -118,7 +121,7 @@ function evaluateDetails(data: Partial<Tour>) {
     (data.languages?.length ?? 0) > 0 ||
     hasNumber(data.min_age) ||
     hasNumber(data.max_age) ||
-    hasText(data.description)
+    hasText((data as any).physical_requirements)
 
   return {
     requiredCount: checks.length,

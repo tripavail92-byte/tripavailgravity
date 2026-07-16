@@ -898,17 +898,21 @@ export default function TourDetailsPage() {
               </div>
             </motion.div>
 
-            {/* Description (glass card like package page) */}
-            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-              <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
-              </GlassHeader>
-              <GlassContent>
-                <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
-                  {tour.description}
-                </p>
-              </GlassContent>
-            </GlassCard>
+            {/* Description (glass card like package page). Conditional: the wizard's only writer of
+                description was the physical-requirements textarea (the bug), so once that was
+                rebound a tour can legitimately have no description — don't render an empty card. */}
+            {tour.description?.trim() ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                    {tour.description}
+                  </p>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
 
             {/* Physical requirements — its own section. This text used to be written into
                 description and shown above as "About the Journey", which is not what it is. */}
