@@ -383,7 +383,10 @@ export function TripAvailSearchBar({
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-full left-0 right-0 mt-2 z-50"
             >
-              <Card className="p-4 shadow-modern border-0 glass-card">
+              {/* Opaque, not glass: this is an absolutely-positioned overlay, and .glass-card's
+                  backdrop-filter cannot sample <main> from inside the .glass-nav backdrop root —
+                  so its 70% alpha just let the page text bleed through and collide with the fields. */}
+              <Card className="p-4 shadow-modern border border-border bg-popover text-popover-foreground">
                 <div className="space-y-4">
                   {/* Recent Searches */}
                   <div className="space-y-3">
@@ -458,7 +461,10 @@ export function TripAvailSearchBar({
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-full left-0 right-0 mt-2 z-50"
             >
-              <Card className="p-4 shadow-modern border-0 glass-card">
+              {/* Opaque, not glass: this is an absolutely-positioned overlay, and .glass-card's
+                  backdrop-filter cannot sample <main> from inside the .glass-nav backdrop root —
+                  so its 70% alpha just let the page text bleed through and collide with the fields. */}
+              <Card className="p-4 shadow-modern border border-border bg-popover text-popover-foreground">
                 <div className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
@@ -522,7 +528,8 @@ export function TripAvailSearchBar({
               exit={{ opacity: 0, y: -10 }}
               className="absolute top-full left-0 right-0 mt-2 z-50"
             >
-              <Card className="p-6 shadow-modern border-0 glass-card">
+              {/* Opaque — see note above; this is the Filters panel the team reported bleeding. */}
+              <Card className="p-6 shadow-modern border border-border bg-popover text-popover-foreground">
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center justify-between">

@@ -23,7 +23,6 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 import {
   Dialog,
   DialogContent,
@@ -342,8 +341,8 @@ export default function MessageThreadPage() {
           subtitle={conversation ? `${conversation.booking_label} · ${conversation.subject || 'Reservation thread'}` : 'Reservation thread'}
           backPath="/messages"
           actions={
+            // No NotificationBell — the shared DashboardHeader already renders one.
             <div className="flex items-center gap-2">
-              <NotificationBell />
               <Button
                 type="button"
                 variant="outline"

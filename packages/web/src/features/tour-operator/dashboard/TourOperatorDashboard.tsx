@@ -21,7 +21,6 @@ import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { commercialService } from '@/features/commercial/services/commercialService'
@@ -279,11 +278,8 @@ export function TourOperatorDashboard() {
                 </div>
               </div>
 
-              {/* right: CTA */}
+              {/* right: CTA — no NotificationBell; the shared DashboardHeader already renders one. */}
               <div className="flex items-center gap-3 self-start md:self-center">
-                <div className="rounded-2xl border border-border/50 bg-background/50 p-1">
-                  <NotificationBell />
-                </div>
                 <Button
                   data-tour="add-tour"
                   onClick={handleCreateTour}

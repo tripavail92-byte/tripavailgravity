@@ -40,6 +40,7 @@ const LazyTourPickupLocationsStep = lazy(() =>
  */
 const SUBMIT_FIELD_ROUTES: Record<string, { stage: StepId; subStep: number; focus?: string }> = {
   title: { stage: 'basics', subStep: 0, focus: 'wz-title' },
+  location: { stage: 'basics', subStep: 0 },
   schedules: { stage: 'basics', subStep: 3, focus: 'wz-departure' },
   pickup_locations: { stage: 'pickup', subStep: 0 },
   itinerary: { stage: 'itinerary', subStep: 0 },
@@ -741,6 +742,11 @@ export default function CreateTourPage() {
       ? draftForCheck.pickup_locations.length
       : 0
     const pickupCount = Math.max(Number(draftForCheck.pickup_locations_count ?? 0), pickupArrCount)
+    // location is jsonb and defaults to {} — an empty object is truthy, so the generic
+    // !tourData[field] check above can never catch a missing destination. Check the city explicitly.
+    if (!String((tourData as any).location?.city ?? '').trim()) {
+      missing.push({ field: 'location', label: 'Tour destination city' })
+    }
     if (pickupCount <= 0) missing.push({ field: 'pickup_locations', label: 'Pickup locations' })
     if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })

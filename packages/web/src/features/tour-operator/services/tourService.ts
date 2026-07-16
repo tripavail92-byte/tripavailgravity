@@ -29,6 +29,8 @@ export interface Tour {
   price: number
   currency: string
   description: string | null
+  /** Physical requirements / logistics. Distinct from description — rendered in its own section. */
+  physical_requirements?: string | null
   short_description: string | null
   custom_category_label?: string | null
   destination_cities?: string[]
@@ -504,8 +506,23 @@ export const tourService = {
     const operatorIsVerified =
       Boolean((data as any).is_verified) || operatorProfile?.account_status === 'active'
 
+    // Existing tours have no country stored (the create form used to read its own empty value, so
+    // country was never written) and some have no city either. Publishing REQUIRES a pickup point,
+    // and pickups carry city + country — so fall back to the primary pickup rather than render
+    // "undefined, undefined". Pickups are ordered is_primary first.
+    const primaryPickup = (pickups ?? [])[0] as TourPickupLocation | undefined
+    const rawLocation = ((data as any).location ?? {}) as { city?: string; country?: string }
+    // Empty string (not undefined) to match Tour['location'], whose city/country are required
+    // strings. The renderer filters falsy values, so '' degrades to "Destination TBD".
+    const location = {
+      ...rawLocation,
+      city: rawLocation.city || primaryPickup?.city || '',
+      country: rawLocation.country || primaryPickup?.country || '',
+    }
+
     return {
       ...(data as unknown as Tour),
+      location,
       operator_display_name: operatorDisplayName,
       operator_is_verified: operatorIsVerified,
       pickup_locations: (pickups ?? []) as TourPickupLocation[],
@@ -677,6 +694,7 @@ export const tourService = {
       duration_days: data.duration_days ?? null,
       short_description: data.short_description ?? null,
       description: (data as any).description ?? null,
+      physical_requirements: (data as any).physical_requirements ?? null,
       price: normalizedPrice,
       base_price: normalizedPrice,
       currency: data.currency || 'PKR',

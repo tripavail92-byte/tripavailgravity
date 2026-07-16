@@ -97,7 +97,9 @@ export function SearchResultsGrid({
 
   if (items.length === 0) {
     return (
-      <Card className="rounded-2xl border border-border/60 p-10 text-center">
+      // m-auto centers the card in the flex-1 column its parent now claims, instead of
+      // stranding it at the top with a dead half-page beneath.
+      <Card className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center">
         <p className="text-lg font-semibold text-foreground">{t('search.noResults')}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t('search.noResultsSub')}</p>
       </Card>

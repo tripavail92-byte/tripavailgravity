@@ -613,6 +613,10 @@ BILLING_AUTOMATION_INTERVAL = max(int(os.environ.get("BILLING_AUTOMATION_INTERVA
 PAYOUT_AUTOMATION_ENABLED = os.environ.get("PAYOUT_AUTOMATION_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 PAYOUT_AUTOMATION_INTERVAL = max(int(os.environ.get("PAYOUT_AUTOMATION_INTERVAL_SECONDS", "300")), 10)
 PAYOUT_AUTOMATION_AUTO_SETTLE = os.environ.get("PAYOUT_AUTOMATION_AUTO_SETTLE", "false").lower() in {"1", "true", "yes", "on"}
+# FX rates refresh. Both providers are free and need no API key. Rates move slowly, so every
+# 6h is plenty; the floor stops a misconfigured env from hammering them.
+FX_REFRESH_ENABLED = os.environ.get("FX_REFRESH_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+FX_REFRESH_INTERVAL = max(int(os.environ.get("FX_REFRESH_INTERVAL_SECONDS", "21600")), 3600)
 
 
 def poll_kyc_sessions_once():
@@ -645,6 +649,95 @@ def run_billing_automation_once():
         "Billing automation closed %s due billing cycle(s) for as_of_date=%s.",
         processed_count,
         as_of_date,
+    )
+
+
+# ── FX rates ──────────────────────────────────────────────────────────────────
+# Three tiers, in order:
+#   1. open.er-api.com          (free, no key, ~160 currencies)
+#   2. fawazahmed0/currency-api (free, no key, ~340 currencies, via jsDelivr CDN)
+#   3. whatever is already in fx_rates — if both providers are down we simply write nothing,
+#      and the client keeps using the last good rates (fxQueries reads most-recent per pair).
+# Never invent a rate: a bad number is worse than an unconverted one, and useMoney() already
+# falls back to showing the listing's own currency when a pair is missing.
+
+def _fetch_usd_rates_primary() -> dict:
+    """open.er-api.com → {CODE: rate per 1 USD}."""
+    res = requests.get("https://open.er-api.com/v6/latest/USD", timeout=20)
+    res.raise_for_status()
+    payload = res.json()
+    if payload.get("result") != "success":
+        raise ValueError(f"provider returned result={payload.get('result')}")
+    return {str(k).upper(): float(v) for k, v in (payload.get("rates") or {}).items()}
+
+
+def _fetch_usd_rates_secondary() -> dict:
+    """fawazahmed0/currency-api via jsDelivr → {CODE: rate per 1 USD}."""
+    res = requests.get(
+        "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json",
+        timeout=20,
+    )
+    res.raise_for_status()
+    payload = res.json()
+    return {str(k).upper(): float(v) for k, v in (payload.get("usd") or {}).items()}
+
+
+def run_fx_refresh_once():
+    """Refresh fx_rates for every active currency pair. Silent no-op if all providers fail."""
+    if not FX_REFRESH_ENABLED:
+        return
+
+    rows = supabase.table("currencies").select("code").eq("is_active", True).execute().data or []
+    codes = [str(r["code"]).upper() for r in rows]
+    if not codes:
+        logger.warning("FX refresh: no active currencies configured — skipping.")
+        return
+
+    usd_rates = None
+    for provider_name, fetch in (
+        ("open.er-api.com", _fetch_usd_rates_primary),
+        ("fawazahmed0/currency-api", _fetch_usd_rates_secondary),
+    ):
+        try:
+            candidate = fetch()
+            candidate["USD"] = 1.0
+            missing = [c for c in codes if c not in candidate]
+            if missing:
+                # A provider that can't price our currencies is no good to us — try the next.
+                raise ValueError(f"missing rates for {missing}")
+            if any(candidate[c] <= 0 for c in codes):
+                raise ValueError("provider returned a non-positive rate")
+            usd_rates = candidate
+            logger.info("FX refresh: rates sourced from %s", provider_name)
+            break
+        except Exception as e:
+            logger.warning("FX refresh: provider %s failed: %s", provider_name, e)
+
+    if not usd_rates:
+        # Tier 3: leave the table untouched. The client keeps serving the last good rates.
+        logger.error("FX refresh: all providers failed — keeping last known rates.")
+        return
+
+    # Cross-rate via USD: 1 A = (USD->B) / (USD->A) B.
+    as_of = date.today().isoformat()
+    payload = [
+        {
+            "base": a,
+            "quote": b,
+            "rate": round(usd_rates[b] / usd_rates[a], 8),
+            "as_of": as_of,
+        }
+        for a in codes
+        for b in codes
+    ]
+
+    # PK is (base, quote, as_of) — re-running the same day just refreshes the row.
+    supabase.table("fx_rates").upsert(payload, on_conflict="base,quote,as_of").execute()
+    logger.info(
+        "FX refresh: upserted %d pairs for %s (1 USD = %.4f PKR)",
+        len(payload),
+        as_of,
+        usd_rates.get("PKR", float("nan")),
     )
 
 
@@ -706,8 +799,10 @@ def main():
         PAYOUT_AUTOMATION_INTERVAL,
         PAYOUT_AUTOMATION_AUTO_SETTLE,
     )
+    logger.info("FX refresh enabled=%s interval=%ss", FX_REFRESH_ENABLED, FX_REFRESH_INTERVAL)
     next_billing_run_at = 0.0
     next_payout_run_at = 0.0
+    next_fx_run_at = 0.0
     while True:
         try:
             poll_kyc_sessions_once()
@@ -729,6 +824,15 @@ def main():
         except Exception as e:
             logger.error(f"Error running payout automation: {e}")
             next_payout_run_at = time.monotonic() + PAYOUT_AUTOMATION_INTERVAL
+
+        try:
+            if FX_REFRESH_ENABLED and time.monotonic() >= next_fx_run_at:
+                run_fx_refresh_once()
+                next_fx_run_at = time.monotonic() + FX_REFRESH_INTERVAL
+        except Exception as e:
+            # Never let FX kill the loop — stale rates are survivable, a dead worker is not.
+            logger.error(f"Error running FX refresh: {e}")
+            next_fx_run_at = time.monotonic() + FX_REFRESH_INTERVAL
 
         # Wait before next poll
         logger.debug(f"Sleeping for {POLLING_INTERVAL} seconds...")

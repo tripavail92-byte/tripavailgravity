@@ -722,6 +722,16 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
+  // The operator dashboard opens this page in a NEW TAB (window.open(..., '_blank') —
+  // TourOperatorDashboard:151), so that tab has no history and navigate(-1) silently did nothing.
+  // React Router tracks position in history.state.idx; idx 0/undefined means there is nothing to
+  // pop, so fall back to a real destination instead of leaving the button dead.
+  const handleBack = () => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx
+    if (typeof idx === 'number' && idx > 0) navigate(-1)
+    else navigate('/tours')
+  }
+
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
       {/* Header / Nav (match PackageDetailsPage) */}
@@ -730,7 +740,7 @@ export default function TourDetailsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="gap-2 hover:bg-muted/40"
           >
             <ArrowLeft size={16} />
@@ -866,10 +876,14 @@ export default function TourDetailsPage() {
                         {(() => {
                           const cities: string[] = Array.isArray((tour as any).destination_cities) && (tour as any).destination_cities.length > 0
                             ? (tour as any).destination_cities
-                            : [tour.location.city].filter(Boolean)
-                          return cities.length > 1
-                            ? cities.join(' · ')
-                            : `${tour.location.city}, ${tour.location.country}`
+                            : [tour.location?.city].filter(Boolean)
+                          if (cities.length > 1) return cities.join(' · ')
+                          // Never interpolate raw — a missing city/country used to render the literal
+                          // string "undefined, undefined" on the live tour page. Mirrors OperatorCalendarPage:25.
+                          return (
+                            [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') ||
+                            'Destination TBD'
+                          )
                         })()}
                       </span>
                     </div>
@@ -884,17 +898,38 @@ export default function TourDetailsPage() {
               </div>
             </motion.div>
 
-            {/* Description (glass card like package page) */}
-            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-              <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
-              </GlassHeader>
-              <GlassContent>
-                <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
-                  {tour.description}
-                </p>
-              </GlassContent>
-            </GlassCard>
+            {/* Description (glass card like package page). Conditional: the wizard's only writer of
+                description was the physical-requirements textarea (the bug), so once that was
+                rebound a tour can legitimately have no description — don't render an empty card. */}
+            {tour.description?.trim() ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                    {tour.description}
+                  </p>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
+
+            {/* Physical requirements — its own section. This text used to be written into
+                description and shown above as "About the Journey", which is not what it is. */}
+            {(tour as any).physical_requirements?.trim() ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">
+                    Physical Requirements &amp; Logistics
+                  </GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                    {(tour as any).physical_requirements}
+                  </p>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
 
             {/* Hosted by */}
             <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
