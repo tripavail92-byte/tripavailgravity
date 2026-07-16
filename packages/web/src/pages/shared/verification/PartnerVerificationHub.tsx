@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { toast } from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -299,13 +300,23 @@ export function PartnerVerificationHub() {
 
       if (rpcError) {
         console.error('[PartnerVerificationHub] partner_submit_verification failed:', rpcError)
-        // Don't block the user — profile is saved, queue entry might fail silently
-        // (e.g. RLS or function grant issue) — log but continue
+        // This RPC IS the submission: it writes the admin-queue row and moves user_roles to
+        // 'pending'. If it failed, nothing was submitted. Advancing to the success screen here
+        // (which is what we used to do) told the partner they were under review while they were
+        // still 'incomplete' and invisible to admins — a failure nobody could see or diagnose.
+        // Surface it and keep them on the step so they can retry.
+        toast.error(
+          `Could not submit your verification: ${rpcError.message ?? 'please try again.'} Your details are saved — press Finish to retry.`,
+        )
+        return
       }
 
       setStep('complete')
     } catch (error) {
       console.error('Error finishing verification:', error)
+      toast.error(
+        `Could not submit your verification: ${error instanceof Error ? error.message : 'please try again.'}`,
+      )
     } finally {
       setIsLoading(false)
     }
@@ -432,6 +443,10 @@ export function PartnerVerificationHub() {
                 onComplete={handleDocsComplete}
                 initialData={verificationData?.businessDocs}
                 country={country}
+                // This sub-flow lives under pages/tour-operator/ but is shared with hotel managers.
+                // Without this it uploaded every document as 'tour_operator' and the edge function
+                // 403'd every manager — the docs step could never complete.
+                role={role === 'hotel_manager' ? 'hotel_manager' : 'tour_operator'}
               />
             </div>
           )}

@@ -54,13 +54,18 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
 
   // Lock the page behind the dialog. Without this the wheel scrolled the listing wizard
   // underneath while the dialog itself stayed put — the "scroll only works for the background
-  // window" the team reported. Restores whatever overflow the page had on unmount.
+  // window" the team reported.
+  //
+  // Lock <html>, NOT <body>: index.css sets `html { overflow-x: hidden }`, and body's overflow is
+  // only propagated to the viewport when the root's computed overflow is `visible`. It isn't, so
+  // <html> is the real scroller and locking body here is a silent no-op.
   useEffect(() => {
     if (!isOpen) return
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const root = document.documentElement
+    const previous = root.style.overflow
+    root.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = previous
+      root.style.overflow = previous
     }
   }, [isOpen])
 
@@ -195,8 +200,11 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
           </div>
 
           {/* Step Content — the only scrollable region. min-h-0 is required or a flex child
-              refuses to shrink and the overflow never kicks in. */}
-          <div className="p-6 flex-1 min-h-0 overflow-y-auto">
+              refuses to shrink and the overflow never kicks in. overscroll-contain belongs HERE,
+              on the box that actually scrolls: hitting the end of this list must not hand the
+              wheel to the page behind. The overlay's copy of it never fires, because the card is
+              capped at exactly the overlay's content height so the overlay never overflows. */}
+          <div className="p-6 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div

@@ -18,11 +18,24 @@ import { HotelData } from '../components/CompleteHotelListingFlow'
 
 export const hotelService = {
   /**
-   * Publish a listing. Pass `draftId` when promoting a saved draft so we UPDATE that row instead
-   * of inserting a second one — the wizard accepted a draft id but never used it, so publishing a
-   * draft orphaned it and created a duplicate hotel.
+   * Publish a listing. Pass `draftId` when promoting a saved draft (or when RETRYING after a failed
+   * publish) so we UPDATE that row instead of inserting a second one — the wizard accepted a draft
+   * id but never used it, so publishing a draft orphaned it and created a duplicate hotel.
+   *
+   * Ordering matters: the row is written UNPUBLISHED, then rooms, and `is_published` is flipped last.
+   * There is no transaction across PostgREST calls, so the flip is the closest thing we have to a
+   * commit — anything that throws before it leaves a resumable draft (is_published=false + draft_data
+   * is exactly what getDraft/fetchDrafts look for) rather than a live, bookable hotel with no rooms.
+   * The caller must feed `hotelId` back as `draftId` on retry; otherwise the retry re-INSERTs.
+   * `onRowCreated` exists for exactly that: it fires the moment the row has an id, so a caller can
+   * capture it even on the paths where we throw afterwards. The success return can't carry it.
    */
-  async publishListing(data: Partial<HotelData>, userId: string, draftId?: string) {
+  async publishListing(
+    data: Partial<HotelData>,
+    userId: string,
+    draftId?: string,
+    onRowCreated?: (hotelId: string) => void,
+  ) {
     if (!userId) throw new Error('User ID required')
 
     // 1. Prepare Hotel Payload
@@ -56,7 +69,9 @@ export const hotelService = {
       // Arrays
       amenities: data.amenities,
 
-      is_published: true,
+      // NOT is_published — that is flipped last, once the rooms are safely written. See below.
+      // draft_data keeps the row resumable if we throw part-way through.
+      draft_data: data,
       updated_at: new Date().toISOString(),
     }
 
@@ -66,13 +81,13 @@ export const hotelService = {
     }
 
     try {
-      // 2. Write the hotel — update the draft row when we have one, otherwise insert.
+      // 2. Write the hotel UNPUBLISHED — update the existing row when we have one, else insert.
       let hotel: { id: string } | null = null
 
       if (draftId) {
         const { data: updated, error: updateError } = await supabase
           .from('hotels')
-          .update(hotelPayload)
+          .update({ ...hotelPayload, is_published: false })
           .eq('id', draftId)
           // Scope to the owner: a draft id must never be able to overwrite someone else's row.
           .eq('owner_id', userId)
@@ -86,7 +101,7 @@ export const hotelService = {
       } else {
         const { data: inserted, error: hotelError } = await supabase
           .from('hotels')
-          .insert(hotelPayload)
+          .insert({ ...hotelPayload, is_published: false })
           .select()
           .single()
         if (hotelError) {
@@ -97,18 +112,19 @@ export const hotelService = {
       }
 
       if (!hotel) throw new Error('Publish failed: no hotel row was returned')
+      onRowCreated?.(hotel.id)
 
-      // 3. Rooms — replace, never append. Republishing a draft would otherwise stack a second
-      // full set of rooms onto the same hotel.
-      if (draftId) {
-        const { error: clearRoomsError } = await supabase
-          .from('rooms')
-          .delete()
-          .eq('hotel_id', hotel.id)
-        if (clearRoomsError) {
-          console.error('❌ Rooms clear error:', clearRoomsError)
-          throw clearRoomsError
-        }
+      // 3. Rooms — replace, never append. Republishing (a draft, or a retry after a failed attempt)
+      // would otherwise stack a second full set of rooms onto the same hotel.
+      // Keyed on hotel.id, not draftId: a retry reuses the row we inserted on the first attempt, and
+      // that row may already carry rooms from a partially-successful run.
+      const { error: clearRoomsError } = await supabase
+        .from('rooms')
+        .delete()
+        .eq('hotel_id', hotel.id)
+      if (clearRoomsError) {
+        console.error('❌ Rooms clear error:', clearRoomsError)
+        throw clearRoomsError
       }
 
       if (data.rooms && data.rooms.length > 0) {
@@ -136,6 +152,19 @@ export const hotelService = {
           console.error('❌ Rooms insert error:', roomsError)
           throw roomsError
         }
+      }
+
+      // 4. Go live. Last write, and the only one that exposes the listing publicly — everything it
+      // depends on is already durable by this point. draft_data is cleared so the published row
+      // stops looking like a resumable draft.
+      const { error: publishError } = await supabase
+        .from('hotels')
+        .update({ is_published: true, draft_data: null, updated_at: new Date().toISOString() })
+        .eq('id', hotel.id)
+        .eq('owner_id', userId)
+      if (publishError) {
+        console.error('❌ Hotel publish flip error:', publishError)
+        throw publishError
       }
 
       return { success: true, hotelId: hotel.id }

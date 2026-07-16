@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -242,6 +242,10 @@ export default function CompleteHotelListingFlow({
   // Latches true after a successful publish and never resets, so the Publish button cannot fire
   // twice even in the moment before we navigate away.
   const [isPublished, setIsPublished] = useState(false)
+  // The hotels row this flow has already created. Set on the first publish attempt — including one
+  // that later throws — so a retry UPDATEs that row instead of inserting a second hotel. A ref, not
+  // state: the retry reads it in the same handler, and it must not trigger a render.
+  const publishedRowIdRef = useRef<string | undefined>(initialDraftId)
   const { user } = useAuth()
 
   const steps: Step[] = [
@@ -368,11 +372,11 @@ export default function CompleteHotelListingFlow({
   }
 
   const handleSaveAndExit = () => {
-    // Save current progress
-    if (onComplete) {
-      onComplete(hotelData)
-    }
-    // Exit to dashboard if handler provided, otherwise go back
+    // Deliberately does NOT call onComplete. Saving a draft is not completing the flow, and
+    // onComplete now navigates away with replace:true — firing it here would unmount the wizard
+    // before saveDraft resolves and regardless of whether it succeeded, so a failed save would
+    // strand the manager on the dashboard with their work gone and no way back. The owner of
+    // onSaveAndExit navigates on the success branch itself.
     if (onSaveAndExit) {
       onSaveAndExit(hotelData)
     } else {
@@ -393,7 +397,11 @@ export default function CompleteHotelListingFlow({
 
     try {
       // Pass the draft id so republishing updates that row instead of creating a new one.
-      await hotelService.publishListing(hotelData, user.id, initialDraftId)
+      // On a retry, publishedRowIdRef holds the row the previous attempt created — without it the
+      // retry would take the INSERT branch again and duplicate the hotel, which is the whole bug.
+      await hotelService.publishListing(hotelData, user.id, publishedRowIdRef.current, (hotelId) => {
+        publishedRowIdRef.current = hotelId
+      })
       setIsPublished(true)
       toast.success('Your hotel listing has been published successfully.')
       onComplete?.(hotelData)
