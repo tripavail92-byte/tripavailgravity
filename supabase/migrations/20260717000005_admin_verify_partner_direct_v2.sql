@@ -21,18 +21,26 @@
 --    'kyc_only'   — identity verified, but no business documents submitted
 --    'none'       — nothing on file; vouching for this partner from outside the platform
 --
--- SIGNATURE BREAK: cannot be CREATE OR REPLACE — adding parameters creates an ambiguous overload
--- against the 2-arg version. Safe: exactly one caller (AdminPartnersPage.tsx:1317; verified by grep
--- across packages/web/src, supabase/functions and packages/python-worker).
+-- SIGNATURE BREAK: the 2-arg version must be DROPped, not replaced — leaving it in place next to
+-- the 4-arg one creates an ambiguous overload. Safe: exactly one caller (AdminPartnersPage.tsx:1317;
+-- verified by grep across packages/web/src, supabase/functions and packages/python-worker).
 -- DEPLOY THIS SQL BEFORE THE CLIENT. In the gap the old button 404s — a visible, obvious error,
 -- which is the right failure mode.
+--
+-- IDEMPOTENT: safe to re-run. The 4-arg CREATE is OR REPLACE — a plain CREATE fails the second
+-- time with "function already exists with same argument types", because the DROP above only names
+-- the 2-arg signature and so no longer matches anything. (Both statements are inside the
+-- transaction, so that failure rolls the DROP back too and leaves the DB on v2 — a confusing error
+-- rather than a dangerous one, but there is no reason to make the operator read it.)
 -- =====================================================================
 
 BEGIN;
 
+-- Remove the old 2-arg signature. Named explicitly: DROP FUNCTION requires the exact arg types,
+-- and this must not touch the 4-arg version being (re)created below.
 DROP FUNCTION IF EXISTS public.admin_verify_partner_direct(UUID, TEXT);
 
-CREATE FUNCTION public.admin_verify_partner_direct(
+CREATE OR REPLACE FUNCTION public.admin_verify_partner_direct(
   p_user_id      UUID,
   p_partner_type TEXT,
   p_reason       TEXT,
