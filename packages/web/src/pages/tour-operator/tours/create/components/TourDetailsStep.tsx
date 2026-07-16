@@ -145,8 +145,10 @@ export function TourDetailsStep({
         id: 'requirements',
         title: 'What should travellers prepare for?',
         description: 'Kit, fitness, permits — anything they need to know before booking.',
+        // Gate on physical_requirements — this step's field — not description, which belongs to
+        // the Basics step and is a different thing entirely.
         validate: (d) =>
-          d.description?.trim()
+          (d as any).physical_requirements?.trim()
             ? []
             : [
                 {
@@ -460,14 +462,17 @@ export function TourDetailsStep({
           <Textarea
             id={fieldId('extraRequirements')}
             placeholder="e.g. Any custom requirements not covered above..."
-            value={data.description || ''}
-            onChange={(e) => onUpdate({ description: e.target.value.slice(0, 600) })}
+            // Writes to physical_requirements, NOT description. This used to bind to
+            // data.description, so it silently overwrote the tour description and surfaced on the
+            // live page under "About the Journey".
+            value={(data as any).physical_requirements || ''}
+            onChange={(e) => onUpdate({ physical_requirements: e.target.value.slice(0, 600) } as any)}
             rows={4}
             maxLength={600}
             className="border-border focus:border-primary focus:ring-primary/20 resize-none rounded-2xl shadow-sm text-[15px] p-4 placeholder:text-muted-foreground"
           />
           <p className="text-[11px] text-muted-foreground text-right tabular-nums">
-            {(data.description || '').length}/600
+            {((data as any).physical_requirements || '').length}/600
           </p>
         </div>
               </div>

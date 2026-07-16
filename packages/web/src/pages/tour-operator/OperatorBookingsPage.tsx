@@ -127,7 +127,14 @@ export default function OperatorBookingsPage() {
     const earned = bookings.filter(
       (booking) => booking.status === 'confirmed' || booking.status === 'completed',
     )
-    const revenue = earned.reduce((sum, booking) => sum + booking.total_price, 0)
+    // Group by the tour's own currency — NEVER sum raw amounts across currencies. Adding a
+    // USD 17.99 booking to a PKR 5,000 one produces a meaningless number, and labelling that
+    // total with a single currency is worse than showing nothing.
+    const revenueByCurrency = earned.reduce<Record<string, number>>((acc, booking) => {
+      const code = booking.tours.currency
+      acc[code] = (acc[code] || 0) + booking.total_price
+      return acc
+    }, {})
 
     // Cancelled bookings shouldn't count as travellers you hosted either.
     const travellers = earned.reduce((sum, booking) => sum + booking.pax_count, 0)
@@ -136,7 +143,7 @@ export default function OperatorBookingsPage() {
       confirmed: confirmed.length,
       pending: pending.length,
       upcoming: upcoming.length,
-      revenue,
+      revenueByCurrency,
       travellers,
     }
   }, [bookings])
@@ -277,8 +284,15 @@ export default function OperatorBookingsPage() {
             <StatCard
               icon={Receipt}
               label="Revenue"
-              /* TODO: use booking currency once plumbed */
-              value={formatMoney(stats.revenue, 'PKR')}
+              // One figure per currency the operator actually earned in. No FX guessing, and
+              // never a single total across currencies (that number would be meaningless).
+              value={
+                Object.keys(stats.revenueByCurrency).length === 0
+                  ? formatMoney(0, 'PKR')
+                  : Object.entries(stats.revenueByCurrency)
+                      .map(([code, amount]) => formatMoney(amount, code))
+                      .join(' · ')
+              }
             />
           </GlassCard>
           <GlassCard variant="card" className="rounded-3xl p-5">
@@ -540,15 +554,20 @@ export default function OperatorBookingsPage() {
                               </span>
                               {Number(booking.remaining_amount || 0) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  {/* TODO: use booking currency once plumbed */}
                                   Balance due:{' '}
-                                  {formatMoney(Number(booking.remaining_amount || 0), 'PKR')}
+                                  {formatMoney(
+                                    Number(booking.remaining_amount || 0),
+                                    booking.tours.currency,
+                                  )}
                                 </p>
                               ) : null}
                               {refundedAmountForBooking(booking) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  {/* TODO: use booking currency once plumbed */}
-                                  Refunded: {formatMoney(refundedAmountForBooking(booking), 'PKR')}
+                                  Refunded:{' '}
+                                  {formatMoney(
+                                    refundedAmountForBooking(booking),
+                                    booking.tours.currency,
+                                  )}
                                 </p>
                               ) : null}
                             </div>
@@ -613,28 +632,31 @@ export default function OperatorBookingsPage() {
                         </TableCell>
                         <TableCell className="text-right font-semibold text-foreground">
                           <div>
-                            {/* TODO: use booking currency once plumbed */}
-                            <p>{formatMoney(booking.total_price, 'PKR')}</p>
+                            <p>{formatMoney(booking.total_price, booking.tours.currency)}</p>
                             {Number(booking.promo_discount_value || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-emerald-700">
-                                {/* TODO: use booking currency once plumbed */}
                                 Promo: {booking.promo_owner || 'Applied'} · -
-                                {formatMoney(Number(booking.promo_discount_value || 0), 'PKR')}
+                                {formatMoney(
+                                  Number(booking.promo_discount_value || 0),
+                                  booking.tours.currency,
+                                )}
                               </p>
                             ) : null}
                             {Number(booking.promo_discount_value || 0) > 0 &&
                             Number(booking.price_before_promo || 0) > 0 ? (
                               <p className="mt-1 text-xs font-medium text-muted-foreground">
-                                {/* TODO: use booking currency once plumbed */}
                                 Original total:{' '}
-                                {formatMoney(Number(booking.price_before_promo || 0), 'PKR')} ·{' '}
+                                {formatMoney(
+                                  Number(booking.price_before_promo || 0),
+                                  booking.tours.currency,
+                                )}{' '}
+                                ·{' '}
                                 {booking.promo_funding_source === 'platform'
                                   ? 'TripAvail funded'
                                   : 'Operator funded'}
                               </p>
                             ) : null}
                             <p className="mt-1 text-xs font-medium text-muted-foreground">
-                              {/* TODO: use booking currency once plumbed */}
                               Paid online:{' '}
                               {formatMoney(
                                 Number(
@@ -643,7 +665,7 @@ export default function OperatorBookingsPage() {
                                     booking.total_price) ||
                                     0,
                                 ),
-                                'PKR',
+                                booking.tours.currency,
                               )}
                             </p>
                           </div>

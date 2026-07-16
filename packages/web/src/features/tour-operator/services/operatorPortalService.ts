@@ -56,6 +56,8 @@ export interface OperatorBookingRecord {
       country?: string
     } | null
     images?: string[] | null
+    /** The currency the tour is priced in — format money with THIS, never a hardcoded label. */
+    currency: string
   }
   tour_schedules: {
     id: string
@@ -140,6 +142,7 @@ function mapBookingRow(row: any): OperatorBookingRecord {
       title: row.tours?.title || 'Untitled Tour',
       location: row.tours?.location ?? null,
       images: row.tours?.images ?? [],
+      currency: String(row.tours?.currency || 'PKR').toUpperCase(),
     },
     tour_schedules: {
       id: row.tour_schedules?.id,

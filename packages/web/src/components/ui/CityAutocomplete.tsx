@@ -11,7 +11,12 @@ const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY ||
 
 interface CityAutocompleteProps {
   value: string
-  onCitySelect: (city: string) => void
+  /**
+   * Called with the city and, when the source knows it, the country. Callers should persist
+   * `meta.country` — before this existed nothing ever captured a country, so tour locations
+   * rendered as "undefined, undefined".
+   */
+  onCitySelect: (city: string, meta?: { country?: string }) => void
   className?: string
   placeholder?: string
 }
@@ -163,11 +168,21 @@ export function CityAutocomplete({
   }, [searchQuery, mapsUnavailable])
 
   const handlePredictionClick = useCallback(
-    (prediction: { label: string }) => {
-      const cityName = prediction.label
+    (prediction: { label: string; secondary?: string }) => {
+      // Legacy predictions:  label = "Islamabad", secondary = "Punjab, Pakistan"
+      // New Autocomplete:    label = "Islamabad, Pakistan", secondary = ''
+      // Either shape flattens to segments where the city is first and the country is last.
+      const segments = [prediction.label, prediction.secondary]
+        .filter(Boolean)
+        .join(', ')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+      const cityName = segments[0] || prediction.label
+      const country = segments.length > 1 ? segments[segments.length - 1] : undefined
       justSelectedRef.current = true
       setSearchQuery(cityName)
-      onCitySelect(cityName)
+      onCitySelect(cityName, { country })
       setShowSuggestions(false)
       setPredictions([])
     },
@@ -203,12 +218,11 @@ export function CityAutocomplete({
             )
 
             if (cityComponent) {
-              const locationName = countryComponent
-                ? `${cityComponent.long_name}, ${countryComponent.long_name}`
-                : cityComponent.long_name
+              // Commit city and country separately — previously the combined "City, Country"
+              // string was committed as the CITY, and the country was dropped entirely.
               justSelectedRef.current = true
-              setSearchQuery(locationName)
-              onCitySelect(locationName)
+              setSearchQuery(cityComponent.long_name)
+              onCitySelect(cityComponent.long_name, { country: countryComponent?.long_name })
             }
           } else {
             toast.error('Could not detect city name')

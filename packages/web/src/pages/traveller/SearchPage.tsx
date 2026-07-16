@@ -304,7 +304,9 @@ export default function SearchPage() {
         onSearch={handleAdvancedSearch}
       />
 
-      <main className="container mx-auto px-4 py-8">
+      {/* flex-1 so the results column claims the leftover height of the min-h-screen root —
+          without it an empty result set leaves most of the viewport dead. */}
+      <main className="container mx-auto px-4 py-8 flex-1 flex flex-col">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{heading}</h1>
@@ -333,9 +335,9 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 flex-1 flex flex-col">
           {isError ? (
-            <div className="rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
+            <div className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
               {t('search.error')}
             </div>
           ) : (

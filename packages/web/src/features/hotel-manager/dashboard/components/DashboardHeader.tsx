@@ -36,9 +36,12 @@ export function DashboardHeader() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo (home) + role title. The emblem is the home button — it works on any header
-              background, so it's safe on the dark partner chrome too. */}
+              background, so it's safe on the dark partner chrome too.
+              lg:hidden — from lg up the CollapsibleSidebar renders its own emblem, and showing both
+              put two logos side by side. Below lg the sidebar is hidden, so this stays as the only
+              home button. */}
           <div className="flex items-center gap-3">
-            <Logo variant="emblem" emblemClassName="h-9 w-9" />
+            <Logo variant="emblem" emblemClassName="h-9 w-9" className="lg:hidden" />
             <h2 className={cn('text-xl font-semibold', isPartnerChrome ? 'text-white' : 'text-foreground')}>
               {roleTitle}
             </h2>

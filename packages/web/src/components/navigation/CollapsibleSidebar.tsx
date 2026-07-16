@@ -76,11 +76,13 @@ export function CollapsibleSidebar() {
         expanded ? 'w-64 shadow-2xl shadow-black/10' : 'w-16',
       )}
     >
-      {/* Brand + home. The emblem is always visible (the home button the dashboards were missing);
-          the wordmark is clipped by the rail's overflow-hidden until it expands. */}
+      {/* Brand + home. The emblem is always visible (the home button the dashboards were missing).
+          Render the wordmark ONLY when expanded — in the 64px rail it was being sliced in half by
+          overflow-hidden, which is what read as "poor logo placement". alwaysShowWordmark stays so
+          the wordmark isn't hidden by its own responsive rule once the rail IS expanded. */}
       <div className="shrink-0 border-b border-border/50">
         <div className="flex h-16 items-center px-3">
-          <Logo variant="full" alwaysShowWordmark emblemClassName="h-9 w-9" />
+          <Logo variant={expanded ? 'full' : 'emblem'} alwaysShowWordmark emblemClassName="h-9 w-9" />
         </div>
         {/* Who's signed in — only when expanded. */}
         <div

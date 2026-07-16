@@ -474,7 +474,7 @@ export function TourBasicsStep({
                       {allowGoogleMaps ? (
                         <CityAutocomplete
                           value={data.location?.city || ''}
-                          onCitySelect={(city) => {
+                          onCitySelect={(city, meta) => {
                             const existing = Array.isArray(data.destination_cities)
                               ? data.destination_cities.slice(1)
                               : []
@@ -482,7 +482,10 @@ export function TourBasicsStep({
                               location: {
                                 ...data.location,
                                 city,
-                                country: data.location?.country || '',
+                                // Take the country the picker resolved. This used to read
+                                // data.location?.country — its own value — so country was never
+                                // written and every tour rendered "undefined, undefined".
+                                country: meta?.country ?? data.location?.country ?? '',
                               },
                               destination_cities: [city, ...existing].filter(Boolean),
                             })
