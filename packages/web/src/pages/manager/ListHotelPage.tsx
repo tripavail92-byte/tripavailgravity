@@ -86,6 +86,10 @@ export default function ListHotelPage() {
         initialDraftId={draftId}
         onBack={() => setIsStarted(false)}
         onSaveAndExit={handleSaveAndExit}
+        // Without this the wizard published successfully but simply sat there, so managers
+        // clicked Publish again — and every click inserted ANOTHER hotel + its rooms.
+        // replace: true so Back can't return to Review and re-publish.
+        onComplete={() => navigate('/manager/dashboard', { replace: true })}
       />
     )
   }

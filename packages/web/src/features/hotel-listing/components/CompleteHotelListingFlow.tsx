@@ -239,6 +239,9 @@ export default function CompleteHotelListingFlow({
     },
   )
   const [isPublishing, setIsPublishing] = useState(false)
+  // Latches true after a successful publish and never resets, so the Publish button cannot fire
+  // twice even in the moment before we navigate away.
+  const [isPublished, setIsPublished] = useState(false)
   const { user } = useAuth()
 
   const steps: Step[] = [
@@ -378,34 +381,29 @@ export default function CompleteHotelListingFlow({
   }
 
   const handlePublish = async () => {
-    console.log('🚀 handlePublish called')
-    console.log('👤 User:', user)
-    console.log('📦 Hotel Data:', hotelData)
+    // Hard guard against double-submit: every extra click used to INSERT another hotel + rooms.
+    if (isPublishing || isPublished) return
 
     if (!user?.id) {
-      console.error('❌ No user ID found - cannot publish')
       toast.error('You must be logged in to publish. Please log in and try again.')
       return
     }
 
-    console.log('✅ User ID found:', user.id)
     setIsPublishing(true)
 
     try {
-      console.log('📡 Calling hotelService.publishListing...')
-      const result = await hotelService.publishListing(hotelData, user.id)
-      console.log('📡 hotelService response:', result)
-
-      console.log('✅ Published successfully!', result.hotelId)
+      // Pass the draft id so republishing updates that row instead of creating a new one.
+      await hotelService.publishListing(hotelData, user.id, initialDraftId)
+      setIsPublished(true)
       toast.success('Your hotel listing has been published successfully.')
-      if (onComplete) onComplete(hotelData)
+      onComplete?.(hotelData)
     } catch (error) {
-      console.error('❌ Publish error:', error)
+      console.error('Publish error:', error)
       toast.error(
         `Failed to publish hotel: ${error instanceof Error ? error.message : 'Please try again.'}`,
       )
-    } finally {
-      console.log('🏁 Publishing complete, resetting state')
+      // Only re-enable on failure. On success the button stays dead until we navigate away —
+      // re-enabling in `finally` is exactly what let the duplicate clicks through.
       setIsPublishing(false)
     }
   }
@@ -496,7 +494,9 @@ export default function CompleteHotelListingFlow({
                   data={hotelData}
                   onEditStep={(stepId: number) => setCurrentStep(stepId)}
                   onPublish={handlePublish}
-                  isPublishing={isPublishing}
+                  // Stays disabled after a successful publish too — we're about to navigate away,
+                  // and a re-enabled button here is what produced duplicate hotels.
+                  isPublishing={isPublishing || isPublished}
                 />
               </div>
             </motion.div>

@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -51,6 +51,18 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
       },
     },
   )
+
+  // Lock the page behind the dialog. Without this the wheel scrolled the listing wizard
+  // underneath while the dialog itself stayed put — the "scroll only works for the background
+  // window" the team reported. Restores whatever overflow the page had on unmount.
+  useEffect(() => {
+    if (!isOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [isOpen])
 
   const handleNext = () => {
     if (currentStep < 4) {
@@ -136,16 +148,20 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4">
+    // overflow-y-auto + overscroll-contain: the dialog was taller than the viewport, so its
+    // footer (Back / Next) sat below the fold with no way to reach it, and the wheel scrolled the
+    // PAGE BEHIND instead. The body scroll-lock above stops the background moving at all.
+    <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-3xl"
+        className="w-full max-w-3xl max-h-[calc(100dvh-2rem)]"
       >
-        <Card className="bg-background shadow-2xl">
+        {/* Column layout: header/progress/footer stay put, only the step body scrolls. */}
+        <Card className="bg-background shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="shrink-0 flex items-center justify-between p-6 border-b">
             <div>
               <h2 className="text-2xl font-bold text-foreground">
                 {editingRoom ? 'Edit Room Type' : 'Add Room Type'}
@@ -158,7 +174,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
           </div>
 
           {/* Progress Bar */}
-          <div className="px-6 py-4 bg-muted">
+          <div className="shrink-0 px-6 py-4 bg-muted">
             <div className="flex items-center gap-2">
               {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex-1">
@@ -178,8 +194,9 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
             </div>
           </div>
 
-          {/* Step Content */}
-          <div className="p-6 min-h-[400px]">
+          {/* Step Content — the only scrollable region. min-h-0 is required or a flex child
+              refuses to shrink and the overflow never kicks in. */}
+          <div className="p-6 flex-1 min-h-0 overflow-y-auto">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div
@@ -440,7 +457,8 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t bg-muted">
+          {/* shrink-0 pins the footer so Back/Next are always reachable, however tall the step is. */}
+          <div className="shrink-0 flex items-center justify-between p-6 border-t bg-muted">
             <Button onClick={handleBack} variant="outline" disabled={currentStep === 1}>
               <ChevronLeft size={20} className="mr-1" />
               Back

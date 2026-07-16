@@ -1,6 +1,7 @@
+import { Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,8 @@ export default function ListPackagePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [gateLoading, setGateLoading] = useState(true)
+  // null = not checked yet. false = account not approved to operate yet.
+  const [canOperate, setCanOperate] = useState<boolean | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -22,6 +25,24 @@ export default function ListPackagePage() {
       }
 
       try {
+        // Approval gate FIRST. The packages RLS policy requires can_partner_operate(), so an
+        // unapproved manager used to build the entire 11-step wizard and only hit the wall on the
+        // final click — as a raw Postgres "new row violates row-level security policy" error.
+        // Check it up front and say plainly that approval is pending.
+        const { data: allowed, error: gateError } = await supabase.rpc('can_partner_operate', {
+          p_user_id: user.id,
+          p_partner_type: 'hotel_manager',
+        })
+        if (gateError) throw gateError
+
+        // The RPC returns NULL when the profile row is missing — treat anything but an explicit
+        // true as "not yet allowed", exactly as the RLS policy does.
+        if (allowed !== true) {
+          if (!cancelled) setCanOperate(false)
+          return
+        }
+        if (!cancelled) setCanOperate(true)
+
         const { count, error } = await supabase
           .from('hotels')
           .select('*', { count: 'exact', head: true })
@@ -57,6 +78,36 @@ export default function ListPackagePage() {
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
           <p className="text-muted-foreground font-medium tracking-tight">Checking listings...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Account not approved yet — say so plainly instead of letting them build a whole package and
+  // then surfacing a raw row-level-security error at the very last click.
+  if (canOperate === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="max-w-md w-full rounded-3xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10">
+            <Clock className="h-7 w-7 text-amber-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Approval pending</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Your hotel manager account is still being reviewed by the TripAvail team. You can list
+            packages as soon as it&rsquo;s approved — nothing else is needed from you right now.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground/70">
+            If your verification documents are incomplete, finishing them will speed this up.
+          </p>
+          <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button asChild variant="outline" className="rounded-2xl">
+              <Link to="/manager/verification">View verification status</Link>
+            </Button>
+            <Button asChild className="rounded-2xl">
+              <Link to="/manager/dashboard">Back to dashboard</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )

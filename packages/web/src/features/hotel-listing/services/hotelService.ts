@@ -17,7 +17,12 @@ import { HotelData } from '../components/CompleteHotelListingFlow'
 */
 
 export const hotelService = {
-  async publishListing(data: Partial<HotelData>, userId: string) {
+  /**
+   * Publish a listing. Pass `draftId` when promoting a saved draft so we UPDATE that row instead
+   * of inserting a second one — the wizard accepted a draft id but never used it, so publishing a
+   * draft orphaned it and created a duplicate hotel.
+   */
+  async publishListing(data: Partial<HotelData>, userId: string, draftId?: string) {
     if (!userId) throw new Error('User ID required')
 
     // 1. Prepare Hotel Payload
@@ -61,19 +66,51 @@ export const hotelService = {
     }
 
     try {
-      // 2. Insert Hotel
-      const { data: hotel, error: hotelError } = await supabase
-        .from('hotels')
-        .insert(hotelPayload)
-        .select()
-        .single()
+      // 2. Write the hotel — update the draft row when we have one, otherwise insert.
+      let hotel: { id: string } | null = null
 
-      if (hotelError) {
-        console.error('❌ Hotel insert error:', hotelError)
-        throw hotelError
+      if (draftId) {
+        const { data: updated, error: updateError } = await supabase
+          .from('hotels')
+          .update(hotelPayload)
+          .eq('id', draftId)
+          // Scope to the owner: a draft id must never be able to overwrite someone else's row.
+          .eq('owner_id', userId)
+          .select()
+          .single()
+        if (updateError) {
+          console.error('❌ Hotel update error:', updateError)
+          throw updateError
+        }
+        hotel = updated
+      } else {
+        const { data: inserted, error: hotelError } = await supabase
+          .from('hotels')
+          .insert(hotelPayload)
+          .select()
+          .single()
+        if (hotelError) {
+          console.error('❌ Hotel insert error:', hotelError)
+          throw hotelError
+        }
+        hotel = inserted
       }
 
-      // 3. Insert Rooms
+      if (!hotel) throw new Error('Publish failed: no hotel row was returned')
+
+      // 3. Rooms — replace, never append. Republishing a draft would otherwise stack a second
+      // full set of rooms onto the same hotel.
+      if (draftId) {
+        const { error: clearRoomsError } = await supabase
+          .from('rooms')
+          .delete()
+          .eq('hotel_id', hotel.id)
+        if (clearRoomsError) {
+          console.error('❌ Rooms clear error:', clearRoomsError)
+          throw clearRoomsError
+        }
+      }
+
       if (data.rooms && data.rooms.length > 0) {
         const roomsPayload = data.rooms.map((room) => ({
           hotel_id: hotel.id,
