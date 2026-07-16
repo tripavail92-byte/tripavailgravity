@@ -218,13 +218,21 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
         )}
       </AnimatePresence>
 
-      {/* Room Wizard Modal */}
-      <RoomWizardModal
-        isOpen={showWizard}
-        onClose={() => setShowWizard(false)}
-        onSave={handleSaveRoom}
-        editingRoom={editingRoom}
-      />
+      {/* Room Wizard Modal.
+          Rendered conditionally so it actually UNMOUNTS on close. Previously it was always
+          mounted and only self-hid via `if (!isOpen) return null` inside the component, so its
+          `useState(1)` step never re-initialised — reopening it to add a second room dropped you
+          on step 4 (Pricing) of the previous room instead of step 1 (Room Type).
+          The key also forces a fresh instance when switching between editing different rooms. */}
+      {showWizard && (
+        <RoomWizardModal
+          key={editingRoom?.id ?? 'new-room'}
+          isOpen={showWizard}
+          onClose={() => setShowWizard(false)}
+          onSave={handleSaveRoom}
+          editingRoom={editingRoom}
+        />
+      )}
     </div>
   )
 }

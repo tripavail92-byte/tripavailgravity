@@ -24,6 +24,13 @@ interface BusinessDocsSubFlowProps {
   initialData?: any
   /** ISO-3166 alpha-2 of the partner's country; NULL/PK → Pakistan document set. */
   country?: string | null
+  /**
+   * Whose documents these are. This component sits under pages/tour-operator/ but
+   * PartnerVerificationHub renders it for hotel managers too, so the role cannot be assumed from
+   * the file's location — the upload endpoint authorizes against the profile table this names, and
+   * claiming 'tour_operator' as a hotel manager is a 403.
+   */
+  role?: 'tour_operator' | 'hotel_manager'
 }
 
 const DOC_ICONS = {
@@ -32,7 +39,12 @@ const DOC_ICONS = {
   tax: FileText,
 } as const
 
-export function BusinessDocsSubFlow({ onComplete, initialData, country }: BusinessDocsSubFlowProps) {
+export function BusinessDocsSubFlow({
+  onComplete,
+  initialData,
+  country,
+  role = 'tour_operator',
+}: BusinessDocsSubFlowProps) {
   const { user } = useAuth()
   const [urls, setUrls] = useState<Record<string, string>>(initialData || {})
   const [isUploading, setIsUploading] = useState<string | null>(null)
@@ -53,7 +65,7 @@ export function BusinessDocsSubFlow({ onComplete, initialData, country }: Busine
       // `id` (secp_certificate, business_registration, tourism_license, …) is a valid kyc_documents
       // document_type. Upload to the PRIVATE kyc bucket — never a public URL. We track presence with a
       // marker; the actual file is read later via a signed URL by owner/admin.
-      await tourOperatorService.uploadTrustDoc(file, id, 'tour_operator')
+      await tourOperatorService.uploadTrustDoc(file, id, role)
       const nextUrls = { ...urls, [id]: 'uploaded' }
       setUrls(nextUrls)
       toast.success('Document uploaded!')

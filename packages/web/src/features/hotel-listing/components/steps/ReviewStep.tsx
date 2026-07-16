@@ -14,6 +14,18 @@ interface ReviewStepProps {
   isPublishing?: boolean
 }
 
+/**
+ * Amenities are stored as ids ("free_parking"). The canonical labels live in AmenitiesStep's
+ * local `amenityCategories`; until that's hoisted somewhere shared, humanise the id rather than
+ * show a raw slug. ("free_parking" -> "Free Parking")
+ */
+function humanizeAmenity(id: string): string {
+  return id
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: ReviewStepProps) {
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
@@ -135,6 +147,36 @@ export function ReviewStep({ data, onEditStep, onPublish, isPublishing }: Review
             </p>
           </div>
         </div>
+      </Card>
+
+      {/* Amenities (Step 4).
+          This card did not exist. The review rendered only data.services (step 8), so everything
+          the manager selected under "Amenities & Features" was invisible here — which is why the
+          Services & Facilities card looked like it was "only showing additional services". */}
+      <Card className="p-6 relative group hover:border-primary/40 transition-all">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => onEditStep(4)}
+        >
+          <Edit3 size={16} className="mr-1" /> Edit
+        </Button>
+        <h3 className="font-semibold text-gray-900 mb-4">Amenities</h3>
+        {data.amenities && data.amenities.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {data.amenities.map((amenityId) => (
+              <span
+                key={amenityId}
+                className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700 border"
+              >
+                {humanizeAmenity(amenityId)}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No amenities selected</p>
+        )}
       </Card>
 
       {/* Services (Step 8) */}

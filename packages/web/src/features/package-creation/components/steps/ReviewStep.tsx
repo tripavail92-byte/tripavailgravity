@@ -37,9 +37,13 @@ export function ReviewStep({
   // We use parent's isPublishing state and onSubmit callback directly
   // No need for local handleSubmit wrapper
 
+  // NOTE: these ids must match the step ids in CompletePackageCreationFlow's STEPS list.
+  // They were one low — they still encoded the numbering from before HotelSelectionStep was
+  // inserted at position 1 — so every "Edit" button dropped the user on the PREVIOUS step.
+  // (There is intentionally no card for step 8, Pricing.)
   const sections = [
     {
-      id: 1,
+      id: 2,
       title: 'Package Type',
       icon: Package,
       optional: false,
@@ -53,7 +57,7 @@ export function ReviewStep({
       ),
     },
     {
-      id: 2,
+      id: 3,
       title: 'Basic Information',
       icon: FileText,
       optional: false,
@@ -88,7 +92,7 @@ export function ReviewStep({
       ),
     },
     {
-      id: 3,
+      id: 4,
       title: 'Media',
       icon: Image,
       optional: false, // Media is REQUIRED - minimum 4 photos
@@ -117,24 +121,52 @@ export function ReviewStep({
       ),
     },
     {
-      id: 4,
+      id: 5,
       title: 'Highlights',
       icon: Lightbulb,
       optional: true, // Highlights are optional
-      data: packageData.highlights?.length ?? 0, // Ensure 0 instead of undefined
-      render: () => (
-        <div className="space-y-1">
-          {packageData.highlights?.map((highlight, idx) => (
-            <div key={idx} className="flex items-start gap-2 text-sm">
-              <Check size={16} className="text-success mt-0.5 flex-shrink-0" />
-              <span>{highlight}</span>
-            </div>
-          )) || <p className="text-sm text-gray-500">No highlights added</p>}
-        </div>
-      ),
+      // HighlightsStep writes freeInclusions + discountOffers. Nothing anywhere writes
+      // packageData.highlights, so reading it made this card permanently say "No highlights added"
+      // even right after the operator added some.
+      data: (packageData.freeInclusions?.length ?? 0) + (packageData.discountOffers?.length ?? 0),
+      render: () => {
+        const inclusions = packageData.freeInclusions ?? []
+        const discounts = packageData.discountOffers ?? []
+        // Explicit length check: [].map() returns [] which is TRUTHY, so a `|| fallback` would
+        // never fire for an empty list.
+        if (inclusions.length === 0 && discounts.length === 0) {
+          return <p className="text-sm text-gray-500">No highlights added</p>
+        }
+        return (
+          <div className="space-y-2">
+            {inclusions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {inclusions.map((item, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="bg-success/5 border-success/30 text-success"
+                  >
+                    {item.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {discounts.map((offer, idx) => (
+              <div key={idx} className="flex items-start gap-2 text-sm">
+                <Check size={16} className="text-success mt-0.5 flex-shrink-0" />
+                <span>
+                  {offer.name}
+                  {offer.discount ? ` — ${offer.discount}% off` : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        )
+      },
     },
     {
-      id: 5,
+      id: 6,
       title: 'Inclusions',
       icon: PlusCircle,
       optional: false,
@@ -154,7 +186,7 @@ export function ReviewStep({
       ),
     },
     {
-      id: 6,
+      id: 7,
       title: 'Exclusions',
       icon: XCircle,
       optional: false,
@@ -170,7 +202,7 @@ export function ReviewStep({
       ),
     },
     {
-      id: 8,
+      id: 9,
       title: 'Availability',
       icon: Calendar,
       optional: false,
@@ -205,7 +237,7 @@ export function ReviewStep({
       ),
     },
     {
-      id: 9,
+      id: 10,
       title: 'Policies',
       icon: FileText,
       optional: false,
@@ -232,8 +264,8 @@ export function ReviewStep({
   const hasValidData = (data: any, sectionId?: number) => {
     if (data === undefined || data === null) return false
 
-    // Special case: Media section requires minimum 4 photos
-    if (sectionId === 3) {
+    // Special case: Media section requires minimum 4 photos (step 4)
+    if (sectionId === 4) {
       return typeof data === 'number' && data >= 4
     }
 

@@ -2087,11 +2087,24 @@ export default function AdminPartnersPage() {
               ))}
             </div>
           ) : pendingQueue.length === 0 ? (
+            // This queue only ever contains partners who SUBMITTED — it reads
+            // partner_verification_requests. Partners who never started verification have no row
+            // here at all, so an empty queue does NOT mean everyone is sorted. It read "All clear!"
+            // while every hotel manager on the platform sat unverified and unable to publish,
+            // because the action that verifies them lives on the All Partners tab and nothing here
+            // ever pointed at it.
             <Card>
               <CardContent className="p-12 flex flex-col items-center justify-center text-center gap-3">
                 <CheckCircle className="h-12 w-12 text-green-500" />
-                <p className="text-lg font-semibold">All clear!</p>
-                <p className="text-sm text-muted-foreground">No pending applications.</p>
+                <p className="text-lg font-semibold">No applications waiting</p>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Nobody has submitted verification for review. Partners who haven&rsquo;t started
+                  verification never appear here — they&rsquo;re on All Partners, where you can
+                  verify them directly.
+                </p>
+                <Button variant="outline" className="mt-2" onClick={() => setActiveTab('all')}>
+                  Go to All Partners
+                </Button>
               </CardContent>
             </Card>
           ) : (
