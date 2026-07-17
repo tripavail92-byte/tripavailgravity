@@ -19,6 +19,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
@@ -56,6 +57,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   PartnerVerifyDialog,
   type PartnerRole,
+  type VerifyOutcome,
 } from '@/features/admin/components/PartnerVerifyDialog'
 import {
   clearOperatorAwardOverride,
@@ -81,6 +83,7 @@ import {
 } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 import {
+  adminKeys,
   usePartnerPopulation,
   type PartnerPopulationRow,
 } from '@/queries/adminQueries'
@@ -873,7 +876,16 @@ function StorefrontVerificationDialog({
  * column — which used to be `hidden sm:table-cell`, so on a phone the two roles were literally
  * indistinguishable.
  */
-function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
+function AllPartnersTab({
+  roleType,
+  refreshToken = 0,
+}: {
+  roleType: PartnerRole
+  /** Bumped by the page header's Refresh. Without it, Refresh reloaded the counters but left the
+   *  table below them stale — two halves of one page disagreeing after an explicit refresh. */
+  refreshToken?: number
+}) {
+  const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const [partners, setPartners] = useState<PartnerAdminRow[]>(
     [],
@@ -945,7 +957,7 @@ function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
 
   useEffect(() => {
     load(statusFilter)
-  }, [statusFilter, roleType])
+  }, [statusFilter, roleType, refreshToken])
 
   const roleLabelPlural = roleType === 'hotel_manager' ? 'hotel managers' : 'tour operators'
 
@@ -979,9 +991,19 @@ function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
   // The RPC call, the reason, the evidence acknowledgement and the confirmation UI all now live in
   // PartnerVerifyDialog — it has to load the evidence before it can render, so the dialog owns the
   // whole interaction rather than the page driving a stateless confirm box.
-  const handleVerified = async () => {
-    toast.success(`${verifyDialog?.partnerName} verified — partner notified`)
+  //
+  // The outcome is passed back rather than assumed: this used to toast "verified — partner
+  // notified" unconditionally, so rejecting someone told the admin the opposite of what happened.
+  const handleResolved = async (outcome: VerifyOutcome) => {
+    const name = verifyDialog?.partnerName ?? 'Partner'
+    if (outcome === 'approved') toast.success(`${name} verified — partner notified`)
+    else if (outcome === 'rejected') toast.success(`${name} rejected — partner notified`)
+    else toast.success(`More information requested from ${name}`)
+
     setVerifyDialog(null)
+    // The stat cards, tab badges and sidebar badge all read usePartnerPopulation. Without this they
+    // keep counting the partner that was just decided until the cache goes stale on its own.
+    queryClient.invalidateQueries({ queryKey: adminKeys.partnerPopulation() })
     await load(statusFilter)
   }
 
@@ -1154,10 +1176,15 @@ function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
         </Card>
       )}
       {/* N = 0 gets a slim line, never a full-bleed celebration card. The table below always shows
-          the real population, so "nothing to do" can never be mistaken for "nobody is here". */}
+          the real population, so "nothing to do" can never be mistaken for "nobody is here".
+          Only claim "all decided" when this list IS everything: with a status filter active,
+          `partners` is a subset, so the line would say "All 2 hotel managers are decided" while the
+          tab badge next to it says 10 are waiting. Say what is actually on screen instead. */}
       {!loading && needsAction.length === 0 && partners.length > 0 && (
         <p className="mb-4 text-sm text-muted-foreground">
-          ✅ All {partners.length} {roleLabelPlural} are decided — nothing waiting on you.
+          {statusFilter === null
+            ? `✅ All ${partners.length} ${roleLabelPlural} are decided — nothing waiting on you.`
+            : `Showing ${statusFilter} only — none of these ${partners.length} need a decision. Clear the filter to see all ${roleLabelPlural}.`}
         </p>
       )}
 
@@ -1366,7 +1393,7 @@ function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
           partnerName={verifyDialog.partnerName}
           roleType={verifyDialog.roleType as PartnerRole}
           onClose={() => setVerifyDialog(null)}
-          onVerified={handleVerified}
+          onResolved={handleResolved}
         />
       )}
 
@@ -1686,9 +1713,15 @@ export default function AdminPartnersPage() {
     const t = searchParams.get('tab')
     if (t === 'ranking') return 'ranking'
     if (t === 'tour_operator' || t === 'operators') return 'tour_operator'
+    // A ?storefront= payload is operator-only by construction (there is no hotel storefront), and
+    // the deep link that carries it is ?tab=all&storefront=<id> from the admin dashboard. 'all' is
+    // gone, so without this it resolved to Hotel Managers — which fetches the wrong role, so the
+    // operator is never in `partners`, so the dialog the link exists to open never opens.
+    if (searchParams.get('storefront')) return 'tour_operator'
     return 'hotel_manager'
   }
   const [activeTab, setActiveTab] = useState<TabKey>(readTab)
+  const [refreshToken, setRefreshToken] = useState(0)
 
   useEffect(() => {
     setActiveTab(readTab())
@@ -1699,7 +1732,16 @@ export default function AdminPartnersPage() {
   // SUBMISSION log. Nobody had ever submitted, so all three read 0 while ten hotel managers sat
   // blocked and unable to publish. Counting the partner POPULATION (user_roles, via the identity
   // RPCs) is the only thing that answers "how many partners need me?".
-  const { data: population = [], isLoading: popLoading, refetch: refetchPop } = usePartnerPopulation()
+  // isError is not optional here. The hook throws on RPC failure precisely so this cannot fail
+  // silently — but `data = []` would turn that throw straight back into "Needs action: 0 /
+  // Total partners: 0" with nothing on screen saying the fetch died. That is the "All clear!" bug
+  // rebuilt one layer up. Render the failure instead of a zero.
+  const {
+    data: population = [],
+    isLoading: popLoading,
+    isError: popError,
+    refetch: refetchPop,
+  } = usePartnerPopulation()
   const needsActionCount = population.filter(
     (p: PartnerPopulationRow) =>
       p.account_status !== 'deleted' &&
@@ -1726,6 +1768,7 @@ export default function AdminPartnersPage() {
           size="sm"
           onClick={() => {
             refetchPop()
+            setRefreshToken((n) => n + 1)
           }}
           className="gap-1.5"
         >
@@ -1736,42 +1779,59 @@ export default function AdminPartnersPage() {
 
       {/* Stats — counted from the partner POPULATION (user_roles), not the submission log.
           These read 0/0/0 for months because they counted partner_verification_requests, which only
-          holds partners who submitted — and nobody had. */}
-      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-warning/10">
-              <Clock className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{popLoading ? '—' : needsActionCount.length}</p>
-              <p className="text-xs text-muted-foreground">Needs action</p>
-            </div>
+          holds partners who submitted — and nobody had.
+          On failure we render the failure. A "0" here is a claim that nothing needs doing, and this
+          page has already told that lie once. */}
+      {popError ? (
+        <Card className="mb-6 border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4 flex flex-wrap items-center gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+            <p className="min-w-0 flex-1 text-sm text-destructive">
+              Could not count partners — this page cannot tell you what is waiting. Do not read the
+              tabs below as complete.
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetchPop()}>
+              Retry
+            </Button>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-success/10">
-              <CheckCircle className="h-5 w-5 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{popLoading ? '—' : operativeCount}</p>
-              <p className="text-xs text-muted-foreground">Operative</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-info/10">
-              <Users className="h-5 w-5 text-info" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{popLoading ? '—' : population.length}</p>
-              <p className="text-xs text-muted-foreground">Total partners</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-warning/10">
+                <Clock className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{popLoading ? '—' : needsActionCount.length}</p>
+                <p className="text-xs text-muted-foreground">Needs action</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-success/10">
+                <CheckCircle className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{popLoading ? '—' : operativeCount}</p>
+                <p className="text-xs text-muted-foreground">Operative</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-info/10">
+                <Users className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{popLoading ? '—' : population.length}</p>
+                <p className="text-xs text-muted-foreground">Total partners</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)}>
         <TabsList className="mb-6">
@@ -1810,11 +1870,11 @@ export default function AdminPartnersPage() {
             Deleting it also removes the raw kyc_session_token that PendingReviewCard printed into
             the DOM — a free PII win. */}
         <TabsContent value="hotel_manager">
-          <AllPartnersTab roleType="hotel_manager" />
+          <AllPartnersTab roleType="hotel_manager" refreshToken={refreshToken} />
         </TabsContent>
 
         <TabsContent value="tour_operator">
-          <AllPartnersTab roleType="tour_operator" />
+          <AllPartnersTab roleType="tour_operator" refreshToken={refreshToken} />
         </TabsContent>
 
         <TabsContent value="ranking">

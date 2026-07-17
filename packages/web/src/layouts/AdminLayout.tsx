@@ -33,7 +33,10 @@ export default function AdminLayout() {
   // submitted, so the badge read 0 for months while not one manager on the platform could publish.
   // A badge that is structurally incapable of showing work is worse than no badge: it actively
   // tells the admin there is nothing to do.
-  const { data: partnerPopulation = [] } = usePartnerPopulation()
+  // isError matters: a swallowed failure renders a 0 badge, which tells the admin there is nothing
+  // to do. That is exactly what the old queue-backed badge did for months. If we cannot count, say
+  // we cannot count — never imply zero.
+  const { data: partnerPopulation = [], isError: partnerCountError } = usePartnerPopulation()
   const pendingPartnersCount = partnerPopulation.filter(
     (p) =>
       p.account_status !== 'deleted' &&
@@ -81,7 +84,17 @@ export default function AdminLayout() {
       return (
         <span className="inline-flex items-center gap-2">
           <span>{label}</span>
-          {pendingPartnersCount > 0 ? (
+          {partnerCountError ? (
+            // Never render nothing here — an absent badge reads as "zero waiting", which is the
+            // claim we cannot currently support.
+            <Badge
+              variant="destructive"
+              className="border-0"
+              title="Could not count partners waiting"
+            >
+              !
+            </Badge>
+          ) : pendingPartnersCount > 0 ? (
             <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0">
               {pendingPartnersCount}
             </Badge>

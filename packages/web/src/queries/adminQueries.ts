@@ -424,6 +424,8 @@ export function useApprovePartner() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
       queryClient.invalidateQueries({ queryKey: adminKeys.partners() })
+      // The stat cards, tab badges and sidebar badge all read partnerPopulation.
+      queryClient.invalidateQueries({ queryKey: adminKeys.partnerPopulation() })
     },
   })
 }
@@ -453,6 +455,8 @@ export function useRejectPartner() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
       queryClient.invalidateQueries({ queryKey: adminKeys.partners() })
+      // The stat cards, tab badges and sidebar badge all read partnerPopulation.
+      queryClient.invalidateQueries({ queryKey: adminKeys.partnerPopulation() })
     },
   })
 }
@@ -481,6 +485,7 @@ export function useRequestPartnerInfo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.verificationQueue() })
+      queryClient.invalidateQueries({ queryKey: adminKeys.partnerPopulation() })
     },
   })
 }

@@ -111,13 +111,17 @@ function CheckLine({
   )
 }
 
+/** What actually happened, so the caller can say so. A single onVerified() callback meant Reject
+ *  reported "verified — partner notified" — telling the admin the opposite of the truth. */
+export type VerifyOutcome = 'approved' | 'rejected' | 'info_requested'
+
 interface Props {
   open: boolean
   partnerId: string
   partnerName: string
   roleType: PartnerRole
   onClose: () => void
-  onVerified: () => void
+  onResolved: (outcome: VerifyOutcome) => void
 }
 
 /**
@@ -135,11 +139,15 @@ export function PartnerVerifyDialog({
   partnerName,
   roleType,
   onClose,
-  onVerified,
+  onResolved,
 }: Props) {
   const [evidence, setEvidence] = useState<PartnerEvidence | null>(null)
   const [loading, setLoading] = useState(true)
+  // loadError = "we could not fetch the evidence", and it REPLACES the body (fail closed).
+  // actionError = "your action failed", and it must NOT — reusing loadError for a failed reject
+  // destroyed the checklist and dead-ended the dialog with no way back to the evidence.
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const [ack, setAck] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -155,6 +163,7 @@ export function PartnerVerifyDialog({
     let cancelled = false
     setLoading(true)
     setLoadError(null)
+    setActionError(null)
     setEvidence(null)
     setReason('')
     setAck(false)
@@ -169,7 +178,17 @@ export function PartnerVerifyDialog({
         // blank rows as "nothing on file" and approve on the strength of a failed query.
         setLoadError(error.message ?? 'Could not load this partner’s evidence')
       } else {
-        setEvidence((Array.isArray(data) ? data[0] : data) ?? null)
+        const row = (Array.isArray(data) ? data[0] : data) ?? null
+        if (!row) {
+          // Zero rows means no user_roles row for this partner+type — the RPC's WHERE matched
+          // nothing. Rendering the checklist with everything undefined would look identical to a
+          // genuine "nothing on file", which is the one reading that must never be faked.
+          setLoadError(
+            `No ${roleType.replace('_', ' ')} role exists for this user — there is nothing to approve here.`,
+          )
+        } else {
+          setEvidence(row)
+        }
       }
       setLoading(false)
     })()
@@ -179,13 +198,48 @@ export function PartnerVerifyDialog({
   }, [open, partnerId, roleType])
 
   const isManager = roleType === 'hotel_manager'
-  const identityApproved = evidence?.kyc_status === 'approved'
+
+  // "Approved" is not enough. A kyc_sessions row can read approved with NO admin recorded as the
+  // reviewer — that is the exact fingerprint of the self-approval hole 20260717000001 closed, and
+  // treating it as verified identity would put a green "Identity verified" panel over precisely the
+  // case the guard exists for. An unvouched approval is not evidence.
+  const identityApproved =
+    evidence?.kyc_status === 'approved' && evidence?.kyc_reviewed_by_is_admin !== false
+
+  // Does a submission EXIST? A fact, reported as-is on the checklist.
   const hasSubmission = !!evidence?.has_submission
+
+  // Is it evidence FOR APPROVING? Different question. A submission that was already REJECTED is
+  // not — otherwise the dialog says "Reviewing a submission on file" over a rejection and logs
+  // evidence_ack='submission' for it. Note verify_direct only looks up requests in
+  // ('pending','under_review','info_requested'); against a closed one it writes a synthetic
+  // "no submission on file" record, so claiming 'submission' there would misdescribe what the RPC
+  // actually did.
+  const submissionUsable =
+    hasSubmission &&
+    ['pending', 'under_review', 'info_requested', 'approved'].includes(
+      evidence?.submission_status ?? '',
+    )
+
+  // Documents can exist without a submission — a partner who uploaded their SECP certificate but
+  // never pressed Finish. Calling that "No evidence on file" and logging evidence_ack='none' would
+  // be false, and would force an attestation for a partner whose paperwork is sitting right there.
+  const hasAnyDoc = !!(
+    evidence?.has_business_doc ||
+    evidence?.has_title_deed ||
+    evidence?.has_utility_bill ||
+    evidence?.has_property_photo
+  )
+
   const identityConflict =
     evidence?.kyc_status === 'rejected' || evidence?.kyc_status === 'revoked'
 
   // Which of the three shapes are we in? This is what the whole dialog turns on.
-  const ackValue: EvidenceAck = hasSubmission ? 'submission' : identityApproved ? 'kyc_only' : 'none'
+  const ackValue: EvidenceAck = submissionUsable
+    ? 'submission'
+    : identityApproved || hasAnyDoc
+      ? 'kyc_only'
+      : 'none'
   const isBlindVouch = ackValue === 'none'
 
   const reasonOk = reason.trim().length >= MIN_VERIFY_REASON_LEN
@@ -194,6 +248,7 @@ export function PartnerVerifyDialog({
   const handleConfirm = async () => {
     if (!canSubmit) return
     setSubmitting(true)
+    setActionError(null)
     try {
       const { error } = await (supabase as any).rpc('admin_verify_partner_direct', {
         p_user_id: partnerId,
@@ -202,9 +257,9 @@ export function PartnerVerifyDialog({
         p_evidence_ack: ackValue,
       })
       if (error) throw error
-      onVerified()
+      onResolved('approved')
     } catch (err: any) {
-      setLoadError(err?.message ?? 'Failed to verify partner')
+      setActionError(err?.message ?? 'Failed to verify partner')
     } finally {
       setSubmitting(false)
     }
@@ -217,6 +272,7 @@ export function PartnerVerifyDialog({
   const handleReject = async () => {
     if (!submissionId || !reasonOk) return
     setSubmitting(true)
+    setActionError(null)
     try {
       await rejectPartner.mutateAsync({
         userId: partnerId,
@@ -224,9 +280,9 @@ export function PartnerVerifyDialog({
         requestId: submissionId,
         reason: reason.trim(),
       })
-      onVerified()
+      onResolved('rejected')
     } catch (err: any) {
-      setLoadError(err?.message ?? 'Failed to reject partner')
+      setActionError(err?.message ?? 'Failed to reject partner')
     } finally {
       setSubmitting(false)
     }
@@ -235,6 +291,7 @@ export function PartnerVerifyDialog({
   const handleRequestInfo = async () => {
     if (!submissionId || !reasonOk) return
     setSubmitting(true)
+    setActionError(null)
     try {
       await requestInfo.mutateAsync({
         userId: partnerId,
@@ -242,9 +299,9 @@ export function PartnerVerifyDialog({
         requestId: submissionId,
         message: reason.trim(),
       })
-      onVerified()
+      onResolved('info_requested')
     } catch (err: any) {
-      setLoadError(err?.message ?? 'Failed to request more information')
+      setActionError(err?.message ?? 'Failed to request more information')
     } finally {
       setSubmitting(false)
     }
@@ -427,9 +484,11 @@ export function PartnerVerifyDialog({
               <div className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/5 p-3 text-sm text-foreground">
                 <FileText className="h-4 w-4 shrink-0 mt-0.5 text-success" />
                 <span>
-                  {hasSubmission
+                  {submissionUsable
                     ? 'Reviewing a submission on file.'
-                    : 'Identity verified, but no business documents were submitted.'}
+                    : hasAnyDoc
+                      ? 'Documents are on file, but were never submitted for review.'
+                      : 'Identity verified, but no business documents were submitted.'}
                 </span>
               </div>
             )}
@@ -452,6 +511,15 @@ export function PartnerVerifyDialog({
                 {reason.trim().length}/{MIN_VERIFY_REASON_LEN} — recorded in the audit log.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* An action failure keeps the evidence on screen — it is not a load failure and must not
+            be dressed as one. */}
+        {actionError && (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+            <p className="text-sm text-destructive">{actionError}</p>
           </div>
         )}
 
