@@ -310,37 +310,26 @@ export async function fetchToursForModeration(limit = 100) {
  * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
 export async function fetchHotelManagers(limit = 100, status: string | null = null) {
-  // Prefer the identity-based list, for the same reason the operator side does: it enumerates
-  // managers by user_roles, so a manager who picked the role but has no hotel_manager_profiles row
-  // still appears (flagged has_profile=false) instead of being invisible to admin. The older
-  // admin_list_hotel_managers enumerates FROM the profile table, so it cannot see them — and it
-  // returns neither email nor verification_status, which the page needs.
-  try {
-    const { data, error } = await (supabase as any).rpc('admin_list_hotel_manager_identities', {
-      p_status: status,
-    })
-    if (error) throw error
-    return (data || []).slice(0, limit)
-  } catch {
-    // Falls here when the identity RPC is not yet deployed. Keep the previous behaviour.
-    try {
-      const { data, error } = await (supabase as any).rpc('admin_list_hotel_managers', {
-        p_status: status,
-      })
-      if (error) throw error
-      return (data || []).slice(0, limit)
-    } catch {
-      // Last resort: direct query (may miss suspended rows if RLS filters them)
-      const { data, error } = await supabase
-        .from('hotel_manager_profiles')
-        .select('user_id, business_name, account_status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(limit)
-
-      if (error) throw error
-      return data || []
-    }
-  }
+  // Enumerates managers by user_roles, so a manager who picked the role but has no
+  // hotel_manager_profiles row still appears (has_profile=false) instead of being invisible.
+  // It is also the ONLY source of verification_status: user_roles has a single SELECT policy
+  // ("Users can view own roles"), no admin policy, so a raw read returns zero rows for every
+  // partner. This RPC is SECURITY DEFINER and bypasses that.
+  //
+  // NO FALLBACK — deliberately. There used to be a two-tier `catch {}` chain here dropping to
+  // admin_list_hotel_managers and then a raw table read. Neither returns verification_status, and
+  // admins hold an RLS read policy on hotel_manager_profiles, so BOTH would happily return the full
+  // population with verification_status === undefined. needsAction then filters to zero and the
+  // page prints "✅ All 10 hotel managers are decided — nothing waiting on you" over a completely
+  // blocked population. That is the precise failure this whole rework exists to eliminate, and a
+  // blind catch rebuilt it: it cannot tell "RPC not deployed" from "RPC failed". The RPC is
+  // deployed. Let it throw — load() catches and toasts, which is a visible failure instead of a
+  // false all-clear.
+  const { data, error } = await (supabase as any).rpc('admin_list_hotel_manager_identities', {
+    p_status: status,
+  })
+  if (error) throw error
+  return (data || []).slice(0, limit)
 }
 
 /**
@@ -351,35 +340,18 @@ export async function fetchHotelManagers(limit = 100, status: string | null = nu
  * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
 export async function fetchTourOperators(limit = 100, status: string | null = null) {
-  // Prefer the identity-based list: it enumerates operators by user_roles, so an operator who
-  // registered but has no tour_operator_profiles row (a real production case — see
-  // 20260711000001) still appears, flagged has_profile=false, instead of being invisible to admin.
-  try {
-    const { data, error } = await (supabase as any).rpc('admin_list_operator_identities', {
-      p_status: status,
-    })
-    if (error) throw error
-    return (data || []).slice(0, limit)
-  } catch {
-    // Falls here when the identity RPC is not yet deployed. Keep the previous behaviour.
-    try {
-      const { data, error } = await (supabase as any).rpc('admin_list_tour_operators', {
-        p_status: status,
-      })
-      if (error) throw error
-      return (data || []).slice(0, limit)
-    } catch {
-      // Last resort: direct query (may miss suspended rows if RLS filters them).
-      const { data, error } = await supabase
-        .from('tour_operator_profiles')
-        .select('user_id, company_name, account_status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(limit)
-
-      if (error) throw error
-      return data || []
-    }
-  }
+  // Enumerates operators by user_roles, so an operator who registered but has no
+  // tour_operator_profiles row (a real production case — see 20260711000001) still appears,
+  // flagged has_profile=false, instead of being invisible to admin.
+  //
+  // NO FALLBACK, for the same reason as fetchHotelManagers above: the tiers it used to drop to do
+  // not return verification_status, and a row set with verification_status === undefined makes the
+  // page claim everyone is decided. See that comment — the failure mode is identical.
+  const { data, error } = await (supabase as any).rpc('admin_list_operator_identities', {
+    p_status: status,
+  })
+  if (error) throw error
+  return (data || []).slice(0, limit)
 }
 
 /**
