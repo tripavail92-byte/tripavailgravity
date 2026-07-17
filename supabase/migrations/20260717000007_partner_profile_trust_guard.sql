@@ -56,13 +56,36 @@
 -- stay writable, and only the keys that constitute a CLAIM BY THE PLATFORM get pinned to whatever
 -- the server already believes. The wizard carries on unchanged — its kycStatus write stops counting.
 --
--- THE LEGITIMATE AUTHORS, both unaffected because both are SECURITY DEFINER and admin/service:
---   * kyc_session_status_changed()               — owns kycStatus / kycVerifiedAt
---   * admin_set_operator_verification_flag()     — owns the four *Verified flags
---     (20260328000002:124-181; is_admin-guarded, so auth.uid() inside this trigger is the admin's
---     and the is_admin branch below lets it through untouched). It also writes a row to
---     operator_verification_reviews, which partners cannot write — that is the fingerprint the
---     detection query at the bottom uses to tell a real verification from a forged one.
+-- THE LEGITIMATE AUTHORS:
+--   * kyc_session_status_changed()           — owns kycStatus / kycVerifiedAt
+--   * admin_set_operator_verification_flag() — owns the four *Verified flags (20260328000002:124-181).
+--     It also writes a row to operator_verification_reviews, which partners cannot write — that is
+--     the fingerprint the detection query at the bottom uses to tell a real verification from a
+--     forged one.
+--
+-- *** WHY THIS GUARD TESTS current_user AND IS SECURITY INVOKER. ***
+-- An earlier draft exempted them on the grounds that they are "SECURITY DEFINER and admin/service",
+-- testing request_jwt_role() = 'service_role'. THAT REASONING IS WRONG AND WOULD HAVE BROKEN THE
+-- WIZARD. SECURITY DEFINER changes the executing DB ROLE; it does not touch request.jwt.claims. Both
+-- auth.uid() and request_jwt_role() read that GUC (20260323000010:9), so inside a SECURITY DEFINER
+-- function they still return the CALLER's identity — which is precisely why the is_admin() check in
+-- admin_verify_partner_direct works at all.
+--
+-- The consequence: 20260717000001:88-91 deliberately lets a PARTNER set their own session to
+-- 'expired' (refreshQr / start-over). kyc_session_status_changed then fires and syncs
+-- kycStatus='expired' into the profile — under the partner's JWT. A request_jwt_role() test sees
+-- 'authenticated', pins kycStatus back to its old value, and silently discards a legitimate server
+-- write, leaving the wizard's cached identity status frozen.
+--
+-- current_user is the right question — "who is actually executing this write?" — and SECURITY
+-- DEFINER genuinely does change it. But a SECURITY DEFINER function cannot read it: inside one,
+-- current_user is its OWN owner. So this guard is SECURITY INVOKER, and then:
+--     partner PATCHes their profile directly            -> current_user = 'authenticated' -> guarded
+--     kyc_session_status_changed writes the cache       -> current_user = 'postgres'      -> exempt
+--     admin_set_operator_verification_flag writes flags -> current_user = 'postgres'      -> exempt
+--     worker / edge function                            -> current_user = 'service_role'  -> exempt
+-- SECURITY INVOKER is safe here: the function only rewrites NEW, and its one call (is_admin) is
+-- GRANTed to authenticated (20260710000002:27).
 -- =====================================================================
 
 BEGIN;
@@ -70,7 +93,9 @@ BEGIN;
 CREATE OR REPLACE FUNCTION public.partner_profile_trust_guard()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER
+-- INVOKER, deliberately — see the header. A SECURITY DEFINER function reads its OWN owner as
+-- current_user, which would make the discriminator below always true and the guard a no-op.
+SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
@@ -90,21 +115,27 @@ DECLARE
     'addressVerified',
     'bankVerified'
   ];
-  v_uid      UUID := auth.uid();
-  v_jwt_role TEXT := public.request_jwt_role();
-  v_doc      JSONB;
-  v_old_doc  JSONB;
-  k          TEXT;
+  v_uid     UUID := auth.uid();
+  v_doc     JSONB;
+  v_old_doc JSONB;
+  k         TEXT;
 BEGIN
-  -- service_role (the worker, edge functions) and '' (migrations / psql / the SECURITY DEFINER
-  -- trigger that legitimately owns these keys). Asserting the role rather than testing
-  -- `auth.uid() IS NULL` — the latter is also true for anon.
-  IF v_jwt_role = 'service_role' OR v_jwt_role = '' THEN
+  -- Only the client roles are guarded. Everything legitimate reaches these columns as some other
+  -- role: a SECURITY DEFINER function executes as its owner (postgres), and the worker / edge
+  -- functions connect as service_role. Testing current_user rather than the JWT claim is what makes
+  -- the KYC cache sync work on a partner-initiated 'expired' — see the header.
+  IF current_user NOT IN ('authenticated', 'anon') THEN
     RETURN NEW;
   END IF;
 
-  IF v_uid IS NOT NULL AND public.is_admin(v_uid) THEN
-    RETURN NEW;
+  -- An admin writing a profile directly rather than through an RPC.
+  -- Nested, not `v_uid IS NOT NULL AND is_admin(v_uid)`: SQL does not promise to short-circuit AND,
+  -- and is_admin's EXECUTE is REVOKEd from anon (20260710000002:26), so evaluating it as anon would
+  -- be a permission error rather than false.
+  IF v_uid IS NOT NULL THEN
+    IF public.is_admin(v_uid) THEN
+      RETURN NEW;
+    END IF;
   END IF;
 
   -- ── the JSONB trust keys ────────────────────────────────────────────────

@@ -106,8 +106,10 @@ BEGIN
     SET verification_status = 'incomplete'
     WHERE user_id   = v_session.user_id
       AND role_type = v_session.role
-      -- Only demote someone who is actually approved. A partner already 'incomplete'/'rejected'
-      -- should not be silently rewritten, and this keeps the action idempotent.
+      -- Only demote someone who is actually approved: a partner already 'incomplete' or 'rejected'
+      -- must not be silently rewritten. NOTE this does NOT make revoke re-runnable — the status
+      -- guard above raises long before this predicate is reached. Fixing an already-revoked partner
+      -- needs the backfill at the bottom of this file, not a second revoke.
       AND verification_status = 'approved';
 
     -- 3. Tell them. A partner who quietly stops being able to publish, with no message, files a
@@ -183,14 +185,14 @@ COMMIT;
 
 
 -- ---------------------------------------------------------------------
--- THE EXISTING VICTIMS (read-only) — run this. This migration stops NEW cases; it does not
--- retro-fix anyone already revoked-but-trading, because it changes no data.
+-- THE EXISTING VICTIMS — run this. This migration stops NEW cases; it changes no data, so anyone
+-- already revoked-but-still-trading stays that way until you act.
 --
--- Every row returned is a partner whose identity was revoked and who is STILL approved to trade.
--- Revoke them again (the action is now idempotent and will demote them), or fix by hand.
+-- STEP 1 — WHO (read-only). Every row is a partner whose identity was revoked and who is STILL
+-- approved to trade.
 -- ---------------------------------------------------------------------
 -- SELECT ur.user_id, u.email, ur.role_type, ur.verification_status,
---        ks.status AS kyc_status, ks.reviewed_at AS revoked_at, ks.review_notes AS revoke_reason
+--        ks.id AS session_id, ks.reviewed_at AS revoked_at, ks.review_notes AS revoke_reason
 -- FROM public.user_roles ur
 -- JOIN public.users u ON u.id = ur.user_id
 -- JOIN LATERAL (
@@ -200,3 +202,61 @@ COMMIT;
 -- ) ks ON TRUE
 -- WHERE ur.verification_status = 'approved'
 --   AND ks.status = 'revoked';
+--
+-- STEP 2 — FIX THEM (destructive).
+-- NOTE: you cannot simply "revoke them again". admin_enforce_kyc_action's revoke branch guards on
+-- `IF v_session.status != 'approved' THEN RAISE`, so re-revoking an already-revoked session throws —
+-- and AdminKYCPage only renders the Revoke button for approved sessions (availableFor: ['approved']),
+-- so the UI will not offer it either. This backfill does by hand exactly what the fixed RPC now does
+-- automatically, for the rows step 1 returned.
+/*
+BEGIN;
+
+CREATE TEMP TABLE _revoked_but_trading AS
+SELECT ur.user_id, ur.role_type
+FROM public.user_roles ur
+JOIN LATERAL (
+  SELECT s.* FROM public.kyc_sessions s
+   WHERE s.user_id = ur.user_id AND s.role = ur.role_type
+   ORDER BY s.created_at DESC LIMIT 1
+) ks ON TRUE
+WHERE ur.verification_status = 'approved'
+  AND ks.status = 'revoked';
+
+SELECT count(*) AS partners_to_demote FROM _revoked_but_trading;   -- sanity-check against step 1
+
+-- Void the verified identity record (operators only — managers have no kyc_verified_* columns).
+UPDATE public.tour_operator_profiles p
+SET current_kyc_session_id = NULL, kyc_verified_name = NULL, kyc_verified_cnic = NULL,
+    kyc_verified_dob = NULL, kyc_verified_gender = NULL, kyc_verified_father_name = NULL,
+    kyc_verified_at = NULL,
+    kyc_rejection_reason = COALESCE(kyc_rejection_reason, 'KYC revoked by admin (backfill)')
+FROM _revoked_but_trading r
+WHERE p.user_id = r.user_id AND r.role_type = 'tour_operator';
+
+-- Stop them trading.
+UPDATE public.user_roles ur
+SET verification_status = 'incomplete'
+FROM _revoked_but_trading r
+WHERE ur.user_id = r.user_id AND ur.role_type = r.role_type
+  AND ur.verification_status = 'approved';
+
+-- Tell them.
+INSERT INTO public.notifications (user_id, type, title, body)
+SELECT r.user_id, 'kyc_revoked', 'Identity verification withdrawn',
+       'Your identity verification has been withdrawn and your listings are paused. You can re-verify from your dashboard.'
+FROM _revoked_but_trading r;
+
+-- Expect 0.
+SELECT count(*) AS still_trading_on_a_revoked_identity
+FROM public.user_roles ur
+JOIN LATERAL (
+  SELECT s.* FROM public.kyc_sessions s
+   WHERE s.user_id = ur.user_id AND s.role = ur.role_type
+   ORDER BY s.created_at DESC LIMIT 1
+) ks ON TRUE
+WHERE ur.verification_status = 'approved' AND ks.status = 'revoked';
+
+-- Happy? COMMIT;   Anything unexpected? ROLLBACK;
+ROLLBACK;   -- <- deliberately the default.
+*/
