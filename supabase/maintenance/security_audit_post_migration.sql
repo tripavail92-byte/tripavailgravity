@@ -83,7 +83,7 @@ LEFT JOIN public.users u          ON u.id  = ks.user_id
 LEFT JOIN public.admin_users au   ON au.id = ks.reviewed_by
 LEFT JOIN public.user_roles ur    ON ur.user_id = ks.user_id AND ur.role_type = ks.role
 WHERE ks.status IN ('approved', 'revoked', 'rejected')
-ORDER BY (au.id IS NULL AND ks.reviewed_by IS NOT NULL) DESC, ks.reviewed_by IS NULL DESC, ks.updated_at DESC;
+ORDER BY (au.id IS NULL AND ks.reviewed_by IS NOT NULL) DESC, ks.reviewed_by IS NULL DESC, COALESCE(ks.reviewed_at, ks.created_at) DESC;
 
 
 -- ── CHECK 3 — WHO IS TRADING ON A REVOKED IDENTITY? ─────────────────────────
