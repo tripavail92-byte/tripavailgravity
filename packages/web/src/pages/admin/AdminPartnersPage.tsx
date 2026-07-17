@@ -52,6 +52,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  PartnerVerifyDialog,
+  type PartnerRole,
+} from '@/features/admin/components/PartnerVerifyDialog'
+import {
   clearOperatorAwardOverride,
   fetchOperatorAwardOverrides,
   fetchOperatorAwards,
@@ -1219,7 +1223,6 @@ function AllPartnersTab() {
     partnerName: string
   } | null>(null)
   const [storefrontDialog, setStorefrontDialog] = useState<{ id: string; name: string } | null>(null)
-  const [isVerifying, setIsVerifying] = useState(false)
   const [verificationByUserId, setVerificationByUserId] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   // Status filter: null = all
@@ -1310,23 +1313,13 @@ function AllPartnersTab() {
     setStorefrontDialog({ id: target.user_id, name })
   }, [partners, requestedStorefrontId, storefrontDialog, usersById])
 
-  const handleVerifyConfirm = async () => {
-    if (!verifyDialog) return
-    setIsVerifying(true)
-    try {
-      const { error } = await (supabase as any).rpc('admin_verify_partner_direct', {
-        p_user_id:      verifyDialog.partnerId,
-        p_partner_type: verifyDialog.roleType,
-      })
-      if (error) throw error
-      toast.success(`${verifyDialog.partnerName} verified — partner notified`)
-      setVerifyDialog(null)
-      await load(statusFilter)
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to verify partner')
-    } finally {
-      setIsVerifying(false)
-    }
+  // The RPC call, the reason, the evidence acknowledgement and the confirmation UI all now live in
+  // PartnerVerifyDialog — it has to load the evidence before it can render, so the dialog owns the
+  // whole interaction rather than the page driving a stateless confirm box.
+  const handleVerified = async () => {
+    toast.success(`${verifyDialog?.partnerName} verified — partner notified`)
+    setVerifyDialog(null)
+    await load(statusFilter)
   }
 
   const handleActionConfirm = async () => {
@@ -1630,35 +1623,20 @@ function AllPartnersTab() {
       </Card>
 
       {/* Verify Partner Dialog */}
-      <Dialog open={!!verifyDialog} onOpenChange={(open) => { if (!open && !isVerifying) setVerifyDialog(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify Partner</DialogTitle>
-            <DialogDescription>
-              This will mark{' '}
-              <span className="font-semibold text-foreground">{verifyDialog?.partnerName}</span>{' '}
-              as verified and grant them full platform access. They will be notified instantly.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-start gap-2 text-sm text-green-700 bg-green-50 rounded-lg p-3 border border-green-200">
-            <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>Verification is logged to the audit trail. The partner will be able to list tours and packages immediately.</span>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setVerifyDialog(null)} disabled={isVerifying}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
-              onClick={handleVerifyConfirm}
-              disabled={isVerifying}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              {isVerifying ? 'Verifying…' : 'Confirm Verify'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Approval now shows the admin what they are approving ON. The dialog this replaced asked
+          "Verify Partner?" over a green reassurance box and called a 2-arg RPC — it displayed
+          nothing about whether the partner had ever been verified, took no reason, and made
+          vouching for a stranger look identical to approving a reviewed submission. */}
+      {verifyDialog && (
+        <PartnerVerifyDialog
+          open
+          partnerId={verifyDialog.partnerId}
+          partnerName={verifyDialog.partnerName}
+          roleType={verifyDialog.roleType as PartnerRole}
+          onClose={() => setVerifyDialog(null)}
+          onVerified={handleVerified}
+        />
+      )}
 
       {/* Account Status Confirmation Dialog */}
       <Dialog
