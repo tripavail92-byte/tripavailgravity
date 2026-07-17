@@ -3,8 +3,10 @@ import {
   AlertTriangle,
   ArrowLeft,
   BarChart3,
+  Building2,
   CheckCircle,
   Clock,
+  Compass,
   Eye,
   Loader2,
   MessageSquare,
@@ -79,11 +81,8 @@ import {
 } from '@/features/admin/services/adminService'
 import { supabase } from '@/lib/supabase'
 import {
-  useApprovePartner,
-  useRejectPartner,
-  useRequestPartnerInfo,
-  useVerificationQueue,
-  type VerificationRequest,
+  usePartnerPopulation,
+  type PartnerPopulationRow,
 } from '@/queries/adminQueries'
 import { useSearchParams } from 'react-router-dom'
 
@@ -108,6 +107,9 @@ type PartnerRow = {
 }
 
 type PartnerAdminRow = PartnerRow & { roleType: string; rpcName: string }
+
+/** Role is the primary axis; 'ranking' is operator-only and has no hotel analogue. */
+type TabKey = PartnerRole | 'ranking'
 
 const MIN_REASON_LEN = 12
 
@@ -196,25 +198,6 @@ function urgencyColor(dateStr: string): string {
   return 'text-muted-foreground'
 }
 
-function statusBadge(status: VerificationRequest['status']) {
-  const map: Record<string, { label: string; className: string }> = {
-    pending: { label: 'Pending Review', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-    under_review: { label: 'Under Review', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-    approved: { label: 'Approved', className: 'bg-green-100 text-green-800 border-green-200' },
-    rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800 border-red-200' },
-    info_requested: {
-      label: 'Info Requested',
-      className: 'bg-purple-100 text-purple-800 border-purple-200',
-    },
-  }
-  const s = map[status] ?? { label: status, className: '' }
-  return (
-    <Badge variant="outline" className={s.className}>
-      {s.label}
-    </Badge>
-  )
-}
-
 function formatScoreReason(code: string) {
   return code.replace(/_/g, ' ')
 }
@@ -228,335 +211,6 @@ function formatScoreInputValue(value: unknown) {
 
 // ─── Pending Review Card ──────────────────────────────────────────────────────
 
-function PendingReviewCard({ req }: { req: VerificationRequest }) {
-  const [showRejectDialog, setShowRejectDialog] = useState(false)
-  const [showInfoDialog, setShowInfoDialog] = useState(false)
-  const [reason, setReason] = useState('')
-  const [message, setMessage] = useState('')
-
-  const approve = useApprovePartner()
-  const reject = useRejectPartner()
-  const requestInfo = useRequestPartnerInfo()
-
-  const handleApprove = async () => {
-    try {
-      await approve.mutateAsync({
-        userId: req.user_id,
-        partnerType: req.partner_type,
-        requestId: req.id,
-      })
-      toast.success('Partner approved — notified instantly')
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to approve')
-    }
-  }
-
-  const handleReject = async () => {
-    if (reason.trim().length < MIN_REASON_LEN) {
-      toast.error(`Reason must be ≥ ${MIN_REASON_LEN} chars`)
-      return
-    }
-    try {
-      await reject.mutateAsync({
-        userId: req.user_id,
-        partnerType: req.partner_type,
-        requestId: req.id,
-        reason: reason.trim(),
-      })
-      toast.success('Rejected — partner notified with your reason')
-      setShowRejectDialog(false)
-      setReason('')
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to reject')
-    }
-  }
-
-  const handleRequestInfo = async () => {
-    if (message.trim().length < MIN_REASON_LEN) {
-      toast.error(`Message must be ≥ ${MIN_REASON_LEN} chars`)
-      return
-    }
-    try {
-      await requestInfo.mutateAsync({
-        userId: req.user_id,
-        partnerType: req.partner_type,
-        requestId: req.id,
-        message: message.trim(),
-      })
-      toast.success('Info request sent')
-      setShowInfoDialog(false)
-      setMessage('')
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to send')
-    }
-  }
-
-  const sd = req.submission_data as Record<string, any>
-  const partnerLabel = req.partner_type === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'
-
-  const vd = (sd?.verification_documents ?? {}) as Record<string, any>
-  const kycToken = vd.kyc_session_token as string | undefined
-  const kycStatus = vd.kyc_status as string | undefined
-  const kycCnic = vd.cnic_number as string | undefined
-  const kycExpiry = vd.expiry_date as string | undefined
-
-  // Open a submitted trust document. The verification_urls keys are kyc_documents document_types, so
-  // prefer a private signed URL (admin-authorised); fall back to a legacy public URL for old submissions.
-  const viewReqDoc = async (docType: string, legacyUrl?: string) => {
-    const { data, error } = await supabase.functions.invoke('kyc-signed-url', {
-      body: { doc_type: docType, operator_id: req.user_id },
-    })
-    if (!error && data?.signedUrl) {
-      window.open(data.signedUrl as string, '_blank', 'noopener,noreferrer')
-    } else if (legacyUrl && /^https?:\/\//i.test(legacyUrl)) {
-      window.open(legacyUrl, '_blank', 'noopener,noreferrer')
-    } else {
-      toast.error('No document available')
-    }
-  }
-
-  const legacyIdentityDocs = [
-    { key: 'id_card_url', label: 'CNIC Front', emoji: '🪪' },
-    { key: 'id_back_url', label: 'CNIC Back', emoji: '🔄' },
-  ].filter((d) => !!vd[d.key])
-
-  return (
-    <>
-      <Card className="border-l-4 border-l-amber-400">
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <CardTitle className="text-base">
-                  {sd?.business_name || sd?.company_name || sd?.email || req.user_id}
-                </CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  {partnerLabel}
-                </Badge>
-                {req.version > 1 && (
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-purple-50 text-purple-700 border-purple-200"
-                  >
-                    Re-submission v{req.version}
-                  </Badge>
-                )}
-              </div>
-              {sd?.email && <p className="text-sm text-muted-foreground mt-0.5">{sd.email}</p>}
-              {sd?.registration_number && (
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Reg: {sd.registration_number}
-                </p>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              {statusBadge(req.status)}
-              <span className={`text-xs font-medium ${urgencyColor(req.submitted_at)}`}>
-                {daysAgo(req.submitted_at)}
-              </span>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {/* Identity / Biometric Documents */}
-          {(kycToken || legacyIdentityDocs.length > 0) && (
-            <div className="mb-4 p-3 rounded-lg bg-blue-50/60 border border-blue-100 space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">
-                  Identity Verification (CNIC)
-                </p>
-              </div>
-
-              {kycToken ? (
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div>
-                    <span className="font-semibold text-foreground">KYC status:</span>{' '}
-                    {kycStatus ?? '—'}
-                  </div>
-                  <div>
-                    <span className="font-semibold text-foreground">KYC token:</span> {kycToken}
-                  </div>
-                  {kycCnic ? (
-                    <div>
-                      <span className="font-semibold text-foreground">CNIC:</span> {kycCnic}
-                    </div>
-                  ) : null}
-                  {kycExpiry ? (
-                    <div>
-                      <span className="font-semibold text-foreground">Expiry:</span> {kycExpiry}
-                    </div>
-                  ) : null}
-                  <div className="pt-1">
-                    <a
-                      href="/admin/kyc"
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
-                    >
-                      🛡️ Review in KYC Queue
-                    </a>
-                  </div>
-                </div>
-              ) : null}
-
-              {legacyIdentityDocs.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {legacyIdentityDocs.map((doc) => (
-                    <a
-                      key={doc.key}
-                      href={vd[doc.key]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-primary hover:underline bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-medium"
-                    >
-                      {doc.emoji} {doc.label}
-                    </a>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          )}
-          {!kycToken && legacyIdentityDocs.length === 0 && (
-            <div className="mb-4 p-3 rounded-lg bg-amber-50/60 border border-amber-200">
-              <p className="text-xs font-semibold text-amber-700">
-                ⚠️ No identity documents submitted — partner has not completed CNIC verification
-              </p>
-            </div>
-          )}
-
-          {sd?.verification_urls && Object.keys(sd.verification_urls).length > 0 && (
-            <div className="mb-4 p-3 rounded-lg bg-muted/50 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Documents
-              </p>
-              {Object.entries(sd.verification_urls as Record<string, string>).map(
-                ([docType, url]) => (
-                  <button
-                    key={docType}
-                    type="button"
-                    onClick={() => viewReqDoc(docType, url)}
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                  >
-                    📄 {docType.replace(/_/g, ' ')}
-                  </button>
-                ),
-              )}
-            </div>
-          )}
-          {req.partner_type === 'hotel_manager' && (
-            <div className="mb-4 p-3 rounded-lg bg-muted/50 space-y-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Property documents
-              </p>
-              {([
-                { type: 'title_deed', label: 'Title deed / lease', legacy: (vd.ownership_docs as any)?.titleDeedUrl },
-                { type: 'utility_bill', label: 'Utility bill', legacy: (vd.ownership_docs as any)?.utilityBillUrl },
-                { type: 'property_photo', label: 'Live property photo', legacy: (vd.ownership_docs as any)?.propertyLivePhotoUrl },
-              ] as const).map((d) => (
-                <button
-                  key={d.type}
-                  type="button"
-                  onClick={() => viewReqDoc(d.type, d.legacy)}
-                  className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                >
-                  📄 {d.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {sd?.business_address && (
-            <p className="text-xs text-muted-foreground mb-3">📍 {sd.business_address}</p>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
-              onClick={handleApprove}
-              disabled={approve.isPending}
-            >
-              <CheckCircle className="h-4 w-4" />
-              {approve.isPending ? 'Approving…' : 'Approve'}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-purple-300 text-purple-700 hover:bg-purple-50 gap-1.5"
-              onClick={() => setShowInfoDialog(true)}
-            >
-              <MessageSquare className="h-4 w-4" />
-              Request Info
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-red-300 text-red-600 hover:bg-red-50 gap-1.5"
-              onClick={() => setShowRejectDialog(true)}
-            >
-              <XCircle className="h-4 w-4" />
-              Reject
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            All actions are logged to the audit trail and partner notified instantly.
-          </p>
-        </CardContent>
-      </Card>
-
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Application</DialogTitle>
-            <DialogDescription>
-              Provide a clear reason. The partner will receive this exact message and can re-submit.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="e.g. Business registration document was unclear. Please upload a high-resolution scan."
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={4}
-          />
-          <p className="text-xs text-muted-foreground">
-            {reason.length} / {MIN_REASON_LEN} min chars
-          </p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleReject} disabled={reject.isPending}>
-              {reject.isPending ? 'Rejecting…' : 'Confirm Rejection'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request Additional Information</DialogTitle>
-            <DialogDescription>
-              Ask the partner for something specific. They will see your message and can re-submit.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="e.g. Please provide your tax registration certificate number."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInfoDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRequestInfo} disabled={requestInfo.isPending}>
-              {requestInfo.isPending ? 'Sending…' : 'Send Request'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
 
 // ─── All Partners Tab ─────────────────────────────────────────────────────────
 
@@ -1211,7 +865,15 @@ function StorefrontVerificationDialog({
   )
 }
 
-function AllPartnersTab() {
+/**
+ * One role's partners. Role is the primary axis of this page now: a hotel manager and a tour
+ * operator are approved on genuinely different evidence (a manager has a title deed, a utility bill
+ * and a property photo; an operator has a tour licence and a storefront), so mixing them into one
+ * list meant neither could be reviewed properly. It also means the row no longer needs a Type
+ * column — which used to be `hidden sm:table-cell`, so on a phone the two roles were literally
+ * indistinguishable.
+ */
+function AllPartnersTab({ roleType }: { roleType: PartnerRole }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [partners, setPartners] = useState<PartnerAdminRow[]>(
     [],
@@ -1245,45 +907,34 @@ function AllPartnersTab() {
   const load = async (filter: string | null = statusFilter) => {
     setLoading(true)
     try {
-      const [hmData, opData] = await Promise.all([fetchHotelManagers(100, filter), fetchTourOperators(100, filter)])
-      const hmRows = (hmData as PartnerRow[]).map((r) => ({
+      const isManager = roleType === 'hotel_manager'
+      const data = isManager
+        ? await fetchHotelManagers(200, filter)
+        : await fetchTourOperators(200, filter)
+
+      const rows = (data as PartnerRow[]).map((r) => ({
         ...r,
-        roleType: 'hotel_manager',
-        rpcName: 'admin_set_hotel_manager_status',
-      }))
-      const opRows = (opData as PartnerRow[]).map((r) => ({
-        ...r,
-        roleType: 'tour_operator',
-        rpcName: 'admin_set_tour_operator_status',
+        roleType,
+        rpcName: isManager ? 'admin_set_hotel_manager_status' : 'admin_set_tour_operator_status',
       }))
 
-      const allPartners = [...hmRows, ...opRows].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
-
-      const ids = Array.from(new Set(allPartners.map((r) => r.user_id)))
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)))
       const profiles = ids.length ? await fetchProfilesByIds(ids) : []
       setUsersById(Object.fromEntries(profiles.map((p: any) => [p.id, p])))
 
-      // Fetch verification statuses for all these users
-      if (ids.length) {
-        const { data: roles } = await (supabase as any)
-          .from('user_roles')
-          .select('user_id, role_type, verification_status')
-          .in('user_id', ids)
+      // verification_status comes straight off the identity RPC now. It used to be fetched with a
+      // separate raw `user_roles` query — which is RLS-subject (so it could silently return nothing),
+      // destructured its error away without checking it, and only ran `if (ids.length)`, leaving a
+      // stale map behind whenever a filter matched zero rows.
+      setVerificationByUserId(
+        Object.fromEntries(
+          rows
+            .filter((r) => r.verification_status)
+            .map((r) => [`${r.user_id}:${roleType}`, r.verification_status as string]),
+        ),
+      )
 
-        const vsMap: Record<string, string> = {}
-        if (roles) {
-          for (const r of roles) {
-            if (r.role_type === 'hotel_manager' || r.role_type === 'tour_operator') {
-              vsMap[`${r.user_id}:${r.role_type}`] = r.verification_status
-            }
-          }
-        }
-        setVerificationByUserId(vsMap)
-      }
-
-      setPartners(allPartners)
+      setPartners(rows)
     } catch (err: any) {
       console.error('[AdminPartnersPage] load error:', err)
       toast.error('Failed to load partners: ' + (err.message || String(err)))
@@ -1294,7 +945,19 @@ function AllPartnersTab() {
 
   useEffect(() => {
     load(statusFilter)
-  }, [statusFilter])
+  }, [statusFilter, roleType])
+
+  const roleLabelPlural = roleType === 'hotel_manager' ? 'hotel managers' : 'tour operators'
+
+  // Who is waiting on a human? Derived from the SAME list the table renders, so the band and the
+  // table can never tell different stories — the previous design's queue read a different table
+  // from the one the page listed, which is exactly how it came to say "All clear!" over 10 blocked
+  // managers. A deleted account is excluded: it needs no decision.
+  const needsAction = partners.filter(
+    (r) =>
+      r.account_status !== 'deleted' &&
+      (r.verification_status === 'incomplete' || r.verification_status === 'pending'),
+  )
 
   useEffect(() => {
     if (!requestedStorefrontId || partners.length === 0 || storefrontDialog) return
@@ -1433,16 +1096,85 @@ function AllPartnersTab() {
         </Button>
       </div>
 
+      {/* ── Needs your decision ──────────────────────────────────────────────────────────────
+          The anti-root-cause. The old page opened on a "Pending Review" tab reading
+          partner_verification_requests, which only ever holds partners who SUBMITTED — so the
+          entire 'incomplete' population (every hotel manager on the platform) was invisible to it
+          BY CONSTRUCTION, and it rendered a green "All clear!" while nobody could trade.
+          This band reads the same list as the table below it, so it cannot disagree with reality.
+          [Review] is inline, not buried in a "…" menu: the whole failure was an approval action
+          nobody could find. */}
+      {!loading && needsAction.length > 0 && (
+        <Card className="mb-6 border-warning/40 bg-warning/5">
+          <CardContent className="p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Needs your decision ({needsAction.length})
+            </p>
+            <div className="mt-3 space-y-2">
+              {needsAction.map((row) => {
+                const u = usersById[row.user_id]
+                const name =
+                  row.business_name ||
+                  row.company_name ||
+                  [u?.first_name, u?.last_name].filter(Boolean).join(' ') ||
+                  u?.email ||
+                  'Unknown'
+                return (
+                  <div
+                    key={row.user_id}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-background p-2.5"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+                      {name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{u?.email}</span>
+                    <OperativeBadge
+                      verification={row.verification_status}
+                      account={row.account_status}
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="ml-auto shrink-0"
+                      onClick={() =>
+                        setVerifyDialog({
+                          partnerId: row.user_id,
+                          roleType: row.roleType,
+                          partnerName: name,
+                        })
+                      }
+                    >
+                      Review
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {/* N = 0 gets a slim line, never a full-bleed celebration card. The table below always shows
+          the real population, so "nothing to do" can never be mistaken for "nobody is here". */}
+      {!loading && needsAction.length === 0 && partners.length > 0 && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          ✅ All {partners.length} {roleLabelPlural} are decided — nothing waiting on you.
+        </p>
+      )}
+
       {/* Governance Matrix legend */}
       <Card className="mb-6 bg-muted/40 border-border">
         <CardContent className="p-4">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
             Governance Matrix
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
             {[
-              { v: 'approved', a: 'active', ops: '✅ Operative', color: 'text-green-700' },
+              { v: 'approved', a: 'active', ops: '✅ Operative', color: 'text-success' },
               { v: 'approved', a: 'suspended', ops: '❌ Suspended', color: 'text-orange-700' },
+              // 'incomplete' was missing from this legend — the state every hotel manager on the
+              // platform is actually in. The legend documented every case except the only one
+              // occurring in production.
+              { v: 'incomplete', a: '—', ops: '⚪ Not started', color: 'text-muted-foreground' },
               { v: 'pending', a: '—', ops: '🔒 Not verified', color: 'text-slate-600' },
               { v: 'rejected', a: '—', ops: '🔒 Not verified', color: 'text-slate-600' },
             ].map((row) => (
@@ -1763,29 +1495,22 @@ function RankedOperatorsTab() {
       }))
 
       const ids = operatorRows.map((row) => row.user_id)
-      const [profiles, roles, qualityScores] = await Promise.all([
+      const [profiles, qualityScores] = await Promise.all([
         ids.length ? fetchProfilesByIds(ids) : Promise.resolve([]),
-        ids.length
-          ? (supabase as any)
-              .from('user_roles')
-              .select('user_id, role_type, verification_status')
-              .in('user_id', ids)
-          : Promise.resolve({ data: [] }),
         Promise.all(operatorRows.map((row) => fetchOperatorQualityScore(row.user_id, 90))),
       ])
 
       const identityMap = Object.fromEntries((profiles as ProfileIdentity[]).map((profile) => [profile.id, profile]))
-      const verificationMap: Record<string, string | null> = {}
-      for (const roleRow of ((roles as any)?.data || [])) {
-        if (roleRow.role_type === 'tour_operator') {
-          verificationMap[roleRow.user_id] = roleRow.verification_status
-        }
-      }
 
       const rankedRows = operatorRows.map((partner, index) => ({
         partner,
         identity: identityMap[partner.user_id] || null,
-        verificationStatus: verificationMap[partner.user_id] ?? null,
+        // Straight off the identity RPC. This used to be a raw `user_roles` select, which returns
+        // NOTHING for a partner: user_roles has exactly one SELECT policy in the whole codebase —
+        // "Users can view own roles" USING (auth.uid() = user_id) — and no admin policy at all. RLS
+        // silently filtered every partner row out (zero rows, no error), so verificationStatus was
+        // always null here and the badge read "🔒 Not Verified" for everyone regardless of the truth.
+        verificationStatus: partner.verification_status ?? null,
         qualityScore: qualityScores[index] ?? null,
       }))
 
@@ -1953,32 +1678,39 @@ function RankedOperatorsTab() {
 
 export default function AdminPartnersPage() {
   const [searchParams] = useSearchParams()
-  const {
-    data: pendingQueue = [],
-    isLoading: queueLoading,
-    refetch,
-  } = useVerificationQueue('pending')
-  const { data: allQueue = [] } = useVerificationQueue()
 
-  const initialTab = searchParams.get('tab') === 'all'
-    ? 'all'
-    : searchParams.get('tab') === 'ranking'
-      ? 'ranking'
-      : 'pending'
-  const [activeTab, setActiveTab] = useState<'pending' | 'all' | 'ranking'>(initialTab)
+  // Role is the primary axis. 'all' and 'pending' are kept as aliases so every link that already
+  // exists in the wild — including the ?tab=all this project's own docs and the manager-facing
+  // pending screen point at — still lands somewhere sensible rather than 404ing into a dead tab.
+  const readTab = (): TabKey => {
+    const t = searchParams.get('tab')
+    if (t === 'ranking') return 'ranking'
+    if (t === 'tour_operator' || t === 'operators') return 'tour_operator'
+    return 'hotel_manager'
+  }
+  const [activeTab, setActiveTab] = useState<TabKey>(readTab)
 
   useEffect(() => {
-    setActiveTab(
-      searchParams.get('tab') === 'all'
-        ? 'all'
-        : searchParams.get('tab') === 'ranking'
-          ? 'ranking'
-          : 'pending',
-    )
+    setActiveTab(readTab())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  const approvedCount = allQueue.filter((r) => r.status === 'approved').length
-  const pendingCount = pendingQueue.length
+  // THE STAT FIX. These used to read useVerificationQueue — partner_verification_requests, the
+  // SUBMISSION log. Nobody had ever submitted, so all three read 0 while ten hotel managers sat
+  // blocked and unable to publish. Counting the partner POPULATION (user_roles, via the identity
+  // RPCs) is the only thing that answers "how many partners need me?".
+  const { data: population = [], isLoading: popLoading, refetch: refetchPop } = usePartnerPopulation()
+  const needsActionCount = population.filter(
+    (p: PartnerPopulationRow) =>
+      p.account_status !== 'deleted' &&
+      (p.verification_status === 'incomplete' || p.verification_status === 'pending'),
+  )
+  const operativeCount = population.filter(
+    (p: PartnerPopulationRow) =>
+      p.verification_status === 'approved' && p.account_status === 'active',
+  ).length
+  const countFor = (role: PartnerRole) =>
+    needsActionCount.filter((p: PartnerPopulationRow) => p.roleType === role).length
 
   return (
     <div>
@@ -1989,116 +1721,100 @@ export default function AdminPartnersPage() {
             Manage partner verification, account status, and platform access.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            refetchPop()
+          }}
+          className="gap-1.5"
+        >
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
 
-      {/* Stats */}
+      {/* Stats — counted from the partner POPULATION (user_roles), not the submission log.
+          These read 0/0/0 for months because they counted partner_verification_requests, which only
+          holds partners who submitted — and nobody had. */}
       <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-100">
-              <Clock className="h-5 w-5 text-amber-600" />
+            <div className="p-2 rounded-lg bg-warning/10">
+              <Clock className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">Pending Review</p>
+              <p className="text-2xl font-bold">{popLoading ? '—' : needsActionCount.length}</p>
+              <p className="text-xs text-muted-foreground">Needs action</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+            <div className="p-2 rounded-lg bg-success/10">
+              <CheckCircle className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{approvedCount}</p>
-              <p className="text-xs text-muted-foreground">Approved</p>
+              <p className="text-2xl font-bold">{popLoading ? '—' : operativeCount}</p>
+              <p className="text-xs text-muted-foreground">Operative</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-100">
-              <Users className="h-5 w-5 text-blue-600" />
+            <div className="p-2 rounded-lg bg-info/10">
+              <Users className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{allQueue.length}</p>
-              <p className="text-xs text-muted-foreground">Total Applications</p>
+              <p className="text-2xl font-bold">{popLoading ? '—' : population.length}</p>
+              <p className="text-xs text-muted-foreground">Total partners</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'pending' | 'all' | 'ranking')}>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="pending" className="gap-2">
-            <ShieldAlert className="h-4 w-4" />
-            Pending Review
-            {pendingCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold">
-                {pendingCount}
-              </span>
+          <TabsTrigger value="hotel_manager" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            Hotel Managers
+            {countFor('hotel_manager') > 0 && (
+              <Badge className="ml-1.5 bg-amber-500 hover:bg-amber-500 text-white border-0">
+                {countFor('hotel_manager')}
+              </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="all" className="gap-2">
-            <Users className="h-4 w-4" />
-            All Partners
+          <TabsTrigger value="tour_operator" className="gap-2">
+            <Compass className="h-4 w-4" />
+            Tour Operators
+            {countFor('tour_operator') > 0 && (
+              <Badge className="ml-1.5 bg-amber-500 hover:bg-amber-500 text-white border-0">
+                {countFor('tour_operator')}
+              </Badge>
+            )}
           </TabsTrigger>
+          {/* Operator-only BY CONSTRUCTION (fetchTourOperators + fetchOperatorQualityScore; there is
+              no hotel analogue). Renamed from "Ranking Calibration" so that is self-evident. */}
           <TabsTrigger value="ranking" className="gap-2">
             <BarChart3 className="h-4 w-4" />
-            Ranking Calibration
+            Operator Ranking
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-4">
-          {queueLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <Skeleton className="h-24 w-full" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : pendingQueue.length === 0 ? (
-            // This queue only ever contains partners who SUBMITTED — it reads
-            // partner_verification_requests. Partners who never started verification have no row
-            // here at all, so an empty queue does NOT mean everyone is sorted. It read "All clear!"
-            // while every hotel manager on the platform sat unverified and unable to publish,
-            // because the action that verifies them lives on the All Partners tab and nothing here
-            // ever pointed at it.
-            <Card>
-              <CardContent className="p-12 flex flex-col items-center justify-center text-center gap-3">
-                <CheckCircle className="h-12 w-12 text-green-500" />
-                <p className="text-lg font-semibold">No applications waiting</p>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Nobody has submitted verification for review. Partners who haven&rsquo;t started
-                  verification never appear here — they&rsquo;re on All Partners, where you can
-                  verify them directly.
-                </p>
-                <Button variant="outline" className="mt-2" onClick={() => setActiveTab('all')}>
-                  Go to All Partners
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">
-                Oldest first (FIFO). All decisions auto-notify the partner.
-              </p>
-              {pendingQueue.map((req) => (
-                <PendingReviewCard key={req.id} req={req} />
-              ))}
-            </>
-          )}
+        {/* The 'pending' tab is GONE. It read partner_verification_requests WHERE status='pending'
+            — a table only partner_submit_verification ever writes to — so the 'incomplete' birth
+            population was invisible to it by construction, and it was the page's DEFAULT. That is
+            the whole root cause: admins landed on a permanently-empty queue showing "All clear!"
+            while the action that would have unblocked everyone sat one tab over, unadvertised.
+            Its Approve / Reject / Request-info live on in the review dialog, next to the evidence.
+            Deleting it also removes the raw kyc_session_token that PendingReviewCard printed into
+            the DOM — a free PII win. */}
+        <TabsContent value="hotel_manager">
+          <AllPartnersTab roleType="hotel_manager" />
         </TabsContent>
 
-        <TabsContent value="all">
-          <AllPartnersTab />
+        <TabsContent value="tour_operator">
+          <AllPartnersTab roleType="tour_operator" />
         </TabsContent>
 
         <TabsContent value="ranking">

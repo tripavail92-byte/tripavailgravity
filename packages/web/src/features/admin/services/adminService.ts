@@ -310,22 +310,36 @@ export async function fetchToursForModeration(limit = 100) {
  * @param status  Optional filter: 'active' | 'suspended' | 'deleted' | null = all
  */
 export async function fetchHotelManagers(limit = 100, status: string | null = null) {
+  // Prefer the identity-based list, for the same reason the operator side does: it enumerates
+  // managers by user_roles, so a manager who picked the role but has no hotel_manager_profiles row
+  // still appears (flagged has_profile=false) instead of being invisible to admin. The older
+  // admin_list_hotel_managers enumerates FROM the profile table, so it cannot see them — and it
+  // returns neither email nor verification_status, which the page needs.
   try {
-    const { data, error } = await (supabase as any).rpc('admin_list_hotel_managers', {
+    const { data, error } = await (supabase as any).rpc('admin_list_hotel_manager_identities', {
       p_status: status,
     })
     if (error) throw error
     return (data || []).slice(0, limit)
   } catch {
-    // Fallback: direct query (may miss suspended rows if RLS filters them)
-    const { data, error } = await supabase
-      .from('hotel_manager_profiles')
-      .select('user_id, business_name, account_status, created_at')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    // Falls here when the identity RPC is not yet deployed. Keep the previous behaviour.
+    try {
+      const { data, error } = await (supabase as any).rpc('admin_list_hotel_managers', {
+        p_status: status,
+      })
+      if (error) throw error
+      return (data || []).slice(0, limit)
+    } catch {
+      // Last resort: direct query (may miss suspended rows if RLS filters them)
+      const { data, error } = await supabase
+        .from('hotel_manager_profiles')
+        .select('user_id, business_name, account_status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(limit)
 
-    if (error) throw error
-    return data || []
+      if (error) throw error
+      return data || []
+    }
   }
 }
 
