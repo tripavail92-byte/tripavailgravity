@@ -800,6 +800,9 @@ def main():
         PAYOUT_AUTOMATION_AUTO_SETTLE,
     )
     logger.info("FX refresh enabled=%s interval=%ss", FX_REFRESH_ENABLED, FX_REFRESH_INTERVAL)
+    # Build marker — a distinctive line so we can confirm from the deploy logs which build is live.
+    # If you see this line, the FX + name-match code is running.
+    logger.info("WORKER BUILD MARKER: fx-conversion + kyc-name-match (2026-07-18)")
     next_billing_run_at = 0.0
     next_payout_run_at = 0.0
     next_fx_run_at = 0.0
