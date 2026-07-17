@@ -57,7 +57,9 @@
 -- the server already believes. The wizard carries on unchanged — its kycStatus write stops counting.
 --
 -- THE LEGITIMATE AUTHORS:
---   * kyc_session_status_changed()           — owns kycStatus / kycVerifiedAt
+--   * kyc_session_status_changed()           — owns kycStatus (NOT kycVerifiedAt: nothing writes
+--     that key anywhere; the storefront view reads it but no author sets it, so it is stripped
+--     unconditionally below rather than pinned).
 --   * admin_set_operator_verification_flag() — owns the four *Verified flags (20260328000002:124-181).
 --     It also writes a row to operator_verification_reviews, which partners cannot write — that is
 --     the fingerprint the detection query at the bottom uses to tell a real verification from a
@@ -99,13 +101,13 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  -- Keys that assert something the PLATFORM has verified. Every one of these is read by the public
-  -- storefront view, the quality score, or an award gate — i.e. each is a claim made to travellers.
-  -- The partner's own keys (idCardUrl, idBackUrl, ownershipDocs, kycSessionToken, expiryDate,
-  -- cnicNumber) are deliberately absent: those are their uploads and their data, not our verdicts.
+  -- PINNED keys — claims by the PLATFORM, each read by the storefront view, the quality score, or an
+  -- award gate. These have a legitimate server author, so on UPDATE we hold them to the server's
+  -- existing value rather than dropping them (dropping would fight the wizard, which resends them).
+  -- The partner's OWN keys (idCardUrl, idBackUrl, ownershipDocs, kycSessionToken, expiryDate,
+  -- cnicNumber) are deliberately absent: those are their uploads, not our verdicts.
   k_protected CONSTANT text[] := ARRAY[
     'kycStatus',
-    'kycVerifiedAt',
     'businessRegistrationVerified',
     'insuranceVerified',
     'vehicleDocsVerified',
@@ -114,6 +116,13 @@ DECLARE
     'emailVerified',
     'addressVerified',
     'bankVerified'
+  ];
+  -- STRIPPED keys — read by has_identity_verified but with NO server writer ANYWHERE (grep confirms:
+  -- only the three storefront views read kycVerifiedAt, nothing writes it). A key nobody legitimately
+  -- sets can only ever hold a forged value, so pinning it would FREEZE a forgery permanently — no
+  -- path could clear it. Delete it on every write instead.
+  k_stripped CONSTANT text[] := ARRAY[
+    'kycVerifiedAt'
   ];
   v_uid     UUID := auth.uid();
   v_doc     JSONB;
@@ -165,6 +174,12 @@ BEGIN
       v_doc := v_doc - k;
     END LOOP;
   END IF;
+
+  -- Author-less keys: always gone, INSERT or UPDATE. No OLD value is worth preserving because the
+  -- server never wrote one.
+  FOREACH k IN ARRAY k_stripped LOOP
+    v_doc := v_doc - k;
+  END LOOP;
 
   NEW.verification_documents := v_doc;
 

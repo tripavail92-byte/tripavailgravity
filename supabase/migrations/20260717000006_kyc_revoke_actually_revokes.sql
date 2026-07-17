@@ -95,13 +95,19 @@ BEGIN
         kyc_verified_gender      = NULL,
         kyc_verified_father_name = NULL,
         kyc_verified_at          = NULL,
-        kyc_rejection_reason     = COALESCE(NULLIF(TRIM(p_reason), ''), 'KYC revoked by admin')
+        kyc_rejection_reason     = COALESCE(NULLIF(TRIM(p_reason), ''), 'KYC revoked by admin'),
+        -- Also darken the traveller-facing badge. has_identity_verified reads the JSONB, NOT the
+        -- columns above (20260714000006:42-46):
+        --   (verification_documents->>'kycStatus') = 'approved'  OR  kycVerifiedAt <> ''
+        -- so clearing only the columns leaves the storefront still showing "Identity Verified" after
+        -- a revocation. kycVerifiedAt in particular has no server writer anywhere — it can only ever
+        -- hold a forged value — so strip it outright; the AFTER trigger will set kycStatus='revoked'.
+        verification_documents   = COALESCE(verification_documents, '{}'::jsonb) - 'kycVerifiedAt'
       WHERE user_id = v_session.user_id;
     END IF;
 
-    -- 2. Stop them trading. THE POINT OF THE WHOLE MIGRATION.
-    --    can_partner_operate() reads exactly this column, so without this the revoked partner
-    --    keeps publishing.
+    -- 2. Stop them trading. can_partner_operate() reads verification_status, so demoting it blocks
+    --    the operator PUBLISHING anything new.
     UPDATE public.user_roles
     SET verification_status = 'incomplete'
     WHERE user_id   = v_session.user_id
@@ -111,6 +117,29 @@ BEGIN
       -- guard above raises long before this predicate is reached. Fixing an already-revoked partner
       -- needs the backfill at the bottom of this file, not a second revoke.
       AND verification_status = 'approved';
+
+    -- 2b. Pause what is ALREADY live. Demotion alone does NOT do this: can_partner_operate() gates
+    --     tour PUBLISHING, but the public tour SELECT policy is `is_active = true` (20260210000010:94)
+    --     and tour_bookings INSERT only checks `auth.uid() = traveler_id` (:124). So without this an
+    --     operator whose identity was just withdrawn keeps every already-published tour publicly
+    --     listed and bookable — and the notification below would be lying when it says "paused".
+    --     is_active is the visibility switch; flip it off. Re-verifying does not silently republish
+    --     them (that is a deliberate operator action), which is the right default after a revocation.
+    IF v_session.role = 'tour_operator' THEN
+      UPDATE public.tours
+      SET is_active = false
+      WHERE operator_id = v_session.user_id
+        AND is_active = true;
+    ELSIF v_session.role = 'hotel_manager' THEN
+      -- Hotels gate public visibility on is_published (20260130000001:32). Pause at the hotel level;
+      -- packages hang off a hotel, so an unpublished hotel takes its packages out of the storefront
+      -- with it. Not touching packages.status directly — its visibility chain is less clear-cut and
+      -- guessing it is how defects get introduced.
+      UPDATE public.hotels
+      SET is_published = false
+      WHERE owner_id = v_session.user_id
+        AND is_published = true;
+    END IF;
 
     -- 3. Tell them. A partner who quietly stops being able to publish, with no message, files a
     --    support ticket — or worse, does not notice until a booking fails.
@@ -225,12 +254,15 @@ WHERE ur.verification_status = 'approved'
 
 SELECT count(*) AS partners_to_demote FROM _revoked_but_trading;   -- sanity-check against step 1
 
--- Void the verified identity record (operators only — managers have no kyc_verified_* columns).
+-- Void the verified identity record + darken the storefront badge (operators only — managers have
+-- no kyc_verified_* columns). kycVerifiedAt is stripped because has_identity_verified reads it and
+-- nothing legitimately writes it, so after migration 7 lands no app path can clear it.
 UPDATE public.tour_operator_profiles p
 SET current_kyc_session_id = NULL, kyc_verified_name = NULL, kyc_verified_cnic = NULL,
     kyc_verified_dob = NULL, kyc_verified_gender = NULL, kyc_verified_father_name = NULL,
     kyc_verified_at = NULL,
-    kyc_rejection_reason = COALESCE(kyc_rejection_reason, 'KYC revoked by admin (backfill)')
+    kyc_rejection_reason = COALESCE(kyc_rejection_reason, 'KYC revoked by admin (backfill)'),
+    verification_documents = COALESCE(verification_documents, '{}'::jsonb) - 'kycVerifiedAt'
 FROM _revoked_but_trading r
 WHERE p.user_id = r.user_id AND r.role_type = 'tour_operator';
 
@@ -240,6 +272,17 @@ SET verification_status = 'incomplete'
 FROM _revoked_but_trading r
 WHERE ur.user_id = r.user_id AND ur.role_type = r.role_type
   AND ur.verification_status = 'approved';
+
+-- Pause what is already live (see the RPC's step 2b for why demotion alone does not).
+UPDATE public.tours t
+SET is_active = false
+FROM _revoked_but_trading r
+WHERE t.operator_id = r.user_id AND r.role_type = 'tour_operator' AND t.is_active = true;
+
+UPDATE public.hotels h
+SET is_published = false
+FROM _revoked_but_trading r
+WHERE h.owner_id = r.user_id AND r.role_type = 'hotel_manager' AND h.is_published = true;
 
 -- Tell them.
 INSERT INTO public.notifications (user_id, type, title, body)
