@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
-import { useVerificationQueue } from '@/queries/adminQueries'
+import { usePartnerPopulation } from '@/queries/adminQueries'
 
 const navItems = [
   { label: 'Dashboard', to: '/admin/dashboard' },
@@ -26,9 +26,19 @@ export default function AdminLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [openReportsCount, setOpenReportsCount] = useState<number>(0)
 
-  // Live pending partner applications count — powers the sidebar badge
-  const { data: pendingQueue = [] } = useVerificationQueue('pending')
-  const pendingPartnersCount = pendingQueue.length
+  // Partners waiting on a human decision — powers the sidebar badge.
+  //
+  // This counted useVerificationQueue('pending') — partner_verification_requests — which only ever
+  // holds partners who SUBMITTED. Every partner is born 'incomplete' and no hotel manager had ever
+  // submitted, so the badge read 0 for months while not one manager on the platform could publish.
+  // A badge that is structurally incapable of showing work is worse than no badge: it actively
+  // tells the admin there is nothing to do.
+  const { data: partnerPopulation = [] } = usePartnerPopulation()
+  const pendingPartnersCount = partnerPopulation.filter(
+    (p) =>
+      p.account_status !== 'deleted' &&
+      (p.verification_status === 'incomplete' || p.verification_status === 'pending'),
+  ).length
 
   useEffect(() => {
     let isCancelled = false

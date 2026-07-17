@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/supabase'
+import { useRejectPartner, useRequestPartnerInfo } from '@/queries/adminQueries'
 
 export const MIN_VERIFY_REASON_LEN = 12
 
@@ -143,6 +144,12 @@ export function PartnerVerifyDialog({
   const [ack, setAck] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // Reject and Request-info used to live only on PendingReviewCard, on the permanently-empty
+  // pending tab. That tab is gone, so they live here — next to the evidence they are a judgement
+  // about. Without them an admin could only ever say yes.
+  const rejectPartner = useRejectPartner()
+  const requestInfo = useRequestPartnerInfo()
+
   useEffect(() => {
     if (!open) return
     let cancelled = false
@@ -198,6 +205,46 @@ export function PartnerVerifyDialog({
       onVerified()
     } catch (err: any) {
       setLoadError(err?.message ?? 'Failed to verify partner')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Both need a request row to act on — you cannot reject a submission that was never made. So
+  // these only render when one exists, which is also why they can't replace Approve.
+  const submissionId = evidence?.submission_id ?? null
+
+  const handleReject = async () => {
+    if (!submissionId || !reasonOk) return
+    setSubmitting(true)
+    try {
+      await rejectPartner.mutateAsync({
+        userId: partnerId,
+        partnerType: roleType,
+        requestId: submissionId,
+        reason: reason.trim(),
+      })
+      onVerified()
+    } catch (err: any) {
+      setLoadError(err?.message ?? 'Failed to reject partner')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleRequestInfo = async () => {
+    if (!submissionId || !reasonOk) return
+    setSubmitting(true)
+    try {
+      await requestInfo.mutateAsync({
+        userId: partnerId,
+        partnerType: roleType,
+        requestId: submissionId,
+        message: reason.trim(),
+      })
+      onVerified()
+    } catch (err: any) {
+      setLoadError(err?.message ?? 'Failed to request more information')
     } finally {
       setSubmitting(false)
     }
@@ -408,10 +455,34 @@ export function PartnerVerifyDialog({
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
-          </Button>
+        <DialogFooter className="gap-2 sm:justify-between">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={submitting}>
+              Cancel
+            </Button>
+            {/* Only meaningful against a real submission. */}
+            {submissionId && !loading && !loadError && (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={handleRequestInfo}
+                  disabled={!reasonOk || submitting}
+                  title={!reasonOk ? `Add a reason (min ${MIN_VERIFY_REASON_LEN} chars)` : undefined}
+                >
+                  Request info
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleReject}
+                  disabled={!reasonOk || submitting}
+                  title={!reasonOk ? `Add a reason (min ${MIN_VERIFY_REASON_LEN} chars)` : undefined}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+          </div>
           <Button
             variant={isBlindVouch ? 'destructive' : 'default'}
             onClick={handleConfirm}

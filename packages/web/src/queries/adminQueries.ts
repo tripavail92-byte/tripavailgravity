@@ -55,6 +55,7 @@ export const adminKeys = {
   role: (userId: string) => [...adminKeys.all, 'role', userId] as const,
   verificationQueue: (status?: string) =>
     [...adminKeys.all, 'verification-queue', status ?? 'all'] as const,
+  partnerPopulation: () => [...adminKeys.all, 'partner-population'] as const,
   notifications: (userId: string) => ['notifications', userId] as const,
 }
 
@@ -566,5 +567,65 @@ export function useMarkNotificationsRead() {
     onSuccess: (_data, _vars, _ctx) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
+  })
+}
+
+// ─── Partner population ───────────────────────────────────────────────────────
+//
+// Every partner on the platform, by ROLE, from user_roles — not from the submission log.
+//
+// WHY THIS EXISTS: the admin stat cards and the sidebar badge both counted
+// partner_verification_requests (useVerificationQueue). That table only ever holds partners who
+// SUBMITTED. Since every partner is born verification_status='incomplete' and no hotel manager had
+// ever submitted, it was empty — so the cards read 0/0/0, the badge read 0, and the page rendered
+// "All clear!" while ten hotel managers sat blocked and unable to publish. Counting the actual
+// partner population is the only thing that answers "how many partners are waiting on me?".
+//
+// NOTE: unlike useVerificationQueue there is no Realtime channel behind the identity RPCs, so these
+// counts do not self-update. The header Refresh must refetch this too.
+
+export type PartnerPopulationRow = {
+  user_id: string
+  email: string | null
+  name: string | null
+  roleType: 'hotel_manager' | 'tour_operator'
+  verification_status: string | null
+  account_status: string | null
+  has_profile: boolean | null
+  created_at: string
+}
+
+async function fetchPartnerPopulation(): Promise<PartnerPopulationRow[]> {
+  const [hm, op] = await Promise.all([
+    (supabase as any).rpc('admin_list_hotel_manager_identities', { p_status: null }),
+    (supabase as any).rpc('admin_list_operator_identities', { p_status: null }),
+  ])
+  // Fail loudly. A silent [] here would put the page straight back into "All clear!" territory —
+  // the precise failure this hook exists to remove.
+  if (hm.error) throw hm.error
+  if (op.error) throw op.error
+
+  return [
+    ...(hm.data ?? []).map((r: any) => ({
+      ...r,
+      name: r.business_name ?? null,
+      roleType: 'hotel_manager' as const,
+    })),
+    ...(op.data ?? []).map((r: any) => ({
+      ...r,
+      name: r.company_name ?? null,
+      roleType: 'tour_operator' as const,
+    })),
+  ]
+}
+
+export function usePartnerPopulation(
+  options?: Omit<UseQueryOptions<PartnerPopulationRow[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery<PartnerPopulationRow[], Error>({
+    queryKey: adminKeys.partnerPopulation(),
+    queryFn: fetchPartnerPopulation,
+    staleTime: 30 * 1000,
+    ...options,
   })
 }
