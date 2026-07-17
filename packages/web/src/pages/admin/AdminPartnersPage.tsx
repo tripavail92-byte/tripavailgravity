@@ -1495,29 +1495,22 @@ function RankedOperatorsTab() {
       }))
 
       const ids = operatorRows.map((row) => row.user_id)
-      const [profiles, roles, qualityScores] = await Promise.all([
+      const [profiles, qualityScores] = await Promise.all([
         ids.length ? fetchProfilesByIds(ids) : Promise.resolve([]),
-        ids.length
-          ? (supabase as any)
-              .from('user_roles')
-              .select('user_id, role_type, verification_status')
-              .in('user_id', ids)
-          : Promise.resolve({ data: [] }),
         Promise.all(operatorRows.map((row) => fetchOperatorQualityScore(row.user_id, 90))),
       ])
 
       const identityMap = Object.fromEntries((profiles as ProfileIdentity[]).map((profile) => [profile.id, profile]))
-      const verificationMap: Record<string, string | null> = {}
-      for (const roleRow of ((roles as any)?.data || [])) {
-        if (roleRow.role_type === 'tour_operator') {
-          verificationMap[roleRow.user_id] = roleRow.verification_status
-        }
-      }
 
       const rankedRows = operatorRows.map((partner, index) => ({
         partner,
         identity: identityMap[partner.user_id] || null,
-        verificationStatus: verificationMap[partner.user_id] ?? null,
+        // Straight off the identity RPC. This used to be a raw `user_roles` select, which returns
+        // NOTHING for a partner: user_roles has exactly one SELECT policy in the whole codebase —
+        // "Users can view own roles" USING (auth.uid() = user_id) — and no admin policy at all. RLS
+        // silently filtered every partner row out (zero rows, no error), so verificationStatus was
+        // always null here and the badge read "🔒 Not Verified" for everyone regardless of the truth.
+        verificationStatus: partner.verification_status ?? null,
         qualityScore: qualityScores[index] ?? null,
       }))
 
