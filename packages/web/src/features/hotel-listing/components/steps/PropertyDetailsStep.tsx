@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 import type { StepData } from '../CompleteHotelListingFlow'
-import { PropertyDescriptionAI } from '../ui/PropertyDescriptionAI'
+import { PropertyDescriptionSuggestions } from '../ui/PropertyDescriptionSuggestions'
 
 interface PropertyDetailsStepProps {
   onComplete: (data: StepData) => void
@@ -100,7 +100,7 @@ export function PropertyDetailsStep({
             >
               ✨
             </motion.div>
-            AI Assistant
+            {showAISuggestions ? 'Hide ideas' : 'Need ideas?'}
           </Button>
         </div>
 
@@ -121,10 +121,10 @@ export function PropertyDetailsStep({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Pass through whatever the wizard has collected so far — the model writes from
-                  real facts rather than the property type alone. Absent fields are simply omitted
-                  server-side; nothing is invented to fill them. */}
-              <PropertyDescriptionAI
+              {/* Pass through whatever the wizard has collected so far, so the composed copy names
+                  the real place rather than the property type alone. Absent fields are omitted —
+                  fragments that reference a missing value are dropped, not rendered with a gap. */}
+              <PropertyDescriptionSuggestions
                 propertyType={propertyType}
                 hotelName={formData.hotelName}
                 city={existingData?.city}
