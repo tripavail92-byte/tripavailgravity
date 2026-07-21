@@ -1,6 +1,7 @@
 import { Check, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea'
 
 import { NumberStepper } from '../ui/NumberStepper'
 import { RoomDescriptionSuggestions } from '../ui/RoomDescriptionSuggestions'
-
 import { BedConfig, RoomType } from './RoomsStep'
 
 interface RoomWizardModalProps {
@@ -17,16 +17,30 @@ interface RoomWizardModalProps {
   onClose: () => void
   onSave: (room: RoomType) => void
   editingRoom?: RoomType | null
+  /** Set once for the whole property; every room is priced in it. */
+  listingCurrency?: string
 }
 
+/**
+ * The price ranges that used to sit under each label ('$50-100', '$150-250' …) were INVENTED — no
+ * hotel, market or booking data fed them. A partner setting their nightly rate was reading a made-up
+ * anchor as though it were guidance from the platform. They are replaced with the sleeping capacity
+ * each type implies, which is a genuine property of the room and is what the partner configures two
+ * steps later.
+ */
+const CUSTOM_ROOM_TYPE = 'custom'
+
 const ROOM_TYPES = [
-  { value: 'standard', label: 'Standard Room', icon: '🛏️', priceRange: '$50-100' },
-  { value: 'deluxe', label: 'Deluxe Room', icon: '✨', priceRange: '$100-150' },
-  { value: 'suite', label: 'Suite', icon: '🏰', priceRange: '$150-250' },
-  { value: 'family', label: 'Family Room', icon: '👨‍👩‍👧‍👦', priceRange: '$120-200' },
-  { value: 'executive', label: 'Executive Room', icon: '💼', priceRange: '$180-300' },
-  { value: 'presidential', label: 'Presidential Suite', icon: '👑', priceRange: '$300+' },
+  { value: 'standard', label: 'Standard Room', icon: '🛏️', sleeps: 'Sleeps 2' },
+  { value: 'deluxe', label: 'Deluxe Room', icon: '✨', sleeps: 'Sleeps 2' },
+  { value: 'suite', label: 'Suite', icon: '🏰', sleeps: 'Sleeps 2–4' },
+  { value: 'family', label: 'Family Room', icon: '👨‍👩‍👧‍👦', sleeps: 'Sleeps 4–6' },
+  { value: 'executive', label: 'Executive Room', icon: '💼', sleeps: 'Sleeps 2' },
+  { value: 'presidential', label: 'Presidential Suite', icon: '👑', sleeps: 'Sleeps 4+' },
+  { value: CUSTOM_ROOM_TYPE, label: 'Other', icon: '➕', sleeps: 'Name your own' },
 ] as const
+
+const CUSTOM_BED_TYPE = 'custom'
 
 const BED_TYPES = [
   { value: 'king', label: 'King Bed', icon: '🛏️', width: 180 },
@@ -35,9 +49,28 @@ const BED_TYPES = [
   { value: 'twin', label: 'Twin Bed', icon: '🛏️', width: 90 },
   { value: 'single', label: 'Single Bed', icon: '🛏️', width: 90 },
   { value: 'sofaBed', label: 'Sofa Bed', icon: '🛋️', width: 120 },
+  { value: CUSTOM_BED_TYPE, label: 'Other', icon: '➕', width: 0 },
 ] as const
 
-export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWizardModalProps) {
+/**
+ * Label for a bed row. Both summary lines used to do
+ *   BED_TYPES.find((bt) => bt.value === b.type)?.label
+ * unguarded, so any type outside the six printed the literal string "undefined" — which a custom
+ * bed type would hit immediately. Falls back to the stored value, and to the partner's own name for
+ * a custom bed.
+ */
+function bedLabel(bed: BedConfig): string {
+  if (bed.type === CUSTOM_BED_TYPE) return bed.customLabel?.trim() || 'Bed'
+  return BED_TYPES.find((bt) => bt.value === bed.type)?.label ?? bed.type
+}
+
+export function RoomWizardModal({
+  isOpen,
+  onClose,
+  onSave,
+  editingRoom,
+  listingCurrency = 'USD',
+}: RoomWizardModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [roomData, setRoomData] = useState<Partial<RoomType>>(
     editingRoom || {
@@ -50,9 +83,15 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
       beds: [],
       pricing: {
         basePrice: 100,
-        currency: 'USD',
+        currency: listingCurrency,
       },
     },
+  )
+
+  // The price field is edited as a STRING so it can be genuinely empty — see the input for why.
+  // State keeps the number; this keeps what the partner is actually typing.
+  const [priceDraft, setPriceDraft] = useState(() =>
+    editingRoom?.pricing?.basePrice ? String(editingRoom.pricing.basePrice) : '100',
   )
 
   // Lock the page behind the dialog. Without this the wheel scrolled the listing wizard
@@ -79,14 +118,22 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
       // Save room
       const finalRoom: RoomType = {
         id: editingRoom?.id || `room_${Date.now()}`,
-        type: roomData.type as any,
-        name: roomData.name || getRoomTypeLabel(roomData.type as any),
+        type: roomData.type ?? 'standard',
+        name: roomData.name || getRoomTypeLabel(roomData.type),
         description: roomData.description || '',
         count: roomData.count || 1,
         maxGuests: roomData.maxGuests || 2,
         size: roomData.size || 25,
         beds: roomData.beds || [],
-        pricing: roomData.pricing || { basePrice: 100, currency: 'USD' },
+        // Only carried when the type is actually custom, so a partner who tried Other and then
+        // picked a preset does not leave a stale name behind on the saved room.
+        ...(roomData.type === CUSTOM_ROOM_TYPE ? { customType: roomData.customType?.trim() } : {}),
+        // Currency always comes from the listing, never from stale per-room state — that is what
+        // stopped rooms in one property disagreeing with each other.
+        pricing: {
+          basePrice: roomData.pricing?.basePrice ?? 0,
+          currency: listingCurrency,
+        },
       }
       onSave(finalRoom)
     }
@@ -98,8 +145,9 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
     }
   }
 
-  const getRoomTypeLabel = (type: string) => {
-    return ROOM_TYPES.find((t) => t.value === type)?.label || type
+  const getRoomTypeLabel = (type?: string) => {
+    if (type === CUSTOM_ROOM_TYPE) return roomData.customType?.trim() || 'Other'
+    return ROOM_TYPES.find((t) => t.value === type)?.label || type || ''
   }
 
   const addBed = (bedType: BedConfig['type']) => {
@@ -139,6 +187,9 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
+        // 'custom' without a name would publish a room type of literally "custom", so the free-text
+        // field is required once Other is chosen. Every preset stays one click as before.
+        if (roomData.type === CUSTOM_ROOM_TYPE) return !!roomData.customType?.trim()
         return !!roomData.type
       case 2:
         return (
@@ -155,11 +206,19 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
 
   if (!isOpen) return null
 
-  return (
+  // Rendered into document.body, NOT in place.
+  //
+  // The dialog is returned from inside the step content, so in DOM order it came BEFORE
+  // <AirbnbBottomNav>, which is a fixed z-50 sibling. Two positioned elements at the same z-index
+  // are painted in tree order, so the wizard's own Back/Next bar won the tie and sat on top of the
+  // dialog's Save/Next — the partner saw the modal footer covered and reported "I can't reach Next
+  // unless I hide the suggestions" and "Next goes very far down, I have to zoom out". Portalling to
+  // document.body puts it after #root, and z-[100] states the intent rather than relying on order.
+  return createPortal(
     // overflow-y-auto + overscroll-contain: the dialog was taller than the viewport, so its
     // footer (Back / Next) sat below the fold with no way to reach it, and the wheel scrolled the
     // PAGE BEHIND instead. The body scroll-lock above stops the background moving at all.
-    <div className="fixed inset-0 bg-foreground/50 z-50 flex items-center justify-center p-4 overflow-y-auto overscroll-contain">
+    <div className="fixed inset-0 bg-foreground/50 z-[100] flex items-center justify-center p-4 overflow-y-auto overscroll-contain">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -223,13 +282,19 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       <button
                         key={type.value}
                         onClick={() => {
-                          setRoomData({ ...roomData, type: type.value as any })
-                          if (
-                            !roomData.name ||
-                            roomData.name === getRoomTypeLabel(roomData.type as any)
-                          ) {
-                            setRoomData({ ...roomData, type: type.value as any, name: type.label })
-                          }
+                          // Only auto-fill the name while it is still empty or still the previous
+                          // preset's label, so a name the partner typed themselves is never
+                          // overwritten. 'Other' never auto-fills — they are about to name it.
+                          const nameIsUntouched =
+                            !roomData.name || roomData.name === getRoomTypeLabel(roomData.type)
+                          setRoomData({
+                            ...roomData,
+                            type: type.value,
+                            name:
+                              nameIsUntouched && type.value !== CUSTOM_ROOM_TYPE
+                                ? type.label
+                                : roomData.name,
+                          })
                         }}
                         className={`p-4 border-2 rounded-xl transition-all ${
                           roomData.type === type.value
@@ -239,7 +304,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       >
                         <div className="text-3xl mb-2">{type.icon}</div>
                         <div className="font-semibold text-foreground">{type.label}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{type.priceRange}</div>
+                        <div className="text-sm text-muted-foreground mt-1">{type.sleeps}</div>
                         {roomData.type === type.value && (
                           <div className="mt-2">
                             <Check size={20} className="text-primary mx-auto" />
@@ -248,6 +313,39 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       </button>
                     ))}
                   </div>
+
+                  {roomData.type === CUSTOM_ROOM_TYPE && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="pt-2"
+                    >
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        What do you call this room type? *
+                      </label>
+                      <Input
+                        autoFocus
+                        value={roomData.customType ?? ''}
+                        onChange={(e) =>
+                          setRoomData({
+                            ...roomData,
+                            customType: e.target.value,
+                            // Keep the room's display name in step with the type until the partner
+                            // edits it themselves on the next step.
+                            name:
+                              !roomData.name || roomData.name === roomData.customType
+                                ? e.target.value
+                                : roomData.name,
+                          })
+                        }
+                        placeholder="e.g. Dormitory, Treehouse, Cabin"
+                        maxLength={40}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Guests will see this exactly as you write it.
+                      </p>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
 
@@ -350,11 +448,14 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                     {BED_TYPES.map((bed) => {
                       const quantity =
                         roomData.beds?.find((b) => b.type === bed.value)?.quantity || 0
+                      const isCustom = bed.value === CUSTOM_BED_TYPE
                       return (
                         <div key={bed.value} className="border rounded-lg p-4">
                           <div className="text-2xl mb-2">{bed.icon}</div>
                           <div className="font-medium text-foreground">{bed.label}</div>
-                          <div className="text-xs text-muted-foreground">{bed.width}cm wide</div>
+                          <div className="text-xs text-muted-foreground">
+                            {isCustom ? 'Name your own' : `${bed.width}cm wide`}
+                          </div>
                           <div className="flex items-center gap-2 mt-3">
                             <button
                               onClick={() => removeBed(bed.value)}
@@ -371,6 +472,28 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                               +
                             </button>
                           </div>
+
+                          {isCustom && quantity > 0 && (
+                            <Input
+                              value={
+                                roomData.beds?.find((b) => b.type === CUSTOM_BED_TYPE)
+                                  ?.customLabel ?? ''
+                              }
+                              onChange={(e) =>
+                                setRoomData({
+                                  ...roomData,
+                                  beds: (roomData.beds ?? []).map((b) =>
+                                    b.type === CUSTOM_BED_TYPE
+                                      ? { ...b, customLabel: e.target.value }
+                                      : b,
+                                  ),
+                                })
+                              }
+                              placeholder="e.g. Bunk bed"
+                              maxLength={30}
+                              className="mt-3 h-9 text-sm"
+                            />
+                          )}
                         </div>
                       )
                     })}
@@ -380,12 +503,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                     <div className="bg-info/10 border border-info/20 rounded-lg p-4">
                       <p className="text-sm text-foreground">
                         <strong>Selected:</strong>{' '}
-                        {roomData.beds
-                          .map(
-                            (b) =>
-                              `${b.quantity}x ${BED_TYPES.find((bt) => bt.value === b.type)?.label}`,
-                          )
-                          .join(', ')}
+                        {roomData.beds.map((b) => `${b.quantity}x ${bedLabel(b)}`).join(', ')}
                       </p>
                     </div>
                   )}
@@ -408,41 +526,50 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                     </label>
                     <div className="flex gap-4">
                       <div className="flex-1">
+                        {/* type="text" + inputMode="decimal", NOT type="number".
+                            Two bugs lived in the number input. Clearing it made e.target.value ''
+                            so `parseInt('') || 0` wrote a literal 0 back into state, and React
+                            re-rendered value={0} over an empty box — the partner could never delete
+                            the zero. Then typing after it produced '0120000', and React did not
+                            correct the DOM because for number inputs it compares LOOSELY
+                            ('0120000' != 120000 is false), so the wrong string stayed on screen
+                            while state held 120000. A string draft can be genuinely empty and
+                            strips its own leading zeros. */}
                         <Input
-                          type="number"
-                          min="1"
-                          value={roomData.pricing?.basePrice}
-                          onChange={(e) =>
+                          type="text"
+                          inputMode="decimal"
+                          value={priceDraft}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                              .replace(/[^\d.]/g, '')
+                              .replace(/(\..*)\./g, '$1')
+                              .replace(/^0+(?=\d)/, '')
+                            setPriceDraft(raw)
                             setRoomData({
                               ...roomData,
                               pricing: {
                                 ...roomData.pricing!,
-                                basePrice: parseInt(e.target.value) || 0,
+                                basePrice: raw === '' ? 0 : Number(raw),
                               },
                             })
-                          }
+                          }}
                           placeholder="100"
+                          aria-label="Base price per night"
                         />
                       </div>
-                      <select
-                        value={roomData.pricing?.currency || 'USD'}
-                        onChange={(e) =>
-                          setRoomData({
-                            ...roomData,
-                            pricing: {
-                              ...roomData.pricing!,
-                              currency: e.target.value,
-                            },
-                          })
-                        }
-                        className="px-4 py-2 border border-border rounded-lg"
-                      >
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                        <option value="GBP">GBP</option>
-                        <option value="PKR">PKR</option>
-                      </select>
+                      {/* Currency is a property of the LISTING, not of each room. It used to be a
+                          per-room select, so two rooms could disagree and the "from" price did a
+                          Math.min across mixed currencies — comparing 120000 PKR against 400 USD as
+                          bare numbers. It is now set once on the property and shown here read-only.
+                          Nothing is converted: the price is stored exactly as the partner types it. */}
+                      <div className="flex items-center rounded-lg border border-border bg-muted px-4 text-sm font-medium text-muted-foreground">
+                        {listingCurrency}
+                      </div>
                     </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Prices are in {listingCurrency}, set for the whole property on the details
+                      step.
+                    </p>
                   </div>
 
                   {roomData.pricing && roomData.pricing.basePrice > 0 && (
@@ -457,12 +584,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                           Max {roomData.maxGuests} guests · {roomData.size}m²
                         </p>
                         <p>
-                          {roomData.beds
-                            ?.map(
-                              (b) =>
-                                `${b.quantity}x ${BED_TYPES.find((bt) => bt.value === b.type)?.label}`,
-                            )
-                            .join(', ')}
+                          {roomData.beds?.map((b) => `${b.quantity}x ${bedLabel(b)}`).join(', ')}
                         </p>
                         <p className="text-lg font-bold text-foreground mt-3">
                           {roomData.pricing.basePrice} {roomData.pricing.currency}/night
@@ -503,6 +625,7 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
           </div>
         </Card>
       </motion.div>
-    </div>
+    </div>,
+    document.body,
   )
 }

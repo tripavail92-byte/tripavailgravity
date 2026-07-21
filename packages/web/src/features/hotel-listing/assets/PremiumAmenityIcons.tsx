@@ -1,5 +1,4 @@
 import { motion } from 'motion/react'
-import { useEffect, useState } from 'react'
 
 interface AmenityIconProps {
   size?: number
@@ -7,40 +6,28 @@ interface AmenityIconProps {
   isDark?: boolean
 }
 
-// Hook to detect dark mode
-const useDarkMode = () => {
-  const [isDark, setIsDark] = useState(false)
+// The useDarkMode() hook that lived here — a MutationObserver on <html>, instantiated once per
+// icon — is gone. Its result was passed to getColor() and thrown away, so 22 observers ran on the
+// amenities step to compute a value nothing read. currentColor does the same job for free.
 
-  useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'))
-    }
-
-    checkDarkMode()
-
-    const observer = new MutationObserver(checkDarkMode)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-
-    return () => observer.disconnect()
-  }, [])
-
-  return isDark
-}
-
-const getColor = (isDark: boolean, isSelected: boolean) => {
-  // Use neutral black color as per design spec
-  return '#1A1A1A'
-}
-
-const getFillColor = (isDark: boolean, isSelected: boolean) => {
-  return '#1A1A1A'
-}
+/**
+ * Icons inherit the tile's own text colour instead of being pinned to near-black.
+ *
+ * These two functions took (isDark, isSelected) and ignored both, unconditionally returning
+ * '#1A1A1A'. Every icon still paid for a useDarkMode() MutationObserver whose result was then
+ * discarded. On the dark theme that put a near-black icon on a near-black card, which is what the
+ * team saw and described as the amenities looking "blurred" — they were not blurred, they were
+ * almost invisible.
+ *
+ * currentColor defers to whatever the surrounding tile sets, so both themes are correct by
+ * construction and stay correct if the palette changes.
+ */
+const getColor = () => 'currentColor'
 
 // ============= STANDOUT AMENITIES =============
 
 export const PoolIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -83,8 +70,7 @@ export const PoolIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =>
 }
 
 export const HotTubIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -126,8 +112,7 @@ export const HotTubIcon = ({ size = 64, isSelected = false }: AmenityIconProps) 
 }
 
 export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -181,8 +166,7 @@ export const BBQGrillIcon = ({ size = 64, isSelected = false }: AmenityIconProps
 }
 
 export const FirePitIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -242,8 +226,7 @@ export const FirePitIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 }
 
 export const PoolTableIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -294,8 +277,7 @@ export const PoolTableIcon = ({ size = 64, isSelected = false }: AmenityIconProp
 }
 
 export const PianoIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -368,8 +350,7 @@ export const PianoIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
 }
 
 export const GymIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -423,8 +404,7 @@ export const GymIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => 
 }
 
 export const BeachfrontIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -476,8 +456,7 @@ export const BeachfrontIcon = ({ size = 64, isSelected = false }: AmenityIconPro
 }
 
 export const MountainViewIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -518,8 +497,7 @@ export const MountainViewIcon = ({ size = 64, isSelected = false }: AmenityIconP
 }
 
 export const LakeAccessIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -583,8 +561,7 @@ export const LakeAccessIcon = ({ size = 64, isSelected = false }: AmenityIconPro
 // ============= GUEST ESSENTIALS =============
 
 export const WiFiIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -621,8 +598,7 @@ export const WiFiIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =>
 }
 
 export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -660,8 +636,7 @@ export const TVIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
 }
 
 export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -711,8 +686,7 @@ export const KitchenIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 }
 
 export const WashingMachineIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -759,8 +733,7 @@ export const WashingMachineIcon = ({ size = 64, isSelected = false }: AmenityIco
 }
 
 export const ParkingIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -793,8 +766,7 @@ export const ParkingIcon = ({ size = 64, isSelected = false }: AmenityIconProps)
 }
 
 export const AirConditioningIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -849,8 +821,7 @@ export const AirConditioningIcon = ({ size = 64, isSelected = false }: AmenityIc
 }
 
 export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -902,8 +873,7 @@ export const DedicatedWorkspaceIcon = ({ size = 64, isSelected = false }: Amenit
 // Additional Standout Amenities
 
 export const PatioIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -947,8 +917,7 @@ export const PatioIcon = ({ size = 64, isSelected = false }: AmenityIconProps) =
 }
 
 export const OutdoorDiningIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -978,8 +947,7 @@ export const OutdoorDiningIcon = ({ size = 64, isSelected = false }: AmenityIcon
 }
 
 export const IndoorBonfireIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -1023,8 +991,7 @@ export const IndoorBonfireIcon = ({ size = 64, isSelected = false }: AmenityIcon
 }
 
 export const ScenicBalconyIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">
@@ -1067,8 +1034,7 @@ export const ScenicBalconyIcon = ({ size = 64, isSelected = false }: AmenityIcon
 }
 
 export const ForestViewIcon = ({ size = 64, isSelected = false }: AmenityIconProps) => {
-  const isDark = useDarkMode()
-  const color = getColor(isDark, isSelected)
+  const color = getColor()
 
   return (
     <motion.svg width={size} height={size} viewBox="0 0 80 80" fill="none">

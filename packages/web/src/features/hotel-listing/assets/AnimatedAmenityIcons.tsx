@@ -9,7 +9,7 @@ interface AmenityIconProps {
 
 // Internet & Technology Icons
 export function WifiIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -63,7 +63,7 @@ export function BusinessCenterIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -129,7 +129,7 @@ export function MeetingRoomsIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -208,7 +208,7 @@ export function HighSpeedInternetIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -272,7 +272,7 @@ export function ConferenceFacilitiesIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -364,7 +364,7 @@ export function SwimmingPoolIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -453,7 +453,7 @@ export function FitnessCenterIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -552,7 +552,7 @@ export function FitnessCenterIcon({
 }
 
 export function SpaIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -629,7 +629,7 @@ export function SpaIcon({ isSelected, isHovered, size = 24, className = '' }: Am
 }
 
 export function SaunaIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -720,7 +720,7 @@ export function SaunaIcon({ isSelected, isHovered, size = 24, className = '' }: 
 }
 
 export function HotTubIcon({ isSelected, isHovered, size = 24, className = '' }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -819,7 +819,7 @@ export function TennisCourtIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -900,7 +900,7 @@ export function GolfCourseIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -980,7 +980,7 @@ export function GameRoomIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1099,7 +1099,7 @@ export function RestaurantIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1161,7 +1161,7 @@ export function BarLoungeIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1272,7 +1272,7 @@ export function RoomServiceIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1351,7 +1351,7 @@ export function BreakfastIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1426,7 +1426,7 @@ export function CoffeeShopIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1505,7 +1505,7 @@ export function MiniBarIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1622,7 +1622,7 @@ export function ParkingIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg
@@ -1689,7 +1689,7 @@ export function ValetParkingIcon({
   size = 24,
   className = '',
 }: AmenityIconProps) {
-  const baseColor = '#1A1A1A'
+  const baseColor = 'currentColor'
 
   return (
     <motion.svg

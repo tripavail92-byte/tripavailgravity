@@ -1,4 +1,4 @@
-import { Check, Edit3, MapPin, Navigation } from 'lucide-react'
+import { Check, Edit3, Loader2, MapPin, Navigation } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 
@@ -30,6 +30,8 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
     (existingData?.locationData as LocationData | null) || null,
   )
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [isLocating, setIsLocating] = useState(false)
+  const [locateError, setLocateError] = useState<string | null>(null)
   const [additionalDetails, setAdditionalDetails] = useState({
     buildingName: existingData?.buildingName || '',
     floor: existingData?.floor || '',
@@ -55,6 +57,92 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
     console.log('📍 LocationStep: Calling onUpdate with', updateData)
     if (onUpdate) {
       onUpdate(updateData)
+    }
+  }
+
+  /**
+   * Real "use my current location".
+   *
+   * This button used to be a mock that returned a hardcoded { Lahore, 31.5204, 74.3587 } and wrote
+   * it straight in as the property's address — so a partner anywhere in the world who trusted it
+   * silently published a Lahore address. It now asks the browser for a genuine fix and reverse
+   * geocodes it, and says so plainly when it cannot.
+   */
+  const handleUseCurrentLocation = async () => {
+    setLocateError(null)
+
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocateError('Not supported on this device')
+      return
+    }
+
+    setIsLocating(true)
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10_000,
+          maximumAge: 0,
+        })
+      })
+
+      const coordinates = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      }
+
+      // Reverse geocode so the partner gets a real address rather than bare coordinates. If the
+      // Geocoder is unavailable we still keep the true coordinates — a pin in the right place with
+      // a thin address beats a complete address in the wrong city.
+      let address = ''
+      let city = ''
+      let area = ''
+      let country = ''
+      let placeId = ''
+
+      try {
+        if (window.google?.maps?.Geocoder) {
+          const geocoder = new google.maps.Geocoder()
+          const { results } = await geocoder.geocode({ location: coordinates })
+          const best = results?.[0]
+          if (best) {
+            address = best.formatted_address ?? ''
+            placeId = best.place_id ?? ''
+            for (const component of best.address_components ?? []) {
+              if (component.types.includes('locality')) city = component.long_name
+              else if (!city && component.types.includes('postal_town')) city = component.long_name
+              else if (
+                component.types.includes('sublocality') ||
+                component.types.includes('neighborhood')
+              )
+                area = area || component.long_name
+              else if (component.types.includes('country')) country = component.long_name
+            }
+          }
+        }
+      } catch (geocodeError) {
+        console.warn('[LocationStep] Reverse geocoding failed:', geocodeError)
+      }
+
+      handleLocationSelect({
+        address: address || `${coordinates.lat.toFixed(5)}, ${coordinates.lng.toFixed(5)}`,
+        city,
+        area,
+        country,
+        coordinates,
+        placeId,
+      })
+    } catch (error) {
+      const code = (error as GeolocationPositionError)?.code
+      setLocateError(
+        code === 1
+          ? 'Permission denied — search instead'
+          : code === 3
+            ? 'Timed out — search instead'
+            : 'Could not detect — search instead',
+      )
+    } finally {
+      setIsLocating(false)
     }
   }
 
@@ -195,25 +283,23 @@ export function LocationStep({ onComplete, existingData, onUpdate }: LocationSte
                 </motion.button>
 
                 <motion.button
-                  onClick={() => {
-                    // Mock "get current location" - in real app would use geolocation
-                    const mockCurrentLocation: LocationData = {
-                      address: 'Current Location, Lahore',
-                      city: 'Lahore',
-                      area: 'Current Area',
-                      country: 'Pakistan',
-                      coordinates: { lat: 31.5204, lng: 74.3587 },
-                      placeId: 'current_location',
-                    }
-                    handleLocationSelect(mockCurrentLocation)
-                  }}
-                  className="p-3 border border-gray-200 rounded-lg hover:border-info/40 hover:bg-info-foreground transition-colors text-left"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  onClick={() => void handleUseCurrentLocation()}
+                  disabled={isLocating}
+                  className="p-3 border border-border rounded-lg hover:border-info/40 hover:bg-info-foreground transition-colors text-left disabled:opacity-60"
+                  whileHover={{ scale: isLocating ? 1 : 1.02 }}
+                  whileTap={{ scale: isLocating ? 1 : 0.98 }}
                 >
-                  <Navigation className="w-5 h-5 text-info mb-2" />
-                  <p className="text-sm font-medium text-gray-900">Use Current</p>
-                  <p className="text-xs text-gray-600">Auto-detect location</p>
+                  {isLocating ? (
+                    <Loader2 className="w-5 h-5 text-info mb-2 animate-spin" />
+                  ) : (
+                    <Navigation className="w-5 h-5 text-info mb-2" />
+                  )}
+                  <p className="text-sm font-medium text-foreground">
+                    {isLocating ? 'Locating…' : 'Use Current'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {locateError ?? 'Auto-detect location'}
+                  </p>
                 </motion.button>
               </div>
             </motion.div>

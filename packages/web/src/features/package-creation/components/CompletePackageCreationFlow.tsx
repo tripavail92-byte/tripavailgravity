@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { getUserCached } from '@/lib/authCache'
@@ -45,19 +45,17 @@ export function CompletePackageCreationFlow() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
 
-  const handleStepComplete = (stepData: StepData) => {
+  // useCallback with no deps: both use the functional setState form, so they need none. Without it
+  // these were fresh function identities on every render, and any step with a sync-to-parent effect
+  // that depends on onUpdate re-fired forever. BasicsStep did exactly that.
+  const handleStepComplete = useCallback((stepData: StepData) => {
     setPackageData((prev) => ({ ...prev, ...stepData }))
-    if (currentStep < STEPS.length) {
-      setCurrentStep((prev) => prev + 1)
-    } else {
-      console.log('Package Creation Completed', packageData)
-      // Handle completion (submit to backend)
-    }
-  }
+    setCurrentStep((prev) => (prev < STEPS.length ? prev + 1 : prev))
+  }, [])
 
-  const handleStepUpdate = (stepData: StepData) => {
+  const handleStepUpdate = useCallback((stepData: StepData) => {
     setPackageData((prev) => ({ ...prev, ...stepData }))
-  }
+  }, [])
 
   const handleBack = () => {
     if (currentStep > 1) {
@@ -171,7 +169,7 @@ export function CompletePackageCreationFlow() {
       </div>
 
       {/* Step Content */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 min-h-[600px]">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-sm border border-border p-8 min-h-[600px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}

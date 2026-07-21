@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+
 import { HotelData } from '../components/CompleteHotelListingFlow'
 
 /*
@@ -60,6 +61,7 @@ export const hotelService = {
       longitude: data.location?.lng,
 
       base_price_per_night: 0, // Calculated from lowest room price
+      currency: 'USD', // Replaced below with the listing currency; see 20260721000004.
 
       // JSONB Columns
       policies: data.policies,
@@ -75,9 +77,22 @@ export const hotelService = {
       updated_at: new Date().toISOString(),
     }
 
-    // Calculate base price from rooms if available
+    // Currency is a property of the listing, not of each room. It used to be picked per room, so
+    // Math.min below could compare 120000 PKR against 400 USD as bare numbers and publish the PKR
+    // room as the cheaper one. The wizard now sets it once; rooms whose stored currency disagrees
+    // (older drafts) are excluded from the "from" price rather than silently mis-compared.
+    const listingCurrency = data.currency || data.rooms?.[0]?.pricing?.currency || 'USD'
+    hotelPayload.currency = listingCurrency
+
     if (data.rooms && data.rooms.length > 0) {
-      hotelPayload.base_price_per_night = Math.min(...data.rooms.map((r) => r.pricing.basePrice))
+      const comparablePrices = data.rooms
+        .filter((r) => (r.pricing?.currency || listingCurrency) === listingCurrency)
+        .map((r) => r.pricing.basePrice)
+        .filter((p) => Number.isFinite(p) && p > 0)
+
+      if (comparablePrices.length > 0) {
+        hotelPayload.base_price_per_night = Math.min(...comparablePrices)
+      }
     }
 
     try {
@@ -130,13 +145,15 @@ export const hotelService = {
       if (data.rooms && data.rooms.length > 0) {
         const roomsPayload = data.rooms.map((room) => ({
           hotel_id: hotel.id,
-          room_type: room.type,
+          // A custom type stores the partner's own wording, not the literal string 'custom'.
+          // room_type is plain text with no CHECK constraint, so this needs no migration.
+          room_type: room.type === 'custom' ? room.customType?.trim() || 'Other' : room.type,
           name: room.name,
           description: room.description,
           capacity_adults: room.maxGuests,
           capacity_children: 0,
           price_override: room.pricing.basePrice,
-          currency: room.pricing.currency,
+          currency: listingCurrency,
           initial_stock: room.count,
 
           // Additional columns

@@ -30,6 +30,7 @@ const PlaceholderStep = () => <div>Step content coming soon</div>
 
 // Step Components
 import { useAuth } from '@/hooks/useAuth'
+import { isValidEmail } from '@/lib/validators'
 
 import { hotelService } from '../services/hotelService'
 import { AmenitiesStep } from './steps/AmenitiesStep'
@@ -59,6 +60,13 @@ export interface HotelData {
   contactEmail: string
   contactPhone: string
   starRating?: number
+  /**
+   * Currency for the WHOLE property. Every room is priced in it, and nothing is ever converted —
+   * the amount is stored exactly as the partner types it. This used to live on each room, so two
+   * rooms in one property could disagree and the listing's "from" price ran Math.min across mixed
+   * currencies, comparing 120000 PKR against 400 USD as bare numbers.
+   */
+  currency?: string
 
   // Location
   country: string
@@ -75,6 +83,8 @@ export interface HotelData {
   rooms: Array<{
     id: string
     type: string
+    /** Partner's own wording when type is 'custom'. */
+    customType?: string
     name: string
     description: string
     count: number
@@ -401,9 +411,14 @@ export default function CompleteHotelListingFlow({
       // Pass the draft id so republishing updates that row instead of creating a new one.
       // On a retry, publishedRowIdRef holds the row the previous attempt created — without it the
       // retry would take the INSERT branch again and duplicate the hotel, which is the whole bug.
-      await hotelService.publishListing(hotelData, user.id, publishedRowIdRef.current, (hotelId) => {
-        publishedRowIdRef.current = hotelId
-      })
+      await hotelService.publishListing(
+        hotelData,
+        user.id,
+        publishedRowIdRef.current,
+        (hotelId) => {
+          publishedRowIdRef.current = hotelId
+        },
+      )
       setIsPublished(true)
       toast.success('Your hotel listing has been published successfully.')
       onComplete?.(hotelData)
@@ -559,8 +574,12 @@ export default function CompleteHotelListingFlow({
         nextLabel={currentStep === steps.length ? 'Publish' : 'Next'}
         nextDisabled={
           (currentStep === 1 && !hotelData.propertyType) ||
+          // isValidEmail, not truthiness: "khayam ali shujhat" is a perfectly truthy string, and it
+          // was being saved as the property's booking address.
           (currentStep === 2 &&
-            (!hotelData.hotelName || !hotelData.description || !hotelData.contactEmail)) ||
+            (!hotelData.hotelName ||
+              !hotelData.description ||
+              !isValidEmail(hotelData.contactEmail))) ||
           (currentStep === 3 && !hotelData.coordinates) ||
           (currentStep === 4 && (!hotelData.amenities || hotelData.amenities.length === 0)) ||
           (currentStep === 5 && (!hotelData.rooms || hotelData.rooms.length === 0)) ||
