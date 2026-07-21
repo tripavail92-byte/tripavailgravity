@@ -121,9 +121,16 @@ export function PropertyDetailsStep({
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Pass through whatever the wizard has collected so far — the model writes from
+                  real facts rather than the property type alone. Absent fields are simply omitted
+                  server-side; nothing is invented to fill them. */}
               <PropertyDescriptionAI
                 propertyType={propertyType}
                 hotelName={formData.hotelName}
+                city={existingData?.city}
+                country={existingData?.country}
+                starRating={existingData?.starRating}
+                amenities={existingData?.amenities}
                 onSuggestionSelect={handleAISuggestionSelect}
                 className="mb-4"
               />
