@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { getUserCached } from '@/lib/authCache'
@@ -35,6 +35,12 @@ const STEPS = [
 
 export function CompletePackageCreationFlow() {
   const [currentStep, setCurrentStep] = useState(1)
+  // Furthest step reached — decides which progress segments are navigable. Tracked with an effect
+  // so every route into setCurrentStep (Next, Back, and the Review step's Edit links) is covered.
+  const [maxStepReached, setMaxStepReached] = useState(1)
+  useEffect(() => {
+    setMaxStepReached((prev) => Math.max(prev, currentStep))
+  }, [currentStep])
   const [packageData, setPackageData] = useState<PackageData>({})
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
@@ -106,21 +112,61 @@ export function CompletePackageCreationFlow() {
       {/* Header / Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Create New Package
-            <span className="ml-2 text-sm font-normal text-gray-500">
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
               Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].title}
             </span>
           </h1>
-          <div className="text-sm text-gray-500">Saved 2 mins ago</div>
+          {/* "Saved 2 mins ago" used to sit here, hardcoded. Nothing autosaves this flow, so it was
+              telling the user their work was safe when it was not. Removed rather than faked. */}
         </div>
 
-        {/* Progress Bar */}
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all duration-300 ease-out"
-            style={{ width: `${(currentStep / STEPS.length) * 100}%` }}
-          />
+        {/* One segment per step, and every step already visited is a jump target. Previously this
+            was a single width-% bar, so correcting an early step meant clicking Next through every
+            remaining one to get back to Review. Steps beyond the furthest reached stay inert —
+            skipping ahead would bypass the data those steps collect. */}
+        <div className="flex gap-[3px]" role="tablist" aria-label="Package creation steps">
+          {STEPS.map((step, i) => {
+            const n = i + 1
+            const isDone = n < currentStep
+            const isCurrent = n === currentStep
+            const canJump = n <= maxStepReached && !isCurrent
+
+            const bar = (
+              <span
+                className={[
+                  'block h-2 w-full transition-colors duration-300',
+                  isDone || isCurrent ? 'bg-primary' : 'bg-muted',
+                  canJump ? 'group-hover:bg-primary/60' : '',
+                  i === 0 ? 'rounded-l-full' : '',
+                  i === STEPS.length - 1 ? 'rounded-r-full' : '',
+                ].join(' ')}
+              />
+            )
+
+            return canJump ? (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => setCurrentStep(n)}
+                title={`Go to: ${step.title}`}
+                aria-label={`Go to step ${n}: ${step.title}`}
+                className="group flex-1 cursor-pointer py-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {bar}
+              </button>
+            ) : (
+              <span
+                key={step.id}
+                className="flex-1 py-1"
+                title={step.title}
+                aria-current={isCurrent ? 'step' : undefined}
+              >
+                {bar}
+              </span>
+            )
+          })}
         </div>
       </div>
 

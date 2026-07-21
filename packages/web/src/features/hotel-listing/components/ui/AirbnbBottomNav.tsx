@@ -13,6 +13,12 @@ interface AirbnbBottomNavProps {
   nextDisabled?: boolean
   nextLabel?: string
   backLabel?: string
+  /** Step titles for the progress bar's tooltips and label. */
+  stepTitles?: string[]
+  /** Furthest step reached — anything up to it is directly navigable. */
+  maxStepReached?: number
+  /** Jump straight to an already-visited step instead of clicking Next through the rest. */
+  onStepClick?: (step: number) => void
 }
 
 export function AirbnbBottomNav({
@@ -26,6 +32,9 @@ export function AirbnbBottomNav({
   nextDisabled = false,
   nextLabel = 'Next',
   backLabel = 'Back',
+  stepTitles,
+  maxStepReached,
+  onStepClick,
 }: AirbnbBottomNavProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 pt-4">
@@ -36,6 +45,9 @@ export function AirbnbBottomNav({
           totalSteps={totalSteps}
           completedSteps={completedSteps}
           showLabels={true}
+          stepTitles={stepTitles}
+          maxStepReached={maxStepReached}
+          onStepClick={onStepClick}
         />
       </div>
 

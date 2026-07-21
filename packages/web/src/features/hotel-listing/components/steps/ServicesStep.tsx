@@ -1,14 +1,16 @@
 import {
-  Accessibility,
   BatteryCharging,
+  BellRing,
   Car,
   Coffee,
-  ConciergeBell,
-  Dumbbell,
-  Plane,
-  Sparkles,
+  Sandwich,
+  Landmark,
+  Map,
+  Mountain,
+  Package,
+  ShieldCheck,
+  Stethoscope,
   Utensils,
-  Waves,
   Wifi,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -19,22 +21,39 @@ import { Card } from '@/components/ui/card'
 
 import type { StepData } from '../CompleteHotelListingFlow'
 
+/**
+ * This step used to re-ask for things the Amenities step already collects. Of the twelve entries it
+ * offered, eleven were duplicates — pool, gym, spa, restaurant, room service, airport shuttle,
+ * wheelchair access and elevator are all amenity checkboxes, and breakfast/parking/wi-fi exist there
+ * too. Only EV charging was genuinely additional. The heading even read "Facilities & Amenities".
+ *
+ * The split now means something:
+ *   breakfast / parking / wifi  — kept, because they carry a PRICE (included vs paid vs none), which
+ *                                 an amenity checkbox cannot express. Ticking "Free Parking" under
+ *                                 Amenities says you have it; this says what it costs.
+ *   services                    — genuinely additional things, none of which appear in the amenities
+ *                                 list. Verified one by one against AmenitiesStep's categories.
+ *
+ * Old keys (pool, gym, spa, restaurant, roomService, airportShuttle, wheelchairAccessible, elevator)
+ * are intentionally gone. Listings that saved them keep the values harmlessly in their JSONB; the
+ * Review step renders whatever keys are present, so nothing breaks for existing hotels.
+ */
 export interface ServicesData {
   breakfast: 'included' | 'optional' | 'none'
   parking: 'free' | 'paid' | 'none'
   wifi: 'free' | 'paid' | 'none'
   facilities: {
-    pool: boolean
-    gym: boolean
-    spa: boolean
-    restaurant: boolean
-    roomService: boolean
-    airportShuttle: boolean
     evCharging: boolean
-  }
-  accessibility: {
-    wheelchairAccessible: boolean
-    elevator: boolean
+    tourDesk: boolean
+    guidedTreks: boolean
+    equipmentRental: boolean
+    packedMeals: boolean
+    localTransfers: boolean
+    porterService: boolean
+    doctorOnCall: boolean
+    security24h: boolean
+    prayerRoom: boolean
+    halalKitchen: boolean
   }
 }
 
@@ -44,23 +63,33 @@ interface ServicesStepProps {
 }
 
 const FACILITY_ICONS = {
-  pool: Waves,
-  gym: Dumbbell,
-  spa: Sparkles,
-  restaurant: Utensils,
-  roomService: ConciergeBell,
-  airportShuttle: Plane,
   evCharging: BatteryCharging,
+  tourDesk: Map,
+  guidedTreks: Mountain,
+  equipmentRental: Package,
+  packedMeals: Sandwich,
+  localTransfers: Car,
+  porterService: BellRing,
+  doctorOnCall: Stethoscope,
+  security24h: ShieldCheck,
+  prayerRoom: Landmark,
+  halalKitchen: Utensils,
 }
 
+// Every label below was checked against AmenitiesStep and is absent from it. Things like a pool,
+// gym, restaurant or airport shuttle belong there, not here.
 const FACILITY_LABELS = {
-  pool: 'Swimming Pool',
-  gym: 'Gym / Fitness Center',
-  spa: 'Spa & Wellness',
-  restaurant: 'Restaurant / Bar',
-  roomService: 'Room Service',
-  airportShuttle: 'Airport Shuttle',
   evCharging: 'EV Charging Station',
+  tourDesk: 'Tour Desk & Excursion Booking',
+  guidedTreks: 'Guided Treks & Expeditions',
+  equipmentRental: 'Trekking / Sports Equipment Hire',
+  packedMeals: 'Packed Meals for Day Trips',
+  localTransfers: 'Local Transfers & Day Hire',
+  porterService: 'Porter / Bellhop Service',
+  doctorOnCall: 'Doctor on Call',
+  security24h: '24-Hour Security',
+  prayerRoom: 'Prayer Room',
+  halalKitchen: 'Halal-Certified Kitchen',
 }
 
 export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
@@ -70,17 +99,17 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
       parking: 'none',
       wifi: 'free',
       facilities: {
-        pool: false,
-        gym: false,
-        spa: false,
-        restaurant: false,
-        roomService: false,
-        airportShuttle: false,
         evCharging: false,
-      },
-      accessibility: {
-        wheelchairAccessible: false,
-        elevator: false,
+        tourDesk: false,
+        guidedTreks: false,
+        equipmentRental: false,
+        packedMeals: false,
+        localTransfers: false,
+        porterService: false,
+        doctorOnCall: false,
+        security24h: false,
+        prayerRoom: false,
+        halalKitchen: false,
       },
     },
   )
@@ -102,24 +131,26 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
     })
   }
 
-  const handleAccessibilityToggle = (key: keyof ServicesData['accessibility']) => {
-    handleUpdate({
-      accessibility: {
-        ...services.accessibility,
-        [key]: !services.accessibility[key],
-      },
-    })
-  }
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Additional Services</h2>
-        <p className="text-gray-600 mt-1">What extra services and facilities do you offer?</p>
+        <h2 className="text-2xl font-bold text-foreground">Additional Services</h2>
+        <p className="text-muted-foreground mt-1">
+          Pricing for the common ones, plus anything you offer beyond the amenities you already
+          selected.
+        </p>
       </div>
 
-      {/* Core Services */}
+      {/* These three stay here even though Amenities also lists them: an amenity checkbox says you
+          HAVE it, this says what it COSTS. That distinction is the reason for the duplication, so
+          the heading now states it outright. */}
+      <div>
+        <h3 className="font-semibold text-foreground">What do these cost?</h3>
+        <p className="text-sm text-muted-foreground mt-1 mb-4">
+          You marked what the property has under Amenities. Here you set the price.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Breakfast */}
         <Card className="p-6">
@@ -212,9 +243,15 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
         </Card>
       </div>
 
-      {/* Facilities Grid */}
+      {/* Genuinely additional services. This heading used to read "Facilities & Amenities" over a
+          list of things the Amenities step already collected — which is precisely why the two steps
+          felt like duplicates. */}
       <Card className="p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Facilities & Amenities</h3>
+        <h3 className="font-semibold text-foreground">Services you provide</h3>
+        <p className="text-sm text-muted-foreground mt-1 mb-4">
+          Things guests can request or book through you. Facilities the property simply has — pool,
+          gym, restaurant, lift — belong under Amenities.
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Object.entries(FACILITY_LABELS).map(([key, label]) => {
             const Icon = FACILITY_ICONS[key as keyof typeof FACILITY_ICONS]
@@ -239,35 +276,6 @@ export function ServicesStep({ existingData, onUpdate }: ServicesStepProps) {
         </div>
       </Card>
 
-      {/* Accessibility */}
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-success/10 rounded-lg">
-            <Accessibility size={24} className="text-success" />
-          </div>
-          <h3 className="font-semibold">Accessibility</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-            <input
-              type="checkbox"
-              checked={services.accessibility.wheelchairAccessible}
-              onChange={() => handleAccessibilityToggle('wheelchairAccessible')}
-              className="w-5 h-5 text-primary rounded focus:ring-primary/50"
-            />
-            <span className="font-medium text-gray-700">Wheelchair Accessible</span>
-          </label>
-          <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-            <input
-              type="checkbox"
-              checked={services.accessibility.elevator}
-              onChange={() => handleAccessibilityToggle('elevator')}
-              className="w-5 h-5 text-primary rounded focus:ring-primary/50"
-            />
-            <span className="font-medium text-gray-700">Elevator / Lift</span>
-          </label>
-        </div>
-      </Card>
     </div>
   )
 }
