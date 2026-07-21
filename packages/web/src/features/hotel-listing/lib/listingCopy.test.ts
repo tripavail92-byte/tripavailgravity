@@ -4,8 +4,15 @@ import { describe, expect, it, vi } from 'vitest'
 // module importable so the pure composition logic can be tested.
 vi.mock('@/lib/supabase', () => ({ supabase: { from: vi.fn() } }))
 
-const { buildPropertyDetail, buildRoomDetail, composeSuggestions, describeBeds, fillTemplate } =
-  await import('./listingCopy')
+const {
+  AMENITY_PHRASES,
+  amenityKey,
+  buildPropertyDetail,
+  buildRoomDetail,
+  composeSuggestions,
+  describeBeds,
+  fillTemplate,
+} = await import('./listingCopy')
 
 const frag = (slot: 'opener' | 'closer', body: string) => ({ category: 'guesthouse', slot, body })
 
@@ -219,5 +226,86 @@ describe('buildRoomDetail — conjunction handling', () => {
     expect(buildRoomDetail({ beds: [{ type: 'king', quantity: 1 }], size: 20, maxGuests: 2 })).toBe(
       'Spanning 20 m², it features a king bed and sleeps up to 2 guests comfortably.',
     )
+  })
+})
+
+describe('"Show others" actually shows others', () => {
+  // Regression for the defect four review lenses converged on. The old stride was
+  // `cycle * count` on BOTH indices, which is inert whenever the pool size divides the stride.
+  // The production first-pass shape — 3 usable openers against 6 closers — hit it exactly, so
+  // the button recomposed byte-identical text forever while the cards re-animated.
+  const pool = (slot: 'opener' | 'closer', n: number, tag: string) =>
+    Array.from({ length: n }, (_, i) => frag(slot, `${tag}${i}.`))
+
+  const cycles = (openers: number, closers: number, n = 5) =>
+    Array.from({ length: n }, (_, c) =>
+      JSON.stringify(
+        composeSuggestions({
+          kind: 'property',
+          fragments: [...pool('opener', openers, 'O'), ...pool('closer', closers, 'C')],
+          vars: {},
+          detail: '',
+          seed: 'Serena Hunza',
+          cycle: c,
+        }),
+      ),
+    )
+
+  // (3,6) is the exact production shape on a first pass. The assertion is that CONSECUTIVE
+  // presses always differ — not that all N are distinct, which a small pool cannot honour: a
+  // 3x3 library only holds three pages, so cycle 3 legitimately returns to cycle 0.
+  it.each([
+    [3, 6],
+    [3, 3],
+    [4, 6],
+    [5, 5],
+    [6, 6],
+    [7, 5],
+    [2, 6],
+    [1, 6],
+  ])('pool of %i openers x %i closers changes on every press', (o, c) => {
+    const seen = cycles(o, c, 6)
+    for (let i = 1; i < seen.length; i++) {
+      expect(seen[i], `cycle ${i} matched cycle ${i - 1}`).not.toBe(seen[i - 1])
+    }
+  })
+
+  it('is still stable when the cycle does not change', () => {
+    expect(cycles(3, 6, 1)[0]).toBe(cycles(3, 6, 1)[0])
+  })
+})
+
+describe('amenity coverage does not drift', () => {
+  it('maps every id AmenitiesStep can produce', async () => {
+    const fs = await import('node:fs')
+    const nodePath = await import('node:path')
+    // vitest runs with cwd at packages/web; import.meta.url is not a file: URL under the runner.
+    const file = nodePath.resolve(
+      process.cwd(),
+      'src/features/hotel-listing/components/steps/AmenitiesStep.tsx',
+    )
+    const src = fs.readFileSync(file, 'utf8')
+
+    const ids = [...src.matchAll(/id:\s*'([a-zA-Z0-9_-]+)'/g)].map((m) => m[1])
+    expect(ids.length).toBeGreaterThan(60) // sanity: the regex still finds the list
+
+    // The original map was built by a grep matching [a-zA-Z_]+, which silently skipped all 27
+    // hyphenated ids. They fell through to humanise(), so ticking Pet Friendly published
+    // "Guests have access to pet friendly."
+    const unmapped = ids.filter((id) => !AMENITY_PHRASES[amenityKey(id)])
+    expect(unmapped).toEqual([])
+  })
+
+  it('turns adjectival ids into noun phrases', () => {
+    expect(buildPropertyDetail({ amenities: ['pet-friendly'] })).toBe(
+      'Guests have access to pet-friendly rooms.',
+    )
+    expect(buildPropertyDetail({ amenities: ['wheelchair-accessible'] })).toBe(
+      'Guests have access to wheelchair access.',
+    )
+  })
+
+  it('keeps British spelling for the US-spelled ids', () => {
+    expect(buildPropertyDetail({ amenities: ['business-center'] })).toContain('business centre')
   })
 })

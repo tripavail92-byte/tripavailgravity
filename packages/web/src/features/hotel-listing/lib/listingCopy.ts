@@ -62,19 +62,29 @@ function seedFrom(input: string): number {
   return Math.abs(hash)
 }
 
-/** Bundled fallback so the button still works if the table is unreachable. Deliberately small —
- *  the library in the database is the real source. */
+/**
+ * Bundled fallback so the button still works if the table is unreachable.
+ *
+ * Each pool is deliberately LARGER than the three suggestions shown, so that paging through it
+ * actually reaches new text. An earlier version held exactly three openers and three closers,
+ * which meant a fetch failure left "Show others" with nothing further to offer.
+ */
 const FALLBACK: Record<CopyKind, { openers: string[]; closers: string[] }> = {
   room: {
     openers: [
       'A comfortable, well-appointed room with everything you need for a restful stay.',
       'Thoughtfully arranged, with the space and quiet to properly unwind.',
       'A calm room that covers the essentials properly, without fuss.',
+      'An easy room to settle into, kept simple and kept well.',
+      'Quiet, comfortable and ready for a good night’s sleep.',
+      'A restful space, arranged with a little more care than it strictly needed.',
     ],
     closers: [
       'It makes a straightforward, comfortable base for the time you are here.',
       'Whether you are staying one night or several, it is an easy room to settle into.',
       'Everything is checked and made ready ahead of each arrival.',
+      'The aim is simple: a good night’s sleep and an unhurried morning.',
+      'Do get in touch before you arrive if there is anything you would like arranged.',
     ],
   },
   property: {
@@ -82,11 +92,16 @@ const FALLBACK: Record<CopyKind, { openers: string[]; closers: string[] }> = {
       'A well-run property with consistent service and comfortable, properly maintained rooms.',
       'Straightforward hospitality: clean rooms, helpful staff and an easy check-in.',
       'A comfortable base, run with genuine care and an eye for the details that matter.',
+      'Somewhere unfussy and well kept, where the essentials are taken seriously.',
+      'A calm place to stay, run by people who pay attention.',
+      'Comfortable rooms, a straightforward welcome and no unnecessary ceremony.',
     ],
     closers: [
       'Do get in touch if you have any questions before booking.',
       'We look forward to welcoming you.',
       'Whatever brings you to the area, you will have a comfortable base for it.',
+      'Enquiries are always welcome, whatever the length of your stay.',
+      'Rooms are prepared fresh for every arrival.',
     ],
   },
 }
@@ -143,7 +158,7 @@ export function composeSuggestions({
   if (openers.length === 0) openers = FALLBACK[kind].openers
   if (closers.length === 0) closers = FALLBACK[kind].closers
 
-  const base = seedFrom(seed) + cycle * count
+  const base = seedFrom(seed)
   const out: string[] = []
 
   // Never ask for more suggestions than there are distinct openers. Dropping placeholder fragments
@@ -153,10 +168,23 @@ export function composeSuggestions({
   const wanted = Math.min(count, openers.length)
 
   for (let i = 0; i < wanted; i++) {
-    const opener = openers[(base + i) % openers.length]
-    // A different stride for closers, so the opener/closer pairing is not locked in step and
-    // repeating the cycle produces genuinely new combinations rather than the same three.
-    const closer = closers[(base * 2 + i) % closers.length]
+    // Openers paginate: each press of "Show others" advances a whole page through the library.
+    const opener = openers[(base + cycle * wanted + i) % openers.length]
+
+    // Closers advance by exactly ONE per press — deliberately NOT by `wanted`.
+    //
+    // This line previously read (base + cycle * wanted) * 2 + i, i.e. both indices stepped by a
+    // multiple of `wanted`. That is inert whenever the pool size divides the stride, and the
+    // production shape hits it exactly: on the first pass through the wizard the city is not
+    // known yet, one opener per category is dropped for its unfillable {city}, leaving 3 openers
+    // against a count of 3 and 6 closers against a closer stride of 6. Both indices then reduce
+    // to the same values on every cycle and "Show others" recomposed byte-identical text — while
+    // the cycle-keyed React elements remounted and replayed their fade-in, so the panel visibly
+    // animated and changed nothing.
+    //
+    // A stride of 1 cannot degenerate: it shifts the closer window on every press for any pool
+    // larger than one, whatever `wanted` happens to be.
+    const closer = closers[(base * 2 + cycle + i) % closers.length]
     const detailText = typeof detail === 'function' ? detail(opener) : detail
     const text = [opener, detailText, closer].filter(Boolean).join(' ')
     if (!out.includes(text)) out.push(text)
@@ -227,7 +255,7 @@ export function buildRoomDetail(room: {
  * AmenitiesStep.tsx; anything unrecognised falls through to the bare humanised form, which is
  * article-less and therefore safe in a list even when it is not ideal.
  */
-const AMENITY_PHRASES: Record<string, string> = {
+export const AMENITY_PHRASES: Record<string, string> = {
   wifi: 'WiFi',
   pool: 'a pool',
   gym: 'a gym',
@@ -269,6 +297,39 @@ const AMENITY_PHRASES: Record<string, string> = {
   tv: 'a TV',
   library: 'a library',
   nightclub: 'a nightclub',
+
+  // The kebab-case half of AmenitiesStep. These were missing in the first version because the
+  // grep that built this map matched [a-zA-Z_]+ and silently skipped every hyphenated id — all
+  // 27 of them fell through to the bare humanised key, so a partner ticking Pet Friendly got
+  // "Guests have access to pet friendly." Adjectival ids are rewritten as noun phrases here,
+  // since no amount of article-guessing rescues "access to wheelchair accessible".
+  airport_shuttle: 'an airport shuttle',
+  bar_lounge: 'a bar and lounge',
+  business_center: 'a business centre',
+  car_rental: 'car hire',
+  city_view: 'city views',
+  coffee_shop: 'a coffee shop',
+  conference_facilities: 'conference facilities',
+  currency_exchange: 'currency exchange',
+  dry_cleaning: 'dry cleaning',
+  entertainment_system: 'an entertainment system',
+  family_rooms: 'family rooms',
+  front_desk_24h: 'a 24-hour front desk',
+  golf_course: 'a golf course',
+  high_speed_internet: 'high-speed internet',
+  kids_club: 'a kids club',
+  live_music: 'live music',
+  luggage_storage: 'luggage storage',
+  meeting_rooms: 'meeting rooms',
+  ocean_view: 'ocean views',
+  pet_friendly: 'pet-friendly rooms',
+  room_service: 'room service',
+  safe_deposit: 'a safe deposit box',
+  taxi_service: 'a taxi service',
+  tennis_court: 'a tennis court',
+  tv_cable: 'cable TV',
+  valet_parking: 'valet parking',
+  wheelchair_accessible: 'wheelchair access',
 }
 
 /**
@@ -278,6 +339,7 @@ const AMENITY_PHRASES: Record<string, string> = {
  */
 const AMENITY_PRIORITY = [
   'mountain_view',
+  'ocean_view',
   'lake_access',
   'beachfront',
   'forest_view',
@@ -287,16 +349,31 @@ const AMENITY_PRIORITY = [
   'breakfast',
   'hot_tub',
   'sauna',
+  'golf_course',
+  'tennis_court',
   'gym',
   'scenic_balcony',
   'fire_pit',
   'outdoor_dining',
+  'bar_lounge',
+  'coffee_shop',
+  'kids_club',
+  'live_music',
   'patio',
   'balcony',
+  'city_view',
+  'room_service',
+  'front_desk_24h',
+  'airport_shuttle',
   'wifi',
+  'high_speed_internet',
   'free_parking',
+  'valet_parking',
   'kitchen',
   'concierge',
+  'family_rooms',
+  'pet_friendly',
+  'wheelchair_accessible',
 ]
 
 const humanise = (key: string) =>
@@ -307,7 +384,7 @@ const humanise = (key: string) =>
     .trim()
 
 /** camelCase and kebab variants both appear across the wizard; normalise before lookup. */
-const amenityKey = (raw: string) =>
+export const amenityKey = (raw: string) =>
   String(raw)
     .trim()
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
