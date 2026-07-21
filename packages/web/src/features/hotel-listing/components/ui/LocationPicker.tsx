@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useGeolocationIfGranted } from '@/hooks/useGeolocationIfGranted'
 
 interface LocationData {
   address: string
@@ -25,8 +26,15 @@ interface LocationPickerProps {
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 const GOOGLE_MAPS_MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || ''
 
-// Default center (Lahore, Pakistan)
-const DEFAULT_CENTER = { lat: 31.5204, lng: 74.3587 }
+// Fallback view when we know nothing about the property yet.
+//
+// This used to be Lahore at city zoom, which quietly told every partner the map already knew where
+// they were — and combined with the viewport-restricted search below, it meant a property outside
+// Lahore could not be found at all. A wide regional view makes "we do not know yet" honest, and the
+// map recentres as soon as the partner searches, uses the locate button, or has already granted
+// location permission.
+const FALLBACK_CENTER = { lat: 25, lng: 55 }
+const FALLBACK_ZOOM = 3
 
 // Airbnb-style custom map styles
 const MAP_STYLES = [
@@ -53,7 +61,13 @@ function PlacesAutocomplete({
 }) {
   const map = useMap()
   const [predictions, setPredictions] = useState<
-    Array<{ key: string; placeId?: string; label: string; secondary?: string; placePrediction?: any }>
+    Array<{
+      key: string
+      placeId?: string
+      label: string
+      secondary?: string
+      placePrediction?: any
+    }>
   >([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -68,60 +82,81 @@ function PlacesAutocomplete({
     setIsSearching(true)
     const timeoutId = setTimeout(async () => {
       try {
+        if (!window.google?.maps?.places) {
+          setPredictions([])
+          return
+        }
+
         const hasNewAutocomplete =
           typeof (google.maps as any).importLibrary === 'function' &&
           (google.maps as any).places?.AutocompleteSuggestion
 
         if (hasNewAutocomplete) {
-          const lib = (await (google.maps as any).importLibrary('places')) as any
-          const AutocompleteSuggestion = lib?.AutocompleteSuggestion
-          const AutocompleteSessionToken = lib?.AutocompleteSessionToken
+          // Its own try/catch: a failure here must FALL THROUGH to the legacy service below, not
+          // abort the search. "Places API (New)" being disabled or unbilled on the Cloud project
+          // throws here, and returning empty made the search box look completely dead. Both
+          // CityAutocomplete and TourPickupLocationsStep already fall back this way.
+          try {
+            const lib = (await (google.maps as any).importLibrary('places')) as any
+            const AutocompleteSuggestion = lib?.AutocompleteSuggestion
+            const AutocompleteSessionToken = lib?.AutocompleteSessionToken
 
-          if (!AutocompleteSuggestion) {
-            setPredictions([])
-            return
-          }
-
-          if (!sessionTokenRef.current && AutocompleteSessionToken) {
-            sessionTokenRef.current = new AutocompleteSessionToken()
-          }
-          const token = sessionTokenRef.current
-
-          const request: any = {
-            input: searchQuery,
-            includedRegionCodes: ['pk'],
-          }
-          const bounds = map.getBounds?.()
-          if (bounds) request.locationRestriction = bounds
-          const center = map.getCenter?.()
-          if (center) request.origin = center
-          if (token) request.sessionToken = token
-
-          const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
-          const next = (suggestions ?? [])
-            .map((s: any) => s?.placePrediction)
-            .filter(Boolean)
-            .map((placePrediction: any) => {
-              const text = placePrediction?.text?.toString?.() ?? ''
-              const id = placePrediction?.placeId
-              return {
-                key: id || text,
-                placeId: id,
-                label: text,
-                secondary: '',
-                placePrediction,
+            if (AutocompleteSuggestion) {
+              if (!sessionTokenRef.current && AutocompleteSessionToken) {
+                sessionTokenRef.current = new AutocompleteSessionToken()
               }
-            })
+              const token = sessionTokenRef.current
 
-          setPredictions(next)
+              // No includedRegionCodes: a partner may list a property in any country.
+              const request: any = { input: searchQuery }
+
+              // locationBias, NOT locationRestriction. In the new Places API a restriction is a
+              // HARD filter, so biasing the request to the visible map meant searching "Karachi"
+              // while the map sat on Lahore returned nothing at all — the partner had to pan the
+              // map to the city by hand before it could be found. A bias only ranks nearby hits
+              // first, which is what was intended.
+              const center = map.getCenter?.()
+              if (center) {
+                request.origin = center
+                request.locationBias = center
+              }
+              if (token) request.sessionToken = token
+
+              const { suggestions } =
+                await AutocompleteSuggestion.fetchAutocompleteSuggestions(request)
+              const next = (suggestions ?? [])
+                .map((s: any) => s?.placePrediction)
+                .filter(Boolean)
+                .map((placePrediction: any) => {
+                  const text = placePrediction?.text?.toString?.() ?? ''
+                  const id = placePrediction?.placeId
+                  return {
+                    key: id || text,
+                    placeId: id,
+                    label: text,
+                    secondary: '',
+                    placePrediction,
+                  }
+                })
+
+              setPredictions(next)
+              return
+            }
+          } catch (newApiError) {
+            console.warn(
+              '[LocationPicker] Places API (New) unavailable, falling back to legacy:',
+              newApiError,
+            )
+          }
+        }
+
+        if (!google.maps.places.AutocompleteService) {
+          setPredictions([])
           return
         }
 
         const service = new google.maps.places.AutocompleteService()
-        const response = await service.getPlacePredictions({
-          input: searchQuery,
-          componentRestrictions: { country: 'pk' },
-        })
+        const response = await service.getPlacePredictions({ input: searchQuery })
 
         const next = (response.predictions || []).map((p) => ({
           key: p.place_id,
@@ -226,11 +261,11 @@ function PlacesAutocomplete({
                     <MapPin size={18} className="text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {prediction.label}
-                    </p>
+                    <p className="font-medium text-foreground truncate">{prediction.label}</p>
                     {prediction.secondary ? (
-                      <p className="text-sm text-muted-foreground truncate">{prediction.secondary}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {prediction.secondary}
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -253,8 +288,21 @@ function LocationPickerContent({
   )
   const [searchQuery, setSearchQuery] = useState('')
   const [markerPosition, setMarkerPosition] = useState(initialLocation?.coordinates || null)
-  const [initialCenter] = useState(initialLocation?.coordinates || DEFAULT_CENTER)
+  const [initialCenter] = useState(initialLocation?.coordinates || FALLBACK_CENTER)
   const map = useMap()
+
+  // Only reads a position the browser has ALREADY been granted — it never raises a permission
+  // prompt, so calling it unconditionally is safe. <Map> is uncontrolled (defaultCenter is read
+  // once), so the result has to be applied imperatively once both the map and the coords exist.
+  const { coords: grantedCoords } = useGeolocationIfGranted()
+
+  useEffect(() => {
+    if (!map || !grantedCoords) return
+    // A resumed draft already knows where the property is; never move the map out from under it.
+    if (initialLocation?.coordinates) return
+    map.panTo({ lat: grantedCoords.latitude, lng: grantedCoords.longitude })
+    map.setZoom(12)
+  }, [map, grantedCoords, initialLocation])
 
   const handlePlaceSelect = useCallback(
     (place: any) => {
@@ -426,7 +474,7 @@ function LocationPickerContent({
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col\">
+    <div className="fixed inset-0 bg-background z-50 flex flex-col">
       {/* Minimal Header - Airbnb Style */}
       <div className="bg-background border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
@@ -501,7 +549,7 @@ function LocationPickerContent({
       <div className="flex-1 relative bg-muted">
         <Map
           defaultCenter={initialCenter}
-          defaultZoom={12}
+          defaultZoom={initialLocation?.coordinates ? 12 : FALLBACK_ZOOM}
           gestureHandling="greedy"
           disableDefaultUI={true}
           onClick={handleMapClick}
@@ -514,7 +562,11 @@ function LocationPickerContent({
         >
           {markerPosition ? (
             GOOGLE_MAPS_MAP_ID ? (
-              <AdvancedMarker position={markerPosition} draggable={true} onDragEnd={handleMarkerDrag}>
+              <AdvancedMarker
+                position={markerPosition}
+                draggable={true}
+                onDragEnd={handleMarkerDrag}
+              >
                 <motion.div
                   initial={{ scale: 0, y: -40 }}
                   animate={{ scale: 1, y: 0 }}

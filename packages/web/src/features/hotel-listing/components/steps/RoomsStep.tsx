@@ -8,20 +8,36 @@ import { Card } from '@/components/ui/card'
 import type { StepData } from '../CompleteHotelListingFlow'
 import { RoomWizardModal } from './RoomWizardModal'
 
+/**
+ * 'custom' is the escape hatch on both unions.
+ *
+ * These were closed six-value lists. A partner whose room did not fit — a dormitory, a treehouse, a
+ * cabin — had no way to say so, and because the wizard seeds `type: 'standard'` and never disables
+ * Next, their room was silently PUBLISHED as a Standard Room. Nobody was blocked; the data was just
+ * quietly wrong, which is worse. When type is 'custom' the partner's own wording lives in
+ * customLabel.
+ *
+ * No migration is needed: hotels.room_type is plain text with no CHECK constraint, and bed_config is
+ * JSONB.
+ */
 export interface BedConfig {
-  type: 'king' | 'queen' | 'double' | 'twin' | 'single' | 'sofaBed'
+  type: 'king' | 'queen' | 'double' | 'twin' | 'single' | 'sofaBed' | 'custom'
   quantity: number
+  /** Partner-supplied name, only when type is 'custom'. */
+  customLabel?: string
 }
 
 export interface RoomType {
   id: string
-  type: 'standard' | 'deluxe' | 'suite' | 'family' | 'executive' | 'presidential'
+  type: 'standard' | 'deluxe' | 'suite' | 'family' | 'executive' | 'presidential' | 'custom'
   name: string
   description: string
   count: number
   maxGuests: number
   size: number
   beds: BedConfig[]
+  /** Partner-supplied room type name, only when type is 'custom'. */
+  customType?: string
   pricing: {
     basePrice: number
     currency: string
@@ -32,6 +48,8 @@ interface RoomsStepProps {
   onComplete?: (data: StepData) => void
   existingData?: {
     rooms?: RoomType[]
+    /** Property-level currency, set on the details step. Every room is priced in it. */
+    currency?: string
   }
   onUpdate?: (data: StepData) => void
 }
@@ -231,6 +249,7 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
           onClose={() => setShowWizard(false)}
           onSave={handleSaveRoom}
           editingRoom={editingRoom}
+          listingCurrency={existingData?.currency || 'USD'}
         />
       )}
     </div>

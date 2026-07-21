@@ -32,16 +32,27 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [showValidation, setShowValidation] = useState(false)
 
-  // Update parent state on changes
+  // Push this step's own fields up to the wizard.
+  //
+  // This effect used to depend on `existingData` AND `onUpdate` and to spread `...existingData`
+  // into the payload. The parent declares handleStepUpdate inline and merges with
+  // `{ ...prev, ...stepData }`, so every run produced a new packageData object and a new function
+  // identity — both dependencies changed, the effect re-ran, and it never settled. React 18 does
+  // not throw on that (the update lands in DefaultLane, not SyncLane, so the "Maximum update
+  // depth" invariant does not fire), it just re-renders this step forever in the background.
+  //
+  // Emitting only the four fields this step owns is also correct on its own terms: the parent
+  // already merges, so echoing the whole object back was redundant.
   useEffect(() => {
     onUpdate({
-      ...existingData,
       name: title,
       description: description,
       hotelName: hotelName,
       durationDays: duration ? parseInt(duration) : undefined,
     })
-  }, [title, description, hotelName, duration, onUpdate, existingData])
+    // onUpdate is memoised in the parent; existingData is deliberately not a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, description, hotelName, duration])
 
   // Auto-generate title suggestions based on package type
   const getTitleSuggestions = (packageType?: PackageType) => {
@@ -86,6 +97,15 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         'VIP Elite Package',
         'Platinum Indulgence',
       ],
+      // These three types existed in the enum but in neither map, so they silently served
+      // Weekend-Getaway titles while producing no description at all.
+      [PackageType.CULTURAL_HISTORY]: [
+        'Heritage & History Trail',
+        'Culture Close Up',
+        'Landmarks & Local Stories',
+      ],
+      [PackageType.ECO_NATURE]: ['Into the Wild', 'Green Escape', 'Nature & Nights'],
+      [PackageType.CRUISE_WATER]: ['On the Water', 'Coast & Cruise', 'Shoreline Escape'],
       [PackageType.CUSTOM]: ['Custom Package Deal', 'Special Offer', 'Exclusive Stay'],
     }
     return packageType ? titleMap[packageType] || titleMap[PackageType.WEEKEND_GETAWAY] : []
@@ -126,31 +146,59 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         'Indulge in unparalleled luxury with exclusive VIP services, premium amenities, and world-class hospitality. Experience the pinnacle of hospitality with bespoke services and ultra-luxury accommodations. Where opulence meets excellence - an exclusive experience crafted for the most discerning guests.',
         'Experience absolute luxury with butler service, private transfers, Michelin-star dining, premium suite accommodations, and personalized concierge attention to every detail.',
       ],
+      [PackageType.CULTURAL_HISTORY]: [
+        'Step into the region’s history with guided visits to landmarks, museums and heritage sites, in the company of people who know their stories. Return each evening to comfortable accommodation and time to take it all in.',
+        'A package built around the area’s culture and history: guided site visits, local craft and food traditions, and unhurried time to explore between them.',
+      ],
+      [PackageType.ECO_NATURE]: [
+        'Spend your days outdoors and your nights somewhere that treads lightly. Guided walks, local wildlife and landscapes, with accommodation chosen for its care of the surroundings.',
+        'A nature-first package: time in the landscape, guides who know it well, and a stay run with a genuine eye on its footprint.',
+      ],
+      [PackageType.CRUISE_WATER]: [
+        'Time on the water, with the route, the stops and the pace planned for you. Comfortable accommodation between stretches, and space simply to watch the shoreline go by.',
+        'A water-based package combining time afloat with comfortable stays ashore, and the logistics handled from the moment you arrive.',
+      ],
       [PackageType.CUSTOM]: [
         'Create your own unique experience tailored exactly to your preferences. Select from our premium amenities and services to design the perfect stay that meets directly to your specific needs and desires.',
         'A fully customizable package allowing you to mix and match accommodations, dining, and activities for a truly personalized stay.',
       ],
     }
-    return packageType ? suggestionMap[packageType] || [] : []
+    // Falls back to the generic set rather than to []. Three of the twelve package types —
+    // cultural-history, eco-nature and cruise-water — had no entry at all, so the button returned
+    // undefined, wrote nothing, and looked broken. A thirteenth type must degrade to generic copy,
+    // never to silence.
+    if (!packageType) return []
+    return suggestionMap[packageType] ?? suggestionMap[PackageType.CUSTOM]
   }
 
   const titleSuggestions = getTitleSuggestions(existingData?.packageType)
   const descriptionSuggestions = getDescriptionSuggestions(existingData?.packageType)
 
-  const [isGenerating, setIsGenerating] = useState(false)
+  // Which pre-written description we last offered, so pressing again cycles rather than
+  // re-rolling the same one at random.
+  const [suggestionIndex, setSuggestionIndex] = useState(0)
 
+  /**
+   * Fills the description from a small library of pre-written starters for this package type.
+   *
+   * This used to await setTimeout(800) behind a "Generating…" label to imitate a model thinking,
+   * then pick at random from the same fixed list. Nothing was generated. Worse, for three of the
+   * twelve package types the list did not exist, so it spun and then wrote nothing — which is the
+   * "AI suggest is not working, it is not giving any description" report. The delay is gone, the
+   * button says what it does, and an empty result now says so out loud instead of failing silently.
+   */
   const handleGenerateSuggestion = () => {
-    setIsGenerating(true)
-    // Simulate AI generation delay
-    setTimeout(() => {
-      if (descriptionSuggestions.length > 0) {
-        const randomSuggestion =
-          descriptionSuggestions[Math.floor(Math.random() * descriptionSuggestions.length)]
-        setDescription(randomSuggestion)
-      }
-      setIsGenerating(false)
-    }, 800)
+    if (descriptionSuggestions.length === 0) {
+      setSuggestionError('Choose a package type first to see suggested descriptions.')
+      return
+    }
+    setSuggestionError(null)
+    const next = suggestionIndex % descriptionSuggestions.length
+    setDescription(descriptionSuggestions[next])
+    setSuggestionIndex(next + 1)
   }
+
+  const [suggestionError, setSuggestionError] = useState<string | null>(null)
 
   const handleTitleChange = (value: string) => setTitle(value)
   const handleDescriptionChange = (value: string) => setDescription(value)
@@ -196,8 +244,8 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="space-y-2"
       >
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Package Basics</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Package Basics</h1>
+        <p className="text-muted-foreground text-lg">
           Set up the fundamental details of your package including title, description, and duration.
         </p>
       </motion.div>
@@ -211,7 +259,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
       >
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-gray-400" />
-          <label className="text-base font-medium text-gray-900">Hotel/Property Name</label>
+          <label className="text-base font-medium text-foreground">Hotel/Property Name</label>
         </div>
 
         <div className="relative">
@@ -222,9 +270,9 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
             onBlur={() => setFocusedField(null)}
             placeholder="Grand Vista Hotel"
             className={cn(
-              'h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm',
+              'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm',
               focusedField === 'hotelName'
-                ? 'border-black ring-1 ring-black shadow-md'
+                ? 'border-primary ring-1 ring-primary shadow-md'
                 : 'border-gray-200 hover:border-gray-300',
               showValidation &&
                 !isHotelValid &&
@@ -250,7 +298,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <label className="text-base font-medium text-gray-900">Package Title</label>
+          <label className="text-base font-medium text-foreground">Package Title</label>
           <span
             className={cn(
               'text-sm transition-colors',
@@ -270,9 +318,9 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
             placeholder="e.g., Romantic Sunset Getaway"
             maxLength={80}
             className={cn(
-              'h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm',
+              'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm',
               focusedField === 'title'
-                ? 'border-black ring-1 ring-black shadow-md'
+                ? 'border-primary ring-1 ring-primary shadow-md'
                 : 'border-gray-200 hover:border-gray-300',
               showValidation &&
                 !isTitleValid &&
@@ -307,7 +355,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                   <motion.button
                     key={index}
                     onClick={() => handleTitleChange(suggestion)}
-                    className="group relative px-4 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-full hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 shadow-sm hover:shadow-md text-left flex items-center gap-2"
+                    className="group relative px-4 py-2 text-sm text-foreground bg-background border border-border rounded-full hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 shadow-sm hover:shadow-md text-left flex items-center gap-2"
                     whileHover={{ scale: 1.02, y: -1 }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: 10 }}
@@ -332,7 +380,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <label className="text-base font-medium text-gray-900">Duration (Nights)</label>
+          <label className="text-base font-medium text-foreground">Duration (Nights)</label>
         </div>
 
         <div className="relative w-32">
@@ -343,9 +391,9 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
             onBlur={() => setFocusedField(null)}
             placeholder="e.g. 2"
             className={cn(
-              'h-14 text-base transition-all duration-200 bg-white rounded-xl shadow-sm text-center',
+              'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm text-center',
               focusedField === 'duration'
-                ? 'border-black ring-1 ring-black shadow-md'
+                ? 'border-primary ring-1 ring-primary shadow-md'
                 : 'border-gray-200 hover:border-gray-300',
               showValidation &&
                 !isDurationValid &&
@@ -366,14 +414,16 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <label className="text-base font-medium text-gray-900">Detailed Description</label>
+          <label className="text-base font-medium text-foreground">Detailed Description</label>
+          {/* Not "AI Suggest" — nothing is generated. These are pre-written starters for the
+              chosen package type, and saying so is the difference between a helpful shortcut and a
+              claim the product cannot back up. */}
           <button
             onClick={handleGenerateSuggestion}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
           >
-            <RefreshCw className={cn('w-4 h-4', isGenerating && 'animate-spin')} />
-            {isGenerating ? 'Generating...' : 'AI Suggest'}
+            <RefreshCw className={cn('w-4 h-4')} />
+            {description ? 'Try another' : 'Suggest a description'}
           </button>
           <div className="flex items-center gap-2">
             {description.length >= 50 ? (
@@ -398,9 +448,9 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
             onBlur={() => setFocusedField(null)}
             placeholder="Describe your package in detail. What makes it special? What's included?"
             className={cn(
-              'min-h-[180px] resize-none text-base transition-all duration-200 bg-white rounded-xl shadow-sm leading-relaxed',
+              'min-h-[180px] resize-none text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm leading-relaxed',
               focusedField === 'description'
-                ? 'border-black ring-1 ring-black shadow-md'
+                ? 'border-primary ring-1 ring-primary shadow-md'
                 : 'border-gray-200 hover:border-gray-300',
               showValidation &&
                 !isDescValid &&
@@ -431,7 +481,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>

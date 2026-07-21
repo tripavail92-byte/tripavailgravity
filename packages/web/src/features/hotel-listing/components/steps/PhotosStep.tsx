@@ -80,21 +80,46 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
     setUploadError(null)
     const fileArray = Array.from(files)
 
-    // Validate files
-    const validFiles = fileArray.filter((file) => {
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp']
-      const maxSize = 10 * 1024 * 1024 // 10MB
+    // Validate files. Rejections are collected rather than each overwriting the last — the previous
+    // version called setUploadError from inside the filter, so with several bad files only the
+    // final message survived and it never said WHICH file it meant.
+    const rejected: string[] = []
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp']
+    const maxSize = 10 * 1024 * 1024 // 10MB
 
+    const typeChecked = fileArray.filter((file) => {
       if (!validTypes.includes(file.type)) {
-        setUploadError('Only JPG, PNG, and WebP images are allowed')
+        rejected.push(`${file.name} — only JPG, PNG and WebP are allowed`)
         return false
       }
       if (file.size > maxSize) {
-        setUploadError('File size must be less than 10MB')
+        rejected.push(`${file.name} — must be under 10MB`)
         return false
       }
       return true
     })
+
+    // Skip files already added. Without this, dragging the same image in twice produced two
+    // identical tiles that both counted toward the 5-photo minimum — the duplicate pair visible in
+    // the report. Name + size is the strongest identity a File gives us without hashing contents.
+    const seen = new Set(photos.map((p) => `${p.fileName}:${p.size}`))
+    const validFiles = typeChecked.filter((file) => {
+      const key = `${file.name}:${file.size}`
+      if (seen.has(key)) {
+        rejected.push(`${file.name} — already added`)
+        return false
+      }
+      seen.add(key)
+      return true
+    })
+
+    if (rejected.length > 0) {
+      setUploadError(
+        rejected.length === 1
+          ? rejected[0]
+          : `${rejected.length} files skipped: ${rejected.join('; ')}`,
+      )
+    }
 
     // Convert to Photo objects with compression
     const newPhotos: Photo[] = []
@@ -145,6 +170,11 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(e.target.files)
+    // Clear the input so picking the SAME file again still fires a change event. A file input only
+    // fires on change, and re-selecting the file already in .value is not a change — so after
+    // deleting a photo and trying to re-add it, the picker closed and nothing happened at all. That
+    // is the "if you select one picture you cannot select the same picture again" report.
+    e.target.value = ''
   }
 
   const deletePhoto = (photoId: string) => {
@@ -258,8 +288,14 @@ export function PhotosStep({ existingData, onUpdate }: PhotosStepProps) {
                     </div>
                   )}
 
-                  {/* Overlay Actions */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  {/* Overlay Actions
+                      Visible by default, hover-revealed only from md up. Gating them behind
+                      :hover made "Set as Cover" and Delete completely unreachable on a phone or
+                      tablet — there is no hover — while the caption above still promised "Click the
+                      star to set cover photo". A partner on touch could add photos and then do
+                      nothing else with them, which is the most likely reading of the "gallery
+                      option not working" report. */}
+                  <div className="absolute inset-0 bg-black/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"

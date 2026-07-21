@@ -159,18 +159,18 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
       }
 
       // Otherwise, close all others and open this one (Exclusive Accordion)
-      // Auto-scroll to the category after a short delay to let expansion animation start
-      setTimeout(() => {
-        const element = categoryRefs.current[category]
-        if (element) {
-          element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest',
-          })
-        }
-      }, 100)
-
+      //
+      // NO AUTO-SCROLL. This used to schedule
+      //   setTimeout(() => element.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+      // which is what the team saw as "clicking the last options in Standard Amenities makes the
+      // page scroll down by itself". block:'center' centres the WHOLE section box, not its header,
+      // and an expanded section (15 tiles at 130px in two columns, ~1,200px) is far taller than the
+      // scrollport — so centring it necessarily scrolled past the heading and parked the view in
+      // the section's lower half, apparently at random. The 100ms delay meant it fired after the
+      // partner had already started reading, which made it feel like the page moved on its own.
+      //
+      // Opening a section directly under the header the partner just clicked needs no scrolling at
+      // all: the header does not move, and the content grows below it.
       return [category]
     })
   }
