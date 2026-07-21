@@ -7,6 +7,9 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
+import { NumberStepper } from '../ui/NumberStepper'
+import { RoomDescriptionSuggestions } from '../ui/RoomDescriptionSuggestions'
+
 import { BedConfig, RoomType } from './RoomsStep'
 
 interface RoomWizardModalProps {
@@ -279,46 +282,54 @@ export function RoomWizardModal({ isOpen, onClose, onSave, editingRoom }: RoomWi
                       placeholder="Describe what makes this room special..."
                       rows={3}
                     />
+                    {/* Suggestions built from this room's own type, beds and size — see the
+                        component for why they are labelled "suggested" and not "AI". */}
+                    <RoomDescriptionSuggestions
+                      room={roomData}
+                      onSelect={(text) => setRoomData({ ...roomData, description: text })}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  {/* Steppers rather than bare number inputs: on a phone the old spinners were
+                      fiddly and summoned a keyboard over the form. */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Number of Rooms *
                       </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={roomData.count}
-                        onChange={(e) =>
-                          setRoomData({ ...roomData, count: parseInt(e.target.value) || 1 })
-                        }
+                      <NumberStepper
+                        value={roomData.count ?? 1}
+                        onChange={(count) => setRoomData({ ...roomData, count })}
+                        min={1}
+                        max={500}
+                        aria-label="number of rooms"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
                         Max Guests *
                       </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={roomData.maxGuests}
-                        onChange={(e) =>
-                          setRoomData({ ...roomData, maxGuests: parseInt(e.target.value) || 1 })
-                        }
+                      <NumberStepper
+                        value={roomData.maxGuests ?? 1}
+                        onChange={(maxGuests) => setRoomData({ ...roomData, maxGuests })}
+                        min={1}
+                        max={20}
+                        suffix="guests"
+                        aria-label="maximum guests"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Size (m²) *
+                        Size *
                       </label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={roomData.size}
-                        onChange={(e) =>
-                          setRoomData({ ...roomData, size: parseInt(e.target.value) || 1 })
-                        }
+                      <NumberStepper
+                        value={roomData.size ?? 1}
+                        onChange={(size) => setRoomData({ ...roomData, size })}
+                        min={1}
+                        max={2000}
+                        step={5}
+                        suffix="m²"
+                        aria-label="room size in square metres"
                       />
                     </div>
                   </div>
