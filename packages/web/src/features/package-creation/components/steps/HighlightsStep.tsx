@@ -382,7 +382,7 @@ export const HighlightsStep = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                          className="text-muted-foreground hover:text-destructive opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-8 w-8"
                           onClick={() => removeFreeInclusion(index)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -745,14 +745,14 @@ export const HighlightsStep = ({
       </div>
 
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
@@ -766,7 +766,7 @@ export const HighlightsStep = ({
           }
           disabled={inclusions.length === 0 && discounts.length === 0}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            'px-8 py-3 bg-foreground text-background rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-foreground/90',
             inclusions.length === 0 &&
               discounts.length === 0 &&
               'opacity-50 cursor-not-allowed hover:transform-none',

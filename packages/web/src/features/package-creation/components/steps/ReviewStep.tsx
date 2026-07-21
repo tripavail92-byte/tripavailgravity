@@ -65,25 +65,25 @@ export function ReviewStep({
       render: () => (
         <div className="space-y-2">
           <div>
-            <span className="text-sm text-gray-500">Name:</span>
+            <span className="text-sm text-muted-foreground">Name:</span>
             <p className="font-medium">{packageData.name}</p>
           </div>
           {packageData.description && (
             <div>
-              <span className="text-sm text-gray-500">Description:</span>
-              <p className="text-gray-700 text-sm">{packageData.description}</p>
+              <span className="text-sm text-muted-foreground">Description:</span>
+              <p className="text-foreground text-sm">{packageData.description}</p>
             </div>
           )}
           <div className="flex gap-4 text-sm">
             {packageData.durationDays && (
               <div>
-                <span className="text-gray-500">Duration:</span>
+                <span className="text-muted-foreground">Duration:</span>
                 <span className="ml-1 font-medium">{packageData.durationDays} days</span>
               </div>
             )}
             {packageData.maxGuests && (
               <div>
-                <span className="text-gray-500">Max Guests:</span>
+                <span className="text-muted-foreground">Max Guests:</span>
                 <span className="ml-1 font-medium">{packageData.maxGuests} people</span>
               </div>
             )}
@@ -99,7 +99,7 @@ export function ReviewStep({
       data: packageData.photos?.length ?? 0, // Ensure 0 instead of undefined
       render: () => (
         <div>
-          <p className="text-sm text-gray-600 mb-2">
+          <p className="text-sm text-muted-foreground mb-2">
             {packageData.photos?.length || 0} photo(s) uploaded
             {(!packageData.photos || packageData.photos.length < 4) && (
               <span className="ml-2 text-error font-medium">(Minimum 4 required)</span>
@@ -135,7 +135,7 @@ export function ReviewStep({
         // Explicit length check: [].map() returns [] which is TRUTHY, so a `|| fallback` would
         // never fire for an empty list.
         if (inclusions.length === 0 && discounts.length === 0) {
-          return <p className="text-sm text-gray-500">No highlights added</p>
+          return <p className="text-sm text-muted-foreground">No highlights added</p>
         }
         return (
           <div className="space-y-2">
@@ -181,7 +181,7 @@ export function ReviewStep({
             >
               {item}
             </Badge>
-          )) || <p className="text-sm text-gray-500">No inclusions specified</p>}
+          )) || <p className="text-sm text-muted-foreground">No inclusions specified</p>}
         </div>
       ),
     },
@@ -197,7 +197,7 @@ export function ReviewStep({
             <Badge key={idx} variant="outline" className="bg-error/5 border-error/30 text-error">
               {item}
             </Badge>
-          )) || <p className="text-sm text-gray-500">No exclusions specified</p>}
+          )) || <p className="text-sm text-muted-foreground">No exclusions specified</p>}
         </div>
       ),
     },
@@ -210,24 +210,24 @@ export function ReviewStep({
       render: () => (
         <div className="space-y-2">
           <div>
-            <span className="text-sm text-gray-500">Type:</span>
+            <span className="text-sm text-muted-foreground">Type:</span>
             <span className="ml-2 font-medium capitalize">
               {packageData.availabilityType?.replace('-', ' ')}
             </span>
           </div>
           <div className="flex gap-4 text-sm">
             <div>
-              <span className="text-gray-500">Min Stay:</span>
+              <span className="text-muted-foreground">Min Stay:</span>
               <span className="ml-1 font-medium">{packageData.minStay} nights</span>
             </div>
             <div>
-              <span className="text-gray-500">Max Stay:</span>
+              <span className="text-muted-foreground">Max Stay:</span>
               <span className="ml-1 font-medium">{packageData.maxStay} nights</span>
             </div>
           </div>
           {packageData.blackoutDates && packageData.blackoutDates.length > 0 && (
             <div>
-              <span className="text-sm text-gray-500">Blackout Dates:</span>
+              <span className="text-sm text-muted-foreground">Blackout Dates:</span>
               <span className="ml-2 text-sm font-medium">
                 {packageData.blackoutDates.length} dates blocked
               </span>
@@ -245,11 +245,11 @@ export function ReviewStep({
       render: () => (
         <div className="space-y-2">
           <div>
-            <span className="text-sm text-gray-500">Cancellation:</span>
+            <span className="text-sm text-muted-foreground">Cancellation:</span>
             <span className="ml-2 font-medium capitalize">{packageData.cancellationPolicy}</span>
           </div>
           <div>
-            <span className="text-sm text-gray-500">Payment:</span>
+            <span className="text-sm text-muted-foreground">Payment:</span>
             <span className="ml-2 font-medium capitalize">
               {packageData.paymentTerms?.replace('-', ' ')}
             </span>
@@ -291,8 +291,10 @@ export function ReviewStep({
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Review Your Package</h2>
-        <p className="text-gray-600 text-lg">Review all details before publishing your package</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Review Your Package</h2>
+        <p className="text-muted-foreground text-lg">
+          Review all details before publishing your package
+        </p>
       </motion.div>
 
       {/* Completion Progress */}
@@ -303,16 +305,16 @@ export function ReviewStep({
       >
         <Card className="p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-semibold text-gray-900">Completion Status</span>
+            <span className="font-semibold text-foreground">Completion Status</span>
             <span className="text-2xl font-bold text-primary">{completionPercentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+          <div className="w-full bg-border rounded-full h-2 mb-2">
             <div
               className="bg-primary h-2 rounded-full transition-all"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {completedRequired.length} of {requiredSections.length} required sections completed
           </p>
         </Card>
@@ -334,7 +336,7 @@ export function ReviewStep({
               key={section.id}
               className={cn(
                 'p-6 shadow-sm hover:shadow-md transition-shadow',
-                !isComplete && 'bg-gray-50',
+                !isComplete && 'bg-muted',
               )}
             >
               <div className="flex items-start justify-between mb-4">
@@ -342,22 +344,22 @@ export function ReviewStep({
                   <div
                     className={cn(
                       'w-10 h-10 rounded-lg flex items-center justify-center',
-                      isComplete ? 'bg-primary/10' : 'bg-gray-200',
+                      isComplete ? 'bg-primary/10' : 'bg-border',
                     )}
                   >
                     <IconComponent
                       size={20}
-                      className={isComplete ? 'text-primary' : 'text-gray-400'}
+                      className={isComplete ? 'text-primary' : 'text-muted-foreground'}
                     />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-foreground">
                       {section.title}
                       {section.optional && (
-                        <span className="ml-2 text-xs text-gray-500">(Optional)</span>
+                        <span className="ml-2 text-xs text-muted-foreground">(Optional)</span>
                       )}
                     </h3>
-                    {!isComplete && <p className="text-sm text-gray-500">Not completed</p>}
+                    {!isComplete && <p className="text-sm text-muted-foreground">Not completed</p>}
                   </div>
                 </div>
                 <Button

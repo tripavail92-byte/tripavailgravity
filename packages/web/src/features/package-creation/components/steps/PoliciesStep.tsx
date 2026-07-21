@@ -91,8 +91,8 @@ export function PoliciesStep({ onComplete, onUpdate, existingData, onBack }: Pol
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Package Policies</h2>
-        <p className="text-gray-600 text-lg">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Package Policies</h2>
+        <p className="text-muted-foreground text-lg">
           Define your cancellation, payment, and booking policies
         </p>
       </motion.div>
@@ -117,13 +117,13 @@ export function PoliciesStep({ onComplete, onUpdate, existingData, onBack }: Pol
                   'w-full p-4 rounded-lg border-2 text-left transition-all',
                   cancellationPolicy === policy.id
                     ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-gray-300',
+                    : 'border-border hover:border-primary/40',
                 )}
               >
-                <div className="font-semibold text-gray-900 mb-1">{policy.name}</div>
-                <div className="text-sm text-gray-600 mb-2">{policy.description}</div>
+                <div className="font-semibold text-foreground mb-1">{policy.name}</div>
+                <div className="text-sm text-muted-foreground mb-2">{policy.description}</div>
                 {policy.refundSchedule && (
-                  <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
                     {policy.refundSchedule}
                   </div>
                 )}
@@ -170,11 +170,11 @@ export function PoliciesStep({ onComplete, onUpdate, existingData, onBack }: Pol
                   'w-full p-4 rounded-lg border-2 text-left transition-all',
                   paymentTerms === term.id
                     ? 'border-primary bg-primary/5'
-                    : 'border-gray-200 hover:border-gray-300',
+                    : 'border-border hover:border-primary/40',
                 )}
               >
-                <div className="font-semibold text-gray-900 mb-1">{term.name}</div>
-                <div className="text-sm text-gray-600">{term.description}</div>
+                <div className="font-semibold text-foreground mb-1">{term.name}</div>
+                <div className="text-sm text-muted-foreground">{term.description}</div>
               </button>
             ))}
           </div>
@@ -188,7 +188,7 @@ export function PoliciesStep({ onComplete, onUpdate, existingData, onBack }: Pol
           </div>
           <div className="bg-info/5 border border-info/20 rounded-lg p-3 mb-4 flex items-start gap-2">
             <AlertCircle size={16} className="text-info mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-foreground">
               Include important details like age restrictions, health requirements, required
               documents, etc.
             </p>
@@ -208,14 +208,14 @@ Travel insurance recommended..."
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
@@ -223,7 +223,7 @@ Travel insurance recommended..."
           onClick={handleContinue}
           disabled={cancellationPolicy === 'custom' && !customCancellationPolicy.trim()}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            'px-8 py-3 bg-foreground text-background rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-foreground/90',
             cancellationPolicy === 'custom' &&
               !customCancellationPolicy.trim() &&
               'opacity-50 cursor-not-allowed hover:transform-none',
