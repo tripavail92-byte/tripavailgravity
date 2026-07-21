@@ -237,8 +237,8 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Package Pricing</h2>
-        <p className="text-gray-600 text-lg">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Package Pricing</h2>
+        <p className="text-muted-foreground text-lg">
           {existingData?.hotelName
             ? `Select rooms from ${existingData.hotelName} and set package prices`
             : 'Select rooms from your hotel and set package prices'}
@@ -254,7 +254,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
         <Card className="p-4 bg-info/5 border-info/20 shadow-sm">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-foreground">
               <p className="font-medium mb-1">Pricing from your hotel listing</p>
               <p>
                 Prices default to your hotel room rates. You can override them for package-specific
@@ -277,11 +277,11 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
               <div className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-success" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-foreground">
                     {selectedRooms.size} room{selectedRooms.size !== 1 ? 's' : ''} selected
                   </h3>
                   {priceRange && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       Price range: {priceRange.currency} {priceRange.min}
                       {priceRange.min !== priceRange.max && ` - ${priceRange.max}`} per night
                     </p>
@@ -298,7 +298,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
         <Card className="p-12">
           <div className="flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-gray-600">Loading hotel rooms...</p>
+            <p className="text-muted-foreground">Loading hotel rooms...</p>
           </div>
         </Card>
       )}
@@ -309,7 +309,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-error mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm text-gray-700">{error}</p>
+              <p className="text-sm text-foreground">{error}</p>
             </div>
           </div>
         </Card>
@@ -324,7 +324,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
           className="space-y-4"
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Available Rooms</h3>
+            <h3 className="text-lg font-semibold text-foreground">Available Rooms</h3>
             <Button onClick={() => setShowWizard(true)} variant="outline">
               <Plus size={18} className="mr-2" />
               Add New Room
@@ -350,7 +350,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                   key={room.id}
                   className={cn(
                     'p-6 transition-all cursor-pointer',
-                    isSelected ? 'border-primary bg-primary/5' : 'hover:border-gray-300',
+                    isSelected ? 'border-primary bg-primary/5' : 'hover:border-primary/40',
                   )}
                   onClick={() => !isSelected && toggleRoomSelection(room)}
                 >
@@ -365,7 +365,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                         'w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all mt-1',
                         isSelected
                           ? 'bg-primary border-primary'
-                          : 'border-gray-300 hover:border-primary',
+                          : 'border-muted-foreground/40 hover:border-primary',
                       )}
                     >
                       {isSelected && <Check size={16} className="text-white" />}
@@ -375,7 +375,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className="font-semibold text-gray-900 text-lg">{room.name}</h4>
+                          <h4 className="font-semibold text-foreground text-lg">{room.name}</h4>
                           <Badge variant="outline" className="mt-1">
                             {room.type}
                           </Badge>
@@ -383,37 +383,39 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                       </div>
 
                       {room.description && (
-                        <p className="text-sm text-gray-600 mb-3">{room.description}</p>
+                        <p className="text-sm text-muted-foreground mb-3">{room.description}</p>
                       )}
 
                       {/* Room Info */}
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
                         <div className="flex items-center gap-1.5">
-                          <Users size={16} className="text-gray-400" />
+                          <Users size={16} className="text-muted-foreground" />
                           <span>Up to {room.maxGuests} guests</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Ruler size={16} className="text-gray-400" />
+                          <Ruler size={16} className="text-muted-foreground" />
                           <span>{room.size} m²</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Bed size={16} className="text-gray-400" />
+                          <Bed size={16} className="text-muted-foreground" />
                           <span>{bedSummary}</span>
                         </div>
                       </div>
 
                       {/* Pricing Section */}
                       {isSelected ? (
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="bg-card rounded-lg p-4 border border-border">
                           <div className="grid md:grid-cols-2 gap-4">
                             {/* Original Price */}
                             <div>
-                              <Label className="text-xs text-gray-500 mb-1 block">
+                              <Label className="text-xs text-muted-foreground mb-1 block">
                                 Original Hotel Price
                               </Label>
-                              <div className="text-lg font-semibold text-gray-700">
+                              <div className="text-lg font-semibold text-foreground">
                                 {room.pricing.currency} {room.pricing.basePrice}
-                                <span className="text-sm font-normal text-gray-500">/night</span>
+                                <span className="text-sm font-normal text-muted-foreground">
+                                  /night
+                                </span>
                               </div>
                             </div>
 
@@ -421,13 +423,13 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                             <div>
                               <Label
                                 htmlFor={`price-${room.id}`}
-                                className="text-xs text-gray-700 font-medium mb-1 block"
+                                className="text-xs text-foreground font-medium mb-1 block"
                               >
                                 Package Price
                               </Label>
                               <div className="flex items-center gap-2">
                                 <div className="relative flex-1">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                                     {room.pricing.currency}
                                   </span>
                                   <Input
@@ -466,10 +468,10 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
                       ) : (
                         <div className="flex items-center gap-2">
                           <DollarSign size={18} className="text-primary" />
-                          <span className="text-lg font-semibold text-gray-900">
+                          <span className="text-lg font-semibold text-foreground">
                             {room.pricing.currency} {room.pricing.basePrice}
                           </span>
-                          <span className="text-sm text-gray-500">/night</span>
+                          <span className="text-sm text-muted-foreground">/night</span>
                         </div>
                       )}
                     </div>
@@ -493,14 +495,14 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
@@ -508,7 +510,7 @@ export function PricingStep({ onComplete, onUpdate, existingData, onBack }: Pric
           onClick={handleContinue}
           disabled={selectedRooms.size === 0}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            'px-8 py-3 bg-foreground text-background rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-foreground/90',
             selectedRooms.size === 0 && 'opacity-50 cursor-not-allowed hover:transform-none',
           )}
         >

@@ -128,8 +128,8 @@ export function AvailabilityStep({
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Package Availability</h2>
-        <p className="text-gray-600 text-lg">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Package Availability</h2>
+        <p className="text-muted-foreground text-lg">
           Set when your package is available and manage booking restrictions.
         </p>
       </motion.div>
@@ -140,7 +140,7 @@ export function AvailabilityStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
       >
-        <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="p-6 border-border shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-4">
             <Calendar className="w-5 h-5 text-primary" />
             <Label className="text-lg font-semibold">Availability Type</Label>
@@ -152,11 +152,11 @@ export function AvailabilityStep({
                 'p-4 rounded-lg border-2 text-left transition-all',
                 availabilityType === 'year-round'
                   ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 hover:border-gray-300',
+                  : 'border-border hover:border-primary/40',
               )}
             >
-              <div className="font-semibold text-gray-900 mb-1">Year-Round</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-semibold text-foreground mb-1">Year-Round</div>
+              <div className="text-sm text-muted-foreground">
                 Available throughout the year with blackout dates
               </div>
             </button>
@@ -166,11 +166,11 @@ export function AvailabilityStep({
                 'p-4 rounded-lg border-2 text-left transition-all',
                 availabilityType === 'specific-dates'
                   ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 hover:border-gray-300',
+                  : 'border-border hover:border-primary/40',
               )}
             >
-              <div className="font-semibold text-gray-900 mb-1">Specific Dates</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-semibold text-foreground mb-1">Specific Dates</div>
+              <div className="text-sm text-muted-foreground">
                 Available only during specific date ranges
               </div>
             </button>
@@ -184,7 +184,7 @@ export function AvailabilityStep({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="p-6 border-border shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-5 h-5 text-primary" />
             <Label className="text-lg font-semibold">Stay Duration Requirements</Label>
@@ -223,21 +223,23 @@ export function AvailabilityStep({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <Card className="p-6 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+          <Card className="p-6 border-border shadow-sm hover:shadow-md transition-shadow">
             <div className="mb-4">
               <Label className="text-lg font-semibold">Blackout Dates</Label>
-              <p className="text-sm text-gray-600 mt-1">{blackoutDates.length} dates blocked</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {blackoutDates.length} dates blocked
+              </p>
             </div>
 
             {/* Info banner */}
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4 flex items-start gap-2">
               <Info size={18} className="text-warning mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-foreground">
                 Click dates to block/unblock availability
                 <br />
                 <span className="text-error font-medium">Red dates are blocked</span> •
                 <span className="text-success font-medium"> Green dates are available</span> •
-                <span className="text-gray-500 font-medium"> Gray dates are past</span>
+                <span className="text-muted-foreground font-medium"> Gray dates are past</span>
               </p>
             </div>
 
@@ -247,7 +249,7 @@ export function AvailabilityStep({
                 const dates = monthIndex === 0 ? thisMonthDates : nextMonthDates
                 return (
                   <div key={monthIndex}>
-                    <div className="font-semibold text-gray-900 mb-3 text-center">
+                    <div className="font-semibold text-foreground mb-3 text-center">
                       {monthNames[monthDate.getMonth()]} {monthDate.getFullYear()}
                     </div>
 
@@ -256,7 +258,7 @@ export function AvailabilityStep({
                       {dayNames.map((day) => (
                         <div
                           key={day}
-                          className="text-center text-xs font-medium text-gray-500 py-1"
+                          className="text-center text-xs font-medium text-muted-foreground py-1"
                         >
                           {day}
                         </div>
@@ -280,7 +282,7 @@ export function AvailabilityStep({
                             disabled={isPast}
                             className={cn(
                               'aspect-square rounded-lg text-sm font-medium transition-all',
-                              isPast && 'bg-gray-100 text-gray-400 cursor-not-allowed',
+                              isPast && 'bg-muted text-muted-foreground cursor-not-allowed',
                               !isPast &&
                                 isBlocked &&
                                 'bg-error/10 text-error border border-error/20 hover:bg-error/20',
@@ -304,7 +306,7 @@ export function AvailabilityStep({
               <Button variant="outline" onClick={prevMonth}>
                 Previous
               </Button>
-              <Button variant="outline" onClick={nextMonth} className="hover:bg-gray-50">
+              <Button variant="outline" onClick={nextMonth} className="hover:bg-muted">
                 Next
               </Button>
             </div>
@@ -314,20 +316,20 @@ export function AvailabilityStep({
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
         <button
           onClick={handleContinue}
-          className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+          className="px-8 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
         >
           Continue
         </button>

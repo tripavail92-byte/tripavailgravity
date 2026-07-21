@@ -258,7 +258,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         className="space-y-3"
       >
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-gray-400" />
+          <Building2 className="w-5 h-5 text-muted-foreground" />
           <label className="text-base font-medium text-foreground">Hotel/Property Name</label>
         </div>
 
@@ -273,7 +273,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
               'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm',
               focusedField === 'hotelName'
                 ? 'border-primary ring-1 ring-primary shadow-md'
-                : 'border-gray-200 hover:border-gray-300',
+                : 'border-border hover:border-primary/40',
               showValidation &&
                 !isHotelValid &&
                 'border-error bg-error-foreground focus:border-error focus:ring-error',
@@ -302,7 +302,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
           <span
             className={cn(
               'text-sm transition-colors',
-              title.length > 60 ? 'text-warning font-medium' : 'text-gray-400',
+              title.length > 60 ? 'text-warning font-medium' : 'text-muted-foreground',
             )}
           >
             {title.length}/80
@@ -321,7 +321,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
               'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm',
               focusedField === 'title'
                 ? 'border-primary ring-1 ring-primary shadow-md'
-                : 'border-gray-200 hover:border-gray-300',
+                : 'border-border hover:border-primary/40',
               showValidation &&
                 !isTitleValid &&
                 'border-error bg-error-foreground focus:border-error focus:ring-error',
@@ -394,7 +394,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
               'h-14 text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm text-center',
               focusedField === 'duration'
                 ? 'border-primary ring-1 ring-primary shadow-md'
-                : 'border-gray-200 hover:border-gray-300',
+                : 'border-border hover:border-primary/40',
               showValidation &&
                 !isDurationValid &&
                 'border-error bg-error-foreground focus:border-error focus:ring-error',
@@ -436,7 +436,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
                 {50 - description.length} more characters needed
               </span>
             )}
-            <span className="text-sm text-gray-400">{description.length}/1000</span>
+            <span className="text-sm text-muted-foreground">{description.length}/1000</span>
           </div>
         </div>
 
@@ -451,7 +451,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
               'min-h-[180px] resize-none text-base transition-all duration-200 bg-background text-foreground rounded-xl shadow-sm leading-relaxed',
               focusedField === 'description'
                 ? 'border-primary ring-1 ring-primary shadow-md'
-                : 'border-gray-200 hover:border-gray-300',
+                : 'border-border hover:border-primary/40',
               showValidation &&
                 !isDescValid &&
                 'border-error bg-error-foreground focus:border-error focus:ring-error',
@@ -467,14 +467,14 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         {showValidation && !isDescValid && (
           <p className="text-sm text-error pl-1">Description is required (min 50 chars)</p>
         )}
-        <p className="text-sm text-gray-500 pl-1">
+        <p className="text-sm text-muted-foreground pl-1">
           Use emotional language that resonates with your target audience.
         </p>
       </motion.div>
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100"
+        className="flex justify-between pt-8 border-t border-border"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -487,7 +487,7 @@ export function BasicsStep({ onComplete, onUpdate, existingData, onBack }: Basic
         </button>
         <button
           onClick={handleContinue}
-          className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+          className="px-8 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
         >
           Continue
         </button>

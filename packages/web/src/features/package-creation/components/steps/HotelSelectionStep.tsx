@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 import { AlertCircle, Building2, Check, Loader2, MapPin, Plus } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
@@ -6,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
 import { StepData } from '../../types'
@@ -164,13 +164,13 @@ export function HotelSelectionStep({
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Select Your Hotel</h2>
-          <p className="text-gray-600">Choose which hotel this package is for</p>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Select Your Hotel</h2>
+          <p className="text-muted-foreground">Choose which hotel this package is for</p>
         </div>
         <Card className="p-12">
           <div className="flex flex-col items-center justify-center gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-gray-600">Loading your hotels...</p>
+            <p className="text-muted-foreground">Loading your hotels...</p>
           </div>
         </Card>
       </div>
@@ -182,15 +182,15 @@ export function HotelSelectionStep({
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Select Your Hotel</h2>
-          <p className="text-gray-600">Choose which hotel this package is for</p>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Select Your Hotel</h2>
+          <p className="text-muted-foreground">Choose which hotel this package is for</p>
         </div>
         <Card className="p-8 bg-error/5 border-error/20">
           <div className="flex flex-col items-center gap-4">
             <AlertCircle className="w-12 h-12 text-error" />
             <div className="text-center">
-              <h3 className="font-semibold text-gray-900 mb-2">No Hotels Found</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
+              <h3 className="font-semibold text-foreground mb-2">No Hotels Found</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
               <Button onClick={() => (window.location.href = '/manager/list-hotel')}>
                 <Plus size={18} className="mr-2" />
                 Create Hotel Listing
@@ -207,15 +207,15 @@ export function HotelSelectionStep({
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Select Your Hotel</h2>
-          <p className="text-gray-600">Choose which hotel this package is for</p>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Select Your Hotel</h2>
+          <p className="text-muted-foreground">Choose which hotel this package is for</p>
         </div>
         <Card className="p-8 bg-success/5 border-success/20">
           <div className="flex items-center gap-4">
             <Check className="w-8 h-8 text-success flex-shrink-0" />
             <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Hotel Selected</h3>
-              <p className="text-gray-600">
+              <h3 className="font-semibold text-foreground mb-1">Hotel Selected</h3>
+              <p className="text-muted-foreground">
                 Automatically selected <strong>{selectedHotel.name}</strong>
               </p>
             </div>
@@ -235,8 +235,8 @@ export function HotelSelectionStep({
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">Select Your Hotel</h2>
-        <p className="text-gray-600 text-lg">Choose which hotel this package is for</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Select Your Hotel</h2>
+        <p className="text-muted-foreground text-lg">Choose which hotel this package is for</p>
       </motion.div>
 
       {/* Info Banner */}
@@ -248,7 +248,7 @@ export function HotelSelectionStep({
         <Card className="p-4 bg-info/5 border-info/20 shadow-sm">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-info mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-gray-700">
+            <div className="text-sm text-foreground">
               <p className="font-medium mb-1">Package-Hotel Link</p>
               <p>
                 Each package is linked to a specific hotel. Room prices and availability will be
@@ -276,7 +276,7 @@ export function HotelSelectionStep({
                 'p-6 cursor-pointer transition-all',
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-md'
-                  : 'hover:border-gray-300 hover:shadow-sm',
+                  : 'hover:border-primary/40 hover:shadow-sm',
               )}
               onClick={() => handleSelectHotel(hotel)}
             >
@@ -285,7 +285,7 @@ export function HotelSelectionStep({
                 <div
                   className={cn(
                     'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all',
-                    isSelected ? 'bg-primary border-primary' : 'border-gray-300',
+                    isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/40',
                   )}
                 >
                   {isSelected && <Check size={16} className="text-white" />}
@@ -295,19 +295,22 @@ export function HotelSelectionStep({
                 <div
                   className={cn(
                     'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
-                    isSelected ? 'bg-primary/10' : 'bg-gray-100',
+                    isSelected ? 'bg-primary/10' : 'bg-muted',
                   )}
                 >
-                  <Building2 size={24} className={isSelected ? 'text-primary' : 'text-gray-400'} />
+                  <Building2
+                    size={24}
+                    className={isSelected ? 'text-primary' : 'text-muted-foreground'}
+                  />
                 </div>
 
                 {/* Hotel Details */}
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{hotel.name}</h3>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1">
-                        <MapPin size={14} className="text-gray-400" />
+                      <h3 className="text-lg font-semibold text-foreground">{hotel.name}</h3>
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                        <MapPin size={14} className="text-muted-foreground" />
                         <span>
                           {hotel.address}
                           {hotel.city && `, ${hotel.city}`}
@@ -321,7 +324,7 @@ export function HotelSelectionStep({
                   </div>
 
                   {hotel.roomCount !== undefined && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       <strong>{hotel.roomCount}</strong> room type{hotel.roomCount !== 1 ? 's' : ''}{' '}
                       available
                     </p>
@@ -338,7 +341,7 @@ export function HotelSelectionStep({
         <Card className="p-4 bg-error/5 border-error/20">
           <div className="flex items-center gap-2">
             <AlertCircle size={18} className="text-error" />
-            <p className="text-sm text-gray-700">{error}</p>
+            <p className="text-sm text-foreground">{error}</p>
           </div>
         </Card>
       )}
@@ -347,7 +350,7 @@ export function HotelSelectionStep({
       {/* Wait, the existing code has no back button! But props has onBack?: () => void. Lets stick to that. */}
       <motion.div
         className={cn(
-          'flex pt-8 border-t border-gray-100 mt-8',
+          'flex pt-8 border-t border-border mt-8',
           onBack ? 'justify-between' : 'justify-end',
         )}
         initial={{ opacity: 0 }}
@@ -357,7 +360,7 @@ export function HotelSelectionStep({
         {onBack && (
           <button
             onClick={onBack}
-            className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+            className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
           >
             Back
           </button>
@@ -366,7 +369,7 @@ export function HotelSelectionStep({
           onClick={handleContinue}
           disabled={!selectedHotel}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-gray-800',
+            'px-8 py-3 bg-foreground text-background rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 hover:bg-foreground/90',
             !selectedHotel && 'opacity-50 cursor-not-allowed hover:transform-none',
           )}
         >

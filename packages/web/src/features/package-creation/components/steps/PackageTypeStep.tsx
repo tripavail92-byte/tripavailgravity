@@ -43,10 +43,10 @@ export function PackageTypeStep({
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="text-center space-y-2 mb-8"
       >
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Choose Your Package Type
         </h2>
-        <p className="text-gray-600 text-lg">
+        <p className="text-muted-foreground text-lg">
           Select the type of package that best represents your offering.
         </p>
       </motion.div>
@@ -74,8 +74,8 @@ export function PackageTypeStep({
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-md ring-1 ring-primary'
                   : cn(
-                      'border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm',
-                      isCustom && 'border-dashed border-gray-300 bg-gray-50/50',
+                      'border-border hover:border-primary/40 bg-card hover:shadow-sm',
+                      isCustom && 'border-dashed border-border bg-muted/50',
                     ),
               )}
             >
@@ -100,7 +100,7 @@ export function PackageTypeStep({
                   <div
                     className={cn(
                       'w-12 h-12 rounded-lg flex items-center justify-center',
-                      isSelected ? 'bg-white' : config.bg,
+                      isSelected ? 'bg-card' : config.bg,
                     )}
                   >
                     <Icon className={cn('w-6 h-6', config.color)} />
@@ -111,13 +111,15 @@ export function PackageTypeStep({
               <h3
                 className={cn(
                   'font-semibold text-lg mb-1',
-                  isSelected ? 'text-gray-900' : 'text-gray-700',
+                  isSelected ? 'text-foreground' : 'text-foreground/80',
                 )}
               >
                 {config.label}
               </h3>
 
-              <p className="text-sm text-gray-500 leading-relaxed mb-4">{config.description}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                {config.description}
+              </p>
 
               <div className="space-y-1 mt-auto">
                 {config.features?.map((feature, idx) => (
@@ -125,10 +127,10 @@ export function PackageTypeStep({
                     <div
                       className={cn(
                         'w-1 h-1 rounded-full',
-                        isSelected ? 'bg-gray-600' : 'bg-gray-400',
+                        isSelected ? 'bg-muted-foreground' : 'bg-muted-foreground/60',
                       )}
                     ></div>
-                    <span className="text-xs text-gray-600">{feature}</span>
+                    <span className="text-xs text-muted-foreground">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -138,28 +140,28 @@ export function PackageTypeStep({
       </motion.div>
 
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
         {selectedType ? (
           <button
             onClick={() => onComplete({ packageType: selectedType })}
-            className="px-8 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
+            className="px-8 py-3 bg-foreground text-background rounded-lg font-medium hover:bg-foreground/90 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
           >
             Continue with {PACKAGE_TYPE_CONFIG[selectedType].label}
           </button>
         ) : (
           <button
             disabled
-            className="px-8 py-3 bg-black text-white rounded-lg font-medium opacity-50 cursor-not-allowed"
+            className="px-8 py-3 bg-foreground text-background rounded-lg font-medium opacity-50 cursor-not-allowed"
           >
             Continue
           </button>

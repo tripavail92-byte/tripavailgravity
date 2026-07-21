@@ -245,8 +245,8 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="space-y-2"
       >
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">Photos & Media</h1>
-        <p className="text-gray-600 text-lg">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Photos & Media</h1>
+        <p className="text-muted-foreground text-lg">
           Showcase your package with high-quality photos and videos.
         </p>
       </motion.div>
@@ -262,7 +262,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
             'p-10 border-2 border-dashed transition-all cursor-pointer group',
             isDragging
               ? 'border-primary bg-primary/10'
-              : 'border-gray-300 hover:border-primary/40 hover:bg-gray-50',
+              : 'border-border hover:border-primary/40 hover:bg-muted',
             showValidation && mediaItems.length < 3 && 'border-error bg-error-foreground',
           )}
           onDrop={handleDrop}
@@ -276,15 +276,15 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                 'w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors',
                 isDragging
                   ? 'bg-primary/20 text-primary'
-                  : 'bg-gray-100 text-gray-500 group-hover:bg-primary/20 group-hover:text-primary',
+                  : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary',
               )}
             >
               <Upload size={32} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Drag & drop photos or videos here
             </h3>
-            <p className="text-gray-600 mb-6 max-w-sm mx-auto">
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
               Support for JPG, PNG, WebP images (max 10MB) and MP4, WebM videos (max 50MB)
             </p>
             <input
@@ -297,7 +297,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
             />
             <Button
               type="button"
-              className="bg-black hover:bg-gray-800 text-white rounded-full px-6"
+              className="bg-black hover:bg-foreground/90 text-white rounded-full px-6"
               onClick={(e) => {
                 e.stopPropagation()
                 document.getElementById('media-upload')?.click()
@@ -326,13 +326,13 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
           animate={{ opacity: 1 }}
           className="flex items-center justify-between px-1"
         >
-          <div className="text-sm text-gray-600 font-medium">
+          <div className="text-sm text-muted-foreground font-medium">
             {mediaItems.length} item{mediaItems.length !== 1 ? 's' : ''} uploaded
             {mediaItems.length < 3 && (
               <span className="text-warning ml-2">• {3 - mediaItems.length} more required</span>
             )}
           </div>
-          <p className="text-xs text-gray-400">Top ranking packages have 8+ photos</p>
+          <p className="text-xs text-muted-foreground">Top ranking packages have 8+ photos</p>
         </motion.div>
       )}
 
@@ -379,7 +379,7 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
                   )}
 
                   {/* Overlay Actions */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
+                  <div className="absolute inset-0 bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
                     {item.type !== 'video' && !item.isCover && (
                       <Button
                         variant="secondary"
@@ -423,10 +423,10 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
               animate={{ opacity: 1 }}
               className="text-center py-8"
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-3">
-                <ImageIcon size={20} className="text-gray-400" />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
+                <ImageIcon size={20} className="text-muted-foreground" />
               </div>
-              <p className="text-sm text-gray-500">No media uploaded yet</p>
+              <p className="text-sm text-muted-foreground">No media uploaded yet</p>
             </motion.div>
           )
         )}
@@ -434,24 +434,24 @@ export function MediaStep({ onComplete, onUpdate, existingData, onBack }: MediaS
 
       {/* Navigation Buttons */}
       <motion.div
-        className="flex justify-between pt-8 border-t border-gray-100 mt-8"
+        className="flex justify-between pt-8 border-t border-border mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
         <button
           onClick={onBack}
-          className="px-6 py-3 text-gray-600 font-medium hover:text-gray-900 transition-colors"
+          className="px-6 py-3 text-muted-foreground font-medium hover:text-foreground transition-colors"
         >
           Back
         </button>
         <button
           onClick={handleContinue}
           className={cn(
-            'px-8 py-3 bg-black text-white rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0',
+            'px-8 py-3 bg-foreground text-background rounded-lg font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0',
             mediaItems.length < 3
               ? 'opacity-50 cursor-not-allowed hover:transform-none hover:shadow-lg'
-              : 'hover:bg-gray-800',
+              : 'hover:bg-foreground/90',
           )}
           // disabled={mediaItems.length < 3} // Optional: disable checking here too if desired, but we show validation on click
         >
