@@ -7,6 +7,12 @@ interface StepsProgressBarProps {
   showLabels?: boolean
   variant?: 'default' | 'compact'
   className?: string
+  /** Step titles, used for the tooltip and the screen-reader label on each segment. */
+  stepTitles?: string[]
+  /** Furthest step the user has reached. Anything up to this is navigable; later steps are not. */
+  maxStepReached?: number
+  /** When supplied, each reachable segment becomes a button that jumps straight to that step. */
+  onStepClick?: (step: number) => void
 }
 
 export function StepsProgressBar({
@@ -16,38 +22,73 @@ export function StepsProgressBar({
   showLabels = true,
   variant = 'default',
   className = '',
+  stepTitles,
+  maxStepReached,
+  onStepClick,
 }: StepsProgressBarProps) {
-  const percentage = Math.round((currentStep / totalSteps) * 100)
-  const stepsCompleted = completedSteps ?? currentStep - 1
-  const stepsRemaining = totalSteps - currentStep
+  // Navigating backwards used to mean clicking Next through every remaining step to get back to
+  // Review. Each segment is now a jump target for any step already visited. Steps ahead of
+  // maxStepReached stay inert — skipping forward would bypass the data those steps collect.
+  const furthest = maxStepReached ?? currentStep
+  const interactive = typeof onStepClick === 'function'
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Segmented Progress bar - Divided into steps */}
-      <div className="relative w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex gap-[2px]">
+      {/* One segment per step. The bar itself stays thin; the button wrapper supplies a real
+          touch target so this is usable on a phone. */}
+      <div className="relative flex w-full gap-[2px]">
         {Array.from({ length: totalSteps }).map((_, index) => {
-          const isCompleted = index < currentStep
-          return (
-            <div
-              key={index}
-              className="h-full flex-1 transition-all duration-300 ease-out"
-              style={{
-                backgroundColor: isCompleted
-                  ? '#000000'
-                  : index === currentStep
-                    ? '#E5E5E5'
-                    : 'transparent',
-                borderRadius:
-                  index === 0
-                    ? '9999px 0 0 9999px'
-                    : index === totalSteps - 1
-                      ? '0 9999px 9999px 0'
-                      : '0',
-              }}
+          const stepNumber = index + 1
+          const isDone = stepNumber < currentStep
+          const isCurrent = stepNumber === currentStep
+          const canJump = interactive && stepNumber <= furthest && !isCurrent
+          const title = stepTitles?.[index]
+
+          const bar = (
+            <span
+              className={[
+                'block h-1.5 w-full transition-colors duration-300 ease-out',
+                isDone || isCurrent ? 'bg-primary' : 'bg-muted',
+                canJump ? 'group-hover:bg-primary/60' : '',
+                index === 0 ? 'rounded-l-full' : '',
+                index === totalSteps - 1 ? 'rounded-r-full' : '',
+              ].join(' ')}
             />
+          )
+
+          if (!canJump) {
+            return (
+              <span
+                key={index}
+                className="flex-1 py-2"
+                aria-current={isCurrent ? 'step' : undefined}
+                title={title}
+              >
+                {bar}
+              </span>
+            )
+          }
+
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => onStepClick!(stepNumber)}
+              title={title ? `Go to: ${title}` : `Go to step ${stepNumber}`}
+              aria-label={title ? `Go to step ${stepNumber}: ${title}` : `Go to step ${stepNumber}`}
+              className="group flex-1 cursor-pointer py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
+            >
+              {bar}
+            </button>
           )
         })}
       </div>
+
+      {showLabels && stepTitles?.[currentStep - 1] && (
+        <p className="mt-1 text-center text-xs text-muted-foreground">
+          Step {currentStep} of {totalSteps} — {stepTitles[currentStep - 1]}
+        </p>
+      )}
     </div>
   )
 }

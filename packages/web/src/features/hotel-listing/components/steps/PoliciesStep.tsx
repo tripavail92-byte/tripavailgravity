@@ -105,8 +105,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Policies & Rules</h2>
-        <p className="text-gray-600 mt-1">Set your booking policies and house rules</p>
+        <h2 className="text-2xl font-bold text-foreground">Policies & Rules</h2>
+        <p className="text-muted-foreground mt-1">Set your booking policies and house rules</p>
       </div>
 
       {/* Check-in/Check-out Times */}
@@ -116,18 +116,18 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             <Clock size={20} className="text-info" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Check-in & Check-out Times</h3>
-            <p className="text-sm text-gray-600">Set your standard arrival and departure times</p>
+            <h3 className="font-semibold text-foreground">Check-in & Check-out Times</h3>
+            <p className="text-sm text-muted-foreground">Set your standard arrival and departure times</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Time</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Check-in Time</label>
             <select
               value={policies.checkIn}
               onChange={(e) => handleUpdate({ checkIn: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground focus:border-transparent focus:ring-2 focus:ring-ring"
             >
               {TIME_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -137,11 +137,11 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Check-out Time</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Check-out Time</label>
             <select
               value={policies.checkOut}
               onChange={(e) => handleUpdate({ checkOut: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground focus:border-transparent focus:ring-2 focus:ring-ring"
             >
               {TIME_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -160,8 +160,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             <Shield size={20} className="text-success" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Cancellation Policy</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="font-semibold text-foreground">Cancellation Policy</h3>
+            <p className="text-sm text-muted-foreground">
               Choose how flexible you want to be with cancellations
             </p>
           </div>
@@ -173,20 +173,22 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
               key={policy.value}
               variant="outline"
               onClick={() => handleUpdate({ cancellationPolicy: policy.value })}
-              className={`p-4 text-left h-auto ${
+              className={`flex h-auto w-full flex-col items-start justify-start gap-1 whitespace-normal p-4 text-left ${
                 policies.cancellationPolicy === policy.value
                   ? 'border-success bg-success/5'
-                  : 'border-gray-200'
+                  : 'border-border'
               }`}
             >
-              <div className="font-semibold text-gray-900 mb-1">{policy.label}</div>
-              <div className="text-sm text-gray-600">{policy.description}</div>
+              <div className="font-semibold text-foreground">{policy.label}</div>
+              <div className="text-sm font-normal leading-relaxed text-muted-foreground">
+                {policy.description}
+              </div>
             </Button>
           ))}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Additional Details (optional)
           </label>
           <Textarea
@@ -205,14 +207,14 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             <Home size={20} className="text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">House Rules</h3>
-            <p className="text-sm text-gray-600">Set rules for guests staying at your property</p>
+            <h3 className="font-semibold text-foreground">House Rules</h3>
+            <p className="text-sm text-muted-foreground">Set rules for guests staying at your property</p>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Toggles */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { key: 'petsAllowed', label: 'Pets Allowed' },
               { key: 'smokingAllowed', label: 'Smoking Allowed' },
@@ -221,9 +223,9 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             ].map(({ key, label }) => (
               <label
                 key={key}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
               >
-                <span className="text-sm font-medium text-gray-700">{label}</span>
+                <span className="text-sm font-medium text-foreground">{label}</span>
                 <input
                   type="checkbox"
                   checked={policies.houseRules[key as keyof typeof policies.houseRules] as boolean}
@@ -236,14 +238,14 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
 
           {/* Quiet Hours */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Quiet Hours (optional)
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <select
                 value={policies.houseRules.quietHoursStart || ''}
                 onChange={(e) => handleHouseRulesUpdate({ quietHoursStart: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
+                className="rounded-lg border border-input bg-background px-4 py-2 text-foreground"
               >
                 <option value="">No quiet hours</option>
                 {TIME_OPTIONS.map((opt) => (
@@ -255,7 +257,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
               <select
                 value={policies.houseRules.quietHoursEnd || ''}
                 onChange={(e) => handleHouseRulesUpdate({ quietHoursEnd: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded-lg"
+                className="rounded-lg border border-input bg-background px-4 py-2 text-foreground"
                 disabled={!policies.houseRules.quietHoursStart}
               >
                 <option value="">Select end time</option>
@@ -270,7 +272,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
 
           {/* Additional Rules */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Additional Rules (optional)
             </label>
             <Textarea
@@ -290,14 +292,14 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             <UserCheck size={20} className="text-warning" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Guest Requirements</h3>
-            <p className="text-sm text-gray-600">Set requirements for booking guests</p>
+            <h3 className="font-semibold text-foreground">Guest Requirements</h3>
+            <p className="text-sm text-muted-foreground">Set requirements for booking guests</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Age</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Minimum Age</label>
             <Input
               type="number"
               min="0"
@@ -325,7 +327,7 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
             ].map(({ key, label, description }) => (
               <label
                 key={key}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors"
               >
                 <input
                   type="checkbox"
@@ -338,8 +340,8 @@ export function PoliciesStep({ existingData, onUpdate }: PoliciesStepProps) {
                   className="w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/50 mt-0.5"
                 />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-700">{label}</div>
-                  <div className="text-xs text-gray-600">{description}</div>
+                  <div className="text-sm font-medium text-foreground">{label}</div>
+                  <div className="text-xs text-muted-foreground">{description}</div>
                 </div>
               </label>
             ))}

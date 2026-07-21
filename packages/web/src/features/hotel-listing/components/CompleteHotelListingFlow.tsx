@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
 import { Button } from '@/components/ui/button'
@@ -123,24 +123,15 @@ export interface HotelData {
     }>
   }
 
-  // Services
+  // Services — see ServicesStep for why this no longer mirrors the amenities list. `facilities` is
+  // deliberately loose here: old listings still carry the removed keys (pool, gym, spa, restaurant,
+  // roomService, airportShuttle) in their saved JSONB, and the Review step renders whatever is
+  // present, so narrowing this type would reject perfectly valid stored data.
   services?: {
     breakfast: 'included' | 'optional' | 'none'
     parking: 'free' | 'paid' | 'none'
     wifi: 'free' | 'paid' | 'none'
-    facilities: {
-      pool: boolean
-      gym: boolean
-      spa: boolean
-      restaurant: boolean
-      roomService: boolean
-      airportShuttle: boolean
-      evCharging: boolean
-    }
-    accessibility: {
-      wheelchairAccessible: boolean
-      elevator: boolean
-    }
+    facilities: Record<string, boolean>
   }
 }
 
@@ -246,6 +237,17 @@ export default function CompleteHotelListingFlow({
   // that later throws — so a retry UPDATEs that row instead of inserting a second hotel. A ref, not
   // state: the retry reads it in the same handler, and it must not trigger a render.
   const publishedRowIdRef = useRef<string | undefined>(initialDraftId)
+  // Furthest step the user has ever reached. Drives which segments of the progress bar are
+  // clickable, so editing an early step no longer means clicking Next through every later one to
+  // get back to Review. Tracked with an effect rather than at each setCurrentStep call site —
+  // there are six of them, and a missed one would silently lock a step the user had already seen.
+  // Seeded from completedSteps so resuming a draft keeps its history.
+  const [maxStepReached, setMaxStepReached] = useState(() =>
+    Math.max(calculateStartingStep(initialData), ...calculateCompletedSteps(initialData), 1),
+  )
+  useEffect(() => {
+    setMaxStepReached((prev) => Math.max(prev, currentStep))
+  }, [currentStep])
   const { user } = useAuth()
 
   const steps: Step[] = [
@@ -517,6 +519,9 @@ export default function CompleteHotelListingFlow({
         currentStep={currentStep}
         totalSteps={steps.length}
         completedSteps={completedSteps.length}
+        stepTitles={steps.map((s) => s.title)}
+        maxStepReached={maxStepReached}
+        onStepClick={setCurrentStep}
         onBack={() => {
           if (currentStep === 1) {
             onBack() // Exit to dashboard on first step
