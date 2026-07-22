@@ -104,6 +104,31 @@ const CATEGORIES: CategoryDef[] = [
   },
 ]
 
+/**
+ * How many category chips are shown at each breakpoint, by index.
+ *
+ * "Ask TripAvail" plus two categories fit a narrow phone; a wide desktop takes the lot. Anything
+ * hidden is still reachable through the filter button beside the row, which is the point — the
+ * previous version rendered all nine into a scroll strip with the scrollbar hidden, so on a
+ * mouse-driven desktop the tail was invisible AND unreachable.
+ *
+ * Tailwind needs these as complete literal class strings; it cannot see classes built by
+ * concatenation at runtime.
+ */
+// Measured, not guessed: at 375px the row has 285px of usable width, and "Ask TripAvail" (133px)
+// plus one chip (~108px) is what actually fits. A second pushed it 120px over.
+const CHIP_VISIBILITY = [
+  'inline-flex', // 0 — always
+  'hidden sm:inline-flex', // 1
+  'hidden sm:inline-flex', // 2
+  'hidden md:inline-flex', // 3
+  'hidden lg:inline-flex', // 4
+  'hidden lg:inline-flex', // 5
+  'hidden xl:inline-flex', // 6
+  'hidden xl:inline-flex', // 7
+  'hidden 2xl:inline-flex', // 8+
+] as const
+
 const toHotel = (pkg: any): FeedItem => ({ type: 'hotel', id: pkg.id, pkg })
 const toTour = (tour: any): FeedItem => ({ type: 'tour', id: tour.id, tour })
 
@@ -308,6 +333,19 @@ export function HomeCategoryFeed() {
     'northern-pk': northernQ.isError,
   }
 
+  // The active category always leads the row.
+  //
+  // Chips past the breakpoint's limit are display:none, so picking a late one from the All sheet —
+  // "Northern Pakistan", say — used to render it at x=648 in a row ending at x=647: completely
+  // off-screen. The feed was filtered with nothing on screen saying what by. Promoting the
+  // selection to index 0 makes it visible at every width without needing a scroll the desktop
+  // cannot perform.
+  const chipOrder = useMemo(() => {
+    const idx = CATEGORIES.findIndex((c) => c.key === selected)
+    if (idx <= 0) return CATEGORIES
+    return [CATEGORIES[idx], ...CATEGORIES.filter((_, j) => j !== idx)]
+  }, [selected])
+
   const activeDef = CATEGORIES.find((c) => c.key === selected) ?? CATEGORIES[0]
   const items = itemsByCategory[selected]
   const loading = loadingByCategory[selected]
@@ -315,7 +353,12 @@ export function HomeCategoryFeed() {
 
   return (
     <section aria-labelledby="home-feed-heading">
-      {/* Category chips — horizontal scroll on mobile, overflow tucked behind the filter sheet. */}
+      {/* Category chips.
+          Only as many as comfortably fit are shown; the rest live behind the filter button to the
+          right. Previously all nine rendered into an `overflow-x-auto no-scrollbar` strip, which on
+          a desktop with a mouse meant the last few were simply unreachable — hidden scrollbar, no
+          drag affordance, nothing to indicate more existed. Hiding by breakpoint makes the overflow
+          honest: what you cannot see is behind a button that says so. */}
       <div className="flex items-center gap-2">
         <div className="-mx-4 flex flex-1 gap-2 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0">
           {/* Ask TripAvail leads the row and is deliberately styled UNLIKE the category chips: a
@@ -326,13 +369,18 @@ export function HomeCategoryFeed() {
           <button
             type="button"
             onClick={() => setAssistantOpen(true)}
+            aria-label="Ask TripAvail"
             className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-            Ask TripAvail
+            {/* "Ask TripAvail" is 133px of a 285px row on a 375px phone, which left too little for
+                a long category like "Northern Pakistan" beside it. The brand name is redundant on
+                the brand's own site anyway. */}
+            <span className="sm:hidden">Ask AI</span>
+            <span className="hidden sm:inline">Ask TripAvail</span>
           </button>
 
-          {CATEGORIES.map((cat) => {
+          {chipOrder.map((cat, i) => {
             const Icon = cat.icon
             const isSel = cat.key === selected
             return (
@@ -342,7 +390,11 @@ export function HomeCategoryFeed() {
                 onClick={() => setSelected(cat.key)}
                 aria-pressed={isSel}
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+                  'shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+                  // The SELECTED chip is always shown, wherever it sits in the list. Without this,
+                  // choosing "Northern Pakistan" from the sheet on a phone would leave the feed
+                  // filtered with nothing on screen saying why.
+                  isSel ? 'inline-flex' : CHIP_VISIBILITY[Math.min(i, CHIP_VISIBILITY.length - 1)],
                   isSel
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-muted text-muted-foreground hover:bg-muted/70',
@@ -357,12 +409,17 @@ export function HomeCategoryFeed() {
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
+            {/* Labelled "All", not a bare icon. Now that chips are hidden by breakpoint, this is
+                the ONLY route to the rest — a lone slider glyph reads as "filter these results"
+                rather than "there are more categories here". */}
             <button
               type="button"
-              aria-label="Browse all categories"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted"
+              aria-label={`Browse all ${CATEGORIES.length} categories`}
+              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
             >
               <SlidersHorizontal className="h-4 w-4" />
+              All
+              <span className="text-muted-foreground">{CATEGORIES.length}</span>
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl">
