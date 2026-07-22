@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { SiteHeader } from '@/components/layout/SiteHeader'
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
 import { CollapsibleSidebar } from '@/components/navigation/CollapsibleSidebar'
 import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
@@ -72,7 +73,20 @@ export default function TravellerLayout() {
           showSidebar ? (pinned ? 'lg:pl-64' : 'lg:pl-16') : '',
         )}
       >
-        <main className="min-h-screen relative">
+        {/* The storefront top bar. It used to live inside LandingPage as a local component, so it
+            appeared on "/" and nowhere else — search, listing details, collections and checkout all
+            rendered with no navigation at all. Hoisting it here is what makes the storefront one
+            site rather than a home page plus a set of orphans.
+
+            The account area opts out: it already has the sidebar and its own chrome, and would
+            otherwise show two navigations at once. */}
+        {!showSidebar ? <SiteHeader /> : null}
+
+        {/* SiteHeader is `fixed`, so nothing below it reserves space on its own. Applying the
+            offset once here means a new storefront page cannot forget it — which is exactly how
+            SearchPage ended up positioning its filter bar at top-16 against a header that was not
+            rendered on that route. */}
+        <main className={cn('min-h-screen relative', !showSidebar && 'pt-[60px] md:pt-20')}>
           <Outlet />
         </main>
 

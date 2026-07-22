@@ -28,8 +28,12 @@ const SearchPage = lazy(() => import('@/pages/traveller/SearchPage'))
 const ListHotelPage = lazy(() => import('@/pages/manager/ListHotelPage'))
 const ListPackagePage = lazy(() => import('@/pages/manager/ListPackagePage'))
 const DashboardPage = lazy(() => import('@/pages/hotel-manager/DashboardPage'))
-const HotelManagerBookingsPage = lazy(() => import('@/pages/hotel-manager/HotelManagerBookingsPage'))
-const HotelManagerCalendarPage = lazy(() => import('@/pages/hotel-manager/HotelManagerCalendarPage'))
+const HotelManagerBookingsPage = lazy(
+  () => import('@/pages/hotel-manager/HotelManagerBookingsPage'),
+)
+const HotelManagerCalendarPage = lazy(
+  () => import('@/pages/hotel-manager/HotelManagerCalendarPage'),
+)
 const OperatorDashboardPage = lazy(() => import('@/pages/tour-operator/OperatorDashboardPage'))
 const OperatorCalendarPage = lazy(() => import('@/pages/tour-operator/OperatorCalendarPage'))
 const OperatorBookingsPage = lazy(() => import('@/pages/tour-operator/OperatorBookingsPage'))
@@ -274,7 +278,8 @@ function App() {
 
             {/* Authenticated Routes with Drawer (Purple Theme) */}
             <Route element={<DashboardLayout />}>
-              <Route path="/search" element={<SearchPage />} />
+              {/* /search is registered under TravellerLayout above; with identical paths
+              React Router only ever matches the first, so this copy was unreachable. */}
               <Route path="/hotels/:id" element={<HotelDetailsPage />} />
               <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
 
