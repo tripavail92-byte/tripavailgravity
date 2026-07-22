@@ -5,6 +5,36 @@ import type { PackageData } from '../types'
 /**
  * Convert base64 data URL to File object
  */
+/**
+ * The nightly price to advertise for a package.
+ *
+ * The pricing step stores each selected room's `packagePrice` in `packageData.selectedRooms` and
+ * summarises them in `packageData.priceRange`, but never writes `basePricePerNight`. So this exists
+ * to derive it deterministically at publish time from what the wizard actually collected. Returns
+ * undefined when the payload genuinely has nothing to base a price on, in which case the caller
+ * inserts NULL and the DB guard blocks the publish rather than shipping a bookable card with no
+ * price behind it.
+ */
+export function derivePackageBasePrice(pkg: PackageData): number | undefined {
+  // 1. An explicit override from the payload wins if present and positive.
+  if (typeof pkg.basePricePerNight === 'number' && pkg.basePricePerNight > 0) {
+    return pkg.basePricePerNight
+  }
+
+  // 2. Cheapest configured room per night — the "from" price the details page already shows.
+  const rooms = Object.values(pkg.selectedRooms ?? {})
+  const prices = rooms
+    .map((r: any) => Number(r?.packagePrice))
+    .filter((n) => Number.isFinite(n) && n > 0)
+  if (prices.length > 0) return Math.min(...prices)
+
+  // 3. Anything the pricing step summarised for us.
+  const rangeMin = Number(pkg.priceRange?.min)
+  if (Number.isFinite(rangeMin) && rangeMin > 0) return rangeMin
+
+  return undefined
+}
+
 function dataURLtoFile(dataurl: string, filename: string): File {
   const arr = dataurl.split(',')
   const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
@@ -147,8 +177,21 @@ export async function publishPackage(packageData: PackageData, userId: string) {
       // Room Configuration (Option A: Fixed package)
       room_configuration: roomConfiguration,
 
-      // Pricing and booking rules
-      base_price_per_night: packageData.basePricePerNight || null,
+      // Pricing and booking rules.
+      //
+      // The pricing step never sets basePricePerNight explicitly — it collects a per-room
+      // `packagePrice` in packageData.selectedRooms and a summary priceRange, but the field this
+      // column reads was declared on the type and never assigned. `packageData.basePricePerNight
+      // || null` therefore inserted NULL, and the DB accepted it (base_price_per_night is nullable
+      // with only CHECK >= 0). The listing then rendered "Price on request" while the atomic
+      // booking RPC raised P0001 "Package has no base price set" at the first booking attempt.
+      //
+      // The right value is the CHEAPEST configured room per night: that is what the details page
+      // shows as the from-price, and it is the honest advertised nightly rate. Falls back through
+      // priceRange.min and an explicit basePricePerNight for older payload shapes. The migration
+      // guard (20260722000006) will reject a NULL either way, so this is the client's half of
+      // making both sides agree.
+      base_price_per_night: derivePackageBasePrice(packageData) ?? null,
       currency: packageCurrency,
       minimum_nights: packageData.minimumNights || 1,
       maximum_nights: packageData.maximumNights || 30,

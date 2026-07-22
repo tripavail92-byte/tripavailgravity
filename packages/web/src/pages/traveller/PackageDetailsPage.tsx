@@ -20,8 +20,8 @@ import { useEffect, useState } from 'react'
 import { DateRange } from 'react-day-picker'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import { ShareButton } from '@/components/share/ShareButton'
 import { SiteFooter } from '@/components/layout/SiteFooter'
+import { ShareButton } from '@/components/share/ShareButton'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import {
@@ -426,6 +426,14 @@ export default function PackageDetailsPage() {
       return
     }
 
+    // Defence in depth. The button is not rendered when basePrice is 0, but a stale render or a
+    // race could still call this. Better to catch it here with a readable message than let the
+    // atomic booking RPC raise P0001 at the traveller.
+    if (!(basePrice > 0)) {
+      setAvailabilityError('This package isn’t bookable online yet — no price is published.')
+      return
+    }
+
     const checkIn = formatDateParam(dateRange.from)
     const checkOut = formatDateParam(dateRange.to)
 
@@ -589,9 +597,7 @@ export default function PackageDetailsPage() {
                       Top Choice
                     </GlassBadge>
                   </div>
-                  <h1 className="type-display text-foreground mb-4">
-                    {name}
-                  </h1>
+                  <h1 className="type-display text-foreground mb-4">{name}</h1>
                   <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 bg-warning/10 rounded-full">
@@ -642,9 +648,7 @@ export default function PackageDetailsPage() {
                     <GlassHeader className="bg-muted/40 border-b border-border/50 mb-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <GlassTitle className="type-title text-primary">
-                            {room.name}
-                          </GlassTitle>
+                          <GlassTitle className="type-title text-primary">{room.name}</GlassTitle>
                           <GlassDescription className="font-medium text-muted-foreground flex items-center gap-1 mt-1">
                             <MapPin size={14} /> {hotel?.name || 'Partner Hotel'}
                           </GlassDescription>
@@ -807,9 +811,7 @@ export default function PackageDetailsPage() {
                         <div className="mb-3 text-primary">
                           <Icon size={48} isHovered={true} />
                         </div>
-                        <span className="type-overline text-foreground text-center">
-                          {label}
-                        </span>
+                        <span className="type-overline text-foreground text-center">{label}</span>
                       </motion.div>
                     )
                   })}
@@ -878,9 +880,7 @@ export default function PackageDetailsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-12">
               {cancellation_policy && (
                 <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
-                  <h3 className="type-overline text-foreground mb-4">
-                    Cancellation Policy
-                  </h3>
+                  <h3 className="type-overline text-foreground mb-4">Cancellation Policy</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
                     {cancellation_policy}
                   </p>
@@ -888,9 +888,7 @@ export default function PackageDetailsPage() {
               )}
               {payment_terms && (
                 <div className="p-6 rounded-3xl bg-muted/40 border border-border/50">
-                  <h3 className="type-overline text-foreground mb-4">
-                    Payment Terms
-                  </h3>
+                  <h3 className="type-overline text-foreground mb-4">Payment Terms</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line font-medium">
                     {payment_terms}
                   </p>
@@ -930,9 +928,7 @@ export default function PackageDetailsPage() {
                     <PopoverTrigger asChild>
                       <div className="grid grid-cols-2 border-b border-border/50 cursor-pointer hover:bg-muted/40 transition-all duration-300">
                         <div className="p-4 border-r border-border/50">
-                          <label className="type-overline text-primary block mb-2">
-                            Check-in
-                          </label>
+                          <label className="type-overline text-primary block mb-2">Check-in</label>
                           <div className="flex items-center gap-2">
                             <CalendarIcon size={14} className="text-muted-foreground/70" />
                             <span
@@ -948,9 +944,7 @@ export default function PackageDetailsPage() {
                           </div>
                         </div>
                         <div className="p-4">
-                          <label className="type-overline text-primary block mb-2">
-                            Check-out
-                          </label>
+                          <label className="type-overline text-primary block mb-2">Check-out</label>
                           <div className="flex items-center gap-2">
                             <CalendarIcon size={14} className="text-muted-foreground/70" />
                             <span
@@ -1004,9 +998,7 @@ export default function PackageDetailsPage() {
                     <PopoverTrigger asChild>
                       <div className="p-4 cursor-pointer hover:bg-muted/40 transition-all duration-300 flex items-center justify-between">
                         <div>
-                          <label className="type-overline text-primary block mb-2">
-                            Travelers
-                          </label>
+                          <label className="type-overline text-primary block mb-2">Travelers</label>
                           <div className="flex items-center gap-2">
                             <Users size={14} className="text-muted-foreground/70" />
                             <span className="font-bold text-sm text-foreground">
@@ -1023,12 +1015,8 @@ export default function PackageDetailsPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="type-overline text-foreground">
-                            Travelers
-                          </div>
-                          <div className="type-caption text-muted-foreground/70">
-                            Ages 13+
-                          </div>
+                          <div className="type-overline text-foreground">Travelers</div>
+                          <div className="type-caption text-muted-foreground/70">Ages 13+</div>
                         </div>
                         <div className="flex items-center gap-4">
                           <GlassButton
@@ -1060,24 +1048,43 @@ export default function PackageDetailsPage() {
                   </Popover>
                 </div>
 
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
-                    onClick={handleRequestToBook}
-                    disabled={
-                      isCheckingAvailability ||
-                      !dateRange?.from ||
-                      !dateRange?.to ||
-                      !isStayLengthValid
-                    }
-                  >
-                    {isCheckingAvailability ? (
-                      <Loader2 className="animate-spin" />
-                    ) : (
-                      t('detail.confirmBooking')
-                    )}
-                  </Button>
-                </motion.div>
+                {/* A package with no base_price_per_night cannot be booked online — the atomic
+                    booking RPC raises P0001 "Package has no base price set" as soon as it is called.
+                    Before this gate, the button rendered enabled once dates were picked, so a
+                    traveller who chose dates hit that error at checkout. It now says what is
+                    actually true: no price means the operator has not set one, and the honest
+                    response is to say so up front and disable the action. Reachable through the
+                    listing page's own operator link when they want to enquire. */}
+                {basePrice > 0 ? (
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Button
+                      className="w-full h-16 type-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl shadow-primary/25 rounded-3xl transition-all duration-300"
+                      onClick={handleRequestToBook}
+                      disabled={
+                        isCheckingAvailability ||
+                        !dateRange?.from ||
+                        !dateRange?.to ||
+                        !isStayLengthValid
+                      }
+                    >
+                      {isCheckingAvailability ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        t('detail.confirmBooking')
+                      )}
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <div className="rounded-3xl border border-border/60 bg-muted/40 p-4 text-center">
+                    <p className="text-sm font-semibold text-foreground">
+                      This package isn’t bookable online yet
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      The operator hasn’t published a price. Please check back later, or contact
+                      them directly for a quote.
+                    </p>
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {availabilityError && (
@@ -1133,9 +1140,7 @@ export default function PackageDetailsPage() {
               <div className="flex flex-col items-center gap-4 relative">
                 <div className="flex items-center gap-2 px-4 py-2 bg-success/10 rounded-full border border-success/20">
                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  <span className="type-overline text-success">
-                    Free Cancellation
-                  </span>
+                  <span className="type-overline text-success">Free Cancellation</span>
                 </div>
                 <p className="type-overline text-muted-foreground/70 text-center">
                   Trusted by 10,000+ happy travelers this year
