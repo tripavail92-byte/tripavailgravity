@@ -83,16 +83,21 @@ BEGIN
     RETURN FALSE;
   END IF;
 
+  -- The WHERE clauses below are REQUIRED, not decorative. Both unique indexes are PARTIAL, and
+  -- Postgres will not infer a partial unique index for ON CONFLICT unless the arbiter predicate is
+  -- restated here. Without them this raises "there is no unique or exclusion constraint matching
+  -- the ON CONFLICT specification" — and because that lives inside a PL/pgSQL body it would NOT
+  -- surface at CREATE FUNCTION time, only on the first real request.
   IF p_user_id IS NOT NULL THEN
     INSERT INTO public.assistant_usage (user_id, window_start, request_count)
     VALUES (p_user_id, v_window, 1)
-    ON CONFLICT (user_id, window_start)
+    ON CONFLICT (user_id, window_start) WHERE user_id IS NOT NULL
       DO UPDATE SET request_count = public.assistant_usage.request_count + 1
     RETURNING request_count INTO v_count;
   ELSE
     INSERT INTO public.assistant_usage (client_hash, window_start, request_count)
     VALUES (p_client_hash, v_window, 1)
-    ON CONFLICT (client_hash, window_start)
+    ON CONFLICT (client_hash, window_start) WHERE client_hash IS NOT NULL
       DO UPDATE SET request_count = public.assistant_usage.request_count + 1
     RETURNING request_count INTO v_count;
   END IF;
