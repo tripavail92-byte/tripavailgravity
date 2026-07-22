@@ -84,15 +84,36 @@ const SYSTEM_PROMPT = [
   "HOW TO WORK:",
   "- Turn what the traveller says into arguments for search_listings. Infer sensibly: 'cheap' is a",
   "  max_price, a place name is the query, 'family' or 'honeymoon' is the category.",
-  "- Do not restate every field of every result — the traveller sees the real listing cards next to",
-  "  your reply. Say what is worth noticing and what distinguishes the options.",
   "- Use get_listing_facts when asked something specific about ONE listing (what is included,",
   "  cancellation policy, age limits, day-by-day plan).",
   "- If a fact is genuinely absent from the data, say the operator has not stated it and suggest",
   "  asking them. Do not guess.",
   "",
-  "STYLE: British English. Warm, brief, concrete. No emoji. No marketing clichés. Prices exactly as",
-  "returned, with their currency code. Two or three short paragraphs at most.",
+  "HOW TO WRITE THE REPLY — these are hard rules, not preferences:",
+  "1. NEVER produce a numbered or bulleted list. No '1.', no '-', no '*'.",
+  "2. NEVER use markdown. Your text is rendered as PLAIN TEXT, so '**bold**' appears to the",
+  "   traveller as literal asterisks. No bold, no headings, no bullets, no tables.",
+  "3. NEVER STATE A PRICE. Not once. The card beneath your reply shows the exact price, in the",
+  "   right currency, next to a button that books it. Writing '20 USD' adds nothing and is how",
+  "   this feature gets a reputation for padding.",
+  "4. NEVER walk through the results one by one. Not as a list, and not as a sentence per listing",
+  "   either — 'The cheapest is X. Then there is Y. There is also Z.' is the same failure with the",
+  "   numbers taken off. Name a listing only when you are singling it out for a specific reason.",
+  "5. Write 2 to 4 SENTENCES about the set AS A WHOLE. Say what the traveller cannot see at a",
+  "   glance: how the options differ, which fits what they asked, what to watch out for, what",
+  "   would help you narrow it down further.",
+  "",
+  "Good: \"Most of what came back are short hikes around Nathia Gali, so they suit a weekend rather",
+  "than a full trip. Only the Hunza options run to several days. Tell me how long you have and",
+  "roughly what you want to spend and I can narrow it down.\"",
+  "",
+  "Bad, a list: \"1. **Snow Hike to Mushkpuri Peak** - Location: Nathia Gali - Price: 20 USD\"",
+  "",
+  "Bad, the same list as sentences: \"The cheapest tour is a snow hike to Mushkpuri Peak, priced at",
+  "20 USD. Following that, there is an 8-day tour to Attock for 33 PKR. If you want something",
+  "longer, a 5-day trip to Hunza is available for 47 USD.\"",
+  "",
+  "STYLE: British English. Warm, brief, concrete. No emoji. No marketing clichés.",
 ].join("\n");
 
 const TOOLS = [
@@ -157,6 +178,26 @@ const TOOLS = [
     },
   },
 ];
+
+/**
+ * Belt and braces for the no-markdown rule.
+ *
+ * The reply is rendered as plain text, so any markdown the model emits reaches the traveller as
+ * literal punctuation — "**Snow Hike** - **Price:** 20 USD". The system prompt forbids it, but a
+ * prompt is a request and this is a guarantee. Also collapses a list the model produced anyway
+ * into prose-ish lines rather than leaving numbered bullets on screen.
+ */
+function toPlainText(s: string): string {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, "$1")   // bold
+    .replace(/(^|\s)\*(\S[^*]*?)\*/g, "$1$2") // italics
+    .replace(/^\s*#{1,6}\s*/gm, "")    // headings
+    .replace(/^\s*[-*•]\s+/gm, "")     // bullets
+    .replace(/^\s*\d+\.\s+/gm, "")     // numbered items
+    .replace(/`{1,3}/g, "")            // code ticks
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 /** Strip fields the model must not see or repeat. Ratings are always 0 and would mislead. */
 function sanitiseRow(row: Record<string, unknown>) {
@@ -296,7 +337,7 @@ Deno.serve(async (req: Request) => {
       const calls = choice.tool_calls ?? [];
       if (calls.length === 0) {
         return json(200, {
-          reply: (choice.content ?? "").trim(),
+          reply: toPlainText(choice.content ?? ""),
           // The client renders these as real cards. The prose describes them; it does not replace
           // them, so a traveller always sees the actual price and can click through to book.
           listings,
