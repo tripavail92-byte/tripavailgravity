@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   Compass,
   Heart,
@@ -10,7 +11,6 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -18,14 +18,10 @@ import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
 import { cn } from '@/lib/utils'
 import {
   useCuratedPackages,
@@ -44,9 +40,7 @@ const TOUR_FALLBACK_IMG =
 
 const FEED_SIZE = 12
 
-type FeedItem =
-  | { type: 'hotel'; id: string; pkg: any }
-  | { type: 'tour'; id: string; tour: any }
+type FeedItem = { type: 'hotel'; id: string; pkg: any } | { type: 'tour'; id: string; tour: any }
 
 type CategoryKey =
   | 'featured'
@@ -72,12 +66,42 @@ const CATEGORIES: CategoryDef[] = [
   { key: 'featured', label: 'Featured', icon: Star, viewAllHref: '/search' },
   { key: 'top-rated', label: 'Top Rated', icon: TrendingUp, viewAllHref: '/collections/top-rated' },
   { key: 'new', label: 'New Arrivals', icon: Sparkles, viewAllHref: '/collections/new' },
-  { key: 'couples', label: 'Couples', icon: Heart, viewAllHref: '/explore/hotel-packages/best_for_couples' },
-  { key: 'family', label: 'Family', icon: Users, viewAllHref: '/explore/hotel-packages/family_friendly' },
-  { key: 'weekend', label: 'Weekend', icon: Sun, viewAllHref: '/explore/hotel-packages/weekend_getaways' },
-  { key: 'adventure', label: 'Adventure', icon: Mountain, viewAllHref: '/explore/tours/categories/adventure-trips' },
-  { key: 'hiking', label: 'Hiking', icon: Compass, viewAllHref: '/explore/tours/categories/hiking-trips' },
-  { key: 'northern-pk', label: 'Northern Pakistan', icon: MapPin, viewAllHref: '/explore/tours/collections/pakistan-northern' },
+  {
+    key: 'couples',
+    label: 'Couples',
+    icon: Heart,
+    viewAllHref: '/explore/hotel-packages/best_for_couples',
+  },
+  {
+    key: 'family',
+    label: 'Family',
+    icon: Users,
+    viewAllHref: '/explore/hotel-packages/family_friendly',
+  },
+  {
+    key: 'weekend',
+    label: 'Weekend',
+    icon: Sun,
+    viewAllHref: '/explore/hotel-packages/weekend_getaways',
+  },
+  {
+    key: 'adventure',
+    label: 'Adventure',
+    icon: Mountain,
+    viewAllHref: '/explore/tours/categories/adventure-trips',
+  },
+  {
+    key: 'hiking',
+    label: 'Hiking',
+    icon: Compass,
+    viewAllHref: '/explore/tours/categories/hiking-trips',
+  },
+  {
+    key: 'northern-pk',
+    label: 'Northern Pakistan',
+    icon: MapPin,
+    viewAllHref: '/explore/tours/collections/pakistan-northern',
+  },
 ]
 
 const toHotel = (pkg: any): FeedItem => ({ type: 'hotel', id: pkg.id, pkg })
@@ -215,6 +239,7 @@ function renderCard(item: FeedItem) {
 export function HomeCategoryFeed() {
   const [selected, setSelected] = useState<CategoryKey>('featured')
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
 
   const mixPkgQ = useHomepageMixPackages(48)
   const mixTourQ = useHomepageMixTours(48)
@@ -256,8 +281,7 @@ export function HomeCategoryFeed() {
   ])
 
   const loadingByCategory: Record<CategoryKey, boolean> = {
-    featured:
-      featTourQ.isLoading || featPkgQ.isLoading || mixPkgQ.isLoading || mixTourQ.isLoading,
+    featured: featTourQ.isLoading || featPkgQ.isLoading || mixPkgQ.isLoading || mixTourQ.isLoading,
     'top-rated': mixPkgQ.isLoading || mixTourQ.isLoading,
     new: mixPkgQ.isLoading || mixTourQ.isLoading,
     couples: couplesQ.isLoading,
@@ -294,6 +318,20 @@ export function HomeCategoryFeed() {
       {/* Category chips — horizontal scroll on mobile, overflow tucked behind the filter sheet. */}
       <div className="flex items-center gap-2">
         <div className="-mx-4 flex flex-1 gap-2 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0">
+          {/* Ask TripAvail leads the row and is deliberately styled UNLIKE the category chips: a
+              filled gradient rather than a muted pill. The others filter a feed; this one opens a
+              conversation, so making it look like a ninth category would misrepresent it. It sits
+              first because it is most useful to someone who does not yet know which category they
+              want. */}
+          <button
+            type="button"
+            onClick={() => setAssistantOpen(true)}
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+            Ask TripAvail
+          </button>
+
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon
             const isSel = cat.key === selected
@@ -368,6 +406,18 @@ export function HomeCategoryFeed() {
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Ask TripAvail opens here rather than navigating away — someone browsing the home feed is
+            mid-thought, and sending them to another page to ask a question loses that. The panel
+            mounts only when opened, so nothing is fetched and no model is called until asked. */}
+        <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Ask TripAvail</DialogTitle>
+            </DialogHeader>
+            {assistantOpen && <TravelAssistant className="max-h-[70vh]" />}
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Section heading + view-all for the selected category. */}
@@ -394,10 +444,7 @@ export function HomeCategoryFeed() {
         ) : loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2, 3].map((i) => (
-              <Card
-                key={i}
-                className="overflow-hidden rounded-2xl border border-border/60"
-              >
+              <Card key={i} className="overflow-hidden rounded-2xl border border-border/60">
                 <div className="aspect-[4/5]">
                   <Skeleton className="h-full w-full" />
                 </div>
