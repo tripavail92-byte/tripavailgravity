@@ -9,23 +9,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
-import { useTravellerCityStore } from '@/store/travellerCityStore'
 import {
   type SearchListingType,
   type SearchSort,
   useSearchFacets,
   useUnifiedSearch,
 } from '@/queries/searchQueries'
+import { useTravellerCityStore } from '@/store/travellerCityStore'
 
 const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
   { value: '', labelKey: 'search.sortRecommended' },
@@ -48,7 +43,10 @@ export default function SearchPage() {
   // ---- read filters from the URL --------------------------------------------
   const q = searchParams.get('q') || ''
   const location = searchParams.get('location') || ''
-  const effectiveQuery = [q, location].map((s) => s.trim()).filter(Boolean).join(' ')
+  const effectiveQuery = [q, location]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(' ')
 
   const typesParam = useMemo(
     () =>
@@ -83,22 +81,29 @@ export default function SearchPage() {
       country: country || null,
       category: category || null,
     }),
-    [effectiveQuery, coords?.latitude, coords?.longitude, minPrice, maxPrice, minRating, country, category],
+    [
+      effectiveQuery,
+      coords?.latitude,
+      coords?.longitude,
+      minPrice,
+      maxPrice,
+      minRating,
+      country,
+      category,
+    ],
   )
 
   const searchInput = useMemo(
-    () => ({ ...baseFilters, types: typesParam, sort: (sort || undefined) as SearchSort | undefined }),
+    () => ({
+      ...baseFilters,
+      types: typesParam,
+      sort: (sort || undefined) as SearchSort | undefined,
+    }),
     [baseFilters, typesParam, sort],
   )
 
-  const {
-    data,
-    isLoading,
-    isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useUnifiedSearch(searchInput)
+  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useUnifiedSearch(searchInput)
   const { data: facets } = useSearchFacets(baseFilters)
 
   const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.rows), [data])
@@ -118,8 +123,7 @@ export default function SearchPage() {
     setSearchParams(next)
   }
 
-  const activeType: 'all' | SearchListingType =
-    typesParam.length === 1 ? typesParam[0] : 'all'
+  const activeType: 'all' | SearchListingType = typesParam.length === 1 ? typesParam[0] : 'all'
 
   const activeFilterCount =
     (minPrice != null ? 1 : 0) +
@@ -253,7 +257,9 @@ export default function SearchPage() {
                             : 'border-border bg-background hover:bg-muted'
                         }`}
                       >
-                        {r === 0 ? t('search.any') : (
+                        {r === 0 ? (
+                          t('search.any')
+                        ) : (
                           <>
                             {r}
                             <Star className="h-3.5 w-3.5 fill-current" />+
@@ -271,7 +277,9 @@ export default function SearchPage() {
                       <button
                         onClick={() => setParam('country', null)}
                         className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                          !country ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background hover:bg-muted'
+                          !country
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background hover:bg-muted'
                         }`}
                       >
                         {t('search.all')}
@@ -311,22 +319,35 @@ export default function SearchPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{heading}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLoading ? t('search.searching') : t('search.results', { count: total.toLocaleString() })}
+              {isLoading
+                ? t('search.searching')
+                : t('search.results', { count: total.toLocaleString() })}
             </p>
           </div>
 
           {/* Type toggle with facet counts */}
           <div className="inline-flex rounded-full border border-border bg-background p-1 self-start">
             {[
-              { key: 'all' as const, label: `${t('search.all')} ${facets ? `(${tourCount + packageCount})` : ''}` },
-              { key: 'tour' as const, label: `${t('search.tours')} ${facets ? `(${tourCount})` : ''}` },
-              { key: 'package' as const, label: `${t('search.stays')} ${facets ? `(${packageCount})` : ''}` },
+              {
+                key: 'all' as const,
+                label: `${t('search.all')} ${facets ? `(${tourCount + packageCount})` : ''}`,
+              },
+              {
+                key: 'tour' as const,
+                label: `${t('search.tours')} ${facets ? `(${tourCount})` : ''}`,
+              },
+              {
+                key: 'package' as const,
+                label: `${t('search.stays')} ${facets ? `(${packageCount})` : ''}`,
+              },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
                 className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                  activeType === tab.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                  activeType === tab.key
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label.trim()}
@@ -344,6 +365,17 @@ export default function SearchPage() {
             <SearchResultsGrid items={items} isLoading={isLoading} showDistance={showDistance} />
           )}
         </div>
+
+        {/* The assistant sits AFTER the results, not above them.
+            It is help for someone who has looked and not found what they wanted — which is exactly
+            when a small catalogue disappoints — rather than a headline feature competing with the
+            search that already works. It is also collapsed by default, so it costs nothing to
+            ignore and makes no request until someone asks something. */}
+        {!isLoading && !isError && (
+          <div className="mt-10 rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
+            <TravelAssistant />
+          </div>
+        )}
 
         {hasNextPage && !isLoading && (
           <div className="mt-10 flex justify-center">
