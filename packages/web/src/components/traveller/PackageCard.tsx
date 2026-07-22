@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { GlassBadge } from '@/components/ui/glass'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
+import { cn } from '@/lib/utils'
 
 interface PackageCardProps {
   id: string
@@ -47,11 +48,19 @@ export function PackageCard({
   instantConfirmation = true,
   className,
 }: PackageCardProps) {
+  // See TourCard for the rationale — desktop opens in a new tab so the search survives, mobile
+  // stays same-tab. Middle-click and Ctrl-click still work at every width.
+  const isDesktop = useIsDesktop()
+  const linkTarget = isDesktop ? '_blank' : undefined
+  const linkRel = isDesktop ? 'noopener noreferrer' : undefined
+
   const money = useMoney()
   const priceFromMoney =
     typeof priceFrom === 'number' ? money(Math.round(priceFrom), currency ?? undefined) : null
   const originalMoney =
-    typeof totalOriginal === 'number' ? money(Math.round(totalOriginal), currency ?? undefined) : null
+    typeof totalOriginal === 'number'
+      ? money(Math.round(totalOriginal), currency ?? undefined)
+      : null
   const discountedMoney =
     typeof totalDiscounted === 'number'
       ? money(Math.round(totalDiscounted), currency ?? undefined)
@@ -63,7 +72,7 @@ export function PackageCard({
     totalOriginal > totalDiscounted
 
   return (
-    <Link to={`/packages/${slug || id}`} className="block h-full">
+    <Link to={`/packages/${slug || id}`} target={linkTarget} rel={linkRel} className="block h-full">
       <Card
         className={cn(
           'group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl h-full bg-background',
@@ -183,11 +192,11 @@ export function PackageCard({
                   <span className="text-xs text-muted-foreground">Total</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-sm text-muted-foreground line-through">
-                        {originalMoney?.text}
+                      {originalMoney?.text}
                     </span>
                     <span className="font-bold text-lg text-foreground">
-                        {discountedMoney?.estimate ? '≈ ' : ''}
-                        {discountedMoney?.text}
+                      {discountedMoney?.estimate ? '≈ ' : ''}
+                      {discountedMoney?.text}
                     </span>
                   </div>
                 </>
@@ -195,8 +204,8 @@ export function PackageCard({
                 <>
                   <span className="text-xs text-muted-foreground">From</span>
                   <span className="font-bold text-lg text-foreground">
-                      {priceFromMoney?.estimate ? '≈ ' : ''}
-                      {priceFromMoney?.text}
+                    {priceFromMoney?.estimate ? '≈ ' : ''}
+                    {priceFromMoney?.text}
                   </span>
                 </>
               ) : (

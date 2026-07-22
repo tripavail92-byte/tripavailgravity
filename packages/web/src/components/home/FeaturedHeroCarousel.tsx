@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { Button } from '@/components/ui/button'
+import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
 import { cn } from '@/lib/utils'
 
@@ -46,6 +47,12 @@ export function FeaturedHeroCarousel({
 }: FeaturedHeroCarouselProps) {
   const money = useMoney()
   const reduceMotion = useReducedMotion()
+
+  // Same rationale as TourCard/PackageCard — desktop opens the listing in a new tab so the
+  // homepage keeps its scroll position and hero rotation, mobile stays same-tab.
+  const isDesktop = useIsDesktop()
+  const linkTarget = isDesktop ? '_blank' : undefined
+  const linkRel = isDesktop ? 'noopener noreferrer' : undefined
   const [index, setIndex] = useState(0)
   const touchStartX = useRef<number | null>(null)
 
@@ -145,6 +152,8 @@ export function FeaturedHeroCarousel({
             <h1 className="mt-3">
               <Link
                 to={slide.href}
+                target={linkTarget}
+                rel={linkRel}
                 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-balance drop-shadow-sm hover:underline decoration-2 underline-offset-4"
               >
                 {slide.title}
@@ -169,7 +178,7 @@ export function FeaturedHeroCarousel({
                 asChild
                 className="h-12 rounded-full px-8 text-base font-bold shadow-xl shadow-black/20"
               >
-                <Link to={slide.href}>
+                <Link to={slide.href} target={linkTarget} rel={linkRel}>
                   {slide.kind === 'package' ? 'View stay' : 'View trip'}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>

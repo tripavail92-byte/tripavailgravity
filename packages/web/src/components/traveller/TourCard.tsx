@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
 import { useT } from '@/hooks/useT'
 
@@ -55,6 +56,16 @@ export function TourCard({
   const depositMoney = money(paymentTerms.upfrontAmount, currency)
   const mainMoney = money(showsDeposit ? paymentTerms.upfrontAmount : price, currency)
 
+  // Desktop opens the tour in a new tab so browsing several listings does not throw the search
+  // away. Mobile keeps the same tab: phone browsers make new tabs feel like the app forgot the last
+  // screen, and heavy browsing fills the tab list fast. `rel` is required whenever we target
+  // `_blank` — noopener prevents `window.opener` attacks, noreferrer trims a referrer we do not
+  // gain anything by leaking. Middle-click and Ctrl-click already work at every width regardless.
+  const isDesktop = useIsDesktop()
+  const openInNewTab = isDesktop
+  const linkTarget = openInNewTab ? '_blank' : undefined
+  const linkRel = openInNewTab ? 'noopener noreferrer' : undefined
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -62,7 +73,7 @@ export function TourCard({
       viewport={{ once: true }}
       className="group cursor-pointer h-full"
     >
-      <Link to={`/tours/${slug || id}`} className="block h-full">
+      <Link to={`/tours/${slug || id}`} target={linkTarget} rel={linkRel} className="block h-full">
         <Card className="group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 rounded-2xl h-full bg-background">
           <div className="relative aspect-[4/5] overflow-hidden">
             <img
@@ -160,8 +171,12 @@ export function TourCard({
                 ) : (
                   <>
                     <span className="text-xs text-muted-foreground">{t('detail.pricing')}</span>
-                    <span className="font-bold text-lg text-foreground truncate">{t('detail.onRequest')}</span>
-                    <span className="text-[11px] text-muted-foreground">{t('detail.contactOperator')}</span>
+                    <span className="font-bold text-lg text-foreground truncate">
+                      {t('detail.onRequest')}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t('detail.contactOperator')}
+                    </span>
                   </>
                 )}
               </div>
