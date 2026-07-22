@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { ArrowRight, MapPin, Sparkles, Star } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -75,10 +75,15 @@ export function FeaturedHeroCarousel({
   if (count === 0) return null
   const slide = slides[Math.min(index, count - 1)]
 
-  const priceLabel =
-    slide.price === 'Contact' || typeof slide.price !== 'number'
-      ? 'Contact for price'
-      : `From ${money(slide.price, slide.currency)}`
+  // money() returns a DisplayMoney object ({ text, estimate, currency }), not a string —
+  // interpolating it directly rendered the literal "From [object Object]" on the homepage hero.
+  // The '≈' prefix marks a figure converted via the FX table rather than the listing's own
+  // currency, matching TourCard and PackageCard.
+  const priceMoney = typeof slide.price === 'number' ? money(slide.price, slide.currency) : null
+
+  const priceLabel = priceMoney
+    ? `From ${priceMoney.estimate ? '≈ ' : ''}${priceMoney.text}`
+    : 'Contact for price'
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null
@@ -152,7 +157,8 @@ export function FeaturedHeroCarousel({
               </span>
               {slide.rating > 0 ? (
                 <span className="inline-flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" /> {slide.rating.toFixed(1)}
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />{' '}
+                  {slide.rating.toFixed(1)}
                 </span>
               ) : null}
               <span className="font-semibold">{priceLabel}</span>
