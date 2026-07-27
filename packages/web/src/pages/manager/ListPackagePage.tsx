@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { CompletePackageCreationFlow } from '@/features/package-creation/components/CompletePackageCreationFlow'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 export default function ListPackagePage() {
   const navigate = useNavigate()
@@ -163,7 +163,12 @@ export default function ListPackagePage() {
       </header>
 
       <main className="flex-1">
-        <CompletePackageCreationFlow />
+        {/* On success the flow latches its Publish button off; here we leave the wizard entirely so
+            the partner lands on their dashboard rather than sitting on the review screen clicking a
+            button that already fired. `replace` so Back does not return into a completed wizard. */}
+        <CompletePackageCreationFlow
+          onPublished={() => navigate('/manager/dashboard', { replace: true })}
+        />
       </main>
     </div>
   )

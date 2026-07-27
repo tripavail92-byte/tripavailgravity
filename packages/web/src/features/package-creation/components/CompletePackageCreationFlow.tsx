@@ -33,7 +33,15 @@ const STEPS = [
   { id: 11, title: 'Review', component: ReviewStep },
 ]
 
-export function CompletePackageCreationFlow() {
+interface CompletePackageCreationFlowProps {
+  /** Called once, after a package has been successfully published. The host decides where to go
+   *  next (dashboard, the new listing). Publish is otherwise self-contained. */
+  onPublished?: (pkg: { id?: string; name?: string }) => void
+}
+
+export function CompletePackageCreationFlow({
+  onPublished,
+}: CompletePackageCreationFlowProps = {}) {
   const [currentStep, setCurrentStep] = useState(1)
   // Furthest step reached — decides which progress segments are navigable. Tracked with an effect
   // so every route into setCurrentStep (Next, Back, and the Review step's Edit links) is covered.
@@ -43,6 +51,12 @@ export function CompletePackageCreationFlow() {
   }, [currentStep])
   const [packageData, setPackageData] = useState<PackageData>({})
   const [isPublishing, setIsPublishing] = useState(false)
+  // Latches true on the first successful publish and never resets. The button is disabled on
+  // `isPublishing || isPublished`, so the window between success and navigating away cannot be used
+  // to publish the same package a second time. Before this, `setIsPublishing(false)` in the finally
+  // re-enabled the button on the same review screen, and partners — seeing no redirect — clicked
+  // again and created duplicate listings.
+  const [isPublished, setIsPublished] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
 
   // useCallback with no deps: both use the functional setState form, so they need none. Without it
@@ -87,17 +101,17 @@ export function CompletePackageCreationFlow() {
 
       console.log('✅ Package published successfully!', publishedPackage)
 
-      // Success feedback
+      // Latch BEFORE handing control to the host. The host navigates away, but until it does the
+      // button must stay disabled — this is the guard against the double-publish.
+      setIsPublished(true)
       toast.success(`Package "${publishedPackage.name}" published successfully.`)
-
-      // TODO: Redirect to dashboard or package detail page
-      // window.location.href = `/hotel-manager/packages/${publishedPackage.id}`;
+      onPublished?.({ id: publishedPackage?.id, name: publishedPackage?.name })
     } catch (error: any) {
       console.error('❌ Failed to publish package:', error)
       const errorMessage = error.message || 'Failed to publish package. Please try again.'
       setPublishError(errorMessage)
       toast.error(errorMessage)
-    } finally {
+      // Only re-enable on FAILURE — a failed publish is safe to retry, a successful one is not.
       setIsPublishing(false)
     }
   }
@@ -191,7 +205,9 @@ export function CompletePackageCreationFlow() {
                 onBack={handleBack}
                 onEdit={handleEdit}
                 onSubmit={handleSubmit}
-                isPublishing={isPublishing}
+                // Stays busy after a successful publish too — we are about to navigate away, and a
+                // re-enabled button here is what produced duplicate packages.
+                isPublishing={isPublishing || isPublished}
                 publishError={publishError}
               />
             )}

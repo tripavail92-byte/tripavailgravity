@@ -10,13 +10,14 @@ import { cn } from '@/lib/utils'
 
 export function DashboardHeader() {
   const { activeRole } = useAuth()
-  const roleTitle = activeRole?.role_type === 'tour_operator'
-    ? 'Tour Operator'
-    : activeRole?.role_type === 'hotel_manager'
-      ? 'Hotel Manager'
-      : activeRole?.role_type === 'admin'
-        ? 'Administrator'
-        : 'Traveler'
+  const roleTitle =
+    activeRole?.role_type === 'tour_operator'
+      ? 'Tour Operator'
+      : activeRole?.role_type === 'hotel_manager'
+        ? 'Hotel Manager'
+        : activeRole?.role_type === 'admin'
+          ? 'Administrator'
+          : 'Traveler'
   // Both partner roles share the premium dark chrome — previously only hotel_manager did,
   // which left tour operators with a translucent light drawer over the dark scrim
   // (washed-out, low-contrast — the "Colouring" issue in the team's QA report).
@@ -42,7 +43,12 @@ export function DashboardHeader() {
               home button. */}
           <div className="flex items-center gap-3">
             <Logo variant="emblem" emblemClassName="h-9 w-9" className="lg:hidden" />
-            <h2 className={cn('text-xl font-semibold', isPartnerChrome ? 'text-white' : 'text-foreground')}>
+            <h2
+              className={cn(
+                'text-xl font-semibold',
+                isPartnerChrome ? 'text-white' : 'text-foreground',
+              )}
+            >
               {roleTitle}
             </h2>
           </div>
@@ -63,7 +69,7 @@ export function DashboardHeader() {
                   className={cn(
                     'w-full pl-10',
                     isPartnerChrome &&
-                      'border-white/10 bg-white/5 text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary/50 focus-visible:ring-primary/20',
+                      'border-white/10 bg-card/5 text-white placeholder:text-white/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:border-primary/50 focus-visible:ring-primary/20',
                   )}
                 />
               </div>

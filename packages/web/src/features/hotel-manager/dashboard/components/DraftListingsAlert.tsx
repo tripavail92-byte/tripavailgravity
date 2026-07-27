@@ -97,10 +97,10 @@ export function DraftListingsAlert() {
 
           {/* Content */}
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            <h3 className="text-lg font-semibold text-foreground mb-1">
               {drafts.length} Draft Listing{drafts.length > 1 ? 's' : ''} Need Your Attention
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               Complete these listings to start receiving bookings
             </p>
 
@@ -113,25 +113,25 @@ export function DraftListingsAlert() {
                 return (
                   <div
                     key={draft.id}
-                    className="bg-white rounded-lg p-4 flex items-center justify-between"
+                    className="bg-card rounded-lg p-4 flex items-center justify-between"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h4 className="font-medium text-gray-900">{draft.name}</h4>
+                        <h4 className="font-medium text-foreground">{draft.name}</h4>
                         <span className="text-xs font-medium text-warning bg-warning-foreground px-2 py-1 rounded-full">
                           {completion}% Complete
                         </span>
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div className="w-full bg-muted rounded-full h-2 mb-2">
                         <div
                           className="bg-warning h-2 rounded-full transition-all duration-500"
                           style={{ width: `${completion}%` }}
                         />
                       </div>
 
-                      <p className="text-sm text-gray-600">Missing: {missing.join(', ')}</p>
+                      <p className="text-sm text-muted-foreground">Missing: {missing.join(', ')}</p>
                     </div>
 
                     <Button

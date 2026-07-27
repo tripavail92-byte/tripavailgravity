@@ -38,12 +38,12 @@ export function ListingsGrid() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+          <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+          <div className="h-10 w-32 bg-muted rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2].map((i) => (
-            <div key={i} className="h-96 bg-gray-200 rounded-xl animate-pulse" />
+            <div key={i} className="h-96 bg-muted rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -55,17 +55,17 @@ export function ListingsGrid() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Your Listings</h2>
-          <p className="text-gray-600 mt-1">{listings.length} published properties</p>
+          <h2 className="text-2xl font-semibold text-foreground">Your Listings</h2>
+          <p className="text-muted-foreground mt-1">{listings.length} published properties</p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-            <button className="p-2 rounded-md bg-white text-gray-900 shadow-sm">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <button className="p-2 rounded-md bg-card text-foreground shadow-sm">
               <Grid className="w-4 h-4" />
             </button>
-            <button className="p-2 rounded-md text-gray-600 hover:text-gray-900">
+            <button className="p-2 rounded-md text-muted-foreground hover:text-foreground">
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -83,12 +83,12 @@ export function ListingsGrid() {
 
       {/* Listings Grid */}
       {listings.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
+        <div className="text-center py-12 bg-muted rounded-xl border-2 border-dashed border-border">
           <div className="mb-4">
-            <Building className="w-16 h-16 text-gray-400 mx-auto" />
+            <Building className="w-16 h-16 text-muted-foreground mx-auto" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No published listings yet</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-lg font-semibold text-foreground mb-2">No published listings yet</h3>
+          <p className="text-muted-foreground mb-6">
             Create your first listing to start receiving bookings
           </p>
           <Button

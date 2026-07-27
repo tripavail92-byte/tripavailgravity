@@ -37,7 +37,7 @@ export function ListingCard({
     },
     paused: {
       badge: 'Paused',
-      color: 'bg-gray-100 text-gray-700 border-gray-200',
+      color: 'bg-muted text-foreground border-border',
       icon: Pause,
     },
   }
@@ -56,7 +56,7 @@ export function ListingCard({
           <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flexitems-center justify-center">
-            <Building className="w-16 h-16 text-gray-400 mx-auto mt-16" />
+            <Building className="w-16 h-16 text-muted-foreground mx-auto mt-16" />
           </div>
         )}
 
@@ -70,31 +70,31 @@ export function ListingCard({
         </GlassBadge>
 
         {/* Actions Menu */}
-        <button className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-          <MoreVertical className="w-4 h-4 text-gray-700" />
+        <button className="absolute top-3 right-3 p-2 bg-card/90 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+          <MoreVertical className="w-4 h-4 text-foreground" />
         </button>
       </div>
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{name}</h3>
-        <p className="text-sm text-gray-600 mb-3">{location}</p>
+        <h3 className="font-semibold text-foreground mb-1 line-clamp-1">{name}</h3>
+        <p className="text-sm text-muted-foreground mb-3">{location}</p>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div>
-            <p className="text-xs text-gray-500">Bookings</p>
-            <p className="text-sm font-semibold text-gray-900">{bookings ?? '—'}</p>
+            <p className="text-xs text-muted-foreground">Bookings</p>
+            <p className="text-sm font-semibold text-foreground">{bookings ?? '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Rating</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs text-muted-foreground">Rating</p>
+            <p className="text-sm font-semibold text-foreground">
               {typeof rating === 'number' ? `⭐ ${rating}` : '—'}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Revenue</p>
-            <p className="text-sm font-semibold text-gray-900">{revenue ?? '—'}</p>
+            <p className="text-xs text-muted-foreground">Revenue</p>
+            <p className="text-sm font-semibold text-foreground">{revenue ?? '—'}</p>
           </div>
         </div>
 

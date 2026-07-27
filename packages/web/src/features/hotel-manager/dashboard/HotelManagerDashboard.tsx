@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/hooks/useAuth'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
+import { useAuth } from '@/hooks/useAuth'
 
 import { DraftListingsAlert } from './components/DraftListingsAlert'
 import { EarningsChart } from './components/EarningsChart'
 import { ListingsGrid } from './components/ListingsGrid'
+import { PackagesGrid } from './components/PackagesGrid'
 import { RecentBookings } from './components/RecentBookings'
 import { StatsOverview } from './components/StatsOverview'
 
@@ -48,7 +49,9 @@ export function HotelManagerDashboard() {
       setIsKycPendingAdminReview(Boolean(pendingAdmin && verificationStatus !== 'approved'))
 
       if (!processing) {
-        try { localStorage.removeItem('tripavail_kyc_processing') } catch {}
+        try {
+          localStorage.removeItem('tripavail_kyc_processing')
+        } catch {}
       }
     }
 
@@ -75,8 +78,8 @@ export function HotelManagerDashboard() {
         >
           {/* Welcome Section */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {displayName}!</h1>
-            <p className="text-gray-600">Manage your properties and bookings</p>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back, {displayName}!</h1>
+            <p className="text-muted-foreground">Manage your properties and bookings</p>
           </div>
 
           {isKycProcessing && (
@@ -90,8 +93,11 @@ export function HotelManagerDashboard() {
                   <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-sm">Verification processing</p>
-                  <p className="text-xs text-gray-600 font-medium">We’re running OCR on your CNIC. This usually takes a few minutes — you can keep using the dashboard.</p>
+                  <p className="font-bold text-foreground text-sm">Verification processing</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    We’re running OCR on your CNIC. This usually takes a few minutes — you can keep
+                    using the dashboard.
+                  </p>
                 </div>
               </div>
               <Button
@@ -108,15 +114,17 @@ export function HotelManagerDashboard() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="rounded-2xl border border-gray-200 bg-white px-6 py-5 flex items-center justify-between gap-4"
+              className="rounded-2xl border border-border bg-card px-6 py-5 flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-gray-700" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="font-bold text-gray-900 text-sm">Verification pending review</p>
-                  <p className="text-xs text-gray-600 font-medium">Your CNIC was processed successfully and is now queued for admin approval.</p>
+                  <p className="font-bold text-foreground text-sm">Verification pending review</p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Your CNIC was processed successfully and is now queued for admin approval.
+                  </p>
                 </div>
               </div>
               <Button
@@ -140,9 +148,13 @@ export function HotelManagerDashboard() {
 
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Listings (2/3 width) */}
-            <div className="lg:col-span-2">
+            {/* Left Column - Listings + Packages (2/3 width).
+                Packages sit directly under the hotel listings because they were previously
+                invisible: the dashboard only ever rendered ListingsGrid, which queries `hotels`, so
+                a published package left no trace anywhere in the partner's account. */}
+            <div className="lg:col-span-2 space-y-10">
               <ListingsGrid />
+              <PackagesGrid />
             </div>
 
             {/* Right Column - Recent Bookings (1/3 width) */}

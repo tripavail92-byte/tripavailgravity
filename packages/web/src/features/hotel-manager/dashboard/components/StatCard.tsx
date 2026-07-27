@@ -23,8 +23,8 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>
+          <p className="text-3xl font-bold text-foreground mb-2">{value}</p>
 
           <div className="flex items-center gap-1 text-sm">
             {!isNeutral && (
@@ -33,13 +33,13 @@ export function StatCard({ label, value, change, trend, icon: Icon, period }: St
             <span
               className={
                 isNeutral
-                  ? 'font-medium text-gray-500'
+                  ? 'font-medium text-muted-foreground'
                   : `font-medium ${isPositive ? 'text-success' : 'text-error'}`
               }
             >
               {change}
             </span>
-            {period && <span className="text-gray-500 ml-1">{period}</span>}
+            {period && <span className="text-muted-foreground ml-1">{period}</span>}
           </div>
         </div>
 
