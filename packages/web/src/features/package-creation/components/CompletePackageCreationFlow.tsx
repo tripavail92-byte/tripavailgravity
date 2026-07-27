@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 
+import { Button } from '@/components/ui/button'
 import { getUserCached } from '@/lib/authCache'
 import { supabase } from '@/lib/supabase'
 
-import { publishPackage } from '../services/packageService'
+import { publishPackage, savePackageDraft } from '../services/packageService'
 import { PackageData, StepData } from '../types'
 import { AvailabilityStep } from './steps/AvailabilityStep'
 import { BasicsStep } from './steps/BasicsStep'
@@ -33,23 +34,54 @@ const STEPS = [
   { id: 11, title: 'Review', component: ReviewStep },
 ]
 
+/**
+ * Which step to open on when resuming a draft: the first one whose data is still missing.
+ *
+ * Mirrors calculateStartingStep in the hotel flow. Order matches STEPS above — a gap early in the
+ * wizard is where the partner needs to be, even if they had filled in later steps before going
+ * back.
+ */
+export function calculateStartingStep(data?: PackageData): number {
+  if (!data) return 1
+  if (!data.hotelId) return 1
+  if (!data.packageType) return 2
+  if (!data.name || !data.description) return 3
+  if (!data.photos || data.photos.length === 0) return 4
+  if (!data.highlights || data.highlights.length === 0) return 5
+  if (!data.inclusions || data.inclusions.length === 0) return 6
+  if (!data.exclusions || data.exclusions.length === 0) return 7
+  if (!data.selectedRooms || Object.keys(data.selectedRooms).length === 0) return 8
+  if (!data.cancellationPolicy) return 10
+  return 11
+}
+
 interface CompletePackageCreationFlowProps {
   /** Called once, after a package has been successfully published. The host decides where to go
    *  next (dashboard, the new listing). Publish is otherwise self-contained. */
   onPublished?: (pkg: { id?: string; name?: string }) => void
+  /** Wizard state restored from a saved draft. */
+  initialData?: PackageData
+  /** The packages row this draft lives in. Publishing promotes THIS row rather than inserting a
+   *  second one. */
+  initialDraftId?: string
+  /** Called after Save & Exit stores the draft. */
+  onSavedAndExit?: (draftId?: string) => void
 }
 
 export function CompletePackageCreationFlow({
   onPublished,
+  initialData,
+  initialDraftId,
+  onSavedAndExit,
 }: CompletePackageCreationFlowProps = {}) {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(() => calculateStartingStep(initialData))
   // Furthest step reached — decides which progress segments are navigable. Tracked with an effect
   // so every route into setCurrentStep (Next, Back, and the Review step's Edit links) is covered.
-  const [maxStepReached, setMaxStepReached] = useState(1)
+  const [maxStepReached, setMaxStepReached] = useState(() => calculateStartingStep(initialData))
   useEffect(() => {
     setMaxStepReached((prev) => Math.max(prev, currentStep))
   }, [currentStep])
-  const [packageData, setPackageData] = useState<PackageData>({})
+  const [packageData, setPackageData] = useState<PackageData>(initialData ?? {})
   const [isPublishing, setIsPublishing] = useState(false)
   // Latches true on the first successful publish and never resets. The button is disabled on
   // `isPublishing || isPublished`, so the window between success and navigating away cannot be used
@@ -58,6 +90,52 @@ export function CompletePackageCreationFlow({
   // again and created duplicate listings.
   const [isPublished, setIsPublished] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
+
+  // ── Draft autosave ────────────────────────────────────────────────────────
+  // The row this wizard owns. Starts as the resumed draft, or is filled in by the first save.
+  const draftIdRef = useRef<string | undefined>(initialDraftId)
+  const [savedAt, setSavedAt] = useState<Date | null>(null)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [draftError, setDraftError] = useState<string | null>(null)
+  // Guards against a second write landing while the first is still in flight. Without it, the very
+  // first autosave could race itself and insert two draft rows before either returned an id.
+  const savingRef = useRef(false)
+
+  const saveDraft = useCallback(async (data: PackageData, opts?: { silent?: boolean }) => {
+    const user = await getUserCached()
+    if (!user) return undefined
+    // Nothing worth persisting yet — an empty row would show up on the dashboard as a phantom
+    // "Untitled Package" the partner never created.
+    if (!data.hotelId && !data.packageType && !data.name) return undefined
+    if (savingRef.current) return draftIdRef.current
+
+    savingRef.current = true
+    if (!opts?.silent) setIsSavingDraft(true)
+    try {
+      const result = await savePackageDraft(data, user.id, draftIdRef.current)
+      if (result.success) {
+        draftIdRef.current = result.draftId
+        setSavedAt(new Date())
+        setDraftError(null)
+      } else {
+        setDraftError('Couldn’t save your progress')
+      }
+      return result.draftId
+    } finally {
+      savingRef.current = false
+      setIsSavingDraft(false)
+    }
+  }, [])
+
+  // Debounced: the wizard's steps push state up on every keystroke, so writing per change would
+  // hammer the database. 2s after the partner stops, the draft is stored.
+  useEffect(() => {
+    if (isPublished) return
+    const t = window.setTimeout(() => {
+      void saveDraft(packageData, { silent: true })
+    }, 2000)
+    return () => window.clearTimeout(t)
+  }, [packageData, isPublished, saveDraft])
 
   // useCallback with no deps: both use the functional setState form, so they need none. Without it
   // these were fresh function identities on every render, and any step with a sync-to-parent effect
@@ -81,6 +159,12 @@ export function CompletePackageCreationFlow({
     setCurrentStep(stepId)
   }
 
+  const handleSaveAndExit = async () => {
+    const id = await saveDraft(packageData)
+    // Hand back the id even when nothing was saved (empty wizard) — the host just leaves.
+    onSavedAndExit?.(id ?? draftIdRef.current)
+  }
+
   const handleSubmit = async () => {
     console.log('📦 Publishing package:', packageData)
     setIsPublishing(true)
@@ -96,8 +180,9 @@ export function CompletePackageCreationFlow({
 
       console.log('👤 User ID:', user.id)
 
-      // Publish package (uploads media + saves to DB)
-      const publishedPackage = await publishPackage(packageData, user.id)
+      // Promote the draft row if this wizard owns one — otherwise publishing a resumed draft would
+      // leave it orphaned and create a second listing alongside it.
+      const publishedPackage = await publishPackage(packageData, user.id, draftIdRef.current)
 
       console.log('✅ Package published successfully!', publishedPackage)
 
@@ -130,8 +215,33 @@ export function CompletePackageCreationFlow({
               Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].title}
             </span>
           </h1>
-          {/* "Saved 2 mins ago" used to sit here, hardcoded. Nothing autosaves this flow, so it was
-              telling the user their work was safe when it was not. Removed rather than faked. */}
+          {/* A hardcoded "Saved 2 mins ago" used to sit here and was removed, because nothing
+              autosaved this flow — it told the partner their work was safe when it was not. Now
+              that drafts are real, the indicator is too: it only claims a save that actually
+              happened, and reports a failure rather than staying quiet. */}
+          <div className="flex items-center gap-3">
+            {draftError ? (
+              <span className="text-xs font-medium text-destructive">{draftError}</span>
+            ) : isSavingDraft ? (
+              <span className="text-xs text-muted-foreground">Saving…</span>
+            ) : savedAt ? (
+              <span className="text-xs text-muted-foreground">
+                Draft saved {savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            ) : null}
+
+            {!isPublished && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleSaveAndExit()}
+                disabled={isSavingDraft}
+              >
+                Save &amp; exit
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* One segment per step, and every step already visited is a jump target. Previously this

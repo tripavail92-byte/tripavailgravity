@@ -1,16 +1,23 @@
 import { Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { CompletePackageCreationFlow } from '@/features/package-creation/components/CompletePackageCreationFlow'
+import { getPackageDraft } from '@/features/package-creation/services/packageService'
+import type { PackageData } from '@/features/package-creation/types'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
 export default function ListPackagePage() {
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
+  const [searchParams] = useSearchParams()
+  // ?draft=<id> resumes a saved package. Absent → a fresh wizard.
+  const draftId = searchParams.get('draft')
+  const [draftData, setDraftData] = useState<PackageData | null>(null)
+  const [draftLoading, setDraftLoading] = useState(Boolean(draftId))
   const [gateLoading, setGateLoading] = useState(true)
   // null = not checked yet. false = account not approved to operate yet.
   const [canOperate, setCanOperate] = useState<boolean | null>(null)
@@ -72,7 +79,32 @@ export default function ListPackagePage() {
     }
   }, [navigate, user?.id])
 
-  if (gateLoading) {
+  // Restore a saved draft. Failure is not fatal: the wizard still opens, just empty, and the
+  // partner is told rather than silently losing the link between this session and their draft.
+  useEffect(() => {
+    if (!draftId || !user?.id) return
+    let cancelled = false
+
+    const run = async () => {
+      setDraftLoading(true)
+      try {
+        const { draftData: restored } = await getPackageDraft(draftId, user.id)
+        if (!cancelled) setDraftData(restored ?? {})
+      } catch (e) {
+        console.error('[ListPackagePage] Failed to load draft', e)
+        if (!cancelled) toast.error('Could not open that draft — starting a new package instead.')
+      } finally {
+        if (!cancelled) setDraftLoading(false)
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [draftId, user?.id])
+
+  if (gateLoading || draftLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -167,7 +199,13 @@ export default function ListPackagePage() {
             the partner lands on their dashboard rather than sitting on the review screen clicking a
             button that already fired. `replace` so Back does not return into a completed wizard. */}
         <CompletePackageCreationFlow
+          // Remounts when a different draft is opened, so the wizard's initial-state hooks re-read
+          // the restored data instead of keeping the previous draft's step.
+          key={draftId ?? 'new'}
+          initialData={draftData ?? undefined}
+          initialDraftId={draftId ?? undefined}
           onPublished={() => navigate('/manager/dashboard', { replace: true })}
+          onSavedAndExit={() => navigate('/manager/dashboard', { replace: true })}
         />
       </main>
     </div>

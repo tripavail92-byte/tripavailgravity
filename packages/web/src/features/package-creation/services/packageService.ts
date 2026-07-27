@@ -117,7 +117,15 @@ export async function uploadPackageMedia(
 /**
  * Publish a package to the database
  */
-export async function publishPackage(packageData: PackageData, userId: string) {
+/**
+ * Publish a package.
+ *
+ * Pass `draftId` when promoting a saved draft, so the SAME row goes live instead of a second one
+ * being inserted alongside it. Without this the wizard's own autosave would guarantee duplicates:
+ * every publish from a resumed draft would leave the draft orphaned and create a fresh listing.
+ * hotelService.publishListing had exactly this bug and was fixed the same way.
+ */
+export async function publishPackage(packageData: PackageData, userId: string, draftId?: string) {
   console.log('🚀 Starting package publish...')
   console.log('Package data:', packageData)
 
@@ -199,21 +207,44 @@ export async function publishPackage(packageData: PackageData, userId: string) {
 
       slug: packageData.slug || null,
       is_published: true,
+      // The row is going live, so it is no longer a resumable draft. Clearing this also stops it
+      // reappearing in the dashboard's draft list.
+      draft_data: null,
     }
 
-    console.log('💾 Inserting package to database...')
+    console.log('💾 Writing package to database...')
     console.log('Payload:', packagePayload)
 
-    // Step 3: Insert package to database
-    const { data: packageRecord, error: insertError } = await supabase
-      .from('packages')
-      .insert(packagePayload)
-      .select()
-      .single()
+    // Step 3: Promote the draft if we have one, otherwise insert fresh. Scoped to owner_id so a
+    // draft id can never be used to overwrite somebody else's row.
+    let packageRecord: any = null
 
-    if (insertError) {
-      console.error('❌ Database insert error:', insertError)
-      throw insertError
+    if (draftId) {
+      const { data, error } = await supabase
+        .from('packages')
+        .update(packagePayload)
+        .eq('id', draftId)
+        .eq('owner_id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Database update error:', error)
+        throw error
+      }
+      packageRecord = data
+    } else {
+      const { data, error } = await supabase
+        .from('packages')
+        .insert(packagePayload)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Database insert error:', error)
+        throw error
+      }
+      packageRecord = data
     }
 
     console.log('✅ Package published successfully!', packageRecord)
@@ -221,6 +252,112 @@ export async function publishPackage(packageData: PackageData, userId: string) {
   } catch (error) {
     console.error('❌ FATAL ERROR in publishPackage:', error)
     throw error
+  }
+}
+
+/**
+ * Save (or update) an in-progress package as an unpublished draft.
+ *
+ * The whole wizard state goes into draft_data verbatim; the typed columns carry whatever is already
+ * known so the row is still meaningful on the dashboard before it is finished.
+ *
+ * PLACEHOLDERS ARE REQUIRED, NOT LAZY. packages.package_type is NOT NULL, packages.name is NOT NULL,
+ * and packages_name_min_length demands >= 3 characters. A draft saved on step 1 has none of those,
+ * and a partner mid-word has a 1-2 character name. Substituting here keeps the constraints strict
+ * for published rows — which is where they matter — instead of relaxing the schema to fit a
+ * half-filled form. Both placeholders are visible and editable in the wizard.
+ *
+ * NOTE ON MEDIA: photos are NOT uploaded here. Autosave runs on a timer while the partner is still
+ * typing, and uploading half-chosen images on every keystroke would burn storage and bandwidth for
+ * files that may never be published. Media is uploaded once, at publish. A resumed draft therefore
+ * restores everything except pending local image selections, which the partner re-picks on the
+ * Media step.
+ */
+export async function savePackageDraft(
+  packageData: PackageData,
+  userId: string,
+  draftId?: string,
+): Promise<{ success: boolean; draftId?: string; error?: unknown }> {
+  if (!userId) throw new Error('User ID required')
+
+  const safeData = packageData || {}
+  const typedName = (safeData.name || '').trim()
+
+  const draftPayload = {
+    owner_id: userId,
+    // >= 3 chars or the CHECK constraint rejects the save mid-typing.
+    name: typedName.length >= 3 ? typedName : 'Untitled Package',
+    package_type: safeData.packageType || 'custom',
+    description: safeData.description || null,
+    hotel_id: safeData.hotelId || null,
+    currency:
+      safeData.currency ||
+      safeData.priceRange?.currency ||
+      Object.values(safeData.selectedRooms || {})[0]?.currency ||
+      'PKR',
+    // Derived where possible so the dashboard card can show a real price on a draft. Left null when
+    // nothing is set yet — packages_published_requires_price only applies to published rows.
+    base_price_per_night: derivePackageBasePrice(safeData) ?? null,
+    minimum_nights: safeData.minimumNights || 1,
+    maximum_nights: safeData.maximumNights || 30,
+    max_guests: safeData.maxGuests || 4,
+
+    is_published: false,
+    draft_data: safeData as unknown as Record<string, unknown>,
+    updated_at: new Date().toISOString(),
+  }
+
+  try {
+    if (draftId) {
+      const { data, error } = await supabase
+        .from('packages')
+        .update(draftPayload)
+        .eq('id', draftId)
+        // Scoped to owner so a draft id from elsewhere cannot overwrite another partner's row.
+        .eq('owner_id', userId)
+        .select('id')
+        .single()
+
+      if (error) throw error
+      return { success: true, draftId: data.id }
+    }
+
+    const { data, error } = await supabase
+      .from('packages')
+      .insert(draftPayload)
+      .select('id')
+      .single()
+
+    if (error) throw error
+    return { success: true, draftId: data.id }
+  } catch (error) {
+    console.error('[packageService] Error saving draft:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Load a draft for resuming. Restricted to the caller's own unpublished rows — a published package
+ * is not a draft, and reopening one in the wizard would silently republish over it.
+ */
+export async function getPackageDraft(draftId: string, userId: string) {
+  if (!userId) throw new Error('User ID required')
+  if (!draftId) throw new Error('Draft ID required')
+
+  const { data, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('id', draftId)
+    .eq('owner_id', userId)
+    .eq('is_published', false)
+    .single()
+
+  if (error) throw error
+
+  return {
+    draft: data,
+    // draft_data is the wizard's own shape; the columns alongside are the derived view of it.
+    draftData: (data?.draft_data ?? {}) as PackageData,
   }
 }
 

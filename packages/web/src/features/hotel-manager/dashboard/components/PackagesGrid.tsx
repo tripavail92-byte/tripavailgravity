@@ -168,15 +168,17 @@ export function PackagesGrid() {
                   </div>
 
                   <div className="mt-auto pt-2">
-                    {/* Only a live package has a public page worth opening. */}
+                    {/* Only a live package has a public page worth opening. An unpublished one is
+                        resumable instead — ?draft= reopens the wizard on the first step still
+                        missing data, rather than making the partner start over. */}
                     {pkg.is_published ? (
                       <Button asChild variant="outline" size="sm" className="w-full">
                         <Link to={`/packages/${pkg.slug || pkg.id}`}>View listing</Link>
                       </Button>
                     ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Not visible to guests while unpublished.
-                      </p>
+                      <Button asChild variant="outline" size="sm" className="w-full">
+                        <Link to={`/manager/list-package?draft=${pkg.id}`}>Continue setup</Link>
+                      </Button>
                     )}
                   </div>
                 </Card>
