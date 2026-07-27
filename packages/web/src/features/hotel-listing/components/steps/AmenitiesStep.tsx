@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 
-import { getAmenityIcon } from '../../assets/AnimatedAmenityIcons'
+import { getAmenityLucideIcon } from '../../assets/amenityLucideMap'
 import type { StepData } from '../CompleteHotelListingFlow'
 import SmartAmenitiesSelector from '../ui/SmartAmenitiesSelector'
 
@@ -320,7 +320,13 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                           {categoryAmenities.map((amenity, amenityIndex) => {
                             const isSelected = selectedAmenities.includes(amenity.id)
                             const isHovered = hoveredAmenity === amenity.id
-                            const IconComponent = getAmenityIcon(amenity.id)
+                            // Was getAmenityIcon() from AnimatedAmenityIcons. Its map only covered
+                            // ~20 amenities and defaulted the other ~45 to WifiIcon, so the browse
+                            // grid rendered a Wi-Fi glyph next to Fire Pit, BBQ Grill, TV, Paid
+                            // Parking, Elevator etc. The lucide map covers every wizard id.
+                            // Standout + Guest Essentials (SmartAmenitiesSelector) keep their
+                            // premium animated icons — those were always wired up correctly.
+                            const IconComponent = getAmenityLucideIcon(amenity.id)
 
                             // Check if this amenity is in the quick select lists
                             const isQuickSelectItem = [
@@ -368,14 +374,19 @@ export function AmenitiesStep({ onComplete, existingData, onUpdate }: AmenitiesS
                                   {/* Icon - 40x40px with scale animation on selection */}
                                   <motion.div
                                     className="flex-shrink-0"
-                                    animate={isSelected ? { scale: 1.05 } : { scale: 1 }}
+                                    // The parent motion.div drives the selection/hover animation
+                                    // now that IconComponent is a plain lucide glyph (no built-in
+                                    // isSelected/isHovered pulse like the animated icons had).
+                                    animate={
+                                      isSelected
+                                        ? { scale: 1.1 }
+                                        : isHovered
+                                          ? { scale: 1.05 }
+                                          : { scale: 1 }
+                                    }
                                     transition={{ duration: 0.2, ease: 'easeOut' }}
                                   >
-                                    <IconComponent
-                                      isSelected={false}
-                                      isHovered={isHovered}
-                                      size={40}
-                                    />
+                                    <IconComponent size={40} />
                                   </motion.div>
 
                                   {/* Amenity Name - Centered */}
