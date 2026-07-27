@@ -157,6 +157,23 @@ export default function TravelerBookingDetailPage() {
     void loadBookingDetails()
   }, [bookingId, user?.id])
 
+  // Auto-open the write-a-review dialog when arrived from the tour page's Review button. Only
+  // fires once the booking has loaded (so we know the user is actually eligible) and only when
+  // the flag is present + no existing review yet. The URL param is stripped after opening so a
+  // page reload doesn't relaunch the dialog on top of a review already being written.
+  useEffect(() => {
+    if (searchParams.get('openReview') !== '1') return
+    if (!booking || existingReview === undefined) return
+    const eligible =
+      booking.tours &&
+      typeof booking.metadata?.operator_completion_confirmed_at === 'string' &&
+      !existingReview
+    if (eligible) setShowReviewDialog(true)
+    const next = new URLSearchParams(searchParams)
+    next.delete('openReview')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, booking, existingReview, setSearchParams])
+
   const scope = useMemo<BookingConversationScope | null>(() => {
     if (!booking) return null
     return booking.tours ? 'tour_booking' : 'package_booking'

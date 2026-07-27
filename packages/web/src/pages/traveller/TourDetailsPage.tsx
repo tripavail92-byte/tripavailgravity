@@ -29,6 +29,8 @@ import {
   DialogContent,
 } from '@/components/ui/dialog'
 import { ShareButton } from '@/components/share/ShareButton'
+import { TourReviewButton } from '@/components/tour/TourReviewButton'
+import { TourSubNav } from '@/components/tour/TourSubNav'
 import {
   GlassBadge,
   GlassButton,
@@ -754,12 +756,27 @@ export default function TourDetailsPage() {
               text={`Check out this trip on TripAvail: ${tour.title}`}
               className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
             />
+            {/* Header CTA — see TourReviewButton for the branching (booking-eligible users deep-
+                link to write, everyone else lands on the reviews section on this page). */}
+            <TourReviewButton tourId={tour.id} />
             <GlassButton variant="ghost" size="icon" className="rounded-full">
               <Heart size={18} className="text-primary" />
             </GlassButton>
           </div>
         </div>
       </GlassCard>
+
+      {/* Sub-nav — sticks below the top bar and drives the section anchors added on the cards
+          below. Long tour pages become skimmable this way. */}
+      <TourSubNav
+        sections={[
+          { id: 'overview', label: 'Overview' },
+          { id: 'details', label: 'Details' },
+          { id: 'itinerary', label: 'Itinerary' },
+          { id: 'operator', label: 'Operator' },
+          { id: 'reviews', label: 'Reviews' },
+        ]}
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Gallery (match PackageDetailsPage grid) */}
@@ -902,7 +919,9 @@ export default function TourDetailsPage() {
                 description was the physical-requirements textarea (the bug), so once that was
                 rebound a tour can legitimately have no description — don't render an empty card. */}
             {tour.description?.trim() ? (
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+              // id/scroll-mt-32 pair matches the Overview tab in TourSubNav — scroll-mt keeps the
+              // heading clear of the two stacked sticky bars when jumped to.
+              <GlassCard id="overview" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
                 </GlassHeader>
@@ -931,8 +950,8 @@ export default function TourDetailsPage() {
               </GlassCard>
             ) : null}
 
-            {/* Hosted by */}
-            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+            {/* Hosted by — id/scroll-mt-32 target for the "Operator" sub-nav tab. */}
+            <GlassCard id="operator" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">
                   Hosted by {tour.operator_display_name || 'Tour Operator'}
@@ -977,8 +996,8 @@ export default function TourDetailsPage() {
               </GlassContent>
             </GlassCard>
 
-            {/* Languages + Requirements */}
-            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+            {/* Languages + Requirements — id/scroll-mt-32 target for the "Details" sub-nav tab. */}
+            <GlassCard id="details" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">Before you go</GlassTitle>
               </GlassHeader>
@@ -1305,9 +1324,9 @@ export default function TourDetailsPage() {
               </GlassContent>
             </GlassCard>
 
-            {/* Itinerary */}
+            {/* Itinerary — id/scroll-mt-32 target for the "Itinerary" sub-nav tab. */}
             {tour.itinerary?.length ? (
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+              <GlassCard id="itinerary" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">Itinerary</GlassTitle>
                 </GlassHeader>
@@ -1382,9 +1401,11 @@ export default function TourDetailsPage() {
               </GlassCard>
             ) : null}
 
-            {/* Traveler reviews */}
+            {/* Traveler reviews — id/scroll-mt-32 target for the "Reviews" sub-nav tab.
+                Empty-state variant renders below when reviews.length === 0 so the tab always has
+                a landing spot rather than silently no-op'ing on a fresh tour. */}
             {reviews.length > 0 ? (
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+              <GlassCard id="reviews" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">
                     Traveler reviews
@@ -1430,7 +1451,20 @@ export default function TourDetailsPage() {
                   </div>
                 </GlassContent>
               </GlassCard>
-            ) : null}
+            ) : (
+              // Empty-state landing card so the Reviews tab always has a target and the CTA never
+              // "does nothing" on a tour that has yet to receive its first review.
+              <GlassCard id="reviews" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">Traveler reviews</GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <p className="text-muted-foreground">
+                    No reviews yet. Once travelers complete this tour, their reviews will appear here.
+                  </p>
+                </GlassContent>
+              </GlassCard>
+            )}
           </div>
 
           {/* Booking Card */}
