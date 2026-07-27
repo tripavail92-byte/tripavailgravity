@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, Heart, MapPin, Share, Star, Users, Wifi } from 'lucide-react'
+import { ChevronLeft, Heart, MapPin, Share, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { ImageWithFallback } from '@/components/ImageWithFallback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  formatAmenityLabel,
+  getAmenityLucideIcon,
+} from '@/features/hotel-listing/assets/amenityLucideMap'
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 
 // Fields fetched from the hotels table
@@ -174,17 +178,23 @@ export default function HotelDetailsPage() {
               <p className="text-foreground/80 leading-relaxed">{hotel.description || '—'}</p>
             </div>
 
-            {/* Amenities */}
+            {/* Amenities.
+                Previously this rendered a hardcoded <Wifi /> for every amenity — Pool, BBQ Grill,
+                Fire Pit, TV, Paid Parking all sat next to the same wireless-signal glyph. Now uses
+                the shared lucide map so the icon actually reflects the amenity. */}
             {amenities.length > 0 && (
               <div className="border-b pb-6">
                 <h3 className="text-xl font-semibold mb-4">What this place offers</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {amenities.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 text-foreground/80">
-                      <Wifi className="w-5 h-5 text-muted-foreground" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
+                  {amenities.map((item, idx) => {
+                    const Icon = getAmenityLucideIcon(item)
+                    return (
+                      <div key={idx} className="flex items-center gap-3 text-foreground/80">
+                        <Icon className="w-5 h-5 text-muted-foreground" />
+                        <span>{formatAmenityLabel(item)}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

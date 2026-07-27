@@ -82,10 +82,15 @@ export function NotificationBell({ inverted = false }: { inverted?: boolean }) {
             exit={{ opacity: 0, y: -8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
             className={cn(
+              // Fully opaque in both modes. Previously the partner variant used bg-slate-950/96
+              // and the traveller variant used bg-background — both should have been solid, but a
+              // white-on-white stat card underneath left the panel edges nearly invisible in the
+              // UI review screenshots. bg-popover is the design-system token for opaque popovers
+              // and adapts to theme; the dark variant now uses solid slate-950.
               'absolute right-0 top-12 z-50 w-80 overflow-hidden rounded-2xl border shadow-2xl',
               inverted
-                ? 'border-white/10 bg-slate-950/96 text-white backdrop-blur-xl'
-                : 'border-border bg-background',
+                ? 'border-white/10 bg-slate-950 text-white'
+                : 'border-border bg-popover text-popover-foreground',
             )}
           >
             {/* Header */}

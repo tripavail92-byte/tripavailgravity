@@ -35,7 +35,10 @@ import {
 } from '@/components/ui/glass'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { packageBookingService } from '@/features/booking'
-import { getAmenityIcon } from '@/features/hotel-listing/assets/AnimatedAmenityIcons'
+import {
+  formatAmenityLabel,
+  getAmenityLucideIcon,
+} from '@/features/hotel-listing/assets/amenityLucideMap'
 import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useMoney } from '@/hooks/useMoney'
@@ -44,22 +47,13 @@ import { useT } from '@/hooks/useT'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 
-// Helper to normalize amenity strings to kebab-case for centralized icon lookup
-const normalizeAmenityId = (amenityStr: string): string => {
-  return amenityStr
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-// Helper to get amenity display config using centralized icon system
+// Helper to get amenity display config using the lucide amenity map — covers every wizard id
+// (see amenityLucideMap.ts), unlike the animated icon set that defaulted anything unmapped to a
+// Wi-Fi glyph.
 const getAmenityConfig = (amenityStr: string) => {
-  const normalizedId = normalizeAmenityId(amenityStr)
-  const IconComponent = getAmenityIcon(normalizedId)
-
   return {
-    Icon: IconComponent,
-    label: amenityStr,
+    Icon: getAmenityLucideIcon(amenityStr),
+    label: formatAmenityLabel(amenityStr),
   }
 }
 
@@ -680,7 +674,7 @@ export default function PackageDetailsPage() {
                                   className="flex flex-col items-center justify-center p-4 bg-background rounded-2xl border border-border/60 hover:border-primary/20 hover:shadow-lg transition-all group"
                                 >
                                   <div className="mb-3 text-primary">
-                                    <Icon size={32} isHovered={true} />
+                                    <Icon size={32} />
                                   </div>
                                   <span className="type-caption text-foreground text-center uppercase tracking-tight">
                                     {label}
@@ -809,7 +803,7 @@ export default function PackageDetailsPage() {
                         className="flex flex-col items-center justify-center p-4 bg-background border border-border/60 rounded-[2rem] shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group"
                       >
                         <div className="mb-3 text-primary">
-                          <Icon size={48} isHovered={true} />
+                          <Icon size={48} />
                         </div>
                         <span className="type-overline text-foreground text-center">{label}</span>
                       </motion.div>
@@ -862,9 +856,14 @@ export default function PackageDetailsPage() {
                       {exclusions.map((item: string, idx: number) => (
                         <li
                           key={idx}
-                          className="flex items-start gap-3 text-foreground font-medium font-mono text-xs"
+                          // Matches the Included list styling above. The previous version used
+                          // font-mono + text-xs + a faded destructive bar, which made the excluded
+                          // panel read as a footnote — the UI review flagged it as looking lighter
+                          // even though both sides used the same font weight. Same font, same size,
+                          // same-shape marker means both panels have equal visual weight now.
+                          className="flex items-start gap-3 text-foreground font-medium"
                         >
-                          <div className="mt-1.5 w-1 h-3 bg-destructive/30 rounded-full shrink-0" />
+                          <div className="mt-1 w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                           <span>{item}</span>
                         </li>
                       ))}
