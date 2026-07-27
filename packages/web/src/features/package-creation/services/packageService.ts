@@ -35,6 +35,70 @@ export function derivePackageBasePrice(pkg: PackageData): number | undefined {
   return undefined
 }
 
+/**
+ * The blackout dates to store for a package.
+ *
+ * AvailabilityStep writes `YYYY-MM-DD` strings into `packageData.blackoutDates` and the review step
+ * tells the partner "N dates blocked", but publishPackage never mapped the field to a column — so
+ * the whole array died in browser memory at publish and guests booked the blocked days. This is the
+ * client half of closing that; the enforcement half is in migration 20260727000001.
+ *
+ * Normalising rather than passing the array straight through, because one malformed entry makes
+ * Postgres reject the entire DATE[] cast and the partner loses the whole listing over a single bad
+ * cell. Anything that is not a real calendar day is dropped; the rest is deduplicated and sorted so
+ * the stored value is stable and diffable.
+ */
+export function normalizeBlackoutDates(input: unknown): string[] {
+  if (!Array.isArray(input)) return []
+
+  const days = new Set<string>()
+  for (const raw of input) {
+    if (typeof raw !== 'string') continue
+    // Tolerate a full ISO timestamp: the step writes date-only today, but earlier drafts and any
+    // future picker that hands back a Date would serialise with a time component.
+    const day = raw.slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) continue
+    // Shape alone is not enough — '2026-02-31' matches the pattern and Postgres rejects it. Round
+    // -tripping through Date catches every impossible day, because JS rolls them over to a
+    // different date that no longer matches the input.
+    const parsed = new Date(`${day}T00:00:00Z`)
+    if (Number.isNaN(parsed.getTime())) continue
+    if (parsed.toISOString().slice(0, 10) !== day) continue
+    days.add(day)
+  }
+
+  return [...days].sort()
+}
+
+/**
+ * The minimum and maximum nights to store for a package.
+ *
+ * Same class of bug as the blackout dates, in the same step: AvailabilityStep collects `minStay` and
+ * `maxStay` (AvailabilityStep.tsx:31-32) and the review screen shows both back, but the payload read
+ * `packageData.minimumNights`/`maximumNights` — fields nothing in the wizard ever assigns. Every
+ * package therefore published at the fallback 1/30 regardless of what the partner set, and the
+ * booking RPC enforced that fallback.
+ *
+ * The clamps exist because the step has no cross-field validation: a partner can set a minimum of 5
+ * and a maximum of 1, which the RPC would turn into a package that rejects every possible booking.
+ * Raising the maximum to meet the minimum is the least surprising reading of that input.
+ */
+export function deriveStayLimits(pkg: PackageData): {
+  minimumNights: number
+  maximumNights: number
+} {
+  const rawMin = Number(pkg.minStay ?? pkg.minimumNights)
+  const rawMax = Number(pkg.maxStay ?? pkg.maximumNights)
+
+  const minimumNights = Number.isFinite(rawMin) && rawMin >= 1 ? Math.floor(rawMin) : 1
+  const maximumNights =
+    Number.isFinite(rawMax) && rawMax >= 1
+      ? Math.max(Math.floor(rawMax), minimumNights)
+      : Math.max(30, minimumNights)
+
+  return { minimumNights, maximumNights }
+}
+
 function dataURLtoFile(dataurl: string, filename: string): File {
   const arr = dataurl.split(',')
   const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
@@ -141,6 +205,9 @@ export async function publishPackage(packageData: PackageData, userId: string) {
     }
 
     // Step 2: Prepare package payload
+    const blackoutDates = normalizeBlackoutDates(packageData.blackoutDates)
+    const stayLimits = deriveStayLimits(packageData)
+
     // Build room_configuration from selectedRooms
     const roomConfiguration = packageData.selectedRooms
       ? {
@@ -193,9 +260,19 @@ export async function publishPackage(packageData: PackageData, userId: string) {
       // making both sides agree.
       base_price_per_night: derivePackageBasePrice(packageData) ?? null,
       currency: packageCurrency,
-      minimum_nights: packageData.minimumNights || 1,
-      maximum_nights: packageData.maximumNights || 30,
+      minimum_nights: stayLimits.minimumNights,
+      maximum_nights: stayLimits.maximumNights,
       max_guests: packageData.maxGuests || 4,
+
+      // Dates the partner closed in the availability step. Persisted regardless of
+      // `availabilityType`: the review screen reports "N dates blocked" whichever type is selected,
+      // and that screen is what the partner agreed to when they pressed publish. NULL rather than
+      // an empty array when nothing is blocked, matching how the nullable columns above read.
+      //
+      // create_package_booking_atomic rejects a stay that occupies any of these nights
+      // (20260727000001). Storing them without that would be the same silent-overbooking bug with
+      // the data merely made visible.
+      blackout_dates: blackoutDates.length > 0 ? blackoutDates : null,
 
       slug: packageData.slug || null,
       is_published: true,

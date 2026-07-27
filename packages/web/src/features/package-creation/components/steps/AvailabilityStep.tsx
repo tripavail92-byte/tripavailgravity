@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 import { StepData } from '../../types'
+import { toDateKey } from '../../utils/dateKey'
 
 interface AvailabilityStepProps {
   onComplete: (data: StepData) => void
@@ -57,8 +58,11 @@ export function AvailabilityStep({
     return dates
   }
 
+  // toDateKey, not toISOString(): the cells are built at LOCAL midnight, which UTC formatting shifts
+  // back a day at any positive offset. See utils/dateKey.ts — these dates are now enforced against
+  // real bookings, so blocking the day before the one the partner clicked is not a cosmetic bug.
   const toggleBlackoutDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0]
+    const dateString = toDateKey(date)
     setBlackoutDates((prev) => {
       if (prev.includes(dateString)) {
         return prev.filter((d) => d !== dateString)
@@ -70,8 +74,7 @@ export function AvailabilityStep({
 
   const isDateBlocked = (date: Date | null): boolean => {
     if (!date) return false
-    const dateString = date.toISOString().split('T')[0]
-    return blackoutDates.includes(dateString)
+    return blackoutDates.includes(toDateKey(date))
   }
 
   const isDatePast = (date: Date | null): boolean => {

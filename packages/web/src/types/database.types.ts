@@ -563,6 +563,7 @@ export type Database = {
       packages: {
         Row: {
           base_price_per_night: number | null
+          blackout_dates: string[] | null
           cancellation_policy: string | null
           cover_image: string | null
           created_at: string | null
@@ -597,6 +598,7 @@ export type Database = {
         }
         Insert: {
           base_price_per_night?: number | null
+          blackout_dates?: string[] | null
           cancellation_policy?: string | null
           cover_image?: string | null
           created_at?: string | null
@@ -631,6 +633,7 @@ export type Database = {
         }
         Update: {
           base_price_per_night?: number | null
+          blackout_dates?: string[] | null
           cancellation_policy?: string | null
           cover_image?: string | null
           created_at?: string | null
