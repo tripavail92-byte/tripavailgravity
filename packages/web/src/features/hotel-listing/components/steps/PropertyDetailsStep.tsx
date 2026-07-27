@@ -32,6 +32,10 @@ export function PropertyDetailsStep({
     contactEmail: existingData?.contactEmail || accountEmail,
     contactPhone: existingData?.contactPhone || '',
     currency: existingData?.currency || 'USD',
+    // Kept as number|undefined rather than 0-as-unrated, so ReviewStep and the details page can
+    // legitimately distinguish "not rated" from "rated at zero stars" (the star-rating cast for a
+    // hostel or guesthouse should not be a 0 badge — it should simply be absent).
+    starRating: existingData?.starRating,
   })
 
   const [showAISuggestions, setShowAISuggestions] = useState(false)
@@ -56,6 +60,14 @@ export function PropertyDetailsStep({
 
   const handleInputChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value }
+    setFormData(newData)
+    onUpdate(newData)
+  }
+
+  // starRating is number | undefined, not a string, so it can't go through handleInputChange —
+  // an empty picker selection must be `undefined`, not the string "" that stringifies as truthy.
+  const handleStarRatingChange = (value: number | undefined) => {
+    const newData = { ...formData, starRating: value }
     setFormData(newData)
     onUpdate(newData)
   }
@@ -165,6 +177,57 @@ export function PropertyDetailsStep({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Star Rating.
+          Optional — some property types genuinely aren't rated (guesthouses, hostels), and forcing
+          a value there would either push partners to invent one or park the field as a permanent 0.
+          "Not rated" is a first-class choice, distinct from selecting 0 stars, so the field is
+          stored as number | undefined rather than 0-as-unrated. */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Star rating <span className="text-muted-foreground font-normal">(optional)</span>
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const selected = formData.starRating === n
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() =>
+                  // A second click on the same rating clears it — the only way to "un-set" once
+                  // you've picked something without needing a separate reset control.
+                  handleStarRatingChange(selected ? undefined : n)
+                }
+                aria-pressed={selected}
+                className={`h-10 min-w-[3rem] rounded-full border px-4 text-sm font-semibold transition-colors ${
+                  selected
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-input bg-background text-foreground hover:bg-muted'
+                }`}
+              >
+                {n}★
+              </button>
+            )
+          })}
+          <button
+            type="button"
+            onClick={() => handleStarRatingChange(undefined)}
+            aria-pressed={formData.starRating === undefined}
+            className={`h-10 rounded-full border px-4 text-sm font-medium transition-colors ${
+              formData.starRating === undefined
+                ? 'border-primary bg-primary/10 text-foreground'
+                : 'border-input bg-background text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Not rated
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          The official rating your {propertyType.toLowerCase()} holds. Leave as “Not rated” if it
+          doesn’t have one — many guesthouses, hostels and boutique stays don’t.
+        </p>
       </div>
 
       {/* Contact Information */}
