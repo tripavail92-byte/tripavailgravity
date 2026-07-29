@@ -78,8 +78,8 @@ export default function BecomePartnerPage() {
               <div className="h-12 w-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <MapIcon className="h-6 w-6" />
               </div>
-              <CardTitle>Tour Operator</CardTitle>
-              <CardDescription>Best for guided tours, activities, and experiences.</CardDescription>
+              <CardTitle>Tours & Events Partner</CardTitle>
+              <CardDescription>List tours, activities, attractions, and events.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 text-sm text-muted-foreground">
@@ -97,7 +97,7 @@ export default function BecomePartnerPage() {
                 </div>
               </div>
               <Button className="w-full" disabled={loading === 'tour_operator'}>
-                {loading === 'tour_operator' ? 'Switching...' : 'Select Tour Operator'}
+                {loading === 'tour_operator' ? 'Switching...' : 'Select Tours & Events'}
               </Button>
             </CardContent>
           </Card>

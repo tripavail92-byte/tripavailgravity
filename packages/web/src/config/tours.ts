@@ -27,7 +27,7 @@ export const travellerTour: TourConfig = {
       id: 'step-partner',
       title: 'Become a Partner',
       description:
-        'Want to earn with TripAvail? You can permanently switch your account to become a Hotel Manager or Tour Operator.',
+        'Want to earn with TripAvail? You can permanently switch your account to become a Hotel Manager or Tours & Events Partner.',
       target: '[data-tour="partner-switch"]',
       position: 'left',
       highlight: true,

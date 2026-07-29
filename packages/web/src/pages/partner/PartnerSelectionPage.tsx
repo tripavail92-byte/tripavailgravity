@@ -34,10 +34,10 @@ export default function PartnerSelectionPage() {
     },
     {
       id: 'tour_operator',
-      title: 'Tour Operator',
-      description: 'Best for guided tours, activities, and experiences',
+      title: 'Tours & Events Partner',
+      description: 'List tours, activities, attractions, and events',
       icon: Modern3DTourIcon,
-      stats: '15K+ operators active',
+      stats: '15K+ partners active',
     },
   ]
 
@@ -54,14 +54,14 @@ export default function PartnerSelectionPage() {
     partnerType === 'hotel_manager'
       ? 'Hotel Manager'
       : partnerType === 'tour_operator'
-        ? 'Tour Operator'
+        ? 'Tours & Events Partner'
         : null
 
   const pendingLabel =
     pendingMode === 'hotel_manager'
       ? 'Hotel Manager'
       : pendingMode === 'tour_operator'
-        ? 'Tour Operator'
+        ? 'Tours & Events Partner'
         : ''
 
   // Step 1: user taps a partner card. Validate, then open a friendly confirmation
@@ -150,12 +150,12 @@ export default function PartnerSelectionPage() {
                 {partnerType === 'hotel_manager' ? '🏨' : '🏔️'}
               </span>
               <span className="text-sm font-semibold text-foreground">
-                {partnerType === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'}
+                {partnerType === 'hotel_manager' ? 'Hotel Manager' : 'Tours & Events Partner'}
               </span>
               <span className="text-xs text-muted-foreground">
                 {partnerType === 'hotel_manager'
                   ? 'Manage your hotel listings'
-                  : 'Manage your tour packages'}
+                  : 'Manage your tours and events'}
               </span>
             </div>
             <p className="text-muted-foreground mb-6">

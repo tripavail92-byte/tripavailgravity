@@ -295,7 +295,7 @@ export default function VerificationStatusPage() {
   const { user, activeRole } = useAuth()
 
   const roleType = activeRole?.role_type ?? ''
-  const roleLabel = roleType === 'hotel_manager' ? 'Hotel Manager' : 'Tour Operator'
+  const roleLabel = roleType === 'hotel_manager' ? 'Hotel Manager' : 'Tours & Events Partner'
   const verificationStatus = activeRole?.verification_status ?? 'incomplete'
 
   const {
