@@ -223,6 +223,7 @@ export const hotelService = {
       latitude: safeData.location?.lat || null,
       longitude: safeData.location?.lng || null,
       base_price_per_night: 0,
+      currency: safeData.currency || 'USD',
 
       // JSONB Columns
       policies: safeData.policies || null,
