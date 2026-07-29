@@ -39,6 +39,7 @@ export const packageKeys = {
   curatedList: (kind: CuratedPackageKind) => [...packageKeys.curated(), kind] as const,
   homepageMerge: (take: number) => [...packageKeys.all, 'homepage_merge', take] as const,
   homepageMix: (take: number) => [...packageKeys.all, 'homepage_mix', take] as const,
+  hotelStays: (hotelId: string) => [...packageKeys.all, 'hotel_stays', hotelId] as const,
 }
 
 export type CuratedPackageKind =
@@ -131,6 +132,18 @@ function inferDurationDays(minimumNights: unknown): number | undefined {
 function resolvePackageCurrency(pkg: any): string {
   const value = String(pkg?.currency || '').trim()
   return value || 'PKR'
+}
+
+// package_type is stored as a slug ('Room Only', 'weekend-getaway', 'family'…).
+// Title-case it into a badge so cards don't show raw hyphenated slugs.
+function prettyPackageBadge(type: unknown): string {
+  const raw = String(type || '').trim()
+  if (!raw) return 'Stay'
+  return raw
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
 }
 
 function mapPackageRowToMappedPackage(pkg: any, badge: string): MappedPackage {
@@ -509,6 +522,69 @@ export function useFeaturedPackages(
     gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
     refetchOnMount: true, // Always refetch on component mount for fresh data
     refetchOnWindowFocus: false, // Don't refetch on tab focus (reduce API calls)
+    ...options,
+  })
+}
+
+/**
+ * Fetch every published, live stay (package) for one hotel — the property
+ * profile's "Choose your stay" list. Cheapest first, so the Room-Only rate leads.
+ */
+async function fetchHotelStays(hotelId: string): Promise<MappedPackage[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      slug,
+      name,
+      currency,
+      cover_image,
+      media_urls,
+      rooms_config,
+      package_type,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      hotels (
+        name,
+        city,
+        country,
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('hotel_id', hotelId)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('base_price_per_night', { ascending: true, nullsFirst: false })
+
+  if (error) {
+    if (isAbortError(error)) return []
+    console.error('[packageQueries] Error fetching hotel stays:', error)
+    throw error
+  }
+
+  return ((data || []) as any[]).map((pkg) =>
+    mapPackageRowToMappedPackage(pkg, prettyPackageBadge(pkg.package_type)),
+  )
+}
+
+/**
+ * Hook: every published stay for a hotel, for the property-profile page.
+ */
+export function useHotelStays(
+  hotelId: string,
+  options?: Omit<UseQueryOptions<MappedPackage[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: packageKeys.hotelStays(hotelId),
+    queryFn: () => fetchHotelStays(hotelId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    enabled: !!hotelId,
+    refetchOnWindowFocus: false,
     ...options,
   })
 }
