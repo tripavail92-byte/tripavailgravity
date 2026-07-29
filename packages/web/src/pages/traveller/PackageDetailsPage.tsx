@@ -43,6 +43,7 @@ import { hotelService } from '@/features/hotel-listing/services/hotelService'
 import { getPackageById } from '@/features/package-creation/services/packageService'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
+import { computePriceTotals } from '@/queries/packageQueries'
 import { useT } from '@/hooks/useT'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
@@ -408,6 +409,28 @@ export default function PackageDetailsPage() {
   const displayBasePrice = priceQuote?.price_per_night || basePrice
   const totalPrice = priceQuote?.total_price || 0
   const maxGuests = packageData?.max_guests || 4
+
+  // Savings derived the same way every card on the site does it — one source of
+  // truth in computePriceTotals — so the ribbon on the card and the "was" price
+  // here always agree. Returns nulls when there is nothing meaningful to strike
+  // through (add-on list absent or discounts too small), which zeroes the block.
+  const priceTotals = computePriceTotals(basePrice, packageData?.discount_offers)
+  const totalOriginalPerNight = priceTotals.totalOriginal
+  const totalDiscountedPerNight = priceTotals.totalDiscounted
+  const hasPackageSavings =
+    typeof totalOriginalPerNight === 'number' &&
+    typeof totalDiscountedPerNight === 'number' &&
+    totalOriginalPerNight > totalDiscountedPerNight
+  const savingsPercent = hasPackageSavings
+    ? Math.round(
+        ((totalOriginalPerNight! - totalDiscountedPerNight!) / totalOriginalPerNight!) * 100,
+      )
+    : 0
+  const showSavingsHeader = hasPackageSavings && savingsPercent >= 5
+  const savingsPerNight = hasPackageSavings
+    ? Math.round(totalOriginalPerNight! - totalDiscountedPerNight!)
+    : 0
+  const bookingTotalSavings = nights > 0 ? savingsPerNight * nights : 0
 
   const handleRequestToBook = async () => {
     if (!id || !dateRange?.from || !dateRange?.to) {
@@ -904,20 +927,43 @@ export default function PackageDetailsPage() {
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
 
-              <div className="flex items-end gap-2 mb-8 relative">
-                <span className="type-h1 text-foreground tracking-tight">
-                  {displayBasePrice > 0
-                    ? (() => {
-                        const m = money(displayBasePrice, packageData?.currency)
-                        return `${m.estimate ? '≈ ' : ''}${m.text}`
-                      })()
-                    : 'Price on request'}
-                </span>
-                {displayBasePrice > 0 && (
-                  <span className="text-muted-foreground font-bold mb-1.5 tracking-wide">
-                    / night
+              <div className="mb-8 relative">
+                {/* Savings header. Displayed above the price so the eye lands on the
+                    win first, then reads the strikethrough as evidence. Gated to
+                    5% so a rounding-artefact discount never appears. */}
+                {showSavingsHeader ? (
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                      Save {savingsPercent}%
+                    </span>
+                    {typeof totalOriginalPerNight === 'number' ? (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {(() => {
+                          const m = money(
+                            Math.round(totalOriginalPerNight),
+                            packageData?.currency,
+                          )
+                          return `${m.estimate ? '≈ ' : ''}${m.text}`
+                        })()}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                <div className="flex items-end gap-2">
+                  <span className="type-h1 text-foreground tracking-tight">
+                    {displayBasePrice > 0
+                      ? (() => {
+                          const m = money(displayBasePrice, packageData?.currency)
+                          return `${m.estimate ? '≈ ' : ''}${m.text}`
+                        })()
+                      : 'Price on request'}
                   </span>
-                )}
+                  {displayBasePrice > 0 && (
+                    <span className="text-muted-foreground font-bold mb-1.5 tracking-wide">
+                      / night
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-6 mb-8 relative">
@@ -1110,6 +1156,10 @@ export default function PackageDetailsPage() {
                     {(() => {
                       const perNight = money(displayBasePrice, packageData?.currency)
                       const total = money(totalPrice, packageData?.currency)
+                      const savedForStay =
+                        hasPackageSavings && bookingTotalSavings > 0
+                          ? money(bookingTotalSavings, packageData?.currency)
+                          : null
                       return (
                         <>
                           <div className="flex justify-between items-center type-overline text-muted-foreground">
@@ -1122,6 +1172,17 @@ export default function PackageDetailsPage() {
                               {total.text}
                             </span>
                           </div>
+                          {/* Reinforces the header savings with a concrete number tied to
+                              THIS booking's length — turns "Save 20%" into "you save Rs 4,500". */}
+                          {savedForStay ? (
+                            <div className="flex justify-between items-center type-overline text-primary">
+                              <span>You save on this stay</span>
+                              <span className="font-semibold">
+                                {savedForStay.estimate ? '≈ ' : ''}
+                                {savedForStay.text}
+                              </span>
+                            </div>
+                          ) : null}
                           <div className="flex justify-between items-center bg-muted/40 p-4 rounded-2xl">
                             <span className="type-overline text-foreground">Total Cost</span>
                             <span className="type-h2 text-primary">

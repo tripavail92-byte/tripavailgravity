@@ -70,6 +70,15 @@ export function PackageCard({
     typeof totalOriginal === 'number' &&
     typeof totalDiscounted === 'number' &&
     totalOriginal > totalDiscounted
+  // Only surface the savings ribbon when the discount is meaningful — a rounding
+  // artefact ("Save 1%") reads as noise and dilutes the value prop everywhere else.
+  const savingsPercent = hasSavings
+    ? Math.round(((totalOriginal - totalDiscounted) / totalOriginal) * 100)
+    : 0
+  const savingsAmount = hasSavings ? Math.round(totalOriginal - totalDiscounted) : 0
+  const showSavingsRibbon = hasSavings && savingsPercent >= 5
+  const savingsMoney =
+    hasSavings && savingsAmount > 0 ? money(savingsAmount, currency ?? undefined) : null
 
   return (
     <Link to={`/packages/${slug || id}`} target={linkTarget} rel={linkRel} className="block h-full">
@@ -137,6 +146,17 @@ export function PackageCard({
             ) : null}
           </div>
 
+          {/* Savings ribbon — top-right, above the heart. Uses the primary accent so
+              it earns attention on a crowded grid without competing with the type badge
+              in the top-left. Gated at 5% so trivial rounding differences never show. */}
+          {showSavingsRibbon ? (
+            <div className="absolute top-3 right-14">
+              <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground shadow-md">
+                Save {savingsPercent}%
+              </span>
+            </div>
+          ) : null}
+
           <div className="absolute top-3 right-3">
             <button
               aria-label="Save to wishlist"
@@ -199,6 +219,12 @@ export function PackageCard({
                       {discountedMoney?.text}
                     </span>
                   </div>
+                  {savingsMoney ? (
+                    <span className="text-xs font-semibold text-primary">
+                      You save {savingsMoney.estimate ? '≈ ' : ''}
+                      {savingsMoney.text}
+                    </span>
+                  ) : null}
                 </>
               ) : typeof priceFrom === 'number' && priceFrom > 0 ? (
                 <>

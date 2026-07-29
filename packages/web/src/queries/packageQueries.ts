@@ -92,7 +92,7 @@ function extractDiscountOffers(raw: unknown): DiscountOffer[] {
   return []
 }
 
-function computePriceTotals(basePrice: number | null, discountOffersRaw: unknown) {
+export function computePriceTotals(basePrice: number | null, discountOffersRaw: unknown) {
   const discountOffers = extractDiscountOffers(discountOffersRaw)
   const base = basePrice ?? 0
 
