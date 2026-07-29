@@ -69,7 +69,7 @@ export function RoomWizardModal({
   onClose,
   onSave,
   editingRoom,
-  listingCurrency = 'USD',
+  listingCurrency = 'PKR',
 }: RoomWizardModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [roomData, setRoomData] = useState<Partial<RoomType>>(
@@ -82,7 +82,11 @@ export function RoomWizardModal({
       size: 25,
       beds: [],
       pricing: {
-        basePrice: 100,
+        // Starts empty, not a pre-filled 100. A pre-filled anchor is exactly how ~4 live hotels
+        // ended up published at a flat "USD 100" nobody ever meant — the partner clicked through the
+        // pricing step without touching it. isStepValid (step 4) already requires basePrice > 0, so
+        // an empty field blocks Continue until a real rate is typed.
+        basePrice: 0,
         currency: listingCurrency,
       },
     },
@@ -91,7 +95,7 @@ export function RoomWizardModal({
   // The price field is edited as a STRING so it can be genuinely empty — see the input for why.
   // State keeps the number; this keeps what the partner is actually typing.
   const [priceDraft, setPriceDraft] = useState(() =>
-    editingRoom?.pricing?.basePrice ? String(editingRoom.pricing.basePrice) : '100',
+    editingRoom?.pricing?.basePrice ? String(editingRoom.pricing.basePrice) : '',
   )
 
   // Lock the page behind the dialog. Without this the wheel scrolled the listing wizard
@@ -553,7 +557,7 @@ export function RoomWizardModal({
                               },
                             })
                           }}
-                          placeholder="100"
+                          placeholder="Enter nightly rate"
                           aria-label="Base price per night"
                         />
                       </div>

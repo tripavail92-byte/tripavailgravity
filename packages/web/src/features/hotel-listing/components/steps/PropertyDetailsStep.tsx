@@ -31,7 +31,7 @@ export function PropertyDetailsStep({
     description: existingData?.description || '',
     contactEmail: existingData?.contactEmail || accountEmail,
     contactPhone: existingData?.contactPhone || '',
-    currency: existingData?.currency || 'USD',
+    currency: existingData?.currency || 'PKR',
     // Kept as number|undefined rather than 0-as-unrated, so ReviewStep and the details page can
     // legitimately distinguish "not rated" from "rated at zero stars" (the star-rating cast for a
     // hostel or guesthouse should not be a 0 badge — it should simply be absent).
@@ -276,12 +276,12 @@ export function PropertyDetailsStep({
           onChange={(e) => handleInputChange('currency', e.target.value)}
           className="w-full max-w-xs rounded-lg border border-input bg-background px-4 py-2 text-foreground focus:border-transparent focus:ring-2 focus:ring-ring"
         >
-          <option value="USD">USD — US Dollar</option>
           <option value="PKR">PKR — Pakistani Rupee</option>
-          <option value="EUR">EUR — Euro</option>
-          <option value="GBP">GBP — British Pound</option>
+          <option value="USD">USD — US Dollar</option>
           <option value="AED">AED — UAE Dirham</option>
           <option value="SAR">SAR — Saudi Riyal</option>
+          <option value="EUR">EUR — Euro</option>
+          <option value="GBP">GBP — British Pound</option>
         </select>
         <p className="text-xs text-gray-500 mt-1">
           All your room prices use this currency. Guests see prices converted to their own.

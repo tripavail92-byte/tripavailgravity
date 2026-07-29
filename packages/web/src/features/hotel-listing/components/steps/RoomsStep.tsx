@@ -249,7 +249,7 @@ export function RoomsStep({ onComplete, existingData, onUpdate }: RoomsStepProps
           onClose={() => setShowWizard(false)}
           onSave={handleSaveRoom}
           editingRoom={editingRoom}
-          listingCurrency={existingData?.currency || 'USD'}
+          listingCurrency={existingData?.currency || 'PKR'}
         />
       )}
     </div>

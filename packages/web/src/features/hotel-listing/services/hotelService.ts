@@ -81,7 +81,7 @@ export const hotelService = {
     // Math.min below could compare 120000 PKR against 400 USD as bare numbers and publish the PKR
     // room as the cheaper one. The wizard now sets it once; rooms whose stored currency disagrees
     // (older drafts) are excluded from the "from" price rather than silently mis-compared.
-    const listingCurrency = data.currency || data.rooms?.[0]?.pricing?.currency || 'USD'
+    const listingCurrency = data.currency || data.rooms?.[0]?.pricing?.currency || 'PKR'
     hotelPayload.currency = listingCurrency
 
     if (data.rooms && data.rooms.length > 0) {
@@ -223,7 +223,7 @@ export const hotelService = {
       latitude: safeData.location?.lat || null,
       longitude: safeData.location?.lng || null,
       base_price_per_night: 0,
-      currency: safeData.currency || 'USD',
+      currency: safeData.currency || 'PKR',
 
       // JSONB Columns
       policies: safeData.policies || null,
