@@ -27,10 +27,15 @@ export const hotelKeys = {
 }
 
 function mapHotelRow(h: any): HotelBrowseItem | null {
-  // packages!inner + the published/live filters below mean this array only holds
-  // sellable stays; still guard, and derive the "from" price from the cheapest.
+  // packages RLS already restricts anon to is_published=true and `!inner` requires
+  // at least one visible row; here we additionally drop anything not currently
+  // live (moderated 'draft'/'hidden'/'removed') and non-positive prices, then
+  // derive the "from" price from the cheapest survivor. status is filtered here
+  // rather than via `.eq('packages.status', 'live')` on the DB query because
+  // PostgREST's enum casting through an EMBEDDED filter silently drops all rows.
   const stays = Array.isArray(h.packages) ? h.packages : []
   const priced: Array<{ price: number; currency: string }> = stays
+    .filter((p: any) => p?.is_published === true && p?.status === 'live')
     .map((p: any) => ({
       price: Number(p.base_price_per_night),
       currency: String(p.currency || 'PKR').trim() || 'PKR',
@@ -91,8 +96,11 @@ async function fetchHotelBrowse(): Promise<HotelBrowseItem[]> {
     `,
     )
     .eq('is_published', true)
-    .eq('packages.is_published', true)
-    .eq('packages.status', 'live')
+    // NO embedded-relation .eq() here — the status enum in particular casts
+    // unreliably through PostgREST's embedded filter and can silently return 0
+    // rows. `!inner` combined with packages' own RLS (is_published=true) already
+    // means "hotel has at least one visible published package"; the remaining
+    // status='live' + price>0 filters are applied in mapHotelRow.
     .order('created_at', { ascending: false })
     .limit(60)
 
