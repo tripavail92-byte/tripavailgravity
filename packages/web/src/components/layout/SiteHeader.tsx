@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { CurrencySwitcher } from '@/components/CurrencySwitcher'
@@ -13,6 +13,15 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { useAuth } from '@/hooks/useAuth'
 import { useT } from '@/hooks/useT'
+import { cn } from '@/lib/utils'
+
+// Primary storefront nav — the three content verticals. Desktop only; phones use
+// the bottom tab bar (BottomTabsNav) for the same destinations.
+const PRIMARY_NAV = [
+  { to: '/hotels', label: 'Hotels' },
+  { to: '/tours', label: 'Tours' },
+  { to: '/events', label: 'Events' },
+]
 
 /**
  * The storefront top bar — logo, search, language, currency, theme, account.
@@ -55,9 +64,28 @@ export function SiteHeader() {
     <>
       <header className="fixed top-0 left-0 right-0 bg-background border-b z-50">
         <div className="container mx-auto max-w-7xl grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3 min-h-[60px] px-4 py-2 md:h-20 md:py-0 md:px-6 lg:px-10">
-          {/* Logo — central Logo component, links home (emblem-only on phones). */}
-          <div className="flex items-center shrink-0">
+          {/* Logo + primary nav (desktop). Emblem-only logo on phones; the nav
+              collapses to the bottom tab bar there. */}
+          <div className="flex items-center gap-4 shrink-0">
             <Logo />
+            <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
+              {PRIMARY_NAV.map((l) => (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  className={({ isActive }) =>
+                    cn(
+                      'px-3 py-2 rounded-full text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'text-primary bg-primary/10'
+                        : 'text-foreground hover:bg-muted',
+                    )
+                  }
+                >
+                  {l.label}
+                </NavLink>
+              ))}
+            </nav>
           </div>
 
           {/* Search — the CENTRE column at every width: logo (left) · search (centre) · menu

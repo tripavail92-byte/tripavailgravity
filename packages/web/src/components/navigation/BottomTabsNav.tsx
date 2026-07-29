@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import {
+  EventsTabIcon,
   HikerTabIcon,
   HomeTabIcon,
   HotelTabIcon,
@@ -132,8 +133,9 @@ export function BottomTabsNav() {
 
   const tabs: Tab[] = [
     { label: 'Home', icon: HomeTabIcon, to: '/' },
-    { label: 'Trips', icon: HikerTabIcon, to: '/tours' },
     { label: 'Hotels', icon: HotelTabIcon, to: '/hotels', match: ['/hotel'] },
+    { label: 'Tours', icon: HikerTabIcon, to: '/tours' },
+    { label: 'Events', icon: EventsTabIcon, to: '/events' },
     {
       label: 'Profile',
       icon: UserTabIcon,

@@ -76,6 +76,17 @@ export function HotelTabIcon({ active, className }: TabIconProps) {
   )
 }
 
+/** Events — an admission ticket with a perforation. Solid silhouette when active,
+ *  clean outline when idle. */
+export function EventsTabIcon({ active, className }: TabIconProps) {
+  return (
+    <svg className={className} {...svgProps(active)}>
+      <path d="M3.5 9 A1.5 1.5 0 0 1 5 7.5 H19 A1.5 1.5 0 0 1 20.5 9 V10.2 A1.9 1.9 0 0 0 20.5 13.8 V15 A1.5 1.5 0 0 1 19 16.5 H5 A1.5 1.5 0 0 1 3.5 15 V13.8 A1.9 1.9 0 0 0 3.5 10.2 Z" />
+      <path d="M14.2 7.7 V16.3" fill="none" strokeDasharray="1.4 1.8" />
+    </svg>
+  )
+}
+
 export function UserTabIcon({ active, className }: TabIconProps) {
   return (
     <svg className={className} {...svgProps(active)}>

@@ -56,6 +56,7 @@ const PackageCheckoutPage = lazy(() => import('@/pages/checkout/PackageCheckoutP
 const Homepage = lazy(() => import('@/pages/traveller/Homepage'))
 const HotelsPage = lazy(() => import('@/pages/traveller/HotelsPage'))
 const ToursPage = lazy(() => import('@/pages/traveller/ToursPage'))
+const EventsPage = lazy(() => import('@/pages/traveller/EventsPage'))
 const PackageCategoryPage = lazy(() => import('@/pages/traveller/PackageCategoryPage'))
 const TourCategoryPage = lazy(() => import('@/pages/traveller/TourCategoryPage'))
 const TourCollectionPage = lazy(() => import('@/pages/traveller/TourCollectionPage'))
@@ -228,6 +229,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/hotels" element={<HotelsPage />} />
               <Route path="/tours" element={<ToursPage />} />
+              <Route path="/events" element={<EventsPage />} />
               <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
               <Route path="/payment-methods" element={<PaymentMethodsPage />} />
               <Route path="/explore" element={<Homepage />} />
