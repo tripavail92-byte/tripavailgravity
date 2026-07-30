@@ -168,9 +168,18 @@ interface GlintProps {
   reduce: boolean
 }
 
-/** Diagonal shine sweep, clipped to the object silhouette. */
+/**
+ * Diagonal shine sweep, clipped to the object silhouette.
+ *
+ * Gated on `lit`. This nav row is mounted on every route, and the sweep is the
+ * most expensive element in the set: motion drives `x` on a <g> inside a
+ * clipPath from JS every frame rather than handing it to WAAPI. At rest it is
+ * also a ~6.7px highlight crossing a ~20px shape — imperceptible at the size
+ * the icon actually renders. It now runs only on hover/active, where it is
+ * both visible and deserved.
+ */
 function Glint({ uid, clipId, lit, reduce }: GlintProps) {
-  if (reduce) return null
+  if (reduce || !lit) return null
   return (
     <g clipPath={`url(#${clipId})`}>
       <g transform="rotate(-22 24 24)">
@@ -264,6 +273,11 @@ function LitPanel({ uid, x, y, w, h, r = 0.55, i, lit, reduce }: LitPanelProps) 
           }}
         />
       )}
+      {/* Idle is a STATIC lit panel, not a pulse. Three icons x up to 11 panels
+          meant ~30 infinite RAF loops running permanently on a nav row that is
+          mounted on every route — and the reference icon this family is modelled
+          on only pulsed when lit. The ambient aura still breathes at rest, so
+          the row stays alive without the per-window cost. */}
       <motion.rect
         x={x}
         y={y}
@@ -271,17 +285,15 @@ function LitPanel({ uid, x, y, w, h, r = 0.55, i, lit, reduce }: LitPanelProps) 
         height={h}
         rx={r}
         fill={`url(#${uid}-gold)`}
-        initial={{ opacity: lit ? 0.7 : 0.45 }}
+        initial={{ opacity: lit ? 0.7 : 0.6 }}
         animate={
-          reduce
-            ? { opacity: lit ? 0.95 : 0.7 }
-            : { opacity: lit ? [0.66, 1, 0.66] : [0.42, 0.72, 0.42] }
+          reduce || !lit ? { opacity: lit ? 0.95 : 0.6 } : { opacity: [0.66, 1, 0.66] }
         }
         transition={
-          reduce
-            ? { duration: 0 }
+          reduce || !lit
+            ? { duration: 0.25 }
             : {
-                duration: lit ? 1.7 : 2.7,
+                duration: 1.7,
                 repeat: Infinity,
                 delay: i * 0.26,
                 ease: 'easeInOut' as const,
