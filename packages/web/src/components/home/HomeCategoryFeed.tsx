@@ -1,14 +1,13 @@
-import {
-  Building2,
-  Compass,
-  type LucideIcon,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  Ticket,
-} from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Search, SlidersHorizontal, Sparkles, Ticket } from 'lucide-react'
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+
+import {
+  EventPremiumIcon,
+  HotelPremiumIcon,
+  type PremiumIconProps,
+  TourPremiumIcon,
+} from '@/components/icons/PremiumNavIcons'
 
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -47,13 +46,13 @@ interface ModeDef {
   key: Exclude<Mode, 'all'>
   label: string
   sub: string
-  icon: LucideIcon
+  icon: ComponentType<PremiumIconProps>
 }
 
 const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: Building2 },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: Compass },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: Ticket },
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: HotelPremiumIcon },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: TourPremiumIcon },
+  { key: 'events', label: 'Events', sub: 'Coming soon', icon: EventPremiumIcon },
 ]
 
 // ── Card builders (loosely typed to match the mapped-row shapes) ────────────
@@ -241,7 +240,7 @@ export function HomeCategoryFeed() {
       {/* ── Row 1: search bar + filter + Ask AI ──────────────────────────────
           THE search for the home page — the global header hides its own search
           here so there's only one. Pre-scoped to the active mode. */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="mx-auto flex w-full max-w-3xl items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
@@ -270,46 +269,59 @@ export function HomeCategoryFeed() {
         </button>
       </div>
 
-      {/* ── Row 2: big premium mode pills ────────────────────────────────── */}
-      <div className="mt-4 flex flex-wrap gap-3">
-        {MODES.map((m) => {
-          const Icon = m.icon
-          const active = mode === m.key
-          return (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => selectMode(m.key)}
-              aria-pressed={active}
-              className={cn(
-                'group flex items-center gap-3 rounded-2xl border px-5 py-3 text-left transition-all duration-300',
-                active
-                  ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25 lg:scale-[1.03]'
-                  : 'border-border bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
-              )}
-            >
-              <span
+      {/* ── Row 2: big premium mode pills. Centred, equal width, icon on top so
+          the animated icon is the hero rather than a decoration beside text. ── */}
+      <div className="mt-6 flex justify-center">
+        <div className="grid w-full max-w-2xl grid-cols-3 gap-3 sm:gap-4">
+          {MODES.map((m) => {
+            const Icon = m.icon
+            const active = mode === m.key
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => selectMode(m.key)}
+                aria-pressed={active}
                 className={cn(
-                  'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
-                  active ? 'bg-white/20' : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                  'group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border px-3 py-4 text-center transition-all duration-300 sm:px-5 sm:py-5',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground shadow-xl shadow-primary/30 sm:scale-[1.03]'
+                    : 'border-border bg-background hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg',
                 )}
               >
-                <Icon className="h-5 w-5" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold leading-tight">{m.label}</span>
+                {/* Icon tile stays LIGHT in both states so the full-colour icon
+                    always reads — a multi-colour 3D icon on a rose fill would muddy.
+                    It is TINTED rather than pure white on purpose: the icons' front
+                    faces start at #ffffff, so on a white tile their silhouettes
+                    disappeared entirely. A soft rose wash gives them something to
+                    sit against while keeping the saturated rose accents readable. */}
                 <span
                   className={cn(
-                    'block text-xs',
-                    active ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                    'grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br transition-colors',
+                    active
+                      ? 'from-rose-50 to-rose-100 shadow-inner'
+                      : 'from-rose-50/70 to-slate-100 group-hover:from-rose-50 group-hover:to-rose-100/80',
                   )}
                 >
-                  {m.sub}
+                  <Icon size={44} isActive={active} />
                 </span>
-              </span>
-            </button>
-          )
-        })}
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold leading-tight sm:text-base">
+                    {m.label}
+                  </span>
+                  <span
+                    className={cn(
+                      'mt-0.5 block text-[11px] leading-tight sm:text-xs',
+                      active ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                    )}
+                  >
+                    {m.sub}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Ask AI — mounts lazily, so nothing is fetched until opened. */}
