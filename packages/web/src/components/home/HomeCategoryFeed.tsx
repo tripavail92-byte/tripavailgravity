@@ -1,36 +1,27 @@
-import type { LucideIcon } from 'lucide-react'
-import {
-  Compass,
-  Heart,
-  MapPin,
-  Mountain,
-  SlidersHorizontal,
-  Sparkles,
-  Star,
-  Sun,
-  TrendingUp,
-  Users,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Building2, Compass, type LucideIcon, Search, Sparkles, Ticket } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
+import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
+import { type SearchFilters } from '@/components/search/TripAvailSearchBar'
+import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
 import { cn } from '@/lib/utils'
+import type { HotelBrowseItem } from '@/queries/hotelQueries'
+import { useHotelBrowse } from '@/queries/hotelQueries'
 import {
   useCuratedPackages,
   useFeaturedPackages,
-  useHomepageMixPackages,
+  useSpecialOffers,
 } from '@/queries/packageQueries'
 import {
   useFeaturedTours,
-  useHomepageMixTours,
   usePakistanNorthernTours,
   useToursByCategory,
 } from '@/queries/tourQueries'
@@ -38,204 +29,50 @@ import {
 const TOUR_FALLBACK_IMG =
   'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
 
-const FEED_SIZE = 12
+// How many cards a home row shows — one desktop row. "See all" carries the rest.
+const ROW_SIZE = 4
 
-type FeedItem = { type: 'hotel'; id: string; pkg: any } | { type: 'tour'; id: string; tour: any }
+type Mode = 'all' | 'hotels' | 'tours' | 'events'
+const MODE_STORAGE_KEY = 'ta_home_mode'
 
-type CategoryKey =
-  | 'featured'
-  | 'top-rated'
-  | 'new'
-  | 'couples'
-  | 'family'
-  | 'weekend'
-  | 'adventure'
-  | 'hiking'
-  | 'northern-pk'
-
-interface CategoryDef {
-  key: CategoryKey
+interface ModeDef {
+  key: Exclude<Mode, 'all'>
   label: string
+  sub: string
   icon: LucideIcon
-  /** Full-page browse link for this category. */
-  viewAllHref: string
 }
 
-// Single source of truth for the home category chips + feed. Order == chip order.
-const CATEGORIES: CategoryDef[] = [
-  { key: 'featured', label: 'Featured', icon: Star, viewAllHref: '/search' },
-  { key: 'top-rated', label: 'Top Rated', icon: TrendingUp, viewAllHref: '/collections/top-rated' },
-  { key: 'new', label: 'New Arrivals', icon: Sparkles, viewAllHref: '/collections/new' },
-  {
-    key: 'couples',
-    label: 'Couples',
-    icon: Heart,
-    viewAllHref: '/explore/hotel-packages/best_for_couples',
-  },
-  {
-    key: 'family',
-    label: 'Family',
-    icon: Users,
-    viewAllHref: '/explore/hotel-packages/family_friendly',
-  },
-  {
-    key: 'weekend',
-    label: 'Weekend',
-    icon: Sun,
-    viewAllHref: '/explore/hotel-packages/weekend_getaways',
-  },
-  {
-    key: 'adventure',
-    label: 'Adventure',
-    icon: Mountain,
-    viewAllHref: '/explore/tours/categories/adventure-trips',
-  },
-  {
-    key: 'hiking',
-    label: 'Hiking',
-    icon: Compass,
-    viewAllHref: '/explore/tours/categories/hiking-trips',
-  },
-  {
-    key: 'northern-pk',
-    label: 'Northern Pakistan',
-    icon: MapPin,
-    viewAllHref: '/explore/tours/collections/pakistan-northern',
-  },
+const MODES: ModeDef[] = [
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: Building2 },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: Compass },
+  { key: 'events', label: 'Events', sub: 'Coming soon', icon: Ticket },
 ]
 
-/**
- * How many category chips are shown at each breakpoint, by index.
- *
- * "Ask TripAvail" plus two categories fit a narrow phone; a wide desktop takes the lot. Anything
- * hidden is still reachable through the filter button beside the row, which is the point — the
- * previous version rendered all nine into a scroll strip with the scrollbar hidden, so on a
- * mouse-driven desktop the tail was invisible AND unreachable.
- *
- * Tailwind needs these as complete literal class strings; it cannot see classes built by
- * concatenation at runtime.
- */
-// Measured, not guessed: at 375px the row has 285px of usable width, and "Ask TripAvail" (133px)
-// plus one chip (~108px) is what actually fits. A second pushed it 120px over.
-const CHIP_VISIBILITY = [
-  'inline-flex', // 0 — always
-  'hidden sm:inline-flex', // 1
-  'hidden sm:inline-flex', // 2
-  'hidden md:inline-flex', // 3
-  'hidden lg:inline-flex', // 4
-  'hidden lg:inline-flex', // 5
-  'hidden xl:inline-flex', // 6
-  'hidden xl:inline-flex', // 7
-  'hidden 2xl:inline-flex', // 8+
-] as const
-
-const toHotel = (pkg: any): FeedItem => ({ type: 'hotel', id: pkg.id, pkg })
-const toTour = (tour: any): FeedItem => ({ type: 'tour', id: tour.id, tour })
-
-const ratingOf = (it: FeedItem) => {
-  const r = it.type === 'hotel' ? it.pkg.rating : it.tour.rating
-  return typeof r === 'number' ? r : null
-}
-const createdOf = (it: FeedItem) => (it.type === 'hotel' ? it.pkg.created_at : it.tour.created_at)
-
-const compareRatingDesc = (a: FeedItem, b: FeedItem) => {
-  const ar = ratingOf(a)
-  const br = ratingOf(b)
-  if (ar == null && br == null) return 0
-  if (ar == null) return 1
-  if (br == null) return -1
-  return br - ar
+// ── Card builders (loosely typed to match the mapped-row shapes) ────────────
+function renderPackageCards(pkgs: any[]): ReactNode[] {
+  return pkgs.map((pkg) => (
+    <PackageCard
+      key={`pkg-${pkg.id}`}
+      id={pkg.id}
+      slug={pkg.slug ?? undefined}
+      images={pkg.images}
+      title={pkg.title}
+      subtitle={pkg.hotelName}
+      location={pkg.location}
+      durationDays={pkg.durationDays}
+      rating={pkg.rating}
+      reviewCount={pkg.reviewCount}
+      priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
+      currency={pkg.currency || 'PKR'}
+      totalOriginal={pkg.totalOriginal}
+      totalDiscounted={pkg.totalDiscounted}
+      badge={pkg.badge}
+    />
+  ))
 }
 
-// Mirrors the old MixedHomepageRow merge: 'new' = freshest across both tables;
-// 'top-rated' = interleave the best of each type, then fill by rating.
-function buildMixed(kind: 'new' | 'top-rated', pkgs: any[], tours: any[]): FeedItem[] {
-  const hotelItems = pkgs.map(toHotel)
-  const tourItems = tours.map(toTour)
-
-  if (kind === 'new') {
-    return [...hotelItems, ...tourItems]
-      .slice()
-      .sort((a, b) => Date.parse(createdOf(b)) - Date.parse(createdOf(a)))
-      .slice(0, FEED_SIZE)
-  }
-
-  const perType = Math.ceil(FEED_SIZE / 2)
-  const sortedHotels = hotelItems.slice().sort(compareRatingDesc)
-  const sortedTours = tourItems.slice().sort(compareRatingDesc)
-  const pickedHotels = sortedHotels.slice(0, perType)
-  const pickedTours = sortedTours.slice(0, perType)
-
-  const out: FeedItem[] = []
-  const maxLen = Math.max(pickedHotels.length, pickedTours.length)
-  for (let i = 0; i < maxLen; i++) {
-    if (pickedHotels[i]) out.push(pickedHotels[i])
-    if (out.length >= FEED_SIZE) break
-    if (pickedTours[i]) out.push(pickedTours[i])
-    if (out.length >= FEED_SIZE) break
-  }
-  if (out.length < FEED_SIZE) {
-    const remaining = [
-      ...sortedHotels.slice(pickedHotels.length),
-      ...sortedTours.slice(pickedTours.length),
-    ]
-      .slice()
-      .sort(compareRatingDesc)
-    out.push(...remaining.slice(0, FEED_SIZE - out.length))
-  }
-  return out.slice(0, FEED_SIZE)
-}
-
-// Featured = flagged-featured trips + stays interleaved, topped up with top-rated picks so the
-// default feed is never sparse when few listings carry the "featured" flag.
-function buildFeatured(fTours: any[], fPkgs: any[], mixPkgs: any[], mixTours: any[]): FeedItem[] {
-  const seen = new Set<string>()
-  const out: FeedItem[] = []
-  const push = (it: FeedItem) => {
-    const k = `${it.type}-${it.id}`
-    if (seen.has(k) || out.length >= FEED_SIZE) return
-    seen.add(k)
-    out.push(it)
-  }
-
-  const ft = fTours.filter((t) => t.images?.[0]).map(toTour)
-  const fp = fPkgs.filter((p) => p.images?.[0]).map(toHotel)
-  const maxLen = Math.max(ft.length, fp.length)
-  for (let i = 0; i < maxLen && out.length < FEED_SIZE; i++) {
-    if (ft[i]) push(ft[i])
-    if (fp[i]) push(fp[i])
-  }
-  if (out.length < FEED_SIZE) {
-    for (const it of buildMixed('top-rated', mixPkgs, mixTours)) push(it)
-  }
-  return out
-}
-
-function renderCard(item: FeedItem) {
-  if (item.type === 'hotel') {
-    const pkg = item.pkg
-    return (
-      <PackageCard
-        key={`hotel-${pkg.id}`}
-        id={pkg.id}
-        slug={pkg.slug ?? undefined}
-        images={pkg.images}
-        title={pkg.title}
-        subtitle={pkg.hotelName}
-        location={pkg.location}
-        durationDays={pkg.durationDays ?? 3}
-        rating={pkg.rating}
-        reviewCount={pkg.reviewCount}
-        priceFrom={typeof pkg.packagePrice === 'number' ? pkg.packagePrice : null}
-        currency={pkg.currency || 'PKR'}
-        totalOriginal={pkg.totalOriginal}
-        totalDiscounted={pkg.totalDiscounted}
-        badge={pkg.badge || 'Hotel Stay'}
-      />
-    )
-  }
-  const tour = item.tour
-  return (
+function renderTourCards(tours: any[]): ReactNode[] {
+  return tours.map((tour) => (
     <TourCard
       key={`tour-${tour.id}`}
       id={tour.id}
@@ -247,283 +84,361 @@ function renderCard(item: FeedItem) {
       rating={tour.rating}
       price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
       currency={tour.currency || 'PKR'}
-      depositRequired={Boolean(tour.deposit_required ?? tour.depositRequired)}
-      depositPercentage={Number(tour.deposit_percentage ?? tour.depositPercentage ?? 0)}
-      type={tour.badge || 'Tour Experience'}
-      isFeatured={Boolean(tour.isFeatured) || tour.badge === 'Featured'}
+      type={tour.badge || 'Tour'}
+      isFeatured={tour.badge === 'Featured'}
     />
+  ))
+}
+
+function renderHotelCards(hotels: HotelBrowseItem[]): ReactNode[] {
+  return hotels.map((h) => <HotelPropertyCard key={`hotel-${h.id}`} hotel={h} />)
+}
+
+function SkeletonCard() {
+  return (
+    <Card className="overflow-hidden rounded-2xl border border-border/60">
+      <div className="aspect-[4/5]">
+        <Skeleton className="h-full w-full" />
+      </div>
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+    </Card>
+  )
+}
+
+/** One home row: heading + See-all + up to ROW_SIZE cards. Hides itself entirely
+ *  once loaded and empty, so a sparse catalogue simply shows fewer sections
+ *  rather than a wall of "nothing here yet" cards. */
+function FeedSection({
+  title,
+  subtitle,
+  viewAllHref,
+  isLoading,
+  cards,
+}: {
+  title: string
+  subtitle?: string
+  viewAllHref: string
+  isLoading: boolean
+  cards: ReactNode[]
+}) {
+  if (!isLoading && cards.length === 0) return null
+
+  return (
+    <section className="mt-12 first:mt-0">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-foreground md:text-2xl">{title}</h2>
+          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+        </div>
+        <Button asChild variant="link" className="shrink-0 px-0">
+          <Link to={viewAllHref}>See all</Link>
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading && cards.length === 0
+          ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
+          : cards.slice(0, ROW_SIZE)}
+      </div>
+    </section>
   )
 }
 
 /**
- * The home discovery body: a single row of category chips (overflow behind a filter sheet) driving
- * ONE vertical feed of full-width cards. Replaces the old stack of horizontal category rows so mobile
- * scrolls straight down, one listing per row. Every category's data is fetched up-front (React Query
- * dedupes the shared keys), so tapping a chip swaps the feed instantly with no refetch flash.
+ * Intent-first home discovery. Big Hotels/Tours/Events mode pills switch the
+ * sections below; the default 'all' state shows a teaser row of each so a
+ * first-time visitor sees the whole platform before choosing. Search and Ask AI
+ * sit beside the pills; search is pre-scoped to the active mode. Every query is
+ * fetched up-front (React Query dedupes shared keys) so switching modes is
+ * instant with no refetch flash. Reuses PackageCard / HotelPropertyCard /
+ * TourCard and the TravelAssistant dialog verbatim.
  */
 export function HomeCategoryFeed() {
-  const [selected, setSelected] = useState<CategoryKey>('featured')
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>('all')
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
-  const mixPkgQ = useHomepageMixPackages(48)
-  const mixTourQ = useHomepageMixTours(48)
+  // Restore the visitor's last-picked mode (Airbnb-style tab memory).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(MODE_STORAGE_KEY)
+      if (saved === 'hotels' || saved === 'tours' || saved === 'events') setMode(saved)
+    } catch {
+      /* private-mode / disabled storage — default 'all' is fine */
+    }
+  }, [])
+
+  const selectMode = (next: Exclude<Mode, 'all'>) => {
+    // Clicking the active pill again returns to the 'all' overview.
+    const resolved: Mode = mode === next ? 'all' : next
+    setMode(resolved)
+    try {
+      if (resolved === 'all') localStorage.removeItem(MODE_STORAGE_KEY)
+      else localStorage.setItem(MODE_STORAGE_KEY, resolved)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // ── Data. All prefetched; sections read from these. ──
+  const offersQ = useSpecialOffers()
+  const hotelsQ = useHotelBrowse()
   const featPkgQ = useFeaturedPackages()
-  const featTourQ = useFeaturedTours()
+  const topRatedQ = useCuratedPackages('top_rated')
   const couplesQ = useCuratedPackages('best_for_couples')
   const familyQ = useCuratedPackages('family_friendly')
   const weekendQ = useCuratedPackages('weekend_getaways')
+  const newQ = useCuratedPackages('new_arrivals')
+  const featTourQ = useFeaturedTours()
   const adventureQ = useToursByCategory('adventure-trips')
   const hikingQ = useToursByCategory('hiking-trips')
   const northernQ = usePakistanNorthernTours()
 
-  const itemsByCategory = useMemo<Record<CategoryKey, FeedItem[]>>(() => {
-    const mixPkgs = mixPkgQ.data ?? []
-    const mixTours = mixTourQ.data ?? []
-    return {
-      featured: buildFeatured(featTourQ.data ?? [], featPkgQ.data ?? [], mixPkgs, mixTours),
-      'top-rated': buildMixed('top-rated', mixPkgs, mixTours),
-      new: buildMixed('new', mixPkgs, mixTours),
-      couples: (couplesQ.data ?? []).map(toHotel),
-      family: (familyQ.data ?? []).map(toHotel),
-      weekend: (weekendQ.data ?? []).map(toHotel),
-      adventure: (adventureQ.data ?? []).slice(0, FEED_SIZE).map(toTour),
-      hiking: (hikingQ.data ?? []).slice(0, FEED_SIZE).map(toTour),
-      'northern-pk': (northernQ.data ?? []).slice(0, FEED_SIZE).map(toTour),
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    mixPkgQ.data,
-    mixTourQ.data,
-    featPkgQ.data,
-    featTourQ.data,
-    couplesQ.data,
-    familyQ.data,
-    weekendQ.data,
-    adventureQ.data,
-    hikingQ.data,
-    northernQ.data,
-  ])
+  const offers = useMemo(() => renderPackageCards(offersQ.data ?? []), [offersQ.data])
+  const hotels = useMemo(() => renderHotelCards(hotelsQ.data ?? []), [hotelsQ.data])
+  const featuredStays = useMemo(
+    () => renderPackageCards(featPkgQ.data ?? []),
+    [featPkgQ.data],
+  )
+  const topRated = useMemo(() => renderPackageCards(topRatedQ.data ?? []), [topRatedQ.data])
+  const couples = useMemo(() => renderPackageCards(couplesQ.data ?? []), [couplesQ.data])
+  const family = useMemo(() => renderPackageCards(familyQ.data ?? []), [familyQ.data])
+  const weekend = useMemo(() => renderPackageCards(weekendQ.data ?? []), [weekendQ.data])
+  const newArrivals = useMemo(() => renderPackageCards(newQ.data ?? []), [newQ.data])
+  const featTours = useMemo(() => renderTourCards(featTourQ.data ?? []), [featTourQ.data])
+  const adventure = useMemo(() => renderTourCards(adventureQ.data ?? []), [adventureQ.data])
+  const hiking = useMemo(() => renderTourCards(hikingQ.data ?? []), [hikingQ.data])
+  const northern = useMemo(() => renderTourCards(northernQ.data ?? []), [northernQ.data])
 
-  const loadingByCategory: Record<CategoryKey, boolean> = {
-    featured: featTourQ.isLoading || featPkgQ.isLoading || mixPkgQ.isLoading || mixTourQ.isLoading,
-    'top-rated': mixPkgQ.isLoading || mixTourQ.isLoading,
-    new: mixPkgQ.isLoading || mixTourQ.isLoading,
-    couples: couplesQ.isLoading,
-    family: familyQ.isLoading,
-    weekend: weekendQ.isLoading,
-    adventure: adventureQ.isLoading,
-    hiking: hikingQ.isLoading,
-    'northern-pk': northernQ.isLoading,
+  // Search from the home page, pre-scoped to the active mode.
+  const handleSearch = (filters: SearchFilters) => {
+    const params = new URLSearchParams()
+    if (filters.query) params.set('q', filters.query)
+    if (filters.location) params.set('location', filters.location)
+    if (mode === 'hotels') params.set('types', 'hotel')
+    else if (mode === 'tours') params.set('types', 'tour')
+    setSearchOpen(false)
+    navigate(`/search?${params.toString()}`)
   }
-  const errorByCategory: Record<CategoryKey, boolean> = {
-    // OR (not AND): with the items-first render below, an error flag only decides between the error
-    // card and the empty card — both shown ONLY when the feed is empty. So if ANY contributing
-    // source failed we surface "couldn't load" instead of a misleading "nothing here yet". When a
-    // source succeeds with data, items-first shows it regardless of a sibling source's error.
-    // Featured also draws on the mix queries (buildFeatured's fallback fill), so it lists all four.
-    featured: featTourQ.isError || featPkgQ.isError || mixPkgQ.isError || mixTourQ.isError,
-    'top-rated': mixPkgQ.isError || mixTourQ.isError,
-    new: mixPkgQ.isError || mixTourQ.isError,
-    couples: couplesQ.isError,
-    family: familyQ.isError,
-    weekend: weekendQ.isError,
-    adventure: adventureQ.isError,
-    hiking: hikingQ.isError,
-    'northern-pk': northernQ.isError,
-  }
-
-  // The active category always leads the row.
-  //
-  // Chips past the breakpoint's limit are display:none, so picking a late one from the All sheet —
-  // "Northern Pakistan", say — used to render it at x=648 in a row ending at x=647: completely
-  // off-screen. The feed was filtered with nothing on screen saying what by. Promoting the
-  // selection to index 0 makes it visible at every width without needing a scroll the desktop
-  // cannot perform.
-  const chipOrder = useMemo(() => {
-    const idx = CATEGORIES.findIndex((c) => c.key === selected)
-    if (idx <= 0) return CATEGORIES
-    return [CATEGORIES[idx], ...CATEGORIES.filter((_, j) => j !== idx)]
-  }, [selected])
-
-  const activeDef = CATEGORIES.find((c) => c.key === selected) ?? CATEGORIES[0]
-  const items = itemsByCategory[selected]
-  const loading = loadingByCategory[selected]
-  const error = errorByCategory[selected]
 
   return (
-    <section aria-labelledby="home-feed-heading">
-      {/* Category chips.
-          Only as many as comfortably fit are shown; the rest live behind the filter button to the
-          right. Previously all nine rendered into an `overflow-x-auto no-scrollbar` strip, which on
-          a desktop with a mouse meant the last few were simply unreachable — hidden scrollbar, no
-          drag affordance, nothing to indicate more existed. Hiding by breakpoint makes the overflow
-          honest: what you cannot see is behind a button that says so. */}
-      <div className="flex items-center gap-2">
-        <div className="-mx-4 flex flex-1 gap-2 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0">
-          {/* Ask TripAvail leads the row and is deliberately styled UNLIKE the category chips: a
-              filled gradient rather than a muted pill. The others filter a feed; this one opens a
-              conversation, so making it look like a ninth category would misrepresent it. It sits
-              first because it is most useful to someone who does not yet know which category they
-              want. */}
-          <button
-            type="button"
-            onClick={() => setAssistantOpen(true)}
-            aria-label="Ask TripAvail"
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-            {/* "Ask TripAvail" is 133px of a 285px row on a 375px phone, which left too little for
-                a long category like "Northern Pakistan" beside it. The brand name is redundant on
-                the brand's own site anyway. */}
-            <span className="sm:hidden">Ask AI</span>
-            <span className="hidden sm:inline">Ask TripAvail</span>
-          </button>
+    <section aria-labelledby="home-explore-heading">
+      <h2 id="home-explore-heading" className="sr-only">
+        Explore TripAvail
+      </h2>
 
-          {chipOrder.map((cat, i) => {
-            const Icon = cat.icon
-            const isSel = cat.key === selected
+      {/* ── Mode pills + Ask AI + Search ─────────────────────────────────── */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap gap-3">
+          {MODES.map((m) => {
+            const Icon = m.icon
+            const active = mode === m.key
             return (
               <button
-                key={cat.key}
+                key={m.key}
                 type="button"
-                onClick={() => setSelected(cat.key)}
-                aria-pressed={isSel}
+                onClick={() => selectMode(m.key)}
+                aria-pressed={active}
                 className={cn(
-                  'shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
-                  // The SELECTED chip is always shown, wherever it sits in the list. Without this,
-                  // choosing "Northern Pakistan" from the sheet on a phone would leave the feed
-                  // filtered with nothing on screen saying why.
-                  isSel ? 'inline-flex' : CHIP_VISIBILITY[Math.min(i, CHIP_VISIBILITY.length - 1)],
-                  isSel
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/70',
+                  'group flex items-center gap-3 rounded-2xl border px-5 py-3 text-left transition-all duration-300',
+                  active
+                    ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25 lg:scale-[1.03]'
+                    : 'border-border bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
                 )}
               >
-                <Icon className="h-3.5 w-3.5" />
-                {cat.label}
+                <span
+                  className={cn(
+                    'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
+                    active
+                      ? 'bg-white/20'
+                      : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold leading-tight">{m.label}</span>
+                  <span
+                    className={cn(
+                      'block text-xs',
+                      active ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                    )}
+                  >
+                    {m.sub}
+                  </span>
+                </span>
               </button>
             )
           })}
         </div>
 
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            {/* Labelled "All", not a bare icon. Now that chips are hidden by breakpoint, this is
-                the ONLY route to the rest — a lone slider glyph reads as "filter these results"
-                rather than "there are more categories here". */}
-            <button
-              type="button"
-              aria-label={`Browse all ${CATEGORIES.length} categories`}
-              className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              All
-              <span className="text-muted-foreground">{CATEGORIES.length}</span>
-            </button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="rounded-t-3xl">
-            <SheetHeader className="text-left">
-              <SheetTitle>Browse by category</SheetTitle>
-            </SheetHeader>
-            <div className="mt-4 grid grid-cols-2 gap-2 pb-2">
-              {CATEGORIES.map((cat) => {
-                const Icon = cat.icon
-                const isSel = cat.key === selected
-                return (
-                  <button
-                    key={cat.key}
-                    type="button"
-                    aria-pressed={isSel}
-                    onClick={() => {
-                      setSelected(cat.key)
-                      setSheetOpen(false)
-                    }}
-                    className={cn(
-                      'flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition-colors',
-                      isSel
-                        ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-border bg-background text-foreground hover:bg-muted',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'grid h-8 w-8 shrink-0 place-items-center rounded-full',
-                        isSel
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground',
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    {cat.label}
-                  </button>
-                )
-              })}
-            </div>
-          </SheetContent>
-        </Sheet>
-
-        {/* Ask TripAvail opens here rather than navigating away — someone browsing the home feed is
-            mid-thought, and sending them to another page to ask a question loses that. The panel
-            mounts only when opened, so nothing is fetched and no model is called until asked. */}
-        <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Ask TripAvail</DialogTitle>
-            </DialogHeader>
-            {assistantOpen && <TravelAssistant className="max-h-[70vh]" />}
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            <Search className="h-4 w-4" />
+            <span>
+              Search{' '}
+              {mode === 'hotels' ? 'hotels' : mode === 'tours' ? 'tours' : 'everything'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAssistantOpen(true)}
+            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
+          >
+            <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
+            Ask AI
+          </button>
+        </div>
       </div>
 
-      {/* Section heading + view-all for the selected category. */}
-      <div className="mt-6 flex items-end justify-between gap-4">
-        <h2 id="home-feed-heading" className="text-2xl font-bold text-foreground md:text-3xl">
-          {activeDef.label}
-        </h2>
-        <Button asChild variant="link" className="px-0">
-          <Link to={activeDef.viewAllHref}>View all</Link>
-        </Button>
-      </div>
+      {/* Ask AI — mounts lazily, so nothing is fetched until opened. */}
+      <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Ask TripAvail</DialogTitle>
+          </DialogHeader>
+          {assistantOpen && <TravelAssistant className="max-h-[70vh]" />}
+        </DialogContent>
+      </Dialog>
 
-      {/* One vertical feed: single column on phones (one listing per row), widening on larger screens. */}
-      <div className="mt-5">
-        {/* Items-first: whenever a category has renderable listings, show them — even if a sibling
-            data source is still loading or errored. Skeleton/error/empty are only for a truly empty
-            feed. This stops the default "Featured" tab from flashing a skeleton (while its fallback
-            mix queries load) or an error card (when the featured queries fail but the mix fallback
-            succeeded) over content it could already render. */}
-        {items.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map(renderCard)}
-          </div>
-        ) : loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[0, 1, 2, 3].map((i) => (
-              <Card key={i} className="overflow-hidden rounded-2xl border border-border/60">
-                <div className="aspect-[4/5]">
-                  <Skeleton className="h-full w-full" />
-                </div>
-                <div className="space-y-3 p-4">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                  <div className="flex items-center justify-between pt-2">
-                    <Skeleton className="h-8 w-24" />
-                    <Skeleton className="h-9 w-24 rounded-md" />
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : error ? (
-          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
-            Unable to load experiences right now. Please try again shortly.
-          </Card>
-        ) : (
-          <Card className="rounded-2xl border border-border/60 p-6">
-            <div className="text-sm text-muted-foreground">
-              Nothing in {activeDef.label} yet — try another category.
+      {/* Search — reuses the same overlay as the header, pre-scoped to the mode. */}
+      <SearchOverlay
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSearch={handleSearch}
+      />
+
+      {/* ── Sections per mode ────────────────────────────────────────────── */}
+      <div className="mt-8">
+        {mode === 'all' && (
+          <>
+            <FeedSection
+              title="Special offers"
+              subtitle="Curated stays with real savings"
+              viewAllHref="/search?types=hotel"
+              isLoading={offersQ.isLoading}
+              cards={offers}
+            />
+            <FeedSection
+              title="Tours & experiences"
+              viewAllHref="/tours"
+              isLoading={featTourQ.isLoading}
+              cards={featTours}
+            />
+            <FeedSection
+              title="Places to stay"
+              viewAllHref="/hotels"
+              isLoading={hotelsQ.isLoading}
+              cards={hotels}
+            />
+          </>
+        )}
+
+        {mode === 'hotels' && (
+          <>
+            <FeedSection
+              title="Special offers"
+              subtitle="Curated stays with real savings"
+              viewAllHref="/search?types=hotel"
+              isLoading={offersQ.isLoading}
+              cards={offers}
+            />
+            <FeedSection
+              title="Places to stay"
+              viewAllHref="/hotels"
+              isLoading={hotelsQ.isLoading}
+              cards={hotels}
+            />
+            <FeedSection
+              title="Top rated"
+              viewAllHref="/collections/top-rated"
+              isLoading={topRatedQ.isLoading}
+              cards={topRated}
+            />
+            <FeedSection
+              title="Featured stays"
+              viewAllHref="/hotels"
+              isLoading={featPkgQ.isLoading}
+              cards={featuredStays}
+            />
+            <FeedSection
+              title="Weekend getaways"
+              viewAllHref="/explore/hotel-packages/weekend_getaways"
+              isLoading={weekendQ.isLoading}
+              cards={weekend}
+            />
+            <FeedSection
+              title="Family friendly"
+              viewAllHref="/explore/hotel-packages/family_friendly"
+              isLoading={familyQ.isLoading}
+              cards={family}
+            />
+            <FeedSection
+              title="For couples"
+              viewAllHref="/explore/hotel-packages/best_for_couples"
+              isLoading={couplesQ.isLoading}
+              cards={couples}
+            />
+            <FeedSection
+              title="New arrivals"
+              viewAllHref="/collections/new"
+              isLoading={newQ.isLoading}
+              cards={newArrivals}
+            />
+          </>
+        )}
+
+        {mode === 'tours' && (
+          <>
+            <FeedSection
+              title="Featured tours"
+              viewAllHref="/tours"
+              isLoading={featTourQ.isLoading}
+              cards={featTours}
+            />
+            <FeedSection
+              title="Adventure"
+              viewAllHref="/explore/tours/categories/adventure-trips"
+              isLoading={adventureQ.isLoading}
+              cards={adventure}
+            />
+            <FeedSection
+              title="Hiking & nature"
+              viewAllHref="/explore/tours/categories/hiking-trips"
+              isLoading={hikingQ.isLoading}
+              cards={hiking}
+            />
+            <FeedSection
+              title="Northern Pakistan"
+              viewAllHref="/explore/tours/collections/pakistan-northern"
+              isLoading={northernQ.isLoading}
+              cards={northern}
+            />
+          </>
+        )}
+
+        {mode === 'events' && (
+          <Card className="mt-2 rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 py-16 text-center">
+            <Ticket className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+            <p className="text-lg font-semibold text-foreground">Events are coming</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+              Concerts, festivals, and local experiences with verified tickets — launching soon.
+              In the meantime, explore hotels and tours.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <Button asChild className="rounded-full">
+                <Link to="/hotels">Browse hotels</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/tours">Browse tours</Link>
+              </Button>
             </div>
           </Card>
         )}

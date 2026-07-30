@@ -293,7 +293,12 @@ async function fetchToursByCategory(
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
-    .eq('tour_type', tourType)
+    // ilike, not eq: the create-tour wizard saves Title-Case tour_type
+    // ('Adventure', 'Nature') while older seed data is lowercase ('adventure').
+    // Case-insensitive match (no wildcards = exact-but-case-insensitive) makes
+    // the category rails populate for BOTH, instead of silently returning zero
+    // rows for every wizard-created tour.
+    .ilike('tour_type', tourType)
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(take)

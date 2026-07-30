@@ -40,6 +40,7 @@ export const packageKeys = {
   homepageMerge: (take: number) => [...packageKeys.all, 'homepage_merge', take] as const,
   homepageMix: (take: number) => [...packageKeys.all, 'homepage_mix', take] as const,
   hotelStays: (hotelId: string) => [...packageKeys.all, 'hotel_stays', hotelId] as const,
+  specialOffers: () => [...packageKeys.all, 'special_offers'] as const,
 }
 
 export type CuratedPackageKind =
@@ -522,6 +523,74 @@ export function useFeaturedPackages(
     gcTime: 15 * 60 * 1000, // Keep in cache for 15 minutes
     refetchOnMount: true, // Always refetch on component mount for fresh data
     refetchOnWindowFocus: false, // Don't refetch on tab focus (reduce API calls)
+    ...options,
+  })
+}
+
+/**
+ * "Special offers" for the home page — curated stays that actually carry a
+ * saving. Excludes 'Room Only' (a bare rate has no deal to show) and keeps only
+ * rows where computePriceTotals finds a real discount, so the section never
+ * shows a package whose "Save X%" ribbon wouldn't render.
+ */
+async function fetchSpecialOffers(take = 12): Promise<MappedPackage[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      slug,
+      name,
+      currency,
+      cover_image,
+      media_urls,
+      rooms_config,
+      package_type,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      hotels (
+        name,
+        city,
+        country,
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .neq('package_type', 'Room Only')
+    .order('created_at', { ascending: false })
+    .limit(48)
+
+  if (error) {
+    if (isAbortError(error)) return []
+    console.error('[packageQueries] Error fetching special offers:', error)
+    throw error
+  }
+
+  return ((data || []) as any[])
+    .map((pkg) => mapPackageRowToMappedPackage(pkg, prettyPackageBadge(pkg.package_type)))
+    .filter(
+      (m) =>
+        typeof m.totalOriginal === 'number' &&
+        typeof m.totalDiscounted === 'number' &&
+        m.totalOriginal > m.totalDiscounted,
+    )
+    .slice(0, take)
+}
+
+/** Hook: discounted curated stays for the home page "Special offers" row. */
+export function useSpecialOffers(
+  options?: Omit<UseQueryOptions<MappedPackage[], Error>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: packageKeys.specialOffers(),
+    queryFn: () => fetchSpecialOffers(12),
+    staleTime: 6 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...options,
   })
 }
