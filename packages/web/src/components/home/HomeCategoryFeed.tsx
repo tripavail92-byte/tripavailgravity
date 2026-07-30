@@ -1,4 +1,12 @@
-import { Building2, Compass, type LucideIcon, Search, Sparkles, Ticket } from 'lucide-react'
+import {
+  Building2,
+  Compass,
+  type LucideIcon,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Ticket,
+} from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -230,72 +238,78 @@ export function HomeCategoryFeed() {
         Explore TripAvail
       </h2>
 
-      {/* ── Mode pills + Ask AI + Search ─────────────────────────────────── */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-3">
-          {MODES.map((m) => {
-            const Icon = m.icon
-            const active = mode === m.key
-            return (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => selectMode(m.key)}
-                aria-pressed={active}
+      {/* ── Row 1: search bar + filter + Ask AI ──────────────────────────────
+          THE search for the home page — the global header hides its own search
+          here so there's only one. Pre-scoped to the active mode. */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex flex-1 items-center gap-3 rounded-full border border-border bg-background px-5 py-3.5 text-left shadow-sm transition-colors hover:bg-muted"
+        >
+          <Search className="h-5 w-5 shrink-0 text-primary" />
+          <span className="truncate text-sm font-semibold text-muted-foreground">
+            Search {mode === 'hotels' ? 'hotels' : mode === 'tours' ? 'tours' : 'stays, tours & more'}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Filters"
+          className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted"
+        >
+          <SlidersHorizontal className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setAssistantOpen(true)}
+          className="group inline-flex h-[52px] shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-5 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
+        >
+          <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
+          <span className="hidden sm:inline">Ask AI</span>
+        </button>
+      </div>
+
+      {/* ── Row 2: big premium mode pills ────────────────────────────────── */}
+      <div className="mt-4 flex flex-wrap gap-3">
+        {MODES.map((m) => {
+          const Icon = m.icon
+          const active = mode === m.key
+          return (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => selectMode(m.key)}
+              aria-pressed={active}
+              className={cn(
+                'group flex items-center gap-3 rounded-2xl border px-5 py-3 text-left transition-all duration-300',
+                active
+                  ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25 lg:scale-[1.03]'
+                  : 'border-border bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
+              )}
+            >
+              <span
                 className={cn(
-                  'group flex items-center gap-3 rounded-2xl border px-5 py-3 text-left transition-all duration-300',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/25 lg:scale-[1.03]'
-                    : 'border-border bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
+                  'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
+                  active ? 'bg-white/20' : 'bg-primary/10 text-primary group-hover:bg-primary/15',
                 )}
               >
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold leading-tight">{m.label}</span>
                 <span
                   className={cn(
-                    'grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors',
-                    active
-                      ? 'bg-white/20'
-                      : 'bg-primary/10 text-primary group-hover:bg-primary/15',
+                    'block text-xs',
+                    active ? 'text-primary-foreground/80' : 'text-muted-foreground',
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  {m.sub}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold leading-tight">{m.label}</span>
-                  <span
-                    className={cn(
-                      'block text-xs',
-                      active ? 'text-primary-foreground/80' : 'text-muted-foreground',
-                    )}
-                  >
-                    {m.sub}
-                  </span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-          >
-            <Search className="h-4 w-4" />
-            <span>
-              Search{' '}
-              {mode === 'hotels' ? 'hotels' : mode === 'tours' ? 'tours' : 'everything'}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setAssistantOpen(true)}
-            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
-          >
-            <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
-            Ask AI
-          </button>
-        </div>
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Ask AI — mounts lazily, so nothing is fetched until opened. */}

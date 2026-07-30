@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
 import { Logo } from '@/components/brand/Logo'
 import { CurrencySwitcher } from '@/components/CurrencySwitcher'
@@ -40,6 +40,10 @@ const PRIMARY_NAV = [
 export function SiteHeader() {
   const navigate = useNavigate()
   const t = useT()
+  // The home page ('/') hosts its own search + Ask AI row below the hero, so the
+  // header's search is hidden there to avoid two search bars. Every other route
+  // keeps it as its only search entry.
+  const isHome = useLocation().pathname === '/'
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
   const { user, activeRole } = useAuth()
   const isAuthenticated = Boolean(user && activeRole)
@@ -90,7 +94,11 @@ export function SiteHeader() {
 
           {/* Search — the CENTRE column at every width: logo (left) · search (centre) · menu
               (right). Desktop shows the full glass search; phones get a compact pill in the same
-              slot (both live here so the search stays centred instead of a separate mobile row). */}
+              slot. HIDDEN on the home page, which hosts its own search below the hero; an empty
+              spacer preserves the 3-column grid there. */}
+          {isHome ? (
+            <div aria-hidden />
+          ) : (
           <div className="flex min-w-0 justify-center px-1 md:px-0">
             <GlassCard
               variant="light"
@@ -140,6 +148,7 @@ export function SiteHeader() {
               </span>
             </button>
           </div>
+          )}
 
           {/* Right User Menu (drawer + toggles) */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
