@@ -72,24 +72,29 @@ export function SiteHeader() {
               collapses to the bottom tab bar there. */}
           <div className="flex items-center gap-4 shrink-0">
             <Logo />
-            <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
-              {PRIMARY_NAV.map((l) => (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'px-3 py-2 rounded-full text-sm font-semibold transition-colors',
-                      isActive
-                        ? 'text-primary bg-primary/10'
-                        : 'text-foreground hover:bg-muted',
-                    )
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              ))}
-            </nav>
+            {/* Primary nav links — hidden on the home page, where the big
+                Hotels/Tours/Events mode pills below the hero are the switcher.
+                Kept on every other route as the persistent top nav. */}
+            {!isHome && (
+              <nav className="hidden lg:flex items-center gap-1" aria-label="Primary">
+                {PRIMARY_NAV.map((l) => (
+                  <NavLink
+                    key={l.to}
+                    to={l.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'px-3 py-2 rounded-full text-sm font-semibold transition-colors',
+                        isActive
+                          ? 'text-primary bg-primary/10'
+                          : 'text-foreground hover:bg-muted',
+                      )
+                    }
+                  >
+                    {l.label}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
           </div>
 
           {/* Search — the CENTRE column at every width: logo (left) · search (centre) · menu
