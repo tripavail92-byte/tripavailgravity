@@ -111,7 +111,7 @@ export const searchKeys = {
 }
 
 /** Paginated unified search across tours + packages (FTS + geo ranked). */
-export function useUnifiedSearch(p: UnifiedSearchParams) {
+export function useUnifiedSearch(p: UnifiedSearchParams, options?: { enabled?: boolean }) {
   const types = p.types && p.types.length ? p.types : (['tour', 'package'] as SearchListingType[])
   const sort = defaultSort(p)
 
@@ -137,6 +137,7 @@ export function useUnifiedSearch(p: UnifiedSearchParams) {
     },
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 }
 

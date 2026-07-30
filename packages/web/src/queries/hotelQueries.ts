@@ -1,7 +1,8 @@
-import { useQuery, type UseQueryOptions } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, type UseQueryOptions } from '@tanstack/react-query'
 
 import { supabase } from '@/lib/supabase'
 import { isAbortError } from '@/lib/withTimeout'
+import type { SearchSort, UnifiedSearchParams } from '@/queries/searchQueries'
 
 /**
  * A hotel as a browsable PROPERTY — one card per hotel, priced by its cheapest
@@ -19,11 +20,14 @@ export interface HotelBrowseItem {
   priceFrom: number | null
   currency: string
   stayCount: number
+  // Set by search results when a geo origin is available; null for /hotels browse.
+  distanceKm?: number | null
 }
 
 export const hotelKeys = {
   all: ['hotels'] as const,
   browse: () => [...hotelKeys.all, 'browse'] as const,
+  search: (p: UnifiedSearchParams) => [...hotelKeys.all, 'search', p] as const,
 }
 
 function mapHotelRow(h: any): HotelBrowseItem | null {
@@ -128,5 +132,93 @@ export function useHotelBrowse(
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
     ...options,
+  })
+}
+
+/**
+ * Paginated property-centric search (Phase 3C). Uses the SECURITY DEFINER
+ * `search_hotels_unified` RPC, which returns ONE row per hotel with its
+ * cheapest matching stay's price + a `stay_count`. Same shape as
+ * `useHotelBrowse` output (`HotelBrowseItem`), plus `distanceKm` when the
+ * caller passes a lat/lng — so `HotelPropertyCard` renders both without
+ * caring where the row came from.
+ */
+
+const PAGE_SIZE = 24
+
+const rpc = (name: string, args: Record<string, unknown>) =>
+  (
+    supabase.rpc as unknown as (
+      n: string,
+      a: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: unknown }>
+  )(name, args)
+
+const cleanStr = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null)
+
+function defaultSort(p: UnifiedSearchParams): SearchSort {
+  if (p.sort) return p.sort
+  if (cleanStr(p.query)) return 'relevance'
+  if (p.lat != null && p.lng != null) return 'nearest'
+  return 'newest'
+}
+
+function mapSearchRow(r: any): HotelBrowseItem & { totalCount: number } {
+  const images = Array.isArray(r.images)
+    ? r.images.filter((x: unknown): x is string => typeof x === 'string')
+    : []
+  const location =
+    typeof r.location_label === 'string' && r.location_label
+      ? r.location_label
+      : typeof r.country === 'string' && r.country
+        ? r.country
+        : ''
+  return {
+    id: r.hotel_id,
+    name: r.name ?? 'Property',
+    location,
+    starRating: r.star_rating != null ? Number(r.star_rating) : null,
+    rating: r.rating != null && Number(r.rating) > 0 ? Number(r.rating) : null,
+    reviewCount: r.review_count != null ? Number(r.review_count) : null,
+    images,
+    priceFrom: r.from_price != null ? Number(r.from_price) : null,
+    currency: r.from_currency || 'PKR',
+    stayCount: r.stay_count != null ? Number(r.stay_count) : 0,
+    distanceKm: r.distance_km != null ? Number(r.distance_km) : null,
+    totalCount: Number(r.total_count) || 0,
+  }
+}
+
+export function useHotelSearch(p: UnifiedSearchParams, options?: { enabled?: boolean }) {
+  const sort = defaultSort(p)
+  return useInfiniteQuery({
+    queryKey: hotelKeys.search({ ...p, sort }),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const { data, error } = await rpc('search_hotels_unified', {
+        p_query: cleanStr(p.query),
+        p_lat: p.lat ?? null,
+        p_lng: p.lng ?? null,
+        p_radius_km: p.radiusKm ?? null,
+        p_min_price: p.minPrice ?? null,
+        p_max_price: p.maxPrice ?? null,
+        p_min_rating: p.minRating ?? null,
+        p_country: cleanStr(p.country),
+        p_sort: sort,
+        p_limit: PAGE_SIZE,
+        p_offset: pageParam as number,
+      })
+      if (error) throw error as Error
+      const rows = (Array.isArray(data) ? data : []).map(mapSearchRow)
+      const total = rows[0]?.totalCount ?? 0
+      return { rows, total, offset: pageParam as number }
+    },
+    getNextPageParam: (last) => {
+      const loaded = last.offset + last.rows.length
+      return loaded < last.total ? loaded : undefined
+    },
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 }

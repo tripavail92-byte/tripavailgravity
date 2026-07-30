@@ -2,6 +2,7 @@ import { Search, SlidersHorizontal, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { HotelResultsGrid } from '@/components/search/HotelResultsGrid'
 import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
 import { type SearchFilters, TripAvailSearchBar } from '@/components/search/TripAvailSearchBar'
@@ -14,13 +15,20 @@ import { TravelAssistant } from '@/features/assistant/components/TravelAssistant
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
+import { useHotelSearch } from '@/queries/hotelQueries'
 import {
-  type SearchListingType,
   type SearchSort,
   useSearchFacets,
   useUnifiedSearch,
 } from '@/queries/searchQueries'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
+
+// Post-Phase-3C the traveller only ever picks Hotels or Tours in the toggle;
+// Stays as a category is gone (a "stay" belongs to a hotel, so it surfaces
+// under one). 'package' in the URL is silently mapped to 'hotel' for any
+// still-live campaign link that hasn't been rewritten.
+type SearchType = 'hotel' | 'tour'
+type ActiveType = 'all' | SearchType
 
 const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
   { value: '', labelKey: 'search.sortRecommended' },
@@ -48,14 +56,14 @@ export default function SearchPage() {
     .filter(Boolean)
     .join(' ')
 
-  const typesParam = useMemo(
-    () =>
-      (searchParams.get('types') || '')
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s): s is SearchListingType => s === 'tour' || s === 'package'),
-    [searchParams],
-  )
+  // Accepts 'hotel' or 'tour'; the old 'package' value is treated as 'hotel' for
+  // backwards compatibility with any bookmarked/campaign URLs.
+  const activeType: ActiveType = useMemo(() => {
+    const raw = (searchParams.get('types') || '').trim().toLowerCase()
+    if (raw === 'tour') return 'tour'
+    if (raw === 'hotel' || raw === 'package') return 'hotel'
+    return 'all'
+  }, [searchParams])
 
   // Seed the shared geo origin from a searched place (non-destructive: only sets coords
   // when the term matches a known city, so "nearest" sort uses the searched destination).
@@ -96,23 +104,45 @@ export default function SearchPage() {
   const searchInput = useMemo(
     () => ({
       ...baseFilters,
-      types: typesParam,
       sort: (sort || undefined) as SearchSort | undefined,
     }),
-    [baseFilters, typesParam, sort],
+    [baseFilters, sort],
   )
 
-  const { data, isLoading, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useUnifiedSearch(searchInput)
+  // Two independent paginated queries — one per surface. `enabled` skips the RPC
+  // call entirely when the traveller is on the other tab, so switching to Hotels
+  // never spends a network round-trip fetching tours the UI won't render.
+  const wantsHotels = activeType === 'all' || activeType === 'hotel'
+  const wantsTours = activeType === 'all' || activeType === 'tour'
+
+  const hotelQuery = useHotelSearch(searchInput, { enabled: wantsHotels })
+  const tourQuery = useUnifiedSearch(
+    { ...searchInput, types: ['tour'] },
+    { enabled: wantsTours },
+  )
+
+  // Facets stay driven by the existing tour+package aggregate — used only for
+  // the sidebar's price/country/rating chips, not the toggle counts.
   const { data: facets } = useSearchFacets(baseFilters)
 
-  const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p.rows), [data])
-  // Header count comes from facets (a single consistent snapshot); pagination is driven
-  // by the per-page window total below.
-  const total = facets?.total ?? data?.pages?.[0]?.total ?? 0
+  const hotelItems = useMemo(
+    () => (hotelQuery.data?.pages ?? []).flatMap((p) => p.rows),
+    [hotelQuery.data],
+  )
+  const tourItems = useMemo(
+    () => (tourQuery.data?.pages ?? []).flatMap((p) => p.rows),
+    [tourQuery.data],
+  )
 
-  const tourCount = facets?.types?.tour ?? 0
-  const packageCount = facets?.types?.package ?? 0
+  const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
+  const tourTotal = tourQuery.data?.pages?.[0]?.total ?? 0
+  const total =
+    activeType === 'hotel' ? hotelTotal : activeType === 'tour' ? tourTotal : hotelTotal + tourTotal
+
+  const isLoading =
+    (wantsHotels && hotelQuery.isLoading) || (wantsTours && tourQuery.isLoading)
+  const isError = hotelQuery.isError || tourQuery.isError
+
   const showDistance = (sort || (effectiveQuery ? '' : coords ? 'nearest' : '')) === 'nearest'
 
   // ---- URL helpers ----------------------------------------------------------
@@ -122,8 +152,6 @@ export default function SearchPage() {
     else next.set(key, value)
     setSearchParams(next)
   }
-
-  const activeType: 'all' | SearchListingType = typesParam.length === 1 ? typesParam[0] : 'all'
 
   const activeFilterCount =
     (minPrice != null ? 1 : 0) +
@@ -325,21 +353,13 @@ export default function SearchPage() {
             </p>
           </div>
 
-          {/* Type toggle with facet counts */}
+          {/* Type toggle — Hotels · Tours. Counts come from each query's own
+              first-page total, no second facet call needed. */}
           <div className="inline-flex rounded-full border border-border bg-background p-1 self-start">
             {[
-              {
-                key: 'all' as const,
-                label: `${t('search.all')} ${facets ? `(${tourCount + packageCount})` : ''}`,
-              },
-              {
-                key: 'tour' as const,
-                label: `${t('search.tours')} ${facets ? `(${tourCount})` : ''}`,
-              },
-              {
-                key: 'package' as const,
-                label: `${t('search.stays')} ${facets ? `(${packageCount})` : ''}`,
-              },
+              { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal})` },
+              { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
+              { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -356,13 +376,60 @@ export default function SearchPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex-1 flex flex-col">
+        <div className="mt-6 flex-1 flex flex-col space-y-10">
           {isError ? (
             <div className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
               {t('search.error')}
             </div>
+          ) : activeType === 'hotel' ? (
+            <HotelResultsGrid
+              hotels={hotelItems}
+              isLoading={hotelQuery.isLoading}
+              showDistance={showDistance}
+            />
+          ) : activeType === 'tour' ? (
+            <SearchResultsGrid
+              items={tourItems}
+              isLoading={tourQuery.isLoading}
+              showDistance={showDistance}
+            />
           ) : (
-            <SearchResultsGrid items={items} isLoading={isLoading} showDistance={showDistance} />
+            // 'all' — Hotels first, then Tours, each with its own count header
+            // so travellers can tell at a glance which surface they're looking at.
+            <>
+              {(hotelItems.length > 0 || hotelQuery.isLoading) && (
+                <section>
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">
+                    Hotels {hotelTotal > 0 ? `(${hotelTotal})` : ''}
+                  </h2>
+                  <HotelResultsGrid
+                    hotels={hotelItems}
+                    isLoading={hotelQuery.isLoading}
+                    showDistance={showDistance}
+                  />
+                </section>
+              )}
+              {(tourItems.length > 0 || tourQuery.isLoading) && (
+                <section>
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">
+                    {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
+                  </h2>
+                  <SearchResultsGrid
+                    items={tourItems}
+                    isLoading={tourQuery.isLoading}
+                    showDistance={showDistance}
+                  />
+                </section>
+              )}
+              {!hotelQuery.isLoading &&
+                !tourQuery.isLoading &&
+                hotelItems.length === 0 &&
+                tourItems.length === 0 && (
+                  // SearchResultsGrid renders its own empty state when items=[] and
+                  // isLoading=false, so this mirrors that behaviour for the 'all' branch.
+                  <SearchResultsGrid items={[]} isLoading={false} />
+                )}
+            </>
           )}
         </div>
 
@@ -377,16 +444,36 @@ export default function SearchPage() {
           </div>
         )}
 
-        {hasNextPage && !isLoading && (
+        {/* Load More — one button per surface, only shown when that surface
+            has more pages AND is either the active tab or 'all'. Keeps
+            pagination honest across the two independent infinite queries. */}
+        {wantsHotels && hotelQuery.hasNextPage && !hotelQuery.isLoading && (
           <div className="mt-10 flex justify-center">
             <Button
               variant="outline"
               size="lg"
               className="rounded-full px-8"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
+              onClick={() => hotelQuery.fetchNextPage()}
+              disabled={hotelQuery.isFetchingNextPage}
             >
-              {isFetchingNextPage ? t('search.loading') : t('search.loadMore')}
+              {hotelQuery.isFetchingNextPage
+                ? t('search.loading')
+                : `${t('search.loadMore')} · Hotels`}
+            </Button>
+          </div>
+        )}
+        {wantsTours && tourQuery.hasNextPage && !tourQuery.isLoading && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full px-8"
+              onClick={() => tourQuery.fetchNextPage()}
+              disabled={tourQuery.isFetchingNextPage}
+            >
+              {tourQuery.isFetchingNextPage
+                ? t('search.loading')
+                : `${t('search.loadMore')} · ${t('search.tours')}`}
             </Button>
           </div>
         )}
