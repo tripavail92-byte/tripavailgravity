@@ -382,8 +382,71 @@ function Shell({ uid, width, height, className, label, children }: ShellProps) {
 }
 
 /* ================================================================== *
- * 1. LODGE — Hotels
+ * 1. HOTEL — a proper premium property, no mountains
  * ================================================================== */
+
+/**
+ * Backdrop for the hotel: sky, orb, clouds and a plaza — deliberately NO
+ * mountain range. The peaks belong to the Tours badge, where the road runs
+ * through them; behind a city hotel they made it read as a ski chalet.
+ * A soft haze band sits on the horizon so the sky does not meet the plaza
+ * as a hard line.
+ */
+function PlazaBackdrop({ uid, reduce, fast }: BackdropProps) {
+  return (
+    <g>
+      <rect x="0" y="0" width="120" height="96" fill={`url(#${uid}-sky)`} />
+
+      <motion.circle
+        cx="99"
+        cy="18"
+        r={16}
+        fill={`url(#${uid}-halo)`}
+        opacity={fast ? 0.85 : 0.7}
+        animate={
+          reduce
+            ? undefined
+            : { r: [16, 20, 16], opacity: fast ? [0.7, 1, 0.7] : [0.55, 0.85, 0.55] }
+        }
+        transition={reduce ? undefined : inf(fast ? 2.6 : 4.6)}
+      />
+      <polygon
+        points="106.4,20.8 102.2,25 96.2,25 92,20.8 92,14.8 96.2,10.6 102.2,10.6 106.4,14.8"
+        fill="var(--ic-orb)"
+      />
+
+      <CloudRow y={11} x0={0} s={1} op={0.4} dur={fast ? 22 : 36} reduce={reduce} />
+      <CloudRow y={30} x0={40} s={0.75} op={0.26} dur={fast ? 34 : 56} reduce={reduce} />
+
+      {/* horizon haze — softens sky into ground without adding a skyline */}
+      <rect x="0" y="62" width="120" height="10" fill="var(--ic-snow)" opacity={0.14} />
+
+      {/* plaza: three wide facets, the middle one lit as the approach */}
+      <polygon points="-4,70 44,68 30,100 -4,100" fill="var(--ic-ground-s)" />
+      <polygon points="44,68 84,68 92,100 30,100" fill="var(--ic-ground)" />
+      <polygon points="84,68 124,70 124,100 92,100" fill="var(--ic-ground-s)" />
+    </g>
+  )
+}
+
+/** Slim resort palm — a premium cue that reads at 120x96 without fine fronds. */
+function Palm({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      {/* trunk 4 x 22 */}
+      <rect x={-2} y={-22} width={4} height={22} fill="var(--ic-road-s)" />
+      {/* crown: five fat fronds, each ~11 x 7 — no hairlines */}
+      <polygon points="0,-22 -13,-27 -2,-25" fill="var(--ic-tree)" />
+      <polygon points="0,-22 -9,-33 -1,-26" fill="var(--ic-tree)" />
+      <polygon points="0,-22 2,-35 4,-26" fill="var(--ic-tree)" />
+      <polygon points="0,-22 12,-32 3,-25" fill="var(--ic-tree)" />
+      <polygon points="0,-22 14,-24 3,-22" fill="var(--ic-tree)" />
+      {/* lit right-hand fronds */}
+      <polygon points="0,-22 12,-32 3,-25" fill="var(--ic-snow)" opacity={0.16} />
+      <polygon points="0,-22 14,-24 3,-22" fill="var(--ic-snow)" opacity={0.16} />
+    </g>
+  )
+}
 
 export function LodgeSceneIcon({
   width = 120,
@@ -395,89 +458,82 @@ export function LodgeSceneIcon({
   const reduce = useReducedMotion() ?? false
   const fast = isActive && !reduce
 
-  const winDur = fast ? 1.8 : 3.4
-  const smokeDur = fast ? 3.2 : 5
+  const winDur = fast ? 2 : 3.6
+
+  /* Window grid: 3 columns x 4 rows of 9 x 8 panes, 4.5u apart — every pane is
+     comfortably over the 4px floor, and the gaps survive rasterisation too. */
+  const cols = [-18, -4.5, 9]
+  const rows = [-54, -43, -32, -21]
 
   return (
-    <Shell uid={uid} width={width} height={height} className={className} label="Alpine lodge">
-      <Backdrop uid={uid} reduce={reduce} fast={fast} />
+    <Shell uid={uid} width={width} height={height} className={className} label="Premium hotel">
+      <PlazaBackdrop uid={uid} reduce={reduce} fast={fast} />
 
-      <Tree x={12} y={84} s={1.2} />
-      <Tree x={92} y={72} s={1} />
-      <Tree x={105} y={88} s={1.35} />
+      {/* ---- the hotel: origin at the front-wall base centre ---- */}
+      <g transform="translate(58 82)">
+        <ellipse cx={-3} cy={1.5} rx={34} ry={5} fill="var(--ic-ink)" opacity={0.2} />
 
-      {/* ---- lodge: origin at the front-wall base centre ---- */}
-      <g transform="translate(58 84)">
-        <ellipse cx={-2} cy={1.5} rx={29} ry={4.5} fill="var(--ic-ink)" opacity={0.2} />
-
-        {/* warm pool of light spilling from the doorway (28 x 8) */}
+        {/* warm light spilling across the approach */}
         <motion.ellipse
-          cx={2}
+          cx={0}
           cy={2}
-          rx={14}
-          ry={4}
+          rx={20}
+          ry={5}
           fill="var(--ic-warm-glow)"
           opacity={0.3}
-          animate={reduce ? undefined : { opacity: fast ? [0.3, 0.55, 0.3] : [0.22, 0.4, 0.22] }}
+          animate={reduce ? undefined : { opacity: fast ? [0.32, 0.58, 0.32] : [0.24, 0.42, 0.24] }}
           transition={reduce ? undefined : inf(winDur)}
         />
 
-        {/* chimney 8 x 14, drawn before the roof so the roof cuts its base */}
-        <rect x={8} y={-46} width={8} height={14} fill="var(--ic-road-s)" />
-        <rect x={12} y={-46} width={4} height={14} fill="var(--ic-road)" />
+        {/* LOW WING on the right — gives the property mass and a real skyline */}
+        <polygon points="22,0 22,-26 32,-32 32,-6" fill="var(--ic-road)" />
+        <rect x={22} y={-26} width={16} height={26} fill="var(--ic-road-s)" />
+        <polygon points="22,-26 38,-26 48,-32 32,-32" fill="var(--ic-snow)" opacity={0.2} />
 
-        {/* left side face — the receding, shaded plane. Extrusion (-10,-6). */}
-        <polygon points="-14,0 -24,-6 -24,-32 -14,-26" fill="var(--ic-road-s)" />
-        {/* front face 32 x 26 */}
-        <rect x={-14} y={-26} width={32} height={26} fill="var(--ic-road)" />
-        {/* lit right edge of the facade, 8 wide */}
-        <rect x={10} y={-26} width={8} height={26} fill="var(--ic-snow)" opacity={0.14} />
+        {/* TOWER — receding side plane on the family (-10,-6) extrusion */}
+        <polygon points="-22,0 -32,-6 -32,-64 -22,-58" fill="var(--ic-road-s)" />
+        {/* front facade 44 x 58 */}
+        <rect x={-22} y={-58} width={44} height={58} fill="var(--ic-road)" />
+        {/* roof top plane */}
+        <polygon points="-22,-58 22,-58 12,-64 -32,-64" fill="var(--ic-snow)" opacity={0.22} />
+        {/* lit right edge of the facade */}
+        <rect x={14} y={-58} width={8} height={58} fill="var(--ic-snow)" opacity={0.13} />
 
-        {/* roof: receding plane, then two front facets, then a lit eave facet */}
-        <polygon points="-18,-26 -28,-32 -8,-48 2,-42" fill={ROSE_DEEP} />
-        <polygon points="-18,-26 -28,-32 -8,-48 2,-42" fill="var(--ic-ink)" opacity={0.2} />
-        <polygon points="-18,-26 2,-42 2,-26" fill={ROSE_DEEP} />
-        <polygon points="2,-42 22,-26 2,-26" fill={ROSE} />
-        <polygon points="2,-42 22,-26 14,-26" fill={ROSE_LIGHT} />
-        {/* eave band 42 x 4 */}
-        <rect x={-19} y={-26} width={42} height={4} fill={ROSE_DEEP} />
+        {/* rose crown band + mast — the premium signature at the top */}
+        <rect x={-24} y={-64} width={48} height={6} fill={ROSE} />
+        <polygon points="-24,-64 24,-64 14,-70 -34,-70" fill={ROSE_DEEP} />
+        <rect x={-2} y={-80} width={3} height={11} fill="var(--ic-road-s)" />
 
-        {/* windows 9 x 9, glowing */}
+        {/* lit window grid */}
         <motion.g
-          animate={reduce ? undefined : { opacity: fast ? [0.82, 1, 0.82] : [0.7, 0.96, 0.7] }}
+          animate={reduce ? undefined : { opacity: fast ? [0.84, 1, 0.84] : [0.72, 0.97, 0.72] }}
           transition={reduce ? undefined : inf(winDur)}
         >
-          <rect x={-11} y={-20} width={9} height={9} fill="var(--ic-warm)" />
-          <rect x={4} y={-20} width={9} height={9} fill="var(--ic-warm)" />
+          {rows.map((ry) =>
+            cols.map((cx) => (
+              <g key={`${cx}-${ry}`}>
+                <rect x={cx} y={ry} width={9} height={8} fill="var(--ic-warm)" />
+                {/* shaded reveal on the left of each pane — reads as depth */}
+                <rect x={cx} y={ry} width={3} height={8} fill="var(--ic-ink)" opacity={0.18} />
+              </g>
+            )),
+          )}
         </motion.g>
 
-        {/* doorway 9 x 10, with a 4-wide shaded jamb */}
-        <rect x={-3} y={-10} width={9} height={10} fill="var(--ic-warm-glow)" opacity={0.92} />
-        <rect x={-3} y={-10} width={4} height={10} fill="var(--ic-ink)" opacity={0.16} />
+        {/* PORTE-COCHERE — the entrance canopy. Deck + two columns. */}
+        <polygon points="-26,-16 26,-16 34,-22 -18,-22" fill={ROSE_LIGHT} />
+        <rect x={-26} y={-16} width={52} height={5} fill={ROSE} />
+        <rect x={-24} y={-11} width={4} height={11} fill="var(--ic-road-s)" />
+        <rect x={20} y={-11} width={4} height={11} fill="var(--ic-road-s)" />
 
-        {/* chimney smoke — cx / cy / r animation only, so no transform origin */}
-        {[0, 1, 2].map((i) => (
-          <motion.circle
-            key={i}
-            cx={12}
-            cy={-48}
-            r={3.2}
-            fill="var(--ic-snow)"
-            opacity={0}
-            animate={
-              reduce
-                ? undefined
-                : {
-                    cx: [12, 9, 5],
-                    cy: [-48, -57, -66],
-                    r: [3.2, 4.4, 5.6],
-                    opacity: [0, 0.45, 0],
-                  }
-            }
-            transition={reduce ? undefined : inf(smokeDur, (i * smokeDur) / 3)}
-          />
-        ))}
+        {/* glazed entrance 18 x 11, warm inside, mullion splitting the doors */}
+        <rect x={-9} y={-11} width={18} height={11} fill="var(--ic-warm-glow)" opacity={0.95} />
+        <rect x={-1.5} y={-11} width={3} height={11} fill="var(--ic-ink)" opacity={0.28} />
       </g>
+
+      {/* palms flanking the approach — resort premium, not alpine */}
+      <Palm x={16} y={88} s={1.15} />
+      <Palm x={104} y={92} s={1} />
     </Shell>
   )
 }
@@ -694,35 +750,53 @@ export function JeepSceneIcon({
 }
 
 /* ================================================================== *
- * 3. STAGE — Events
+ * 3. CROWD — Events
  * ================================================================== */
 
-interface BeamProps {
-  uid: string
+/**
+ * One festival-goer, arms up, feet at the local origin.
+ *
+ * Built as a SILHOUETTE, not an articulated figure: a head disc, a tapered
+ * torso and two raised arms, all one flat ink colour. At 120x96 a person is
+ * ~20u tall, so limbs are 3u bars — anything thinner, or any attempt to
+ * animate joints, turns to grey haze. The raised-arms pose is what makes a
+ * dark blob read as a CELEBRATING person rather than a bollard, so it is the
+ * one silhouette detail worth the pixels.
+ *
+ * The jump is a whole-body translate. No rotation, no origin maths.
+ */
+function Reveller({
+  x,
+  y,
+  s,
+  tone,
+  hop,
+  dur,
+  delay,
+  reduce,
+}: {
   x: number
-  swing: number
+  y: number
+  s: number
+  tone: string
+  hop: number
   dur: number
   delay: number
   reduce: boolean
-}
-
-/**
- * Sweeping beam — the same rigid-rotation rig as the wheel. A static parent
- * places the lamp apex; the motion.g holds a SYMMETRIC bow-tie (a triangle up
- * and its mirror down) so the fill-box centre is exactly the apex. The
- * mirrored lower half never renders: the whole beams group is clipped to the
- * sky band (y < 40), and 40 is precisely the apex line.
- */
-function Beam({ uid, x, swing, dur, delay, reduce }: BeamProps) {
+}) {
   return (
-    <g transform={`translate(${x} 40)`}>
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
       <motion.g
-        style={{ transformBox: 'fill-box', transformOrigin: '50% 50%' }}
-        animate={reduce ? undefined : { rotate: [-swing, swing, -swing] }}
+        animate={reduce ? undefined : { y: [0, -hop, 0] }}
         transition={reduce ? undefined : inf(dur, delay)}
       >
-        <polygon points="0,0 -9,-46 9,-46" fill={`url(#${uid}-beam)`} />
-        <polygon points="0,0 -9,46 9,46" fill={`url(#${uid}-beam)`} />
+        {/* raised arms — 3u bars, drawn first so the torso caps their roots */}
+        <polygon points="-3,-13 -6,-14 -10,-23 -6.5,-24" fill={tone} />
+        <polygon points="3,-13 6,-14 10,-23 6.5,-24" fill={tone} />
+        {/* torso 9 x 13, tapered */}
+        <polygon points="-4.5,0 4.5,0 3.5,-14 -3.5,-14" fill={tone} />
+        {/* head 7u */}
+        <circle cx={0} cy={-17.5} r={3.5} fill={tone} />
       </motion.g>
     </g>
   )
@@ -738,108 +812,110 @@ export function StageSceneIcon({
   const reduce = useReducedMotion() ?? false
   const fast = isActive && !reduce
 
-  const beamDur = fast ? 2.4 : 4.4
-  const pulseDur = fast ? 1.1 : 2.2
-  const bobDur = fast ? 0.9 : 1.7
+  const hopDur = fast ? 0.62 : 0.95
+  const beamDur = fast ? 2.4 : 3.8
 
-  const heads = [6, 21, 36, 51, 66, 81, 96, 111]
+  /* Back row: smaller, lighter, and hopping out of phase with the front so the
+     crowd never pulses as one block. Front row: bigger and darker = nearer. */
+  const backRow = [10, 30, 50, 70, 90, 110]
+  const frontRow = [0, 20, 40, 60, 80, 100, 120]
 
   return (
-    <Shell uid={uid} width={width} height={height} className={className} label="Open-air stage">
-      <Backdrop uid={uid} reduce={reduce} fast={fast} />
+    <Shell uid={uid} width={width} height={height} className={className} label="Live events">
+      <PlazaBackdrop uid={uid} reduce={reduce} fast={fast} />
 
-      <Tree x={10} y={78} s={1} />
-      <Tree x={112} y={80} s={1.1} />
+      {/* ---- stage: a lit bandshell the crowd is facing ---- */}
+      <g transform="translate(60 66)">
+        {/* shell back wall + receding side on the family extrusion */}
+        <polygon points="-30,0 -40,-6 -40,-28 -30,-22" fill="var(--ic-road-s)" />
+        <rect x={-30} y={-22} width={60} height={22} fill="var(--ic-road)" />
+        <polygon points="-30,-22 30,-22 20,-28 -40,-28" fill="var(--ic-snow)" opacity={0.2} />
+        {/* rose proscenium arch */}
+        <rect x={-32} y={-26} width={64} height={6} fill={ROSE} />
+        <rect x={-32} y={-26} width={8} height={6} fill={ROSE_DEEP} />
 
-      {/* light beams — behind the shell, clipped to the sky */}
-      <g clipPath={`url(#${uid}-sky40)`}>
-        <Beam uid={uid} x={47} swing={18} dur={beamDur} delay={0} reduce={reduce} />
-        <Beam uid={uid} x={73} swing={20} dur={beamDur * 1.25} delay={0.6} reduce={reduce} />
-      </g>
-
-      {/* ---- stage: origin at the deck front base centre ---- */}
-      <g transform="translate(60 84)">
-        <ellipse cx={-3} cy={1} rx={34} ry={4.5} fill="var(--ic-ink)" opacity={0.2} />
-
-        {/* bandshell: 4 facets ramping dark on the left flank to lit on the right */}
-        <polygon points="-18,-42 -28,-30 -30,-14 -14,-14" fill={ROSE_DEEP} />
-        <polygon points="-18,-42 -28,-30 -30,-14 -14,-14" fill="var(--ic-ink)" opacity={0.18} />
-        <polygon points="0,-47 -18,-42 -14,-14 0,-14" fill={ROSE_DEEP} />
-        <polygon points="0,-47 18,-42 14,-14 0,-14" fill={ROSE} />
-        <polygon points="18,-42 28,-30 30,-14 14,-14" fill={ROSE_LIGHT} />
-
-        {/* stage opening 30 x 23 — near-solid so the silhouette has something to bite */}
-        <polygon points="-15,-14 -13,-30 0,-37 13,-30 15,-14" fill="var(--ic-ink)" opacity={0.92} />
-        {/* warm wash BEHIND the performer, 24 x 18 */}
-        <motion.ellipse
-          cx={0}
-          cy={-24}
-          rx={12}
-          ry={9}
-          fill="var(--ic-warm-glow)"
-          opacity={0.55}
-          animate={reduce ? undefined : { opacity: fast ? [0.5, 0.85, 0.5] : [0.4, 0.66, 0.4] }}
-          transition={reduce ? undefined : inf(pulseDur)}
+        {/* the lit screen behind the performers */}
+        <motion.rect
+          x={-24}
+          y={-18}
+          width={48}
+          height={14}
+          fill="var(--ic-warm)"
+          opacity={0.85}
+          animate={reduce ? undefined : { opacity: fast ? [0.7, 1, 0.7] : [0.6, 0.9, 0.6] }}
+          transition={reduce ? undefined : inf(fast ? 1.4 : 2.4)}
         />
 
-        {/* performer silhouette — rigid, translation only. Head 8px, body 10 wide. */}
-        <motion.g
-          animate={reduce ? undefined : { y: fast ? [0, -2.4, 0] : [0, -1.6, 0] }}
-          transition={reduce ? undefined : inf(bobDur)}
-        >
-          <circle cx={0} cy={-28} r={4} fill="var(--ic-ink)" />
-          <polygon points="-5,-14 5,-14 3.5,-24 -3.5,-24" fill="var(--ic-ink)" />
-        </motion.g>
+        {/* stage deck */}
+        <rect x={-34} y={0} width={68} height={6} fill="var(--ic-road-s)" />
+      </g>
 
-        {/* deck: lit top face + shaded front face, extrusion (-8,-6) */}
-        <polygon points="-30,-8 30,-8 22,-14 -38,-14" fill="var(--ic-road)" />
-        <rect x={-30} y={-8} width={60} height={8} fill="var(--ic-road-s)" />
+      {/* ---- sweeping light beams, clipped to the sky band ---- */}
+      <g clipPath={`url(#${uid}-sky40)`}>
+        {[
+          { x: 34, swing: 16, delay: 0 },
+          { x: 86, swing: -16, delay: beamDur / 2 },
+        ].map((b) => (
+          <g key={b.x} transform={`translate(${b.x} 40)`}>
+            <motion.g
+              style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }}
+              animate={reduce ? undefined : { rotate: [-b.swing, b.swing, -b.swing] }}
+              transition={reduce ? undefined : inf(beamDur, b.delay)}
+            >
+              <polygon points="0,0 -9,-46 9,-46" fill={`url(#${uid}-beam)`} />
+            </motion.g>
+          </g>
+        ))}
+      </g>
 
-        {/* two stage lamps, 7px each, counter-phase */}
-        {[-25, 25].map((lx, i) => (
-          <motion.circle
-            key={lx}
-            cx={lx}
-            cy={-11}
-            r={3.5}
-            fill="var(--ic-warm)"
-            opacity={0.9}
-            animate={reduce ? undefined : { opacity: [0.45, 1, 0.45], r: [3.2, 4, 3.2] }}
-            transition={reduce ? undefined : inf(pulseDur, i * pulseDur * 0.5)}
+      {/* ---- confetti drifting down over the crowd ---- */}
+      {[
+        { x: 18, c: ROSE, d: 0 },
+        { x: 44, c: 'var(--ic-warm)', d: 1.1 },
+        { x: 72, c: ROSE_LIGHT, d: 0.5 },
+        { x: 98, c: 'var(--ic-warm)', d: 1.7 },
+      ].map((f) => (
+        <g key={f.x} transform={`translate(${f.x} 26)`}>
+          <motion.rect
+            x={-2.5}
+            y={0}
+            width={5}
+            height={5}
+            fill={f.c}
+            opacity={0}
+            animate={reduce ? undefined : { y: [0, 46], opacity: [0, 1, 1, 0] }}
+            transition={reduce ? undefined : linearLoop(fast ? 2.6 : 4.2, f.d)}
           />
-        ))}
-      </g>
+        </g>
+      ))}
 
-      {/* ---- crowd silhouette bar across the foreground ---- */}
-      <g fill="var(--ic-ink)" opacity={0.8}>
-        <rect x={-2} y={88} width={124} height={10} />
-        {[0, 1].map((phase) => (
-          <motion.g
-            key={phase}
-            animate={
-              reduce
-                ? undefined
-                : {
-                    y:
-                      phase === 0
-                        ? fast
-                          ? [0, -2.4, 0]
-                          : [0, -1.6, 0]
-                        : fast
-                          ? [0, 2.4, 0]
-                          : [0, 1.6, 0],
-                  }
-            }
-            transition={reduce ? undefined : inf(bobDur, phase * 0.18)}
-          >
-            {heads
-              .filter((_, i) => i % 2 === phase)
-              .map((hx) => (
-                <circle key={hx} cx={hx} cy={88} r={5} />
-              ))}
-          </motion.g>
-        ))}
-      </g>
+      {/* ---- THE CROWD — two rows of jumping silhouettes ---- */}
+      {backRow.map((cx, i) => (
+        <Reveller
+          key={`b${cx}`}
+          x={cx}
+          y={80}
+          s={0.82}
+          tone="var(--ic-ridge-s)"
+          hop={3}
+          dur={hopDur * 1.15}
+          delay={(i % 3) * 0.22}
+          reduce={reduce}
+        />
+      ))}
+      {frontRow.map((cx, i) => (
+        <Reveller
+          key={`f${cx}`}
+          x={cx}
+          y={94}
+          s={1.05}
+          tone="var(--ic-ink)"
+          hop={4.5}
+          dur={hopDur}
+          delay={(i % 4) * 0.16}
+          reduce={reduce}
+        />
+      ))}
     </Shell>
   )
 }
