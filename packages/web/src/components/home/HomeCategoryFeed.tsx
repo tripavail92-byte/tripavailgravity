@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
-  EventPremiumIcon,
-  HotelPremiumIcon,
-  type PremiumIconProps,
-  TourPremiumIcon,
-} from '@/components/icons/PremiumNavIcons'
+  JeepSceneIcon,
+  LodgeSceneIcon,
+  type SceneIconProps,
+  StageSceneIcon,
+} from '@/components/icons/SceneNavIconsLowPoly'
 
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -46,13 +46,13 @@ interface ModeDef {
   key: Exclude<Mode, 'all'>
   label: string
   sub: string
-  icon: ComponentType<PremiumIconProps>
+  icon: ComponentType<SceneIconProps>
 }
 
 const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: HotelPremiumIcon },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: TourPremiumIcon },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: EventPremiumIcon },
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: LodgeSceneIcon },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: JeepSceneIcon },
+  { key: 'events', label: 'Events', sub: 'Coming soon', icon: StageSceneIcon },
 ]
 
 // ── Card builders (loosely typed to match the mapped-row shapes) ────────────
@@ -283,29 +283,27 @@ export function HomeCategoryFeed() {
                 onClick={() => selectMode(m.key)}
                 aria-pressed={active}
                 className={cn(
-                  'group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border px-3 py-4 text-center transition-all duration-300 sm:px-5 sm:py-5',
+                  'group relative flex flex-col items-center overflow-hidden rounded-3xl border p-2 text-center transition-all duration-300',
                   active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-xl shadow-primary/30 sm:scale-[1.03]'
-                    : 'border-border bg-background hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg',
+                    ? 'border-primary bg-primary text-primary-foreground shadow-xl shadow-primary/30 sm:scale-[1.02]'
+                    : 'border-border bg-card hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg',
                 )}
               >
-                {/* Icon tile stays LIGHT in both states so the full-colour icon
-                    always reads — a multi-colour 3D icon on a rose fill would muddy.
-                    It is TINTED rather than pure white on purpose: the icons' front
-                    faces start at #ffffff, so on a white tile their silhouettes
-                    disappeared entirely. A soft rose wash gives them something to
-                    sit against while keeping the saturated rose accents readable. */}
-                <span
-                  className={cn(
-                    'grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br transition-colors',
-                    active
-                      ? 'from-rose-50 to-rose-100 shadow-inner'
-                      : 'from-rose-50/70 to-slate-100 group-hover:from-rose-50 group-hover:to-rose-100/80',
-                  )}
-                >
-                  <Icon size={44} isActive={active} />
+                {/* The badge is a self-contained illustrated scene carrying its own
+                    sky, so it needs no tile behind it and reads correctly on a light
+                    OR dark page — every colour inside re-tints with the .dark class.
+                    It renders at its native 120x96 (1 SVG unit = 1 CSS pixel), which
+                    is the whole reason the detail survives; the previous 44px version
+                    put every feature below 2px and rasterised to mush. */}
+                <span className="w-full overflow-hidden rounded-2xl">
+                  <Icon
+                    width={120}
+                    height={96}
+                    isActive={active}
+                    className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 px-1 pb-1 pt-2.5">
                   <span className="block text-sm font-bold leading-tight sm:text-base">
                     {m.label}
                   </span>
