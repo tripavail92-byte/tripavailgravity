@@ -96,6 +96,14 @@ const SCENE_VARS = [
   'dark:[--ic-road:#3a4356]',
   '[--ic-road-s:#968f8b]',
   'dark:[--ic-road-s:#2a3244]',
+  // BUILDING masonry — warm sand, deliberately NOT the grey road token. A grey
+  // concrete facade under a grid of glowing windows reads as an institution, not
+  // a hotel. Warm stone is most of the difference between "premium resort" and
+  // "asylum". Stays warm-tinted at night so the property looks occupied.
+  '[--ic-wall:#f0e2c9]',
+  'dark:[--ic-wall:#4a4459]',
+  '[--ic-wall-s:#d6c2a0]',
+  'dark:[--ic-wall-s:#332f42]',
   '[--ic-ink:#1e293b]',
   'dark:[--ic-ink:#060c18]',
 ].join(' ')
@@ -460,80 +468,97 @@ export function LodgeSceneIcon({
 
   const winDur = fast ? 2 : 3.6
 
-  /* Window grid: 3 columns x 4 rows of 9 x 8 panes, 4.5u apart — every pane is
-     comfortably over the 4px floor, and the gaps survive rasterisation too. */
-  const cols = [-18, -4.5, 9]
-  const rows = [-54, -43, -32, -21]
+  /*
+   * WHY THIS BUILDING IS SHAPED THE WAY IT IS.
+   *
+   * The first version read as genuinely frightening, and the causes were
+   * specific rather than a matter of taste:
+   *   - a GREY concrete facade (the road token) under a rigid grid of glowing
+   *     windows is the visual grammar of an institution;
+   *   - a lone antenna MAST on the roofline is pure asylum/watchtower;
+   *   - and a 58-tall tower on a 96-tall badge LOOMS over the viewer.
+   *
+   * So: warm sand masonry instead of concrete, no mast, and the mass is now
+   * lower and wider (56 x 44) so it sits in the plaza rather than towering out
+   * of it. Continuous BALCONY bands run across every floor, which is the real
+   * fix for the grid-of-eyes — a hotel facade reads as horizontal storeys, an
+   * institution reads as a matrix of identical cells.
+   */
+  const floors = [-38, -25]
+  const winCols = [-24, -10, 4, 18]
 
   return (
     <Shell uid={uid} width={width} height={height} className={className} label="Premium hotel">
       <PlazaBackdrop uid={uid} reduce={reduce} fast={fast} />
 
       {/* ---- the hotel: origin at the front-wall base centre ---- */}
-      <g transform="translate(58 82)">
-        <ellipse cx={-3} cy={1.5} rx={34} ry={5} fill="var(--ic-ink)" opacity={0.2} />
+      <g transform="translate(60 80)">
+        <ellipse cx={-4} cy={1.5} rx={40} ry={5} fill="var(--ic-ink)" opacity={0.18} />
 
         {/* warm light spilling across the approach */}
         <motion.ellipse
           cx={0}
-          cy={2}
-          rx={20}
+          cy={2.5}
+          rx={24}
           ry={5}
           fill="var(--ic-warm-glow)"
-          opacity={0.3}
-          animate={reduce ? undefined : { opacity: fast ? [0.32, 0.58, 0.32] : [0.24, 0.42, 0.24] }}
+          opacity={0.32}
+          animate={reduce ? undefined : { opacity: fast ? [0.34, 0.6, 0.34] : [0.26, 0.44, 0.26] }}
           transition={reduce ? undefined : inf(winDur)}
         />
 
-        {/* LOW WING on the right — gives the property mass and a real skyline */}
-        <polygon points="22,0 22,-26 32,-32 32,-6" fill="var(--ic-road)" />
-        <rect x={22} y={-26} width={16} height={26} fill="var(--ic-road-s)" />
-        <polygon points="22,-26 38,-26 48,-32 32,-32" fill="var(--ic-snow)" opacity={0.2} />
+        {/* LOW WING on the right — mass and an asymmetric roofline */}
+        <polygon points="28,0 28,-22 38,-28 38,-6" fill="var(--ic-wall-s)" />
+        <rect x={28} y={-22} width={14} height={22} fill="var(--ic-wall)" />
+        <polygon points="28,-22 42,-22 52,-28 38,-28" fill="var(--ic-snow)" opacity={0.22} />
 
-        {/* TOWER — receding side plane on the family (-10,-6) extrusion */}
-        <polygon points="-22,0 -32,-6 -32,-64 -22,-58" fill="var(--ic-road-s)" />
-        {/* front facade 44 x 58 */}
-        <rect x={-22} y={-58} width={44} height={58} fill="var(--ic-road)" />
+        {/* MAIN BLOCK — receding side plane on the family (-10,-6) extrusion */}
+        <polygon points="-28,0 -38,-6 -38,-50 -28,-44" fill="var(--ic-wall-s)" />
+        {/* facade 56 x 44, warm sand */}
+        <rect x={-28} y={-44} width={56} height={44} fill="var(--ic-wall)" />
         {/* roof top plane */}
-        <polygon points="-22,-58 22,-58 12,-64 -32,-64" fill="var(--ic-snow)" opacity={0.22} />
-        {/* lit right edge of the facade */}
-        <rect x={14} y={-58} width={8} height={58} fill="var(--ic-snow)" opacity={0.13} />
+        <polygon points="-28,-44 28,-44 18,-50 -38,-50" fill="var(--ic-snow)" opacity={0.24} />
+        {/* soft lit band down the sunlit right edge */}
+        <rect x={20} y={-44} width={8} height={44} fill="var(--ic-snow)" opacity={0.12} />
 
-        {/* rose crown band + mast — the premium signature at the top */}
-        <rect x={-24} y={-64} width={48} height={6} fill={ROSE} />
-        <polygon points="-24,-64 24,-64 14,-70 -34,-70" fill={ROSE_DEEP} />
-        <rect x={-2} y={-80} width={3} height={11} fill="var(--ic-road-s)" />
+        {/* rose parapet — the brand signature, and a flat top rather than a spike */}
+        <rect x={-30} y={-50} width={60} height={6} fill={ROSE} />
+        <polygon points="-30,-50 30,-50 20,-56 -40,-56" fill={ROSE_DEEP} />
 
-        {/* lit window grid */}
+        {/* GUEST FLOORS: lit windows, then a continuous balcony band across the
+            whole facade. The band is what stops the windows reading as cells. */}
         <motion.g
-          animate={reduce ? undefined : { opacity: fast ? [0.84, 1, 0.84] : [0.72, 0.97, 0.72] }}
+          animate={reduce ? undefined : { opacity: fast ? [0.86, 1, 0.86] : [0.76, 0.98, 0.76] }}
           transition={reduce ? undefined : inf(winDur)}
         >
-          {rows.map((ry) =>
-            cols.map((cx) => (
-              <g key={`${cx}-${ry}`}>
-                <rect x={cx} y={ry} width={9} height={8} fill="var(--ic-warm)" />
-                {/* shaded reveal on the left of each pane — reads as depth */}
-                <rect x={cx} y={ry} width={3} height={8} fill="var(--ic-ink)" opacity={0.18} />
-              </g>
+          {floors.map((fy) =>
+            winCols.map((cx) => (
+              <rect key={`${cx}-${fy}`} x={cx} y={fy} width={10} height={8} fill="var(--ic-warm)" />
             )),
           )}
         </motion.g>
+        {floors.map((fy) => (
+          <g key={`bal${fy}`}>
+            {/* balcony deck + its shadow line under the windows */}
+            <rect x={-28} y={fy + 8} width={56} height={3} fill="var(--ic-wall-s)" />
+            <rect x={-28} y={fy + 8} width={56} height={1.5} fill="var(--ic-ink)" opacity={0.16} />
+          </g>
+        ))}
 
-        {/* PORTE-COCHERE — the entrance canopy. Deck + two columns. */}
-        <polygon points="-26,-16 26,-16 34,-22 -18,-22" fill={ROSE_LIGHT} />
-        <rect x={-26} y={-16} width={52} height={5} fill={ROSE} />
-        <rect x={-24} y={-11} width={4} height={11} fill="var(--ic-road-s)" />
-        <rect x={20} y={-11} width={4} height={11} fill="var(--ic-road-s)" />
+        {/* PORTE-COCHERE — a generous covered arrival, the premium cue */}
+        <polygon points="-30,-14 30,-14 38,-20 -22,-20" fill={ROSE_LIGHT} />
+        <rect x={-30} y={-14} width={60} height={5} fill={ROSE} />
+        <rect x={-27} y={-9} width={4} height={9} fill="var(--ic-wall-s)" />
+        <rect x={23} y={-9} width={4} height={9} fill="var(--ic-wall-s)" />
 
-        {/* glazed entrance 18 x 11, warm inside, mullion splitting the doors */}
-        <rect x={-9} y={-11} width={18} height={11} fill="var(--ic-warm-glow)" opacity={0.95} />
-        <rect x={-1.5} y={-11} width={3} height={11} fill="var(--ic-ink)" opacity={0.28} />
+        {/* glazed lobby 22 x 9, warm inside, mullion splitting the doors */}
+        <rect x={-11} y={-9} width={22} height={9} fill="var(--ic-warm-glow)" opacity={0.95} />
+        <rect x={-1.5} y={-9} width={3} height={9} fill="var(--ic-ink)" opacity={0.26} />
       </g>
 
       {/* palms flanking the approach — resort premium, not alpine */}
-      <Palm x={16} y={88} s={1.15} />
-      <Palm x={104} y={92} s={1} />
+      <Palm x={14} y={90} s={1.1} />
+      <Palm x={107} y={94} s={0.95} />
     </Shell>
   )
 }
