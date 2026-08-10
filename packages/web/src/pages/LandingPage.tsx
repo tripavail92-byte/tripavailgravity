@@ -48,14 +48,14 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <div className="container mx-auto max-w-7xl px-4 pb-6">
         <div className="space-y-8">
-          {/* Geo-adaptive hero — reshapes to the visitor's country (real supply → "Discover
-              {country}"; no supply yet → honest "expanding" band; unknown → global default). */}
-          <GeoHomeHero />
-
-          {/* Category chips + one vertical feed of full-width cards (replaces the old stack of
-              horizontal category rows — mobile scrolls straight down, one listing per row). */}
+          {/*
+            Layout order: search + mode pills first, THEN the geo-adaptive hero,
+            then the mode-driven feed. The hero is passed to HomeCategoryFeed as
+            a slot so the pill state stays local — the pills come from the same
+            component that renders the sections they drive.
+          */}
           <QueryErrorBoundaryWrapper>
-            <HomeCategoryFeed />
+            <HomeCategoryFeed hero={<GeoHomeHero />} />
           </QueryErrorBoundaryWrapper>
 
           {/* Trust Strip — moved below the listings so experiences lead the page */}

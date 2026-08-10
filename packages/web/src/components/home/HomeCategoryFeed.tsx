@@ -161,8 +161,12 @@ function FeedSection({
  * fetched up-front (React Query dedupes shared keys) so switching modes is
  * instant with no refetch flash. Reuses PackageCard / HotelPropertyCard /
  * TourCard and the TravelAssistant dialog verbatim.
+ *
+ * `hero` renders BETWEEN the pill row and the mode sections — so the page reads
+ * as: search bar, mode pills, featured hero, then the sections that respond to
+ * the pill choice. This is why the mode pills are the first thing a visitor sees.
  */
-export function HomeCategoryFeed() {
+export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('all')
   const [assistantOpen, setAssistantOpen] = useState(false)
@@ -283,27 +287,34 @@ export function HomeCategoryFeed() {
                 onClick={() => selectMode(m.key)}
                 aria-pressed={active}
                 className={cn(
-                  'group relative flex flex-col items-center overflow-hidden rounded-3xl border p-2 text-center transition-all duration-300',
+                  // No inner padding — the illustrated badge goes edge-to-edge inside
+                  // the pill, and the pill's own rounded-2xl + overflow-hidden clips it.
+                  // An earlier version had p-2 on the button PLUS a nested rounded-2xl
+                  // on the icon wrapper, so a visible bezel and a corner-in-corner
+                  // ring appeared between icon and pill.
+                  'group relative flex flex-col items-stretch overflow-hidden rounded-2xl border text-center transition-all duration-300',
                   active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-xl shadow-primary/30 sm:scale-[1.02]'
+                    ? 'border-primary shadow-xl shadow-primary/30 sm:scale-[1.02]'
                     : 'border-border bg-card hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg',
                 )}
               >
-                {/* The badge is a self-contained illustrated scene carrying its own
-                    sky, so it needs no tile behind it and reads correctly on a light
-                    OR dark page — every colour inside re-tints with the .dark class.
-                    It renders at its native 120x96 (1 SVG unit = 1 CSS pixel), which
-                    is the whole reason the detail survives; the previous 44px version
-                    put every feature below 2px and rasterised to mush. */}
-                <span className="w-full overflow-hidden rounded-2xl">
-                  <Icon
-                    width={120}
-                    height={96}
-                    isActive={active}
-                    className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.04]"
-                  />
-                </span>
-                <span className="min-w-0 px-1 pb-1 pt-2.5">
+                {/* Icon flush to the pill edges. The badge is a self-contained
+                    illustrated scene carrying its own sky, so it needs no tile
+                    behind it and reads correctly on a light OR dark page — every
+                    colour inside re-tints with the .dark class. Rendered at its
+                    native 120x96 (1 SVG unit = 1 CSS pixel). */}
+                <Icon
+                  width={120}
+                  height={96}
+                  isActive={active}
+                  className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.04]"
+                />
+                <span
+                  className={cn(
+                    'min-w-0 px-2 pb-2 pt-2.5',
+                    active ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground',
+                  )}
+                >
                   <span className="block text-sm font-bold leading-tight sm:text-base">
                     {m.label}
                   </span>
@@ -338,6 +349,11 @@ export function HomeCategoryFeed() {
         onClose={() => setSearchOpen(false)}
         onSearch={handleSearch}
       />
+
+      {/* ── Featured hero — sits BETWEEN the pill row and the sections, so the
+          mode-switcher is the first thing a visitor sees on the page. Optional:
+          if no hero is passed the layout collapses cleanly. */}
+      {hero ? <div className="mt-8">{hero}</div> : null}
 
       {/* ── Sections per mode ────────────────────────────────────────────── */}
       <div className="mt-8">
