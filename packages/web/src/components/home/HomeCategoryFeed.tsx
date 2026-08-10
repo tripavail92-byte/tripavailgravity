@@ -3,11 +3,18 @@ import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
-  JeepSceneIcon,
-  LodgeSceneIcon,
-  type SceneIconProps,
-  StageSceneIcon,
-} from '@/components/icons/SceneNavIconsLowPoly'
+  CrowdStoryIcon,
+  HotelStoryIcon,
+  JeepStoryIcon,
+} from '@/components/icons/SceneNavIconsStory'
+
+// Story icons share the same prop shape as the older Scene ones did.
+type SceneIconProps = {
+  width?: number
+  height?: number
+  isActive?: boolean
+  className?: string
+}
 
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -50,9 +57,9 @@ interface ModeDef {
 }
 
 const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: LodgeSceneIcon },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: JeepSceneIcon },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: StageSceneIcon },
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: HotelStoryIcon },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: JeepStoryIcon },
+  { key: 'events', label: 'Events', sub: 'Coming soon', icon: CrowdStoryIcon },
 ]
 
 // ── Card builders (loosely typed to match the mapped-row shapes) ────────────
