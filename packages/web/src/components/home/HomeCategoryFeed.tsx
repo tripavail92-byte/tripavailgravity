@@ -1,26 +1,14 @@
-import {
-  Building2,
-  Compass,
-  type LucideIcon,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  Ticket,
-} from 'lucide-react'
+import { Ticket } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
+import { ExploreControls, type ExploreMode } from '@/components/home/ExploreControls'
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
-import { type SearchFilters } from '@/components/search/TripAvailSearchBar'
-import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
-import { cn } from '@/lib/utils'
 import type { HotelBrowseItem } from '@/queries/hotelQueries'
 import { useHotelBrowse } from '@/queries/hotelQueries'
 import {
@@ -40,21 +28,8 @@ const TOUR_FALLBACK_IMG =
 // How many cards a home row shows — one desktop row. "See all" carries the rest.
 const ROW_SIZE = 4
 
-type Mode = 'all' | 'hotels' | 'tours' | 'events'
+type Mode = ExploreMode
 const MODE_STORAGE_KEY = 'ta_home_mode'
-
-interface ModeDef {
-  key: Exclude<Mode, 'all'>
-  label: string
-  sub: string
-  icon: LucideIcon
-}
-
-const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: Building2 },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: Compass },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: Ticket },
-]
 
 // ── Card builders (loosely typed to match the mapped-row shapes) ────────────
 function renderPackageCards(pkgs: any[]): ReactNode[] {
@@ -168,10 +143,7 @@ function FeedSection({
  * the pill choice. This is why the mode pills are the first thing a visitor sees.
  */
 export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
-  const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('all')
-  const [assistantOpen, setAssistantOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
 
   // Restore the visitor's last-picked mode (Airbnb-style tab memory).
   useEffect(() => {
@@ -225,117 +197,18 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   const hiking = useMemo(() => renderTourCards(hikingQ.data ?? []), [hikingQ.data])
   const northern = useMemo(() => renderTourCards(northernQ.data ?? []), [northernQ.data])
 
-  // Search from the home page, pre-scoped to the active mode.
-  const handleSearch = (filters: SearchFilters) => {
-    const params = new URLSearchParams()
-    if (filters.query) params.set('q', filters.query)
-    if (filters.location) params.set('location', filters.location)
-    if (mode === 'hotels') params.set('types', 'hotel')
-    else if (mode === 'tours') params.set('types', 'tour')
-    setSearchOpen(false)
-    navigate(`/search?${params.toString()}`)
-  }
-
   return (
     <section aria-labelledby="home-explore-heading">
       <h2 id="home-explore-heading" className="sr-only">
         Explore TripAvail
       </h2>
 
-      {/* ── Row 1: search bar + filter + Ask AI ──────────────────────────────
-          THE search for the home page — the global header hides its own search
-          here so there's only one. Pre-scoped to the active mode. */}
-      <div className="mx-auto flex w-full max-w-3xl items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          className="flex flex-1 items-center gap-3 rounded-full border border-border bg-background px-5 py-3.5 text-left shadow-sm transition-colors hover:bg-muted"
-        >
-          <Search className="h-5 w-5 shrink-0 text-primary" />
-          <span className="truncate text-sm font-semibold text-muted-foreground">
-            Search {mode === 'hotels' ? 'hotels' : mode === 'tours' ? 'tours' : 'stays, tours & more'}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          aria-label="Filters"
-          className="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted"
-        >
-          <SlidersHorizontal className="h-5 w-5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setAssistantOpen(true)}
-          className="group inline-flex h-[52px] shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-5 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
-        >
-          <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
-          <span className="hidden sm:inline">Ask AI</span>
-        </button>
-      </div>
-
-      {/* ── Row 2: big premium mode pills. Centred, equal width, icon on top so
-          the animated icon is the hero rather than a decoration beside text. ── */}
-      <div className="mt-6 flex justify-center">
-        <div className="grid w-full max-w-2xl grid-cols-3 gap-3 sm:gap-4">
-          {MODES.map((m) => {
-            const Icon = m.icon
-            const active = mode === m.key
-            return (
-              <button
-                key={m.key}
-                type="button"
-                onClick={() => selectMode(m.key)}
-                aria-pressed={active}
-                className={cn(
-                  'group flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200',
-                  active
-                    ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                    : 'border-border bg-card text-foreground hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
-                )}
-              >
-                <Icon
-                  className={cn(
-                    'h-6 w-6 shrink-0 transition-colors',
-                    active ? 'text-primary-foreground' : 'text-primary',
-                  )}
-                  strokeWidth={2}
-                />
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold leading-tight sm:text-base">
-                    {m.label}
-                  </span>
-                  <span
-                    className={cn(
-                      'mt-0.5 block text-[11px] leading-tight sm:text-xs',
-                      active ? 'text-primary-foreground/80' : 'text-muted-foreground',
-                    )}
-                  >
-                    {m.sub}
-                  </span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Ask AI — mounts lazily, so nothing is fetched until opened. */}
-      <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Ask TripAvail</DialogTitle>
-          </DialogHeader>
-          {assistantOpen && <TravelAssistant className="max-h-[70vh]" />}
-        </DialogContent>
-      </Dialog>
-
-      {/* Search — reuses the same overlay as the header, pre-scoped to the mode. */}
-      <SearchOverlay
-        isOpen={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        onSearch={handleSearch}
-      />
+      {/* Shared search + Ask AI + Hotels/Tours/Events pills. On HOME the pills
+          switch which sections render below (local state), so we pass selectMode
+          as the click handler. On the standalone browse pages the same
+          component is mounted but its pill handler is navigate — same UI,
+          different semantic per host, which is the whole point of B. */}
+      <ExploreControls activeMode={mode} onModeSelect={selectMode} />
 
       {/* ── Featured hero — sits BETWEEN the pill row and the sections, so the
           mode-switcher is the first thing a visitor sees on the page. Optional:

@@ -1,6 +1,7 @@
 import { BedDouble } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
+import { ExploreControls } from '@/components/home/ExploreControls'
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,10 +10,19 @@ import { useHotelBrowse } from '@/queries/hotelQueries'
 
 export default function HotelsPage() {
   const { data: hotels = [], isLoading, isError } = useHotelBrowse()
+  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-7xl mx-auto px-4 py-10">
+        {/* Same search + Hotels/Tours/Events row as home. The current-route
+            pill is active; clicking a sibling navigates. */}
+        <ExploreControls
+          activeMode="hotels"
+          onModeSelect={(m) => navigate(m === 'hotels' ? '/hotels' : m === 'tours' ? '/tours' : '/events')}
+          className="mb-10"
+        />
+
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Hotels</h1>

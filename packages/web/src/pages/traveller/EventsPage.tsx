@@ -1,6 +1,7 @@
 import { CalendarDays, MapPin, Ticket } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
+import { ExploreControls } from '@/components/home/ExploreControls'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -9,9 +10,17 @@ import { Button } from '@/components/ui/button'
  * gives the Hotels · Tours · Events nav a real destination without faking listings.
  */
 export default function EventsPage() {
+  const navigate = useNavigate()
   return (
     <div className="min-h-screen bg-background">
-      <main className="max-w-3xl mx-auto px-4 py-20 md:py-28 text-center">
+      <div className="max-w-7xl mx-auto px-4 pt-10">
+        {/* Same search + Hotels/Tours/Events row as every other browse page. */}
+        <ExploreControls
+          activeMode="events"
+          onModeSelect={(m) => navigate(m === 'hotels' ? '/hotels' : m === 'tours' ? '/tours' : '/events')}
+        />
+      </div>
+      <main className="max-w-3xl mx-auto px-4 py-16 md:py-20 text-center">
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mb-6">
           <Ticket className="w-8 h-8 text-primary" />
         </div>
