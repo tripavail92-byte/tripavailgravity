@@ -1,20 +1,14 @@
-import { Search, SlidersHorizontal, Sparkles, Ticket } from 'lucide-react'
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-
 import {
-  CrowdStoryIcon,
-  HotelStoryIcon,
-  JeepStoryIcon,
-} from '@/components/icons/SceneNavIconsStory'
-
-// Story icons share the same prop shape as the older Scene ones did.
-type SceneIconProps = {
-  width?: number
-  height?: number
-  isActive?: boolean
-  className?: string
-}
+  Building2,
+  Compass,
+  type LucideIcon,
+  Search,
+  SlidersHorizontal,
+  Sparkles,
+  Ticket,
+} from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
@@ -53,13 +47,13 @@ interface ModeDef {
   key: Exclude<Mode, 'all'>
   label: string
   sub: string
-  icon: ComponentType<SceneIconProps>
+  icon: LucideIcon
 }
 
 const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: HotelStoryIcon },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: JeepStoryIcon },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: CrowdStoryIcon },
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: Building2 },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: Compass },
+  { key: 'events', label: 'Events', sub: 'Coming soon', icon: Ticket },
 ]
 
 // ── Card builders (loosely typed to match the mapped-row shapes) ────────────
@@ -294,35 +288,21 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
                 onClick={() => selectMode(m.key)}
                 aria-pressed={active}
                 className={cn(
-                  // No inner padding — the illustrated badge goes edge-to-edge inside
-                  // the pill, and the pill's own rounded-2xl + overflow-hidden clips it.
-                  // An earlier version had p-2 on the button PLUS a nested rounded-2xl
-                  // on the icon wrapper, so a visible bezel and a corner-in-corner
-                  // ring appeared between icon and pill.
-                  'group relative flex flex-col items-stretch overflow-hidden rounded-2xl border text-center transition-all duration-300',
+                  'group flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all duration-200',
                   active
-                    ? 'border-primary shadow-xl shadow-primary/30 sm:scale-[1.02]'
-                    : 'border-border bg-card hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg',
+                    ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                    : 'border-border bg-card text-foreground hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
                 )}
               >
-                {/* Icon flush to the pill edges. The badge is a self-contained
-                    illustrated scene carrying its own sky, so it needs no tile
-                    behind it and reads correctly on a light OR dark page — every
-                    colour inside re-tints with the .dark class. Rendered at its
-                    native 120x96 (1 SVG unit = 1 CSS pixel). */}
                 <Icon
-                  width={120}
-                  height={96}
-                  isActive={active}
-                  className="h-auto w-full transition-transform duration-500 group-hover:scale-[1.04]"
-                />
-                <span
                   className={cn(
-                    'min-w-0 px-2 pb-2 pt-2.5',
-                    active ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground',
+                    'h-6 w-6 shrink-0 transition-colors',
+                    active ? 'text-primary-foreground' : 'text-primary',
                   )}
-                >
-                  <span className="block text-sm font-bold leading-tight sm:text-base">
+                  strokeWidth={2}
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-tight sm:text-base">
                     {m.label}
                   </span>
                   <span
