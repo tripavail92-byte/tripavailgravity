@@ -39,12 +39,15 @@ interface TripAvailSearchBarProps {
   onSearch: (filters: SearchFilters) => void
   className?: string
   onSearchOverlayToggle?: (isOpen: boolean, filters?: SearchFilters) => void
+  /** Seed the input on mount. Used by /search so an incoming ?q=... URL fills the field. */
+  initialFilters?: Partial<SearchFilters>
 }
 
 export function TripAvailSearchBar({
   onSearch,
   className = '',
   onSearchOverlayToggle,
+  initialFilters,
 }: TripAvailSearchBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -52,14 +55,29 @@ export function TripAvailSearchBar({
   const [showRecentSearches, setShowRecentSearches] = useState(false)
 
   const [filters, setFilters] = useState<SearchFilters>({
-    query: '',
-    category: 'all',
-    location: '',
-    duration: '',
-    priceRange: [0, 5000],
-    minRating: 0,
-    experienceType: [],
+    query: initialFilters?.query ?? '',
+    category: initialFilters?.category ?? 'all',
+    location: initialFilters?.location ?? '',
+    duration: initialFilters?.duration ?? '',
+    priceRange: initialFilters?.priceRange ?? [0, 5000],
+    minRating: initialFilters?.minRating ?? 0,
+    experienceType: initialFilters?.experienceType ?? [],
   })
+
+  // Rehydrate when the URL changes (e.g. user navigates from home search overlay to
+  // /search with a new query without unmounting the page). Keying on the primitives
+  // avoids a re-render loop from a fresh object reference each parent render.
+  const seedQ = initialFilters?.query
+  const seedLoc = initialFilters?.location
+  const seedCat = initialFilters?.category
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      query: seedQ ?? '',
+      location: seedLoc ?? '',
+      category: seedCat ?? 'all',
+    }))
+  }, [seedQ, seedLoc, seedCat])
 
   const searchRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)

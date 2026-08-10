@@ -201,6 +201,13 @@ export default function SearchPage() {
               onSearch={handleAdvancedSearch}
               onSearchOverlayToggle={(isOpen) => setIsSearchOverlayOpen(isOpen)}
               className="p-0 shadow-none"
+              initialFilters={{
+                query: q,
+                location,
+                category,
+                priceRange: [minPrice ?? 0, maxPrice ?? 5000],
+                minRating: minRating ?? 0,
+              }}
             />
           </div>
 
@@ -338,6 +345,15 @@ export default function SearchPage() {
         isOpen={isSearchOverlayOpen}
         onClose={() => setIsSearchOverlayOpen(false)}
         onSearch={handleAdvancedSearch}
+        initialFilters={{
+          query: q,
+          location,
+          category: category || 'all',
+          duration: '',
+          priceRange: [minPrice ?? 0, maxPrice ?? 5000],
+          minRating: minRating ?? 0,
+          experienceType: [],
+        }}
       />
 
       {/* flex-1 so the results column claims the leftover height of the min-h-screen root —
