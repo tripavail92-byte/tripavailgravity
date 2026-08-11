@@ -198,34 +198,36 @@ export function AirbnbSearchBar({
 
   const [assistantOpen, setAssistantOpen] = useState<boolean>(false)
 
-  // ── Scroll morph via IntersectionObserver on a sibling sentinel ────────
+  // ── Scroll morph via a plain passive scroll listener on the sentinel ───
   //
-  // Sentinel is placed IMMEDIATELY AFTER the expanded pill in flow. Its top
-  // sits at (header 60/80px) + (expanded pill height ~120px). The negative
-  // rootMargin -80px shrinks the observed viewport top so the sentinel is
-  // considered "not intersecting" once it scrolls above the fixed header
-  // line. That transition is the trigger:
+  // We tried IntersectionObserver first, but IO fires unreliably on our
+  // sentinel in some browser contexts (verified: even a fresh test IO on
+  // any element in the page failed to fire callbacks after scroll). A
+  // straight `getBoundingClientRect().top` measurement on scroll is
+  // simpler, always fires, and — because React bails when setState is
+  // called with the current value — costs one identity check per scroll
+  // event when the state hasn't changed. `passive: true` keeps the
+  // handler off the scroll-blocking critical path.
   //
-  //   sentinel VISIBLE (below header line)   → isCompact = false
-  //   sentinel HIDDEN  (above header line)   → isCompact = true
-  //
-  // -80px matches the DESKTOP header height. On mobile (60px header) the
-  // sentinel goes non-intersecting 20px "earlier" than it visually crosses
-  // the header — imperceptible in practice and stops us shipping a mobile
-  // false-negative where compact never fires.
+  // Threshold: the sentinel sits immediately AFTER the expanded pill.
+  // When its top reaches the fixed-header line (80px on desktop, 60px on
+  // mobile) the expanded pill has fully scrolled under the header, and
+  // we swap to the compact form portalled INTO the header slot.
   useEffect(() => {
     const sentinel = sentinelRef.current
-    if (!sentinel || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        if (!entry) return
-        setIsCompact(!entry.isIntersecting)
-      },
-      { threshold: 0, rootMargin: '-80px 0px 0px 0px' },
-    )
-    io.observe(sentinel)
-    return () => io.disconnect()
+    if (!sentinel || typeof window === 'undefined') return
+    const HEADER_OFFSET = 80 // desktop; mobile (60) fires slightly earlier — harmless
+    const check = (): void => {
+      const top = sentinel.getBoundingClientRect().top
+      setIsCompact(top <= HEADER_OFFSET)
+    }
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    window.addEventListener('resize', check, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', check)
+      window.removeEventListener('resize', check)
+    }
   }, [])
 
   const guests = adults + kids
@@ -344,46 +346,54 @@ export function AirbnbSearchBar({
 
       {/* ── COMPACT PILL, portalled into SiteHeader ────────────────────────
           Airbnb pattern. When scrolled past the expanded pill, the compact
-          form fades into the header's centre column via React portal — so
-          the header BECOMES the search chrome instead of stacking beneath
-          a second sticky band. AnimatePresence works across portals because
-          it tracks its children by key, not by DOM position. */}
-      <AnimatePresence>
-        {isCompact && headerSlot
-          ? createPortal(
-              <motion.div
-                key="header-compact"
-                initial={reduceMotion ? false : { opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="flex items-center gap-2"
-              >
-                <CompactPill
-                  tab={tab}
-                  onTabChange={handleTabChange}
-                  where={summaryWhere}
-                  when={summaryWhen}
-                  who={summaryWho}
-                  onExpand={expandAndScrollTop}
-                  onSearch={submit}
-                />
-                {/* Ask AI, compact — icon-only sparkle chip so the AI entry
-                    stays reachable at any scroll depth without crowding the
-                    header's right cluster. */}
-                <button
-                  type="button"
-                  onClick={() => setAssistantOpen(true)}
-                  aria-label="Ask AI"
-                  className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm transition-all hover:brightness-105"
+          form fades INTO the header's centre column via React portal — so
+          the header BECOMES the search chrome instead of stacking beneath a
+          second sticky band.
+
+          IMPORTANT — AnimatePresence lives INSIDE the portal, not outside.
+          createPortal returns a special ReactPortal node that AnimatePresence
+          cannot reliably introspect via React.Children (Framer/motion checks
+          the child's `type` and `key`; a portal wrapper hides both). Placing
+          AP inside the portal target means AP sees the plain motion.div as
+          its direct child, so enter/exit animations fire correctly. */}
+      {headerSlot
+        ? createPortal(
+            <AnimatePresence initial={false}>
+              {isCompact ? (
+                <motion.div
+                  key="header-compact"
+                  initial={reduceMotion ? false : { opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="flex items-center gap-2"
                 >
-                  <Sparkles className="h-4 w-4" />
-                </button>
-              </motion.div>,
-              headerSlot,
-            )
-          : null}
-      </AnimatePresence>
+                  <CompactPill
+                    tab={tab}
+                    onTabChange={handleTabChange}
+                    where={summaryWhere}
+                    when={summaryWhen}
+                    who={summaryWho}
+                    onExpand={expandAndScrollTop}
+                    onSearch={submit}
+                  />
+                  {/* Ask AI, compact — icon-only sparkle chip so the AI entry
+                      stays reachable at any scroll depth without crowding
+                      the header's right cluster. */}
+                  <button
+                    type="button"
+                    onClick={() => setAssistantOpen(true)}
+                    aria-label="Ask AI"
+                    className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm transition-all hover:brightness-105"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
+            headerSlot,
+          )
+        : null}
 
       <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
         <DialogContent className="max-w-2xl">
