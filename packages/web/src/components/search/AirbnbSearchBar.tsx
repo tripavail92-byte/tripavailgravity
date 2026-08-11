@@ -117,11 +117,50 @@ const DESTINATION_SUGGESTIONS: Record<SearchTab, readonly string[]> = {
   events: ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'],
 }
 
-const TABS: readonly { key: SearchTab; label: string; emoji: string }[] = [
-  { key: 'hotels', label: 'Hotels', emoji: '🏨' },
-  { key: 'tours', label: 'Tours', emoji: '🎈' },
-  { key: 'events', label: 'Events', emoji: '🎫' },
+/** System colour-emoji stack — the fallback if a 3D PNG ever fails to load. */
+const EMOJI_FONT =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif'
+
+const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: string }[] = [
+  // `icon` is a Microsoft Fluent Emoji 3D PNG (MIT-licensed, bundled in
+  // public/emoji) so the tab glyphs render as true 3D art identically on every
+  // device — not the flat OS font emoji, which differ Windows↔Apple↔Android.
+  // `emoji` stays as the graceful fallback.
+  { key: 'hotels', label: 'Hotels', emoji: '🏨', icon: '/emoji/hotel.png' },
+  { key: 'tours', label: 'Tours', emoji: '🎈', icon: '/emoji/balloon.png' },
+  { key: 'events', label: 'Events', emoji: '🎫', icon: '/emoji/ticket.png' },
 ]
+
+/**
+ * A tab glyph rendered as the bundled Fluent 3D PNG, with an automatic fall
+ * back to the system colour-emoji glyph if the image 404s or is blocked. `px`
+ * is both the box size and the fallback font-size, so the two render at the
+ * same footprint. Decorative — aria-hidden, empty alt.
+ */
+function EmojiIcon({ src, emoji, px }: { src: string; emoji: string; px: number }): JSX.Element {
+  const [failed, setFailed] = useState(false)
+  if (failed) {
+    return (
+      <span aria-hidden style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}>
+        {emoji}
+      </span>
+    )
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden
+      draggable={false}
+      decoding="async"
+      width={px}
+      height={px}
+      style={{ width: px, height: px }}
+      className="shrink-0 select-none object-contain"
+      onError={() => setFailed(true)}
+    />
+  )
+}
 
 /**
  * Shared premium popover surface for every field dropdown in the bar (Where,
@@ -484,17 +523,7 @@ function ExpandedBar({
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              <span
-                aria-hidden
-                style={{
-                  fontFamily:
-                    '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-                  fontSize: '28px',
-                  lineHeight: 1,
-                }}
-              >
-                {t.emoji}
-              </span>
+              <EmojiIcon src={t.icon} emoji={t.emoji} px={28} />
               {t.label}
             </button>
           )
@@ -1035,17 +1064,7 @@ function CompactPill({
             aria-label="Change search category"
             className="inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
           >
-            <span
-              aria-hidden
-              style={{
-                fontFamily:
-                  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-                fontSize: '20px',
-                lineHeight: 1,
-              }}
-            >
-              {activeTab.emoji}
-            </span>
+            <EmojiIcon src={activeTab.icon} emoji={activeTab.emoji} px={20} />
             <span className="hidden sm:inline">{activeTab.label}</span>
           </button>
         </PopoverTrigger>
@@ -1063,17 +1082,7 @@ function CompactPill({
                 t.key === tab && 'text-foreground',
               )}
             >
-              <span
-                aria-hidden
-                style={{
-                  fontFamily:
-                    '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
-                  fontSize: '18px',
-                  lineHeight: 1,
-                }}
-              >
-                {t.emoji}
-              </span>
+              <EmojiIcon src={t.icon} emoji={t.emoji} px={18} />
               {t.label}
             </button>
           ))}
