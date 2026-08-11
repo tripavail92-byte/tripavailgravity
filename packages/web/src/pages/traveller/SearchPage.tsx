@@ -9,17 +9,15 @@
 //                  longer used — kept here because Sheet still needs no
 //                  state; if TS complains about unused, drop it).
 // Kept imports:    everything else the page still uses.
-import { SlidersHorizontal, Star } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { SlidersHorizontal } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { AirbnbSearchBar } from '@/components/search/AirbnbSearchBar'
 import { HotelResultsGrid } from '@/components/search/HotelResultsGrid'
+import { SearchFilterPanel } from '@/components/search/SearchFilterPanel'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
@@ -39,8 +37,6 @@ const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
   { value: 'rating', labelKey: 'search.sortRating' },
   { value: 'newest', labelKey: 'search.sortNewest' },
 ]
-
-const RATINGS = [0, 3, 4, 4.5]
 
 export default function SearchPage() {
   const t = useT()
@@ -128,6 +124,39 @@ export default function SearchPage() {
     setSearchParams(next)
   }
 
+  const clearAllFilters = () => {
+    const next = new URLSearchParams(searchParams)
+    for (const k of ['minPrice', 'maxPrice', 'minRating', 'country', 'category']) next.delete(k)
+    setSearchParams(next)
+  }
+
+  // Mobile filter sheet open state (desktop uses the always-visible sidebar).
+  const [filtersOpen, setFiltersOpen] = useState<boolean>(false)
+
+  // Category options for the Tours filter are the distinct badges present in
+  // the tour results — exactly what the RPC's p_category matches, so a click
+  // always narrows correctly. We cache the full (category-unfiltered) list so
+  // that selecting a category doesn't collapse the chip list to just the one
+  // selected (which would trap the traveller — they couldn't switch without
+  // clearing first).
+  const categoryOptionsLive = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const it of tourItems) {
+      const b = (it.badge ?? '').trim()
+      if (b) counts.set(b, (counts.get(b) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [tourItems])
+
+  const [categoryCache, setCategoryCache] = useState<{ label: string; count: number }[]>([])
+  useEffect(() => {
+    if (!category && categoryOptionsLive.length) setCategoryCache(categoryOptionsLive)
+  }, [category, categoryOptionsLive])
+  const categoryOptions =
+    category && categoryCache.length ? categoryCache : categoryOptionsLive
+
   const activeFilterCount =
     (minPrice != null ? 1 : 0) +
     (maxPrice != null ? 1 : 0) +
@@ -159,6 +188,9 @@ export default function SearchPage() {
       <AirbnbSearchBar defaultTab={defaultTab === 'tour' ? 'tours' : 'hotels'} />
 
       <main className="container mx-auto px-4 py-8 flex-1 flex flex-col">
+        {/* Results toolbar — sits BELOW the search bar. Heading + count on the
+            left; type tabs, sort, and (mobile only) the Filters button on the
+            right. On desktop, filtering lives in the left sidebar instead. */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{heading}</h1>
@@ -170,8 +202,8 @@ export default function SearchPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 self-start">
-            {/* Type toggle — kept: it lets the traveller flip between the two
-                surfaces without re-opening the search bar. */}
+            {/* Type toggle — flip between the two surfaces without re-opening
+                the search bar. */}
             <div className="inline-flex rounded-full border border-border bg-background p-1">
               {[
                 { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal})` },
@@ -192,7 +224,8 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* Sort — kept. */}
+            {/* Sort — the "Recommended" control, now clearly in the results
+                toolbar below the search fields. */}
             <select
               aria-label="Sort results"
               value={sort}
@@ -206,10 +239,11 @@ export default function SearchPage() {
               ))}
             </select>
 
-            {/* Filters — kept. */}
-            <Sheet>
+            {/* Filters — MOBILE/TABLET ONLY. Desktop uses the persistent left
+                sidebar below, so this button is hidden at lg+. */}
+            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" className="gap-2 shrink-0">
+                <Button variant="outline" className="gap-2 shrink-0 lg:hidden">
                   <SlidersHorizontal className="w-4 h-4" />
                   {t('search.filters')}
                   {activeFilterCount > 0 && (
@@ -219,162 +253,124 @@ export default function SearchPage() {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
+              <SheetContent side="left" className="flex w-[88%] flex-col p-0 sm:max-w-sm">
+                {/* sr-only title satisfies Radix's a11y requirement without
+                    duplicating the panel's own visible "Filters" header. */}
+                <SheetHeader className="sr-only">
                   <SheetTitle>{t('search.filters')}</SheetTitle>
                 </SheetHeader>
-                <Separator className="my-4" />
-                <div className="space-y-6">
-                  <div>
-                    <Label>{t('search.priceRange')}</Label>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        placeholder={t('search.min')}
-                        defaultValue={minPrice ?? ''}
-                        onBlur={(e) => setParam('minPrice', e.target.value || null)}
-                      />
-                      <span>-</span>
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        placeholder={t('search.max')}
-                        defaultValue={maxPrice ?? ''}
-                        onBlur={(e) => setParam('maxPrice', e.target.value || null)}
-                      />
-                    </div>
-                    {facets?.priceMin != null && facets?.priceMax != null && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t('search.available')}: {Math.round(facets.priceMin).toLocaleString()} –{' '}
-                        {Math.round(facets.priceMax).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label>{t('search.minRating')}</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {RATINGS.map((r) => (
-                        <button
-                          key={r}
-                          onClick={() => setParam('minRating', r > 0 ? String(r) : null)}
-                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                            (minRating ?? 0) === r
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-muted'
-                          }`}
-                        >
-                          {r === 0 ? (
-                            t('search.any')
-                          ) : (
-                            <>
-                              {r}
-                              <Star className="h-3.5 w-3.5 fill-current" />+
-                            </>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {facets && facets.countries.length > 0 && (
-                    <div>
-                      <Label>{t('search.country')}</Label>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <button
-                          onClick={() => setParam('country', null)}
-                          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                            !country
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-muted'
-                          }`}
-                        >
-                          {t('search.all')}
-                        </button>
-                        {facets.countries.map((c) => (
-                          <button
-                            key={c.country}
-                            onClick={() => setParam('country', c.country)}
-                            className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                              country === c.country
-                                ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-border bg-background hover:bg-muted'
-                            }`}
-                          >
-                            {c.country} ({c.count})
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5">
+                  <SearchFilterPanel
+                    activeType={activeType}
+                    minPrice={minPrice}
+                    maxPrice={maxPrice}
+                    minRating={minRating}
+                    country={country}
+                    category={category}
+                    facets={facets}
+                    categoryOptions={categoryOptions}
+                    activeFilterCount={activeFilterCount}
+                    onSetParam={setParam}
+                    onClearAll={clearAllFilters}
+                  />
+                </div>
+                <div className="border-t border-border p-4">
+                  <Button
+                    className="w-full rounded-full"
+                    onClick={() => setFiltersOpen(false)}
+                  >
+                    {t('search.showResults')} · {total.toLocaleString()}
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
         </div>
 
-        <div className="mt-6 flex-1 flex flex-col space-y-10">
-          {isError ? (
-            <div className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
-              {t('search.error')}
+        {/* Content: sticky filter sidebar (desktop) + results column. */}
+        <div className="mt-6 flex flex-1 gap-8">
+          <aside className="hidden w-64 shrink-0 lg:block">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border border-border/60 bg-background px-4 py-2 pr-2">
+              <SearchFilterPanel
+                activeType={activeType}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                minRating={minRating}
+                country={country}
+                category={category}
+                facets={facets}
+                categoryOptions={categoryOptions}
+                activeFilterCount={activeFilterCount}
+                onSetParam={setParam}
+                onClearAll={clearAllFilters}
+              />
             </div>
-          ) : activeType === 'hotel' ? (
-            <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
-          ) : activeType === 'tour' ? (
-            <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
-          ) : (
-            <>
-              {(hotelItems.length > 0 || hotelQuery.isLoading) && (
-                <section>
-                  <h2 className="mb-3 text-lg font-semibold text-foreground">
-                    Hotels {hotelTotal > 0 ? `(${hotelTotal})` : ''}
-                  </h2>
-                  <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
-                </section>
-              )}
-              {(tourItems.length > 0 || tourQuery.isLoading) && (
-                <section>
-                  <h2 className="mb-3 text-lg font-semibold text-foreground">
-                    {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
-                  </h2>
-                  <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
-                </section>
-              )}
-              {!hotelQuery.isLoading &&
-                !tourQuery.isLoading &&
-                hotelItems.length === 0 &&
-                tourItems.length === 0 && <SearchResultsGrid items={[]} isLoading={false} />}
-            </>
-          )}
-        </div>
+          </aside>
 
-        {wantsHotels && hotelQuery.hasNextPage && !hotelQuery.isLoading && (
-          <div className="mt-10 flex justify-center">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-8"
-              onClick={() => hotelQuery.fetchNextPage()}
-              disabled={hotelQuery.isFetchingNextPage}
-            >
-              {hotelQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · Hotels`}
-            </Button>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex-1 space-y-10">
+              {isError ? (
+                <div className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center text-sm text-muted-foreground">
+                  {t('search.error')}
+                </div>
+              ) : activeType === 'hotel' ? (
+                <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
+              ) : activeType === 'tour' ? (
+                <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
+              ) : (
+                <>
+                  {(hotelItems.length > 0 || hotelQuery.isLoading) && (
+                    <section>
+                      <h2 className="mb-3 text-lg font-semibold text-foreground">
+                        Hotels {hotelTotal > 0 ? `(${hotelTotal})` : ''}
+                      </h2>
+                      <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
+                    </section>
+                  )}
+                  {(tourItems.length > 0 || tourQuery.isLoading) && (
+                    <section>
+                      <h2 className="mb-3 text-lg font-semibold text-foreground">
+                        {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
+                      </h2>
+                      <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
+                    </section>
+                  )}
+                  {!hotelQuery.isLoading &&
+                    !tourQuery.isLoading &&
+                    hotelItems.length === 0 &&
+                    tourItems.length === 0 && <SearchResultsGrid items={[]} isLoading={false} />}
+                </>
+              )}
+            </div>
+
+            {wantsHotels && hotelQuery.hasNextPage && !hotelQuery.isLoading && (
+              <div className="mt-10 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="rounded-full px-8"
+                  onClick={() => hotelQuery.fetchNextPage()}
+                  disabled={hotelQuery.isFetchingNextPage}
+                >
+                  {hotelQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · Hotels`}
+                </Button>
+              </div>
+            )}
+            {wantsTours && tourQuery.hasNextPage && !tourQuery.isLoading && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="rounded-full px-8"
+                  onClick={() => tourQuery.fetchNextPage()}
+                  disabled={tourQuery.isFetchingNextPage}
+                >
+                  {tourQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · ${t('search.tours')}`}
+                </Button>
+              </div>
+            )}
           </div>
-        )}
-        {wantsTours && tourQuery.hasNextPage && !tourQuery.isLoading && (
-          <div className="mt-4 flex justify-center">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-8"
-              onClick={() => tourQuery.fetchNextPage()}
-              disabled={tourQuery.isFetchingNextPage}
-            >
-              {tourQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · ${t('search.tours')}`}
-            </Button>
-          </div>
-        )}
+        </div>
       </main>
     </div>
   )
