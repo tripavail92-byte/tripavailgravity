@@ -127,7 +127,7 @@ const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: strin
   // device — not the flat OS font emoji, which differ Windows↔Apple↔Android.
   // `emoji` stays as the graceful fallback.
   { key: 'hotels', label: 'Hotels', emoji: '🏨', icon: '/emoji/hotel.png' },
-  { key: 'tours', label: 'Tours', emoji: '🏞️', icon: '/emoji/national-park.png' },
+  { key: 'tours', label: 'Tours', emoji: '🚙', icon: '/emoji/jeep.png' },
   { key: 'events', label: 'Events', emoji: '🎫', icon: '/emoji/ticket.png' },
 ]
 
@@ -137,11 +137,25 @@ const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: strin
  * is both the box size and the fallback font-size, so the two render at the
  * same footprint. Decorative — aria-hidden, empty alt.
  */
-function EmojiIcon({ src, emoji, px }: { src: string; emoji: string; px: number }): JSX.Element {
+function EmojiIcon({
+  src,
+  emoji,
+  px,
+  className,
+}: {
+  src: string
+  emoji: string
+  px: number
+  className?: string
+}): JSX.Element {
   const [failed, setFailed] = useState(false)
   if (failed) {
     return (
-      <span aria-hidden style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}>
+      <span
+        aria-hidden
+        className={className}
+        style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}
+      >
         {emoji}
       </span>
     )
@@ -156,7 +170,7 @@ function EmojiIcon({ src, emoji, px }: { src: string; emoji: string; px: number 
       width={px}
       height={px}
       style={{ width: px, height: px }}
-      className="shrink-0 select-none object-contain"
+      className={cn('shrink-0 select-none object-contain', className)}
       onError={() => setFailed(true)}
     />
   )
@@ -523,7 +537,12 @@ function ExpandedBar({
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              <EmojiIcon src={t.icon} emoji={t.emoji} px={28} />
+              <EmojiIcon
+                src={t.icon}
+                emoji={t.emoji}
+                px={28}
+                className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
+              />
               {t.label}
             </button>
           )
@@ -1064,7 +1083,12 @@ function CompactPill({
             aria-label="Change search category"
             className="inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
           >
-            <EmojiIcon src={activeTab.icon} emoji={activeTab.emoji} px={20} />
+            <EmojiIcon
+              src={activeTab.icon}
+              emoji={activeTab.emoji}
+              px={20}
+              className={activeTab.key === 'tours' ? 'animate-jeep-drive' : undefined}
+            />
             <span className="hidden sm:inline">{activeTab.label}</span>
           </button>
         </PopoverTrigger>
@@ -1082,7 +1106,12 @@ function CompactPill({
                 t.key === tab && 'text-foreground',
               )}
             >
-              <EmojiIcon src={t.icon} emoji={t.emoji} px={18} />
+              <EmojiIcon
+                src={t.icon}
+                emoji={t.emoji}
+                px={18}
+                className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
+              />
               {t.label}
             </button>
           ))}

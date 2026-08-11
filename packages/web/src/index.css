@@ -855,3 +855,40 @@
     animation: none;
   }
 }
+
+/* Tours tab jeep — a continuous "driving over a bumpy mountain road" bob +
+   rock. transform-origin near the wheels so it pivots on them rather than
+   spinning about its centre. Honoured everywhere the Tours glyph renders
+   (tab strip, compact pill, category menu). */
+@keyframes jeep-drive {
+  0% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  20% {
+    transform: translateY(-2px) rotate(0deg);
+  }
+  40% {
+    transform: translateY(0) rotate(2deg);
+  }
+  60% {
+    transform: translateY(-2px) rotate(0deg);
+  }
+  80% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+}
+
+.animate-jeep-drive {
+  animation: jeep-drive 1s ease-in-out infinite;
+  transform-origin: 50% 85%;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-jeep-drive {
+    animation: none;
+  }
+}
