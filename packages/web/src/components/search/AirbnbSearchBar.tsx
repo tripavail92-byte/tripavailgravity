@@ -464,21 +464,13 @@ function ExpandedBar({
 
         {tab === 'hotels' ? (
           <>
-            <DateRangeField
-              label="Check in"
-              which="from"
-              range={range}
-              setRange={setRange}
-              isDesktop={isDesktop}
-            />
-            <Divider />
-            <DateRangeField
-              label="Check out"
-              which="to"
-              range={range}
-              setRange={setRange}
-              isDesktop={isDesktop}
-            />
+            {/* ONE combined "When" field, not two. Airbnb's current bar shows a
+                single field labelled "When" with a formatted range value like
+                "Aug 12 – 22", opening a range calendar. Two separate Check-in /
+                Check-out fields — the pattern this workflow originally produced
+                — matches an older Airbnb look and doubles the visual weight of
+                the middle of the bar. */}
+            <WhenRangeField range={range} setRange={setRange} isDesktop={isDesktop} />
             <Divider />
             <GuestsField
               tab={tab}
@@ -641,30 +633,65 @@ function WhereField({
   )
 }
 
-function DateRangeField({
-  label,
-  which,
+/**
+ * Combined "When" range field — the single field Airbnb's current bar uses in
+ * place of separate Check-in / Check-out. Renders the range as one string
+ * ("Aug 12 – 22", or "Aug 12 – …" while mid-selection, or "Any week" when
+ * empty), and opens a two-month range calendar with a small clear (×) button
+ * when a range is picked so the traveller can start over without closing the
+ * popover.
+ */
+function WhenRangeField({
   range,
   setRange,
   isDesktop,
 }: {
-  label: string
-  which: 'from' | 'to'
   range: DateRange | undefined
   setRange: Dispatch<SetStateAction<DateRange | undefined>>
   isDesktop: boolean
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
-  const shown = which === 'from' ? range?.from : range?.to
-  const display = shown ? format(shown, 'MMM d') : 'Add date'
+  const display = useMemo<string>(() => {
+    if (range?.from && range.to) {
+      return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')}`
+    }
+    if (range?.from) return `${format(range.from, 'MMM d')} – …`
+    return 'Any week'
+  }, [range])
+  const hasRange = Boolean(range?.from && range.to)
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div>
-          <FieldShell label={label} value={display} onClick={() => setOpen(true)} />
-        </div>
+        <button
+          type="button"
+          className="group flex flex-1 flex-col items-start justify-center rounded-full px-5 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-w-[180px]"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+            When
+          </span>
+          <span className="mt-0.5 flex items-center gap-2 truncate text-sm">
+            <span className={hasRange ? 'text-foreground' : 'text-muted-foreground'}>
+              {display}
+            </span>
+            {hasRange && (
+              <span
+                role="button"
+                tabIndex={-1}
+                aria-label="Clear dates"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setRange(undefined)
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-muted-foreground/10"
+              >
+                ×
+              </span>
+            )}
+          </span>
+        </button>
       </PopoverTrigger>
-      <PopoverContent align={which === 'from' ? 'start' : 'center'} sideOffset={12} className="w-auto p-2">
+      <PopoverContent align="center" sideOffset={12} className="w-auto p-2">
         <Calendar
           mode="range"
           selected={range}
