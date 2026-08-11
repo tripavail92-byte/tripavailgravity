@@ -31,8 +31,14 @@ export default function LandingPage() {
     ],
   })
 
+  // overflow-x: CLIP, not hidden. `overflow-x: hidden` implies `overflow-y: auto`,
+  // which turns this div into a scroll ancestor and captures every `position: sticky`
+  // descendant. AirbnbSearchBar's sticky then anchors to a container that doesn't
+  // itself scroll (the window does), so on scroll the bar drifts off with the page
+  // instead of pinning. `overflow-x: clip` clips horizontally without becoming a
+  // scroll ancestor, and sticky pins to the viewport as intended.
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-clip">
       <div className="container mx-auto max-w-7xl px-4 pb-6">
         <div className="space-y-8">
           {/*

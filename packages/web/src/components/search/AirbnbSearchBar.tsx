@@ -296,8 +296,12 @@ export function AirbnbSearchBar({
           // morph. h-[120px] fits tab-strip (28) + gap (12) + h-14 pill (56) +
           // top/bottom padding — with room to spare — so both states center
           // inside the same reserved box and nothing jumps.
-          'sticky top-[60px] md:top-20 z-40 w-full h-[120px] bg-background/95 supports-[backdrop-filter]:bg-background/70 backdrop-blur transition-shadow',
-          isCompact ? 'border-b border-border shadow-sm' : '',
+          // Sticky band. Glassmorphism: translucent ground + strong blur so
+          // scrolling content bleeds through faintly instead of a hard scrim.
+          // When compact, a soft border+shadow gives the pinned bar physical
+          // separation from the page below.
+          'sticky top-[60px] md:top-20 z-40 w-full h-[120px] bg-background/60 supports-[backdrop-filter]:bg-background/40 backdrop-blur-xl transition-shadow',
+          isCompact ? 'border-b border-border/60 shadow-sm shadow-black/5' : '',
           className,
         )}
       >
@@ -457,8 +461,12 @@ function ExpandedBar({
         })}
       </div>
 
-      {/* Field pill */}
-      <div className="mx-auto flex w-full max-w-4xl items-stretch rounded-full border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+      {/* Field pill — the premium Glass-UI element. Translucent ground with a
+          heavy backdrop blur (so hero content ghosts through), a white/10-40
+          highlight ring for the glass edge, and a soft, wide black shadow that
+          lifts the pill off the page. Matches the previous GlassCard
+          variant="light" treatment the header used to carry. */}
+      <div className="mx-auto flex w-full max-w-4xl items-stretch rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20 transition-shadow">
         <WhereField value={where} onChange={setWhere} onSubmit={onSubmit} />
         <Divider />
 
@@ -918,7 +926,7 @@ function CompactPill({
           <button
             type="button"
             aria-label="Change search category"
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm font-semibold shadow-sm transition-colors hover:bg-muted"
+            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
           >
             <span
               aria-hidden
@@ -971,7 +979,7 @@ function CompactPill({
        * fold them into one target, and Enter/Space can bubble ambiguously.
        * Two sibling <button>s inside one visual container solve all three.
        */}
-      <div className="inline-flex h-11 items-stretch rounded-full border border-border bg-background pl-4 pr-1 text-sm font-semibold shadow-sm transition-shadow hover:shadow-md">
+      <div className="inline-flex h-11 items-stretch rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl pl-4 pr-1 text-sm font-semibold shadow-xl shadow-black/10 transition-shadow hover:shadow-xl hover:shadow-black/20">
         <button
           type="button"
           onClick={onExpand}

@@ -35,7 +35,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 bg-background border-b z-50">
+      <header className="fixed top-0 left-0 right-0 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl border-b border-border/60 z-50">
         <div className="container mx-auto max-w-7xl grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:gap-3 min-h-[60px] px-4 py-2 md:h-20 md:py-0 md:px-6 lg:px-10">
           {/* Logo + primary nav (desktop). Emblem-only logo on phones; the nav
               collapses to the bottom tab bar there. */}

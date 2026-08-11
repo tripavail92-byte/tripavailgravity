@@ -85,7 +85,7 @@ export default function MixedCollectionPage() {
   const hasMore = visibleCount < merged.length
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-clip">
       <div className="container mx-auto max-w-7xl px-4 pt-6">
         <button
           type="button"
