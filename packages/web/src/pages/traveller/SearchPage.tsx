@@ -124,6 +124,18 @@ export default function SearchPage() {
     setSearchParams(next)
   }
 
+  // Min + max must be written in ONE setSearchParams call. Calling setParam
+  // twice would rebuild from the same stale `searchParams` closure and the
+  // second write would clobber the first (classic batched-router pitfall).
+  const setPriceRange = (min: number | null, max: number | null) => {
+    const next = new URLSearchParams(searchParams)
+    if (min == null) next.delete('minPrice')
+    else next.set('minPrice', String(min))
+    if (max == null) next.delete('maxPrice')
+    else next.set('maxPrice', String(max))
+    setSearchParams(next)
+  }
+
   const clearAllFilters = () => {
     const next = new URLSearchParams(searchParams)
     for (const k of ['minPrice', 'maxPrice', 'minRating', 'country', 'category']) next.delete(k)
@@ -271,6 +283,7 @@ export default function SearchPage() {
                     categoryOptions={categoryOptions}
                     activeFilterCount={activeFilterCount}
                     onSetParam={setParam}
+                    onSetPrice={setPriceRange}
                     onClearAll={clearAllFilters}
                   />
                 </div>
@@ -302,6 +315,7 @@ export default function SearchPage() {
                 categoryOptions={categoryOptions}
                 activeFilterCount={activeFilterCount}
                 onSetParam={setParam}
+                onSetPrice={setPriceRange}
                 onClearAll={clearAllFilters}
               />
             </div>

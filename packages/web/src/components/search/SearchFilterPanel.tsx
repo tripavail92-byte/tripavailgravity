@@ -1,7 +1,9 @@
+import { BASE_CURRENCY } from '@tripavail/shared/utils/money'
 import { Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { useMoney } from '@/hooks/useMoney'
 import { useT } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
 import type { SearchFacets } from '@/queries/searchQueries'
@@ -43,6 +45,9 @@ export interface SearchFilterPanelProps {
   categoryOptions: { label: string; count: number }[]
   activeFilterCount: number
   onSetParam: (key: string, value: string | null) => void
+  /** Writes minPrice + maxPrice in a SINGLE router update (avoids the
+   *  double-setParam clobber). null = clear that bound. */
+  onSetPrice: (min: number | null, max: number | null) => void
   onClearAll: () => void
 }
 
@@ -57,6 +62,7 @@ export function SearchFilterPanel({
   categoryOptions,
   activeFilterCount,
   onSetParam,
+  onSetPrice,
   onClearAll,
 }: SearchFilterPanelProps): JSX.Element {
   const t = useT()
@@ -106,20 +112,20 @@ export function SearchFilterPanel({
 
       <Divider />
 
-      {/* Price range */}
-      <Section title={t('search.priceRange')}>
-        <PriceInputs
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onSetParam={onSetParam}
-        />
-        {facets?.priceMin != null && facets?.priceMax != null && (
-          <p className="text-xs text-muted-foreground">
-            {t('search.available')}: {Math.round(facets.priceMin).toLocaleString()} –{' '}
-            {Math.round(facets.priceMax).toLocaleString()}
-          </p>
-        )}
-      </Section>
+      {/* Price range — a two-thumb slider (no typing), labelled in the
+          traveller's display currency (PKR in Pakistan). Only shown when the
+          facet actually reports a spendable range. */}
+      {facets?.priceMin != null && facets?.priceMax != null && facets.priceMax > facets.priceMin && (
+        <Section title={t('search.priceRange')}>
+          <PriceSlider
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            facetMin={facets.priceMin}
+            facetMax={facets.priceMax}
+            onSetPrice={onSetPrice}
+          />
+        </Section>
+      )}
 
       <Divider />
 
@@ -241,58 +247,83 @@ function ChipButton({
   )
 }
 
+/** A "nice" step so drags snap to round numbers (~100 stops across the range). */
+function niceStep(range: number): number {
+  if (range <= 0) return 1
+  const raw = range / 100
+  const pow = 10 ** Math.floor(Math.log10(raw))
+  for (const m of [1, 2, 2.5, 5, 10]) {
+    if (m * pow >= raw) return m * pow
+  }
+  return pow * 10
+}
+
 /**
- * Controlled-with-local-buffer price inputs. Committing on blur/Enter (not per
- * keystroke) avoids a query per digit; a useEffect re-seeds the local buffer
- * whenever the URL-driven props change (e.g. "Clear all" zeroes them) so the
- * inputs never drift from the actual applied filter.
+ * Two-thumb price range slider — the whole point is NO typing. Operates in the
+ * search's base currency (the facet min/max are already base-normalised), and
+ * labels the thumbs via useMoney so a Pakistani traveller sees ₨ while the
+ * underlying filter value stays in base units. Bounds are snapped outward to a
+ * round step so the ends read cleanly (e.g. 7,000 – 69,000).
+ *
+ * onValueChange updates the labels live during the drag; onValueCommit (fires
+ * once on release) is what actually writes the URL + refetches — one query per
+ * gesture, not per pixel. A thumb parked at a bound clears that filter so the
+ * range never over-constrains the result set.
  */
-function PriceInputs({
+function PriceSlider({
   minPrice,
   maxPrice,
-  onSetParam,
+  facetMin,
+  facetMax,
+  onSetPrice,
 }: {
   minPrice: number | null
   maxPrice: number | null
-  onSetParam: (key: string, value: string | null) => void
+  facetMin: number
+  facetMax: number
+  onSetPrice: (min: number | null, max: number | null) => void
 }): JSX.Element {
-  const t = useT()
-  const [minL, setMinL] = useState<string>(minPrice != null ? String(minPrice) : '')
-  const [maxL, setMaxL] = useState<string>(maxPrice != null ? String(maxPrice) : '')
-  useEffect(() => setMinL(minPrice != null ? String(minPrice) : ''), [minPrice])
-  useEffect(() => setMaxL(maxPrice != null ? String(maxPrice) : ''), [maxPrice])
+  const money = useMoney()
+  const step = niceStep(facetMax - facetMin)
+  // Snap the ceiling up to a clean step multiple (e.g. 69,000). For the floor,
+  // prefer a clean step multiple too — but if the cheapest listing is below one
+  // step it would collapse to a misleading "0", so fall back to the real
+  // minimum in that case (shows "PKR 500", not "PKR 0").
+  const hi = Math.ceil(facetMax / step) * step
+  const lo = Math.floor(facetMin / step) * step || Math.floor(facetMin)
 
-  const commit = (key: 'minPrice' | 'maxPrice', v: string): void => {
-    onSetParam(key, v.trim() || null)
+  const clamp = (n: number): number => Math.min(hi, Math.max(lo, n))
+  const [local, setLocal] = useState<[number, number]>([
+    clamp(minPrice ?? lo),
+    clamp(maxPrice ?? hi),
+  ])
+  // Re-seed from the URL whenever it changes (Clear all, back/forward, or a
+  // filter that shifts the facet bounds) so the thumbs never drift.
+  useEffect(() => {
+    setLocal([clamp(minPrice ?? lo), clamp(maxPrice ?? hi)])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minPrice, maxPrice, lo, hi])
+
+  const commit = (vals: number[]): void => {
+    const [a, b] = vals
+    onSetPrice(a <= lo ? null : a, b >= hi ? null : b)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Input
-        type="number"
-        inputMode="numeric"
-        aria-label={t('search.min')}
-        placeholder={t('search.min')}
-        value={minL}
-        onChange={(e) => setMinL(e.target.value)}
-        onBlur={(e) => commit('minPrice', e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit('minPrice', (e.target as HTMLInputElement).value)
-        }}
+    <div className="space-y-3 pt-1">
+      <Slider
+        min={lo}
+        max={hi}
+        step={step}
+        value={local}
+        onValueChange={(v) => setLocal([v[0] ?? lo, v[1] ?? hi])}
+        onValueCommit={commit}
+        aria-label="Price range"
       />
-      <span className="text-muted-foreground">–</span>
-      <Input
-        type="number"
-        inputMode="numeric"
-        aria-label={t('search.max')}
-        placeholder={t('search.max')}
-        value={maxL}
-        onChange={(e) => setMaxL(e.target.value)}
-        onBlur={(e) => commit('maxPrice', e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit('maxPrice', (e.target as HTMLInputElement).value)
-        }}
-      />
+      <div className="flex items-center justify-between text-sm font-semibold text-foreground">
+        <span className="tabular-nums">{money(local[0], BASE_CURRENCY).text}</span>
+        <span className="tabular-nums">{money(local[1], BASE_CURRENCY).text}</span>
+      </div>
     </div>
   )
 }
