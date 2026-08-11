@@ -127,7 +127,7 @@ const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: strin
   // device — not the flat OS font emoji, which differ Windows↔Apple↔Android.
   // `emoji` stays as the graceful fallback.
   { key: 'hotels', label: 'Hotels', emoji: '🏨', icon: '/emoji/hotel.png' },
-  { key: 'tours', label: 'Tours', emoji: '🎈', icon: '/emoji/balloon.png' },
+  { key: 'tours', label: 'Tours', emoji: '🏞️', icon: '/emoji/national-park.png' },
   { key: 'events', label: 'Events', emoji: '🎫', icon: '/emoji/ticket.png' },
 ]
 
