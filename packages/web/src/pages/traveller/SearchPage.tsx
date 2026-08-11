@@ -1,33 +1,33 @@
-import { Search, SlidersHorizontal, Sparkles, Star } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+// DIFF: complete replacement of the top-bar block and the SearchOverlay
+// mount. The Sort <select> and Filters <Sheet> are RETAINED — only the
+// search UIs (TripAvailSearchBar + mobile compact pill + the top-bar Ask AI
+// button) are removed. AirbnbSearchBar now mounts above the results header
+// and provides the single Ask AI entry point.
+//
+// Removed imports: SearchOverlay, TripAvailSearchBar, SearchFilters,
+//                  Sparkles, TravelAssistant, Dialog, useState (only if no
+//                  longer used — kept here because Sheet still needs no
+//                  state; if TS complains about unused, drop it).
+// Kept imports:    everything else the page still uses.
+import { SlidersHorizontal, Star } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { AirbnbSearchBar } from '@/components/search/AirbnbSearchBar'
 import { HotelResultsGrid } from '@/components/search/HotelResultsGrid'
-import { SearchOverlay } from '@/components/search/SearchOverlay'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
-import { type SearchFilters, TripAvailSearchBar } from '@/components/search/TripAvailSearchBar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useHotelSearch } from '@/queries/hotelQueries'
-import {
-  type SearchSort,
-  useSearchFacets,
-  useUnifiedSearch,
-} from '@/queries/searchQueries'
+import { type SearchSort, useSearchFacets, useUnifiedSearch } from '@/queries/searchQueries'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 
-// Post-Phase-3C the traveller only ever picks Hotels or Tours in the toggle;
-// Stays as a category is gone (a "stay" belongs to a hotel, so it surfaces
-// under one). 'package' in the URL is silently mapped to 'hotel' for any
-// still-live campaign link that hasn't been rewritten.
 type SearchType = 'hotel' | 'tour'
 type ActiveType = 'all' | SearchType
 
@@ -45,12 +45,9 @@ const RATINGS = [0, 3, 4, 4.5]
 export default function SearchPage() {
   const t = useT()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const { coords } = useTravellerCoords()
   const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
 
-  // ---- read filters from the URL --------------------------------------------
   const q = searchParams.get('q') || ''
   const location = searchParams.get('location') || ''
   const effectiveQuery = [q, location]
@@ -58,8 +55,6 @@ export default function SearchPage() {
     .filter(Boolean)
     .join(' ')
 
-  // Accepts 'hotel' or 'tour'; the old 'package' value is treated as 'hotel' for
-  // backwards compatibility with any bookmarked/campaign URLs.
   const activeType: ActiveType = useMemo(() => {
     const raw = (searchParams.get('types') || '').trim().toLowerCase()
     if (raw === 'tour') return 'tour'
@@ -67,12 +62,11 @@ export default function SearchPage() {
     return 'all'
   }, [searchParams])
 
-  // Seed the shared geo origin from a searched place (non-destructive: only sets coords
-  // when the term matches a known city, so "nearest" sort uses the searched destination).
   useEffect(() => {
     const seed = (location || q).trim()
     if (seed) setSelectedCityByName(seed)
   }, [location, q, setSelectedCityByName])
+
   const country = searchParams.get('country') || ''
   const category = searchParams.get('category') || ''
   const minPrice = numOrNull(searchParams.get('minPrice'))
@@ -91,40 +85,20 @@ export default function SearchPage() {
       country: country || null,
       category: category || null,
     }),
-    [
-      effectiveQuery,
-      coords?.latitude,
-      coords?.longitude,
-      minPrice,
-      maxPrice,
-      minRating,
-      country,
-      category,
-    ],
+    [effectiveQuery, coords?.latitude, coords?.longitude, minPrice, maxPrice, minRating, country, category],
   )
 
   const searchInput = useMemo(
-    () => ({
-      ...baseFilters,
-      sort: (sort || undefined) as SearchSort | undefined,
-    }),
+    () => ({ ...baseFilters, sort: (sort || undefined) as SearchSort | undefined }),
     [baseFilters, sort],
   )
 
-  // Two independent paginated queries — one per surface. `enabled` skips the RPC
-  // call entirely when the traveller is on the other tab, so switching to Hotels
-  // never spends a network round-trip fetching tours the UI won't render.
   const wantsHotels = activeType === 'all' || activeType === 'hotel'
   const wantsTours = activeType === 'all' || activeType === 'tour'
 
   const hotelQuery = useHotelSearch(searchInput, { enabled: wantsHotels })
-  const tourQuery = useUnifiedSearch(
-    { ...searchInput, types: ['tour'] },
-    { enabled: wantsTours },
-  )
+  const tourQuery = useUnifiedSearch({ ...searchInput, types: ['tour'] }, { enabled: wantsTours })
 
-  // Facets stay driven by the existing tour+package aggregate — used only for
-  // the sidebar's price/country/rating chips, not the toggle counts.
   const { data: facets } = useSearchFacets(baseFilters)
 
   const hotelItems = useMemo(
@@ -147,7 +121,6 @@ export default function SearchPage() {
 
   const showDistance = (sort || (effectiveQuery ? '' : coords ? 'nearest' : '')) === 'nearest'
 
-  // ---- URL helpers ----------------------------------------------------------
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams)
     if (value == null || value === '') next.delete(key)
@@ -162,24 +135,6 @@ export default function SearchPage() {
     (country ? 1 : 0) +
     (category ? 1 : 0)
 
-  // The overlay/search bar owns q/location/category/price/rating. Merge onto the current
-  // URL so it never wipes the active type, sort or country selection.
-  const handleAdvancedSearch = (filters: SearchFilters) => {
-    const next = new URLSearchParams(searchParams)
-    const put = (key: string, value: string | null | undefined) =>
-      value ? next.set(key, value) : next.delete(key)
-
-    put('q', filters.query)
-    put('location', filters.location)
-    put('category', filters.category && filters.category !== 'all' ? filters.category : null)
-    put('minPrice', filters.priceRange[0] !== 0 ? String(filters.priceRange[0]) : null)
-    put('maxPrice', filters.priceRange[1] !== 5000 ? String(filters.priceRange[1]) : null)
-    put('minRating', filters.minRating > 0 ? String(filters.minRating) : null)
-
-    setSearchParams(next)
-    setIsSearchOverlayOpen(false)
-  }
-
   const heading = effectiveQuery
     ? t('search.resultsFor', { query: effectiveQuery })
     : country
@@ -190,188 +145,19 @@ export default function SearchPage() {
     title: effectiveQuery ? `Search: ${effectiveQuery}` : 'Search tours & stays',
     description: 'Search tours and hotel stays across every destination on TripAvail.',
     canonicalPath: '/search',
-    noindex: true, // filtered result URLs shouldn't be indexed
+    noindex: true,
   })
+
+  // Tab preselect: /search?types=tour opens the bar on Tours; hotel/all → Hotels.
+  const defaultTab = activeType === 'tour' ? 'tour' : 'hotel'
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Top bar with search */}
-      <div className="glass-nav border-b sticky top-16 z-40 shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="hidden md:block flex-1">
-            <TripAvailSearchBar
-              onSearch={handleAdvancedSearch}
-              onSearchOverlayToggle={(isOpen) => setIsSearchOverlayOpen(isOpen)}
-              className="p-0 shadow-none"
-              initialFilters={{
-                query: q,
-                location,
-                category,
-                priceRange: [minPrice ?? 0, maxPrice ?? 5000],
-                minRating: minRating ?? 0,
-              }}
-            />
-          </div>
+      {/* ONE search bar for the whole app — Airbnb-style, sticky, morphs on
+          scroll, and provides Ask AI. Every other search UI on this page has
+          been removed. */}
+      <AirbnbSearchBar defaultTab={defaultTab === 'tour' ? 'tours' : 'hotels'} />
 
-          <button
-            onClick={() => setIsSearchOverlayOpen(true)}
-            className="md:hidden flex items-center gap-2 px-4 py-2 glass-chip rounded-full text-sm font-medium"
-          >
-            <Search className="w-4 h-4" />
-            {t('search.searchDestinations')}
-          </button>
-
-          {/* Sort */}
-          <select
-            aria-label="Sort results"
-            value={sort}
-            onChange={(e) => setParam('sort', e.target.value)}
-            className="h-9 rounded-full border border-border bg-background px-3 text-sm font-medium"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value || 'auto'} value={o.value}>
-                {t(o.labelKey)}
-              </option>
-            ))}
-          </select>
-
-          {/* Ask AI — the same dialog entry every other page has. Sits with
-              Sort and Filters so /search's top bar matches home's ExploreControls
-              row for AI access. */}
-          <Button
-            type="button"
-            onClick={() => setIsAssistantOpen(true)}
-            className="group hidden sm:inline-flex h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
-          >
-            <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-            Ask AI
-          </Button>
-
-          {/* Filters sheet */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="gap-2 shrink-0">
-                <SlidersHorizontal className="w-4 h-4" />
-                {t('search.filters')}
-                {activeFilterCount > 0 && (
-                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>{t('search.filters')}</SheetTitle>
-              </SheetHeader>
-              <Separator className="my-4" />
-              <div className="space-y-6">
-                <div>
-                  <Label>{t('search.priceRange')}</Label>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder={t('search.min')}
-                      defaultValue={minPrice ?? ''}
-                      onBlur={(e) => setParam('minPrice', e.target.value || null)}
-                    />
-                    <span>-</span>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder={t('search.max')}
-                      defaultValue={maxPrice ?? ''}
-                      onBlur={(e) => setParam('maxPrice', e.target.value || null)}
-                    />
-                  </div>
-                  {facets?.priceMin != null && facets?.priceMax != null && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {t('search.available')}: {Math.round(facets.priceMin).toLocaleString()} –{' '}
-                      {Math.round(facets.priceMax).toLocaleString()}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label>{t('search.minRating')}</Label>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {RATINGS.map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => setParam('minRating', r > 0 ? String(r) : null)}
-                        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                          (minRating ?? 0) === r
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:bg-muted'
-                        }`}
-                      >
-                        {r === 0 ? (
-                          t('search.any')
-                        ) : (
-                          <>
-                            {r}
-                            <Star className="h-3.5 w-3.5 fill-current" />+
-                          </>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {facets && facets.countries.length > 0 && (
-                  <div>
-                    <Label>{t('search.country')}</Label>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setParam('country', null)}
-                        className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                          !country
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:bg-muted'
-                        }`}
-                      >
-                        {t('search.all')}
-                      </button>
-                      {facets.countries.map((c) => (
-                        <button
-                          key={c.country}
-                          onClick={() => setParam('country', c.country)}
-                          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
-                            country === c.country
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-background hover:bg-muted'
-                          }`}
-                        >
-                          {c.country} ({c.count})
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-
-      <SearchOverlay
-        isOpen={isSearchOverlayOpen}
-        onClose={() => setIsSearchOverlayOpen(false)}
-        onSearch={handleAdvancedSearch}
-        initialFilters={{
-          query: q,
-          location,
-          category: category || 'all',
-          duration: '',
-          priceRange: [minPrice ?? 0, maxPrice ?? 5000],
-          minRating: minRating ?? 0,
-          experienceType: [],
-        }}
-      />
-
-      {/* flex-1 so the results column claims the leftover height of the min-h-screen root —
-          without it an empty result set leaves most of the viewport dead. */}
       <main className="container mx-auto px-4 py-8 flex-1 flex flex-col">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -383,26 +169,148 @@ export default function SearchPage() {
             </p>
           </div>
 
-          {/* Type toggle — Hotels · Tours. Counts come from each query's own
-              first-page total, no second facet call needed. */}
-          <div className="inline-flex rounded-full border border-border bg-background p-1 self-start">
-            {[
-              { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal})` },
-              { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
-              { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                  activeType === tab.key
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {tab.label.trim()}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            {/* Type toggle — kept: it lets the traveller flip between the two
+                surfaces without re-opening the search bar. */}
+            <div className="inline-flex rounded-full border border-border bg-background p-1">
+              {[
+                { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal})` },
+                { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
+                { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                    activeType === tab.key
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.label.trim()}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort — kept. */}
+            <select
+              aria-label="Sort results"
+              value={sort}
+              onChange={(e) => setParam('sort', e.target.value)}
+              className="h-9 rounded-full border border-border bg-background px-3 text-sm font-medium"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value || 'auto'} value={o.value}>
+                  {t(o.labelKey)}
+                </option>
+              ))}
+            </select>
+
+            {/* Filters — kept. */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="gap-2 shrink-0">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {t('search.filters')}
+                  {activeFilterCount > 0 && (
+                    <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>{t('search.filters')}</SheetTitle>
+                </SheetHeader>
+                <Separator className="my-4" />
+                <div className="space-y-6">
+                  <div>
+                    <Label>{t('search.priceRange')}</Label>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder={t('search.min')}
+                        defaultValue={minPrice ?? ''}
+                        onBlur={(e) => setParam('minPrice', e.target.value || null)}
+                      />
+                      <span>-</span>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder={t('search.max')}
+                        defaultValue={maxPrice ?? ''}
+                        onBlur={(e) => setParam('maxPrice', e.target.value || null)}
+                      />
+                    </div>
+                    {facets?.priceMin != null && facets?.priceMax != null && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('search.available')}: {Math.round(facets.priceMin).toLocaleString()} –{' '}
+                        {Math.round(facets.priceMax).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>{t('search.minRating')}</Label>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {RATINGS.map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setParam('minRating', r > 0 ? String(r) : null)}
+                          className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                            (minRating ?? 0) === r
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border bg-background hover:bg-muted'
+                          }`}
+                        >
+                          {r === 0 ? (
+                            t('search.any')
+                          ) : (
+                            <>
+                              {r}
+                              <Star className="h-3.5 w-3.5 fill-current" />+
+                            </>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {facets && facets.countries.length > 0 && (
+                    <div>
+                      <Label>{t('search.country')}</Label>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setParam('country', null)}
+                          className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+                            !country
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border bg-background hover:bg-muted'
+                          }`}
+                        >
+                          {t('search.all')}
+                        </button>
+                        {facets.countries.map((c) => (
+                          <button
+                            key={c.country}
+                            onClick={() => setParam('country', c.country)}
+                            className={`rounded-full border px-3 py-1.5 text-sm font-medium ${
+                              country === c.country
+                                ? 'border-primary bg-primary text-primary-foreground'
+                                : 'border-border bg-background hover:bg-muted'
+                            }`}
+                          >
+                            {c.country} ({c.count})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 
@@ -412,31 +320,17 @@ export default function SearchPage() {
               {t('search.error')}
             </div>
           ) : activeType === 'hotel' ? (
-            <HotelResultsGrid
-              hotels={hotelItems}
-              isLoading={hotelQuery.isLoading}
-              showDistance={showDistance}
-            />
+            <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
           ) : activeType === 'tour' ? (
-            <SearchResultsGrid
-              items={tourItems}
-              isLoading={tourQuery.isLoading}
-              showDistance={showDistance}
-            />
+            <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
           ) : (
-            // 'all' — Hotels first, then Tours, each with its own count header
-            // so travellers can tell at a glance which surface they're looking at.
             <>
               {(hotelItems.length > 0 || hotelQuery.isLoading) && (
                 <section>
                   <h2 className="mb-3 text-lg font-semibold text-foreground">
                     Hotels {hotelTotal > 0 ? `(${hotelTotal})` : ''}
                   </h2>
-                  <HotelResultsGrid
-                    hotels={hotelItems}
-                    isLoading={hotelQuery.isLoading}
-                    showDistance={showDistance}
-                  />
+                  <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
                 </section>
               )}
               {(tourItems.length > 0 || tourQuery.isLoading) && (
@@ -444,43 +338,17 @@ export default function SearchPage() {
                   <h2 className="mb-3 text-lg font-semibold text-foreground">
                     {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
                   </h2>
-                  <SearchResultsGrid
-                    items={tourItems}
-                    isLoading={tourQuery.isLoading}
-                    showDistance={showDistance}
-                  />
+                  <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
                 </section>
               )}
               {!hotelQuery.isLoading &&
                 !tourQuery.isLoading &&
                 hotelItems.length === 0 &&
-                tourItems.length === 0 && (
-                  // SearchResultsGrid renders its own empty state when items=[] and
-                  // isLoading=false, so this mirrors that behaviour for the 'all' branch.
-                  <SearchResultsGrid items={[]} isLoading={false} />
-                )}
+                tourItems.length === 0 && <SearchResultsGrid items={[]} isLoading={false} />}
             </>
           )}
         </div>
 
-        {/* The inline "Ask TripAvail" panel that used to live here was a
-            leftover from before Ask AI became a dialog everywhere else. It made
-            /search look inconsistent — a random prompt panel below the results
-            while every other page has a compact Ask AI button in the top bar.
-            The dialog below is opened by the top-bar Ask AI button and mounts
-            the assistant only on demand, so nothing is fetched until asked. */}
-        <Dialog open={isAssistantOpen} onOpenChange={setIsAssistantOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Ask TripAvail</DialogTitle>
-            </DialogHeader>
-            {isAssistantOpen && <TravelAssistant className="max-h-[70vh]" />}
-          </DialogContent>
-        </Dialog>
-
-        {/* Load More — one button per surface, only shown when that surface
-            has more pages AND is either the active tab or 'all'. Keeps
-            pagination honest across the two independent infinite queries. */}
         {wantsHotels && hotelQuery.hasNextPage && !hotelQuery.isLoading && (
           <div className="mt-10 flex justify-center">
             <Button
@@ -490,9 +358,7 @@ export default function SearchPage() {
               onClick={() => hotelQuery.fetchNextPage()}
               disabled={hotelQuery.isFetchingNextPage}
             >
-              {hotelQuery.isFetchingNextPage
-                ? t('search.loading')
-                : `${t('search.loadMore')} · Hotels`}
+              {hotelQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · Hotels`}
             </Button>
           </div>
         )}
@@ -505,9 +371,7 @@ export default function SearchPage() {
               onClick={() => tourQuery.fetchNextPage()}
               disabled={tourQuery.isFetchingNextPage}
             >
-              {tourQuery.isFetchingNextPage
-                ? t('search.loading')
-                : `${t('search.loadMore')} · ${t('search.tours')}`}
+              {tourQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · ${t('search.tours')}`}
             </Button>
           </div>
         )}

@@ -1,23 +1,10 @@
-import { CheckCircle2, Search, ShieldCheck, Star, Zap } from 'lucide-react'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { CheckCircle2, ShieldCheck, Star, Zap } from 'lucide-react'
 
-import { Logo } from '@/components/brand/Logo'
-import { CurrencySwitcher } from '@/components/CurrencySwitcher'
 import { GeoHomeHero } from '@/components/home/GeoHomeHero'
 import { HomeCategoryFeed } from '@/components/home/HomeCategoryFeed'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { RoleBasedDrawer } from '@/components/navigation/RoleBasedDrawer'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
-import { SearchOverlay } from '@/components/search/SearchOverlay'
-import type { SearchFilters } from '@/components/search/TripAvailSearchBar'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { GlassCard } from '@/components/ui/glass'
-import { useAuth } from '@/hooks/useAuth'
 import { useSeo } from '@/hooks/useSeo'
-import { useT } from '@/hooks/useT'
 
 export default function LandingPage() {
   useSeo({
