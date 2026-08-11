@@ -86,16 +86,19 @@ function Calendar({
           defaultClassNames.week_number,
         ),
         day: cn(
-          'group/day relative aspect-square h-full w-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md',
+          'group/day relative aspect-square h-full w-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-full [&:last-child[data-selected=true]_button]:rounded-r-full',
           defaultClassNames.day,
         ),
-        range_start: cn('bg-accent rounded-l-md', defaultClassNames.range_start),
-        range_middle: cn('rounded-none', defaultClassNames.range_middle),
-        range_end: cn('bg-accent rounded-r-md', defaultClassNames.range_end),
-        today: cn(
-          'bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none',
-          defaultClassNames.today,
-        ),
+        // Range band: a continuous grey (accent) rail on the day CELLS, capped
+        // with a rounded pill at each end. The rose endpoint circles sit on the
+        // BUTTON (below), so between them the cell rail reads as one connected
+        // band — Airbnb-style.
+        range_start: cn('bg-accent rounded-l-full', defaultClassNames.range_start),
+        range_middle: cn('bg-accent rounded-none', defaultClassNames.range_middle),
+        range_end: cn('bg-accent rounded-r-full', defaultClassNames.range_end),
+        // Today is bold, not filled — a filled grey today reads as "selected"
+        // and fights the real selection. Airbnb just weights today heavier.
+        today: cn('font-semibold text-foreground', defaultClassNames.today),
         outside: cn(
           'text-muted-foreground aria-selected:text-muted-foreground',
           defaultClassNames.outside,
@@ -165,7 +168,11 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 flex aspect-square h-auto w-full min-w-[--cell-size] flex-col gap-1 font-normal leading-none data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] [&>span]:text-xs [&>span]:opacity-70',
+        // rounded-full base → circular hover + circular selection. Endpoints
+        // (range start/end) and single selection get the rose fill; the range
+        // MIDDLE button is transparent so the grey cell-rail behind shows as
+        // the connecting band. Text stays foreground on the band for contrast.
+        'rounded-full data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-transparent data-[range-middle=true]:text-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 flex aspect-square h-auto w-full min-w-[--cell-size] flex-col gap-1 font-normal leading-none group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className,
       )}

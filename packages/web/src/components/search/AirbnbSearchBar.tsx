@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { differenceInCalendarDays, format, startOfToday } from 'date-fns'
 import { Minus, Plus, Search, Sparkles } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
@@ -121,6 +121,21 @@ const TABS: readonly { key: SearchTab; label: string; emoji: string }[] = [
   { key: 'tours', label: 'Tours', emoji: '🎈' },
   { key: 'events', label: 'Events', emoji: '🎫' },
 ]
+
+/**
+ * Shared premium popover surface for every field dropdown in the bar (Where,
+ * When, Who, single-date). Big radius + deep soft shadow + hairline border =
+ * the Airbnb "floating card" look, so all four dropdowns read as one system
+ * instead of four default-styled boxes. `rounded-3xl`/`shadow-2xl` reliably
+ * win over the PopoverContent base (`rounded-md`/`shadow-md`) because Tailwind
+ * emits the larger-scale utility later in the stylesheet.
+ */
+const POPOVER_PREMIUM =
+  'rounded-3xl border border-border/60 bg-popover shadow-2xl shadow-black/20'
+
+/** Larger day cells for the search calendars — the wizard keeps the compact
+ *  2rem default; the storefront date pickers get roomier, more tappable days. */
+const CALENDAR_ROOMY = '[--cell-size:2.5rem]'
 
 function toIso(d: Date): string {
   // Local-date ISO (YYYY-MM-DD) — using .toISOString() would shift a
@@ -621,7 +636,11 @@ function WhereField({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={12} className="w-[360px] p-0">
+      <PopoverContent
+        align="start"
+        sideOffset={12}
+        className={cn(POPOVER_PREMIUM, 'w-[360px] overflow-hidden p-0')}
+      >
         <div className="border-b border-border p-3">
           <input
             autoFocus
@@ -680,14 +699,22 @@ function WhenRangeField({
   isDesktop: boolean
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
+  // react-day-picker sets `to = from` on the FIRST click (a zero-night range),
+  // then extends `to` on the second. So "both ends set" is NOT enough to call
+  // the range complete — we require at least one night. Everything downstream
+  // (auto-close, header cue, trigger label, clear button) keys off these two
+  // flags so a mid-selection first click reads as "still picking check-out"
+  // rather than a bogus "Aug 18 – Aug 18".
+  const nights = range?.from && range.to ? differenceInCalendarDays(range.to, range.from) : 0
+  const hasCompleteRange = nights >= 1
+  const hasCheckIn = Boolean(range?.from)
   const display = useMemo<string>(() => {
-    if (range?.from && range.to) {
+    if (hasCompleteRange && range?.from && range.to) {
       return `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')}`
     }
     if (range?.from) return `${format(range.from, 'MMM d')} – …`
     return 'Any week'
-  }, [range])
-  const hasRange = Boolean(range?.from && range.to)
+  }, [range, hasCompleteRange])
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -699,10 +726,10 @@ function WhenRangeField({
             When
           </span>
           <span className="mt-0.5 flex items-center gap-2 truncate text-sm">
-            <span className={hasRange ? 'text-foreground' : 'text-muted-foreground'}>
+            <span className={hasCompleteRange ? 'text-foreground' : 'text-muted-foreground'}>
               {display}
             </span>
-            {hasRange && (
+            {hasCheckIn && (
               <span
                 role="button"
                 tabIndex={-1}
@@ -720,17 +747,59 @@ function WhenRangeField({
           </span>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" sideOffset={12} className="w-auto p-2">
-        <Calendar
-          mode="range"
-          selected={range}
-          onSelect={(r) => {
-            setRange(r)
-            if (r?.from && r.to) setOpen(false)
-          }}
-          numberOfMonths={isDesktop ? 2 : 1}
-          defaultMonth={range?.from ?? new Date()}
-        />
+      <PopoverContent
+        align="center"
+        sideOffset={12}
+        className={cn(POPOVER_PREMIUM, 'w-auto overflow-hidden p-0')}
+      >
+        {/* Header cue — tells the traveller which end of the range they are
+            picking, then flips to the resolved range + nights count once both
+            ends are set. This is the "second-date allocation" signal: the field
+            makes it explicit that a check-in AND a check-out are expected. */}
+        <div className="flex items-center justify-between gap-4 px-5 pb-2 pt-4">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-foreground">
+              {hasCompleteRange && range?.from && range.to
+                ? `${format(range.from, 'MMM d')} – ${format(range.to, 'MMM d')}`
+                : range?.from
+                  ? 'Select check-out date'
+                  : 'Select check-in date'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {hasCompleteRange
+                ? `${nights} night${nights === 1 ? '' : 's'}`
+                : 'Add your travel dates'}
+            </p>
+          </div>
+          {hasCheckIn && (
+            <button
+              type="button"
+              onClick={() => setRange(undefined)}
+              className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold text-foreground underline-offset-2 transition-colors hover:bg-muted hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="px-3 pb-3">
+          <Calendar
+            mode="range"
+            className={CALENDAR_ROOMY}
+            selected={range}
+            onSelect={(r) => {
+              setRange(r)
+              // Only auto-close on a REAL range (>= 1 night); the first click
+              // yields a zero-night {from:x, to:x} that must keep the calendar
+              // open so the traveller can pick their check-out.
+              const n = r?.from && r.to ? differenceInCalendarDays(r.to, r.from) : 0
+              if (n >= 1) setOpen(false)
+            }}
+            numberOfMonths={isDesktop ? 2 : 1}
+            defaultMonth={range?.from ?? new Date()}
+            // No check-in in the past — greys out prior days, Airbnb-style.
+            disabled={{ before: startOfToday() }}
+          />
+        </div>
       </PopoverContent>
     </Popover>
   )
@@ -761,9 +830,14 @@ function SingleDateField({
             <FieldShell label={label} value={display} onClick={() => setOpen(true)} />
           </div>
         </PopoverTrigger>
-        <PopoverContent align="center" sideOffset={12} className="w-auto p-2">
+        <PopoverContent
+          align="center"
+          sideOffset={12}
+          className={cn(POPOVER_PREMIUM, 'w-auto p-3')}
+        >
           <Calendar
             mode="single"
+            className={CALENDAR_ROOMY}
             selected={value}
             onSelect={(d) => {
               onChange(d)
@@ -771,6 +845,7 @@ function SingleDateField({
             }}
             numberOfMonths={isDesktop ? 2 : 1}
             defaultMonth={value ?? new Date()}
+            disabled={{ before: startOfToday() }}
           />
         </PopoverContent>
       </Popover>
@@ -819,7 +894,11 @@ function GuestsField({
           <FieldShell label="Who" value={display} onClick={() => setOpen(true)} wide />
         </div>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={12} className="w-[320px] p-4">
+      <PopoverContent
+        align="end"
+        sideOffset={12}
+        className={cn(POPOVER_PREMIUM, 'w-[320px] p-4')}
+      >
         <StepperRow
           title="Adults"
           sub="Ages 13+"
