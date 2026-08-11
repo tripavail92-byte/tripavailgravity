@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal, Star } from 'lucide-react'
+import { Search, SlidersHorizontal, Sparkles, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { TravelAssistant } from '@/features/assistant/components/TravelAssistant'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
@@ -45,6 +46,7 @@ export default function SearchPage() {
   const t = useT()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false)
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false)
   const { coords } = useTravellerCoords()
   const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
 
@@ -232,6 +234,18 @@ export default function SearchPage() {
               </option>
             ))}
           </select>
+
+          {/* Ask AI — the same dialog entry every other page has. Sits with
+              Sort and Filters so /search's top bar matches home's ExploreControls
+              row for AI access. */}
+          <Button
+            type="button"
+            onClick={() => setIsAssistantOpen(true)}
+            className="group hidden sm:inline-flex h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
+          >
+            <Sparkles className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
+            Ask AI
+          </Button>
 
           {/* Filters sheet */}
           <Sheet>
@@ -449,16 +463,20 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* The assistant sits AFTER the results, not above them.
-            It is help for someone who has looked and not found what they wanted — which is exactly
-            when a small catalogue disappoints — rather than a headline feature competing with the
-            search that already works. It is also collapsed by default, so it costs nothing to
-            ignore and makes no request until someone asks something. */}
-        {!isLoading && !isError && (
-          <div className="mt-10 rounded-2xl border border-border/60 bg-card p-5 sm:p-6">
-            <TravelAssistant />
-          </div>
-        )}
+        {/* The inline "Ask TripAvail" panel that used to live here was a
+            leftover from before Ask AI became a dialog everywhere else. It made
+            /search look inconsistent — a random prompt panel below the results
+            while every other page has a compact Ask AI button in the top bar.
+            The dialog below is opened by the top-bar Ask AI button and mounts
+            the assistant only on demand, so nothing is fetched until asked. */}
+        <Dialog open={isAssistantOpen} onOpenChange={setIsAssistantOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Ask TripAvail</DialogTitle>
+            </DialogHeader>
+            {isAssistantOpen && <TravelAssistant className="max-h-[70vh]" />}
+          </DialogContent>
+        </Dialog>
 
         {/* Load More — one button per surface, only shown when that surface
             has more pages AND is either the active tab or 'all'. Keeps
