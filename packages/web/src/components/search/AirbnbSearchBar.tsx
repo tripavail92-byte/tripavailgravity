@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { createPortal } from 'react-dom'
 import type { DateRange } from 'react-day-picker'
 import { useNavigate } from 'react-router-dom'
 
@@ -26,21 +27,26 @@ import { cn } from '@/lib/utils'
  * row, and every ad-hoc search input in the header.
  *
  * ── State machine ─────────────────────────────────────────────────────────
- * The wrapper is `position: sticky; top: 0` at ALL times. It never flips to
- * `position: fixed`, so the space it reserves in the document is stable and
- * no scroll-jump can occur when the visual state swaps.
- *
- * Internally it renders exactly ONE of two panels, chosen by `isCompact`:
+ * Airbnb pattern: the EXPANDED pill lives in normal document flow directly
+ * beneath the fixed SiteHeader — NOT sticky. As the traveller scrolls, the
+ * expanded pill scrolls out of view naturally, and a COMPACT summary pill
+ * fades INTO the SiteHeader's centre column via React portal. The two
+ * chrome layers never stack: on scroll, the header itself BECOMES the
+ * search chrome. On scroll back up, the compact pill fades out of the
+ * header and the expanded pill re-enters the viewport in its rest position.
  *
  *   • EXPANDED  — tab strip + wide multi-field pill + rose Search circle
- *   • COMPACT   — single-line summary pill ("Anywhere · Any week · Add
- *                 guests · 🔎"); clicking any zone re-expands AND scrolls
- *                 the page to the top (Airbnb parity)
+ *                 (rendered in flow, always mounted)
+ *   • COMPACT   — tab chevron + single-line summary pill + inline search
+ *                 circle + Ask AI icon; portalled into
+ *                 #siteheader-search-slot when isCompact is true
  *
  * `isCompact` is derived from an IntersectionObserver watching a 1-px
- * sentinel positioned as a SIBLING immediately BEFORE the sticky wrapper.
- * When the sentinel scrolls out of the viewport → compact; when it scrolls
- * back in → expanded. No per-frame scroll listener is used.
+ * sentinel positioned as a SIBLING immediately AFTER the expanded pill.
+ * When the sentinel scrolls above the fixed-header line → compact; when
+ * it scrolls back below → expanded. No per-frame scroll listener is used.
+ * Rendering the expanded pill unconditionally means its height is stable
+ * across state flips, so downstream content never jumps.
  *
  * ── Field state ────────────────────────────────────────────────────────────
  * `where`, `range`, `singleDate`, `adults`, `kids`, `rooms` PERSIST across
@@ -154,6 +160,16 @@ export function AirbnbSearchBar({
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const [isCompact, setIsCompact] = useState<boolean>(false)
 
+  // Portal target — the div SiteHeader renders with id="siteheader-search-slot".
+  // Grabbed in useEffect (not during render) so we don't touch the DOM during
+  // React's render phase and so SSR-safe environments don't blow up. Null on
+  // first render, resolved on mount — first-render is always isCompact=false
+  // (page starts at scrollY=0), so no compact portal is needed before then.
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setHeaderSlot(document.getElementById('siteheader-search-slot'))
+  }, [])
+
   // Controlled-optional tab: if the parent passes activeTab it wins;
   // otherwise the internal state runs the show. Both paths call
   // handleTabChange, which pushes both directions in sync.
@@ -184,13 +200,19 @@ export function AirbnbSearchBar({
 
   // ── Scroll morph via IntersectionObserver on a sibling sentinel ────────
   //
-  // The rootMargin negative top offset is CRITICAL. SiteHeader is
-  // position:fixed top:0 z-50 at 60px on mobile / 80px on desktop. Without
-  // this margin the bar would trigger the compact state as soon as its rest
-  // position hit the viewport top, sliding UNDER the header (invisible until
-  // scrolled further). Matching the sticky offset below to 60/80 keeps them
-  // stacking cleanly; we err on the desktop value here so mobile fires
-  // slightly earlier — a false positive on mobile is invisible and harmless.
+  // Sentinel is placed IMMEDIATELY AFTER the expanded pill in flow. Its top
+  // sits at (header 60/80px) + (expanded pill height ~120px). The negative
+  // rootMargin -80px shrinks the observed viewport top so the sentinel is
+  // considered "not intersecting" once it scrolls above the fixed header
+  // line. That transition is the trigger:
+  //
+  //   sentinel VISIBLE (below header line)   → isCompact = false
+  //   sentinel HIDDEN  (above header line)   → isCompact = true
+  //
+  // -80px matches the DESKTOP header height. On mobile (60px header) the
+  // sentinel goes non-intersecting 20px "earlier" than it visually crosses
+  // the header — imperceptible in practice and stops us shipping a mobile
+  // false-negative where compact never fires.
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel || typeof IntersectionObserver === 'undefined') return
@@ -269,110 +291,99 @@ export function AirbnbSearchBar({
     }
   }, [reduceMotion])
 
-  const enterAnim = reduceMotion
-    ? { initial: false as const, animate: { opacity: 1 }, exit: undefined }
-    : {
-        initial: { opacity: 0, y: -4 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -4 },
-      }
-
   return (
     <>
-      {/* Sentinel — SIBLING before the sticky wrapper, NOT a child. It stays
-          behind at the bar's rest position so its intersection tells us
-          whether the user has scrolled past it. */}
-      <div ref={sentinelRef} aria-hidden className="h-px w-full" />
-
-      <div
-        className={cn(
-          // top-[60px] mobile / md:top-20 (80px) desktop matches SiteHeader's
-          // fixed height, so the pinned bar sits FLUSH beneath it instead of
-          // being covered. z-40 keeps it above content but below the header.
-          //
-          // A HARD height (not min-h) matters more than it looks: sticky
-          // reserves the element's rendered height, so if compact were shorter
-          // than expanded the below-fold content would jump by the delta each
-          // morph. h-[120px] fits tab-strip (28) + gap (12) + h-14 pill (56) +
-          // top/bottom padding — with room to spare — so both states center
-          // inside the same reserved box and nothing jumps.
-          // Sticky band. Glassmorphism: translucent ground + strong blur so
-          // scrolling content bleeds through faintly instead of a hard scrim.
-          // When compact, a soft border+shadow gives the pinned bar physical
-          // separation from the page below.
-          'sticky top-[60px] md:top-20 z-40 w-full h-[120px] bg-background/60 supports-[backdrop-filter]:bg-background/40 backdrop-blur-xl transition-shadow',
-          isCompact ? 'border-b border-border/60 shadow-sm shadow-black/5' : '',
-          className,
-        )}
-      >
-        <div className="mx-auto flex h-full w-full max-w-6xl items-center gap-3 px-4">
+      {/* ── EXPANDED PILL, in flow ────────────────────────────────────────
+          Not sticky. Sits directly under the fixed SiteHeader and scrolls
+          away naturally as the traveller scrolls. Always mounted — its
+          height is stable across compact/expanded flips, so downstream
+          content never jumps. */}
+      <div className={cn('w-full', className)}>
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 md:py-4">
           <div className="min-w-0 flex-1">
-            <AnimatePresence initial={false} mode="wait">
-              {isCompact ? (
-                <motion.div
-                  key="compact"
-                  initial={enterAnim.initial}
-                  animate={enterAnim.animate}
-                  exit={enterAnim.exit}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="flex justify-center"
-                >
-                  <CompactPill
-                    tab={tab}
-                    onTabChange={handleTabChange}
-                    where={summaryWhere}
-                    when={summaryWhen}
-                    who={summaryWho}
-                    onExpand={expandAndScrollTop}
-                    onSearch={submit}
-                  />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="expanded"
-                  initial={enterAnim.initial}
-                  animate={enterAnim.animate}
-                  exit={enterAnim.exit}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                >
-                  <ExpandedBar
-                    tab={tab}
-                    onTabChange={handleTabChange}
-                    where={where}
-                    setWhere={setWhere}
-                    range={range}
-                    setRange={setRange}
-                    singleDate={singleDate}
-                    setSingleDate={setSingleDate}
-                    adults={adults}
-                    setAdults={setAdults}
-                    kids={kids}
-                    setKids={setKids}
-                    rooms={rooms}
-                    setRooms={setRooms}
-                    isDesktop={isDesktop}
-                    onSubmit={submit}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <ExpandedBar
+              tab={tab}
+              onTabChange={handleTabChange}
+              where={where}
+              setWhere={setWhere}
+              range={range}
+              setRange={setRange}
+              singleDate={singleDate}
+              setSingleDate={setSingleDate}
+              adults={adults}
+              setAdults={setAdults}
+              kids={kids}
+              setKids={setKids}
+              rooms={rooms}
+              setRooms={setRooms}
+              isDesktop={isDesktop}
+              onSubmit={submit}
+            />
           </div>
 
-          {/* Ask AI — always visible, rose gradient, sits beside the search bar. */}
+          {/* Ask AI — beside the expanded bar. Rose gradient, always visible
+              in this row. When scrolled, a compact Sparkles icon replaces
+              it inside the portalled header pill. */}
           <button
             type="button"
             onClick={() => setAssistantOpen(true)}
             aria-label="Ask AI"
-            className={cn(
-              'group inline-flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105',
-              isCompact ? 'h-10 px-3' : 'h-11 px-4',
-            )}
+            className="group inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
           >
             <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
-            <span className={cn(isCompact ? 'hidden sm:inline' : 'hidden md:inline')}>Ask AI</span>
+            <span className="hidden md:inline">Ask AI</span>
           </button>
         </div>
       </div>
+
+      {/* Sentinel — sibling AFTER the expanded pill. IO fires when its top
+          crosses the fixed-header line (rootMargin -80px), telling us the
+          expanded pill is (mostly) out of view → time to render the compact
+          pill inside the header slot. */}
+      <div ref={sentinelRef} aria-hidden className="h-px w-full" />
+
+      {/* ── COMPACT PILL, portalled into SiteHeader ────────────────────────
+          Airbnb pattern. When scrolled past the expanded pill, the compact
+          form fades into the header's centre column via React portal — so
+          the header BECOMES the search chrome instead of stacking beneath
+          a second sticky band. AnimatePresence works across portals because
+          it tracks its children by key, not by DOM position. */}
+      <AnimatePresence>
+        {isCompact && headerSlot
+          ? createPortal(
+              <motion.div
+                key="header-compact"
+                initial={reduceMotion ? false : { opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="flex items-center gap-2"
+              >
+                <CompactPill
+                  tab={tab}
+                  onTabChange={handleTabChange}
+                  where={summaryWhere}
+                  when={summaryWhen}
+                  who={summaryWho}
+                  onExpand={expandAndScrollTop}
+                  onSearch={submit}
+                />
+                {/* Ask AI, compact — icon-only sparkle chip so the AI entry
+                    stays reachable at any scroll depth without crowding the
+                    header's right cluster. */}
+                <button
+                  type="button"
+                  onClick={() => setAssistantOpen(true)}
+                  aria-label="Ask AI"
+                  className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm transition-all hover:brightness-105"
+                >
+                  <Sparkles className="h-4 w-4" />
+                </button>
+              </motion.div>,
+              headerSlot,
+            )
+          : null}
+      </AnimatePresence>
 
       <Dialog open={assistantOpen} onOpenChange={setAssistantOpen}>
         <DialogContent className="max-w-2xl">

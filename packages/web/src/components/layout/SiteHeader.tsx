@@ -46,9 +46,13 @@ export function SiteHeader() {
                 does not compete with it. */}
           </div>
 
-          {/* Empty centre column. The header no longer owns search; every browse
-              page renders its own via ExploreControls. Keeps the 3-column grid. */}
-          <div aria-hidden />
+          {/* Centre column — the search-slot the AirbnbSearchBar portals into
+              when the traveller has scrolled past the expanded pill. Empty at
+              rest, populated on scroll: matches airbnb.com's pattern of the
+              header BECOMING the search chrome as the expanded pill scrolls
+              out of view, so the two chrome layers never stack. The stable id
+              is what AirbnbSearchBar looks up via document.getElementById. */}
+          <div id="siteheader-search-slot" className="min-w-0 flex items-center justify-center" />
 
           {/* Right User Menu (drawer + toggles) */}
           <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
