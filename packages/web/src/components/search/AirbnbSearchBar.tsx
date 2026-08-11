@@ -105,16 +105,17 @@ export interface AirbnbSearchBarProps {
   className?: string
 }
 
-const DESTINATION_SUGGESTIONS: readonly string[] = [
-  'Hunza Valley',
-  'Skardu',
-  'Naran & Kaghan',
-  'Swat Valley',
-  'Fairy Meadows',
-  'Lahore',
-  'Islamabad',
-  'Karachi',
-]
+// Suggested destinations are per-tab: a stay-seeker and a trek-seeker are
+// looking for different places, so Hotels lists the CITIES where TripAvail
+// actually has properties, while Tours lists the trek/adventure REGIONS the
+// tours are built around. (They used to share one static list, which is why
+// Hotels and Tours showed identical suggestions.) These are search seeds —
+// clicking one runs a real search on the active surface.
+const DESTINATION_SUGGESTIONS: Record<SearchTab, readonly string[]> = {
+  hotels: ['Islamabad', 'Murree', 'Hunza Valley', 'Muzaffarabad', 'Skardu', 'Lahore', 'Karachi'],
+  tours: ['Hunza Valley', 'Skardu', 'Fairy Meadows', 'Naran & Kaghan', 'Swat Valley', 'Nathia Gali', 'Kalam'],
+  events: ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'],
+}
 
 const TABS: readonly { key: SearchTab; label: string; emoji: string }[] = [
   { key: 'hotels', label: 'Hotels', emoji: '🏨' },
@@ -503,7 +504,7 @@ function ExpandedBar({
           lifts the pill off the page. Matches the previous GlassCard
           variant="light" treatment the header used to carry. */}
       <div className="mx-auto flex w-full max-w-4xl items-stretch rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl shadow-2xl shadow-black/10 hover:shadow-2xl hover:shadow-black/20 transition-shadow">
-        <WhereField value={where} onChange={setWhere} onSubmit={onSubmit} />
+        <WhereField value={where} onChange={setWhere} onSubmit={onSubmit} tab={tab} />
         <Divider />
 
         {tab === 'hotels' ? (
@@ -610,12 +611,15 @@ function WhereField({
   value,
   onChange,
   onSubmit,
+  tab,
 }: {
   value: string
   onChange: Dispatch<SetStateAction<string>>
   onSubmit: () => void
+  tab: SearchTab
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
+  const suggestions = DESTINATION_SUGGESTIONS[tab]
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -661,7 +665,7 @@ function WhereField({
           <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             Suggested destinations
           </p>
-          {DESTINATION_SUGGESTIONS.map((d) => (
+          {suggestions.map((d) => (
             <button
               key={d}
               type="button"
