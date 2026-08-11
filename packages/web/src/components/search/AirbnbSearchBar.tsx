@@ -142,37 +142,47 @@ function EmojiIcon({
   emoji,
   px,
   className,
+  hoverGrow = false,
 }: {
   src: string
   emoji: string
   px: number
   className?: string
+  /** Magnify on hover of the enclosing element (which must be a `group`). */
+  hoverGrow?: boolean
 }): JSX.Element {
   const [failed, setFailed] = useState(false)
-  if (failed) {
-    return (
-      <span
-        aria-hidden
-        className={className}
-        style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}
-      >
-        {emoji}
-      </span>
-    )
-  }
+  // The hover-magnify lives on this WRAPPER, not the glyph, so it MULTIPLIES
+  // with whatever transform the glyph already carries — emoji-fill's fill-scale
+  // for static icons, or the jeep's drive animation — instead of overriding it.
+  // Requires the tab/button around it to be a `group`.
+  const wrapper = cn(
+    'inline-flex shrink-0 items-center justify-center',
+    hoverGrow && 'transition-transform duration-200 ease-out group-hover:scale-[1.2]',
+  )
   return (
-    <img
-      src={src}
-      alt=""
-      aria-hidden
-      draggable={false}
-      decoding="async"
-      width={px}
-      height={px}
-      style={{ width: px, height: px }}
-      className={cn('emoji-fill shrink-0 select-none object-contain', className)}
-      onError={() => setFailed(true)}
-    />
+    <span aria-hidden className={wrapper} style={{ width: px, height: px }}>
+      {failed ? (
+        <span
+          className={className}
+          style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}
+        >
+          {emoji}
+        </span>
+      ) : (
+        <img
+          src={src}
+          alt=""
+          draggable={false}
+          decoding="async"
+          width={px}
+          height={px}
+          style={{ width: px, height: px }}
+          className={cn('emoji-fill max-w-none select-none object-contain', className)}
+          onError={() => setFailed(true)}
+        />
+      )}
+    </span>
   )
 }
 
@@ -531,7 +541,7 @@ function ExpandedBar({
               aria-selected={active}
               onClick={() => onTabChange(t.key)}
               className={cn(
-                'inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-semibold transition-colors',
+                'group inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-semibold transition-colors',
                 active
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -541,6 +551,7 @@ function ExpandedBar({
                 src={t.icon}
                 emoji={t.emoji}
                 px={30}
+                hoverGrow
                 className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
               />
               {t.label}
@@ -1081,12 +1092,13 @@ function CompactPill({
           <button
             type="button"
             aria-label="Change search category"
-            className="inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
+            className="group inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
           >
             <EmojiIcon
               src={activeTab.icon}
               emoji={activeTab.emoji}
               px={22}
+              hoverGrow
               className={activeTab.key === 'tours' ? 'animate-jeep-drive' : undefined}
             />
             <span className="hidden sm:inline">{activeTab.label}</span>
