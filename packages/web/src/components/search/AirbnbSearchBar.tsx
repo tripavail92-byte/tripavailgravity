@@ -464,8 +464,10 @@ function ExpandedBar({
 }: ExpandedBarProps): JSX.Element {
   return (
     <div className="flex flex-col items-stretch gap-2">
-      {/* Tab strip */}
-      <div className="flex items-center justify-center gap-6" role="tablist" aria-label="Search category">
+      {/* Tab strip — icon size matched to airbnb.com: 28px emoji beside a 14px
+          label. Ours previously inherited the 14px text size, so the emoji
+          rendered less than half Airbnb's and read as "dull". */}
+      <div className="flex items-center justify-center gap-8" role="tablist" aria-label="Search category">
         {TABS.map((t) => {
           const active = t.key === tab
           return (
@@ -476,7 +478,7 @@ function ExpandedBar({
               aria-selected={active}
               onClick={() => onTabChange(t.key)}
               className={cn(
-                'inline-flex items-center gap-1.5 border-b-2 pb-1 text-sm font-semibold transition-colors',
+                'inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-semibold transition-colors',
                 active
                   ? 'border-primary text-foreground'
                   : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -487,6 +489,7 @@ function ExpandedBar({
                 style={{
                   fontFamily:
                     '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+                  fontSize: '28px',
                   lineHeight: 1,
                 }}
               >
@@ -1037,6 +1040,7 @@ function CompactPill({
               style={{
                 fontFamily:
                   '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+                fontSize: '20px',
                 lineHeight: 1,
               }}
             >
@@ -1064,6 +1068,7 @@ function CompactPill({
                 style={{
                   fontFamily:
                     '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+                  fontSize: '18px',
                   lineHeight: 1,
                 }}
               >
