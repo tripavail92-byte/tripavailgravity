@@ -170,7 +170,7 @@ function EmojiIcon({
       width={px}
       height={px}
       style={{ width: px, height: px }}
-      className={cn('shrink-0 select-none object-contain', className)}
+      className={cn('emoji-fill shrink-0 select-none object-contain', className)}
       onError={() => setFailed(true)}
     />
   )
@@ -540,7 +540,7 @@ function ExpandedBar({
               <EmojiIcon
                 src={t.icon}
                 emoji={t.emoji}
-                px={28}
+                px={30}
                 className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
               />
               {t.label}
@@ -1086,7 +1086,7 @@ function CompactPill({
             <EmojiIcon
               src={activeTab.icon}
               emoji={activeTab.emoji}
-              px={20}
+              px={22}
               className={activeTab.key === 'tours' ? 'animate-jeep-drive' : undefined}
             />
             <span className="hidden sm:inline">{activeTab.label}</span>
@@ -1109,7 +1109,7 @@ function CompactPill({
               <EmojiIcon
                 src={t.icon}
                 emoji={t.emoji}
-                px={18}
+                px={20}
                 className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
               />
               {t.label}

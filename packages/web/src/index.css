@@ -856,35 +856,39 @@
   }
 }
 
-/* Tours tab jeep — a continuous "driving over a bumpy mountain road" bob +
-   rock. transform-origin near the wheels so it pivots on them rather than
-   spinning about its centre. Honoured everywhere the Tours glyph renders
-   (tab strip, compact pill, category menu). */
+/* Emoji tab glyphs — the Fluent 3D PNGs carry ~12.5% transparent padding, so
+   at a given box the visible art renders smaller than an edge-to-edge icon
+   (Airbnb's fill their box). Scale the art up to fill the box so ours read at
+   the same size. */
+.emoji-fill {
+  transform: scale(1.15);
+}
+
+/* Tours jeep — a gentle, continuous "driving" bob + rock. The scale is held
+   CONSTANT across every keyframe (the same 1.15 as .emoji-fill) so the motion
+   is pure translate/rotate and never a pulse or zoom — i.e. it does not
+   "magnify". transform-origin sits near the wheels so it rocks on them. */
 @keyframes jeep-drive {
   0% {
-    transform: translateY(0) rotate(-2deg);
+    transform: scale(1.15) translateY(0) rotate(-1.5deg);
   }
-  20% {
-    transform: translateY(-2px) rotate(0deg);
+  25% {
+    transform: scale(1.15) translateY(-1.5px) rotate(0deg);
   }
-  40% {
-    transform: translateY(0) rotate(2deg);
+  50% {
+    transform: scale(1.15) translateY(0) rotate(1.5deg);
   }
-  60% {
-    transform: translateY(-2px) rotate(0deg);
-  }
-  80% {
-    transform: translateY(0) rotate(-1deg);
+  75% {
+    transform: scale(1.15) translateY(-1.5px) rotate(0deg);
   }
   100% {
-    transform: translateY(0) rotate(-2deg);
+    transform: scale(1.15) translateY(0) rotate(-1.5deg);
   }
 }
 
 .animate-jeep-drive {
-  animation: jeep-drive 1s ease-in-out infinite;
-  transform-origin: 50% 85%;
-  will-change: transform;
+  animation: jeep-drive 1.4s ease-in-out infinite;
+  transform-origin: 50% 80%;
 }
 
 @media (prefers-reduced-motion: reduce) {
