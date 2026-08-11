@@ -1,4 +1,4 @@
-import { Building2, Compass, type LucideIcon, Search, SlidersHorizontal, Sparkles, Ticket } from 'lucide-react'
+import { Search, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -30,13 +30,19 @@ interface ModeDef {
   key: Exclude<ExploreMode, 'all'>
   label: string
   sub: string
-  icon: LucideIcon
+  /**
+   * Colour emoji glyph, Airbnb-style — a single small illustration per pill.
+   * Rendered via the system emoji font stack; modern OS emoji fonts (Apple
+   * Color Emoji, Segoe UI Emoji, Noto Color Emoji) all produce a colourful
+   * illustration at nav size without any bespoke SVG work.
+   */
+  emoji: string
 }
 
 const MODES: ModeDef[] = [
-  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', icon: Building2 },
-  { key: 'tours', label: 'Tours', sub: 'Guided experiences', icon: Compass },
-  { key: 'events', label: 'Events', sub: 'Coming soon', icon: Ticket },
+  { key: 'hotels', label: 'Hotels', sub: 'Stays & properties', emoji: '🏨' },
+  { key: 'tours', label: 'Tours', sub: 'Guided experiences', emoji: '🎈' },
+  { key: 'events', label: 'Events', sub: 'Coming soon', emoji: '🎫' },
 ]
 
 interface ExploreControlsProps {
@@ -115,7 +121,6 @@ export function ExploreControls({
       <div className="mt-6 flex justify-center">
         <div className="grid w-full max-w-2xl grid-cols-3 gap-3 sm:gap-4">
           {MODES.map((m) => {
-            const Icon = m.icon
             const active = activeMode === m.key
             return (
               <button
@@ -130,13 +135,21 @@ export function ExploreControls({
                     : 'border-border bg-card text-foreground hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md',
                 )}
               >
-                <Icon
-                  className={cn(
-                    'h-6 w-6 shrink-0 transition-colors',
-                    active ? 'text-primary-foreground' : 'text-primary',
-                  )}
-                  strokeWidth={2}
-                />
+                <span
+                  role="img"
+                  aria-hidden
+                  // Force the system's colour-emoji font. Without this, some
+                  // sans stacks fall through to a monochrome glyph on Windows
+                  // and the whole point of the redesign is lost.
+                  style={{
+                    fontFamily:
+                      '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif',
+                    lineHeight: 1,
+                  }}
+                  className="shrink-0 text-2xl sm:text-3xl"
+                >
+                  {m.emoji}
+                </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold leading-tight sm:text-base">
                     {m.label}
