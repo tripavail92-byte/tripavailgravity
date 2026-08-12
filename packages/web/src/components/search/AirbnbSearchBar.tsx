@@ -750,19 +750,28 @@ function WhereField({
   const goNearby = (): void => {
     setOpen(false)
     onChange('') // location-based, so the text query is cleared
-    const dest =
-      tab === 'events'
-        ? '/events'
-        : `/search?types=${tab === 'tours' ? 'tour' : 'hotel'}&sort=nearest`
-    const go = (): void => navigate(dest)
+    // Events has no results surface yet.
+    if (tab === 'events') {
+      navigate('/events')
+      return
+    }
+    const base = `/search?types=${tab === 'tours' ? 'tour' : 'hotel'}&sort=nearest`
+    // Coarse-round to ~1 km so an approximate AREA — not a precise personal
+    // location — travels in the URL. That's ample for a nearest-first ordering
+    // and makes the geo sort reliable on the FIRST grant (SearchPage reads the
+    // coords straight off the URL instead of waiting on the ambient hook).
+    const coarse = (n: number): number => Math.round(n * 100) / 100
+    const withCoords = (lat: number, lng: number): void =>
+      navigate(`${base}&lat=${coarse(lat)}&lng=${coarse(lng)}`)
+    const withoutCoords = (): void => navigate(base)
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(go, go, {
-        enableHighAccuracy: false,
-        maximumAge: 60_000,
-        timeout: 7_000,
-      })
+      navigator.geolocation.getCurrentPosition(
+        (pos) => withCoords(pos.coords.latitude, pos.coords.longitude),
+        withoutCoords,
+        { enableHighAccuracy: false, maximumAge: 60_000, timeout: 7_000 },
+      )
     } else {
-      go()
+      withoutCoords()
     }
   }
 

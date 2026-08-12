@@ -41,8 +41,18 @@ const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
 export default function SearchPage() {
   const t = useT()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { coords } = useTravellerCoords()
+  const { coords: geoCoords } = useTravellerCoords()
   const setSelectedCityByName = useTravellerCityStore((s) => s.setSelectedCityByName)
+
+  // Coordinates passed explicitly on the URL (from the "Nearby" action) win
+  // over the ambient geolocation hook — that's what makes a nearest search
+  // reliable on the FIRST location grant, without waiting for the
+  // read-if-already-granted hook to catch up. They are coarse (~1 km) by
+  // construction, so no precise location rides in the URL.
+  const urlLat = numOrNull(searchParams.get('lat'))
+  const urlLng = numOrNull(searchParams.get('lng'))
+  const coords =
+    urlLat != null && urlLng != null ? { latitude: urlLat, longitude: urlLng } : geoCoords
 
   const q = searchParams.get('q') || ''
   const location = searchParams.get('location') || ''
