@@ -1,5 +1,16 @@
 import { differenceInCalendarDays, format, startOfToday } from 'date-fns'
-import { Minus, Plus, Search, Sparkles } from 'lucide-react'
+import {
+  Building2,
+  Landmark,
+  type LucideIcon,
+  Minus,
+  MountainSnow,
+  Navigation,
+  Plus,
+  Search,
+  Sparkles,
+  Waves,
+} from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   type Dispatch,
@@ -108,14 +119,59 @@ export interface AirbnbSearchBarProps {
 // Suggested destinations are per-tab: a stay-seeker and a trek-seeker are
 // looking for different places, so Hotels lists the CITIES where TripAvail
 // actually has properties, while Tours lists the trek/adventure REGIONS the
-// tours are built around. (They used to share one static list, which is why
-// Hotels and Tours showed identical suggestions.) These are search seeds —
-// clicking one runs a real search on the active surface.
-const DESTINATION_SUGGESTIONS: Record<SearchTab, readonly string[]> = {
-  hotels: ['Islamabad', 'Murree', 'Hunza Valley', 'Muzaffarabad', 'Skardu', 'Lahore', 'Karachi'],
-  tours: ['Hunza Valley', 'Skardu', 'Fairy Meadows', 'Naran & Kaghan', 'Swat Valley', 'Nathia Gali', 'Kalam'],
-  events: ['Islamabad', 'Lahore', 'Karachi', 'Rawalpindi'],
+// tours are built around. Each carries a line-art icon + a one-line subtitle
+// (Airbnb style). These are search seeds — clicking one runs a real search on
+// the active surface.
+type DestIcon = 'skyline' | 'mountains' | 'coast' | 'monument'
+interface Destination {
+  name: string
+  sub: string
+  icon: DestIcon
 }
+
+const DESTINATION_SUGGESTIONS: Record<SearchTab, readonly Destination[]> = {
+  hotels: [
+    { name: 'Islamabad', sub: 'For sights like Faisal Mosque', icon: 'monument' },
+    { name: 'Murree', sub: 'A cool hill-station escape', icon: 'mountains' },
+    { name: 'Hunza Valley', sub: 'Karakoram views & valleys', icon: 'mountains' },
+    { name: 'Muzaffarabad', sub: 'Gateway to Neelum Valley', icon: 'mountains' },
+    { name: 'Skardu', sub: 'Base for the great peaks', icon: 'mountains' },
+    { name: 'Lahore', sub: 'History, food & the old city', icon: 'skyline' },
+    { name: 'Karachi', sub: 'Beaches & the big city', icon: 'coast' },
+  ],
+  tours: [
+    { name: 'Hunza Valley', sub: 'Jeep trails & valley treks', icon: 'mountains' },
+    { name: 'Skardu', sub: 'Deosai plains & K2 base routes', icon: 'mountains' },
+    { name: 'Fairy Meadows', sub: 'Right under Nanga Parbat', icon: 'mountains' },
+    { name: 'Naran & Kaghan', sub: 'Alpine lakes & high passes', icon: 'mountains' },
+    { name: 'Swat Valley', sub: 'The “Switzerland of the East”', icon: 'mountains' },
+    { name: 'Nathia Gali', sub: 'Pine forests & easy hikes', icon: 'mountains' },
+    { name: 'Kalam', sub: 'River valleys & waterfalls', icon: 'mountains' },
+  ],
+  events: [
+    { name: 'Islamabad', sub: 'Concerts, festivals & shows', icon: 'monument' },
+    { name: 'Lahore', sub: 'The cultural capital', icon: 'skyline' },
+    { name: 'Karachi', sub: 'Coastal-city nightlife', icon: 'coast' },
+    { name: 'Rawalpindi', sub: 'Right next to Islamabad', icon: 'skyline' },
+  ],
+}
+
+const DEST_ICON: Record<DestIcon, LucideIcon> = {
+  skyline: Building2,
+  mountains: MountainSnow,
+  coast: Waves,
+  monument: Landmark,
+}
+
+// Soft tinted tiles behind each icon. Cycled by position so adjacent rows
+// differ (Airbnb's rhythm), and each works in light + dark.
+const DEST_TINTS: readonly string[] = [
+  'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+  'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+  'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+]
 
 /** System colour-emoji stack — the fallback if a 3D PNG ever fails to load. */
 const EMOJI_FONT =
@@ -680,8 +736,36 @@ function WhereField({
   onSubmit: () => void
   tab: SearchTab
 }): JSX.Element {
+  const navigate = useNavigate()
   const [open, setOpen] = useState<boolean>(false)
   const suggestions = DESTINATION_SUGGESTIONS[tab]
+  const q = value.trim().toLowerCase()
+  const filtered = q ? suggestions.filter((d) => d.name.toLowerCase().includes(q)) : suggestions
+
+  // "Nearby" — Airbnb's geolocation entry. We ask the browser for the visitor's
+  // location (this prompts) and navigate to a nearest-sorted search once it
+  // resolves either way; SearchPage reads the now-granted coords via
+  // useGeolocationIfGranted and applies the geo sort. Events has no results
+  // surface yet, so it just lands on /events.
+  const goNearby = (): void => {
+    setOpen(false)
+    onChange('') // location-based, so the text query is cleared
+    const dest =
+      tab === 'events'
+        ? '/events'
+        : `/search?types=${tab === 'tours' ? 'tour' : 'hotel'}&sort=nearest`
+    const go = (): void => navigate(dest)
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(go, go, {
+        enableHighAccuracy: false,
+        maximumAge: 60_000,
+        timeout: 7_000,
+      })
+    } else {
+      go()
+    }
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -723,24 +807,64 @@ function WhereField({
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
-        <div className="max-h-72 overflow-auto p-2">
+        <div className="max-h-80 overflow-auto p-2">
           <p className="px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
             Suggested destinations
           </p>
-          {suggestions.map((d) => (
+
+          {/* Nearby — geolocation, shown first when the field is empty (Airbnb). */}
+          {!q && (
             <button
-              key={d}
               type="button"
-              onClick={() => {
-                onChange(d)
-                setOpen(false)
-              }}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+              onClick={goNearby}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted"
             >
-              <span aria-hidden className="text-lg">📍</span>
-              <span className="font-medium text-foreground">{d}</span>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                <Navigation className="h-5 w-5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Nearby</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  Find what’s around you
+                </span>
+              </span>
             </button>
-          ))}
+          )}
+
+          {filtered.map((d, i) => {
+            const Icon = DEST_ICON[d.icon]
+            const tint = DEST_TINTS[i % DEST_TINTS.length]
+            return (
+              <button
+                key={d.name}
+                type="button"
+                onClick={() => {
+                  onChange(d.name)
+                  setOpen(false)
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted"
+              >
+                <span
+                  className={cn(
+                    'grid h-11 w-11 shrink-0 place-items-center rounded-xl',
+                    tint,
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{d.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{d.sub}</span>
+                </span>
+              </button>
+            )
+          })}
+
+          {q && filtered.length === 0 && (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              No matches — press Enter to search “{value}”.
+            </p>
+          )}
         </div>
       </PopoverContent>
     </Popover>
