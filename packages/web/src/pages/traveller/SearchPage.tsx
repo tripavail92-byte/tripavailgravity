@@ -15,6 +15,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { AirbnbSearchBar } from '@/components/search/AirbnbSearchBar'
 import { HotelResultsGrid } from '@/components/search/HotelResultsGrid'
+import { PackageResultsGrid } from '@/components/search/PackageResultsGrid'
 import { SearchFilterPanel } from '@/components/search/SearchFilterPanel'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
 import { Button } from '@/components/ui/button'
@@ -23,10 +24,11 @@ import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useHotelSearch } from '@/queries/hotelQueries'
+import { useSearchPackages } from '@/queries/packageQueries'
 import { type SearchSort, useSearchFacets, useUnifiedSearch } from '@/queries/searchQueries'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 
-type SearchType = 'hotel' | 'tour'
+type SearchType = 'hotel' | 'tour' | 'package'
 type ActiveType = 'all' | SearchType
 
 const SORT_OPTIONS: { value: SearchSort | ''; labelKey: string }[] = [
@@ -64,7 +66,8 @@ export default function SearchPage() {
   const activeType: ActiveType = useMemo(() => {
     const raw = (searchParams.get('types') || '').trim().toLowerCase()
     if (raw === 'tour') return 'tour'
-    if (raw === 'hotel' || raw === 'package') return 'hotel'
+    if (raw === 'package') return 'package'
+    if (raw === 'hotel') return 'hotel'
     return 'all'
   }, [searchParams])
 
@@ -101,9 +104,22 @@ export default function SearchPage() {
 
   const wantsHotels = activeType === 'all' || activeType === 'hotel'
   const wantsTours = activeType === 'all' || activeType === 'tour'
+  const wantsPackages = activeType === 'all' || activeType === 'package'
 
-  const hotelQuery = useHotelSearch(searchInput, { enabled: wantsHotels })
-  const tourQuery = useUnifiedSearch({ ...searchInput, types: ['tour'] }, { enabled: wantsTours })
+  // All three run regardless of the active tab so EVERY tab count is accurate
+  // (otherwise an inactive tab reads "(0)" until you click it). Results are
+  // cached, so switching tabs is instant and does not refetch.
+  const hotelQuery = useHotelSearch(searchInput)
+  const tourQuery = useUnifiedSearch({ ...searchInput, types: ['tour'] })
+  // Curated hotel packages (room-only stays excluded — they show as hotel
+  // property cards). Filtered client-side against the same facet filters.
+  const packageQuery = useSearchPackages({
+    query: effectiveQuery || null,
+    minPrice,
+    maxPrice,
+    minRating,
+    country: country || null,
+  })
 
   const { data: facets } = useSearchFacets(baseFilters)
 
@@ -115,15 +131,25 @@ export default function SearchPage() {
     () => (tourQuery.data?.pages ?? []).flatMap((p) => p.rows),
     [tourQuery.data],
   )
+  const packageItems = packageQuery.data ?? []
 
   const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
   const tourTotal = tourQuery.data?.pages?.[0]?.total ?? 0
+  const packageTotal = packageItems.length
   const total =
-    activeType === 'hotel' ? hotelTotal : activeType === 'tour' ? tourTotal : hotelTotal + tourTotal
+    activeType === 'hotel'
+      ? hotelTotal
+      : activeType === 'tour'
+        ? tourTotal
+        : activeType === 'package'
+          ? packageTotal
+          : hotelTotal + tourTotal + packageTotal
 
   const isLoading =
-    (wantsHotels && hotelQuery.isLoading) || (wantsTours && tourQuery.isLoading)
-  const isError = hotelQuery.isError || tourQuery.isError
+    (wantsHotels && hotelQuery.isLoading) ||
+    (wantsTours && tourQuery.isLoading) ||
+    (wantsPackages && packageQuery.isLoading)
+  const isError = hotelQuery.isError || tourQuery.isError || packageQuery.isError
 
   const showDistance = (sort || (effectiveQuery ? '' : coords ? 'nearest' : '')) === 'nearest'
 
@@ -228,8 +254,9 @@ export default function SearchPage() {
                 the search bar. */}
             <div className="inline-flex rounded-full border border-border bg-background p-1">
               {[
-                { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal})` },
+                { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal + packageTotal})` },
                 { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
+                { key: 'package' as const, label: `Packages (${packageTotal})` },
                 { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
               ].map((tab) => (
                 <button
@@ -339,6 +366,8 @@ export default function SearchPage() {
                 </div>
               ) : activeType === 'hotel' ? (
                 <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
+              ) : activeType === 'package' ? (
+                <PackageResultsGrid packages={packageItems} isLoading={packageQuery.isLoading} />
               ) : activeType === 'tour' ? (
                 <SearchResultsGrid items={tourItems} isLoading={tourQuery.isLoading} showDistance={showDistance} />
               ) : (
@@ -351,6 +380,14 @@ export default function SearchPage() {
                       <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
                     </section>
                   )}
+                  {(packageItems.length > 0 || packageQuery.isLoading) && (
+                    <section>
+                      <h2 className="mb-3 text-lg font-semibold text-foreground">
+                        Packages {packageTotal > 0 ? `(${packageTotal})` : ''}
+                      </h2>
+                      <PackageResultsGrid packages={packageItems} isLoading={packageQuery.isLoading} />
+                    </section>
+                  )}
                   {(tourItems.length > 0 || tourQuery.isLoading) && (
                     <section>
                       <h2 className="mb-3 text-lg font-semibold text-foreground">
@@ -361,8 +398,10 @@ export default function SearchPage() {
                   )}
                   {!hotelQuery.isLoading &&
                     !tourQuery.isLoading &&
+                    !packageQuery.isLoading &&
                     hotelItems.length === 0 &&
-                    tourItems.length === 0 && <SearchResultsGrid items={[]} isLoading={false} />}
+                    tourItems.length === 0 &&
+                    packageItems.length === 0 && <SearchResultsGrid items={[]} isLoading={false} />}
                 </>
               )}
             </div>

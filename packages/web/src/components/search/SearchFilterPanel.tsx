@@ -34,7 +34,7 @@ import type { SearchFacets } from '@/queries/searchQueries'
 const RATINGS = [0, 3, 4, 4.5] as const
 
 export interface SearchFilterPanelProps {
-  activeType: 'all' | 'hotel' | 'tour'
+  activeType: 'all' | 'hotel' | 'tour' | 'package'
   minPrice: number | null
   maxPrice: number | null
   minRating: number | null

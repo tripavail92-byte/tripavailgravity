@@ -595,6 +595,88 @@ export function useSpecialOffers(
   })
 }
 
+export interface SearchPackageFilters {
+  query?: string | null
+  minPrice?: number | null
+  maxPrice?: number | null
+  minRating?: number | null
+  country?: string | null
+}
+
+/**
+ * Curated HOTEL PACKAGES for the /search "Packages" tab — every published, live
+ * package that is NOT a bare room-only stay (`package_type = 'Room Only'`, which
+ * already surfaces as a hotel PROPERTY card). Fetched directly (anon RLS allows
+ * published packages) and filtered client-side against the active search
+ * filters; the curated set is small, so this is exact with no pagination gaps.
+ */
+async function fetchSearchPackages(f: SearchPackageFilters): Promise<MappedPackage[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select(
+      `
+      id,
+      slug,
+      name,
+      currency,
+      cover_image,
+      media_urls,
+      rooms_config,
+      package_type,
+      minimum_nights,
+      base_price_per_night,
+      discount_offers,
+      created_at,
+      hotels (
+        name,
+        city,
+        country,
+        rating,
+        review_count
+      )
+    `,
+    )
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .neq('package_type', 'Room Only')
+    .order('created_at', { ascending: false })
+    .limit(60)
+
+  if (error) {
+    if (isAbortError(error)) return []
+    console.error('[packageQueries] Error fetching search packages:', error)
+    throw error
+  }
+
+  const mapped = ((data || []) as any[]).map((pkg) =>
+    mapPackageRowToMappedPackage(pkg, prettyPackageBadge(pkg.package_type)),
+  )
+
+  const q = f.query?.trim().toLowerCase() ?? ''
+  const country = f.country?.trim().toLowerCase() ?? ''
+  return mapped.filter((m) => {
+    const price = typeof m.packagePrice === 'number' ? m.packagePrice : null
+    if (f.minPrice != null && (price == null || price < f.minPrice)) return false
+    if (f.maxPrice != null && (price == null || price > f.maxPrice)) return false
+    if (f.minRating != null && (m.rating || 0) < f.minRating) return false
+    if (country && !`${m.location} ${m.hotelName}`.toLowerCase().includes(country)) return false
+    if (q && !`${m.title} ${m.hotelName} ${m.location}`.toLowerCase().includes(q)) return false
+    return true
+  })
+}
+
+/** Hook: curated hotel packages for the /search "Packages" tab. */
+export function useSearchPackages(filters: SearchPackageFilters, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: [...packageKeys.lists(), 'search', filters] as const,
+    queryFn: () => fetchSearchPackages(filters),
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: options?.enabled ?? true,
+  })
+}
+
 /**
  * Fetch every published, live stay (package) for one hotel — the property
  * profile's "Choose your stay" list. Cheapest first, so the Room-Only rate leads.
