@@ -10,9 +10,12 @@ import type { SearchListing } from '@/queries/searchQueries'
 const FALLBACK_IMG =
   'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
 
-function DistanceChip({ km }: { km: number | null }) {
+function DistanceChip({ km, kind }: { km: number | null; kind: 'away' | 'pickup' }) {
   if (km == null) return null
-  const label = km < 1 ? '<1 km away' : `${Math.round(km).toLocaleString()} km away`
+  const dist = km < 1 ? '<1 km' : `${Math.round(km).toLocaleString()} km`
+  // Tours are ranked by their nearest PICKUP point, so say so — the distance is
+  // to where the trip departs, not to a single venue.
+  const label = kind === 'pickup' ? `Pickup ${dist} away` : `${dist} away`
   return (
     <div className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
       <MapPin className="h-3.5 w-3.5" />
@@ -21,7 +24,15 @@ function DistanceChip({ km }: { km: number | null }) {
   )
 }
 
-function ResultCard({ item, showDistance }: { item: SearchListing; showDistance: boolean }) {
+function ResultCard({
+  item,
+  showDistance,
+  distanceKind,
+}: {
+  item: SearchListing
+  showDistance: boolean
+  distanceKind: 'away' | 'pickup'
+}) {
   if (item.listingType === 'tour') {
     return (
       <div>
@@ -38,7 +49,7 @@ function ResultCard({ item, showDistance }: { item: SearchListing; showDistance:
           type={item.badge ?? 'Tour'}
           isFeatured={item.isFeatured}
         />
-        {showDistance && <DistanceChip km={item.distanceKm} />}
+        {showDistance && <DistanceChip km={item.distanceKm} kind={distanceKind} />}
       </div>
     )
   }
@@ -58,7 +69,7 @@ function ResultCard({ item, showDistance }: { item: SearchListing; showDistance:
         currency={item.currency}
         badge={item.badge ?? 'Stay'}
       />
-      {showDistance && <DistanceChip km={item.distanceKm} />}
+      {showDistance && <DistanceChip km={item.distanceKm} kind="away" />}
     </div>
   )
 }
@@ -67,10 +78,13 @@ export function SearchResultsGrid({
   items,
   isLoading,
   showDistance = false,
+  distanceKind = 'away',
 }: {
   items: SearchListing[]
   isLoading: boolean
   showDistance?: boolean
+  /** How to phrase the distance chip — 'pickup' for pickup-ranked tours. */
+  distanceKind?: 'away' | 'pickup'
 }) {
   const t = useT()
   if (isLoading) {
@@ -109,7 +123,12 @@ export function SearchResultsGrid({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {items.map((item) => (
-        <ResultCard key={`${item.listingType}-${item.listingId}`} item={item} showDistance={showDistance} />
+        <ResultCard
+          key={`${item.listingType}-${item.listingId}`}
+          item={item}
+          showDistance={showDistance}
+          distanceKind={distanceKind}
+        />
       ))}
     </div>
   )
