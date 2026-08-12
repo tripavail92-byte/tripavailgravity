@@ -25,7 +25,7 @@ import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { useHotelSearch } from '@/queries/hotelQueries'
 import { useSearchPackages } from '@/queries/packageQueries'
-import { useNearestToursByPickup } from '@/queries/pickupQueries'
+import { useNearbyTours } from '@/queries/pickupQueries'
 import { type SearchSort, useSearchFacets, useUnifiedSearch } from '@/queries/searchQueries'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 
@@ -112,7 +112,6 @@ export default function SearchPage() {
   // hotel-side, relevant on the Hotels tab), while tours load only on the Tours
   // or All tab. Cached, so tab switches stay instant.
   const hotelQuery = useHotelSearch(searchInput, { enabled: wantsHotels })
-  const tourQuery = useUnifiedSearch({ ...searchInput, types: ['tour'] }, { enabled: wantsTours })
   // Curated hotel packages (room-only stays excluded — they show as hotel
   // property cards). Filtered client-side against the same facet filters.
   // Enabled alongside hotels (they belong to the hotel side of the catalogue).
@@ -129,19 +128,19 @@ export default function SearchPage() {
 
   // TOURS "nearby" is fundamentally different from hotels: a tour has no single
   // location — it has PICKUP POINTS where the trip departs. So when tours are
-  // shown nearby, rank them by their NEAREST PICKUP to the traveller (dedicated
-  // `search_tours_by_nearest_pickup` RPC), not by a tour's own map pin.
+  // shown nearby we rank them by NEAREST PICKUP across the WHOLE catalogue via
+  // useNearbyTours (pickup RPC + hydrate); otherwise the normal unified
+  // text/geo tour search runs. Exactly one of the two is enabled at a time.
   const tourNearby = wantsTours && geoSort && !!coords
-  const pickupQuery = useNearestToursByPickup(
-    {
-      userLat: coords?.latitude ?? 0,
-      userLng: coords?.longitude ?? 0,
-      radiusKm: 500,
-      limit: 96,
-      offset: 0,
-    },
-    { enabled: tourNearby },
+  const tourQuery = useUnifiedSearch(
+    { ...searchInput, types: ['tour'] },
+    { enabled: wantsTours && !tourNearby },
   )
+  const nearbyToursQuery = useNearbyTours(
+    { userLat: coords?.latitude ?? 0, userLng: coords?.longitude ?? 0, radiusKm: 500, limit: 96 },
+    { enabled: wantsTours && tourNearby },
+  )
+  const tourLoading = tourNearby ? nearbyToursQuery.isLoading : tourQuery.isLoading
 
   const hotelItems = useMemo(
     () => (hotelQuery.data?.pages ?? []).flatMap((p) => p.rows),
@@ -151,24 +150,35 @@ export default function SearchPage() {
     () => (tourQuery.data?.pages ?? []).flatMap((p) => p.rows),
     [tourQuery.data],
   )
-  // When nearby, keep only tours that have a pickup within range and order them
-  // by pickup distance, attaching that distance so the card reads "Pickup N km
-  // away". Falls back to the plain tour list if the pickup lookup is empty.
+  // Nearby → pickup-ranked, hydrated tours (already ordered by pickup distance),
+  // with the same facet filters applied client-side. Otherwise the unified list.
   const tourItems = useMemo(() => {
-    if (!tourNearby || !pickupQuery.data?.length) return tourItemsRaw
-    const distById = new Map(
-      pickupQuery.data.map((r) => [String(r.tour_id), r.nearest_distance_km]),
-    )
-    return tourItemsRaw
-      .filter((it) => distById.has(String(it.listingId)))
-      .map((it) => ({ ...it, distanceKm: distById.get(String(it.listingId)) ?? null }))
-      .sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity))
-  }, [tourNearby, pickupQuery.data, tourItemsRaw])
+    if (!tourNearby) return tourItemsRaw
+    const qs = effectiveQuery.trim().toLowerCase()
+    const cn = country.trim().toLowerCase()
+    return (nearbyToursQuery.data ?? []).filter((it) => {
+      const price = it.price ?? null
+      if (minPrice != null && (price == null || price < minPrice)) return false
+      if (maxPrice != null && (price == null || price > maxPrice)) return false
+      if (minRating != null && (it.rating ?? 0) < minRating) return false
+      if (cn && !`${it.locationLabel ?? ''} ${it.country ?? ''}`.toLowerCase().includes(cn)) return false
+      if (qs && !`${it.title} ${it.locationLabel ?? ''}`.toLowerCase().includes(qs)) return false
+      return true
+    })
+  }, [
+    tourNearby,
+    nearbyToursQuery.data,
+    tourItemsRaw,
+    minPrice,
+    maxPrice,
+    minRating,
+    country,
+    effectiveQuery,
+  ])
   const packageItems = packageQuery.data ?? []
 
   const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
-  const tourTotal =
-    tourNearby && pickupQuery.data?.length ? tourItems.length : tourQuery.data?.pages?.[0]?.total ?? 0
+  const tourTotal = tourNearby ? tourItems.length : tourQuery.data?.pages?.[0]?.total ?? 0
   const packageTotal = packageItems.length
   const total =
     activeType === 'hotel'
@@ -181,9 +191,10 @@ export default function SearchPage() {
 
   const isLoading =
     (wantsHotels && hotelQuery.isLoading) ||
-    (wantsTours && (tourQuery.isLoading || (tourNearby && pickupQuery.isLoading))) ||
+    (wantsTours && tourLoading) ||
     (wantsPackages && packageQuery.isLoading)
-  const isError = hotelQuery.isError || tourQuery.isError || packageQuery.isError
+  const isError =
+    hotelQuery.isError || tourQuery.isError || nearbyToursQuery.isError || packageQuery.isError
 
   const showDistance = geoSort
 
@@ -405,7 +416,7 @@ export default function SearchPage() {
               ) : activeType === 'tour' ? (
                 <SearchResultsGrid
                 items={tourItems}
-                isLoading={tourQuery.isLoading || (tourNearby && pickupQuery.isLoading)}
+                isLoading={tourLoading}
                 showDistance={showDistance}
                 distanceKind={tourNearby ? 'pickup' : 'away'}
               />
@@ -427,21 +438,21 @@ export default function SearchPage() {
                       <PackageResultsGrid packages={packageItems} isLoading={packageQuery.isLoading} />
                     </section>
                   )}
-                  {(tourItems.length > 0 || tourQuery.isLoading) && (
+                  {(tourItems.length > 0 || tourLoading) && (
                     <section>
                       <h2 className="mb-3 text-lg font-semibold text-foreground">
                         {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
                       </h2>
                       <SearchResultsGrid
                 items={tourItems}
-                isLoading={tourQuery.isLoading || (tourNearby && pickupQuery.isLoading)}
+                isLoading={tourLoading}
                 showDistance={showDistance}
                 distanceKind={tourNearby ? 'pickup' : 'away'}
               />
                     </section>
                   )}
                   {!hotelQuery.isLoading &&
-                    !tourQuery.isLoading &&
+                    !tourLoading &&
                     !packageQuery.isLoading &&
                     hotelItems.length === 0 &&
                     tourItems.length === 0 &&
@@ -463,7 +474,7 @@ export default function SearchPage() {
                 </Button>
               </div>
             )}
-            {wantsTours && tourQuery.hasNextPage && !tourQuery.isLoading && (
+            {wantsTours && !tourNearby && tourQuery.hasNextPage && !tourQuery.isLoading && (
               <div className="mt-4 flex justify-center">
                 <Button
                   variant="outline"

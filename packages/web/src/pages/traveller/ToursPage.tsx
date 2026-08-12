@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { ExploreControls } from '@/components/home/ExploreControls'
+import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
-import { useNearestToursByPickup } from '@/queries/pickupQueries'
+import { useNearbyTours } from '@/queries/pickupQueries'
 import {
   useFeaturedTours,
   useHomepageMixTours,
@@ -33,17 +34,14 @@ export default function ToursPage() {
   const hikingQuery = useToursByCategory('hiking-trips')
   const pakistanNorthernQuery = usePakistanNorthernTours()
 
-  const nearestQuery = useNearestToursByPickup(
-    {
-      userLat: coords?.latitude ?? 0,
-      userLng: coords?.longitude ?? 0,
-      radiusKm: 250,
-      limit: 96,
-      offset: 0,
-    },
-    {
-      enabled: Boolean(coords) && sortMode === 'nearest_pickup',
-    },
+  // "Nearest Pickup" uses the SAME canonical hook as the search page — tours
+  // ranked by nearest pickup, hydrated, with a "Pickup N km away" chip. When
+  // this mode is on we render its results (via SearchResultsGrid) instead of
+  // the default TourCard grid.
+  const nearbyPickup = Boolean(coords) && sortMode === 'nearest_pickup'
+  const nearbyToursQuery = useNearbyTours(
+    { userLat: coords?.latitude ?? 0, userLng: coords?.longitude ?? 0, radiusKm: 500, limit: 96 },
+    { enabled: nearbyPickup },
   )
 
   const isLoading =
@@ -63,6 +61,8 @@ export default function ToursPage() {
   const featured = featuredQuery.data ?? []
   const allTours = allToursQuery.data ?? []
 
+  // 'trust_first' ranks featured then by rating; 'newest' keeps default order.
+  // 'nearest_pickup' is handled separately (renders nearbyToursQuery below).
   const sortedAllTours = useMemo(() => {
     if (sortMode === 'trust_first') {
       // Featured tours surface first, then rank by star rating as the public trust signal.
@@ -74,28 +74,8 @@ export default function ToursPage() {
           return (b.rating ?? 0) - (a.rating ?? 0)
         })
     }
-
-    if (sortMode !== 'nearest_pickup') return allTours
-
-    const orderedIds = (nearestQuery.data ?? []).map((r) => String(r.tour_id))
-    if (orderedIds.length === 0) return allTours
-
-    const byId = new Map(allTours.map((t: any) => [String(t.id), t]))
-    const picked: any[] = []
-
-    for (const id of orderedIds) {
-      const found = byId.get(id)
-      if (found) {
-        picked.push(found)
-        byId.delete(id)
-      }
-    }
-
-    // Tours without pickups (or outside radius) remain included at the end,
-    // preserving the existing default ordering for those items.
-    const remainder = allTours.filter((t: any) => byId.has(String(t.id)))
-    return [...picked, ...remainder]
-  }, [allTours, nearestQuery.data, sortMode])
+    return allTours
+  }, [allTours, sortMode])
 
   const topRated = allTours
     .slice()
@@ -234,7 +214,16 @@ export default function ToursPage() {
                 </div>
               </div>
 
-              {isLoading ? (
+              {nearbyPickup ? (
+                // Nearest Pickup → the canonical pickup-ranked grid, with a
+                // "Pickup N km away" chip on each card (shared with /search).
+                <SearchResultsGrid
+                  items={nearbyToursQuery.data ?? []}
+                  isLoading={nearbyToursQuery.isLoading}
+                  showDistance
+                  distanceKind="pickup"
+                />
+              ) : isLoading ? (
                 renderSkeletonGrid()
               ) : sortedAllTours.length > 0 ? (
                 renderToursGrid(sortedAllTours, 'mix')
