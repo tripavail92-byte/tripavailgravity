@@ -152,36 +152,38 @@ export function TourCard({
               </p>
             )}
 
-            {/* Thin divider before price (align baseline with PackageCard) */}
-            <div className="pt-3 flex items-center justify-between border-t border-border/60">
-              <div className="flex flex-col min-w-0">
+            {/* Price + CTA stack vertically so the price never truncates to
+                "PKR…" against the button in a narrow grid (matches
+                HotelPropertyCard). */}
+            <div className="pt-3 flex flex-col gap-3 border-t border-border/60">
+              <div className="min-w-0">
                 {price > 0 ? (
                   <>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="block text-xs text-muted-foreground">
                       {showsDeposit ? t('detail.payNow') : t('detail.from')}
                     </span>
-                    <span className="font-bold text-lg text-foreground truncate">
+                    <span className="block font-bold text-lg text-foreground whitespace-nowrap">
                       {mainMoney.estimate ? '≈ ' : ''}
                       {mainMoney.text}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="block text-[11px] text-muted-foreground">
                       {showsDeposit ? t('detail.balanceLater') : t('detail.perPerson')}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-muted-foreground">{t('detail.pricing')}</span>
-                    <span className="font-bold text-lg text-foreground truncate">
+                    <span className="block text-xs text-muted-foreground">{t('detail.pricing')}</span>
+                    <span className="block font-bold text-lg text-foreground whitespace-nowrap">
                       {t('detail.onRequest')}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="block text-[11px] text-muted-foreground">
                       {t('detail.contactOperator')}
                     </span>
                   </>
                 )}
               </div>
 
-              <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shrink-0">
+              <div className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                 Book Now
               </div>
             </div>
