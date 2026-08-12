@@ -17,6 +17,7 @@ import { AirbnbSearchBar } from '@/components/search/AirbnbSearchBar'
 import { HotelResultsGrid } from '@/components/search/HotelResultsGrid'
 import { PackageResultsGrid } from '@/components/search/PackageResultsGrid'
 import { SearchFilterPanel } from '@/components/search/SearchFilterPanel'
+import { SearchRecommendations } from '@/components/search/SearchRecommendations'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -176,6 +177,17 @@ export default function SearchPage() {
     effectiveQuery,
   ])
   const packageItems = packageQuery.data ?? []
+
+  // Ids already on screen — so the "Recommended for you" row never repeats a card.
+  const resultIds = useMemo(
+    () =>
+      new Set<string>([
+        ...hotelItems.map((h) => h.id),
+        ...tourItems.map((tt) => tt.listingId),
+        ...packageItems.map((p) => p.id),
+      ]),
+    [hotelItems, tourItems, packageItems],
+  )
 
   const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
   const tourTotal = tourNearby ? tourItems.length : tourQuery.data?.pages?.[0]?.total ?? 0
@@ -487,6 +499,10 @@ export default function SearchPage() {
                 </Button>
               </div>
             )}
+
+            {/* Discovery row below the results — curated picks for the active
+                tab, minus anything already shown. */}
+            {!isError && <SearchRecommendations activeType={activeType} excludeIds={resultIds} />}
           </div>
         </div>
       </main>
