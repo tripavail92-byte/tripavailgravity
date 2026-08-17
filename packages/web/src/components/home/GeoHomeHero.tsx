@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { MapPin, Sparkles } from 'lucide-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -29,9 +30,12 @@ export function GeoHomeHero() {
   const resolving = Boolean(country) && isLoading
   const heroImage = hasSupply ? popular[0]?.images?.[0] : undefined
 
-  // Featured stays join the hero so it showcases both trips and packages. Global (not geo-scoped),
-  // so the hero has real content even in a market with tours but no listed packages, and vice-versa.
-  const { data: featuredPackages = [] } = useFeaturedPackages()
+  // Featured stays join the hero so it showcases both trips and packages —
+  // but only when the hotels surface is live. In the trips-only launch this is
+  // disabled, so the hero carries tours alone.
+  const { data: featuredPackages = [] } = useFeaturedPackages({
+    enabled: isSurfaceEnabled('hotels'),
+  })
 
   const heroSlides = useMemo<HeroSlide[]>(() => {
     const tourSlides: HeroSlide[] = popular
@@ -138,7 +142,8 @@ export function GeoHomeHero() {
                   </Button>
                 ) : (
                   <Button asChild className="h-12 rounded-full px-8 text-base font-bold shadow-xl shadow-black/20">
-                    <Link to="/hotels">{t('hero.browseWorldwide')}</Link>
+                    {/* Trips-only launch: the no-supply fallback sends to Tours, not Hotels. */}
+                    <Link to="/tours">{t('hero.browseWorldwide')}</Link>
                   </Button>
                 )}
               </div>

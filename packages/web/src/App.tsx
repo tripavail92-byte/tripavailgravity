@@ -1,9 +1,17 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { lazy, Suspense, useEffect } from 'react'
 import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+
+// LAUNCH SCOPE — hotel/packages/events routes redirect into Tours until their
+// surface flips on (Phase 2 = events, Phase 3 = hotels). Kept as route-level
+// redirects (not deletions) so old links/bookmarks/deep-links never 404 into a
+// gated vertical, and the pages come back by flipping the flag.
+const HOTELS_ON = isSurfaceEnabled('hotels')
+const EVENTS_ON = isSurfaceEnabled('events')
 
 import { AdminGuard } from '@/components/auth/AdminGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
@@ -227,16 +235,28 @@ function App() {
             {/* Traveller Routes (Teal Theme) */}
             <Route element={<TravellerLayout />}>
               <Route path="/" element={<LandingPage />} />
-              <Route path="/hotels" element={<HotelsPage />} />
+              <Route
+                path="/hotels"
+                element={HOTELS_ON ? <HotelsPage /> : <Navigate to="/tours" replace />}
+              />
               <Route path="/tours" element={<ToursPage />} />
-              <Route path="/events" element={<EventsPage />} />
+              <Route
+                path="/events"
+                element={EVENTS_ON ? <EventsPage /> : <Navigate to="/tours" replace />}
+              />
               <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
               <Route path="/payment-methods" element={<PaymentMethodsPage />} />
               <Route path="/explore" element={<Homepage />} />
               {/* Hotel Packages Categories */}
-              <Route path="/explore/hotel-packages/:kind" element={<PackageCategoryPage />} />
+              <Route
+                path="/explore/hotel-packages/:kind"
+                element={HOTELS_ON ? <PackageCategoryPage /> : <Navigate to="/tours" replace />}
+              />
               {/* Back-compat: old path, still shows hotel packages */}
-              <Route path="/explore/packages/:kind" element={<PackageCategoryPage />} />
+              <Route
+                path="/explore/packages/:kind"
+                element={HOTELS_ON ? <PackageCategoryPage /> : <Navigate to="/tours" replace />}
+              />
 
               {/* Tours Categories */}
               <Route path="/explore/tours/categories/:category" element={<TourCategoryPage />} />
@@ -247,21 +267,33 @@ function App() {
               />
               {/* Back-compat: old path treated as a collection */}
               <Route path="/explore/tours/:collection" element={<TourCollectionPage />} />
-              <Route path="/packages/:id" element={<PackageDetailsPage />} />
-              <Route path="/stays/:id" element={<PackageDetailsPage />} />
+              <Route
+                path="/packages/:id"
+                element={HOTELS_ON ? <PackageDetailsPage /> : <Navigate to="/tours" replace />}
+              />
+              <Route
+                path="/stays/:id"
+                element={HOTELS_ON ? <PackageDetailsPage /> : <Navigate to="/tours" replace />}
+              />
               {/* Full-grid "View All" for the home mixed rows: /collections/new, /collections/top-rated */}
               <Route path="/collections/:kind" element={<MixedCollectionPage />} />
               <Route path="/search" element={<SearchPage />} />
-              <Route path="/hotel/:id" element={<HotelDetailsPage />} />
+              <Route
+                path="/hotel/:id"
+                element={HOTELS_ON ? <HotelDetailsPage /> : <Navigate to="/tours" replace />}
+              />
               <Route path="/tours/:id" element={<TourDetailsPage />} />
               {/* Public operator storefront */}
               <Route path="/operators/:slug" element={<OperatorProfilePage />} />
               <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
-              <Route path="/checkout/package/:id" element={<PackageCheckoutPage />} />
+              <Route
+                path="/checkout/package/:id"
+                element={HOTELS_ON ? <PackageCheckoutPage /> : <Navigate to="/tours" replace />}
+              />
               <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
               <Route
                 path="/booking/package/confirmation"
-                element={<PackageBookingConfirmationPage />}
+                element={HOTELS_ON ? <PackageBookingConfirmationPage /> : <Navigate to="/" replace />}
               />
 
               {/* Profile & Settings */}
@@ -282,7 +314,10 @@ function App() {
             <Route element={<DashboardLayout />}>
               {/* /search is registered under TravellerLayout above; with identical paths
               React Router only ever matches the first, so this copy was unreachable. */}
-              <Route path="/hotels/:id" element={<HotelDetailsPage />} />
+              <Route
+                path="/hotels/:id"
+                element={HOTELS_ON ? <HotelDetailsPage /> : <Navigate to="/tours" replace />}
+              />
               <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
 
               <Route
@@ -534,30 +569,45 @@ function App() {
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
-            {/* Full Screen Flows */}
+            {/* Full Screen Flows — hotel supply creation. RoleGuard-gated to
+                hotel_manager (a role no one can acquire in the trips-only
+                launch), plus a launch-scope redirect as defense-in-depth so
+                even a legacy hotel_manager can't open these until Phase 3. */}
             <Route
               path="/manager/list-hotel"
               element={
-                <RoleGuard allowedRoles={['hotel_manager']}>
-                  <ListHotelPage />
-                </RoleGuard>
+                HOTELS_ON ? (
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <ListHotelPage />
+                  </RoleGuard>
+                ) : (
+                  <Navigate to="/" replace />
+                )
               }
             />
             <Route
               path="/manager/list-package"
               element={
-                <RoleGuard allowedRoles={['hotel_manager']}>
-                  <ListPackagePage />
-                </RoleGuard>
+                HOTELS_ON ? (
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <ListPackagePage />
+                  </RoleGuard>
+                ) : (
+                  <Navigate to="/" replace />
+                )
               }
             />
 
             <Route
               path="/manager/setup"
               element={
-                <RoleGuard allowedRoles={['hotel_manager']}>
-                  <HotelManagerSetupPage />
-                </RoleGuard>
+                HOTELS_ON ? (
+                  <RoleGuard allowedRoles={['hotel_manager']}>
+                    <HotelManagerSetupPage />
+                  </RoleGuard>
+                ) : (
+                  <Navigate to="/" replace />
+                )
               }
             />
             <Route

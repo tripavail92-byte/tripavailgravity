@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { motion, useReducedMotion, type Transition } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -131,11 +132,15 @@ export function BottomTabsNav() {
 
   const isAuthenticated = Boolean(user && activeRole)
 
+  // Launch scope — Hotels/Events tabs appear only when their surface is live
+  // (trips-only launch shows Home · Tours · Profile).
   const tabs: Tab[] = [
     { label: 'Home', icon: HomeTabIcon, to: '/' },
-    { label: 'Hotels', icon: HotelTabIcon, to: '/hotels', match: ['/hotel'] },
+    ...(isSurfaceEnabled('hotels')
+      ? [{ label: 'Hotels', icon: HotelTabIcon, to: '/hotels', match: ['/hotel'] }]
+      : []),
     { label: 'Tours', icon: HikerTabIcon, to: '/tours' },
-    { label: 'Events', icon: EventsTabIcon, to: '/events' },
+    ...(isSurfaceEnabled('events') ? [{ label: 'Events', icon: EventsTabIcon, to: '/events' }] : []),
     {
       label: 'Profile',
       icon: UserTabIcon,

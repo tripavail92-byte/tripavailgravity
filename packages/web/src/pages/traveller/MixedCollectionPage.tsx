@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { ArrowLeft } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -20,13 +21,18 @@ type MixedItem =
   | { type: 'hotel'; id: string; created_at: string; rating: number | null; pkg: any }
   | { type: 'tour'; id: string; created_at: string; rating: number | null; tour: any }
 
-const COPY: Record<'new' | 'top-rated', { title: string; subtitle: string }> = {
-  new: { title: 'New Arrivals', subtitle: 'The latest stays and tours, fresh from our partners' },
-  'top-rated': {
-    title: 'Top Rated',
-    subtitle: 'The highest-rated stays and tours travellers love',
-  },
-}
+// Trips-only launch: copy speaks to tours (hotel side is off).
+const COPY: Record<'new' | 'top-rated', { title: string; subtitle: string }> = isSurfaceEnabled(
+  'hotels',
+)
+  ? {
+      new: { title: 'New Arrivals', subtitle: 'The latest stays and tours, fresh from our partners' },
+      'top-rated': { title: 'Top Rated', subtitle: 'The highest-rated stays and tours travellers love' },
+    }
+  : {
+      new: { title: 'New Arrivals', subtitle: 'The latest tours, fresh from our partners' },
+      'top-rated': { title: 'Top Rated', subtitle: 'The highest-rated tours travellers love' },
+    }
 
 export default function MixedCollectionPage() {
   const { kind } = useParams<{ kind: string }>()
@@ -38,7 +44,7 @@ export default function MixedCollectionPage() {
     data: hotelPackages = [],
     isLoading: hotelsLoading,
     isError: hotelsError,
-  } = useHomepageMixPackages(48)
+  } = useHomepageMixPackages(48, { enabled: isSurfaceEnabled('hotels') })
   const { data: tours = [], isLoading: toursLoading, isError: toursError } = useHomepageMixTours(48)
 
   const isLoading = hotelsLoading || toursLoading

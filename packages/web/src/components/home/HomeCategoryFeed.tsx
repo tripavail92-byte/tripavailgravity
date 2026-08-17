@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { Ticket } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
@@ -143,17 +144,23 @@ function FeedSection({
  * the pill choice. This is why the mode pills are the first thing a visitor sees.
  */
 export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
-  const [mode, setMode] = useState<Mode>('all')
+  // LAUNCH SCOPE: trips-only home is locked to the 'tours' mode (the Hotels/
+  // Events pills are hidden in the search bar), so the hotel/package/event
+  // sections never render and their queries never fire.
+  const hotelsOn = isSurfaceEnabled('hotels')
+  const [mode, setMode] = useState<Mode>(hotelsOn ? 'all' : 'tours')
 
-  // Restore the visitor's last-picked mode (Airbnb-style tab memory).
+  // Restore the visitor's last-picked mode (Airbnb-style tab memory). Only
+  // restore surfaces that are live — a stored 'hotels'/'events' is ignored.
   useEffect(() => {
+    if (!hotelsOn) return
     try {
       const saved = localStorage.getItem(MODE_STORAGE_KEY)
       if (saved === 'hotels' || saved === 'tours' || saved === 'events') setMode(saved)
     } catch {
       /* private-mode / disabled storage — default 'all' is fine */
     }
-  }, [])
+  }, [hotelsOn])
 
   const selectMode = (next: Exclude<Mode, 'all'>) => {
     // Clicking the active pill again returns to the 'all' overview.
@@ -167,15 +174,16 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
     }
   }
 
-  // ── Data. All prefetched; sections read from these. ──
-  const offersQ = useSpecialOffers()
-  const hotelsQ = useHotelBrowse()
-  const featPkgQ = useFeaturedPackages()
-  const topRatedQ = useCuratedPackages('top_rated')
-  const couplesQ = useCuratedPackages('best_for_couples')
-  const familyQ = useCuratedPackages('family_friendly')
-  const weekendQ = useCuratedPackages('weekend_getaways')
-  const newQ = useCuratedPackages('new_arrivals')
+  // ── Data. All prefetched; sections read from these. Hotel/package queries
+  //    are disabled in the trips-only launch (nothing consumes them). ──
+  const offersQ = useSpecialOffers({ enabled: hotelsOn })
+  const hotelsQ = useHotelBrowse({ enabled: hotelsOn })
+  const featPkgQ = useFeaturedPackages({ enabled: hotelsOn })
+  const topRatedQ = useCuratedPackages('top_rated', { enabled: hotelsOn })
+  const couplesQ = useCuratedPackages('best_for_couples', { enabled: hotelsOn })
+  const familyQ = useCuratedPackages('family_friendly', { enabled: hotelsOn })
+  const weekendQ = useCuratedPackages('weekend_getaways', { enabled: hotelsOn })
+  const newQ = useCuratedPackages('new_arrivals', { enabled: hotelsOn })
   const featTourQ = useFeaturedTours()
   const adventureQ = useToursByCategory('adventure-trips')
   const hikingQ = useToursByCategory('hiking-trips')

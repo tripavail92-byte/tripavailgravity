@@ -29,9 +29,10 @@ interface ExploreControlsProps {
 }
 
 /** Map the caller-facing ExploreMode ('all' | 'hotels' | 'tours' | 'events')
- *  to the bar's tab key. 'all' has no tab equivalent — we default to Hotels. */
+ *  to the bar's tab key. 'all' has no tab equivalent — default to Tours (the
+ *  launch surface; Hotels tab is hidden in the trips-only launch anyway). */
 function modeToTab(mode: ExploreMode): SearchTab {
-  return mode === 'all' ? 'hotels' : mode
+  return mode === 'all' ? 'tours' : mode
 }
 
 export function ExploreControls({

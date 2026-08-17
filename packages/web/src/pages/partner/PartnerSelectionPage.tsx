@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { ArrowRight, Star, TrendingUp, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState } from 'react'
@@ -45,6 +46,18 @@ export default function PartnerSelectionPage() {
   const hasPartnerRole = partnerType === 'hotel_manager' || partnerType === 'tour_operator'
 
   const availablePartnerOptions = allPartnerOptions.filter((option) => {
+    // LAUNCH SCOPE: no new hotel onboarding until Phase 3 — hide the Hotel
+    // Manager card. This is the single decisive gate: it's the only live path
+    // that mints a hotel_manager role, so every /manager/* supply flow becomes
+    // unreachable to new partners. (An existing hotel_manager still sees it so
+    // their "already a partner" state renders.)
+    if (
+      option.id === 'hotel_manager' &&
+      !isSurfaceEnabled('hotels') &&
+      partnerType !== 'hotel_manager'
+    ) {
+      return false
+    }
     if (!hasPartnerRole) return true
     // Only show the already-selected role (enterprise clarity). Never show both.
     return option.id === partnerType

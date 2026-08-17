@@ -9,6 +9,7 @@
 //                  longer used — kept here because Sheet still needs no
 //                  state; if TS complains about unused, drop it).
 // Kept imports:    everything else the page still uses.
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { SlidersHorizontal } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -66,6 +67,10 @@ export default function SearchPage() {
     .join(' ')
 
   const activeType: ActiveType = useMemo(() => {
+    // LAUNCH SCOPE: with the hotel surface off, /search is TOURS-ONLY — any
+    // ?types=hotel|package|all (old link, bookmark, or stray param) is coerced
+    // to 'tour' so no hotel/package results can appear.
+    if (!isSurfaceEnabled('hotels')) return 'tour'
     const raw = (searchParams.get('types') || '').trim().toLowerCase()
     if (raw === 'tour') return 'tour'
     if (raw === 'package') return 'package'
@@ -309,26 +314,30 @@ export default function SearchPage() {
           <div className="flex flex-wrap items-center gap-2 self-start">
             {/* Type toggle — flip between the two surfaces without re-opening
                 the search bar. */}
-            <div className="inline-flex rounded-full border border-border bg-background p-1">
-              {[
-                { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal + packageTotal})` },
-                { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
-                { key: 'package' as const, label: `Packages (${packageTotal})` },
-                { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                    activeType === tab.key
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {tab.label.trim()}
-                </button>
-              ))}
-            </div>
+            {/* Type toggle hidden in the trips-only launch — /search is
+                tours-only, so there's nothing to switch between. */}
+            {isSurfaceEnabled('hotels') && (
+              <div className="inline-flex rounded-full border border-border bg-background p-1">
+                {[
+                  { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal + packageTotal})` },
+                  { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
+                  { key: 'package' as const, label: `Packages (${packageTotal})` },
+                  { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setParam('types', tab.key === 'all' ? null : tab.key)}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      activeType === tab.key
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {tab.label.trim()}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Sort — the "Recommended" control, now clearly in the results
                 toolbar below the search fields. */}

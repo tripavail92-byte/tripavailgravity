@@ -26,6 +26,8 @@ import { createPortal } from 'react-dom'
 import type { DateRange } from 'react-day-picker'
 import { useNavigate } from 'react-router-dom'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { Calendar } from '@/components/ui/calendar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -177,7 +179,7 @@ const DEST_TINTS: readonly string[] = [
 const EMOJI_FONT =
   '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif'
 
-const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: string }[] = [
+const ALL_TABS: readonly { key: SearchTab; label: string; emoji: string; icon: string }[] = [
   // `icon` is a Microsoft Fluent Emoji 3D PNG (MIT-licensed, bundled in
   // public/emoji) so the tab glyphs render as true 3D art identically on every
   // device — not the flat OS font emoji, which differ Windows↔Apple↔Android.
@@ -186,6 +188,17 @@ const TABS: readonly { key: SearchTab; label: string; emoji: string; icon: strin
   { key: 'tours', label: 'Tours', emoji: '🚙', icon: '/emoji/jeep.png' },
   { key: 'events', label: 'Events', emoji: '🎫', icon: '/emoji/ticket.png' },
 ]
+
+// LAUNCH SCOPE — Trips-only launch hides the Hotels/Events tabs (Phase 2/3
+// flip their surface flag back on). Tours is always present. This one filter
+// is the choke point: it collapses the expanded tab strip, the compact-pill
+// category chevron, and the per-tab Where suggestions all at once.
+const TABS = ALL_TABS.filter(
+  (t) =>
+    t.key === 'tours' ||
+    (t.key === 'hotels' && isSurfaceEnabled('hotels')) ||
+    (t.key === 'events' && isSurfaceEnabled('events')),
+)
 
 /**
  * A tab glyph rendered as the bundled Fluent 3D PNG, with an automatic fall
@@ -282,7 +295,7 @@ function useIsDesktop(): boolean {
 }
 
 export function AirbnbSearchBar({
-  defaultTab = 'hotels',
+  defaultTab = 'tours',
   activeTab,
   onTabChange,
   onSearch,
@@ -584,8 +597,9 @@ function ExpandedBar({
   return (
     <div className="flex flex-col items-stretch gap-2">
       {/* Tab strip — icon size matched to airbnb.com: 28px emoji beside a 14px
-          label. Ours previously inherited the 14px text size, so the emoji
-          rendered less than half Airbnb's and read as "dull". */}
+          label. Hidden entirely when only one surface is live (trips-only
+          launch) — a lone "Tours" tab is noise. */}
+      {TABS.length > 1 && (
       <div className="flex items-center justify-center gap-8" role="tablist" aria-label="Search category">
         {TABS.map((t) => {
           const active = t.key === tab
@@ -615,6 +629,7 @@ function ExpandedBar({
           )
         })}
       </div>
+      )}
 
       {/* Field pill — the premium Glass-UI element. Translucent ground with a
           heavy backdrop blur (so hero content ghosts through), a white/10-40
@@ -1219,7 +1234,9 @@ function CompactPill({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Tab chevron — Airbnb tucks tab labels behind a chevron in compact mode. */}
+      {/* Tab chevron — Airbnb tucks tab labels behind a chevron in compact mode.
+          Hidden in a single-surface (trips-only) launch: nothing to switch. */}
+      {TABS.length > 1 && (
       <Popover open={tabsOpen} onOpenChange={setTabsOpen}>
         <PopoverTrigger asChild>
           <button
@@ -1262,6 +1279,7 @@ function CompactPill({
           ))}
         </PopoverContent>
       </Popover>
+      )}
 
       {/* The compact summary pill.
        *
