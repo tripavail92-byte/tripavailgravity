@@ -533,10 +533,16 @@ export default function TourDetailsPage() {
       </GlassHeader>
       <GlassContent className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Star size={16} className="text-warning fill-current" />
-          <span className="font-bold text-foreground">
-            {tour.rating} ({tour.review_count})
-          </span>
+          {Number(tour.rating) > 0 ? (
+            <>
+              <Star size={16} className="text-warning fill-current" />
+              <span className="font-bold text-foreground">
+                {tour.rating} ({tour.review_count})
+              </span>
+            </>
+          ) : (
+            <span className="font-semibold text-foreground">New · No reviews yet</span>
+          )}
         </div>
 
         <div className="space-y-3 rounded-3xl border border-primary/10 bg-primary/5 p-4 backdrop-blur-sm">
@@ -877,14 +883,23 @@ export default function TourDetailsPage() {
                   )}
 
                   <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-warning/10 rounded-full">
-                        <Star size={16} className="text-warning fill-current" />
+                    {Number(tour.rating) > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-warning/10 rounded-full">
+                          <Star size={16} className="text-warning fill-current" />
+                        </div>
+                        <span className="font-bold text-foreground">
+                          {tour.rating} ({tour.review_count} reviews)
+                        </span>
                       </div>
-                      <span className="font-bold text-foreground">
-                        {tour.rating} ({tour.review_count} reviews)
-                      </span>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-primary/10 rounded-full">
+                          <Star size={16} className="text-primary" />
+                        </div>
+                        <span className="font-bold text-foreground">New</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 bg-info/10 rounded-full">
                         <MapPin size={16} className="text-info" />

@@ -241,7 +241,11 @@ export default function TourOperatorSetupPage() {
   const advanceStage = useCallback(async () => {
     const nextStep = currentStep + 1
     const isFinal = currentStep === STEPS.length - 2
-    await saveProgress(setupData, isFinal, isFinal ? 0 : nextStep)
+    // Only advance when the save actually succeeded — otherwise the final step
+    // would show "You're all set!" while setup_completed stayed false in the DB,
+    // and the dashboard would bounce the operator straight back to setup.
+    const saved = await saveProgress(setupData, isFinal, isFinal ? 0 : nextStep)
+    if (!saved) return
     if (currentStep < STEPS.length - 1) {
       syncUrl(nextStep, 0)
       setCurrentStep(nextStep)

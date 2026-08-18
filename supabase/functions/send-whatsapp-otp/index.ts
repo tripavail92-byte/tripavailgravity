@@ -220,16 +220,30 @@ serve(async (req: Request) => {
     const phoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
 
     if (!accessToken || !phoneNumberId) {
-      // Dev fallback: return OTP in response so engineers can test without WA
-      console.warn('[send-whatsapp-otp] Missing WHATSAPP secrets — DEV MODE, returning OTP')
+      // Dev fallback returns the OTP in the response so engineers can test
+      // without WhatsApp. SECURITY: this is a self-verification bypass + OTP
+      // disclosure, so it must NEVER trigger silently in production just because
+      // the secrets happen to be missing. Fail CLOSED unless a deployer has
+      // explicitly opted in with ALLOW_DEV_OTP=true.
+      if (Deno.env.get('ALLOW_DEV_OTP') === 'true') {
+        console.warn('[send-whatsapp-otp] Missing WHATSAPP secrets — DEV MODE (ALLOW_DEV_OTP), returning OTP')
+        return new Response(
+          JSON.stringify({
+            success: true,
+            dev: true,
+            otp,
+            message: 'Dev mode: OTP returned in response (set WHATSAPP_ACCESS_TOKEN + WHATSAPP_PHONE_NUMBER_ID for live delivery)',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      console.error('[send-whatsapp-otp] Missing WHATSAPP secrets and ALLOW_DEV_OTP not set — refusing to send')
       return new Response(
         JSON.stringify({
-          success: true,
-          dev: true,
-          otp,
-          message: 'Dev mode: OTP returned in response (add WHATSAPP_ACCESS_TOKEN + WHATSAPP_PHONE_NUMBER_ID to enable live delivery)',
+          success: false,
+          error: 'Phone verification is temporarily unavailable. Please try again later.',
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 

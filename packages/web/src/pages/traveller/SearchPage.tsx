@@ -281,8 +281,15 @@ export default function SearchPage() {
       : t('search.exploreEverything')
 
   useSeo({
-    title: effectiveQuery ? `Search: ${effectiveQuery}` : 'Search tours & stays',
-    description: 'Search tours and hotel stays across every destination on TripAvail.',
+    // Launch scope: drop "stays"/hotel wording from the search meta until Phase 3.
+    title: effectiveQuery
+      ? `Search: ${effectiveQuery}`
+      : isSurfaceEnabled('hotels')
+        ? 'Search tours & stays'
+        : 'Search tours',
+    description: isSurfaceEnabled('hotels')
+      ? 'Search tours and hotel stays across every destination on TripAvail.'
+      : 'Search tours and experiences across every destination on TripAvail.',
     canonicalPath: '/search',
     noindex: true,
   })
