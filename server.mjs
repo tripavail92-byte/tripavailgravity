@@ -13,6 +13,12 @@ const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL |
 const SUPABASE_ANON = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
 const seoEnabled = Boolean(SUPABASE_URL && SUPABASE_ANON)
 
+// Launch scope (Trips-only): mirror of packages/shared launchScope.hotels. This is a
+// plain Node server (no workspace import at runtime), so the flag is duplicated here —
+// flip BOTH to true in Phase 3. Gates the default share title + what the sitemap
+// advertises (hotels/packages routes now redirect to /tours, so we don't crawl them).
+const LAUNCH_HOTELS = false
+
 const indexHtmlPath = path.join(distDir, 'index.html')
 let INDEX_HTML = ''
 try {
@@ -69,7 +75,11 @@ async function fetchListing(kind, slugOrId) {
 function renderShell(meta) {
   const { title, description, canonical, image, jsonLd } = meta
   let html = INDEX_HTML
-  const fullTitle = title ? `${title} · TripAvail` : 'TripAvail — Find Your Perfect Stay'
+  const fullTitle = title
+    ? `${title} · TripAvail`
+    : LAUNCH_HOTELS
+      ? 'TripAvail — Find Your Perfect Stay'
+      : 'TripAvail — Find Your Next Adventure'
   const rep = (re, str) => {
     html = re.test(html) ? html.replace(re, str) : html
   }
@@ -132,11 +142,15 @@ function listingMeta(kind, row) {
 }
 
 async function buildSitemap() {
+  // Launch scope (Trips-only): only fetch/advertise hotel packages in Phase 3 — until
+  // then /hotels and /packages/* redirect to /tours, so crawling them is wasted budget.
   const [tours, pkgs] = await Promise.all([
     sbFetch('tours?is_active=eq.true&is_published=eq.true&status=eq.live&select=slug,id&limit=5000'),
-    sbFetch('packages?is_published=eq.true&status=eq.live&select=slug,id&limit=5000'),
+    LAUNCH_HOTELS
+      ? sbFetch('packages?is_published=eq.true&status=eq.live&select=slug,id&limit=5000')
+      : Promise.resolve([]),
   ])
-  const statics = ['/', '/hotels', '/tours', '/explore']
+  const statics = LAUNCH_HOTELS ? ['/', '/hotels', '/tours', '/explore'] : ['/', '/tours', '/explore']
   const urls = [
     ...statics.map((p) => ({ loc: `${SITE}${p}`, priority: p === '/' ? '1.0' : '0.7' })),
     ...tours.map((t) => ({ loc: `${SITE}/tours/${t.slug || t.id}`, priority: '0.8' })),

@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 /**
  * Dependency-free per-route SEO. Imperatively sets <title>, meta description, canonical,
  * Open Graph / Twitter tags, robots, and a JSON-LD structured-data block. Google renders
@@ -23,9 +25,14 @@ export interface SeoInput {
 }
 
 const SITE = 'https://tripavail.com'
-const DEFAULT_TITLE = 'TripAvail — Find Your Perfect Stay'
-const DEFAULT_DESC =
-  'Discover and book tours, hotels, and travel packages across Pakistan and beyond. Verified operators, secure payments, real-time availability.'
+// Launch scope (Trips-only): the site-wide default title/description lead with tours.
+// Flipping LAUNCH_SCOPE.hotels back on (Phase 3) auto-restores the hotels wording.
+const DEFAULT_TITLE = isSurfaceEnabled('hotels')
+  ? 'TripAvail — Find Your Perfect Stay'
+  : 'TripAvail — Find Your Next Adventure'
+const DEFAULT_DESC = isSurfaceEnabled('hotels')
+  ? 'Discover and book tours, hotels, and travel packages across Pakistan and beyond. Verified operators, secure payments, real-time availability.'
+  : 'Discover and book unforgettable tours and travel experiences across Pakistan and beyond. Verified operators, secure payments, real-time availability.'
 const DEFAULT_IMAGE = `${SITE}/og-cover.png`
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string) {
