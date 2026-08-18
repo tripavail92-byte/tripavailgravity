@@ -13,6 +13,11 @@
 -- traveler can only review the exact tour they booked. Idempotent.
 -- ============================================================
 
+-- NOTE: the review-row columns MUST be qualified as public.tour_booking_reviews.*.
+-- An unqualified `tour_id` binds to the subquery's `tb.tour_id` (tour_bookings HAS a
+-- tour_id column), which collapses to `tb.tour_id = tb.tour_id` (always true) and does
+-- nothing. `booking_id` happens to resolve to the outer row only because tour_bookings
+-- has no booking_id column — don't rely on that; qualify both explicitly.
 DROP POLICY IF EXISTS "tour_booking_reviews_insert_own" ON public.tour_booking_reviews;
 CREATE POLICY "tour_booking_reviews_insert_own"
   ON public.tour_booking_reviews FOR INSERT
@@ -20,9 +25,9 @@ CREATE POLICY "tour_booking_reviews_insert_own"
     auth.uid() = traveler_id
     AND EXISTS (
       SELECT 1 FROM public.tour_bookings tb
-      WHERE tb.id = booking_id
+      WHERE tb.id = public.tour_booking_reviews.booking_id
         AND tb.traveler_id = auth.uid()
-        AND tb.tour_id = tour_id                    -- << the fix: review must match the booked tour
+        AND tb.tour_id = public.tour_booking_reviews.tour_id   -- << the fix: review must match the booked tour
         AND tb.status IN ('confirmed', 'completed')
     )
   );
@@ -35,9 +40,9 @@ CREATE POLICY "tour_booking_reviews_update_own"
     auth.uid() = traveler_id
     AND EXISTS (
       SELECT 1 FROM public.tour_bookings tb
-      WHERE tb.id = booking_id
+      WHERE tb.id = public.tour_booking_reviews.booking_id
         AND tb.traveler_id = auth.uid()
-        AND tb.tour_id = tour_id                    -- << prevent re-pointing a review at another tour
+        AND tb.tour_id = public.tour_booking_reviews.tour_id   -- << prevent re-pointing a review at another tour
     )
   );
 
