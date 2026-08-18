@@ -1,7 +1,8 @@
-import { AlertCircle, ArrowUp, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, ArrowUp, Loader2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
+import { TravelBot } from '@/components/icons/TravelBot'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -114,7 +115,7 @@ export function TravelAssistant({ className = '' }: { className?: string }) {
   return (
     <div className={`flex flex-col ${className}`}>
       <div className="flex items-center gap-2 border-b border-border pb-3">
-        <Sparkles className="h-5 w-5 text-primary" />
+        <TravelBot className="h-5 w-5 text-primary" />
         <div>
           <h2 className="text-sm font-semibold text-foreground">Ask TripAvail</h2>
           <p className="text-xs text-muted-foreground">

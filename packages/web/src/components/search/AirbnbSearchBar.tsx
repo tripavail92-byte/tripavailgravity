@@ -8,7 +8,6 @@ import {
   Navigation,
   Plus,
   Search,
-  Sparkles,
   Waves,
 } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
@@ -28,6 +27,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 
+import { TravelBot } from '@/components/icons/TravelBot'
 import { Calendar } from '@/components/ui/calendar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -472,7 +472,7 @@ export function AirbnbSearchBar({
           </div>
 
           {/* Ask AI — beside the expanded bar. Rose gradient, always visible
-              in this row. When scrolled, a compact Sparkles icon replaces
+              in this row. When scrolled, a compact travel-bot icon replaces
               it inside the portalled header pill. */}
           <button
             type="button"
@@ -480,7 +480,7 @@ export function AirbnbSearchBar({
             aria-label="Ask AI"
             className="group inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary/80 px-4 font-semibold text-primary-foreground shadow-sm transition-all hover:shadow-md hover:brightness-105"
           >
-            <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
+            <TravelBot className="h-4 w-4 transition-transform group-hover:scale-110" />
             <span className="hidden md:inline">Ask AI</span>
           </button>
         </div>
@@ -525,7 +525,7 @@ export function AirbnbSearchBar({
                     onExpand={expandAndScrollTop}
                     onSearch={submit}
                   />
-                  {/* Ask AI, compact — icon-only sparkle chip so the AI entry
+                  {/* Ask AI, compact — icon-only travel-bot chip so the AI entry
                       stays reachable at any scroll depth without crowding
                       the header's right cluster. */}
                   <button
@@ -534,7 +534,7 @@ export function AirbnbSearchBar({
                     aria-label="Ask AI"
                     className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-sm transition-all hover:brightness-105"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <TravelBot className="h-4 w-4" />
                   </button>
                 </motion.div>
               ) : null}
