@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { useQuery } from '@tanstack/react-query'
 import { type Href, router } from 'expo-router'
 import { useEffect, useState } from 'react'
@@ -31,7 +32,10 @@ function TripCard({ trip }: { trip: TripItem }) {
 
   const open = () => {
     if (trip.kind === 'tour') router.push(`/trips/${trip.id}` as Href)
-    else if (trip.refId) router.push(`/packages/${trip.refId}` as Href)
+    // Launch scope: legacy "Stay" bookings stay visible on the card, but the
+    // hotel-package detail surface is gated until Phase 3 — no-op the tap so it
+    // doesn't bounce off the /packages redirect.
+    else if (trip.refId && isSurfaceEnabled('hotels')) router.push(`/packages/${trip.refId}` as Href)
   }
 
   return (

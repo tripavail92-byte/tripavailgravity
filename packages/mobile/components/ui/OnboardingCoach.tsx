@@ -10,6 +10,8 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient'
 import * as SecureStore from 'expo-secure-store'
 
+import { isSurfaceEnabled } from '@tripavail/shared'
+
 import { CircleUser, Compass, type LucideIcon, Search } from '@/components/icons/lucide'
 import { GlassPanel } from '@/components/ui/Glass'
 import { useAuth } from '@/hooks/useAuth'
@@ -23,17 +25,24 @@ interface CoachStep {
   body: string
 }
 
-/** Mirror of the web's 3-step guided tour ("Find Your Next Trip — Step 1 of 3"). */
+/**
+ * Mirror of the web's 3-step guided tour ("Find Your Next Trip — Step 1 of 3").
+ * Launch scope: copy is trips-only until Phase 3, when hotels/stays return.
+ */
 const STEPS: CoachStep[] = [
   {
     Icon: Search,
     title: 'Find your next trip',
-    body: 'Use the search bar to find hotels, tours, and experiences in your desired destination.',
+    body: isSurfaceEnabled('hotels')
+      ? 'Use the search bar to find hotels, tours, and experiences in your desired destination.'
+      : 'Use the search bar to find tours and experiences in your desired destination.',
   },
   {
     Icon: Compass,
-    title: 'Tours & stays in one place',
-    body: 'Browse curated tours by category, or tap Stays for hotel packages with perks and instant confirmation.',
+    title: isSurfaceEnabled('hotels') ? 'Tours & stays in one place' : 'Curated tours & experiences',
+    body: isSurfaceEnabled('hotels')
+      ? 'Browse curated tours by category, or tap Stays for hotel packages with perks and instant confirmation.'
+      : 'Browse curated tours by category and book unforgettable experiences with instant confirmation.',
   },
   {
     Icon: CircleUser,

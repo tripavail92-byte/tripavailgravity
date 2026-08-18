@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { Tabs } from 'expo-router'
 import { StyleSheet } from 'react-native'
 import { Bed, GlobeHemisphereEast, Mountains, UserCircle } from 'phosphor-react-native'
@@ -43,6 +44,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="hotels"
         options={{
+          // Launch scope: Hotels tab hidden until Phase 3 (the route still
+          // exists but is redirected in hotels.tsx).
+          href: isSurfaceEnabled('hotels') ? undefined : null,
           title: 'Hotels',
           tabBarIcon: ({ color, focused }) => (
             <Bed size={focused ? 27 : 24} color={color} weight={focused ? 'duotone' : 'regular'} />

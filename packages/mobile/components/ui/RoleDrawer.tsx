@@ -47,7 +47,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { useDrawer } from '@/hooks/useDrawer'
 import { useRoleTheme, useThemeColors } from '@/theme'
-import type { RoleType } from '@tripavail/shared'
+import { isSurfaceEnabled, type RoleType } from '@tripavail/shared'
 
 const SCREEN_W = Dimensions.get('window').width
 const PANEL_W = Math.min(320, Math.round(SCREEN_W * 0.86))
@@ -80,20 +80,26 @@ const NAV: Record<'traveller' | 'tour_operator' | 'hotel_manager', NavItem[]> = 
   ],
   hotel_manager: [
     { label: 'Dashboard', Icon: LayoutDashboard, colors: ['#6366f1', '#4f46e5'], route: '/manager/dashboard' },
-    {
-      label: 'List Your Hotel',
-      subtext: 'Publish a new property',
-      Icon: Building2,
-      colors: ['#a855f7', '#7c3aed'],
-      route: '/manager/list-hotel',
-    },
-    {
-      label: 'List Packages',
-      subtext: 'Bundle stays with perks',
-      Icon: Gift,
-      colors: ['#06b6d4', '#0891b2'],
-      route: '/manager/create-package',
-    },
+    // Launch scope: hotel supply tools (list a hotel / build packages) are
+    // hidden until Phase 3 — a legacy manager keeps read-only dashboard access.
+    ...(isSurfaceEnabled('hotels')
+      ? [
+          {
+            label: 'List Your Hotel',
+            subtext: 'Publish a new property',
+            Icon: Building2,
+            colors: ['#a855f7', '#7c3aed'] as [string, string],
+            route: '/manager/list-hotel',
+          },
+          {
+            label: 'List Packages',
+            subtext: 'Bundle stays with perks',
+            Icon: Gift,
+            colors: ['#06b6d4', '#0891b2'] as [string, string],
+            route: '/manager/create-package',
+          },
+        ]
+      : []),
     { label: 'Bookings', Icon: Briefcase, colors: ['#10b981', '#14b8a6'], route: '/manager/bookings' },
     { label: 'Messages', Icon: MessageSquare, colors: ['#10b981', '#0d9488'], route: '/messages' },
     { label: 'Verification', Icon: Shield, colors: ['#f59e0b', '#d97706'], route: '/settings/verification' },
@@ -212,10 +218,11 @@ export function RoleDrawer() {
     return pathname === clean || pathname === route
   }
 
+  // Launch scope: the hotel-manager shortcut is hidden until Phase 3.
   const partnerShortcut =
     partnerType === 'tour_operator'
       ? { label: 'Tour Operator Dashboard', onPress: () => doSwitch('tour_operator', '/operator/dashboard') }
-      : partnerType === 'hotel_manager'
+      : partnerType === 'hotel_manager' && isSurfaceEnabled('hotels')
         ? { label: 'Hotel Manager Dashboard', onPress: () => doSwitch('hotel_manager', '/manager/dashboard') }
         : null
 

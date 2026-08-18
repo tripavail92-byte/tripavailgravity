@@ -14,6 +14,8 @@ import {
 } from '@/components/icons/lucide'
 import { Pressable, ScrollView, Text, View } from 'react-native'
 
+import { isSurfaceEnabled } from '@tripavail/shared'
+
 import { AppHeader, Avatar, Badge, Button, Card, EmptyState, Screen } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useRoleTheme } from '@/theme'
@@ -50,10 +52,12 @@ export default function ProfileScreen() {
 
   const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Traveler'
 
+  // Launch scope: the hotel_manager "Manager Dashboard" entry only shows in
+  // Phase 3 — a legacy manager falls back to the Become-a-Partner CTA.
   const partnerItem =
     activeRole?.role_type === 'tour_operator'
       ? { label: 'Operator Dashboard', Icon: LayoutDashboard, route: '/operator/dashboard' as Href }
-      : activeRole?.role_type === 'hotel_manager'
+      : activeRole?.role_type === 'hotel_manager' && isSurfaceEnabled('hotels')
         ? { label: 'Manager Dashboard', Icon: LayoutDashboard, route: '/manager/dashboard' as Href }
         : { label: 'Become a Partner', Icon: Briefcase, route: '/become-partner' as Href }
   const menuItems = [...MENU_ITEMS, partnerItem]

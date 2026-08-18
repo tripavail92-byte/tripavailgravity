@@ -1,5 +1,6 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { useQuery } from '@tanstack/react-query'
-import { router, useLocalSearchParams, type Href } from 'expo-router'
+import { Redirect, router, useLocalSearchParams, type Href } from 'expo-router'
 import { useState } from 'react'
 import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native'
 import { useStripe } from '@stripe/stripe-react-native'
@@ -58,7 +59,15 @@ function FeatureLine({ label, excluded }: { label: string; excluded?: boolean })
   )
 }
 
+// Launch scope: package (hotel-stay) detail is a live sales surface — hidden AND
+// deep-link-redirected until Phase 3. Legacy My-Trips "Stay" taps are no-oped
+// (see app/(tabs)/trips.tsx) so they don't bounce off this redirect.
 export default function PackageDetailScreen() {
+  if (!isSurfaceEnabled('hotels')) return <Redirect href="/(tabs)/tours" />
+  return <PackageDetailScreenInner />
+}
+
+function PackageDetailScreenInner() {
   const { id } = useLocalSearchParams<{ id?: string }>()
   const { data: pkg, isLoading, error } = useQuery({
     queryKey: ['package', id],

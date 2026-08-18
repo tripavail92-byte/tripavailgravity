@@ -1,4 +1,6 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { useQuery } from '@tanstack/react-query'
+import { Redirect } from 'expo-router'
 import { FlatList, ScrollView, Text, View } from 'react-native'
 
 import { AppHeader, EmptyState, Screen, Skeleton } from '@/components/ui'
@@ -43,7 +45,14 @@ function useCurated(kind: CuratedKind) {
   })
 }
 
+// Launch scope: the Hotels tab is hidden AND deep-link-redirected to Trips
+// until Phase 3. The screen body is kept intact behind the gate.
 export default function HotelsTab() {
+  if (!isSurfaceEnabled('hotels')) return <Redirect href="/(tabs)/tours" />
+  return <HotelsTabInner />
+}
+
+function HotelsTabInner() {
   const featured = useQuery({
     queryKey: ['packages', 'all'],
     queryFn: () => fetchPackages(8),

@@ -1,11 +1,19 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { useQuery } from '@tanstack/react-query'
+import { Redirect } from 'expo-router'
 import { FlatList, View } from 'react-native'
 
 import { AppHeader, EmptyState, Screen, TourCardSkeleton } from '@/components/ui'
 import { PackageCard } from '@/components/ui/PackageCard'
 import { fetchPackages } from '@/lib/packageDiscovery'
 
+// Launch scope: hotel packages are hidden AND deep-link-redirected until Phase 3.
 export default function PackagesScreen() {
+  if (!isSurfaceEnabled('hotels')) return <Redirect href="/(tabs)/tours" />
+  return <PackagesScreenInner />
+}
+
+function PackagesScreenInner() {
   const { data: packages = [], isLoading } = useQuery({
     queryKey: ['packages', 'all'],
     queryFn: () => fetchPackages(40),

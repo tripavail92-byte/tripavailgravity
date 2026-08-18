@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { useQuery } from '@tanstack/react-query'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, type Href } from 'expo-router'
@@ -43,7 +44,10 @@ const CATEGORY_NAV: CategoryNavItem[] = [
     Icon: MapPin,
     route: { pathname: '/explore/collections/[collection]', params: { collection: 'pakistan-northern' } },
   },
-  { label: 'Stays', Icon: Bed, route: '/(tabs)/hotels' as Href },
+  // Launch scope: the "Stays" chip (→ Hotels tab) appears only in Phase 3.
+  ...(isSurfaceEnabled('hotels')
+    ? [{ label: 'Stays', Icon: Bed, route: '/(tabs)/hotels' as Href }]
+    : []),
 ]
 
 interface Tour {
@@ -87,10 +91,12 @@ export default function ExploreScreen() {
     queryFn: fetchFeaturedTours,
     staleTime: 8 * 60 * 1000,
   })
+  // Launch scope: hotel packages rail is disabled until Phase 3.
   const { data: homePackages = [], isLoading: packagesLoading } = useQuery({
     queryKey: ['packages', 'home-rail'],
     queryFn: () => fetchPackages(8),
     staleTime: 8 * 60 * 1000,
+    enabled: isSurfaceEnabled('hotels'),
   })
 
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] ?? null
@@ -158,30 +164,34 @@ export default function ExploreScreen() {
           ))}
         </ScrollView>
 
-        {/* Featured packages — hotel stays, like the web home rails */}
-        <View className="mb-3 mt-7 flex-row items-center justify-between px-5">
-          <View className="flex-row items-center gap-1.5">
-            <Text className="text-lg font-bold text-ink">Featured packages</Text>
-            <SparkleIcon width={16} height={16} color={theme.primary} />
-          </View>
-          <Pressable onPress={() => router.push('/(tabs)/hotels' as Href)}>
-            <Text className="text-sm font-semibold text-primary-700">View all</Text>
-          </Pressable>
-        </View>
-        {packagesLoading ? (
-          <View className="px-5">
-            <Skeleton height={196} radius={20} />
-          </View>
-        ) : homePackages.length > 0 ? (
-          <FlatList
-            data={homePackages}
-            horizontal
-            keyExtractor={(p) => p.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-            renderItem={({ item }) => <PackageRailCard pkg={item} />}
-          />
-        ) : null}
+        {/* Featured packages — hotel stays. Launch scope: hidden until Phase 3. */}
+        {isSurfaceEnabled('hotels') && (
+          <>
+            <View className="mb-3 mt-7 flex-row items-center justify-between px-5">
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-lg font-bold text-ink">Featured packages</Text>
+                <SparkleIcon width={16} height={16} color={theme.primary} />
+              </View>
+              <Pressable onPress={() => router.push('/(tabs)/hotels' as Href)}>
+                <Text className="text-sm font-semibold text-primary-700">View all</Text>
+              </Pressable>
+            </View>
+            {packagesLoading ? (
+              <View className="px-5">
+                <Skeleton height={196} radius={20} />
+              </View>
+            ) : homePackages.length > 0 ? (
+              <FlatList
+                data={homePackages}
+                horizontal
+                keyExtractor={(p) => p.id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20 }}
+                renderItem={({ item }) => <PackageRailCard pkg={item} />}
+              />
+            ) : null}
+          </>
+        )}
 
         {/* Featured */}
         <View className="mb-3 mt-7 flex-row items-center gap-1.5 px-5">

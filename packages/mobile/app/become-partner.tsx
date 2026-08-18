@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Building2, Check, type LucideIcon, Map as MapIcon } from '@/components/icons/lucide'
 import { AppHeader, Button, Card, EmptyState, Screen } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import type { RoleType } from '@tripavail/shared'
+import { isSurfaceEnabled, type RoleType } from '@tripavail/shared'
 
 interface PartnerOption {
   role: RoleType
@@ -82,7 +82,11 @@ export default function BecomePartnerScreen() {
         </Text>
 
         <View className="mt-6">
-          {OPTIONS.map((opt) => (
+          {/* Launch scope: hide the Hotel Manager option until Phase 3 — only
+              tour operators can onboard. */}
+          {OPTIONS.filter(
+            (o) => o.role !== 'hotel_manager' || isSurfaceEnabled('hotels'),
+          ).map((opt) => (
             <Card key={opt.role} className="mb-4 p-5">
               <LinearGradient
                 colors={opt.colors}
