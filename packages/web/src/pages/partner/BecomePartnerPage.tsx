@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { RoleType } from '@tripavail/shared/roles/types'
 import { Building2, CheckCircle2, Map as MapIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -34,7 +35,10 @@ export default function BecomePartnerPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Hotel Manager Option */}
+          {/* Hotel Manager Option — launch scope: hidden until Phase 3 (mirrors the
+              live PartnerSelectionPage gate) so this orphaned page can't mint a
+              hotel_manager if it is ever re-routed. */}
+          {isSurfaceEnabled('hotels') && (
           <Card
             className="hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden group"
             onClick={() => handleSelectRole('hotel_manager')}
@@ -67,6 +71,7 @@ export default function BecomePartnerPage() {
               </Button>
             </CardContent>
           </Card>
+          )}
 
           {/* Tour Operator Option */}
           <Card

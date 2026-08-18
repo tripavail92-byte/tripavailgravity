@@ -3,6 +3,8 @@ import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
@@ -99,7 +101,11 @@ export default function WishlistPage() {
           </div>
 
           <div className="flex bg-muted p-1 rounded-xl">
-            {(['all', 'tour', 'package'] as const).map((t) => (
+            {/* Launch scope: no 'packages' tab until Phase 3 (saved packages are hidden). */}
+            {(isSurfaceEnabled('hotels')
+              ? (['all', 'tour', 'package'] as const)
+              : (['all', 'tour'] as const)
+            ).map((t) => (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
@@ -128,10 +134,12 @@ export default function WishlistPage() {
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">Your wishlist is empty</h2>
             <p className="text-muted-foreground max-w-sm mb-8">
-              Save your favorite tours and packages while you browse to keep them all in one place.
+              {isSurfaceEnabled('hotels')
+                ? 'Save your favorite tours and packages while you browse to keep them all in one place.'
+                : 'Save your favorite tours while you browse to keep them all in one place.'}
             </p>
             <Button asChild className="rounded-full px-8">
-              <a href="/explore">Start Exploring</a>
+              <a href={isSurfaceEnabled('hotels') ? '/explore' : '/tours'}>Start Exploring</a>
             </Button>
           </motion.div>
         ) : (

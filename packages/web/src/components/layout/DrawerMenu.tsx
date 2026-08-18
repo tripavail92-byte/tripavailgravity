@@ -20,6 +20,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
@@ -126,8 +128,10 @@ export function DrawerMenu() {
   // Define menu items based on role
   const getMenuItems = () => {
     if (activeRole?.role_type === 'traveller') {
+      // Launch scope: no hotel_manager shortcut until Phase 3 (this component is
+      // currently unmounted; the gate prevents a leak if it is ever revived).
       const partnerShortcut =
-        partnerType === 'hotel_manager'
+        partnerType === 'hotel_manager' && isSurfaceEnabled('hotels')
           ? {
               icon: LayoutDashboard,
               label: 'Hotel Manager Dashboard',

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { supabase } from '@/lib/supabase'
 
@@ -89,6 +91,13 @@ export function DashboardRedirect() {
         }
 
         if (roleType === 'hotel_manager') {
+          // Launch scope: the hotel back office is gated to Phase 3, so a legacy
+          // manager lands on the traveller dashboard instead of a /manager route
+          // that would just redirect home.
+          if (!isSurfaceEnabled('hotels')) {
+            if (!cancelled) applyTarget('/dashboard/overview')
+            return
+          }
           const { count, error } = await withTimeout<any>(
             supabase
               .from('hotels')

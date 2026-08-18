@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { router, type Href } from 'expo-router'
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native'
 
@@ -86,7 +87,8 @@ export default function HelpScreen() {
           <HelpRow
             Icon={Briefcase}
             title="Partner with TripAvail"
-            desc="List tours, hotels, and packages."
+            // Launch scope: don't advertise hotels/packages until Phase 3.
+            desc={isSurfaceEnabled('hotels') ? 'List tours, hotels, and packages.' : 'List tours and experiences.'}
             onPress={() => router.push('/become-partner' as Href)}
           />
           <HelpRow

@@ -214,8 +214,12 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    // Per-listing meta injection for shareable detail routes
-    const m = pathname.match(/^\/(tours|packages)\/([^/]+)\/?$/)
+    // Per-listing meta injection for shareable detail routes. Launch scope:
+    // while hotels are gated, /packages/<slug> must NOT emit a hotel-package
+    // share card + Product JSON-LD to crawlers (bots don't run the client
+    // redirect) — only /tours/<slug> is advertised.
+    const detailKinds = LAUNCH_HOTELS ? /^\/(tours|packages)\/([^/]+)\/?$/ : /^\/(tours)\/([^/]+)\/?$/
+    const m = pathname.match(detailKinds)
     if (m && seoEnabled && INDEX_HTML) {
       try {
         const row = await fetchListing(m[1], m[2])

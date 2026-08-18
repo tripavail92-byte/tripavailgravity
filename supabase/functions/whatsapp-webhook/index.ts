@@ -8,9 +8,17 @@ const corsHeaders = {
 
 type RoleKey = 'traveller' | 'hotel_manager' | 'tour_operator'
 
+// Launch scope (Trips-only): mirror of packages/shared launchScope.hotels. Edge
+// functions can't import the shared TS flag — flip to true in Phase 3. While
+// false, WhatsApp can't self-onboard a hotel_manager. Requires a redeploy:
+// `supabase functions deploy whatsapp-webhook`.
+const LAUNCH_HOTELS = false
+
 const ROLE_BUTTONS: Array<{ id: string; title: string; role: RoleKey }> = [
   { id: 'role_traveller', title: 'Traveller', role: 'traveller' },
-  { id: 'role_hotel_manager', title: 'Hotel Manager', role: 'hotel_manager' },
+  ...(LAUNCH_HOTELS
+    ? [{ id: 'role_hotel_manager', title: 'Hotel Manager', role: 'hotel_manager' as RoleKey }]
+    : []),
   { id: 'role_tour_operator', title: 'Tour Operator', role: 'tour_operator' },
 ]
 
@@ -67,7 +75,10 @@ Style:
 Professional, warm, confident, non-salesy.
 
 If asked "What is TripAvail?" use this base answer and adapt briefly:
-"TripAvail is a travel platform where travellers discover curated hotel stays and tour packages, while hotel managers and tour operators manage listings, availability, and bookings."
+${LAUNCH_HOTELS
+  ? '"TripAvail is a travel platform where travellers discover curated hotel stays and tour packages, while hotel managers and tour operators manage listings, availability, and bookings."'
+  : '"TripAvail is a travel platform where travellers discover and book curated guided tours and experiences, while tour operators manage their listings, availability, and bookings."'}
+${LAUNCH_HOTELS ? '' : '\nLaunch note: hotel stays and packages are not yet available — only tours are live. Do NOT offer a Hotel Manager role; the only partner role right now is Tour Operator.'}
 `
 
 serve(async (req) => {

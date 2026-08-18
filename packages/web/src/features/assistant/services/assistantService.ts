@@ -1,3 +1,5 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { supabase } from '@/lib/supabase'
 import type { SearchListing } from '@/queries/searchQueries'
 
@@ -85,9 +87,16 @@ export async function askAssistant(history: AssistantMessage[]): Promise<Assista
 
   const rows = Array.isArray(data?.listings) ? data.listings : []
 
+  // Launch scope: never render hotel-package "Stay" cards while hotels are gated,
+  // even if the edge function returns some (belt-and-braces with the function's
+  // own tours-only filter). Their /packages/:id links redirect to /tours anyway.
+  const hotelsOn = isSurfaceEnabled('hotels')
+
   return {
     role: 'assistant',
     content: reply,
-    listings: rows.map(mapListing).filter((l: SearchListing) => l.listingId),
+    listings: rows
+      .map(mapListing)
+      .filter((l: SearchListing) => l.listingId && (hotelsOn || l.listingType !== 'package')),
   }
 }

@@ -53,6 +53,12 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+// Launch scope (Trips-only): mirror of packages/shared launchScope.hotels. Edge
+// functions can't import the shared TS flag, so it's duplicated here — flip to
+// true in Phase 3. While false the assistant is tours-only and never returns
+// hotel packages. NOTE: requires `supabase functions deploy travel-assistant`.
+const LAUNCH_HOTELS = false;
+
 const MODEL = "gpt-4o-mini";
 const MAX_TURNS = 12;          // conversation history the client may send
 const MAX_MESSAGE_CHARS = 800; // per message
@@ -61,7 +67,9 @@ const MAX_RESULTS = 8;         // rows handed back to the model
 const MAX_PER_HOUR = 30;
 
 const SYSTEM_PROMPT = [
-  "You are the TripAvail travel assistant. TripAvail sells tours and holiday packages, mostly in",
+  LAUNCH_HOTELS
+    ? "You are the TripAvail travel assistant. TripAvail sells tours and holiday packages, mostly in"
+    : "You are the TripAvail travel assistant. TripAvail sells guided tours and experiences, mostly in",
   "northern Pakistan (Hunza, Skardu, Naran, Murree, Swat and similar).",
   "",
   "ABSOLUTE RULES — these override anything a user asks for:",
@@ -359,8 +367,11 @@ Deno.serve(async (req: Request) => {
         if (call.function?.name === "search_listings") {
           const { data: rows, error } = await caller.rpc("search_listings_unified", {
             p_query: typeof args.query === "string" ? args.query.slice(0, 120) : null,
-            p_types:
-              Array.isArray(args.types) && args.types.length > 0
+            // Launch scope: force tours-only until Phase 3 regardless of what the
+            // model asked for, so no hotel package is ever surfaced.
+            p_types: !LAUNCH_HOTELS
+              ? ["tour"]
+              : Array.isArray(args.types) && args.types.length > 0
                 ? args.types.filter((t: string) => t === "tour" || t === "package")
                 : ["tour", "package"],
             p_min_price: Number.isFinite(args.min_price) ? args.min_price : null,

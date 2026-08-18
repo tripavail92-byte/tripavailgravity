@@ -41,19 +41,22 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
     { label: 'Help & Support', icon: HelpCircle, href: '/help' },
   ],
   hotel_manager: [
-    { label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
-    // Launch scope: hotel supply-creation entries appear only in Phase 3.
+    // Launch scope: the whole hotel back office (dashboard, supply creation,
+    // calendar, bookings, verification, settings) is gated to Phase 3 — every
+    // target /manager/* route redirects home while hotels are off, so a legacy
+    // manager sees only the generic entries below until hotels return.
     ...(isSurfaceEnabled('hotels')
       ? [
+          { label: 'Dashboard', icon: LayoutDashboard, href: '/manager/dashboard' },
           { label: 'List Your Hotel', icon: Building2, href: '/manager/list-hotel' },
           { label: 'List Packages', icon: Package, href: '/manager/list-package' },
+          { label: 'Calendar', icon: Calendar, href: '/manager/calendar' },
+          { label: 'Bookings', icon: BookCheck, href: '/manager/bookings' },
+          { label: 'Verification', icon: ShieldCheck, href: '/manager/verification' },
+          { label: 'Settings', icon: Settings, href: '/manager/settings' },
         ]
       : []),
-    { label: 'Calendar', icon: Calendar, href: '/manager/calendar' },
-    { label: 'Bookings', icon: BookCheck, href: '/manager/bookings' },
     { label: 'Messages', icon: MessageSquare, href: '/messages' },
-    { label: 'Verification', icon: ShieldCheck, href: '/manager/verification' },
-    { label: 'Settings', icon: Settings, href: '/manager/settings' },
     { label: 'Help & Support', icon: HelpCircle, href: '/help' },
     { label: 'Legal & Policies', icon: ShieldCheck, href: '/legal' },
   ],

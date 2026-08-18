@@ -246,7 +246,10 @@ function App() {
               />
               <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
               <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-              <Route path="/explore" element={<Homepage />} />
+              {/* Launch scope: /explore (Homepage) is a hotel+package discovery
+                  surface. Until Phase 3 the trips-only LandingPage is the home, so
+                  send /explore there rather than render package rails that dead-end. */}
+              <Route path="/explore" element={HOTELS_ON ? <Homepage /> : <Navigate to="/" replace />} />
               {/* Hotel Packages Categories */}
               <Route
                 path="/explore/hotel-packages/:kind"
@@ -320,30 +323,46 @@ function App() {
               />
               <Route path="/partner/onboarding" element={<PartnerSelectionPage />} />
 
+              {/* Hotel-manager back office. Launch scope: gated to Phase 3 so it
+                  matches mobile (app/manager/_layout.tsx redirects the whole group)
+                  — a legacy hotel_manager is bounced home until hotels return.
+                  Kept intact behind the flag; RoleGuard still guards the role. */}
               <Route
                 path="/manager/dashboard"
                 element={
-                  <RoleGuard allowedRoles={['hotel_manager']}>
-                    <DashboardPage />
-                  </RoleGuard>
+                  HOTELS_ON ? (
+                    <RoleGuard allowedRoles={['hotel_manager']}>
+                      <DashboardPage />
+                    </RoleGuard>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
 
               <Route
                 path="/manager/bookings"
                 element={
-                  <RoleGuard allowedRoles={['hotel_manager']}>
-                    <HotelManagerBookingsPage />
-                  </RoleGuard>
+                  HOTELS_ON ? (
+                    <RoleGuard allowedRoles={['hotel_manager']}>
+                      <HotelManagerBookingsPage />
+                    </RoleGuard>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
 
               <Route
                 path="/manager/calendar"
                 element={
-                  <RoleGuard allowedRoles={['hotel_manager']}>
-                    <HotelManagerCalendarPage />
-                  </RoleGuard>
+                  HOTELS_ON ? (
+                    <RoleGuard allowedRoles={['hotel_manager']}>
+                      <HotelManagerCalendarPage />
+                    </RoleGuard>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
 
@@ -401,13 +420,17 @@ function App() {
                 }
               />
 
-              {/* Hotel Manager Settings */}
+              {/* Hotel Manager Settings — launch-scope gated (see back office above) */}
               <Route
                 path="/manager/settings"
                 element={
-                  <RoleGuard allowedRoles={['hotel_manager']}>
-                    <HotelManagerSettingsPage />
-                  </RoleGuard>
+                  HOTELS_ON ? (
+                    <RoleGuard allowedRoles={['hotel_manager']}>
+                      <HotelManagerSettingsPage />
+                    </RoleGuard>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
 
@@ -504,9 +527,13 @@ function App() {
               <Route
                 path="/manager/verification"
                 element={
-                  <RoleGuard allowedRoles={['hotel_manager']}>
-                    <VerificationStatusPage />
-                  </RoleGuard>
+                  HOTELS_ON ? (
+                    <RoleGuard allowedRoles={['hotel_manager']}>
+                      <VerificationStatusPage />
+                    </RoleGuard>
+                  ) : (
+                    <Navigate to="/" replace />
+                  )
                 }
               />
 

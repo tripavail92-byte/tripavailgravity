@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native'
@@ -325,8 +326,9 @@ export default function VerificationScreen() {
 
         {!kycRole ? (
           <Text className="mt-5 text-center text-xs leading-5 text-ink-soft">
-            Identity verification is required for partners (tour operators and hotel managers). As a
-            traveller you're all set — become a partner from your profile to start.
+            {isSurfaceEnabled('hotels')
+              ? 'Identity verification is required for partners (tour operators and hotel managers). As a traveller you\'re all set — become a partner from your profile to start.'
+              : 'Identity verification is required for partners (tour operators). As a traveller you\'re all set — become a partner from your profile to start.'}
           </Text>
         ) : null}
 

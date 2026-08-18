@@ -10,7 +10,7 @@ export const travellerTour: TourConfig = {
       id: 'step-search',
       title: 'Find Your Next Trip',
       description:
-        'Use the search bar to find hotels, tours, and experiences in your desired destination.',
+        'Use the search bar to find tours and experiences in your desired destination.',
       target: '[data-tour="search-bar"]',
       position: 'bottom',
       highlight: true,
@@ -27,7 +27,7 @@ export const travellerTour: TourConfig = {
       id: 'step-partner',
       title: 'Become a Partner',
       description:
-        'Want to earn with TripAvail? You can permanently switch your account to become a Hotel Manager or Tours & Events Partner.',
+        'Want to earn with TripAvail? You can permanently switch your account to become a Tours & Events Partner.',
       target: '[data-tour="partner-switch"]',
       position: 'left',
       highlight: true,

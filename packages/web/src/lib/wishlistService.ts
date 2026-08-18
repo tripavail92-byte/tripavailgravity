@@ -1,3 +1,5 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { supabase } from './supabase'
 
 export interface WishlistItem {
@@ -63,6 +65,13 @@ export const wishlistService = {
   async getWishlist(
     userId?: string,
   ): Promise<{ item_id: string; item_type: 'tour' | 'package'; created_at?: string }[]> {
+    // Launch scope: hide pre-launch saved packages until Phase 3 — their detail
+    // route (/packages/:id) redirects to /tours, so surfacing them dead-ends. The
+    // rows stay in the DB and return automatically when hotels are re-enabled.
+    const dropPackages = (
+      items: { item_id: string; item_type: 'tour' | 'package'; created_at?: string }[],
+    ) => (isSurfaceEnabled('hotels') ? items : items.filter((i) => i.item_type !== 'package'))
+
     if (userId) {
       const { data, error } = await supabase
         .from('wishlist')
@@ -71,9 +80,11 @@ export const wishlistService = {
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      return data as { item_id: string; item_type: 'tour' | 'package'; created_at?: string }[]
+      return dropPackages(
+        data as { item_id: string; item_type: 'tour' | 'package'; created_at?: string }[],
+      )
     } else {
-      return this.getLocalWishlist()
+      return dropPackages(this.getLocalWishlist())
     }
   },
 

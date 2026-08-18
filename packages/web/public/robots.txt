@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
 
+# Launch scope (Trips-only): hotels/packages redirect to /tours until Phase 3.
+# Keep crawlers off those paths so they aren't indexed as soft-redirects.
+# Remove these two lines when Phase 3 re-enables hotels.
+Disallow: /hotels
+Disallow: /packages
+
 Sitemap: https://tripavail.com/sitemap.xml

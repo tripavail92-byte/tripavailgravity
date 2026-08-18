@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
+
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -160,7 +162,11 @@ export function RoleBasedDrawer({ inverted = false }: { inverted?: boolean }) {
 
   const isTraveller = activeRole.role_type === 'traveller'
 
-  const partnerDashboardAction = isTraveller && partnerType
+  // Launch scope: hide the "Hotel Manager Dashboard" shortcut until Phase 3 — its
+  // target (/manager/dashboard) redirects home while hotels are gated.
+  const partnerShortcutEnabled =
+    partnerType === 'tour_operator' || (partnerType === 'hotel_manager' && isSurfaceEnabled('hotels'))
+  const partnerDashboardAction = isTraveller && partnerType && partnerShortcutEnabled
     ? {
         label: partnerType === 'hotel_manager' ? 'Hotel Manager Dashboard' : 'Tour Operator Dashboard',
         icon: LayoutDashboard,
