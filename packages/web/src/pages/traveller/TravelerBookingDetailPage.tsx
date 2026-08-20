@@ -71,8 +71,10 @@ const TOUR_CANCELLATION_POLICY_META = {
 
 function getTourCancellationPolicySummary(policy: unknown) {
   const normalized = typeof policy === 'string' ? policy : 'flexible'
-  return TOUR_CANCELLATION_POLICY_META[normalized as keyof typeof TOUR_CANCELLATION_POLICY_META]
-    || TOUR_CANCELLATION_POLICY_META.flexible
+  return (
+    TOUR_CANCELLATION_POLICY_META[normalized as keyof typeof TOUR_CANCELLATION_POLICY_META] ||
+    TOUR_CANCELLATION_POLICY_META.flexible
+  )
 }
 
 function getTrimmedMetadataString(value: unknown): string | null {
@@ -142,7 +144,9 @@ export default function TravelerBookingDetailPage() {
 
       // Load existing review (tour bookings only)
       if (loadedBooking.tours?.id) {
-        const review = await reviewService.getTravelerReviewForBooking(loadedBooking.id).catch(() => null)
+        const review = await reviewService
+          .getTravelerReviewForBooking(loadedBooking.id)
+          .catch(() => null)
         setExistingReview(review)
       }
     } catch (loadError) {
@@ -164,9 +168,11 @@ export default function TravelerBookingDetailPage() {
   useEffect(() => {
     if (searchParams.get('openReview') !== '1') return
     if (!booking || existingReview === undefined) return
+    const tripDate = booking.check_in_date
+    const tripPassed = typeof tripDate === 'string' && new Date(tripDate).getTime() < Date.now()
     const eligible =
       booking.tours &&
-      typeof booking.metadata?.operator_completion_confirmed_at === 'string' &&
+      (typeof booking.metadata?.operator_completion_confirmed_at === 'string' || tripPassed) &&
       !existingReview
     if (eligible) setShowReviewDialog(true)
     const next = new URLSearchParams(searchParams)
@@ -182,8 +188,10 @@ export default function TravelerBookingDetailPage() {
   const details = booking?.tours || booking?.packages || null
   const imageSrc = booking?.tours
     ? booking.tours.images?.[0]
-    : booking?.packages?.cover_image || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'
-  const locationLabel = details?.location?.city || details?.location || 'Location confirmed after booking'
+    : booking?.packages?.cover_image ||
+      'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1'
+  const locationLabel =
+    details?.location?.city || details?.location || 'Location confirmed after booking'
   const dateLabel = booking?.check_in_date || schedule?.start_time || booking?.booking_date || null
   const totalGuests = booking?.pax_count ?? booking?.guest_count ?? 0
   const settlementState = getTravelerBookingSettlementState(booking)
@@ -202,9 +210,13 @@ export default function TravelerBookingDetailPage() {
   const isCancelled = settlementState.isCancelled
   const counterpartLabel = scope === 'tour_booking' ? 'tour operator' : 'host'
   const bookingLabel = details?.title || details?.name || 'Booked reservation'
-  const messagingUnlocked = Boolean(booking && booking.status !== 'pending' && booking.status !== 'expired')
+  const messagingUnlocked = Boolean(
+    booking && booking.status !== 'pending' && booking.status !== 'expired',
+  )
   const itinerary = Array.isArray(booking?.tours?.itinerary) ? booking.tours.itinerary : []
-  const pickupLocations = Array.isArray(booking?.tours?.tour_pickup_locations) ? booking.tours.tour_pickup_locations : []
+  const pickupLocations = Array.isArray(booking?.tours?.tour_pickup_locations)
+    ? booking.tours.tour_pickup_locations
+    : []
   const operatorCompletionConfirmedAt =
     typeof booking?.metadata?.operator_completion_confirmed_at === 'string'
       ? booking.metadata.operator_completion_confirmed_at
@@ -213,34 +225,53 @@ export default function TravelerBookingDetailPage() {
     typeof booking?.metadata?.traveler_completion_confirmed_at === 'string'
       ? booking.metadata.traveler_completion_confirmed_at
       : null
-  const cancellationRequestState = getTrimmedMetadataString(booking?.metadata?.cancellation_request_state)
-  const cancellationRequestedAt = getTrimmedMetadataString(booking?.metadata?.traveler_cancellation_requested_at)
-  const cancellationRequestedReason = getTrimmedMetadataString(booking?.metadata?.traveler_cancellation_reason)
-  const cancellationReviewedAt = getTrimmedMetadataString(booking?.metadata?.cancellation_request_reviewed_at)
-  const cancellationReviewReason = getTrimmedMetadataString(booking?.metadata?.cancellation_request_review_reason)
-  const tourCancellationPolicy = getTourCancellationPolicySummary(booking?.tours?.cancellation_policy)
+  // A traveller can review once the trip has actually happened — either the operator marked it
+  // complete OR the departure date has passed — rather than only after the (often-skipped)
+  // operator confirmation. The RLS already permits reviews on any confirmed/completed booking.
+  const tripStartDate =
+    (typeof booking?.check_in_date === 'string' && booking.check_in_date) ||
+    (typeof schedule?.start_time === 'string' && schedule.start_time) ||
+    null
+  const tripDatePassed = tripStartDate ? new Date(tripStartDate).getTime() < Date.now() : false
+  const canWriteReview = Boolean(operatorCompletionConfirmedAt) || tripDatePassed
+  const cancellationRequestState = getTrimmedMetadataString(
+    booking?.metadata?.cancellation_request_state,
+  )
+  const cancellationRequestedAt = getTrimmedMetadataString(
+    booking?.metadata?.traveler_cancellation_requested_at,
+  )
+  const cancellationRequestedReason = getTrimmedMetadataString(
+    booking?.metadata?.traveler_cancellation_reason,
+  )
+  const cancellationReviewedAt = getTrimmedMetadataString(
+    booking?.metadata?.cancellation_request_reviewed_at,
+  )
+  const cancellationReviewReason = getTrimmedMetadataString(
+    booking?.metadata?.cancellation_request_review_reason,
+  )
+  const tourCancellationPolicy = getTourCancellationPolicySummary(
+    booking?.tours?.cancellation_policy,
+  )
   const packageCancellationPolicy = getTrimmedMetadataString(details?.cancellation_policy)
   const packagePaymentTerms = getTrimmedMetadataString(details?.payment_terms)
-  const cancellationPolicyTitle = scope === 'tour_booking'
-    ? tourCancellationPolicy.title
-    : 'Package cancellation policy'
-  const cancellationPolicyDescription = scope === 'tour_booking'
-    ? tourCancellationPolicy.description
-    : packageCancellationPolicy || 'Your host reviews cancellation requests using the cancellation policy attached to this reservation.'
+  const cancellationPolicyTitle =
+    scope === 'tour_booking' ? tourCancellationPolicy.title : 'Package cancellation policy'
+  const cancellationPolicyDescription =
+    scope === 'tour_booking'
+      ? tourCancellationPolicy.description
+      : packageCancellationPolicy ||
+        'Your host reviews cancellation requests using the cancellation policy attached to this reservation.'
   const cancellationPolicySecondary = scope === 'package_booking' ? packagePaymentTerms : null
   const cancellationRequestPending = cancellationRequestState === 'requested'
   const cancellationRequestDeclined = cancellationRequestState === 'declined'
   const canRequestCancellation = Boolean(
-    scope
-    && booking?.status === 'confirmed'
-    && !isCancelled
-    && !cancellationRequestPending,
+    scope && booking?.status === 'confirmed' && !isCancelled && !cancellationRequestPending,
   )
   const showCompletionConfirmationAction =
-    scope === 'tour_booking'
-    && booking?.status === 'completed'
-    && Boolean(operatorCompletionConfirmedAt)
-    && !travelerCompletionConfirmedAt
+    scope === 'tour_booking' &&
+    booking?.status === 'completed' &&
+    Boolean(operatorCompletionConfirmedAt) &&
+    !travelerCompletionConfirmedAt
 
   const setTab = (value: string) => {
     const nextParams = new URLSearchParams(searchParams)
@@ -256,7 +287,10 @@ export default function TravelerBookingDetailPage() {
       {
         title: 'Booking summary',
         rows: [
-          { label: 'Reservation type', value: scope === 'tour_booking' ? 'Tour booking' : 'Package booking' },
+          {
+            label: 'Reservation type',
+            value: scope === 'tour_booking' ? 'Tour booking' : 'Package booking',
+          },
           { label: 'Booking status', value: booking.status || 'confirmed' },
           { label: 'Payment status', value: booking.payment_status || 'paid' },
           { label: 'Guests', value: String(totalGuests) },
@@ -295,9 +329,22 @@ export default function TravelerBookingDetailPage() {
             rows: [
               { label: 'Tour name', value: bookingLabel },
               { label: 'Location', value: locationLabel },
-              { label: 'Departure', value: dateLabel ? format(new Date(dateLabel), 'MMM d, yyyy') : 'TBA' },
-              { label: 'Start time', value: schedule?.start_time ? format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a') : 'TBA' },
-              { label: 'End time', value: schedule?.end_time ? format(new Date(schedule.end_time), 'MMM d, yyyy h:mm a') : 'TBA' },
+              {
+                label: 'Departure',
+                value: dateLabel ? format(new Date(dateLabel), 'MMM d, yyyy') : 'TBA',
+              },
+              {
+                label: 'Start time',
+                value: schedule?.start_time
+                  ? format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a')
+                  : 'TBA',
+              },
+              {
+                label: 'End time',
+                value: schedule?.end_time
+                  ? format(new Date(schedule.end_time), 'MMM d, yyyy h:mm a')
+                  : 'TBA',
+              },
             ],
           },
           ...baseSections,
@@ -317,8 +364,18 @@ export default function TravelerBookingDetailPage() {
           rows: [
             { label: 'Package', value: bookingLabel },
             { label: 'Location', value: locationLabel },
-            { label: 'Check-in', value: booking.check_in_date ? format(new Date(booking.check_in_date), 'MMM d, yyyy') : 'TBA' },
-            { label: 'Check-out', value: booking.check_out_date ? format(new Date(booking.check_out_date), 'MMM d, yyyy') : 'TBA' },
+            {
+              label: 'Check-in',
+              value: booking.check_in_date
+                ? format(new Date(booking.check_in_date), 'MMM d, yyyy')
+                : 'TBA',
+            },
+            {
+              label: 'Check-out',
+              value: booking.check_out_date
+                ? format(new Date(booking.check_out_date), 'MMM d, yyyy')
+                : 'TBA',
+            },
           ],
         },
         ...baseSections,
@@ -337,7 +394,9 @@ export default function TravelerBookingDetailPage() {
       toast.success('Trip completion confirmed')
     } catch (confirmError) {
       console.error('Failed to confirm trip completion:', confirmError)
-      toast.error(confirmError instanceof Error ? confirmError.message : 'Unable to confirm trip completion')
+      toast.error(
+        confirmError instanceof Error ? confirmError.message : 'Unable to confirm trip completion',
+      )
     } finally {
       setConfirmingCompletion(false)
     }
@@ -361,7 +420,9 @@ export default function TravelerBookingDetailPage() {
       toast.success(`Cancellation request sent to the ${counterpartLabel}`)
     } catch (requestError) {
       console.error('Failed to request booking cancellation:', requestError)
-      toast.error(requestError instanceof Error ? requestError.message : 'Unable to request cancellation')
+      toast.error(
+        requestError instanceof Error ? requestError.message : 'Unable to request cancellation',
+      )
     } finally {
       setRequestingCancellation(false)
     }
@@ -382,13 +443,13 @@ export default function TravelerBookingDetailPage() {
         title: reviewTitle || undefined,
         body: reviewBody || undefined,
         ratingCommunication: reviewCommunication || undefined,
-        ratingPunctuality:   reviewPunctuality   || undefined,
-        ratingTransport:     reviewTransport     || undefined,
-        ratingGuide:         reviewGuide         || undefined,
-        ratingSafety:        reviewSafety        || undefined,
-        ratingCleanliness:   reviewCleanliness   || undefined,
-        ratingValue:         reviewValue         || undefined,
-        ratingItinerary:     reviewItinerary     || undefined,
+        ratingPunctuality: reviewPunctuality || undefined,
+        ratingTransport: reviewTransport || undefined,
+        ratingGuide: reviewGuide || undefined,
+        ratingSafety: reviewSafety || undefined,
+        ratingCleanliness: reviewCleanliness || undefined,
+        ratingValue: reviewValue || undefined,
+        ratingItinerary: reviewItinerary || undefined,
       })
       setExistingReview(submitted)
       setShowReviewDialog(false)
@@ -416,8 +477,15 @@ export default function TravelerBookingDetailPage() {
     return (
       <div className="min-h-screen bg-muted/30 px-4 py-10">
         <div className="mx-auto max-w-5xl">
-          <PageHeader title="Booking" subtitle="Traveller reservation workspace" backPath="/trips" />
-          <GlassCard variant="card" className="rounded-3xl border border-border/60 p-10 text-center">
+          <PageHeader
+            title="Booking"
+            subtitle="Traveller reservation workspace"
+            backPath="/trips"
+          />
+          <GlassCard
+            variant="card"
+            className="rounded-3xl border border-border/60 p-10 text-center"
+          >
             <h2 className="text-xl font-semibold text-foreground">Booking unavailable</h2>
             <p className="mt-3 text-sm text-muted-foreground">
               {error || 'We could not find that reservation in your account.'}
@@ -441,7 +509,11 @@ export default function TravelerBookingDetailPage() {
           actions={
             <div className="flex items-center gap-2">
               <NotificationBell />
-              <Button asChild variant="outline" className="rounded-2xl border-border/60 bg-background/80">
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-2xl border-border/60 bg-background/80"
+              >
                 <Link to="/trips">All bookings</Link>
               </Button>
               {canRequestCancellation ? (
@@ -456,12 +528,22 @@ export default function TravelerBookingDetailPage() {
                 </Button>
               ) : null}
               {cancellationRequestPending ? (
-                <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" disabled>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-2xl border-border/60 bg-background/80"
+                  disabled
+                >
                   <AlertTriangle className="mr-2 h-4 w-4" />
                   Cancellation requested
                 </Button>
               ) : null}
-              <Button type="button" variant="outline" className="rounded-2xl border-border/60 bg-background/80" onClick={handleDownloadReceipt}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl border-border/60 bg-background/80"
+                onClick={handleDownloadReceipt}
+              >
                 <Receipt className="mr-2 h-4 w-4" />
                 Download receipt
               </Button>
@@ -478,7 +560,10 @@ export default function TravelerBookingDetailPage() {
           }
         />
 
-        <GlassCard variant="card" className="overflow-hidden rounded-[32px] border border-border/60 p-0 shadow-sm">
+        <GlassCard
+          variant="card"
+          className="overflow-hidden rounded-[32px] border border-border/60 p-0 shadow-sm"
+        >
           <div className="grid gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
             <div className="relative min-h-[260px] overflow-hidden bg-muted">
               <img src={imageSrc} alt={bookingLabel} className="h-full w-full object-cover" />
@@ -505,7 +590,11 @@ export default function TravelerBookingDetailPage() {
                 />
                 <SummaryTile icon={MapPin} label="Location" value={locationLabel} />
                 <SummaryTile icon={Users} label="Guests" value={String(totalGuests)} />
-                <SummaryTile icon={CreditCard} label="Paid online" value={formatMoney(paidOnline, bookingCurrency)} />
+                <SummaryTile
+                  icon={CreditCard}
+                  label="Paid online"
+                  value={formatMoney(paidOnline, bookingCurrency)}
+                />
               </div>
 
               <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
@@ -520,10 +609,15 @@ export default function TravelerBookingDetailPage() {
                         : 'Messaging unlocks after payment clears'}
                     </h2>
                     <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                      TripAvail keeps traveler and partner communication inside this booked reservation so itinerary changes, pickup notes, and support evidence stay attached to the booking.
+                      TripAvail keeps traveler and partner communication inside this booked
+                      reservation so itinerary changes, pickup notes, and support evidence stay
+                      attached to the booking.
                     </p>
                   </div>
-                  <Badge variant="outline" className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground"
+                  >
                     Post-booking only
                   </Badge>
                 </div>
@@ -557,15 +651,22 @@ export default function TravelerBookingDetailPage() {
                         {confirmingCompletion ? 'Confirming...' : 'Confirm trip completion'}
                       </Button>
                     ) : (
-                      <Badge variant="outline" className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        {travelerCompletionConfirmedAt ? 'Confirmed by both sides' : 'Awaiting your confirmation'}
+                      <Badge
+                        variant="outline"
+                        className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground"
+                      >
+                        {travelerCompletionConfirmedAt
+                          ? 'Confirmed by both sides'
+                          : 'Awaiting your confirmation'}
                       </Badge>
                     )}
                   </div>
                 </div>
               ) : null}
 
-              {(canRequestCancellation || cancellationRequestPending || cancellationRequestDeclined) ? (
+              {canRequestCancellation ||
+              cancellationRequestPending ||
+              cancellationRequestDeclined ? (
                 <div className="mt-6 rounded-3xl border border-border/60 bg-background/80 p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -594,12 +695,17 @@ export default function TravelerBookingDetailPage() {
                         className="rounded-2xl border-border/60 bg-background/80"
                         onClick={() => setShowCancellationDialog(true)}
                       >
-                          <AlertTriangle className="mr-2 h-4 w-4" />
+                        <AlertTriangle className="mr-2 h-4 w-4" />
                         Request cancellation
                       </Button>
                     ) : (
-                      <Badge variant="outline" className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                        {cancellationRequestPending ? 'Awaiting partner review' : 'Decision recorded'}
+                      <Badge
+                        variant="outline"
+                        className="w-fit rounded-full border-border/60 bg-background/70 px-3 py-1 text-xs uppercase tracking-[0.18em] text-muted-foreground"
+                      >
+                        {cancellationRequestPending
+                          ? 'Awaiting partner review'
+                          : 'Decision recorded'}
                       </Badge>
                     )}
                   </div>
@@ -609,13 +715,19 @@ export default function TravelerBookingDetailPage() {
                     <InfoRow label="What to expect" value="Request review before refund" />
                     <InfoRow label="Policy details" value={cancellationPolicyDescription} />
                     {cancellationRequestedAt ? (
-                      <InfoRow label="Requested at" value={format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')} />
+                      <InfoRow
+                        label="Requested at"
+                        value={format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')}
+                      />
                     ) : null}
                     {cancellationRequestedReason ? (
                       <InfoRow label="Your reason" value={cancellationRequestedReason} />
                     ) : null}
                     {cancellationReviewedAt ? (
-                      <InfoRow label="Reviewed at" value={format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')} />
+                      <InfoRow
+                        label="Reviewed at"
+                        value={format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')}
+                      />
                     ) : null}
                     {cancellationReviewReason ? (
                       <InfoRow label="Partner note" value={cancellationReviewReason} />
@@ -636,31 +748,43 @@ export default function TravelerBookingDetailPage() {
                     {booking?.promo_owner || 'Promo applied'}
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Original total: {formatMoney(priceBeforePromo, bookingCurrency)} · Discount: {formatMoney(promoDiscountValue, bookingCurrency)} · Final booking total: {formatMoney(totalAmount, bookingCurrency)}
+                    Original total: {formatMoney(priceBeforePromo, bookingCurrency)} · Discount:{' '}
+                    {formatMoney(promoDiscountValue, bookingCurrency)} · Final booking total:{' '}
+                    {formatMoney(totalAmount, bookingCurrency)}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Funding: {booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'}
+                    Funding:{' '}
+                    {booking?.promo_funding_source === 'platform'
+                      ? 'TripAvail funded'
+                      : 'Operator funded'}
                   </p>
                 </div>
               ) : null}
 
-              {(isRefunded || isCancelled) ? (
+              {isRefunded || isCancelled ? (
                 <div className="mt-6 rounded-3xl border border-warning/30 bg-warning/10 p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warning">
                     {isRefunded ? 'Refund status' : 'Cancellation status'}
                   </p>
-                  <h2 className="mt-1 text-xl font-semibold text-foreground">
-                    {outcome.title}
-                  </h2>
+                  <h2 className="mt-1 text-xl font-semibold text-foreground">{outcome.title}</h2>
                   <p className="mt-2 text-sm text-muted-foreground">{outcome.message}</p>
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <InfoRow label="Paid online" value={formatMoney(paidOnline, bookingCurrency)} />
-                    <InfoRow label="Refunded amount" value={formatMoney(refundAmount, bookingCurrency)} />
-                    <InfoRow label="Remaining balance" value={formatMoney(remainingAmount, bookingCurrency)} />
+                    <InfoRow
+                      label="Refunded amount"
+                      value={formatMoney(refundAmount, bookingCurrency)}
+                    />
+                    <InfoRow
+                      label="Remaining balance"
+                      value={formatMoney(remainingAmount, bookingCurrency)}
+                    />
                     <InfoRow label="Booking status" value={booking.status} />
                     {refundReason ? <InfoRow label="Reason" value={refundReason} /> : null}
                     {refundTimestamp ? (
-                      <InfoRow label="Updated at" value={format(new Date(refundTimestamp), 'MMM d, yyyy h:mm a')} />
+                      <InfoRow
+                        label="Updated at"
+                        value={format(new Date(refundTimestamp), 'MMM d, yyyy h:mm a')}
+                      />
                     ) : null}
                   </div>
                 </div>
@@ -687,37 +811,98 @@ export default function TravelerBookingDetailPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Reservation summary
                     </p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">What this booking covers</h3>
+                    <h3 className="mt-1 text-lg font-semibold text-foreground">
+                      What this booking covers
+                    </h3>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <InfoRow label="Reservation type" value={scope === 'tour_booking' ? 'Tour booking' : 'Package booking'} />
+                    <InfoRow
+                      label="Reservation type"
+                      value={scope === 'tour_booking' ? 'Tour booking' : 'Package booking'}
+                    />
                     <InfoRow label="Booking status" value={booking.status} />
-                    <InfoRow label="Booked on" value={format(new Date(booking.booking_date), 'MMM d, yyyy')} />
+                    <InfoRow
+                      label="Booked on"
+                      value={format(new Date(booking.booking_date), 'MMM d, yyyy')}
+                    />
                     <InfoRow label="Payment status" value={booking.payment_status || 'paid'} />
                     <InfoRow label="Guests" value={String(totalGuests)} />
                     <InfoRow label="Total" value={formatMoney(totalAmount, bookingCurrency)} />
-                    {hasPromo ? <InfoRow label="Original total" value={formatMoney(priceBeforePromo, bookingCurrency)} /> : null}
-                    {hasPromo ? <InfoRow label="Promo discount" value={formatMoney(promoDiscountValue, bookingCurrency)} /> : null}
-                    {hasPromo ? <InfoRow label="Promo funding" value={booking?.promo_funding_source === 'platform' ? 'TripAvail funded' : 'Operator funded'} /> : null}
-                    {hasPromo ? <InfoRow label="Promo source" value={booking?.promo_owner || 'Promo applied'} /> : null}
-                    <InfoRow label="Upfront paid" value={formatMoney(paidOnline, bookingCurrency)} />
-                    <InfoRow label="Remaining balance" value={formatMoney(remainingAmount, bookingCurrency)} />
-                    {isRefunded ? <InfoRow label="Refunded amount" value={formatMoney(refundAmount, bookingCurrency)} /> : null}
+                    {hasPromo ? (
+                      <InfoRow
+                        label="Original total"
+                        value={formatMoney(priceBeforePromo, bookingCurrency)}
+                      />
+                    ) : null}
+                    {hasPromo ? (
+                      <InfoRow
+                        label="Promo discount"
+                        value={formatMoney(promoDiscountValue, bookingCurrency)}
+                      />
+                    ) : null}
+                    {hasPromo ? (
+                      <InfoRow
+                        label="Promo funding"
+                        value={
+                          booking?.promo_funding_source === 'platform'
+                            ? 'TripAvail funded'
+                            : 'Operator funded'
+                        }
+                      />
+                    ) : null}
+                    {hasPromo ? (
+                      <InfoRow
+                        label="Promo source"
+                        value={booking?.promo_owner || 'Promo applied'}
+                      />
+                    ) : null}
+                    <InfoRow
+                      label="Upfront paid"
+                      value={formatMoney(paidOnline, bookingCurrency)}
+                    />
+                    <InfoRow
+                      label="Remaining balance"
+                      value={formatMoney(remainingAmount, bookingCurrency)}
+                    />
+                    {isRefunded ? (
+                      <InfoRow
+                        label="Refunded amount"
+                        value={formatMoney(refundAmount, bookingCurrency)}
+                      />
+                    ) : null}
                     {refundReason ? <InfoRow label="Refund reason" value={refundReason} /> : null}
-                    <InfoRow label="Balance payment method" value={remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online'} />
-                    <InfoRow label="Due timing" value={remainingAmount > 0 ? 'Before departure' : 'Paid in full'} />
+                    <InfoRow
+                      label="Balance payment method"
+                      value={remainingAmount > 0 ? 'Direct to operator' : 'Fully paid online'}
+                    />
+                    <InfoRow
+                      label="Due timing"
+                      value={remainingAmount > 0 ? 'Before departure' : 'Paid in full'}
+                    />
                     {schedule?.start_time ? (
-                      <InfoRow label="Start time" value={format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a')} />
+                      <InfoRow
+                        label="Start time"
+                        value={format(new Date(schedule.start_time), 'MMM d, yyyy h:mm a')}
+                      />
                     ) : null}
                     {schedule?.end_time ? (
-                      <InfoRow label="End time" value={format(new Date(schedule.end_time), 'MMM d, yyyy h:mm a')} />
+                      <InfoRow
+                        label="End time"
+                        value={format(new Date(schedule.end_time), 'MMM d, yyyy h:mm a')}
+                      />
                     ) : null}
                     {booking.check_in_date ? (
-                      <InfoRow label="Check-in" value={format(new Date(booking.check_in_date), 'MMM d, yyyy')} />
+                      <InfoRow
+                        label="Check-in"
+                        value={format(new Date(booking.check_in_date), 'MMM d, yyyy')}
+                      />
                     ) : null}
                     {booking.check_out_date ? (
-                      <InfoRow label="Check-out" value={format(new Date(booking.check_out_date), 'MMM d, yyyy')} />
+                      <InfoRow
+                        label="Check-out"
+                        value={format(new Date(booking.check_out_date), 'MMM d, yyyy')}
+                      />
                     ) : null}
                   </div>
 
@@ -770,7 +955,8 @@ export default function TravelerBookingDetailPage() {
                                     </div>
                                   ))}
                                 </div>
-                              ) : typeof day?.description === 'string' && day.description.trim().length > 0 ? (
+                              ) : typeof day?.description === 'string' &&
+                                day.description.trim().length > 0 ? (
                                 <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
                                   <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
                                     {day.description}
@@ -814,15 +1000,22 @@ export default function TravelerBookingDetailPage() {
                               ) : null}
                             </div>
                             {pickup.formatted_address ? (
-                              <p className="text-sm text-muted-foreground pl-6">{pickup.formatted_address}</p>
+                              <p className="text-sm text-muted-foreground pl-6">
+                                {pickup.formatted_address}
+                              </p>
                             ) : null}
                             {pickup.pickup_time ? (
                               <p className="text-sm text-muted-foreground pl-6">
-                                Pickup: <span className="font-medium text-foreground">{pickup.pickup_time}</span>
+                                Pickup:{' '}
+                                <span className="font-medium text-foreground">
+                                  {pickup.pickup_time}
+                                </span>
                               </p>
                             ) : null}
                             {pickup.notes ? (
-                              <p className="text-sm text-muted-foreground pl-6 italic">{pickup.notes}</p>
+                              <p className="text-sm text-muted-foreground pl-6 italic">
+                                {pickup.notes}
+                              </p>
                             ) : null}
                             {pickup.formatted_address ? (
                               <div className="pl-6">
@@ -855,10 +1048,14 @@ export default function TravelerBookingDetailPage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Booking records
                       </p>
-                      <h3 className="mt-1 text-lg font-semibold text-foreground">Keep your receipt and thread together</h3>
+                      <h3 className="mt-1 text-lg font-semibold text-foreground">
+                        Keep your receipt and thread together
+                      </h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Re-download your confirmation from the workspace any time, then use the booking thread for itinerary clarifications, payment follow-up, and support-ready written history.
+                      Re-download your confirmation from the workspace any time, then use the
+                      booking thread for itinerary clarifications, payment follow-up, and
+                      support-ready written history.
                     </p>
                     <Button
                       type="button"
@@ -890,10 +1087,13 @@ export default function TravelerBookingDetailPage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Support
                       </p>
-                      <h3 className="mt-1 text-lg font-semibold text-foreground">Need help with this booking?</h3>
+                      <h3 className="mt-1 text-lg font-semibold text-foreground">
+                        Need help with this booking?
+                      </h3>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Open the booking thread to message your {counterpartLabel} directly. If you need platform support, use the escalation option inside the messages tab.
+                      Open the booking thread to message your {counterpartLabel} directly. If you
+                      need platform support, use the escalation option inside the messages tab.
                     </p>
                     <Button
                       type="button"
@@ -908,15 +1108,18 @@ export default function TravelerBookingDetailPage() {
                   </div>
                 </GlassCard>
 
-                {/* Review card — shown after operator confirms tour completion */}
-                {scope === 'tour_booking' && operatorCompletionConfirmedAt ? (
+                {/* Review card — shown once the trip has happened (operator-confirmed OR the
+                    departure date has passed). */}
+                {scope === 'tour_booking' && canWriteReview ? (
                   <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
                     <div className="space-y-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500">
                         <Star className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Your review</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Your review
+                        </p>
                         <h3 className="mt-1 text-lg font-semibold text-foreground">
                           {existingReview ? 'Thank you for your review' : 'Rate your experience'}
                         </h3>
@@ -925,16 +1128,31 @@ export default function TravelerBookingDetailPage() {
                         <div className="space-y-2">
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((i) => (
-                              <Star key={i} className={`h-5 w-5 ${i <= existingReview.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                              <Star
+                                key={i}
+                                className={`h-5 w-5 ${i <= existingReview.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                              />
                             ))}
                           </div>
-                          {existingReview.title ? <p className="text-sm font-medium text-foreground">{existingReview.title}</p> : null}
-                          {existingReview.body ? <p className="text-sm text-muted-foreground">{existingReview.body}</p> : null}
+                          {existingReview.title ? (
+                            <p className="text-sm font-medium text-foreground">
+                              {existingReview.title}
+                            </p>
+                          ) : null}
+                          {existingReview.body ? (
+                            <p className="text-sm text-muted-foreground">{existingReview.body}</p>
+                          ) : null}
                         </div>
                       ) : (
                         <>
-                          <p className="text-sm text-muted-foreground">Share your experience so future travelers know what to expect.</p>
-                          <Button type="button" className="w-full rounded-2xl" onClick={() => setShowReviewDialog(true)}>
+                          <p className="text-sm text-muted-foreground">
+                            Share your experience so future travelers know what to expect.
+                          </p>
+                          <Button
+                            type="button"
+                            className="w-full rounded-2xl"
+                            onClick={() => setShowReviewDialog(true)}
+                          >
                             <Star className="mr-2 h-4 w-4" />
                             Write a review
                           </Button>
@@ -944,7 +1162,9 @@ export default function TravelerBookingDetailPage() {
                   </GlassCard>
                 ) : null}
 
-                {(canRequestCancellation || cancellationRequestPending || cancellationRequestDeclined) ? (
+                {canRequestCancellation ||
+                cancellationRequestPending ||
+                cancellationRequestDeclined ? (
                   <GlassCard variant="card" className="rounded-3xl border border-border/60 p-6">
                     <div className="space-y-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning">
@@ -972,21 +1192,26 @@ export default function TravelerBookingDetailPage() {
                       ) : null}
                       {cancellationRequestedAt ? (
                         <p className="text-sm text-muted-foreground">
-                          Requested on {format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')}
+                          Requested on{' '}
+                          {format(new Date(cancellationRequestedAt), 'MMM d, yyyy h:mm a')}
                         </p>
                       ) : null}
                       {cancellationReviewedAt ? (
                         <p className="text-sm text-muted-foreground">
-                          Reviewed on {format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')}
+                          Reviewed on{' '}
+                          {format(new Date(cancellationReviewedAt), 'MMM d, yyyy h:mm a')}
                         </p>
                       ) : null}
                       {cancellationReviewReason ? (
-                        <p className="text-sm text-muted-foreground">
-                          {cancellationReviewReason}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{cancellationReviewReason}</p>
                       ) : null}
                       {cancellationRequestPending ? (
-                        <Button type="button" variant="outline" className="w-full rounded-2xl border-border/60 bg-background/80" disabled>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full rounded-2xl border-border/60 bg-background/80"
+                          disabled
+                        >
                           <AlertTriangle className="mr-2 h-4 w-4" />
                           Cancellation requested
                         </Button>
@@ -1028,7 +1253,8 @@ export default function TravelerBookingDetailPage() {
           <DialogHeader>
             <DialogTitle>Request cancellation</DialogTitle>
             <DialogDescription>
-              TripAvail will send this request to the {counterpartLabel}. The booking stays active until they process it or support intervenes.
+              TripAvail will send this request to the {counterpartLabel}. The booking stays active
+              until they process it or support intervenes.
             </DialogDescription>
           </DialogHeader>
 
@@ -1037,7 +1263,9 @@ export default function TravelerBookingDetailPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Cancellation policy
               </p>
-              <h3 className="mt-2 text-base font-semibold text-foreground">{cancellationPolicyTitle}</h3>
+              <h3 className="mt-2 text-base font-semibold text-foreground">
+                {cancellationPolicyTitle}
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {cancellationPolicyDescription}
               </p>
@@ -1047,12 +1275,16 @@ export default function TravelerBookingDetailPage() {
                 </p>
               ) : null}
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Submitting this request does not automatically cancel or refund the booking. The partner reviews the request inside this workspace.
+                Submitting this request does not automatically cancel or refund the booking. The
+                partner reviews the request inside this workspace.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="traveler-cancellation-reason">
+              <label
+                className="text-sm font-medium text-foreground"
+                htmlFor="traveler-cancellation-reason"
+              >
                 Reason for cancellation
               </label>
               <Textarea
@@ -1076,7 +1308,12 @@ export default function TravelerBookingDetailPage() {
             >
               Keep booking
             </Button>
-            <Button type="button" className="rounded-2xl" onClick={handleRequestCancellation} disabled={requestingCancellation}>
+            <Button
+              type="button"
+              className="rounded-2xl"
+              onClick={handleRequestCancellation}
+              disabled={requestingCancellation}
+            >
               {requestingCancellation ? 'Sending request...' : 'Send cancellation request'}
             </Button>
           </DialogFooter>
@@ -1095,7 +1332,9 @@ export default function TravelerBookingDetailPage() {
           <div className="space-y-5">
             {/* Overall star rating */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Overall rating <span className="text-destructive">*</span></p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Overall rating <span className="text-destructive">*</span>
+              </p>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <button
@@ -1105,7 +1344,9 @@ export default function TravelerBookingDetailPage() {
                     className="transition-transform hover:scale-110"
                     aria-label={`Rate ${i} star${i !== 1 ? 's' : ''}`}
                   >
-                    <Star className={`h-9 w-9 ${i <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                    <Star
+                      className={`h-9 w-9 ${i <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                    />
                   </button>
                 ))}
               </div>
@@ -1113,21 +1354,25 @@ export default function TravelerBookingDetailPage() {
 
             {/* Category ratings */}
             <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Rate by category <span className="text-muted-foreground/50">(optional)</span></p>
-              {([
-                ['Communication',  reviewCommunication, setReviewCommunication],
-                ['Punctuality',    reviewPunctuality,   setReviewPunctuality],
-                ['Transport',      reviewTransport,     setReviewTransport],
-                ['Guide quality',  reviewGuide,         setReviewGuide],
-                ['Safety',         reviewSafety,        setReviewSafety],
-                ['Cleanliness',    reviewCleanliness,   setReviewCleanliness],
-                ['Value for money',reviewValue,         setReviewValue],
-                ['Itinerary',      reviewItinerary,     setReviewItinerary],
-              ] as [string, number, (v: number) => void][]).map(([label, val, setter]) => (
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Rate by category <span className="text-muted-foreground/50">(optional)</span>
+              </p>
+              {(
+                [
+                  ['Communication', reviewCommunication, setReviewCommunication],
+                  ['Punctuality', reviewPunctuality, setReviewPunctuality],
+                  ['Transport', reviewTransport, setReviewTransport],
+                  ['Guide quality', reviewGuide, setReviewGuide],
+                  ['Safety', reviewSafety, setReviewSafety],
+                  ['Cleanliness', reviewCleanliness, setReviewCleanliness],
+                  ['Value for money', reviewValue, setReviewValue],
+                  ['Itinerary', reviewItinerary, setReviewItinerary],
+                ] as [string, number, (v: number) => void][]
+              ).map(([label, val, setter]) => (
                 <div key={label} className="flex items-center justify-between gap-3">
                   <span className="w-36 shrink-0 text-sm text-foreground">{label}</span>
                   <div className="flex gap-1">
-                    {[1,2,3,4,5].map((i) => (
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <button
                         key={i}
                         type="button"
@@ -1135,7 +1380,9 @@ export default function TravelerBookingDetailPage() {
                         aria-label={`${label} ${i} stars`}
                         className="transition-transform hover:scale-110"
                       >
-                        <Star className={`h-5 w-5 ${i <= val ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                        <Star
+                          className={`h-5 w-5 ${i <= val ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                        />
                       </button>
                     ))}
                   </div>
@@ -1206,7 +1453,9 @@ function SummaryTile({
           <Icon className="h-4 w-4" />
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {label}
+          </p>
           <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
         </div>
       </div>
@@ -1217,7 +1466,9 @@ function SummaryTile({
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-2 text-sm font-semibold capitalize text-foreground">{value}</p>
     </div>
   )
