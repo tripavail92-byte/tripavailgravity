@@ -1,24 +1,30 @@
 import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { Ticket } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { DestinationTiles } from '@/components/home/DestinationTiles'
 import { ExploreControls, type ExploreMode } from '@/components/home/ExploreControls'
+import {
+  BudgetChips,
+  HowItWorks,
+  OperatorCta,
+  TrustBand,
+} from '@/components/home/HomeStaticSections'
 import { HotelPropertyCard } from '@/components/traveller/HotelPropertyCard'
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
 import type { HotelBrowseItem } from '@/queries/hotelQueries'
 import { useHotelBrowse } from '@/queries/hotelQueries'
+import { useCuratedPackages, useFeaturedPackages, useSpecialOffers } from '@/queries/packageQueries'
 import {
-  useCuratedPackages,
-  useFeaturedPackages,
-  useSpecialOffers,
-} from '@/queries/packageQueries'
-import {
+  type HomepageMixTour,
   useFeaturedTours,
+  useHomepageMixTours,
   usePakistanNorthernTours,
   useToursByCategory,
 } from '@/queries/tourQueries'
@@ -55,23 +61,37 @@ function renderPackageCards(pkgs: any[]): ReactNode[] {
   ))
 }
 
-function renderTourCards(tours: any[]): ReactNode[] {
-  return tours.map((tour) => (
-    <TourCard
-      key={`tour-${tour.id}`}
-      id={tour.id}
-      slug={tour.slug ?? undefined}
-      image={tour.images?.[0] || TOUR_FALLBACK_IMG}
-      title={tour.title}
-      location={tour.location}
-      duration={tour.durationDays ? `${tour.durationDays} days` : 'Multi-day'}
-      rating={tour.rating}
-      price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-      currency={tour.currency || 'PKR'}
-      type={tour.badge || 'Tour'}
-      isFeatured={tour.badge === 'Featured'}
-    />
-  ))
+function renderTourCards(tours: any[], seen?: Set<string>): ReactNode[] {
+  const out: ReactNode[] = []
+  for (const tour of tours) {
+    // Cross-rail de-duplication. Four rails query the same small table with
+    // is_featured leading most sorts, so without this the SAME trip appeared in
+    // three rows — the mechanical cause of the homepage "feeling thin" while
+    // claiming 16 cards.
+    if (seen) {
+      if (seen.has(tour.id)) continue
+      seen.add(tour.id)
+    }
+    out.push(
+      <TourCard
+        key={`tour-${tour.id}`}
+        id={tour.id}
+        slug={tour.slug ?? undefined}
+        image={tour.images?.[0] || TOUR_FALLBACK_IMG}
+        title={tour.title}
+        location={tour.location}
+        duration={formatTourDuration(tour.durationDays)}
+        rating={tour.rating}
+        reviewCount={tour.reviewCount}
+        price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+        currency={tour.currency || 'PKR'}
+        type={tour.badge || 'Tour'}
+        isFeatured={tour.badge === 'Featured'}
+        shortDescription={tour.shortDescription}
+      />,
+    )
+  }
+  return out
 }
 
 function renderHotelCards(hotels: HotelBrowseItem[]): ReactNode[] {
@@ -101,14 +121,18 @@ function FeedSection({
   viewAllHref,
   isLoading,
   cards,
+  minCards = 3,
 }: {
   title: string
   subtitle?: string
   viewAllHref: string
   isLoading: boolean
   cards: ReactNode[]
+  /** Hide the row unless it can show at least this many cards. A one-card row
+   *  reads as broken, so a thin catalogue shows fewer sections instead. */
+  minCards?: number
 }) {
-  if (!isLoading && cards.length === 0) return null
+  if (!isLoading && cards.length < Math.max(1, minCards)) return null
 
   return (
     <section className="mt-12 first:mt-0">
@@ -188,22 +212,52 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   const adventureQ = useToursByCategory('adventure-trips')
   const hikingQ = useToursByCategory('hiking-trips')
   const northernQ = usePakistanNorthernTours()
+  // The whole live catalogue, newest first — powers New arrivals + the trip-length rails.
+  // This hook already existed and was already ordered created_at desc; the homepage
+  // simply never called it, which is why there was no "New arrivals" row.
+  const mixQ = useHomepageMixTours(96)
 
   const offers = useMemo(() => renderPackageCards(offersQ.data ?? []), [offersQ.data])
   const hotels = useMemo(() => renderHotelCards(hotelsQ.data ?? []), [hotelsQ.data])
-  const featuredStays = useMemo(
-    () => renderPackageCards(featPkgQ.data ?? []),
-    [featPkgQ.data],
-  )
+  const featuredStays = useMemo(() => renderPackageCards(featPkgQ.data ?? []), [featPkgQ.data])
   const topRated = useMemo(() => renderPackageCards(topRatedQ.data ?? []), [topRatedQ.data])
   const couples = useMemo(() => renderPackageCards(couplesQ.data ?? []), [couplesQ.data])
   const family = useMemo(() => renderPackageCards(familyQ.data ?? []), [familyQ.data])
   const weekend = useMemo(() => renderPackageCards(weekendQ.data ?? []), [weekendQ.data])
   const newArrivals = useMemo(() => renderPackageCards(newQ.data ?? []), [newQ.data])
-  const featTours = useMemo(() => renderTourCards(featTourQ.data ?? []), [featTourQ.data])
-  const adventure = useMemo(() => renderTourCards(adventureQ.data ?? []), [adventureQ.data])
-  const hiking = useMemo(() => renderTourCards(hikingQ.data ?? []), [hikingQ.data])
-  const northern = useMemo(() => renderTourCards(northernQ.data ?? []), [northernQ.data])
+  // Rail strategy for a SMALL catalogue.
+  //
+  // The audit's finding was that four rails all sorted by is_featured showed the same
+  // trips in the same order — repetition that carried no information. The fix is that
+  // each rail must answer a DIFFERENT question, not that a trip may appear only once:
+  // a trip legitimately is both "new" and "in Northern Pakistan" (Netflix works this way).
+  //
+  // So: the two GENERIC rails (New / Handpicked) de-duplicate against each other, while
+  // the THEMATIC rails (place, trip length, category) draw from the full pool. Every rail
+  // then hides itself below MIN_RAIL_CARDS, because a one-card row reads as broken.
+  const tourRails = useMemo(() => {
+    const mix = mixQ.data ?? []
+    const generic = new Set<string>()
+    const newArrivals = renderTourCards(mix.slice(0, 8), generic)
+    const featured = renderTourCards(featTourQ.data ?? [], generic)
+    return {
+      newArrivals,
+      featured,
+      northern: renderTourCards(northernQ.data ?? []),
+      shortEscapes: renderTourCards(
+        mix.filter((t: HomepageMixTour) => isShortEscape(t.durationDays)),
+      ),
+      expeditions: renderTourCards(
+        mix.filter((t: HomepageMixTour) => isExpedition(t.durationDays)),
+      ),
+      adventure: renderTourCards(adventureQ.data ?? []),
+      hiking: renderTourCards(hikingQ.data ?? []),
+    }
+  }, [mixQ.data, featTourQ.data, northernQ.data, adventureQ.data, hikingQ.data])
+  const featTours = tourRails.featured
+  const adventure = tourRails.adventure
+  const hiking = tourRails.hiking
+  const northern = tourRails.northern
 
   return (
     <section aria-labelledby="home-explore-heading">
@@ -305,30 +359,74 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
 
         {mode === 'tours' && (
           <>
+            {/* Section order follows the tours-only homepage plan: what's new →
+                what we vouch for → where → how long → how much → how it works →
+                supply. Rails de-duplicate against each other and self-hide when
+                the catalogue is too small to fill them. */}
+            <TrustBand />
+
             <FeedSection
-              title="Featured tours"
+              title="New on TripAvail"
+              subtitle="Freshly added by verified operators"
+              viewAllHref="/search?types=tour&sort=newest"
+              isLoading={mixQ.isLoading}
+              cards={tourRails.newArrivals}
+            />
+
+            <FeedSection
+              title="Handpicked by TripAvail"
+              subtitle="Real photos, transparent pricing"
               viewAllHref="/tours"
               isLoading={featTourQ.isLoading}
               cards={featTours}
             />
-            <FeedSection
-              title="Adventure"
-              viewAllHref="/explore/tours/categories/adventure-trips"
-              isLoading={adventureQ.isLoading}
-              cards={adventure}
-            />
-            <FeedSection
-              title="Hiking & nature"
-              viewAllHref="/explore/tours/categories/hiking-trips"
-              isLoading={hikingQ.isLoading}
-              cards={hiking}
-            />
+
+            <DestinationTiles />
+
             <FeedSection
               title="Northern Pakistan"
+              subtitle="Hunza, Skardu, Naran, Swat and Fairy Meadows"
               viewAllHref="/explore/tours/collections/pakistan-northern"
               isLoading={northernQ.isLoading}
               cards={northern}
             />
+
+            <FeedSection
+              title="Short escapes"
+              subtitle="Day trips and weekenders, 1–3 days"
+              viewAllHref="/search?types=tour"
+              isLoading={mixQ.isLoading}
+              cards={tourRails.shortEscapes}
+            />
+
+            <FeedSection
+              title="Big expeditions"
+              subtitle="Seven days and up, for the long haul"
+              viewAllHref="/search?types=tour"
+              isLoading={mixQ.isLoading}
+              cards={tourRails.expeditions}
+            />
+
+            <BudgetChips />
+
+            <FeedSection
+              title="Adventure & jeep safaris"
+              subtitle="High passes, glaciers and off-road valleys"
+              viewAllHref="/explore/tours/categories/adventure-trips"
+              isLoading={adventureQ.isLoading}
+              cards={adventure}
+            />
+
+            <FeedSection
+              title="Hiking & nature"
+              subtitle="Treks, alpine lakes and forest trails"
+              viewAllHref="/explore/tours/categories/hiking-trips"
+              isLoading={hikingQ.isLoading}
+              cards={hiking}
+            />
+
+            <HowItWorks />
+            <OperatorCta />
           </>
         )}
 
@@ -337,8 +435,8 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
             <Ticket className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
             <p className="text-lg font-semibold text-foreground">Events are coming</p>
             <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-              Concerts, festivals, and local experiences with verified tickets — launching soon.
-              In the meantime, explore hotels and tours.
+              Concerts, festivals, and local experiences with verified tickets — launching soon. In
+              the meantime, explore hotels and tours.
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               <Button asChild className="rounded-full">

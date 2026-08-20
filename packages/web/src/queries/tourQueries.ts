@@ -64,6 +64,8 @@ export interface MappedTour {
   badge: string
   shortDescription?: string | null
   durationDays?: number | null
+  /** Cities this trip visits — used by the homepage "Browse by destination" tiles. */
+  destinationCities?: string[]
 }
 
 export interface HomepageMixTour {
@@ -81,6 +83,8 @@ export interface HomepageMixTour {
   badge: string
   shortDescription?: string | null
   durationDays?: number | null
+  /** Cities this trip visits — used by the homepage "Browse by destination" tiles. */
+  destinationCities?: string[]
 }
 
 function mapTourRowToUnifiedExperience(tour: any): UnifiedExperience {
@@ -206,6 +210,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
       created_at: tour.created_at ?? tour.updated_at ?? '1970-01-01T00:00:00.000Z',
       isFeatured,
       badge: 'Tour Experience',
+      destinationCities,
       shortDescription: tour.short_description ?? null,
       durationDays: tour.duration_days ?? null,
     }

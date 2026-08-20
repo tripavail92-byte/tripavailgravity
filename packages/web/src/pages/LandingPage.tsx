@@ -52,42 +52,10 @@ export default function LandingPage() {
           </QueryErrorBoundaryWrapper>
 
           {/* Trust Strip — moved below the listings so experiences lead the page */}
-          <section className="pt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold">Verified partners</div>
-                </div>
-              </Card>
-              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold">Instant confirmation</div>
-                </div>
-              </Card>
-              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold">Secure checkout</div>
-                </div>
-              </Card>
-              <Card className="border border-border/60 rounded-2xl p-3 sm:p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-                    <Star className="w-5 h-5 text-foreground" />
-                  </div>
-                  <div className="text-xs sm:text-sm font-semibold">Top-rated trips</div>
-                </div>
-              </Card>
-            </div>
-          </section>
+          {/* The four bare trust chips that used to sit here were unbacked
+              ("Instant confirmation", "Top-rated trips" — every tour has rating 0)
+              and rendered BELOW every card. HomeCategoryFeed now renders a TrustBand
+              directly under the hero that explains how the marketplace actually works. */}
         </div>
       </div>
     </div>
