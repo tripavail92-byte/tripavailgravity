@@ -26,6 +26,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ShareButton } from '@/components/share/ShareButton'
 import { TourReviewButton } from '@/components/tour/TourReviewButton'
 import { TourSubNav } from '@/components/tour/TourSubNav'
+import { TourGallery } from '@/components/traveller/TourGallery'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
@@ -437,13 +438,12 @@ export default function TourDetailsPage() {
     )
   }
 
-  const tourImages = [
-    tour.images?.[0] || 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200',
-    tour.images?.[1] || 'https://images.unsplash.com/photo-1512100356956-c122ecc598a8?w=800',
-    tour.images?.[2] || 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800',
-    tour.images?.[3] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800',
-    tour.images?.[4] || 'https://images.unsplash.com/photo-1528127269322-539801943592?w=800',
-  ]
+  // Real operator media only. This used to pad to five slots with hardcoded Unsplash
+  // photos, so a tour with two real images advertised three pictures of somewhere else
+  // as its own gallery.
+  const tourImages = (tour.images ?? []).filter(
+    (src: unknown): src is string => typeof src === 'string' && src.trim().length > 0,
+  )
   const pickupLocations = Array.isArray(tour.pickup_locations) ? tour.pickup_locations : []
   const includedExcludedSection = (
     <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
@@ -877,70 +877,7 @@ export default function TourDetailsPage() {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Gallery (match PackageDetailsPage grid) */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-3 h-[300px] md:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-2xl"
-        >
-          <div className="md:col-span-2 h-full bg-muted/60 relative group overflow-hidden">
-            <motion.img
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.8 }}
-              src={tourImages[0]}
-              alt={tour.title}
-              className="w-full h-full object-cover cursor-pointer"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-          </div>
-
-          <div className="hidden md:grid grid-rows-2 gap-3 h-full">
-            <div className="bg-muted/60 h-full relative overflow-hidden group">
-              <motion.img
-                whileHover={{ scale: 1.1 }}
-                src={tourImages[1]}
-                alt={`${tour.title} photo 2`}
-                className="w-full h-full object-cover cursor-pointer"
-              />
-            </div>
-            <div className="bg-muted/60 h-full relative overflow-hidden group">
-              <motion.img
-                whileHover={{ scale: 1.1 }}
-                src={tourImages[2]}
-                alt={`${tour.title} photo 3`}
-                className="w-full h-full object-cover cursor-pointer"
-              />
-            </div>
-          </div>
-          <div className="hidden md:grid grid-rows-2 gap-3 h-full">
-            <div className="bg-muted/60 h-full relative overflow-hidden group">
-              <motion.img
-                whileHover={{ scale: 1.1 }}
-                src={tourImages[3]}
-                alt={`${tour.title} photo 4`}
-                className="w-full h-full object-cover cursor-pointer"
-              />
-            </div>
-            <div className="bg-muted/60 h-full relative overflow-hidden group">
-              <motion.img
-                whileHover={{ scale: 1.1 }}
-                src={tourImages[4]}
-                alt={`${tour.title} photo 5`}
-                className="w-full h-full object-cover cursor-pointer"
-              />
-              <div className="absolute bottom-4 right-4">
-                <GlassButton
-                  variant="light"
-                  size="sm"
-                  className="gap-2 bg-background/70 hover:bg-background/80"
-                >
-                  <Camera size={16} />
-                  Show all photos
-                </GlassButton>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        <TourGallery images={tourImages} title={tour.title} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
