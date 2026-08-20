@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
+import { tourImage } from '@/lib/imageUrl'
 import { formatDepartureDate } from '@/queries/departureQueries'
 
 /**
@@ -95,7 +96,7 @@ export function TourCard({
       />
 
       <img
-        src={image || FALLBACK_IMG}
+        src={image ? tourImage(image, 700) : FALLBACK_IMG}
         alt=""
         loading="lazy"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"

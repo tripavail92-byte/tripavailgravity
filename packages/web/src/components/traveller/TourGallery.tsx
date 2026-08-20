@@ -2,6 +2,7 @@ import { Camera, ChevronLeft, ChevronRight, ImageOff, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { tourImage } from '@/lib/imageUrl'
 import { cn } from '@/lib/utils'
 
 /**
@@ -73,7 +74,7 @@ export function TourGallery({ images, title }: { images: string[]; title: string
               className="h-[260px] w-full flex-none snap-center overflow-hidden rounded-2xl bg-muted/60"
             >
               <img
-                src={src}
+                src={tourImage(src, 800)}
                 alt={i === 0 ? title : ''}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 className="h-full w-full object-cover"
@@ -104,7 +105,7 @@ export function TourGallery({ images, title }: { images: string[]; title: string
           )}
         >
           <img
-            src={hero}
+            src={tourImage(hero, 1200)}
             alt={title}
             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
@@ -127,7 +128,7 @@ export function TourGallery({ images, title }: { images: string[]; title: string
                 className="group relative h-full overflow-hidden bg-muted/60"
               >
                 <img
-                  src={src}
+                  src={tourImage(src, 700)}
                   alt=""
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -152,7 +153,7 @@ export function TourGallery({ images, title }: { images: string[]; title: string
           {lightboxAt !== null && (
             <div className="relative">
               <img
-                src={photos[lightboxAt]}
+                src={tourImage(photos[lightboxAt], 1600)}
                 alt={`${title} — photo ${lightboxAt + 1} of ${photos.length}`}
                 className="max-h-[80vh] w-full rounded-2xl object-contain"
               />

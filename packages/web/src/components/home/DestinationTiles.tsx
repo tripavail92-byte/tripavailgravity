@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { tourImage } from '@/lib/imageUrl'
 import { useHomepageMixTours } from '@/queries/tourQueries'
 
 /**
@@ -84,7 +85,7 @@ export function DestinationTiles({
               }
             >
               <img
-                src={d.image}
+                src={tourImage(d.image, isHero && i === 0 ? 1100 : 600)}
                 alt=""
                 loading={i === 0 ? 'eager' : 'lazy'}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
