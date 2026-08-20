@@ -72,25 +72,21 @@ export function DestinationTiles({
           <Link
             key={d.city}
             to={`/search?types=tour&q=${encodeURIComponent(d.city)}`}
-            className={`group relative overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-              // In the hero the first tile spans two columns so the row has a focal point.
+            className={`group relative aspect-square overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+              // The first tile spans a 2x2 block for a focal point; aspect-square on every
+              // tile keeps the grid rows equal so the hero lines up exactly with the 2x2 of
+              // small tiles beside it.
               isHero && i === 0 ? 'col-span-2 row-span-2' : ''
             }`}
           >
-            <div
-              className={
-                isHero && i === 0
-                  ? 'aspect-[4/3] w-full overflow-hidden sm:aspect-auto sm:h-full'
-                  : 'aspect-[4/3] w-full overflow-hidden'
-              }
-            >
-              <img
-                src={tourImage(d.image, isHero && i === 0 ? 1100 : 600)}
-                alt=""
-                loading={i === 0 ? 'eager' : 'lazy'}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
+            {/* The image fills the WHOLE tile. It used to sit in a fixed 4:3 box while the grid
+                cell stretched taller, leaving a grey band under every small tile. */}
+            <img
+              src={tourImage(d.image, isHero && i === 0 ? 1100 : 600)}
+              alt=""
+              loading={i === 0 ? 'eager' : 'lazy'}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-3">
               <p
