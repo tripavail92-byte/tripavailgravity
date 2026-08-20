@@ -5,13 +5,12 @@ import { tourImage } from '@/lib/imageUrl'
 import { useHomepageMixTours } from '@/queries/tourQueries'
 
 /**
- * "Where to next?" — the destination entry point, and the homepage hero.
+ * "Where to next?" — the destination entry point, rendered as an inline rail:
+ * a heading with a "See all" link and a horizontal row of equal-size destination
+ * tiles. A carousel sells ONE trip to everyone; this asks the question a traveller
+ * actually arrives with, and every tile is a real place with a real trip count.
  *
- * This replaced a rotating single-tour carousel in the hero slot. A carousel sells
- * ONE trip to everyone; a destination grid asks the question a traveller actually
- * arrives with, and every tile is a real place with a real trip count behind it.
- *
- * Built entirely from tours already fetched for the feed: every live trip carries
+ * Built entirely from tours already fetched for the feed — every live trip carries
  * destination_cities (or location.city), so grouping client-side gives real cities
  * with real counts and needs no new query or curated list of places.
  */
@@ -19,16 +18,15 @@ const FALLBACK_IMG =
   'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=800'
 
 export function DestinationTiles({
-  limit = 8,
-  variant = 'section',
+  limit = 10,
+  seeAllHref = '/tours',
 }: {
   limit?: number
-  /** 'hero' is the top-of-page treatment: bigger type, taller tiles. */
-  variant?: 'section' | 'hero'
+  /** Where the "See all" link goes — the full trip catalogue by default. */
+  seeAllHref?: string
 }) {
   // 96 rows is the whole live catalogue at present — enough to count accurately.
   const { data: tours = [], isLoading } = useHomepageMixTours(96)
-  const isHero = variant === 'hero'
 
   const destinations = (() => {
     const byCity = new Map<string, { city: string; count: number; image: string }>()
@@ -43,43 +41,40 @@ export function DestinationTiles({
     return [...byCity.values()].sort((a, b) => b.count - a.count).slice(0, limit)
   })()
 
-  // A destination grid with two entries looks broken — show it only with substance.
+  // A destination row with two entries looks broken — show it only with substance.
   if (isLoading || destinations.length < 3) return null
 
   return (
-    <section className={isHero ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8'}>
-      <div className={isHero ? 'mb-6' : 'mb-5'}>
-        <h2
-          className={
-            isHero
-              ? 'text-3xl font-black tracking-tight text-foreground sm:text-4xl lg:text-5xl'
-              : 'text-2xl font-bold tracking-tight text-foreground sm:text-3xl'
-          }
+    <section className="mt-12 first:mt-0">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
+            Where to next?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Pick a place — we’ll show you the trips running there.
+          </p>
+        </div>
+        <Link
+          to={seeAllHref}
+          className="shrink-0 whitespace-nowrap text-sm font-semibold text-primary underline-offset-4 hover:underline"
         >
-          Where to next?
-        </h2>
-        <p
-          className={
-            isHero ? 'mt-2 text-base text-muted-foreground' : 'mt-1 text-sm text-muted-foreground'
-          }
-        >
-          Pick a place — we’ll show you the trips running there.
-        </p>
+          See all
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {/* Inline horizontal rail — equal square tiles, snap-scroll on touch. */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:px-0">
         {destinations.map((d, i) => (
           <Link
             key={d.city}
             to={`/search?types=tour&q=${encodeURIComponent(d.city)}`}
-            className="group relative aspect-square overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="group relative aspect-square w-40 shrink-0 snap-start overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:w-44"
           >
-            {/* Every tile is the same size — one uniform grid, no oversized first tile.
-                The image fills the whole square. */}
             <img
-              src={tourImage(d.image, 600)}
+              src={tourImage(d.image, 400)}
               alt=""
-              loading={i < 4 ? 'eager' : 'lazy'}
+              loading={i < 5 ? 'eager' : 'lazy'}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />

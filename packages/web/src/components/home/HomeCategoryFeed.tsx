@@ -3,6 +3,7 @@ import { Ticket } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { DestinationTiles } from '@/components/home/DestinationTiles'
 import { ExploreControls, type ExploreMode } from '@/components/home/ExploreControls'
 import {
   BudgetChips,
@@ -382,8 +383,7 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
                 what we vouch for → where → how long → how much → how it works →
                 supply. Rails de-duplicate against each other and self-hide when
                 the catalogue is too small to fill them. */}
-            <TrustBand />
-
+            {/* New on TripAvail leads the page, then destinations, then trust + rails. */}
             <FeedSection
               title="New on TripAvail"
               subtitle="Freshly added by verified operators"
@@ -391,6 +391,10 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
               isLoading={mixQ.isLoading}
               cards={tourRails.newArrivals}
             />
+
+            <DestinationTiles seeAllHref="/tours" />
+
+            <TrustBand />
 
             <FeedSection
               title="Handpicked by TripAvail"
