@@ -519,13 +519,13 @@ export function TourOperatorDashboard() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-wide">
                   <Edit3 className="w-5 h-5 text-primary" />
-                  Continue Editing
+                  In Progress
                   <Badge className="bg-primary/20 text-primary border-primary/30 font-bold">
                     {continuableTours.length}
                   </Badge>
                 </h2>
                 <p className="text-xs text-muted-foreground font-medium">
-                  Pick up where you left off
+                  Drafts and trips pending review
                 </p>
               </div>
 
@@ -553,6 +553,20 @@ export function TourOperatorDashboard() {
                       border: 'border-destructive/40',
                       icon: XCircle,
                     },
+                    submitted: {
+                      label: 'Pending Review',
+                      bg: 'bg-warning/20',
+                      text: 'text-warning',
+                      border: 'border-warning/40',
+                      icon: Clock,
+                    },
+                    under_review: {
+                      label: 'Pending Review',
+                      bg: 'bg-warning/20',
+                      text: 'text-warning',
+                      border: 'border-warning/40',
+                      icon: Clock,
+                    },
                   }[tour.workflow_status as string] ?? {
                     label: tour.workflow_status ?? 'Draft',
                     bg: 'bg-muted/50',
@@ -575,6 +589,10 @@ export function TourOperatorDashboard() {
                     : 'Not saved yet'
 
                   const StatusIcon = statusConfig.icon
+                  // A trip awaiting admin review is not a draft: it must not be deleted from
+                  // here, and the action is "Open" (view/manage), not "Resume".
+                  const isPendingReview =
+                    tour.workflow_status === 'submitted' || tour.workflow_status === 'under_review'
 
                   return (
                     <div
@@ -626,20 +644,22 @@ export function TourOperatorDashboard() {
                           {lastEdited}
                         </span>
                         <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDraft(tour)}
-                            disabled={deletingId === tour.id}
-                            aria-label={`Delete ${tour.title || 'draft tour'}`}
-                            title="Delete draft"
-                            className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
-                          >
-                            {deletingId === tour.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
+                          {!isPendingReview && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDraft(tour)}
+                              disabled={deletingId === tour.id}
+                              aria-label={`Delete ${tour.title || 'draft tour'}`}
+                              title="Delete draft"
+                              className="h-8 w-8 flex items-center justify-center rounded-xl text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                            >
+                              {deletingId === tour.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
                           <Button
                             size="sm"
                             onClick={() =>
@@ -650,7 +670,7 @@ export function TourOperatorDashboard() {
                             className="h-8 px-4 rounded-xl text-xs font-bold gap-1.5 bg-primary/20 border border-primary/40 text-primary hover:bg-primary/30 transition-all"
                           >
                             <Edit3 className="w-3 h-3" />
-                            Resume
+                            {isPendingReview ? 'Open' : 'Resume'}
                           </Button>
                         </div>
                       </div>

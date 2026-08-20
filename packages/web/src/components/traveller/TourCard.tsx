@@ -107,7 +107,9 @@ export function TourCard({
       {/* Top row: real departure date + status */}
       <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
         {departsOn ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm">
+          // The pill background is ALWAYS white (over the photo), so its text is pinned to a
+          // fixed dark colour — text-foreground flips to near-white in dark mode and vanished.
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-neutral-900 shadow-sm">
             <CalendarDays className="h-3 w-3" />
             {departsOn}
           </span>
@@ -122,11 +124,11 @@ export function TourCard({
             rel={linkRel}
             onClick={(e) => e.stopPropagation()}
             title={`Read ${reviewCount || ''} review${Number(reviewCount) === 1 ? '' : 's'}`.trim()}
-            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm transition-transform hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-neutral-900 shadow-sm transition-transform hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           >
             ★ {Number(rating).toFixed(1)}
             {Number(reviewCount) > 0 ? (
-              <span className="font-medium text-muted-foreground">({reviewCount})</span>
+              <span className="font-medium text-neutral-500">({reviewCount})</span>
             ) : null}
           </Link>
         ) : (

@@ -1,12 +1,13 @@
-import { supabase } from '@/lib/supabase'
 import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
+
+import { clampDepositPercentage } from '@/features/booking/utils/tourPaymentTerms'
 import {
   buildStructuredFeaturesFromLabels,
   EXCLUDED_FEATURE_OPTIONS,
   INCLUDED_FEATURE_OPTIONS,
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
-import { clampDepositPercentage } from '@/features/booking/utils/tourPaymentTerms'
+import { supabase } from '@/lib/supabase'
 
 export interface Tour {
   id: string
@@ -74,7 +75,14 @@ export interface Tour {
   itinerary?: any[]
   schedules?: any[]
   // Draft workflow
-  workflow_status: 'draft' | 'in_progress' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'archived'
+  workflow_status:
+    | 'draft'
+    | 'in_progress'
+    | 'submitted'
+    | 'under_review'
+    | 'approved'
+    | 'rejected'
+    | 'archived'
   last_edited_at?: string | null
   completion_percentage?: number
   autosave_enabled?: boolean
@@ -172,7 +180,10 @@ const toIsoOrNull = (value: unknown): string | null => {
 
 const combineDateAndTimeToIso = (dateValue: unknown, timeValue: unknown): string | null => {
   if (typeof dateValue !== 'string' || dateValue.trim().length === 0) return null
-  const time = typeof timeValue === 'string' && timeValue.trim().length > 0 ? timeValue : DEFAULT_SCHEDULE_START
+  const time =
+    typeof timeValue === 'string' && timeValue.trim().length > 0
+      ? timeValue
+      : DEFAULT_SCHEDULE_START
   const parsed = new Date(`${dateValue}T${time}:00`)
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
 }
@@ -215,9 +226,7 @@ export function normalizeTourSchedules(
 
       const endFromTimestamp = toIsoOrNull(schedule?.end_time)
       const effectiveDurationDays = parseDurationDays(schedule?.duration_days ?? durationDays)
-      const end_time =
-        endFromTimestamp ||
-        deriveScheduleEndTime(start_time, effectiveDurationDays)
+      const end_time = endFromTimestamp || deriveScheduleEndTime(start_time, effectiveDurationDays)
 
       const capacity = parseCapacity(schedule?.capacity, fallbackCapacity)
       const status =
@@ -276,7 +285,9 @@ export const tourService = {
   async createTour(tourData: Partial<Tour>) {
     console.log('Creating tour with data:', tourData)
     const normalizedPrice = Number.isFinite(Number(tourData.price)) ? Number(tourData.price) : 0
-    const normalizedDepositPercentage = clampDepositPercentage(Number(tourData.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(
+      Number(tourData.deposit_percentage || 0),
+    )
     // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
     // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
     // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
@@ -285,12 +296,11 @@ export const tourService = {
     const normalizedDepositRequired =
       (tourData.require_deposit ?? tourData.deposit_required ?? true) !== false &&
       normalizedDepositPercentage > 0
-    const normalizedCancellationPolicy =
-      (tourData.cancellation_policy || 'moderate') as
-        | 'flexible'
-        | 'moderate'
-        | 'strict'
-        | 'non-refundable'
+    const normalizedCancellationPolicy = (tourData.cancellation_policy || 'moderate') as
+      | 'flexible'
+      | 'moderate'
+      | 'strict'
+      | 'non-refundable'
     const normalizedInclusions = Array.isArray(tourData.inclusions) ? tourData.inclusions : []
     const normalizedExclusions = Array.isArray(tourData.exclusions) ? tourData.exclusions : []
     const normalizedIncludedFeatures =
@@ -359,7 +369,9 @@ export const tourService = {
   async updateTour(id: string, updates: Partial<Tour>) {
     console.log(`Updating tour ${id}:`, updates)
     const normalizedPrice = Number.isFinite(Number(updates.price)) ? Number(updates.price) : 0
-    const normalizedDepositPercentage = clampDepositPercentage(Number(updates.deposit_percentage || 0))
+    const normalizedDepositPercentage = clampDepositPercentage(
+      Number(updates.deposit_percentage || 0),
+    )
     // `require_deposit = true` with a 0% deposit is not a harmless default: the tours trigger
     // enforce_operator_minimum_deposit_policy raises MINIMUM_DEPOSIT_NOT_MET (P0001) whenever a
     // deposit is required but falls below the operator's tier minimum (Gold: 20%). A brand-new
@@ -368,12 +380,11 @@ export const tourService = {
     const normalizedDepositRequired =
       (updates.require_deposit ?? updates.deposit_required ?? true) !== false &&
       normalizedDepositPercentage > 0
-    const normalizedCancellationPolicy =
-      (updates.cancellation_policy || 'moderate') as
-        | 'flexible'
-        | 'moderate'
-        | 'strict'
-        | 'non-refundable'
+    const normalizedCancellationPolicy = (updates.cancellation_policy || 'moderate') as
+      | 'flexible'
+      | 'moderate'
+      | 'strict'
+      | 'non-refundable'
     const normalizedInclusions = Array.isArray(updates.inclusions) ? updates.inclusions : []
     const normalizedExclusions = Array.isArray(updates.exclusions) ? updates.exclusions : []
     const normalizedIncludedFeatures =
@@ -466,7 +477,9 @@ export const tourService = {
       // Anon-reachable (traveller viewing a public tour). Reads the storefront view, not the base
       // table, so it survives dropping the base-table public-read policy (migration 20260714000003).
       (supabase.from('operator_public_storefront_v' as any) as any)
-        .select('company_name, first_name, last_name, account_status, has_identity_verified, has_business_registration_verified')
+        .select(
+          'company_name, first_name, last_name, account_status, has_identity_verified, has_business_registration_verified',
+        )
         .eq('user_id', data.operator_id)
         .maybeSingle(),
     ])
@@ -479,11 +492,17 @@ export const tourService = {
     }
 
     if (operatorSettingsResult.error) {
-      console.error(`Error fetching operator settings for tour ${data.id}:`, operatorSettingsResult.error)
+      console.error(
+        `Error fetching operator settings for tour ${data.id}:`,
+        operatorSettingsResult.error,
+      )
     }
 
     if (operatorProfileResult.error) {
-      console.error(`Error fetching operator profile for tour ${data.id}:`, operatorProfileResult.error)
+      console.error(
+        `Error fetching operator profile for tour ${data.id}:`,
+        operatorProfileResult.error,
+      )
     }
 
     const operatorSettings = operatorSettingsResult.data as { business_name?: string | null } | null
@@ -587,15 +606,19 @@ export const tourService = {
     return this.getOperatorTours(operatorId)
   },
 
-  /** Returns tours the operator can still edit: draft, in_progress, rejected */
+  /** Tours to surface in the dashboard's "In progress / pending" rail: editable ones
+   *  (draft, in_progress, rejected) PLUS ones awaiting admin review (submitted,
+   *  under_review) so a submitted trip stays accessible instead of vanishing. */
   async fetchContinuableTours(operatorId: string) {
     const { data, error } = await supabase
       .from('tours')
-      .select('id, title, workflow_status, completion_percentage, last_edited_at, images, tour_type, rejection_reason')
+      .select(
+        'id, title, workflow_status, completion_percentage, last_edited_at, images, tour_type, rejection_reason',
+      )
       .eq('operator_id', operatorId)
-      .in('workflow_status', ['draft', 'in_progress', 'rejected'])
+      .in('workflow_status', ['draft', 'in_progress', 'rejected', 'submitted', 'under_review'])
       .order('last_edited_at', { ascending: false, nullsFirst: false })
-      .limit(10)
+      .limit(15)
 
     if (error) {
       console.error(`Error fetching continuable tours for operator ${operatorId}:`, error)
@@ -669,12 +692,11 @@ export const tourService = {
     const normalizedDepositRequired =
       (data.require_deposit ?? data.deposit_required ?? true) !== false &&
       normalizedDepositPercentage > 0
-    const normalizedCancellationPolicy =
-      (data.cancellation_policy || 'moderate') as
-        | 'flexible'
-        | 'moderate'
-        | 'strict'
-        | 'non-refundable'
+    const normalizedCancellationPolicy = (data.cancellation_policy || 'moderate') as
+      | 'flexible'
+      | 'moderate'
+      | 'strict'
+      | 'non-refundable'
     const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
     const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
     const normalizedIncludedFeatures =
@@ -693,9 +715,12 @@ export const tourService = {
       tour_type: data.tour_type || 'Adventure',
       custom_category_label: data.custom_category_label ?? null,
       location: data.location || {},
-      destination_cities: Array.isArray(data.destination_cities) && data.destination_cities.length > 0
-        ? data.destination_cities.filter(Boolean)
-        : data.location?.city ? [data.location.city] : [],
+      destination_cities:
+        Array.isArray(data.destination_cities) && data.destination_cities.length > 0
+          ? data.destination_cities.filter(Boolean)
+          : data.location?.city
+            ? [data.location.city]
+            : [],
       duration: data.duration || '1 day',
       duration_days: data.duration_days ?? null,
       short_description: data.short_description ?? null,
@@ -880,12 +905,11 @@ export const tourService = {
     const normalizedDepositRequired =
       (data.require_deposit ?? data.deposit_required ?? true) !== false &&
       normalizedDepositPercentage > 0
-    const normalizedCancellationPolicy =
-      (data.cancellation_policy || 'moderate') as
-        | 'flexible'
-        | 'moderate'
-        | 'strict'
-        | 'non-refundable'
+    const normalizedCancellationPolicy = (data.cancellation_policy || 'moderate') as
+      | 'flexible'
+      | 'moderate'
+      | 'strict'
+      | 'non-refundable'
     const normalizedInclusions = Array.isArray(data.inclusions) ? data.inclusions : []
     const normalizedExclusions = Array.isArray(data.exclusions) ? data.exclusions : []
     const normalizedIncludedFeatures =
@@ -1063,31 +1087,22 @@ export const tourService = {
     makeMain: boolean
     timeoutMs?: number
   }) {
-    const {
-      tourId,
-      operatorId,
-      file,
-      sortOrder,
-      makeMain,
-      timeoutMs = 15000,
-    } = params
+    const { tourId, operatorId, file, sortOrder, makeMain, timeoutMs = 15000 } = params
 
     const fileExt = file.name.split('.').pop() || 'jpg'
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
     const filePath = `${operatorId}/${tourId}/${fileName}`
 
-    const uploadPromise = supabase.storage
-      .from('tour-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      })
+    const uploadPromise = supabase.storage.from('tour-images').upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Upload timeout: no progress detected')), timeoutMs)
     })
 
-    const uploadResult = await Promise.race([uploadPromise, timeoutPromise]) as {
+    const uploadResult = (await Promise.race([uploadPromise, timeoutPromise])) as {
       error: any
     }
 
