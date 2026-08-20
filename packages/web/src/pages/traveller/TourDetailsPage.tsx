@@ -2,7 +2,6 @@ import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 import {
   Activity,
   AlertCircle,
-  ArrowLeft,
   Calendar,
   Camera,
   Check,
@@ -878,16 +877,6 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
-  // The operator dashboard opens this page in a NEW TAB (window.open(..., '_blank') —
-  // TourOperatorDashboard:151), so that tab has no history and navigate(-1) silently did nothing.
-  // React Router tracks position in history.state.idx; idx 0/undefined means there is nothing to
-  // pop, so fall back to a real destination instead of leaving the button dead.
-  const handleBack = () => {
-    const idx = (window.history.state as { idx?: number } | null)?.idx
-    if (typeof idx === 'number' && idx > 0) navigate(-1)
-    else navigate('/tours')
-  }
-
   // Sections that were previously mis-ordered in the flow are defined here and placed in the
   // markup below in a logical reading order: the itinerary (what travellers most want to see)
   // leads, and the operator/host block sits lower, next to reviews.
@@ -1019,41 +1008,10 @@ export default function TourDetailsPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
-      {/* Back / Share bar — a page-top affordance that scrolls away with the content. It must NOT
-          be sticky: the SiteHeader is already fixed at the top, so a second bar pinned at top-0
-          would hide behind it (and on phones peek a few px over the section tabs). The tabs below
-          are the one bar that stays pinned as you scroll. */}
-      <GlassCard variant="nav" blur="md" className="relative z-40 border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleBack}
-            className="gap-2 hover:bg-muted/40"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </Button>
-          <div className="flex items-center gap-2">
-            <ShareButton
-              variant="icon"
-              url={`/tours/${(tour as any).slug || tour.id}`}
-              title={tour.title}
-              text={`Check out this trip on TripAvail: ${tour.title}`}
-              className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
-            />
-            {/* Header CTA — see TourReviewButton for the branching (booking-eligible users deep-
-                link to write, everyone else lands on the reviews section on this page). */}
-            <TourReviewButton tourId={tour.id} />
-            <GlassButton variant="ghost" size="icon" className="rounded-full">
-              <Heart size={18} className="text-primary" />
-            </GlassButton>
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Sub-nav — sticks below the top bar and drives the section anchors added on the cards
-          below. Long tour pages become skimmable this way. */}
+      {/* Sub-nav — the first bar under the fixed SiteHeader. The old Back/Share bar was removed:
+          tours open in a NEW TAB (no history to go "back" to, so the button only fell back to
+          /tours and ate a whole bar of height). Share / review / save moved into the title header
+          below. This nav sticks under the SiteHeader as you scroll so the page stays skimmable. */}
       <TourSubNav
         sections={[
           // Tabs mirror the reading order of the cards below, and each only appears when its
@@ -1076,7 +1034,7 @@ export default function TourDetailsPage() {
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-2">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <GlassBadge variant="primary" size="lg" className="capitalize">
@@ -1169,6 +1127,22 @@ export default function TourDetailsPage() {
                   <span className="font-bold text-foreground">Secure Booking</span>
                 </div>
               </div>
+            </div>
+
+            {/* Share / review / save — relocated here from the removed top Back bar, so the
+                actions sit with the title instead of on their own full-width strip. */}
+            <div className="flex shrink-0 items-center gap-2">
+              <ShareButton
+                variant="icon"
+                url={`/tours/${(tour as any).slug || tour.id}`}
+                title={tour.title}
+                text={`Check out this trip on TripAvail: ${tour.title}`}
+                className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
+              />
+              <TourReviewButton tourId={tour.id} />
+              <GlassButton variant="ghost" size="icon" className="rounded-full">
+                <Heart size={18} className="text-primary" />
+              </GlassButton>
             </div>
           </div>
         </motion.div>
