@@ -1,5 +1,6 @@
 import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 import {
+  Activity,
   AlertCircle,
   ArrowLeft,
   Calendar,
@@ -457,7 +458,11 @@ export default function TourDetailsPage() {
   )
   const pickupLocations = Array.isArray(tour.pickup_locations) ? tour.pickup_locations : []
   const includedExcludedSection = (
-    <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+    <GlassCard
+      id="included"
+      className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+      variant="card"
+    >
       <GlassHeader>
         <GlassTitle className="text-2xl font-bold">Included & Excluded</GlassTitle>
       </GlassHeader>
@@ -883,6 +888,135 @@ export default function TourDetailsPage() {
     else navigate('/tours')
   }
 
+  // Sections that were previously mis-ordered in the flow are defined here and placed in the
+  // markup below in a logical reading order: the itinerary (what travellers most want to see)
+  // leads, and the operator/host block sits lower, next to reviews.
+  const itinerarySection = tour.itinerary?.length ? (
+    <GlassCard
+      id="itinerary"
+      className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+      variant="card"
+    >
+      <GlassHeader>
+        <GlassTitle className="text-2xl font-bold">Itinerary</GlassTitle>
+      </GlassHeader>
+      <GlassContent>
+        <div className="space-y-8">
+          {tour.itinerary.map((day: any, idx: number) => (
+            <div
+              key={idx}
+              className="relative pl-10 pb-8 last:pb-0 border-l-2 border-border/50 last:border-transparent"
+            >
+              <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
+              <div className="space-y-4">
+                <h4 className="text-lg font-bold text-foreground">
+                  Day {day.day}
+                  {day.title ? `: ${day.title}` : ''}
+                </h4>
+                {/* Activity-based itinerary */}
+                {Array.isArray(day.activities) && day.activities.length > 0 ? (
+                  <div className="space-y-2">
+                    {day.activities.map((act: any, ai: number) => (
+                      <div
+                        key={ai}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-background/40 border border-border/40"
+                      >
+                        <span className="text-lg flex-shrink-0 leading-tight mt-0.5">
+                          {act.type === 'transport'
+                            ? '🚐'
+                            : act.type === 'departure_arrival'
+                              ? '✈️'
+                              : act.type === 'meal'
+                                ? '🍽️'
+                                : act.type === 'tea_break'
+                                  ? '🍵'
+                                  : act.type === 'sightseeing'
+                                    ? '🏞️'
+                                    : act.type === 'guided_tour'
+                                      ? '🧭'
+                                      : act.type === 'adventure'
+                                        ? '🏄'
+                                        : act.type === 'photo_stop'
+                                          ? '📸'
+                                          : act.type === 'shopping'
+                                            ? '🛍️'
+                                            : act.type === 'cultural'
+                                              ? '🎭'
+                                              : act.type === 'free_time'
+                                                ? '⏳'
+                                                : act.type === 'accommodation'
+                                                  ? '🏨'
+                                                  : '✏️'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-foreground">
+                              {act.title ?? act.activity}
+                            </span>
+                            {act.time && (
+                              <span className="text-xs font-semibold text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                                {act.time}
+                              </span>
+                            )}
+                          </div>
+                          {act.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                              {act.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : typeof day.description === 'string' && day.description.trim().length > 0 ? (
+                  /* Fallback: legacy plain-text description */
+                  <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {day.description}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassContent>
+    </GlassCard>
+  ) : null
+
+  const operatorSection = (
+    <GlassCard
+      id="operator"
+      className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+      variant="card"
+    >
+      <GlassHeader>
+        <GlassTitle className="text-2xl font-bold">
+          Hosted by {tour.operator_display_name || 'Tour Operator'}
+        </GlassTitle>
+      </GlassHeader>
+      <GlassContent className="space-y-4">
+        <p className="text-muted-foreground">
+          {(tour.operator_is_verified ?? tour.is_verified) ? 'Verified Operator' : 'Tour Operator'}
+          {' • '}
+          {tour.max_participants && tour.max_participants > 0
+            ? tour.max_participants <= 12
+              ? 'Small groups'
+              : `Up to ${tour.max_participants} guests`
+            : 'Group tours'}
+        </p>
+        {operatorSlug ? (
+          <Link
+            to={`/operators/${operatorSlug}`}
+            className="inline-flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-muted/50"
+          >
+            View operator profile
+          </Link>
+        ) : null}
+      </GlassContent>
+    </GlassCard>
+  )
+
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
       {/* Back / Share bar — a page-top affordance that scrolls away with the content. It must NOT
@@ -922,12 +1056,12 @@ export default function TourDetailsPage() {
           below. Long tour pages become skimmable this way. */}
       <TourSubNav
         sections={[
-          // Only advertise a tab when its section actually renders below — Overview and Itinerary
-          // are conditional (no description / no itinerary => no anchor), and a tab pointing at a
-          // missing anchor would silently do nothing when clicked.
+          // Tabs mirror the reading order of the cards below, and each only appears when its
+          // section actually renders (Overview/Itinerary are conditional) so no tab is ever dead.
           ...(tour.description?.trim() ? [{ id: 'overview', label: 'Overview' }] : []),
-          { id: 'details', label: 'Details' },
           ...(tour.itinerary?.length ? [{ id: 'itinerary', label: 'Itinerary' }] : []),
+          { id: 'included', label: "What's included" },
+          { id: 'details', label: 'Good to know' },
           { id: 'operator', label: 'Operator' },
           { id: 'reviews', label: 'Reviews' },
         ]}
@@ -1066,86 +1200,42 @@ export default function TourDetailsPage() {
               </GlassCard>
             ) : null}
 
-            {/* Physical requirements — its own section. This text used to be written into
-                description and shown above as "About the Journey", which is not what it is. */}
-            {(tour as any).physical_requirements?.trim() ? (
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-                <GlassHeader>
-                  <GlassTitle className="text-2xl font-bold">
-                    Physical Requirements &amp; Logistics
-                  </GlassTitle>
-                </GlassHeader>
-                <GlassContent>
-                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
-                    {(tour as any).physical_requirements}
-                  </p>
-                </GlassContent>
-              </GlassCard>
-            ) : null}
+            {/* Itinerary — the day-by-day plan is the thing travellers scan for first, so it
+                leads the page instead of being buried near the bottom. */}
+            {itinerarySection}
 
-            {/* Hosted by — id/scroll-mt-32 target for the "Operator" sub-nav tab. */}
-            <GlassCard
-              id="operator"
-              className="scroll-mt-32 rounded-3xl border-none shadow-xl"
-              variant="card"
-            >
-              <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">
-                  Hosted by {tour.operator_display_name || 'Tour Operator'}
-                </GlassTitle>
-              </GlassHeader>
-              <GlassContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  {(tour.operator_is_verified ?? tour.is_verified)
-                    ? 'Verified Operator'
-                    : 'Tour Operator'}
-                  {' • '}
-                  {tour.max_participants && tour.max_participants > 0
-                    ? tour.max_participants <= 12
-                      ? 'Small groups'
-                      : `Up to ${tour.max_participants} guests`
-                    : 'Group tours'}
-                </p>
-                {operatorSlug ? (
-                  <Link
-                    to={`/operators/${operatorSlug}`}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-muted/50"
-                  >
-                    View operator profile
-                  </Link>
-                ) : null}
-              </GlassContent>
-            </GlassCard>
-
+            {/* What's included / excluded for the price. */}
             {includedExcludedSection}
 
-            <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-              <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">Experience level</GlassTitle>
-              </GlassHeader>
-              <GlassContent>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
-                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Difficulty
-                  </span>
-                  <span className="text-sm font-bold text-foreground capitalize">
-                    {tour.difficulty_level || 'Not specified'}
-                  </span>
-                </div>
-              </GlassContent>
-            </GlassCard>
-
-            {/* Languages + Requirements — id/scroll-mt-32 target for the "Details" sub-nav tab. */}
+            {/* Good to know — difficulty, languages and requirements grouped into one card
+                instead of the three scattered cards this used to be. */}
             <GlassCard
               id="details"
               className="scroll-mt-32 rounded-3xl border-none shadow-xl"
               variant="card"
             >
               <GlassHeader>
-                <GlassTitle className="text-2xl font-bold">Before you go</GlassTitle>
+                <GlassTitle className="text-2xl font-bold">Good to know</GlassTitle>
               </GlassHeader>
               <GlassContent>
                 <div className="space-y-8">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-warning/10 rounded-full">
+                        <Activity size={16} className="text-warning" />
+                      </div>
+                      <h4 className="text-base font-semibold text-foreground">Experience level</h4>
+                    </div>
+                    <div className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+                      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        Difficulty
+                      </span>
+                      <span className="text-sm font-bold text-foreground capitalize">
+                        {tour.difficulty_level || 'Not specified'}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 bg-info/10 rounded-full">
@@ -1219,6 +1309,23 @@ export default function TourDetailsPage() {
                 </div>
               </GlassContent>
             </GlassCard>
+
+            {/* Physical requirements & logistics — free-text logistics from the operator, kept
+                next to "Good to know" so all the practical prep sits together. */}
+            {(tour as any).physical_requirements?.trim() ? (
+              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
+                <GlassHeader>
+                  <GlassTitle className="text-2xl font-bold">
+                    Physical Requirements &amp; Logistics
+                  </GlassTitle>
+                </GlassHeader>
+                <GlassContent>
+                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                    {(tour as any).physical_requirements}
+                  </p>
+                </GlassContent>
+              </GlassCard>
+            ) : null}
 
             {pickupLocations.length > 0 ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
@@ -1505,100 +1612,9 @@ export default function TourDetailsPage() {
               </GlassContent>
             </GlassCard>
 
-            {/* Itinerary — id/scroll-mt-32 target for the "Itinerary" sub-nav tab. */}
-            {tour.itinerary?.length ? (
-              <GlassCard
-                id="itinerary"
-                className="scroll-mt-32 rounded-3xl border-none shadow-xl"
-                variant="card"
-              >
-                <GlassHeader>
-                  <GlassTitle className="text-2xl font-bold">Itinerary</GlassTitle>
-                </GlassHeader>
-                <GlassContent>
-                  <div className="space-y-8">
-                    {tour.itinerary.map((day: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="relative pl-10 pb-8 last:pb-0 border-l-2 border-border/50 last:border-transparent"
-                      >
-                        <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
-                        <div className="space-y-4">
-                          <h4 className="text-lg font-bold text-foreground">
-                            Day {day.day}
-                            {day.title ? `: ${day.title}` : ''}
-                          </h4>
-                          {/* Activity-based itinerary */}
-                          {Array.isArray(day.activities) && day.activities.length > 0 ? (
-                            <div className="space-y-2">
-                              {day.activities.map((act: any, ai: number) => (
-                                <div
-                                  key={ai}
-                                  className="flex items-start gap-3 p-3 rounded-xl bg-background/40 border border-border/40"
-                                >
-                                  <span className="text-lg flex-shrink-0 leading-tight mt-0.5">
-                                    {act.type === 'transport'
-                                      ? '🚐'
-                                      : act.type === 'departure_arrival'
-                                        ? '✈️'
-                                        : act.type === 'meal'
-                                          ? '🍽️'
-                                          : act.type === 'tea_break'
-                                            ? '🍵'
-                                            : act.type === 'sightseeing'
-                                              ? '🏞️'
-                                              : act.type === 'guided_tour'
-                                                ? '🧭'
-                                                : act.type === 'adventure'
-                                                  ? '🏄'
-                                                  : act.type === 'photo_stop'
-                                                    ? '📸'
-                                                    : act.type === 'shopping'
-                                                      ? '🛍️'
-                                                      : act.type === 'cultural'
-                                                        ? '🎭'
-                                                        : act.type === 'free_time'
-                                                          ? '⏳'
-                                                          : act.type === 'accommodation'
-                                                            ? '🏨'
-                                                            : '✏️'}
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-bold text-sm text-foreground">
-                                        {act.title ?? act.activity}
-                                      </span>
-                                      {act.time && (
-                                        <span className="text-xs font-semibold text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
-                                          {act.time}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {act.description && (
-                                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                        {act.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : typeof day.description === 'string' &&
-                            day.description.trim().length > 0 ? (
-                            /* Fallback: legacy plain-text description */
-                            <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
-                              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-                                {day.description}
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </GlassContent>
-              </GlassCard>
-            ) : null}
+            {/* Operator / host — the "who's running this" trust block sits low on the page,
+                next to the reviews, instead of leading before any of the trip content. */}
+            {operatorSection}
 
             {/* Traveler reviews — id/scroll-mt-32 target for the "Reviews" sub-nav tab.
                 Empty-state variant renders below when reviews.length === 0 so the tab always has
