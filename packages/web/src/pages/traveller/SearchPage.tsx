@@ -25,6 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
+import { useUpcomingDepartures } from '@/queries/departureQueries'
 import { useHotelSearch } from '@/queries/hotelQueries'
 import { useSearchPackages } from '@/queries/packageQueries'
 import { useNearbyTours } from '@/queries/pickupQueries'
@@ -89,6 +90,8 @@ export default function SearchPage() {
   const maxPrice = numOrNull(searchParams.get('maxPrice'))
   const minRating = numOrNull(searchParams.get('minRating'))
   const sort = (searchParams.get('sort') || '') as SearchSort | ''
+  // A date chosen in the search bar's "When" field: show only trips departing on/after it.
+  const checkin = searchParams.get('checkin') || ''
 
   const baseFilters = useMemo(
     () => ({
@@ -101,7 +104,16 @@ export default function SearchPage() {
       country: country || null,
       category: category || null,
     }),
-    [effectiveQuery, coords?.latitude, coords?.longitude, minPrice, maxPrice, minRating, country, category],
+    [
+      effectiveQuery,
+      coords?.latitude,
+      coords?.longitude,
+      minPrice,
+      maxPrice,
+      minRating,
+      country,
+      category,
+    ],
   )
 
   const searchInput = useMemo(
@@ -173,7 +185,8 @@ export default function SearchPage() {
       if (minPrice != null && (price == null || price < minPrice)) return false
       if (maxPrice != null && (price == null || price > maxPrice)) return false
       if (minRating != null && (it.rating ?? 0) < minRating) return false
-      if (cn && !`${it.locationLabel ?? ''} ${it.country ?? ''}`.toLowerCase().includes(cn)) return false
+      if (cn && !`${it.locationLabel ?? ''} ${it.country ?? ''}`.toLowerCase().includes(cn))
+        return false
       if (qs && !`${it.title} ${it.locationLabel ?? ''}`.toLowerCase().includes(qs)) return false
       return true
     })
@@ -189,6 +202,27 @@ export default function SearchPage() {
   ])
   const packageItems = packageQuery.data ?? []
 
+  // Departure dates for the tour results — powers both the card date pill and the
+  // "When" date filter. One batched query over the visible tour ids.
+  const tourIdsForDates = useMemo(() => tourItems.map((tt) => tt.listingId), [tourItems])
+  const { data: upcomingByTour } = useUpcomingDepartures(tourIdsForDates)
+  // Chosen departure per tour: the soonest on/after the searched date, else the soonest.
+  // start_time is a full ISO timestamp and checkin is YYYY-MM-DD, so a lexical >= compare
+  // keeps same-day departures (…-09-14T08:00 >= …-09-14).
+  const departuresById = useMemo(() => {
+    const out: Record<string, string | null> = {}
+    for (const id of tourIdsForDates) {
+      const list = upcomingByTour?.[id] ?? []
+      out[id] = (checkin ? list.find((d) => d >= checkin) : list[0]) ?? null
+    }
+    return out
+  }, [tourIdsForDates, upcomingByTour, checkin])
+  // When a date is chosen, drop trips that have no departure on/after it.
+  const visibleTourItems = useMemo(
+    () => (checkin ? tourItems.filter((tt) => departuresById[tt.listingId]) : tourItems),
+    [checkin, tourItems, departuresById],
+  )
+
   // Ids already on screen — so the "Recommended for you" row never repeats a card.
   const resultIds = useMemo(
     () =>
@@ -201,7 +235,11 @@ export default function SearchPage() {
   )
 
   const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
-  const tourTotal = tourNearby ? tourItems.length : tourQuery.data?.pages?.[0]?.total ?? 0
+  const tourTotal = checkin
+    ? visibleTourItems.length
+    : tourNearby
+      ? tourItems.length
+      : (tourQuery.data?.pages?.[0]?.total ?? 0)
   const packageTotal = packageItems.length
   const total =
     activeType === 'hotel'
@@ -270,8 +308,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (!category && categoryOptionsLive.length) setCategoryCache(categoryOptionsLive)
   }, [category, categoryOptionsLive])
-  const categoryOptions =
-    category && categoryCache.length ? categoryCache : categoryOptionsLive
+  const categoryOptions = category && categoryCache.length ? categoryCache : categoryOptionsLive
 
   const activeFilterCount =
     (minPrice != null ? 1 : 0) +
@@ -332,7 +369,10 @@ export default function SearchPage() {
             {isSurfaceEnabled('hotels') && (
               <div className="inline-flex rounded-full border border-border bg-background p-1">
                 {[
-                  { key: 'all' as const, label: `${t('search.all')} (${hotelTotal + tourTotal + packageTotal})` },
+                  {
+                    key: 'all' as const,
+                    label: `${t('search.all')} (${hotelTotal + tourTotal + packageTotal})`,
+                  },
                   { key: 'hotel' as const, label: `Hotels (${hotelTotal})` },
                   { key: 'package' as const, label: `Packages (${packageTotal})` },
                   { key: 'tour' as const, label: `${t('search.tours')} (${tourTotal})` },
@@ -404,10 +444,7 @@ export default function SearchPage() {
                   />
                 </div>
                 <div className="border-t border-border p-4">
-                  <Button
-                    className="w-full rounded-full"
-                    onClick={() => setFiltersOpen(false)}
-                  >
+                  <Button className="w-full rounded-full" onClick={() => setFiltersOpen(false)}>
                     {t('search.showResults')} · {total.toLocaleString()}
                   </Button>
                 </div>
@@ -444,16 +481,21 @@ export default function SearchPage() {
                   {t('search.error')}
                 </div>
               ) : activeType === 'hotel' ? (
-                <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
+                <HotelResultsGrid
+                  hotels={hotelItems}
+                  isLoading={hotelQuery.isLoading}
+                  showDistance={showDistance}
+                />
               ) : activeType === 'package' ? (
                 <PackageResultsGrid packages={packageItems} isLoading={packageQuery.isLoading} />
               ) : activeType === 'tour' ? (
                 <SearchResultsGrid
-                items={tourItems}
-                isLoading={tourLoading}
-                showDistance={showDistance}
-                distanceKind={tourNearby ? 'pickup' : 'away'}
-              />
+                  items={visibleTourItems}
+                  isLoading={tourLoading}
+                  showDistance={showDistance}
+                  distanceKind={tourNearby ? 'pickup' : 'away'}
+                  departuresById={departuresById}
+                />
               ) : (
                 <>
                   {(hotelItems.length > 0 || hotelQuery.isLoading) && (
@@ -461,7 +503,11 @@ export default function SearchPage() {
                       <h2 className="mb-3 text-lg font-semibold text-foreground">
                         Hotels {hotelTotal > 0 ? `(${hotelTotal})` : ''}
                       </h2>
-                      <HotelResultsGrid hotels={hotelItems} isLoading={hotelQuery.isLoading} showDistance={showDistance} />
+                      <HotelResultsGrid
+                        hotels={hotelItems}
+                        isLoading={hotelQuery.isLoading}
+                        showDistance={showDistance}
+                      />
                     </section>
                   )}
                   {(packageItems.length > 0 || packageQuery.isLoading) && (
@@ -469,20 +515,24 @@ export default function SearchPage() {
                       <h2 className="mb-3 text-lg font-semibold text-foreground">
                         Packages {packageTotal > 0 ? `(${packageTotal})` : ''}
                       </h2>
-                      <PackageResultsGrid packages={packageItems} isLoading={packageQuery.isLoading} />
+                      <PackageResultsGrid
+                        packages={packageItems}
+                        isLoading={packageQuery.isLoading}
+                      />
                     </section>
                   )}
-                  {(tourItems.length > 0 || tourLoading) && (
+                  {(visibleTourItems.length > 0 || tourLoading) && (
                     <section>
                       <h2 className="mb-3 text-lg font-semibold text-foreground">
                         {t('search.tours')} {tourTotal > 0 ? `(${tourTotal})` : ''}
                       </h2>
                       <SearchResultsGrid
-                items={tourItems}
-                isLoading={tourLoading}
-                showDistance={showDistance}
-                distanceKind={tourNearby ? 'pickup' : 'away'}
-              />
+                        items={visibleTourItems}
+                        isLoading={tourLoading}
+                        showDistance={showDistance}
+                        distanceKind={tourNearby ? 'pickup' : 'away'}
+                        departuresById={departuresById}
+                      />
                     </section>
                   )}
                   {!hotelQuery.isLoading &&
@@ -504,7 +554,9 @@ export default function SearchPage() {
                   onClick={() => hotelQuery.fetchNextPage()}
                   disabled={hotelQuery.isFetchingNextPage}
                 >
-                  {hotelQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · Hotels`}
+                  {hotelQuery.isFetchingNextPage
+                    ? t('search.loading')
+                    : `${t('search.loadMore')} · Hotels`}
                 </Button>
               </div>
             )}
@@ -517,7 +569,9 @@ export default function SearchPage() {
                   onClick={() => tourQuery.fetchNextPage()}
                   disabled={tourQuery.isFetchingNextPage}
                 >
-                  {tourQuery.isFetchingNextPage ? t('search.loading') : `${t('search.loadMore')} · ${t('search.tours')}`}
+                  {tourQuery.isFetchingNextPage
+                    ? t('search.loading')
+                    : `${t('search.loadMore')} · ${t('search.tours')}`}
                 </Button>
               </div>
             )}

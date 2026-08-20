@@ -2,9 +2,10 @@ import { MapPin } from 'lucide-react'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
-import { useT } from '@/hooks/useT'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useT } from '@/hooks/useT'
+import { formatTourDuration } from '@/lib/tourDuration'
 import type { SearchListing } from '@/queries/searchQueries'
 
 const FALLBACK_IMG =
@@ -28,10 +29,12 @@ function ResultCard({
   item,
   showDistance,
   distanceKind,
+  departureDate,
 }: {
   item: SearchListing
   showDistance: boolean
   distanceKind: 'away' | 'pickup'
+  departureDate?: string | null
 }) {
   if (item.listingType === 'tour') {
     return (
@@ -42,12 +45,14 @@ function ResultCard({
           image={item.images?.[0] || FALLBACK_IMG}
           title={item.title}
           location={item.locationLabel ?? item.country ?? 'Worldwide'}
-          duration={item.durationDays ? `${item.durationDays} days` : 'Multi-day'}
+          duration={formatTourDuration(item.durationDays)}
           rating={item.rating ?? 0}
           price={item.price ?? 0}
           currency={item.currency}
           type={item.badge ?? 'Tour'}
           isFeatured={item.isFeatured}
+          reviewCount={item.reviewCount ?? 0}
+          departureDate={departureDate ?? null}
         />
         {showDistance && <DistanceChip km={item.distanceKm} kind={distanceKind} />}
       </div>
@@ -79,22 +84,22 @@ export function SearchResultsGrid({
   isLoading,
   showDistance = false,
   distanceKind = 'away',
+  departuresById,
 }: {
   items: SearchListing[]
   isLoading: boolean
   showDistance?: boolean
   /** How to phrase the distance chip — 'pickup' for pickup-ranked tours. */
   distanceKind?: 'away' | 'pickup'
+  /** tourId -> chosen departure ISO (soonest, or soonest on/after the searched date). */
+  departuresById?: Record<string, string | null>
 }) {
   const t = useT()
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-          <Card
-            key={i}
-            className="rounded-3xl border border-border/60 overflow-hidden"
-          >
+          <Card key={i} className="rounded-3xl border border-border/60 overflow-hidden">
             <div className="aspect-[4/5]">
               <Skeleton className="w-full h-full" />
             </div>
@@ -128,6 +133,7 @@ export function SearchResultsGrid({
           item={item}
           showDistance={showDistance}
           distanceKind={distanceKind}
+          departureDate={departuresById?.[item.listingId] ?? null}
         />
       ))}
     </div>

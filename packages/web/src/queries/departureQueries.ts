@@ -55,3 +55,39 @@ export function formatDepartureDate(iso?: string | null): string | null {
   if (Number.isNaN(d.getTime())) return null
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 }
+
+/**
+ * ALL upcoming departures per tour (ascending), for date-filtered search: a tour
+ * qualifies for a chosen date D if it has any departure on/after D. useNextDepartures
+ * only exposes the soonest, which can't answer "does a later departure fall on/after D".
+ */
+export function useUpcomingDepartures(tourIds: string[]) {
+  const ids = [...new Set(tourIds.filter(Boolean))].sort()
+
+  return useQuery({
+    queryKey: ['tours', 'upcoming-departures', ids],
+    enabled: ids.length > 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<Record<string, string[]>> => {
+      const { data, error } = await supabase
+        .from('tour_schedules')
+        .select('tour_id,start_time')
+        .in('tour_id', ids)
+        .eq('status', 'scheduled')
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+
+      if (error) {
+        console.error('[departureQueries] upcoming departures failed:', error.message)
+        return {}
+      }
+      const out: Record<string, string[]> = {}
+      for (const row of (data ?? []) as { tour_id: string; start_time: string }[]) {
+        ;(out[row.tour_id] ??= []).push(row.start_time)
+      }
+      return out
+    },
+  })
+}

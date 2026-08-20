@@ -1,3 +1,4 @@
+import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 import { differenceInCalendarDays, format, startOfToday } from 'date-fns'
 import {
   Building2,
@@ -21,11 +22,9 @@ import {
   useRef,
   useState,
 } from 'react'
-import { createPortal } from 'react-dom'
 import type { DateRange } from 'react-day-picker'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
-
-import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 
 import { TravelBot } from '@/components/icons/TravelBot'
 import { Calendar } from '@/components/ui/calendar'
@@ -232,10 +231,7 @@ function EmojiIcon({
   return (
     <span aria-hidden className={wrapper} style={{ width: px, height: px }}>
       {failed ? (
-        <span
-          className={className}
-          style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}
-        >
+        <span className={className} style={{ fontFamily: EMOJI_FONT, fontSize: px, lineHeight: 1 }}>
           {emoji}
         </span>
       ) : (
@@ -263,8 +259,7 @@ function EmojiIcon({
  * win over the PopoverContent base (`rounded-md`/`shadow-md`) because Tailwind
  * emits the larger-scale utility later in the stylesheet.
  */
-const POPOVER_PREMIUM =
-  'rounded-3xl border border-border/60 bg-popover shadow-2xl shadow-black/20'
+const POPOVER_PREMIUM = 'rounded-3xl border border-border/60 bg-popover shadow-2xl shadow-black/20'
 
 /** Larger day cells for the search calendars — the wizard keeps the compact
  *  2rem default; the storefront date pickers get roomier, more tappable days. */
@@ -398,38 +393,46 @@ export function AirbnbSearchBar({
     return tab === 'hotels' && rooms > 1 ? `${g}, ${rooms} rooms` : g
   }, [tab, guests, rooms])
 
-  const submit = useCallback((): void => {
-    // Events don't have a search results surface yet (the role isn't built),
-    // so submitting from the Events tab lands on /events instead of /search
-    // with an empty ?types= that would fall through to the 'all' mixed grid
-    // and read as a bug.
-    if (tab === 'events') {
-      onSearch?.({ tab, where: where.trim(), checkin: null, checkout: null, guests })
-      navigate('/events')
-      return
-    }
+  const submit = useCallback(
+    (overrideDate?: Date): void => {
+      // A date picked in the "When" field submits immediately, passing the date directly
+      // so we don't read a not-yet-committed state value. Guard: onClick handlers pass a
+      // MouseEvent as the first arg, which must never be treated as the chosen date.
+      const pickedDate = overrideDate instanceof Date ? overrideDate : undefined
+      // Events don't have a search results surface yet (the role isn't built),
+      // so submitting from the Events tab lands on /events instead of /search
+      // with an empty ?types= that would fall through to the 'all' mixed grid
+      // and read as a bug.
+      if (tab === 'events') {
+        onSearch?.({ tab, where: where.trim(), checkin: null, checkout: null, guests })
+        navigate('/events')
+        return
+      }
 
-    const params = new URLSearchParams()
-    params.set('types', tab === 'hotels' ? 'hotel' : 'tour')
+      const params = new URLSearchParams()
+      params.set('types', tab === 'hotels' ? 'hotel' : 'tour')
 
-    const q = where.trim()
-    if (q) params.set('q', q)
+      const q = where.trim()
+      if (q) params.set('q', q)
 
-    let checkin: string | null = null
-    let checkout: string | null = null
-    if (tab === 'hotels') {
-      if (range?.from) checkin = toIso(range.from)
-      if (range?.to) checkout = toIso(range.to)
-    } else if (singleDate) {
-      checkin = toIso(singleDate)
-    }
-    if (checkin) params.set('checkin', checkin)
-    if (checkout) params.set('checkout', checkout)
-    if (guests > 0) params.set('guests', String(guests))
+      let checkin: string | null = null
+      let checkout: string | null = null
+      if (tab === 'hotels') {
+        if (range?.from) checkin = toIso(range.from)
+        if (range?.to) checkout = toIso(range.to)
+      } else if (pickedDate ?? singleDate) {
+        checkin = toIso((pickedDate ?? singleDate) as Date)
+      }
+      if (checkin) params.set('checkin', checkin)
+      if (checkout) params.set('checkout', checkout)
+      // Guests is a hotel concept; /search ignores it for tours, so don't write it there.
+      if (tab === 'hotels' && guests > 0) params.set('guests', String(guests))
 
-    onSearch?.({ tab, where: q, checkin, checkout, guests })
-    navigate(`/search?${params.toString()}`)
-  }, [tab, where, range, singleDate, guests, onSearch, navigate])
+      onSearch?.({ tab, where: q, checkin, checkout, guests })
+      navigate(`/search?${params.toString()}`)
+    },
+    [tab, where, range, singleDate, guests, onSearch, navigate],
+  )
 
   const expandAndScrollTop = useCallback((): void => {
     // Match Airbnb — clicking the compact pill returns the page to the top
@@ -468,6 +471,7 @@ export function AirbnbSearchBar({
               setRooms={setRooms}
               isDesktop={isDesktop}
               onSubmit={submit}
+              onPickDate={submit}
             />
           </div>
 
@@ -558,6 +562,8 @@ export function AirbnbSearchBar({
 // ─── Expanded bar ─────────────────────────────────────────────────────────
 
 interface ExpandedBarProps {
+  /** Fired when a single date is chosen — submits the search immediately (tours). */
+  onPickDate?: (d: Date) => void
   tab: SearchTab
   onTabChange: (t: SearchTab) => void
   where: string
@@ -593,6 +599,7 @@ function ExpandedBar({
   setRooms,
   isDesktop,
   onSubmit,
+  onPickDate,
 }: ExpandedBarProps): JSX.Element {
   return (
     <div className="flex flex-col items-stretch gap-2">
@@ -600,35 +607,39 @@ function ExpandedBar({
           label. Hidden entirely when only one surface is live (trips-only
           launch) — a lone "Tours" tab is noise. */}
       {TABS.length > 1 && (
-      <div className="flex items-center justify-center gap-8" role="tablist" aria-label="Search category">
-        {TABS.map((t) => {
-          const active = t.key === tab
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onTabChange(t.key)}
-              className={cn(
-                'group inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-semibold transition-colors',
-                active
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <EmojiIcon
-                src={t.icon}
-                emoji={t.emoji}
-                px={30}
-                hoverGrow
-                className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
-              />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
+        <div
+          className="flex items-center justify-center gap-8"
+          role="tablist"
+          aria-label="Search category"
+        >
+          {TABS.map((t) => {
+            const active = t.key === tab
+            return (
+              <button
+                key={t.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => onTabChange(t.key)}
+                className={cn(
+                  'group inline-flex items-center gap-2 border-b-2 pb-2 text-sm font-semibold transition-colors',
+                  active
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                <EmojiIcon
+                  src={t.icon}
+                  emoji={t.emoji}
+                  px={30}
+                  hoverGrow
+                  className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
+                />
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
       )}
 
       {/* Field pill — the premium Glass-UI element. Translucent ground with a
@@ -662,25 +673,15 @@ function ExpandedBar({
             />
           </>
         ) : tab === 'tours' ? (
-          <>
-            <SingleDateField
-              label="When"
-              value={singleDate}
-              onChange={setSingleDate}
-              isDesktop={isDesktop}
-            />
-            <Divider />
-            <GuestsField
-              tab={tab}
-              adults={adults}
-              setAdults={setAdults}
-              kids={kids}
-              setKids={setKids}
-              rooms={rooms}
-              setRooms={setRooms}
-              onSubmit={onSubmit}
-            />
-          </>
+          <SingleDateField
+            label="When"
+            value={singleDate}
+            onChange={setSingleDate}
+            isDesktop={isDesktop}
+            trailingSearch
+            onSubmit={onSubmit}
+            onPick={onPickDate}
+          />
         ) : (
           <SingleDateField
             label="When"
@@ -868,12 +869,7 @@ function WhereField({
                 }}
                 className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-muted"
               >
-                <span
-                  className={cn(
-                    'grid h-11 w-11 shrink-0 place-items-center rounded-xl',
-                    tint,
-                  )}
-                >
+                <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-xl', tint)}>
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0">
@@ -1026,6 +1022,7 @@ function SingleDateField({
   isDesktop,
   trailingSearch,
   onSubmit,
+  onPick,
 }: {
   label: string
   value: Date | undefined
@@ -1033,6 +1030,8 @@ function SingleDateField({
   isDesktop: boolean
   trailingSearch?: boolean
   onSubmit?: () => void
+  /** Fired with the chosen date — used to submit the search on selection. */
+  onPick?: (d: Date) => void
 }): JSX.Element {
   const [open, setOpen] = useState<boolean>(false)
   const display = value ? format(value, 'MMM d') : 'Add date'
@@ -1055,7 +1054,10 @@ function SingleDateField({
             selected={value}
             onSelect={(d) => {
               onChange(d)
-              if (d) setOpen(false)
+              if (d) {
+                setOpen(false)
+                onPick?.(d)
+              }
             }}
             numberOfMonths={isDesktop ? 2 : 1}
             defaultMonth={value ?? new Date()}
@@ -1108,26 +1110,10 @@ function GuestsField({
           <FieldShell label="Who" value={display} onClick={() => setOpen(true)} wide />
         </div>
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        sideOffset={12}
-        className={cn(POPOVER_PREMIUM, 'w-[320px] p-4')}
-      >
-        <StepperRow
-          title="Adults"
-          sub="Ages 13+"
-          value={adults}
-          onChange={setAdults}
-          min={1}
-        />
+      <PopoverContent align="end" sideOffset={12} className={cn(POPOVER_PREMIUM, 'w-[320px] p-4')}>
+        <StepperRow title="Adults" sub="Ages 13+" value={adults} onChange={setAdults} min={1} />
         <div className="my-3 h-px bg-border" />
-        <StepperRow
-          title="Children"
-          sub="Ages 2 – 12"
-          value={kids}
-          onChange={setKids}
-          min={0}
-        />
+        <StepperRow title="Children" sub="Ages 2 – 12" value={kids} onChange={setKids} min={0} />
         {tab === 'hotels' && (
           <>
             <div className="my-3 h-px bg-border" />
@@ -1237,48 +1223,48 @@ function CompactPill({
       {/* Tab chevron — Airbnb tucks tab labels behind a chevron in compact mode.
           Hidden in a single-surface (trips-only) launch: nothing to switch. */}
       {TABS.length > 1 && (
-      <Popover open={tabsOpen} onOpenChange={setTabsOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-label="Change search category"
-            className="group inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
-          >
-            <EmojiIcon
-              src={activeTab.icon}
-              emoji={activeTab.emoji}
-              px={22}
-              hoverGrow
-              className={activeTab.key === 'tours' ? 'animate-jeep-drive' : undefined}
-            />
-            <span className="hidden sm:inline">{activeTab.label}</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" sideOffset={8} className="w-40 p-1">
-          {TABS.map((t) => (
+        <Popover open={tabsOpen} onOpenChange={setTabsOpen}>
+          <PopoverTrigger asChild>
             <button
-              key={t.key}
               type="button"
-              onClick={() => {
-                onTabChange(t.key)
-                setTabsOpen(false)
-              }}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-muted',
-                t.key === tab && 'text-foreground',
-              )}
+              aria-label="Change search category"
+              className="group inline-flex h-11 items-center gap-1.5 rounded-full border border-white/40 dark:border-white/10 bg-background/70 supports-[backdrop-filter]:bg-background/55 backdrop-blur-xl px-3 text-sm font-semibold shadow-xl shadow-black/10 transition-colors hover:bg-muted/60"
             >
               <EmojiIcon
-                src={t.icon}
-                emoji={t.emoji}
-                px={20}
-                className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
+                src={activeTab.icon}
+                emoji={activeTab.emoji}
+                px={22}
+                hoverGrow
+                className={activeTab.key === 'tours' ? 'animate-jeep-drive' : undefined}
               />
-              {t.label}
+              <span className="hidden sm:inline">{activeTab.label}</span>
             </button>
-          ))}
-        </PopoverContent>
-      </Popover>
+          </PopoverTrigger>
+          <PopoverContent align="start" sideOffset={8} className="w-40 p-1">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => {
+                  onTabChange(t.key)
+                  setTabsOpen(false)
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors hover:bg-muted',
+                  t.key === tab && 'text-foreground',
+                )}
+              >
+                <EmojiIcon
+                  src={t.icon}
+                  emoji={t.emoji}
+                  px={20}
+                  className={t.key === 'tours' ? 'animate-jeep-drive' : undefined}
+                />
+                {t.label}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       )}
 
       {/* The compact summary pill.
@@ -1299,8 +1285,12 @@ function CompactPill({
           <span className="truncate">{where}</span>
           <span className="mx-3 h-4 w-px bg-border" aria-hidden />
           <span className="truncate">{when}</span>
-          <span className="mx-3 h-4 w-px bg-border" aria-hidden />
-          <span className="truncate text-muted-foreground">{who}</span>
+          {tab === 'hotels' && (
+            <>
+              <span className="mx-3 h-4 w-px bg-border" aria-hidden />
+              <span className="truncate text-muted-foreground">{who}</span>
+            </>
+          )}
         </button>
         <button
           type="button"
