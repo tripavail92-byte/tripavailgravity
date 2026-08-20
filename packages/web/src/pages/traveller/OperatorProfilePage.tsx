@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeft,
   Award,
@@ -23,7 +24,6 @@ import {
   Users,
   XCircle,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
@@ -37,18 +37,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  GlassCard,
-  GlassContent,
-  GlassHeader,
-  GlassTitle,
-} from '@/components/ui/glass'
+import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
 import { Textarea } from '@/components/ui/textarea'
 import { type TourReviewWithReply } from '@/features/booking/services/reviewService'
 import {
-  operatorPublicService,
   type OperatorPublicMetrics,
   type OperatorPublicProfile,
+  operatorPublicService,
   type OperatorStorefrontResponseMetrics,
 } from '@/features/tour-operator/services/operatorPublicService'
 import type {
@@ -60,6 +55,7 @@ import type {
   OperatorVerificationBadge,
 } from '@/features/tour-operator/types/operatorProfile'
 import { useAuth } from '@/hooks/useAuth'
+import { useSeo } from '@/hooks/useSeo'
 
 function parseAssets(value: OperatorFleetAsset[] | null | undefined): OperatorFleetAsset[] {
   if (!Array.isArray(value)) return []
@@ -68,7 +64,9 @@ function parseAssets(value: OperatorFleetAsset[] | null | undefined): OperatorFl
 
 function parseGuides(value: OperatorGuideProfile[] | null | undefined): OperatorGuideProfile[] {
   if (!Array.isArray(value)) return []
-  return value.filter((row) => row && (row.name || row.bio || row.languages?.length || row.specialties?.length))
+  return value.filter(
+    (row) => row && (row.name || row.bio || row.languages?.length || row.specialties?.length),
+  )
 }
 
 function parseGallery(value: OperatorGalleryItem[] | null | undefined): OperatorGalleryItem[] {
@@ -172,7 +170,10 @@ function createVerificationBadges(profile: OperatorPublicProfile): OperatorVerif
       tone: 'verified',
       description: 'Guide credentials have been reviewed by the admin team.',
     })
-  } else if (profile.has_guide_credentials_on_file || guideProfiles.some((guide) => guide.certifications.length > 0)) {
+  } else if (
+    profile.has_guide_credentials_on_file ||
+    guideProfiles.some((guide) => guide.certifications.length > 0)
+  ) {
     badges.push({
       id: 'guide-credentials-listed',
       label: 'Guide credentials listed',
@@ -254,12 +255,22 @@ function StarBar({ rating, count }: { rating: number; count: number }) {
   )
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string
+  value: string
+  icon: LucideIcon
+}) {
   return (
     <div className="rounded-3xl border border-border/60 bg-muted/30 p-5 text-center">
       <Icon className="mx-auto mb-2 h-6 w-6 text-primary/70" />
       <p className="text-2xl font-black text-foreground">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
     </div>
   )
 }
@@ -271,9 +282,14 @@ function CategoryBar({ label, value }: { label: string; value: number | null }) 
     <div className="flex items-center gap-3">
       <span className="w-36 shrink-0 text-sm text-muted-foreground">{label}</span>
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-amber-400 transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground">{value.toFixed(1)}</span>
+      <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground">
+        {value.toFixed(1)}
+      </span>
     </div>
   )
 }
@@ -309,7 +325,8 @@ function RatingHistogram({ reviews }: { reviews: TourReviewWithReply[] }) {
 }
 
 function BadgeCard({ badge }: { badge: OperatorVerificationBadge }) {
-  const Icon = badge.tone === 'verified' ? BadgeCheck : badge.tone === 'submitted' ? FileBadge2 : Shield
+  const Icon =
+    badge.tone === 'verified' ? BadgeCheck : badge.tone === 'submitted' ? FileBadge2 : Shield
   return (
     <div className={`rounded-3xl border p-4 ${badgeToneClasses(badge.tone)}`}>
       <div className="flex items-center justify-between gap-3">
@@ -322,7 +339,10 @@ function BadgeCard({ badge }: { badge: OperatorVerificationBadge }) {
             <p className="text-xs opacity-75">{badge.description}</p>
           </div>
         </div>
-        <Badge variant="outline" className="rounded-full border-current/20 bg-background/70 text-[10px] uppercase tracking-widest">
+        <Badge
+          variant="outline"
+          className="rounded-full border-current/20 bg-background/70 text-[10px] uppercase tracking-widest"
+        >
           {badgeToneLabel(badge.tone)}
         </Badge>
       </div>
@@ -335,16 +355,26 @@ function FleetCard({ asset }: { asset: OperatorFleetAsset }) {
     <div className="rounded-3xl border border-border/60 bg-muted/20 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary/70">{asset.type || 'Asset'}</p>
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary/70">
+            {asset.type || 'Asset'}
+          </p>
           <p className="mt-1 text-lg font-bold text-foreground">{asset.name || 'Listed asset'}</p>
         </div>
         <Truck className="h-6 w-6 text-primary/70" />
       </div>
       <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
-        <span className="rounded-full border border-border/60 bg-background px-3 py-1">Qty {asset.quantity}</span>
-        {asset.capacity ? <span className="rounded-full border border-border/60 bg-background px-3 py-1">Capacity {asset.capacity}</span> : null}
+        <span className="rounded-full border border-border/60 bg-background px-3 py-1">
+          Qty {asset.quantity}
+        </span>
+        {asset.capacity ? (
+          <span className="rounded-full border border-border/60 bg-background px-3 py-1">
+            Capacity {asset.capacity}
+          </span>
+        ) : null}
       </div>
-      {asset.details ? <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{asset.details}</p> : null}
+      {asset.details ? (
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{asset.details}</p>
+      ) : null}
     </div>
   )
 }
@@ -355,7 +385,11 @@ function GuideCard({ guide }: { guide: OperatorGuideProfile }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-lg font-bold text-foreground">{guide.name || 'Guide profile'}</p>
-          {guide.yearsExperience != null ? <p className="text-sm text-muted-foreground">{guide.yearsExperience} years experience</p> : null}
+          {guide.yearsExperience != null ? (
+            <p className="text-sm text-muted-foreground">
+              {guide.yearsExperience} years experience
+            </p>
+          ) : null}
         </div>
         <UserCheck className="h-6 w-6 text-primary/70" />
       </div>
@@ -368,21 +402,43 @@ function GuideCard({ guide }: { guide: OperatorGuideProfile }) {
           ))}
         </div>
       ) : null}
-      {guide.specialties.length > 0 ? <p className="mt-4 text-sm text-muted-foreground"><span className="font-semibold text-foreground">Specialties:</span> {guide.specialties.join(', ')}</p> : null}
-      {guide.certifications.length > 0 ? <p className="mt-2 text-sm text-muted-foreground"><span className="font-semibold text-foreground">Certifications:</span> {guide.certifications.join(', ')}</p> : null}
-      {guide.bio ? <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{guide.bio}</p> : null}
+      {guide.specialties.length > 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Specialties:</span>{' '}
+          {guide.specialties.join(', ')}
+        </p>
+      ) : null}
+      {guide.certifications.length > 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Certifications:</span>{' '}
+          {guide.certifications.join(', ')}
+        </p>
+      ) : null}
+      {guide.bio ? (
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{guide.bio}</p>
+      ) : null}
     </div>
   )
 }
 
-function PolicyCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+function PolicyCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+}) {
   return (
     <div className="rounded-3xl border border-border/60 bg-muted/20 p-5">
       <div className="mb-3 flex items-center gap-3">
         <div className="rounded-2xl bg-primary/10 p-2">
           <Icon className="h-4 w-4 text-primary/70" />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </p>
       </div>
       <p className="text-sm leading-relaxed text-muted-foreground">{value}</p>
     </div>
@@ -415,7 +471,9 @@ export default function OperatorProfilePage() {
 
   const [profile, setProfile] = useState<OperatorPublicProfile | null>(null)
   const [metrics, setMetrics] = useState<OperatorPublicMetrics | null>(null)
-  const [responseMetrics, setResponseMetrics] = useState<OperatorStorefrontResponseMetrics | null>(null)
+  const [responseMetrics, setResponseMetrics] = useState<OperatorStorefrontResponseMetrics | null>(
+    null,
+  )
   const [tours, setTours] = useState<any[]>([])
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
   const [awards, setAwards] = useState<OperatorAward[]>([])
@@ -427,21 +485,53 @@ export default function OperatorProfilePage() {
   const [reportReason, setReportReason] = useState('')
   const [reportSubmitting, setReportSubmitting] = useState(false)
 
+  // This is a PUBLIC, indexable page selling a specific operator, but it carried no
+  // per-route meta — so the tab and every search/social result showed the generic
+  // site title. Falls back to the site default until the profile loads.
+  const operatorName = profile ? displayName(profile) : ''
+  const operatorCity = profile?.primary_city?.trim() || ''
+  useSeo({
+    title: operatorName ? `${operatorName} — verified tour operator` : undefined,
+    description: operatorName
+      ? `Book trips with ${operatorName}${operatorCity ? ` in ${operatorCity}` : ''} on TripAvail — ${
+          tours.length > 0 ? `${tours.length} live trip${tours.length === 1 ? '' : 's'}, ` : ''
+        }verified operator, secure payment.`
+      : undefined,
+    canonicalPath: slug ? `/operators/${slug}` : undefined,
+    image: profile?.company_logo_url || undefined,
+    type: 'profile',
+    jsonLd: profile
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'TravelAgency',
+          name: operatorName,
+          ...(operatorCity
+            ? { address: { '@type': 'PostalAddress', addressLocality: operatorCity } }
+            : {}),
+          ...(profile.company_logo_url ? { image: profile.company_logo_url } : {}),
+          ...(profile.description ? { description: profile.description } : {}),
+          url: `https://tripavail.com/operators/${slug ?? ''}`,
+        }
+      : undefined,
+  })
+
   const trackStorefrontEvent = (
     eventType: 'profile_view' | 'cta_click' | 'tour_click',
     options?: { tourId?: string; metadata?: Record<string, unknown> },
   ) => {
     if (!profile) return
 
-    void operatorPublicService.recordStorefrontEvent({
-      operatorId: profile.user_id,
-      eventType,
-      slug,
-      tourId: options?.tourId,
-      metadata: options?.metadata,
-    }).catch((error) => {
-      console.error('Storefront analytics error:', error)
-    })
+    void operatorPublicService
+      .recordStorefrontEvent({
+        operatorId: profile.user_id,
+        eventType,
+        slug,
+        tourId: options?.tourId,
+        metadata: options?.metadata,
+      })
+      .catch((error) => {
+        console.error('Storefront analytics error:', error)
+      })
   }
 
   useEffect(() => {
@@ -459,7 +549,13 @@ export default function OperatorProfilePage() {
 
         setProfile(currentProfile)
 
-        const [currentMetrics, currentTours, currentReviews, currentAwards, currentResponseMetrics] = await Promise.all([
+        const [
+          currentMetrics,
+          currentTours,
+          currentReviews,
+          currentAwards,
+          currentResponseMetrics,
+        ] = await Promise.all([
           operatorPublicService.getMetrics(currentProfile.user_id),
           operatorPublicService.getPublishedTours(currentProfile.user_id),
           operatorPublicService.getAllReviewsWithReplies(currentProfile.user_id),
@@ -498,9 +594,12 @@ export default function OperatorProfilePage() {
   }, [profile, slug])
 
   const filteredReviews = useMemo(() => {
-    let result = starFilter == null ? reviews : reviews.filter((review) => review.rating === starFilter)
+    let result =
+      starFilter == null ? reviews : reviews.filter((review) => review.rating === starFilter)
     if (reviewSort === 'newest') {
-      result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      result = [...result].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      )
     } else {
       result = [...result].sort((a, b) => b.rating - a.rating)
     }
@@ -520,7 +619,9 @@ export default function OperatorProfilePage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
         <Building2 className="h-16 w-16 text-muted-foreground/40" />
         <h1 className="text-2xl font-bold text-foreground">Operator not found</h1>
-        <p className="text-muted-foreground">This operator profile does not exist or is not public.</p>
+        <p className="text-muted-foreground">
+          This operator profile does not exist or is not public.
+        </p>
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Go back
         </Button>
@@ -539,7 +640,12 @@ export default function OperatorProfilePage() {
   const publicPolicies = parsePolicies(profile.public_policies)
   const verificationBadges = createVerificationBadges(profile)
   const activePolicies = [
-    { key: 'cancellation', label: 'Cancellation policy', icon: Shield, value: publicPolicies.cancellation },
+    {
+      key: 'cancellation',
+      label: 'Cancellation policy',
+      icon: Shield,
+      value: publicPolicies.cancellation,
+    },
     { key: 'deposit', label: 'Deposit policy', icon: CheckCircle2, value: publicPolicies.deposit },
     { key: 'pickup', label: 'Pickup rules', icon: MapPin, value: publicPolicies.pickup },
     { key: 'child', label: 'Child policy', icon: Users, value: publicPolicies.child },
@@ -599,7 +705,10 @@ export default function OperatorProfilePage() {
 
     try {
       setReportSubmitting(true)
-      await operatorPublicService.submitOperatorReport({ operatorId: profile.user_id, reason: trimmedReason })
+      await operatorPublicService.submitOperatorReport({
+        operatorId: profile.user_id,
+        reason: trimmedReason,
+      })
       trackStorefrontEvent('cta_click', { metadata: { cta: 'report_operator' } })
       setReportDialogOpen(false)
       setReportReason('')
@@ -620,13 +729,20 @@ export default function OperatorProfilePage() {
       </div>
 
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-10">
-        <GlassCard variant="card" className="relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10">
+        <GlassCard
+          variant="card"
+          className="relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10"
+        >
           <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 -translate-y-12 translate-x-12 rounded-full bg-primary/10 blur-3xl" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 -translate-x-8 translate-y-8 rounded-full bg-primary/5 blur-3xl" />
           <GlassContent className="relative z-10 flex flex-col gap-6 p-8 sm:flex-row sm:items-start">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-muted/30 shadow-xl">
               {profile.company_logo_url ? (
-                <img src={profile.company_logo_url} alt={name} className="h-full w-full object-cover" />
+                <img
+                  src={profile.company_logo_url}
+                  alt={name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <Building2 className="h-10 w-10 text-muted-foreground/50" />
               )}
@@ -636,14 +752,21 @@ export default function OperatorProfilePage() {
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-3xl font-black text-foreground">{name}</h1>
                 {profile.setup_completed ? (
-                  <Badge variant="secondary" className="flex items-center gap-1 rounded-full px-3 py-1">
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 rounded-full px-3 py-1"
+                  >
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                     Verified Operator
                   </Badge>
                 ) : null}
                 {metrics?.verified_badge_count ? (
-                  <Badge variant="outline" className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700">
-                    {metrics.verified_badge_count} trust badge{metrics.verified_badge_count === 1 ? '' : 's'}
+                  <Badge
+                    variant="outline"
+                    className="rounded-full border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+                  >
+                    {metrics.verified_badge_count} trust badge
+                    {metrics.verified_badge_count === 1 ? '' : 's'}
                   </Badge>
                 ) : null}
                 {/* Owner-only: this operator viewing their own public storefront gets an Edit shortcut
@@ -665,13 +788,18 @@ export default function OperatorProfilePage() {
                 </div>
               ) : null}
 
-              {avgRating != null && avgRating > 0 ? <StarBar rating={avgRating} count={totalReviews} /> : <p className="text-sm text-muted-foreground">No reviews yet</p>}
+              {avgRating != null && avgRating > 0 ? (
+                <StarBar rating={avgRating} count={totalReviews} />
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews yet</p>
+              )}
 
               {responseMetrics ? (
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1">
                     <Clock className="h-4 w-4 text-primary/70" />
-                    Replies to {Math.round(responseMetrics.response_rate ?? 0)}% of traveler messages
+                    Replies to {Math.round(responseMetrics.response_rate ?? 0)}% of traveler
+                    messages
                   </span>
                   <span>
                     {responseMetrics.avg_response_minutes != null
@@ -696,25 +824,39 @@ export default function OperatorProfilePage() {
               <Button asChild className="rounded-2xl">
                 <a
                   href="#tours"
-                  onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'hero_view_tours' } })}
+                  onClick={() =>
+                    trackStorefrontEvent('cta_click', { metadata: { cta: 'hero_view_tours' } })
+                  }
                 >
                   View tours
                 </a>
               </Button>
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={() => void handleShareProfile()}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                onClick={() => void handleShareProfile()}
+              >
                 <Share2 className="mr-2 h-4 w-4" /> Share profile
               </Button>
               {profile.phone_number ? (
                 <Button asChild variant="outline" className="rounded-2xl">
                   <a
                     href={`tel:${profile.phone_number}`}
-                    onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'hero_call_operator' } })}
+                    onClick={() =>
+                      trackStorefrontEvent('cta_click', { metadata: { cta: 'hero_call_operator' } })
+                    }
                   >
                     Call operator
                   </a>
                 </Button>
               ) : null}
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setReportDialogOpen(true)}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl"
+                onClick={() => setReportDialogOpen(true)}
+              >
                 <Flag className="mr-2 h-4 w-4" /> Report a concern
               </Button>
             </div>
@@ -724,26 +866,57 @@ export default function OperatorProfilePage() {
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="space-y-8">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-5">
-              <StatCard label="Avg Rating" value={avgRating ? `${avgRating.toFixed(1)} ★` : '—'} icon={Star} />
+              <StatCard
+                label="Avg Rating"
+                value={avgRating ? `${avgRating.toFixed(1)} ★` : '—'}
+                icon={Star}
+              />
               <StatCard label="Reviews" value={String(totalReviews)} icon={Star} />
-              <StatCard label="Completed Trips" value={String(completedBookings)} icon={CheckCircle2} />
+              <StatCard
+                label="Completed Trips"
+                value={String(completedBookings)}
+                icon={CheckCircle2}
+              />
               <StatCard label="Travelers Served" value={String(travelersServed)} icon={Users} />
               {metrics?.cancellation_rate != null && (
-                <StatCard label="Cancellation Rate" value={`${metrics.cancellation_rate.toFixed(0)}%`} icon={XCircle} />
+                <StatCard
+                  label="Cancellation Rate"
+                  value={`${metrics.cancellation_rate.toFixed(0)}%`}
+                  icon={XCircle}
+                />
               )}
             </div>
 
-            {(profile.description || profile.coverage_range || profile.years_experience) ? (
+            {profile.description || profile.coverage_range || profile.years_experience ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">About {name}</GlassTitle>
                 </GlassHeader>
                 <GlassContent className="space-y-4">
-                  {profile.description ? <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">{profile.description}</p> : null}
+                  {profile.description ? (
+                    <p className="whitespace-pre-line text-base leading-relaxed text-muted-foreground">
+                      {profile.description}
+                    </p>
+                  ) : null}
                   <div className="flex flex-wrap gap-6 pt-2 text-sm text-muted-foreground">
-                    {profile.coverage_range ? <div className="flex items-center gap-2"><Globe className="h-4 w-4 text-primary/60" /><span>{profile.coverage_range}</span></div> : null}
-                    {profile.years_experience ? <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary/60" /><span>{formatYearsExperience(profile.years_experience)}</span></div> : null}
-                    {profile.team_size ? <div className="flex items-center gap-2"><Users className="h-4 w-4 text-primary/60" /><span>{formatTeamSize(profile.team_size)}</span></div> : null}
+                    {profile.coverage_range ? (
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary/60" />
+                        <span>{profile.coverage_range}</span>
+                      </div>
+                    ) : null}
+                    {profile.years_experience ? (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary/60" />
+                        <span>{formatYearsExperience(profile.years_experience)}</span>
+                      </div>
+                    ) : null}
+                    {profile.team_size ? (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary/60" />
+                        <span>{formatTeamSize(profile.team_size)}</span>
+                      </div>
+                    ) : null}
                   </div>
                 </GlassContent>
               </GlassCard>
@@ -757,14 +930,29 @@ export default function OperatorProfilePage() {
                 <GlassContent>
                   <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {galleryMedia.map((item) => (
-                      <div key={item.id} className="overflow-hidden rounded-3xl border border-border/60 bg-muted/20">
+                      <div
+                        key={item.id}
+                        className="overflow-hidden rounded-3xl border border-border/60 bg-muted/20"
+                      >
                         <div className="aspect-[4/3] overflow-hidden bg-muted/40">
-                          <img src={item.url} alt={item.title || name} className="h-full w-full object-cover" loading="lazy" />
+                          <img
+                            src={item.url}
+                            alt={item.title || name}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
                         </div>
                         <div className="space-y-2 p-4">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-foreground">{item.title || 'Operator media'}</p>
-                            <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-widest">{item.category}</Badge>
+                            <p className="text-sm font-semibold text-foreground">
+                              {item.title || 'Operator media'}
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className="rounded-full text-[10px] uppercase tracking-widest"
+                            >
+                              {item.category}
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -792,7 +980,9 @@ export default function OperatorProfilePage() {
             {verificationBadges.length > 0 ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
-                  <GlassTitle className="text-2xl font-bold">Why travelers trust this operator</GlassTitle>
+                  <GlassTitle className="text-2xl font-bold">
+                    Why travelers trust this operator
+                  </GlassTitle>
                 </GlassHeader>
                 <GlassContent>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -804,7 +994,7 @@ export default function OperatorProfilePage() {
               </GlassCard>
             ) : null}
 
-            {(fleetAssets.length > 0 || guideProfiles.length > 0) ? (
+            {fleetAssets.length > 0 || guideProfiles.length > 0 ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">Fleet & guide capability</GlassTitle>
@@ -814,7 +1004,9 @@ export default function OperatorProfilePage() {
                     <section className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Truck className="h-5 w-5 text-primary/70" />
-                        <h3 className="text-lg font-semibold text-foreground">Fleet and transport resources</h3>
+                        <h3 className="text-lg font-semibold text-foreground">
+                          Fleet and transport resources
+                        </h3>
                       </div>
                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {fleetAssets.map((asset) => (
@@ -844,12 +1036,19 @@ export default function OperatorProfilePage() {
             {activePolicies.length > 0 ? (
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassHeader>
-                  <GlassTitle className="text-2xl font-bold">Policies & business standards</GlassTitle>
+                  <GlassTitle className="text-2xl font-bold">
+                    Policies & business standards
+                  </GlassTitle>
                 </GlassHeader>
                 <GlassContent>
                   <div className="grid gap-4 md:grid-cols-2">
                     {activePolicies.map((policy) => (
-                      <PolicyCard key={policy.key} icon={policy.icon} label={policy.label} value={policy.value} />
+                      <PolicyCard
+                        key={policy.key}
+                        icon={policy.icon}
+                        label={policy.label}
+                        value={policy.value}
+                      />
                     ))}
                   </div>
                 </GlassContent>
@@ -868,21 +1067,41 @@ export default function OperatorProfilePage() {
                         <Link
                           key={tour.id}
                           to={`/tours/${tour.id}`}
-                          onClick={() => trackStorefrontEvent('tour_click', { tourId: tour.id, metadata: { title: tour.title } })}
+                          onClick={() =>
+                            trackStorefrontEvent('tour_click', {
+                              tourId: tour.id,
+                              metadata: { title: tour.title },
+                            })
+                          }
                           className="group overflow-hidden rounded-3xl border border-border/60 bg-background transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
                         >
                           {tour.cover_image_url ? (
-                            <img src={tour.cover_image_url} alt={tour.title} className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                            <img
+                              src={tour.cover_image_url}
+                              alt={tour.title}
+                              className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
                           ) : (
                             <div className="flex h-40 items-center justify-center bg-muted/40 text-muted-foreground/30">
                               <Building2 className="h-10 w-10" />
                             </div>
                           )}
                           <div className="space-y-2 p-4">
-                            <p className="line-clamp-2 text-sm font-semibold text-foreground">{tour.title}</p>
+                            <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                              {tour.title}
+                            </p>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{tour.currency} {Number(tour.price_per_person).toLocaleString()} / person</span>
-                              {tour.rating > 0 ? <span className="flex items-center gap-1 font-semibold text-amber-500"><Star className="h-3 w-3 fill-current" />{Number(tour.rating).toFixed(1)}</span> : null}
+                              <span>
+                                {tour.currency} {Number(tour.price_per_person).toLocaleString()} /
+                                person
+                              </span>
+                              {tour.rating > 0 ? (
+                                <span className="flex items-center gap-1 font-semibold text-amber-500">
+                                  <Star className="h-3 w-3 fill-current" />
+                                  {Number(tour.rating).toFixed(1)}
+                                </span>
+                              ) : null}
                             </div>
                           </div>
                         </Link>
@@ -901,7 +1120,9 @@ export default function OperatorProfilePage() {
                 <GlassContent className="space-y-6">
                   <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
                     <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 p-5">
-                      {avgRating != null && avgRating > 0 ? <StarBar rating={avgRating} count={totalReviews} /> : null}
+                      {avgRating != null && avgRating > 0 ? (
+                        <StarBar rating={avgRating} count={totalReviews} />
+                      ) : null}
                       <RatingHistogram reviews={reviews} />
                       <div className="space-y-2 pt-2">
                         {categoryScores.map((score) => (
@@ -909,47 +1130,93 @@ export default function OperatorProfilePage() {
                         ))}
                       </div>
                       <div className="flex flex-wrap gap-2 pt-3">
-                        <Button size="sm" variant={starFilter == null ? 'default' : 'outline'} onClick={() => setStarFilter(null)}>All</Button>
+                        <Button
+                          size="sm"
+                          variant={starFilter == null ? 'default' : 'outline'}
+                          onClick={() => setStarFilter(null)}
+                        >
+                          All
+                        </Button>
                         {[5, 4, 3, 2, 1].map((star) => (
-                          <Button key={star} size="sm" variant={starFilter === star ? 'default' : 'outline'} onClick={() => setStarFilter(star)}>
+                          <Button
+                            key={star}
+                            size="sm"
+                            variant={starFilter === star ? 'default' : 'outline'}
+                            onClick={() => setStarFilter(star)}
+                          >
                             {star}★
                           </Button>
                         ))}
                       </div>
                       <div className="flex gap-2 border-t border-border/40 pt-3">
-                        <Button size="sm" variant={reviewSort === 'newest' ? 'default' : 'outline'} onClick={() => setReviewSort('newest')}>Newest</Button>
-                        <Button size="sm" variant={reviewSort === 'top_rated' ? 'default' : 'outline'} onClick={() => setReviewSort('top_rated')}>Top Rated</Button>
+                        <Button
+                          size="sm"
+                          variant={reviewSort === 'newest' ? 'default' : 'outline'}
+                          onClick={() => setReviewSort('newest')}
+                        >
+                          Newest
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={reviewSort === 'top_rated' ? 'default' : 'outline'}
+                          onClick={() => setReviewSort('top_rated')}
+                        >
+                          Top Rated
+                        </Button>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       {filteredReviews.map((review) => (
-                        <div key={review.id} className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-5">
+                        <div
+                          key={review.id}
+                          className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-5"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">T</div>
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                              T
+                            </div>
                             <div className="space-y-0.5">
                               <div className="flex gap-0.5">
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star key={star} className={`h-3.5 w-3.5 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                                  <Star
+                                    key={star}
+                                    className={`h-3.5 w-3.5 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                                  />
                                 ))}
                               </div>
                               <p className="text-xs text-muted-foreground">
-                                {(review as any).tour_title ? `${(review as any).tour_title} · ` : ''}
-                                {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                {(review as any).tour_title
+                                  ? `${(review as any).tour_title} · `
+                                  : ''}
+                                {new Date(review.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  year: 'numeric',
+                                })}
                               </p>
                             </div>
                           </div>
 
-                          {review.title ? <p className="text-sm font-semibold text-foreground">{review.title}</p> : null}
-                          {review.body ? <p className="text-sm leading-relaxed text-muted-foreground">{review.body}</p> : null}
+                          {review.title ? (
+                            <p className="text-sm font-semibold text-foreground">{review.title}</p>
+                          ) : null}
+                          {review.body ? (
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              {review.body}
+                            </p>
+                          ) : null}
 
                           {review.reply ? (
                             <div className="space-y-1 rounded-2xl border border-primary/20 bg-primary/5 p-4">
                               <div className="flex items-center gap-2">
                                 <MessageSquare className="h-3.5 w-3.5 text-primary/60" />
-                                <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">Operator reply</p>
+                                <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">
+                                  Operator reply
+                                </p>
                               </div>
-                              <p className="text-sm leading-relaxed text-muted-foreground">{review.reply.body}</p>
+                              <p className="text-sm leading-relaxed text-muted-foreground">
+                                {review.reply.body}
+                              </p>
                             </div>
                           ) : null}
                         </div>
@@ -966,28 +1233,46 @@ export default function OperatorProfilePage() {
               <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
                 <GlassContent className="space-y-4 p-6">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Ready to book?</p>
-                    <h2 className="mt-2 text-2xl font-black text-foreground">Start with this operator</h2>
+                    <p className="text-xs font-bold uppercase tracking-widest text-primary/70">
+                      Ready to book?
+                    </p>
+                    <h2 className="mt-2 text-2xl font-black text-foreground">
+                      Start with this operator
+                    </h2>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      Review tours, contact the operator directly, and compare trust signals before committing.
+                      Review tours, contact the operator directly, and compare trust signals before
+                      committing.
                     </p>
                   </div>
                   <Button asChild className="w-full rounded-2xl">
                     <a
                       href="#tours"
-                      onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'sticky_browse_tours' } })}
+                      onClick={() =>
+                        trackStorefrontEvent('cta_click', {
+                          metadata: { cta: 'sticky_browse_tours' },
+                        })
+                      }
                     >
                       Browse tours
                     </a>
                   </Button>
-                  <Button type="button" variant="outline" className="w-full rounded-2xl" onClick={() => void handleShareProfile()}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-2xl"
+                    onClick={() => void handleShareProfile()}
+                  >
                     <Share2 className="mr-2 h-4 w-4" /> Share profile
                   </Button>
                   {profile.phone_number ? (
                     <Button asChild variant="outline" className="w-full rounded-2xl">
                       <a
                         href={`tel:${profile.phone_number}`}
-                        onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'sticky_call_operator' } })}
+                        onClick={() =>
+                          trackStorefrontEvent('cta_click', {
+                            metadata: { cta: 'sticky_call_operator' },
+                          })
+                        }
                       >
                         <Phone className="mr-2 h-4 w-4" /> Call operator
                       </a>
@@ -997,13 +1282,22 @@ export default function OperatorProfilePage() {
                     <Button asChild variant="outline" className="w-full rounded-2xl">
                       <a
                         href={`mailto:${profile.email}`}
-                        onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'sticky_email_operator' } })}
+                        onClick={() =>
+                          trackStorefrontEvent('cta_click', {
+                            metadata: { cta: 'sticky_email_operator' },
+                          })
+                        }
                       >
                         <Mail className="mr-2 h-4 w-4" /> Email operator
                       </a>
                     </Button>
                   ) : null}
-                  <Button type="button" variant="outline" className="w-full rounded-2xl" onClick={() => setReportDialogOpen(true)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-2xl"
+                    onClick={() => setReportDialogOpen(true)}
+                  >
                     <Flag className="mr-2 h-4 w-4" /> Report a concern
                   </Button>
                 </GlassContent>
@@ -1013,7 +1307,10 @@ export default function OperatorProfilePage() {
                 <GlassContent className="space-y-3 p-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-3">
                     <BadgeCheck className="h-4 w-4 text-emerald-600" />
-                    <span>{verificationBadges.filter((badge) => badge.tone === 'verified').length} verified signals</span>
+                    <span>
+                      {verificationBadges.filter((badge) => badge.tone === 'verified').length}{' '}
+                      verified signals
+                    </span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Camera className="h-4 w-4 text-primary/70" />
@@ -1035,22 +1332,36 @@ export default function OperatorProfilePage() {
           <Button asChild className="flex-1 rounded-2xl">
             <a
               href="#tours"
-              onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'mobile_browse_tours' } })}
+              onClick={() =>
+                trackStorefrontEvent('cta_click', { metadata: { cta: 'mobile_browse_tours' } })
+              }
             >
               Browse tours
             </a>
           </Button>
-          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => void handleShareProfile()}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-2xl"
+            onClick={() => void handleShareProfile()}
+          >
             <Share2 className="h-4 w-4" />
           </Button>
-          <Button type="button" variant="outline" className="rounded-2xl" onClick={() => setReportDialogOpen(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-2xl"
+            onClick={() => setReportDialogOpen(true)}
+          >
             <Flag className="h-4 w-4" />
           </Button>
           {profile.phone_number ? (
             <Button asChild variant="outline" className="rounded-2xl">
               <a
                 href={`tel:${profile.phone_number}`}
-                onClick={() => trackStorefrontEvent('cta_click', { metadata: { cta: 'mobile_call_operator' } })}
+                onClick={() =>
+                  trackStorefrontEvent('cta_click', { metadata: { cta: 'mobile_call_operator' } })
+                }
               >
                 <Phone className="h-4 w-4" />
               </a>
@@ -1064,7 +1375,8 @@ export default function OperatorProfilePage() {
           <DialogHeader>
             <DialogTitle>Report a concern</DialogTitle>
             <DialogDescription>
-              Tell TripAvail what feels misleading, unsafe, or concerning and the team will review it.
+              Tell TripAvail what feels misleading, unsafe, or concerning and the team will review
+              it.
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -1074,10 +1386,19 @@ export default function OperatorProfilePage() {
             className="min-h-[120px]"
           />
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setReportDialogOpen(false)} disabled={reportSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setReportDialogOpen(false)}
+              disabled={reportSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="button" onClick={() => void handleSubmitReport()} disabled={reportSubmitting || reportReason.trim().length < 10}>
+            <Button
+              type="button"
+              onClick={() => void handleSubmitReport()}
+              disabled={reportSubmitting || reportReason.trim().length < 10}
+            >
               {reportSubmitting ? 'Sending…' : 'Send concern'}
             </Button>
           </DialogFooter>
