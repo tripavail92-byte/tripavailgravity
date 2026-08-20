@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
+import { useNextDepartures } from '@/queries/departureQueries'
 import type { HotelBrowseItem } from '@/queries/hotelQueries'
 import { useHotelBrowse } from '@/queries/hotelQueries'
 import { useCuratedPackages, useFeaturedPackages, useSpecialOffers } from '@/queries/packageQueries'
@@ -61,7 +62,11 @@ function renderPackageCards(pkgs: any[]): ReactNode[] {
   ))
 }
 
-function renderTourCards(tours: any[], seen?: Set<string>): ReactNode[] {
+function renderTourCards(
+  tours: any[],
+  seen?: Set<string>,
+  departures?: Record<string, string>,
+): ReactNode[] {
   const out: ReactNode[] = []
   for (const tour of tours) {
     // Cross-rail de-duplication. Four rails query the same small table with
@@ -88,6 +93,7 @@ function renderTourCards(tours: any[], seen?: Set<string>): ReactNode[] {
         type={tour.badge || 'Tour'}
         isFeatured={tour.badge === 'Featured'}
         shortDescription={tour.shortDescription}
+        departureDate={departures?.[tour.id] ?? null}
       />,
     )
   }
@@ -216,6 +222,20 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   // This hook already existed and was already ordered created_at desc; the homepage
   // simply never called it, which is why there was no "New arrivals" row.
   const mixQ = useHomepageMixTours(96)
+  // Real departure dates for the cards — one batched query over the ids on screen.
+  const departureIds = useMemo(
+    () => [
+      ...new Set([
+        ...(mixQ.data ?? []).map((t: HomepageMixTour) => t.id),
+        ...(featTourQ.data ?? []).map((t: any) => t.id),
+        ...(northernQ.data ?? []).map((t: any) => t.id),
+        ...(adventureQ.data ?? []).map((t: any) => t.id),
+        ...(hikingQ.data ?? []).map((t: any) => t.id),
+      ]),
+    ],
+    [mixQ.data, featTourQ.data, northernQ.data, adventureQ.data, hikingQ.data],
+  )
+  const { data: departures } = useNextDepartures(departureIds)
 
   const offers = useMemo(() => renderPackageCards(offersQ.data ?? []), [offersQ.data])
   const hotels = useMemo(() => renderHotelCards(hotelsQ.data ?? []), [hotelsQ.data])
@@ -238,22 +258,22 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   const tourRails = useMemo(() => {
     const mix = mixQ.data ?? []
     const generic = new Set<string>()
-    const newArrivals = renderTourCards(mix.slice(0, 8), generic)
-    const featured = renderTourCards(featTourQ.data ?? [], generic)
+    const newArrivals = renderTourCards(mix.slice(0, 8), generic, departures)
+    const featured = renderTourCards(featTourQ.data ?? [], generic, departures)
     return {
       newArrivals,
       featured,
-      northern: renderTourCards(northernQ.data ?? []),
+      northern: renderTourCards(northernQ.data ?? [], undefined, departures),
       shortEscapes: renderTourCards(
         mix.filter((t: HomepageMixTour) => isShortEscape(t.durationDays)),
       ),
       expeditions: renderTourCards(
         mix.filter((t: HomepageMixTour) => isExpedition(t.durationDays)),
       ),
-      adventure: renderTourCards(adventureQ.data ?? []),
-      hiking: renderTourCards(hikingQ.data ?? []),
+      adventure: renderTourCards(adventureQ.data ?? [], undefined, departures),
+      hiking: renderTourCards(hikingQ.data ?? [], undefined, departures),
     }
-  }, [mixQ.data, featTourQ.data, northernQ.data, adventureQ.data, hikingQ.data])
+  }, [mixQ.data, featTourQ.data, northernQ.data, adventureQ.data, hikingQ.data, departures])
   const featTours = tourRails.featured
   const adventure = tourRails.adventure
   const hiking = tourRails.hiking
