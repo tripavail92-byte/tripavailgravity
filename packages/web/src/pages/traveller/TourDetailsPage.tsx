@@ -1068,116 +1068,117 @@ export default function TourDetailsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Gallery (match PackageDetailsPage grid) */}
+        {/* Title header — the name, badges, rating and location lead the page (full-width, above
+            the gallery) so travellers see what the trip is and how it's rated before the photos. */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <div className="flex items-start justify-between mb-2">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <GlassBadge variant="primary" size="lg" className="capitalize">
+                  {tour.tour_type?.replace('-', ' ') || 'Tour'}
+                </GlassBadge>
+                {(tour.operator_is_verified ?? tour.is_verified) ? (
+                  // Clickable: a trust badge should let the traveller go and CHECK the
+                  // claim. Links to the operator's public profile when we have a slug.
+                  operatorSlug ? (
+                    <Link
+                      to={`/operators/${operatorSlug}`}
+                      className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      title="View operator profile"
+                    >
+                      <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                        Verified Operator
+                      </GlassBadge>
+                    </Link>
+                  ) : (
+                    <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                      Verified Operator
+                    </GlassBadge>
+                  )
+                ) : null}
+              </div>
+
+              <h1 className="type-display text-foreground mb-2 break-words">{tour.title}</h1>
+
+              {/* Short description teaser */}
+              {tour.short_description && (
+                <p className="text-base text-muted-foreground italic mb-4 leading-relaxed">
+                  {tour.short_description}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
+                {Number(tour.rating) > 0 ? (
+                  // Clickable: jumps to the Traveler reviews section below (#reviews),
+                  // so the score is a way IN to the reviews rather than a dead stat.
+                  <a
+                    href="#reviews"
+                    className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    title="Read traveller reviews"
+                  >
+                    <div className="p-1.5 bg-warning/10 rounded-full">
+                      <Star size={16} className="text-warning fill-current" />
+                    </div>
+                    <span className="font-bold text-foreground underline-offset-4 hover:underline">
+                      {tour.rating} ({tour.review_count}{' '}
+                      {Number(tour.review_count) === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </a>
+                ) : (
+                  <a
+                    href="#reviews"
+                    className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    title="No reviews yet"
+                  >
+                    <div className="p-1.5 bg-primary/10 rounded-full">
+                      <Star size={16} className="text-primary" />
+                    </div>
+                    <span className="font-bold text-foreground">New</span>
+                  </a>
+                )}
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-info/10 rounded-full">
+                    <MapPin size={16} className="text-info" />
+                  </div>
+                  <span className="font-bold text-foreground">
+                    {(() => {
+                      const cities: string[] =
+                        Array.isArray((tour as any).destination_cities) &&
+                        (tour as any).destination_cities.length > 0
+                          ? (tour as any).destination_cities
+                          : [tour.location?.city].filter(Boolean)
+                      if (cities.length > 1) return cities.join(' · ')
+                      // Never interpolate raw — a missing city/country used to render the literal
+                      // string "undefined, undefined" on the live tour page. Mirrors OperatorCalendarPage:25.
+                      return (
+                        [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') ||
+                        'Destination TBD'
+                      )
+                    })()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-success/10 rounded-full">
+                    <Shield size={16} className="text-success" />
+                  </div>
+                  <span className="font-bold text-foreground">Secure Booking</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Hero Gallery */}
         <TourGallery images={tourImages} title={tour.title} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
-            {/* Title Section (match PackageDetailsPage) */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <GlassBadge variant="primary" size="lg" className="capitalize">
-                      {tour.tour_type?.replace('-', ' ') || 'Tour'}
-                    </GlassBadge>
-                    {(tour.operator_is_verified ?? tour.is_verified) ? (
-                      // Clickable: a trust badge should let the traveller go and CHECK the
-                      // claim. Links to the operator's public profile when we have a slug.
-                      operatorSlug ? (
-                        <Link
-                          to={`/operators/${operatorSlug}`}
-                          className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                          title="View operator profile"
-                        >
-                          <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                            Verified Operator
-                          </GlassBadge>
-                        </Link>
-                      ) : (
-                        <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                          Verified Operator
-                        </GlassBadge>
-                      )
-                    ) : null}
-                  </div>
-
-                  <h1 className="type-display text-foreground mb-2 break-words">{tour.title}</h1>
-
-                  {/* Short description teaser */}
-                  {tour.short_description && (
-                    <p className="text-base text-muted-foreground italic mb-4 leading-relaxed">
-                      {tour.short_description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
-                    {Number(tour.rating) > 0 ? (
-                      // Clickable: jumps to the Traveler reviews section below (#reviews),
-                      // so the score is a way IN to the reviews rather than a dead stat.
-                      <a
-                        href="#reviews"
-                        className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                        title="Read traveller reviews"
-                      >
-                        <div className="p-1.5 bg-warning/10 rounded-full">
-                          <Star size={16} className="text-warning fill-current" />
-                        </div>
-                        <span className="font-bold text-foreground underline-offset-4 hover:underline">
-                          {tour.rating} ({tour.review_count}{' '}
-                          {Number(tour.review_count) === 1 ? 'review' : 'reviews'})
-                        </span>
-                      </a>
-                    ) : (
-                      <a
-                        href="#reviews"
-                        className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                        title="No reviews yet"
-                      >
-                        <div className="p-1.5 bg-primary/10 rounded-full">
-                          <Star size={16} className="text-primary" />
-                        </div>
-                        <span className="font-bold text-foreground">New</span>
-                      </a>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-info/10 rounded-full">
-                        <MapPin size={16} className="text-info" />
-                      </div>
-                      <span className="font-bold text-foreground">
-                        {(() => {
-                          const cities: string[] =
-                            Array.isArray((tour as any).destination_cities) &&
-                            (tour as any).destination_cities.length > 0
-                              ? (tour as any).destination_cities
-                              : [tour.location?.city].filter(Boolean)
-                          if (cities.length > 1) return cities.join(' · ')
-                          // Never interpolate raw — a missing city/country used to render the literal
-                          // string "undefined, undefined" on the live tour page. Mirrors OperatorCalendarPage:25.
-                          return (
-                            [tour.location?.city, tour.location?.country]
-                              .filter(Boolean)
-                              .join(', ') || 'Destination TBD'
-                          )
-                        })()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-success/10 rounded-full">
-                        <Shield size={16} className="text-success" />
-                      </div>
-                      <span className="font-bold text-foreground">Secure Booking</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
             {/* Description (glass card like package page). Conditional: the wizard's only writer of
                 description was the physical-requirements textarea (the bug), so once that was
                 rebound a tour can legitimately have no description — don't render an empty card. */}
