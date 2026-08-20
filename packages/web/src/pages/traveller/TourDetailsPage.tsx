@@ -885,8 +885,11 @@ export default function TourDetailsPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
-      {/* Header / Nav (match PackageDetailsPage) */}
-      <GlassCard variant="nav" blur="md" className="sticky top-0 z-40 border-b border-border/40">
+      {/* Back / Share bar — a page-top affordance that scrolls away with the content. It must NOT
+          be sticky: the SiteHeader is already fixed at the top, so a second bar pinned at top-0
+          would hide behind it (and on phones peek a few px over the section tabs). The tabs below
+          are the one bar that stays pinned as you scroll. */}
+      <GlassCard variant="nav" blur="md" className="relative z-40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -919,9 +922,12 @@ export default function TourDetailsPage() {
           below. Long tour pages become skimmable this way. */}
       <TourSubNav
         sections={[
-          { id: 'overview', label: 'Overview' },
+          // Only advertise a tab when its section actually renders below — Overview and Itinerary
+          // are conditional (no description / no itinerary => no anchor), and a tab pointing at a
+          // missing anchor would silently do nothing when clicked.
+          ...(tour.description?.trim() ? [{ id: 'overview', label: 'Overview' }] : []),
           { id: 'details', label: 'Details' },
-          { id: 'itinerary', label: 'Itinerary' },
+          ...(tour.itinerary?.length ? [{ id: 'itinerary', label: 'Itinerary' }] : []),
           { id: 'operator', label: 'Operator' },
           { id: 'reviews', label: 'Reviews' },
         ]}

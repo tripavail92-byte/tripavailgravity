@@ -236,12 +236,16 @@
   html,
   body {
     width: 100%;
-    overflow-x: hidden;
+    /* clip, NOT hidden: `overflow-x: hidden` forces `overflow-y` to `auto`, which turns the
+       element into a scroll container and breaks `position: sticky` for every descendant
+       (the tour page's section sub-nav, etc.). `clip` gives the same horizontal-overflow
+       guard without creating a scroll container. */
+    overflow-x: clip;
   }
 
   #root {
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {

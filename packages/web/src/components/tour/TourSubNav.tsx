@@ -23,6 +23,9 @@ export function TourSubNav({ sections }: TourSubNavProps) {
   // set changes, not on every parent re-render — otherwise the constant disconnect/reconnect
   // wipes the observer's baseline state and it never fires updates.
   const sectionsKey = sections.map((s) => s.id).join(',')
+  // Ref to this sticky bar so both the scrollspy and the click handler can measure its live
+  // height (with the fixed SiteHeader's) to know exactly where the sticky chrome ends.
+  const navRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Scroll-event scrollspy rather than IntersectionObserver. Two reasons:
@@ -30,25 +33,29 @@ export function TourSubNav({ sections }: TourSubNavProps) {
     //      failed to fire even a single initial callback), so we'd have quietly shipped a nav
     //      whose active state never updated for any user hitting that environment.
     //   2. This approach is easier to reason about: whatever section's top has just passed the
-    //      focal line (128px from the viewport top, matching the sticky-bar stack) is active.
+    //      focal line (the bottom of the sticky chrome) is active.
     //
     // Perf: passive listener, one loop over ~5 anchors per scroll event — well under 16ms budget
     // even on slow devices, so no throttling needed.
     const handleScroll = () => {
-      const focalLine = window.scrollY + 128
-      // Pick the section with the LARGEST offsetTop that is still ≤ focalLine — the most-recently
-      // scrolled-past anchor. Walking sections in array order and breaking on the first miss only
-      // works when the array happens to be in DOM order, which it isn't on this page (the tab
-      // "Details" appears third in the array but its anchor sits AFTER the Operator anchor in
-      // the DOM). Computing the max avoids that ordering dependency entirely.
+      // Focal line = the bottom of the sticky chrome (fixed SiteHeader + this bar), in viewport
+      // space, measured live so it's right on phones (~60px header) and desktop (~80px) alike.
+      const headerH = document.querySelector('header')?.getBoundingClientRect().height ?? 0
+      const barH = navRef.current?.getBoundingClientRect().height ?? 48
+      const focalLine = headerH + barH + 4
+      // Active = the last section whose top has scrolled up under that line: the greatest
+      // viewport-top still ≤ focalLine. Walking in array order and breaking on the first miss only
+      // works when the array is in DOM order, which it isn't here (Operator's anchor sits before
+      // Details' in the DOM). Taking the max removes that ordering dependency. getBoundingClientRect
+      // (not offsetTop) keeps it correct no matter which ancestor is the offsetParent.
       let current = sections[0]?.id ?? ''
-      let bestTop = -Infinity
+      let best = -Infinity
       for (const s of sections) {
         const el = document.getElementById(s.id)
         if (!el) continue
-        const top = el.offsetTop
-        if (top <= focalLine && top > bestTop) {
-          bestTop = top
+        const top = el.getBoundingClientRect().top
+        if (top <= focalLine && top > best) {
+          best = top
           current = s.id
         }
       }
@@ -64,18 +71,41 @@ export function TourSubNav({ sections }: TourSubNavProps) {
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)
     if (!el) return
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    // Set active immediately for perceived responsiveness; the observer will confirm on settle.
+    // Set active immediately for perceived responsiveness; the scrollspy confirms on settle.
     setActiveId(id)
+    // Land the heading just below the sticky chrome. Measure the fixed SiteHeader + this bar at
+    // click time so the offset is exact on phones and desktop alike, instead of trusting a single
+    // scroll-mt constant.
+    const headerH = document.querySelector('header')?.getBoundingClientRect().height ?? 0
+    const barH = navRef.current?.getBoundingClientRect().height ?? 48
+    const targetY = Math.max(
+      0,
+      el.getBoundingClientRect().top + window.scrollY - headerH - barH - 8,
+    )
+    const startY = window.scrollY
+    try {
+      window.scrollTo({ top: targetY, behavior: 'smooth' })
+    } catch {
+      window.scrollTo(0, targetY)
+    }
+    // Guarantee arrival where `behavior:'smooth'` silently no-ops (some embedded/webview engines —
+    // the same failure mode that pushed this component off IntersectionObserver). A real smooth
+    // scroll has already left startY within 250ms, so this only fires when nothing moved at all.
+    window.setTimeout(() => {
+      if (Math.abs(window.scrollY - startY) < 2) window.scrollTo(0, targetY)
+    }, 250)
   }
 
   return (
-    <div className="sticky top-16 z-30 border-b border-border/40 bg-background/95 backdrop-blur-md">
+    // Pins just below the FIXED SiteHeader (60px on phones, 80px on md+). top-16 assumed a
+    // 64px bar with nothing fixed above it, so the sub-nav pinned behind the SiteHeader and
+    // was hidden — these offsets keep it visible as the page scrolls.
+    <div
+      ref={navRef}
+      className="sticky top-[60px] z-30 border-b border-border/40 bg-background/95 backdrop-blur-md md:top-20"
+    >
       <div className="max-w-7xl mx-auto px-4">
-        <nav
-          className="flex items-center gap-1 overflow-x-auto -mb-px"
-          aria-label="Tour sections"
-        >
+        <nav className="flex items-center gap-1 overflow-x-auto -mb-px" aria-label="Tour sections">
           {sections.map((s) => {
             const isActive = s.id === activeId
             return (
