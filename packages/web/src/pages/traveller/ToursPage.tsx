@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { ExploreControls } from '@/components/home/ExploreControls'
 import { SearchResultsGrid } from '@/components/search/SearchResultsGrid'
@@ -14,244 +14,259 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSeo } from '@/hooks/useSeo'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
+import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
 import { useNearbyTours } from '@/queries/pickupQueries'
-import {
-  useFeaturedTours,
-  useHomepageMixTours,
-  usePakistanNorthernTours,
-  useToursByCategory,
-} from '@/queries/tourQueries'
+import { type HomepageMixTour, useHomepageMixTours } from '@/queries/tourQueries'
+
+/**
+ * /tours — the catalogue.
+ *
+ * This used to render "All Tours" followed by five more rails (Featured, Top Rated,
+ * Adventure, Hiking, Northern) all drawn from the SAME rows, so each trip appeared
+ * three or four times, duration was hardcoded to "Multi-day", and there was no result
+ * count and no way to narrow. It made a small catalogue look padded rather than
+ * curated. It is now one filterable grid over the live catalogue.
+ */
+
+type DurationFilter = 'any' | 'short' | 'week' | 'long'
+type SortMode = 'newest' | 'price_asc' | 'price_desc' | 'nearest_pickup'
+
+const DURATION_LABEL: Record<DurationFilter, string> = {
+  any: 'Any length',
+  short: '1–3 days',
+  week: '4–6 days',
+  long: '7+ days',
+}
+
+function matchesDuration(t: HomepageMixTour, f: DurationFilter): boolean {
+  if (f === 'any') return true
+  if (f === 'short') return isShortEscape(t.durationDays)
+  if (f === 'long') return isExpedition(t.durationDays)
+  const n = Number(t.durationDays)
+  return Number.isFinite(n) && n >= 4 && n <= 6
+}
 
 export default function ToursPage() {
-  const [sortMode, setSortMode] = useState<'newest' | 'nearest_pickup' | 'trust_first'>('newest')
-  const { coords } = useTravellerCoords()
   const navigate = useNavigate()
+  const { coords } = useTravellerCoords()
 
-  const featuredQuery = useFeaturedTours()
+  const [sortMode, setSortMode] = useState<SortMode>('newest')
+  const [category, setCategory] = useState<string>('all')
+  const [destination, setDestination] = useState<string>('all')
+  const [duration, setDuration] = useState<DurationFilter>('any')
+
   const allToursQuery = useHomepageMixTours(96)
-  const adventureQuery = useToursByCategory('adventure-trips')
-  const hikingQuery = useToursByCategory('hiking-trips')
-  const pakistanNorthernQuery = usePakistanNorthernTours()
+  const tours = useMemo(() => allToursQuery.data ?? [], [allToursQuery.data])
 
-  // "Nearest Pickup" uses the SAME canonical hook as the search page — tours
-  // ranked by nearest pickup, hydrated, with a "Pickup N km away" chip. When
-  // this mode is on we render its results (via SearchResultsGrid) instead of
-  // the default TourCard grid.
+  useSeo({
+    title: 'Tours & trips in Pakistan',
+    description:
+      'Browse verified guided tours and trips across northern Pakistan — Hunza, Skardu, Naran, Swat and more. Transparent pricing and secure booking.',
+    canonicalPath: '/tours',
+  })
+
+  // "Nearest pickup" uses the same canonical hook as /search — tours ranked by
+  // nearest pickup point, rendered through SearchResultsGrid so the distance chip shows.
   const nearbyPickup = Boolean(coords) && sortMode === 'nearest_pickup'
   const nearbyToursQuery = useNearbyTours(
     { userLat: coords?.latitude ?? 0, userLng: coords?.longitude ?? 0, radiusKm: 500, limit: 96 },
     { enabled: nearbyPickup },
   )
 
-  const isLoading =
-    featuredQuery.isLoading ||
-    allToursQuery.isLoading ||
-    adventureQuery.isLoading ||
-    hikingQuery.isLoading ||
-    pakistanNorthernQuery.isLoading
-
-  const isError =
-    featuredQuery.isError ||
-    allToursQuery.isError ||
-    adventureQuery.isError ||
-    hikingQuery.isError ||
-    pakistanNorthernQuery.isError
-
-  const featured = featuredQuery.data ?? []
-  const allTours = allToursQuery.data ?? []
-
-  // 'trust_first' ranks featured then by rating; 'newest' keeps default order.
-  // 'nearest_pickup' is handled separately (renders nearbyToursQuery below).
-  const sortedAllTours = useMemo(() => {
-    if (sortMode === 'trust_first') {
-      // Featured tours surface first, then rank by star rating as the public trust signal.
-      return allTours
-        .slice()
-        .sort((a: any, b: any) => {
-          const featuredDiff = (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)
-          if (featuredDiff !== 0) return featuredDiff
-          return (b.rating ?? 0) - (a.rating ?? 0)
-        })
+  // Facets are derived from the live catalogue, so we never offer a filter that
+  // would return nothing.
+  const categories = useMemo(() => {
+    const set = new Map<string, string>()
+    for (const t of tours) {
+      const raw = (t.tourType || '').trim()
+      if (raw) set.set(raw.toLowerCase(), raw)
     }
-    return allTours
-  }, [allTours, sortMode])
+    return [...set.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [tours])
 
-  const topRated = allTours
-    .slice()
-    .filter((t: any) => typeof t.rating === 'number' && t.rating > 0)
-    .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 12)
-  const adventure = adventureQuery.data ?? []
-  const hiking = hikingQuery.data ?? []
-  const pakistanNorthern = pakistanNorthernQuery.data ?? []
+  const destinations = useMemo(() => {
+    const set = new Map<string, string>()
+    for (const t of tours) {
+      const city = (t.destinationCities?.[0] || '').trim()
+      if (city) set.set(city.toLowerCase(), city)
+    }
+    return [...set.entries()].sort((a, b) => a[1].localeCompare(b[1]))
+  }, [tours])
 
-  const renderSkeletonGrid = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[0, 1, 2].map((i) => (
-        <Card key={i} className="rounded-2xl border border-border/60 overflow-hidden">
-          <div className="aspect-[4/5]">
-            <Skeleton className="w-full h-full" />
-          </div>
-          <div className="p-4 space-y-3">
+  const filtered = useMemo(() => {
+    const out = tours.filter((t) => {
+      if (category !== 'all' && (t.tourType || '').toLowerCase() !== category) return false
+      if (destination !== 'all' && (t.destinationCities?.[0] || '').toLowerCase() !== destination)
+        return false
+      if (!matchesDuration(t, duration)) return false
+      return true
+    })
+    const price = (t: HomepageMixTour) => (typeof t.tourPrice === 'number' ? t.tourPrice : Infinity)
+    if (sortMode === 'price_asc') return [...out].sort((a, b) => price(a) - price(b))
+    if (sortMode === 'price_desc') return [...out].sort((a, b) => price(b) - price(a))
+    return out // the query already returns newest first
+  }, [tours, category, destination, duration, sortMode])
+
+  const hasFilters = category !== 'all' || destination !== 'all' || duration !== 'any'
+  const clearFilters = () => {
+    setCategory('all')
+    setDestination('all')
+    setDuration('any')
+  }
+
+  const skeletons = (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="overflow-hidden rounded-2xl border border-border/60">
+          <Skeleton className="aspect-[4/3] w-full" />
+          <div className="space-y-3 p-4">
             <Skeleton className="h-5 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
-            <div className="flex items-center justify-between pt-2">
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-9 w-24 rounded-md" />
-            </div>
           </div>
         </Card>
       ))}
     </div>
-  )
-
-  const renderToursGrid = (tours: any[], source: 'mapped' | 'mix') => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {tours.map((tour: any) => (
-        <TourCard
-          key={tour.id}
-          id={tour.id}
-          slug={tour.slug ?? undefined}
-          image={
-            (Array.isArray(tour.images) ? tour.images?.[0] : tour.image) ||
-            'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop'
-          }
-          title={tour.title}
-          location={tour.location}
-          duration={'Multi-day'}
-          rating={tour.rating}
-          price={
-            source === 'mapped'
-              ? typeof tour.tourPrice === 'number'
-                ? tour.tourPrice
-                : 0
-              : typeof tour.tourPrice === 'number'
-                ? tour.tourPrice
-                : 0
-          }
-          currency={tour.currency || 'PKR'}
-          depositRequired={Boolean((tour as any).deposit_required ?? (tour as any).depositRequired)}
-          depositPercentage={Number((tour as any).deposit_percentage ?? (tour as any).depositPercentage ?? 0)}
-          type={tour.badge || 'Tour Experience'}
-          isFeatured={Boolean(tour.isFeatured)}
-          shortDescription={tour.shortDescription ?? undefined}
-        />
-      ))}
-    </div>
-  )
-
-  const renderSection = (title: string, subtitle: string, tours: any[], kind: 'mapped' | 'mix') => (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground font-medium">{subtitle}</p>
-      </div>
-      {isLoading ? (
-        renderSkeletonGrid()
-      ) : tours.length > 0 ? (
-        renderToursGrid(tours, kind)
-      ) : (
-        <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
-          No tours available right now.
-        </Card>
-      )}
-    </section>
   )
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-7xl mx-auto px-4 py-10">
-        {/* Same search + Hotels/Tours/Events row as every other browse page. */}
-        <ExploreControls
-          activeMode="tours"
-          onModeSelect={(m) => navigate(m === 'hotels' ? '/hotels' : m === 'tours' ? '/tours' : '/events')}
-          className="mb-10"
-        />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <ExploreControls activeMode="tours" />
 
-        <div className="flex items-end justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Tours</h1>
-            <p className="text-muted-foreground font-medium">
-              Browse featured, top rated, and category-wise tours
-            </p>
-          </div>
-          <Button asChild variant="outline" className="rounded-xl border-border/60 font-bold">
-            <Link to="/">Back to Home</Link>
-          </Button>
+        <header className="mt-8">
+          <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">
+            Tours &amp; trips
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {allToursQuery.isLoading
+              ? 'Loading trips…'
+              : `${filtered.length} ${filtered.length === 1 ? 'trip' : 'trips'}${
+                  hasFilters ? ` of ${tours.length}` : ''
+                } from verified operators`}
+          </p>
+        </header>
+
+        {/* Filters — derived from the live catalogue */}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          {categories.length > 1 && (
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-10 w-[170px] rounded-full">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map(([key, label]) => (
+                  <SelectItem key={key} value={key} className="capitalize">
+                    {label.replace(/-/g, ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {destinations.length > 1 && (
+            <Select value={destination} onValueChange={setDestination}>
+              <SelectTrigger className="h-10 w-[180px] rounded-full">
+                <SelectValue placeholder="Destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All destinations</SelectItem>
+                {destinations.map(([key, label]) => (
+                  <SelectItem key={key} value={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Select value={duration} onValueChange={(v) => setDuration(v as DurationFilter)}>
+            <SelectTrigger className="h-10 w-[150px] rounded-full">
+              <SelectValue placeholder="Trip length" />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(DURATION_LABEL) as DurationFilter[]).map((k) => (
+                <SelectItem key={k} value={k}>
+                  {DURATION_LABEL[k]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
+            <SelectTrigger className="h-10 w-[170px] rounded-full">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="price_asc">Price: low to high</SelectItem>
+              <SelectItem value="price_desc">Price: high to low</SelectItem>
+              {coords ? <SelectItem value="nearest_pickup">Nearest pickup</SelectItem> : null}
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
+            <Button variant="ghost" className="h-10 rounded-full" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
         </div>
 
-        {isError ? (
-          <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
-            Unable to load tours right now.
-          </Card>
-        ) : (
-          <div className="space-y-10">
-            <section className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">All Tours</h2>
-                  <p className="text-sm text-muted-foreground font-medium">
-                    Browse all live tour experiences
-                  </p>
-                </div>
-                <div className="w-full sm:w-[240px]">
-                  <Select
-                    value={sortMode}
-                    onValueChange={(v) => setSortMode(v as typeof sortMode)}
-                  >
-                    <SelectTrigger className="rounded-xl border-border/60">
-                      <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="nearest_pickup" disabled={!coords}>
-                        Nearest Pickup
-                      </SelectItem>
-                      <SelectItem value="trust_first">Highest Rated Operators</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Results */}
+        <div className="mt-8">
+          {nearbyPickup ? (
+            <SearchResultsGrid
+              items={nearbyToursQuery.data ?? []}
+              isLoading={nearbyToursQuery.isLoading}
+              showDistance
+            />
+          ) : allToursQuery.isLoading ? (
+            skeletons
+          ) : filtered.length === 0 ? (
+            <Card className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 py-16 text-center">
+              <p className="text-lg font-semibold text-foreground">No trips match those filters</p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                Try a different destination or trip length — the catalogue is growing every week.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Button className="rounded-full" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={() => navigate('/search?types=tour')}
+                >
+                  Search all trips
+                </Button>
               </div>
-
-              {nearbyPickup ? (
-                // Nearest Pickup → the canonical pickup-ranked grid, with a
-                // "Pickup N km away" chip on each card (shared with /search).
-                <SearchResultsGrid
-                  items={nearbyToursQuery.data ?? []}
-                  isLoading={nearbyToursQuery.isLoading}
-                  showDistance
-                  distanceKind="pickup"
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((tour) => (
+                <TourCard
+                  key={tour.id}
+                  id={tour.id}
+                  slug={tour.slug ?? undefined}
+                  image={tour.images?.[0] || ''}
+                  title={tour.title}
+                  location={tour.location}
+                  duration={formatTourDuration(tour.durationDays)}
+                  rating={tour.rating}
+                  reviewCount={tour.reviewCount}
+                  price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                  currency={tour.currency || 'PKR'}
+                  type={tour.tourType || 'Tour'}
+                  isFeatured={Boolean(tour.isFeatured)}
+                  shortDescription={tour.shortDescription ?? undefined}
                 />
-              ) : isLoading ? (
-                renderSkeletonGrid()
-              ) : sortedAllTours.length > 0 ? (
-                renderToursGrid(sortedAllTours, 'mix')
-              ) : (
-                <Card className="rounded-2xl border border-border/60 p-6 text-sm text-muted-foreground">
-                  No tours available right now.
-                </Card>
-              )}
-            </section>
-
-            {renderSection('Featured', 'Hand-picked tours from live listings', featured, 'mapped')}
-            {renderSection('Top Rated', 'Highest rated experiences', topRated, 'mix')}
-            {renderSection(
-              'Adventure Trips',
-              'Adrenaline and outdoor experiences',
-              adventure,
-              'mapped',
-            )}
-            {renderSection('Hiking Trips', 'Nature-focused itineraries', hiking, 'mapped')}
-            {renderSection(
-              'Pakistan Northern',
-              'Curated northern routes',
-              pakistanNorthern,
-              'mapped',
-            )}
-          </div>
-        )}
-      </main>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

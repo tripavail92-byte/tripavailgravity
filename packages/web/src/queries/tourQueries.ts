@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query'
 
-import { isAbortError } from '@/lib/withTimeout'
 import { supabase } from '@/lib/supabase'
+import { isAbortError } from '@/lib/withTimeout'
 import type { Database } from '@/types/database.types'
 import type { UnifiedExperience } from '@/types/experience'
 
@@ -84,6 +84,8 @@ export interface HomepageMixTour {
   shortDescription?: string | null
   durationDays?: number | null
   /** Cities this trip visits — used by the homepage "Browse by destination" tiles. */
+  /** Raw tour_type, used for the /tours category facet. */
+  tourType?: string | null
   destinationCities?: string[]
 }
 
@@ -155,7 +157,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
   const { data, error } = await supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,duration_days,images,created_at,updated_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,tour_type,duration_days,images,created_at,updated_at',
     )
     .eq('is_active', true)
     .eq('is_published', true)
@@ -175,15 +177,19 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
 
   return (data as any[]).map((tour: any) => {
     const locationObj = tour.location || {}
-    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
-      ? tour.destination_cities
-      : locationObj.city ? [locationObj.city] : []
-    const location = destinationCities.length > 1
-      ? destinationCities.join(' · ')
-      : (`${locationObj.city || ''}, ${locationObj.country || ''}`
-          .replace(/^, /, '')
-          .replace(/, $/, '')
-          .trim())
+    const destinationCities: string[] =
+      Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+        ? tour.destination_cities
+        : locationObj.city
+          ? [locationObj.city]
+          : []
+    const location =
+      destinationCities.length > 1
+        ? destinationCities.join(' · ')
+        : `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+            .trim()
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -210,6 +216,7 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
       created_at: tour.created_at ?? tour.updated_at ?? '1970-01-01T00:00:00.000Z',
       isFeatured,
       badge: 'Tour Experience',
+      tourType: tour.tour_type ?? null,
       destinationCities,
       shortDescription: tour.short_description ?? null,
       durationDays: tour.duration_days ?? null,
@@ -237,7 +244,9 @@ export function useHomepageMixTours(
 async function fetchFeaturedTours(): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
+    .select(
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+    )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -258,11 +267,19 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
   // Map to UI-friendly format
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
-      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
-    const location = destinationCities.length > 1
-      ? destinationCities.join(' · ')
-      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
+    const destinationCities: string[] =
+      Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+        ? tour.destination_cities
+        : locationObj.city
+          ? [locationObj.city]
+          : []
+    const location =
+      destinationCities.length > 1
+        ? destinationCities.join(' · ')
+        : `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+            .trim()
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -294,7 +311,9 @@ async function fetchToursByCategory(
 
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
+    .select(
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+    )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -320,11 +339,19 @@ async function fetchToursByCategory(
 
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
-      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
-    const location = destinationCities.length > 1
-      ? destinationCities.join(' · ')
-      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
+    const destinationCities: string[] =
+      Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+        ? tour.destination_cities
+        : locationObj.city
+          ? [locationObj.city]
+          : []
+    const location =
+      destinationCities.length > 1
+        ? destinationCities.join(' · ')
+        : `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+            .trim()
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -351,7 +378,9 @@ async function fetchToursByCategory(
 async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
+    .select(
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+    )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -373,11 +402,19 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
 
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
-      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
-    const location = destinationCities.length > 1
-      ? destinationCities.join(' · ')
-      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
+    const destinationCities: string[] =
+      Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+        ? tour.destination_cities
+        : locationObj.city
+          ? [locationObj.city]
+          : []
+    const location =
+      destinationCities.length > 1
+        ? destinationCities.join(' · ')
+        : `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+            .trim()
 
     const images = Array.isArray(tour.images)
       ? tour.images
@@ -409,7 +446,9 @@ async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour
 async function fetchToursByCountry(country: string, take: number = 12): Promise<MappedTour[]> {
   const { data, error } = await supabase
     .from('tours')
-    .select('id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at')
+    .select(
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+    )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
@@ -431,11 +470,19 @@ async function fetchToursByCountry(country: string, take: number = 12): Promise<
 
   return data.map((tour: any) => {
     const locationObj = tour.location || {}
-    const destinationCities: string[] = Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
-      ? tour.destination_cities : locationObj.city ? [locationObj.city] : []
-    const location = destinationCities.length > 1
-      ? destinationCities.join(' · ')
-      : (`${locationObj.city || ''}, ${locationObj.country || ''}`.replace(/^, /, '').replace(/, $/, '').trim())
+    const destinationCities: string[] =
+      Array.isArray(tour.destination_cities) && tour.destination_cities.length > 0
+        ? tour.destination_cities
+        : locationObj.city
+          ? [locationObj.city]
+          : []
+    const location =
+      destinationCities.length > 1
+        ? destinationCities.join(' · ')
+        : `${locationObj.city || ''}, ${locationObj.country || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '')
+            .trim()
 
     const images = Array.isArray(tour.images)
       ? tour.images
