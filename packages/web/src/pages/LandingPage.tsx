@@ -1,6 +1,6 @@
 import { CheckCircle2, ShieldCheck, Star, Zap } from 'lucide-react'
 
-import { GeoHomeHero } from '@/components/home/GeoHomeHero'
+import { DestinationTiles } from '@/components/home/DestinationTiles'
 import { HomeCategoryFeed } from '@/components/home/HomeCategoryFeed'
 import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { Card } from '@/components/ui/card'
@@ -48,7 +48,7 @@ export default function LandingPage() {
             component that renders the sections they drive.
           */}
           <QueryErrorBoundaryWrapper>
-            <HomeCategoryFeed hero={<GeoHomeHero />} />
+            <HomeCategoryFeed hero={<DestinationTiles variant="hero" />} />
           </QueryErrorBoundaryWrapper>
 
           {/* Trust Strip — moved below the listings so experiences lead the page */}

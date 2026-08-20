@@ -3,7 +3,6 @@ import { Ticket } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { DestinationTiles } from '@/components/home/DestinationTiles'
 import { ExploreControls, type ExploreMode } from '@/components/home/ExploreControls'
 import {
   BudgetChips,
@@ -400,8 +399,6 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
               isLoading={featTourQ.isLoading}
               cards={featTours}
             />
-
-            <DestinationTiles />
 
             <FeedSection
               title="Northern Pakistan"
