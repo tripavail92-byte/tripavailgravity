@@ -1006,6 +1006,35 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
+  // Category + "Verified Operator" chips. Shown inline in the meta row under the title (rather
+  // than on their own full-height row above it) to save vertical space.
+  const badgeChips = (
+    <>
+      <GlassBadge variant="primary" className="capitalize">
+        {tour.tour_type?.replace('-', ' ') || 'Tour'}
+      </GlassBadge>
+      {(tour.operator_is_verified ?? tour.is_verified) ? (
+        // Clickable: a trust badge should let the traveller go and CHECK the claim. Links to the
+        // operator's public profile when we have a slug.
+        operatorSlug ? (
+          <Link
+            to={`/operators/${operatorSlug}`}
+            className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            title="View operator profile"
+          >
+            <GlassBadge variant="success" icon={<Sparkles size={12} />}>
+              Verified Operator
+            </GlassBadge>
+          </Link>
+        ) : (
+          <GlassBadge variant="success" icon={<Sparkles size={12} />}>
+            Verified Operator
+          </GlassBadge>
+        )
+      ) : null}
+    </>
+  )
+
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
       {/* Sub-nav — the first bar under the fixed SiteHeader. The old Back/Share bar was removed:
@@ -1036,31 +1065,6 @@ export default function TourDetailsPage() {
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-2">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <GlassBadge variant="primary" size="lg" className="capitalize">
-                  {tour.tour_type?.replace('-', ' ') || 'Tour'}
-                </GlassBadge>
-                {(tour.operator_is_verified ?? tour.is_verified) ? (
-                  // Clickable: a trust badge should let the traveller go and CHECK the
-                  // claim. Links to the operator's public profile when we have a slug.
-                  operatorSlug ? (
-                    <Link
-                      to={`/operators/${operatorSlug}`}
-                      className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                      title="View operator profile"
-                    >
-                      <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                        Verified Operator
-                      </GlassBadge>
-                    </Link>
-                  ) : (
-                    <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                      Verified Operator
-                    </GlassBadge>
-                  )
-                ) : null}
-              </div>
-
               <h1 className="type-display text-foreground mb-2 break-words">{tour.title}</h1>
 
               {/* Short description teaser */}
@@ -1070,7 +1074,8 @@ export default function TourDetailsPage() {
                 </p>
               )}
 
-              <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground font-medium">
+                {badgeChips}
                 {Number(tour.rating) > 0 ? (
                   // Clickable: jumps to the Traveler reviews section below (#reviews),
                   // so the score is a way IN to the reviews rather than a dead stat.
