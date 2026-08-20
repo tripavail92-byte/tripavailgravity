@@ -10,6 +10,12 @@
  *
  * Only rewrites public Supabase storage object URLs; anything else (Unsplash fallback, data URIs,
  * already-transformed URLs) passes through untouched.
+ *
+ * `format=webp` is FORCED rather than left to Accept-header negotiation. The transform response
+ * carries no `Vary: Accept`, so a shared cache stores one variant per URL and serves it to
+ * everyone: if a client that doesn't advertise WebP (a crawler, an in-app webview) hits the URL
+ * first, the 2.2 MB PNG variant gets cached for every visitor. Pinning the format in the URL makes
+ * each URL return exactly one small WebP, cache-safe and negotiation-independent.
  */
 const OBJECT_SEGMENT = '/storage/v1/object/public/'
 const RENDER_SEGMENT = '/storage/v1/render/image/public/'
@@ -20,5 +26,5 @@ export function tourImage(url: string | null | undefined, width: number, quality
   if (!url.includes(OBJECT_SEGMENT)) return url
   const base = url.replace(OBJECT_SEGMENT, RENDER_SEGMENT)
   const sep = base.includes('?') ? '&' : '?'
-  return `${base}${sep}width=${Math.round(width)}&quality=${quality}`
+  return `${base}${sep}width=${Math.round(width)}&quality=${quality}&format=webp`
 }

@@ -11,8 +11,8 @@ import { cn } from '@/lib/utils'
  * pin mark on narrow widths / tight rails. Light and dark variants swap on the
  * `<html>.dark` class (Tailwind darkMode: 'class').
  */
-export const LOGO_FULL_LIGHT = '/brand/logo-light.png'
-export const LOGO_FULL_DARK = '/brand/logo-dark.png'
+export const LOGO_FULL_LIGHT = '/brand/logo-light.webp'
+export const LOGO_FULL_DARK = '/brand/logo-dark.webp'
 export const LOGO_MARK_SRC = '/brand/logo-mark.png'
 /** Back-compat export (setup wizard, etc.) — now points at the new pin mark. */
 export const LOGO_EMBLEM_SRC = LOGO_MARK_SRC
