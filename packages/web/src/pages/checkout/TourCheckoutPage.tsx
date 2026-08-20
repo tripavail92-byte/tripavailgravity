@@ -69,6 +69,7 @@ export default function TourCheckoutPage() {
   const { user } = useAuth()
   const requestedGuests = Math.max(1, Number(searchParams.get('guests') || '1') || 1)
   const autoStartPayment = searchParams.get('autostart') === '1'
+  const requestedScheduleId = searchParams.get('schedule') || null
 
   // State
   const [tour, setTour] = useState<Tour | null>(null)
@@ -129,7 +130,11 @@ export default function TourCheckoutPage() {
         if (foundTour) {
           // IMPORTANT: Use foundTour.id (UUID) instead of id (which might be a slug)
           const schedules = await tourService.getTourSchedules(foundTour.id)
-          const mainSchedule = schedules[0]
+          // Book the departure the traveller picked on the tour page; fall back to the
+          // soonest only when no (or a stale) schedule id was passed.
+          const mainSchedule =
+            (requestedScheduleId && schedules.find((sc) => sc.id === requestedScheduleId)) ||
+            schedules[0]
           setSchedule(mainSchedule)
 
           if (mainSchedule) {
@@ -153,7 +158,7 @@ export default function TourCheckoutPage() {
     }
 
     fetchDetails()
-  }, [id])
+  }, [id, requestedScheduleId])
 
   // Countdown timer for pending booking (10 minutes)
   useEffect(() => {

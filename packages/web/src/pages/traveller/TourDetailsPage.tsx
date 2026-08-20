@@ -160,6 +160,7 @@ export default function TourDetailsPage() {
   const money = useMoney()
   const t = useT()
   const [tour, setTour] = useState<Tour | null>(null)
+  const [schedules, setSchedules] = useState<TourSchedule[]>([])
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
   const [selectedSeats, setSelectedSeats] = useState(1)
@@ -180,23 +181,10 @@ export default function TourDetailsPage() {
           // Fetch schedule for this tour
           // IMPORTANT: Use foundTour.id (UUID) instead of id (which might be a slug)
           const tourSchedules = await tourService.getTourSchedules(foundTour.id)
+          setSchedules(tourSchedules)
           const mainSchedule = tourSchedules[0] || null
           setSchedule(mainSchedule)
-
-          // Fetch available slots for this schedule
-          if (mainSchedule) {
-            try {
-              const slots = await tourBookingService.getAvailableSlots(mainSchedule.id)
-              setAvailableSlots(slots)
-            } catch (slotError) {
-              // A failed seat-count lookup is NOT "sold out". Leaving this null lets the
-              // capacity fallback below take over; forcing 0 rendered the CTA as
-              // "Sold Out", so a transient network error told the buyer the trip was gone.
-              // The server still validates availability when the booking is created.
-              console.error('Error fetching available slots:', slotError)
-              setAvailableSlots(null)
-            }
-          }
+          if (mainSchedule) void loadSlotsFor(mainSchedule.id)
         }
       } catch (error) {
         console.error('Error fetching tour details:', error)
@@ -209,13 +197,36 @@ export default function TourDetailsPage() {
     fetchTourDetails()
   }, [id])
 
+  // Load live seat count for a specific departure. A failed lookup stays null (NOT 0)
+  // so the capacity fallback applies rather than falsely showing "Sold Out".
+  const loadSlotsFor = async (scheduleId: string) => {
+    try {
+      const slots = await tourBookingService.getAvailableSlots(scheduleId)
+      setAvailableSlots(slots)
+    } catch (slotError) {
+      console.error('Error fetching available slots:', slotError)
+      setAvailableSlots(null)
+    }
+  }
+
+  // Switch the selected departure — every published departure is bookable, not just the
+  // earliest. Clears the seat count while the new one loads so stale numbers never show.
+  const handleSelectSchedule = (next: TourSchedule) => {
+    if (next.id === schedule?.id) return
+    setSchedule(next)
+    setAvailableSlots(null)
+    void loadSlotsFor(next.id)
+  }
+
   const handleBookNow = () => {
     if (!tour?.id) return
     const guests = Math.max(1, selectedSeats)
     // No &autostart=1: checkout is a reviewable step where the traveller enters
     // their details and applies a promo code, and the 10-minute hold is created when
     // they click — not silently on mount (which also made the promo input flash away).
-    navigate(`/checkout/tour/${tour.id || id}?guests=${guests}`)
+    // Carry the CHOSEN departure so checkout books that one, not schedules[0].
+    const scheduleParam = schedule?.id ? `&schedule=${schedule.id}` : ''
+    navigate(`/checkout/tour/${tour.id || id}?guests=${guests}${scheduleParam}`)
   }
 
   const handleOpenBookingDialog = () => {
@@ -561,6 +572,47 @@ export default function TourDetailsPage() {
         </div>
 
         <div className="space-y-3 rounded-3xl border border-primary/10 bg-primary/5 p-4 backdrop-blur-sm">
+          {schedules.length > 1 ? (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-primary/75">
+                Choose your departure
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {schedules.map((s) => {
+                  const selected = s.id === schedule?.id
+                  const soldOut =
+                    Number(s.capacity) > 0 && Number(s.capacity) - Number(s.booked_count ?? 0) <= 0
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => !soldOut && handleSelectSchedule(s)}
+                      disabled={soldOut}
+                      aria-pressed={selected}
+                      className={`flex min-w-[84px] flex-col items-center rounded-xl border px-3 py-2 text-center transition-colors ${
+                        selected
+                          ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                          : soldOut
+                            ? 'cursor-not-allowed border-border/50 bg-muted/30 text-muted-foreground/50 line-through'
+                            : 'border-border/60 bg-background text-foreground hover:border-primary/40 hover:bg-primary/5'
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">
+                        {new Date(s.start_time).toLocaleDateString('en-GB', { month: 'short' })}
+                      </span>
+                      <span className="text-lg font-black leading-none">
+                        {new Date(s.start_time).getDate()}
+                      </span>
+                      <span className="text-[10px] font-medium opacity-80">
+                        {new Date(s.start_time).toLocaleDateString('en-GB', { weekday: 'short' })}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="h-px bg-primary/10" />
+            </div>
+          ) : null}
           {schedule ? (
             <>
               <div className="flex items-start gap-3">
