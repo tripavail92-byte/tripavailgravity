@@ -418,6 +418,36 @@ export default function CreateTourPage() {
           console.error('[CreateTourPage] Failed to load pickup locations', e)
         }
 
+        // Load the ACTUAL departures from tour_schedules so the wizard's schedules reflect the
+        // live table, not the (possibly drifted) tours.schedules JSON. Without this, saving or
+        // submitting re-syncs from stale JSON and prunes real departures / resets seat counts.
+        try {
+          const { data: sched, error: schedErr } = await supabase
+            .from('tour_schedules')
+            .select('start_time, end_time, capacity, status')
+            .eq('tour_id', tourIdToEdit)
+            .order('start_time', { ascending: true })
+          if (schedErr) throw schedErr
+          if (Array.isArray(sched) && sched.length > 0) {
+            const pad = (n: number) => String(n).padStart(2, '0')
+            const mapped = sched.map((row: any) => {
+              const d = new Date(row.start_time)
+              return {
+                start_time: row.start_time,
+                end_time: row.end_time,
+                capacity: row.capacity,
+                status: row.status,
+                // date/time drive the wizard's departure field; start_time drives the sync.
+                date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+                time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+              }
+            })
+            setTourData((prev) => ({ ...prev, schedules: mapped }))
+          }
+        } catch (e) {
+          console.error('[CreateTourPage] Failed to load tour schedules', e)
+        }
+
         const workflow = (existing as any)?.draft_data?._workflow
         if (workflow && typeof workflow === 'object') {
           const savedCurrentStep = Number(workflow.currentStep)
