@@ -5,6 +5,7 @@ import {
   Calendar,
   Camera,
   Check,
+  ChevronDown,
   ClipboardList,
   Globe,
   Heart,
@@ -168,6 +169,9 @@ export default function TourDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
   const [operatorSlug, setOperatorSlug] = useState<string | null>(null)
+  // "Good to know" keeps only the first few requirement chips visible; the rest live behind a
+  // "Show all" toggle so the section stays short.
+  const [showAllReqs, setShowAllReqs] = useState(false)
 
   useEffect(() => {
     const fetchTourDetails = async () => {
@@ -1006,6 +1010,12 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
+  // Requirement chips for "Good to know" — the raw list is string keys; resolve and flatten them
+  // into labelled items once so the section can show a few and collapse the rest.
+  const requirementItems = groupTourRequirementsByCategory(tour.requirements ?? []).flatMap(
+    (g) => g.items,
+  )
+
   // Pickup points — its own section with an anchor, placed in the flow right after the itinerary
   // (a "Pickup points" tab jumps here) so "where do we meet" sits next to the day-by-day plan.
   const pickupSection =
@@ -1125,33 +1135,69 @@ export default function TourDetailsPage() {
       </GlassCard>
     ) : null
 
-  // Category + "Verified Operator" chips. Shown inline in the meta row under the title (rather
-  // than on their own full-height row above it) to save vertical space.
-  const badgeChips = (
-    <>
-      <GlassBadge variant="primary" className="capitalize">
-        {tour.tour_type?.replace('-', ' ') || 'Tour'}
-      </GlassBadge>
-      {(tour.operator_is_verified ?? tour.is_verified) ? (
-        // Clickable: a trust badge should let the traveller go and CHECK the claim. Links to the
-        // operator's public profile when we have a slug.
-        operatorSlug ? (
-          <Link
-            to={`/operators/${operatorSlug}`}
-            className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            title="View operator profile"
-          >
-            <GlassBadge variant="success" icon={<Sparkles size={12} />}>
-              Verified Operator
-            </GlassBadge>
-          </Link>
-        ) : (
-          <GlassBadge variant="success" icon={<Sparkles size={12} />}>
+  const durationDays = tour.itinerary?.length ?? 0
+  const durationLabel =
+    durationDays >= 1
+      ? durationDays === 1
+        ? '1 day'
+        : `${durationDays} days / ${durationDays - 1} nights`
+      : null
+  const locationLabel =
+    [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') || 'Destination TBD'
+
+  // Verified-operator badge (links to the operator's profile when we have a slug) — shown in the
+  // trust strip below the hero.
+  const verifiedBadge =
+    (tour.operator_is_verified ?? tour.is_verified) ? (
+      operatorSlug ? (
+        <Link
+          to={`/operators/${operatorSlug}`}
+          className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          title="View operator profile"
+        >
+          <GlassBadge variant="success" size="sm" icon={<Sparkles size={12} />}>
             Verified Operator
           </GlassBadge>
-        )
+        </Link>
+      ) : (
+        <GlassBadge variant="success" size="sm" icon={<Sparkles size={12} />}>
+          Verified Operator
+        </GlassBadge>
+      )
+    ) : null
+
+  // Hero overlay — the eyebrow (category · city), quick-fact pills (duration / difficulty /
+  // location), title and subtitle, laid over the hero photo (white text on a dark scrim).
+  const heroOverlay = (
+    <div className="max-w-3xl">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/80 sm:text-sm">
+        {[tour.tour_type?.replace('-', ' '), tour.location?.city].filter(Boolean).join(' · ') ||
+          'Tour'}
+      </p>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {durationLabel ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
+            <Calendar className="h-3.5 w-3.5" />
+            {durationLabel}
+          </span>
+        ) : null}
+        {tour.difficulty_level ? (
+          <span className="inline-flex items-center rounded-full bg-amber-400/90 px-3 py-1 text-sm font-bold capitalize text-amber-950">
+            {tour.difficulty_level}
+          </span>
+        ) : null}
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
+          <MapPin className="h-3.5 w-3.5" />
+          {locationLabel}
+        </span>
+      </div>
+      <h1 className="type-display text-white drop-shadow-sm">{tour.title}</h1>
+      {tour.short_description ? (
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-lg">
+          {tour.short_description}
+        </p>
       ) : null}
-    </>
+    </div>
   )
 
   return (
@@ -1172,104 +1218,70 @@ export default function TourDetailsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Title header — the name, badges, rating and location lead the page, above the gallery. */}
+        {/* Hero — the title, quick-fact pills, and subtitle are overlaid on the top photo (with a
+            "show all photos" button); the remaining photos sit in a strip below it. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-2">
-            <div>
-              <h1 className="type-display text-foreground mb-2 break-words">{tour.title}</h1>
-
-              {/* Short description teaser */}
-              {tour.short_description && (
-                <p className="text-base text-muted-foreground italic mb-4 leading-relaxed">
-                  {tour.short_description}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground font-medium">
-                {badgeChips}
-                {Number(tour.rating) > 0 ? (
-                  // Clickable: jumps to the Traveler reviews section below (#reviews),
-                  // so the score is a way IN to the reviews rather than a dead stat.
-                  <a
-                    href="#reviews"
-                    className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                    title="Read traveller reviews"
-                  >
-                    <div className="p-1.5 bg-warning/10 rounded-full">
-                      <Star size={16} className="text-warning fill-current" />
-                    </div>
-                    <span className="font-bold text-foreground underline-offset-4 hover:underline">
-                      {tour.rating} ({tour.review_count}{' '}
-                      {Number(tour.review_count) === 1 ? 'review' : 'reviews'})
-                    </span>
-                  </a>
-                ) : (
-                  <a
-                    href="#reviews"
-                    className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                    title="No reviews yet"
-                  >
-                    <div className="p-1.5 bg-primary/10 rounded-full">
-                      <Star size={16} className="text-primary" />
-                    </div>
-                    <span className="font-bold text-foreground">New</span>
-                  </a>
-                )}
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-info/10 rounded-full">
-                    <MapPin size={16} className="text-info" />
-                  </div>
-                  <span className="font-bold text-foreground">
-                    {(() => {
-                      const cities: string[] =
-                        Array.isArray((tour as any).destination_cities) &&
-                        (tour as any).destination_cities.length > 0
-                          ? (tour as any).destination_cities
-                          : [tour.location?.city].filter(Boolean)
-                      if (cities.length > 1) return cities.join(' · ')
-                      // Never interpolate raw — a missing city/country used to render the literal
-                      // string "undefined, undefined" on the live tour page. Mirrors OperatorCalendarPage:25.
-                      return (
-                        [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') ||
-                        'Destination TBD'
-                      )
-                    })()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-success/10 rounded-full">
-                    <Shield size={16} className="text-success" />
-                  </div>
-                  <span className="font-bold text-foreground">Secure Booking</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Share / review / save — relocated here from the removed top Back bar, so the
-                actions sit with the title instead of on their own full-width strip. */}
-            <div className="flex shrink-0 items-center gap-2">
-              <ShareButton
-                variant="icon"
-                url={`/tours/${(tour as any).slug || tour.id}`}
-                title={tour.title}
-                text={`Check out this trip on TripAvail: ${tour.title}`}
-                className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
-              />
-              <TourReviewButton tourId={tour.id} />
-              <GlassButton variant="ghost" size="icon" className="rounded-full">
-                <Heart size={18} className="text-primary" />
-              </GlassButton>
-            </div>
-          </div>
+          <TourGallery images={tourImages} title={tour.title} overlay={heroOverlay} />
         </motion.div>
 
-        {/* Hero Gallery */}
-        <TourGallery images={tourImages} title={tour.title} />
+        {/* Trust strip + actions, just under the hero (the location/duration now live on the hero). */}
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-muted-foreground">
+            {verifiedBadge}
+            {Number(tour.rating) > 0 ? (
+              // Clickable: jumps to the Traveler reviews section below (#reviews).
+              <a
+                href="#reviews"
+                className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                title="Read traveller reviews"
+              >
+                <div className="p-1.5 bg-warning/10 rounded-full">
+                  <Star size={16} className="text-warning fill-current" />
+                </div>
+                <span className="font-bold text-foreground underline-offset-4 hover:underline">
+                  {tour.rating} ({tour.review_count}{' '}
+                  {Number(tour.review_count) === 1 ? 'review' : 'reviews'})
+                </span>
+              </a>
+            ) : (
+              <a
+                href="#reviews"
+                className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                title="No reviews yet"
+              >
+                <div className="p-1.5 bg-primary/10 rounded-full">
+                  <Star size={16} className="text-primary" />
+                </div>
+                <span className="font-bold text-foreground">New</span>
+              </a>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-success/10 rounded-full">
+                <Shield size={16} className="text-success" />
+              </div>
+              <span className="font-bold text-foreground">Secure Booking</span>
+            </div>
+          </div>
+
+          {/* Share / write-a-review / save. */}
+          <div className="flex shrink-0 items-center gap-2">
+            <ShareButton
+              variant="icon"
+              url={`/tours/${(tour as any).slug || tour.id}`}
+              title={tour.title}
+              text={`Check out this trip on TripAvail: ${tour.title}`}
+              className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
+            />
+            <TourReviewButton tourId={tour.id} />
+            <GlassButton variant="ghost" size="icon" className="rounded-full">
+              <Heart size={18} className="text-primary" />
+            </GlassButton>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
@@ -1317,94 +1329,65 @@ export default function TourDetailsPage() {
                 <GlassTitle className="text-2xl font-bold">Good to know</GlassTitle>
               </GlassHeader>
               <GlassContent>
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-warning/10 rounded-full">
-                        <Activity size={16} className="text-warning" />
-                      </div>
-                      <h4 className="text-base font-semibold text-foreground">Experience level</h4>
-                    </div>
-                    <div className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
-                      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Difficulty
-                      </span>
-                      <span className="text-sm font-bold text-foreground capitalize">
-                        {tour.difficulty_level || 'Not specified'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-info/10 rounded-full">
-                        <Globe size={16} className="text-info" />
-                      </div>
-                      <h4 className="text-base font-semibold text-foreground">Languages</h4>
-                    </div>
-
-                    {tour.languages?.length ? (
-                      <div className="flex flex-wrap gap-3">
-                        {tour.languages.map((lang) => (
-                          <motion.span
+                <div className="space-y-4">
+                  {/* Difficulty + languages as compact chips on one line (was three tall blocks). */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1.5 text-sm font-semibold text-foreground">
+                      <Activity className="h-3.5 w-3.5 text-warning" />
+                      <span className="capitalize">{tour.difficulty_level || 'Not specified'}</span>
+                    </span>
+                    {tour.languages?.length
+                      ? tour.languages.map((lang) => (
+                          <span
                             key={lang}
-                            whileHover={{ y: -2, scale: 1.03 }}
-                            className="inline-flex items-center rounded-xl border border-border/60 bg-background px-3 py-2 text-sm font-bold text-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-lg"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1.5 text-sm font-semibold text-foreground"
                           >
+                            <Globe className="h-3.5 w-3.5 text-info" />
                             {lang}
-                          </motion.span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Not specified</p>
-                    )}
+                          </span>
+                        ))
+                      : null}
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-success/10 rounded-full">
-                        <ClipboardList size={16} className="text-success" />
-                      </div>
-                      <h4 className="text-base font-semibold text-foreground">Requirements</h4>
-                    </div>
-
-                    {tour.requirements?.length ? (
-                      <div className="space-y-5">
-                        {groupTourRequirementsByCategory(tour.requirements).map((group) => (
-                          <div
-                            key={group.category}
-                            className="rounded-2xl border border-border/60 bg-muted/20 p-4"
-                          >
-                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                              {group.category}
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-3">
-                              {group.items.map((item) => {
-                                const RequirementIcon = getTourIconComponent(item.icon_key)
-
-                                return (
-                                  <motion.div
-                                    key={item.id}
-                                    whileHover={{ y: -3, scale: 1.03 }}
-                                    className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background px-3.5 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-lg"
-                                  >
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                      <RequirementIcon className="h-4 w-4" />
-                                    </span>
-                                    <span>{item.label}</span>
-                                  </motion.div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No special requirements listed
+                  {/* Requirements & rules as compact chips; the overflow collapses behind a toggle
+                      so a tour with a long list doesn't push the whole page down. */}
+                  {requirementItems.length ? (
+                    <div className="space-y-2.5">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        Requirements &amp; rules
                       </p>
-                    )}
-                  </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(showAllReqs ? requirementItems : requirementItems.slice(0, 6)).map(
+                          (item) => {
+                            const RequirementIcon = getTourIconComponent(item.icon_key)
+                            return (
+                              <span
+                                key={item.id}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1.5 text-sm text-foreground"
+                              >
+                                <RequirementIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                {item.label}
+                              </span>
+                            )
+                          },
+                        )}
+                      </div>
+                      {requirementItems.length > 6 ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllReqs((v) => !v)}
+                          className="inline-flex items-center gap-1 rounded text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        >
+                          {showAllReqs
+                            ? 'Show less'
+                            : `Show all ${requirementItems.length} requirements`}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${showAllReqs ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </GlassContent>
             </GlassCard>
