@@ -71,6 +71,39 @@ async function fetchListing(kind, slugOrId) {
   return rows[0] || null
 }
 
+/** Public operator storefront row for /operators/:slug share cards. */
+async function fetchOperator(slugOrId) {
+  const isUuid = UUID_RE.test(slugOrId)
+  const key = isUuid ? 'user_id' : 'slug'
+  const val = isUuid ? slugOrId : encodeURIComponent(slugOrId)
+  const rows = await sbFetch(
+    `operator_public_storefront_v?${key}=eq.${val}` +
+      `&select=slug,company_name,business_name,company_logo_url,description,primary_city,has_identity_verified&limit=1`,
+  )
+  return rows[0] || null
+}
+
+/** Head meta for an operator profile — a TravelAgency, not a Product. */
+function operatorMeta(row) {
+  const name = (row.business_name || row.company_name || 'Tour Operator').trim()
+  const city = (row.primary_city || '').trim()
+  const canonical = `${SITE}/operators/${row.slug || ''}`
+  const description =
+    (row.description || '').slice(0, 200) ||
+    `Book verified tours with ${name}${city ? ` in ${city}` : ''} on TripAvail.`
+  const image = row.company_logo_url || undefined
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TravelAgency',
+    name,
+    ...(city ? { address: { '@type': 'PostalAddress', addressLocality: city } } : {}),
+    ...(image ? { image } : {}),
+    ...(row.description ? { description: row.description } : {}),
+    url: canonical,
+  }
+  return { title: `${name} — verified tour operator`, description, canonical, image, jsonLd }
+}
+
 /** Replace the shell's default head tags with page-specific ones + inject JSON-LD. */
 function renderShell(meta) {
   const { title, description, canonical, image, jsonLd } = meta
@@ -144,17 +177,24 @@ function listingMeta(kind, row) {
 async function buildSitemap() {
   // Launch scope (Trips-only): only fetch/advertise hotel packages in Phase 3 — until
   // then /hotels and /packages/* redirect to /tours, so crawling them is wasted budget.
-  const [tours, pkgs] = await Promise.all([
+  const [tours, pkgs, operators] = await Promise.all([
     sbFetch('tours?is_active=eq.true&is_published=eq.true&status=eq.live&select=slug,id&limit=5000'),
     LAUNCH_HOTELS
       ? sbFetch('packages?is_published=eq.true&status=eq.live&select=slug,id&limit=5000')
       : Promise.resolve([]),
+    // Public operator profiles are indexable landing pages — advertise the ones with a slug.
+    sbFetch('operator_public_storefront_v?is_public=eq.true&slug=not.is.null&select=slug&limit=5000').catch(
+      () => [],
+    ),
   ])
   const statics = LAUNCH_HOTELS ? ['/', '/hotels', '/tours', '/explore'] : ['/', '/tours', '/explore']
   const urls = [
     ...statics.map((p) => ({ loc: `${SITE}${p}`, priority: p === '/' ? '1.0' : '0.7' })),
     ...tours.map((t) => ({ loc: `${SITE}/tours/${t.slug || t.id}`, priority: '0.8' })),
     ...pkgs.map((p) => ({ loc: `${SITE}/packages/${p.slug || p.id}`, priority: '0.8' })),
+    ...operators
+      .filter((o) => o.slug)
+      .map((o) => ({ loc: `${SITE}/operators/${o.slug}`, priority: '0.6' })),
   ]
   return (
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
@@ -225,6 +265,18 @@ const server = http.createServer(async (req, res) => {
         const row = await fetchListing(m[1], m[2])
         if (row) {
           sendHtml(res, renderShell(listingMeta(m[1], row)))
+          return
+        }
+      } catch {
+        // fall through to the default shell
+      }
+    }
+    const om = pathname.match(/^\/operators\/([^/]+)\/?$/)
+    if (om && seoEnabled && INDEX_HTML) {
+      try {
+        const op = await fetchOperator(om[1])
+        if (op) {
+          sendHtml(res, renderShell(operatorMeta(op)))
           return
         }
       } catch {
