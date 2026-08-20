@@ -47,7 +47,7 @@ export function DestinationTiles({
   if (isLoading || destinations.length < 3) return null
 
   return (
-    <section className={isHero ? '' : 'mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8'}>
+    <section className={isHero ? 'w-full' : 'mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8'}>
       <div className={isHero ? 'mb-6' : 'mb-5'}>
         <h2
           className={
@@ -72,30 +72,19 @@ export function DestinationTiles({
           <Link
             key={d.city}
             to={`/search?types=tour&q=${encodeURIComponent(d.city)}`}
-            className={`group relative aspect-square overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
-              // The first tile spans a 2x2 block for a focal point; aspect-square on every
-              // tile keeps the grid rows equal so the hero lines up exactly with the 2x2 of
-              // small tiles beside it.
-              isHero && i === 0 ? 'col-span-2 row-span-2' : ''
-            }`}
+            className="group relative aspect-square overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           >
-            {/* The image fills the WHOLE tile. It used to sit in a fixed 4:3 box while the grid
-                cell stretched taller, leaving a grey band under every small tile. */}
+            {/* Every tile is the same size — one uniform grid, no oversized first tile.
+                The image fills the whole square. */}
             <img
-              src={tourImage(d.image, isHero && i === 0 ? 1100 : 600)}
+              src={tourImage(d.image, 600)}
               alt=""
-              loading={i === 0 ? 'eager' : 'lazy'}
+              loading={i < 4 ? 'eager' : 'lazy'}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-3">
-              <p
-                className={`font-bold text-white drop-shadow-sm ${
-                  isHero && i === 0 ? 'text-xl sm:text-2xl' : 'text-sm sm:text-base'
-                }`}
-              >
-                {d.city}
-              </p>
+              <p className="text-sm font-bold text-white drop-shadow-sm sm:text-base">{d.city}</p>
               <p className="flex items-center gap-1 text-xs text-white/85">
                 {d.count} {d.count === 1 ? 'trip' : 'trips'}
                 <ArrowRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
