@@ -1,3 +1,4 @@
+import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,29 +10,24 @@ import {
   Heart,
   Loader2,
   MapPin,
-  Navigation,
   Minus,
+  Navigation,
+  Plus,
   Shield,
   Sparkles,
   Star,
-  Plus,
   Users,
   X,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
-import type { TourPickupLocation } from '@tripavail/shared/types/tourPickup'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { ShareButton } from '@/components/share/ShareButton'
 import { TourReviewButton } from '@/components/tour/TourReviewButton'
 import { TourSubNav } from '@/components/tour/TourSubNav'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   GlassBadge,
   GlassButton,
@@ -40,17 +36,17 @@ import {
   GlassHeader,
   GlassTitle,
 } from '@/components/ui/glass'
+import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { tourBookingService } from '@/features/booking'
+import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import {
   CANCELLATION_ICON_BY_POLICY,
   getTourIconComponent,
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
-import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
-import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
 import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
-import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
+import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
@@ -59,7 +55,14 @@ import { cancellationPolicyKey, getCancellationMeta } from '@/lib/cancellationPo
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
 function isValidLatLng(lat: number, lng: number) {
-  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  )
 }
 
 function buildStaticMapPreviewUrl(lat: number, lng: number) {
@@ -208,7 +211,10 @@ export default function TourDetailsPage() {
   const handleBookNow = () => {
     if (!tour?.id) return
     const guests = Math.max(1, selectedSeats)
-    navigate(`/checkout/tour/${tour.id || id}?guests=${guests}&autostart=1`)
+    // No &autostart=1: checkout is a reviewable step where the traveller enters
+    // their details and applies a promo code, and the 10-minute hold is created when
+    // they click — not silently on mount (which also made the promo input flash away).
+    navigate(`/checkout/tour/${tour.id || id}?guests=${guests}`)
   }
 
   const handleOpenBookingDialog = () => {
@@ -232,12 +238,16 @@ export default function TourDetailsPage() {
 
   useEffect(() => {
     if (!tour?.id) return
-    reviewService.getTourReviewsWithReplies(tour.id).then(setReviews).catch(() => {})
+    reviewService
+      .getTourReviewsWithReplies(tour.id)
+      .then(setReviews)
+      .catch(() => {})
   }, [tour?.id])
 
   useEffect(() => {
     if (!tour?.operator_id) return
-    operatorPublicService.getProfileById(tour.operator_id)
+    operatorPublicService
+      .getProfileById(tour.operator_id)
       .then((prof) => setOperatorSlug(prof?.slug ?? null))
       .catch(() => {})
   }, [tour?.operator_id])
@@ -312,23 +322,23 @@ export default function TourDetailsPage() {
   const CancellationPolicyIcon = getTourIconComponent(cancellationMeta.iconKey)
   const includedFeatures =
     (Array.isArray((tour as any)?.included_features) && (tour as any)?.included_features.length > 0
-      ? (((tour as any)?.included_features as TourFeatureItem[]) || [])
+      ? ((tour as any)?.included_features as TourFeatureItem[]) || []
       : []) || []
   const excludedFeatures =
     (Array.isArray((tour as any)?.excluded_features) && (tour as any)?.excluded_features.length > 0
-      ? (((tour as any)?.excluded_features as TourFeatureItem[]) || [])
+      ? ((tour as any)?.excluded_features as TourFeatureItem[]) || []
       : []) || []
   const includedItems =
     (Array.isArray(tour?.inclusions) && tour.inclusions.length > 0
       ? tour.inclusions
       : Array.isArray((tour as any)?.included)
-        ? (((tour as any)?.included as string[]) || [])
+        ? ((tour as any)?.included as string[]) || []
         : []) || []
   const excludedItems =
     (Array.isArray(tour?.exclusions) && tour.exclusions.length > 0
       ? tour.exclusions
       : Array.isArray((tour as any)?.excluded)
-        ? (((tour as any)?.excluded as string[]) || [])
+        ? ((tour as any)?.excluded as string[]) || []
         : []) || []
   const basePrice = Number((tour as any)?.base_price ?? tour?.price ?? 0) || 0
   const depositPercentage = Math.max(0, Math.min(90, tour?.deposit_percentage || 0))
@@ -382,9 +392,15 @@ export default function TourDetailsPage() {
   const nextTierTotalSavingsAtUnlock = nextGroupTier
     ? Math.max(0, (basePrice - nextGroupTier.pricePerPerson) * nextGroupTier.minPeople)
     : 0
-  const payNowPerTraveler = requiresDeposit ? paymentTerms.upfrontAmount / Math.max(selectedSeats, 1) : effectiveUnitPrice
-  const payLaterPerTraveler = requiresDeposit ? paymentTerms.remainingAmount / Math.max(selectedSeats, 1) : 0
-  const seatsRemainingAfterSelection = schedule ? Math.max(0, liveAvailableSeats - selectedSeats) : 0
+  const payNowPerTraveler = requiresDeposit
+    ? paymentTerms.upfrontAmount / Math.max(selectedSeats, 1)
+    : effectiveUnitPrice
+  const payLaterPerTraveler = requiresDeposit
+    ? paymentTerms.remainingAmount / Math.max(selectedSeats, 1)
+    : 0
+  const seatsRemainingAfterSelection = schedule
+    ? Math.max(0, liveAvailableSeats - selectedSeats)
+    : 0
   const canReachNextTierOnThisDeparture = nextGroupTier
     ? selectedSeats + seatsRemainingAfterSelection >= nextGroupTier.minPeople
     : false
@@ -438,56 +454,64 @@ export default function TourDetailsPage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           <div className="space-y-4">
             <h4 className="text-base font-semibold text-foreground">Included</h4>
-            {includedFeatures.length > 0 ? includedFeatures.map((item, i) => {
-              const Icon = getTourIconComponent(item.icon_key)
-              return (
+            {includedFeatures.length > 0 ? (
+              includedFeatures.map((item, i) => {
+                const Icon = getTourIconComponent(item.icon_key)
+                return (
+                  <motion.div
+                    key={`${item.label}-${i}`}
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-success/20 hover:bg-success/5"
+                  >
+                    <Icon className="h-5 w-5 text-success" />
+                    <span>{item.label}</span>
+                  </motion.div>
+                )
+              })
+            ) : includedItems.length > 0 ? (
+              includedItems.map((inc, i) => (
                 <motion.div
-                  key={`${item.label}-${i}`}
+                  key={i}
                   whileHover={{ x: 4 }}
                   className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-success/20 hover:bg-success/5"
                 >
-                  <Icon className="h-5 w-5 text-success" />
-                  <span>{item.label}</span>
+                  <Check className="h-5 w-5 text-success" />
+                  <span>{inc}</span>
                 </motion.div>
-              )
-            }) : includedItems.length > 0 ? includedItems.map((inc, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ x: 4 }}
-                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-success/20 hover:bg-success/5"
-              >
-                <Check className="h-5 w-5 text-success" />
-                <span>{inc}</span>
-              </motion.div>
-            )) : (
+              ))
+            ) : (
               <p className="text-sm text-muted-foreground">Not specified</p>
             )}
           </div>
 
           <div className="space-y-4">
             <h4 className="text-base font-semibold text-foreground">Excluded</h4>
-            {excludedFeatures.length > 0 ? excludedFeatures.map((item, i) => {
-              const Icon = getTourIconComponent(item.icon_key)
-              return (
+            {excludedFeatures.length > 0 ? (
+              excludedFeatures.map((item, i) => {
+                const Icon = getTourIconComponent(item.icon_key)
+                return (
+                  <motion.div
+                    key={`${item.label}-${i}`}
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-destructive/20 hover:bg-destructive/5"
+                  >
+                    <Icon className="h-5 w-5 text-destructive" />
+                    <span>{item.label}</span>
+                  </motion.div>
+                )
+              })
+            ) : excludedItems.length > 0 ? (
+              excludedItems.map((exc, i) => (
                 <motion.div
-                  key={`${item.label}-${i}`}
+                  key={i}
                   whileHover={{ x: 4 }}
                   className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-destructive/20 hover:bg-destructive/5"
                 >
-                  <Icon className="h-5 w-5 text-destructive" />
-                  <span>{item.label}</span>
+                  <X className="h-5 w-5 text-destructive" />
+                  <span>{exc}</span>
                 </motion.div>
-              )
-            }) : excludedItems.length > 0 ? excludedItems.map((exc, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ x: 4 }}
-                className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground transition-all duration-300 hover:border-destructive/20 hover:bg-destructive/5"
-              >
-                <X className="h-5 w-5 text-destructive" />
-                <span>{exc}</span>
-              </motion.div>
-            )) : (
+              ))
+            ) : (
               <p className="text-sm text-muted-foreground">Not specified</p>
             )}
           </div>
@@ -505,13 +529,20 @@ export default function TourDetailsPage() {
   }) => (
     <GlassCard
       variant="card"
-      className={inDialog ? 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10' : 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10'}
+      className={
+        inDialog
+          ? 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10'
+          : 'relative overflow-hidden rounded-[2.5rem] border-none shadow-2xl shadow-primary/10'
+      }
     >
       <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 -translate-y-8 translate-x-8 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-24 w-24 -translate-x-6 translate-y-6 rounded-full bg-primary/5 blur-3xl" />
       <GlassHeader>
         <GlassTitle className="type-h2 text-foreground">
-          {(() => { const m = money(effectiveUnitPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+          {(() => {
+            const m = money(effectiveUnitPrice, tour.currency)
+            return `${m.estimate ? '≈ ' : ''}${m.text}`
+          })()}
           <span className="type-body-sm text-muted-foreground"> / person</span>
         </GlassTitle>
       </GlassHeader>
@@ -557,7 +588,8 @@ export default function TourDetailsPage() {
                 </span>
               </div>
               <p className="text-[11px] font-medium text-muted-foreground">
-                Live capacity {liveAvailableSeats} seat{liveAvailableSeats === 1 ? '' : 's'} before this booking.
+                Live capacity {liveAvailableSeats} seat{liveAvailableSeats === 1 ? '' : 's'} before
+                this booking.
               </p>
               {schedule && seatsRemainingAfterSelection < 3 && liveAvailableSeats > 0 && (
                 <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-2">
@@ -606,8 +638,9 @@ export default function TourDetailsPage() {
           </div>
           <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
             <p className="type-caption text-muted-foreground">
-              Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves {seatsRemainingAfterSelection}{' '}
-              seat{seatsRemainingAfterSelection === 1 ? '' : 's'} available on this departure.
+              Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves{' '}
+              {seatsRemainingAfterSelection} seat{seatsRemainingAfterSelection === 1 ? '' : 's'}{' '}
+              available on this departure.
             </p>
             <div className="flex flex-wrap items-center justify-between gap-2">
               {activeGroupTier ? (
@@ -619,21 +652,32 @@ export default function TourDetailsPage() {
                 <p className="type-overline text-primary/75">Standard rate</p>
               )}
               {currentTotalSavings > 0 ? (
-                <GlassBadge variant="light" size="sm" className="border-primary/15 bg-primary/10 text-primary">
+                <GlassBadge
+                  variant="light"
+                  size="sm"
+                  className="border-primary/15 bg-primary/10 text-primary"
+                >
                   Traveller rate live
                 </GlassBadge>
               ) : null}
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium text-muted-foreground">
-                {(() => { const m = money(effectiveUnitPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} × {selectedSeats}
+                {(() => {
+                  const m = money(effectiveUnitPrice, tour.currency)
+                  return `${m.estimate ? '≈ ' : ''}${m.text}`
+                })()}{' '}
+                × {selectedSeats}
               </span>
               <span
                 className={`font-black tabular-nums text-foreground transition-all duration-200 ${
                   isTotalPulsing ? 'scale-[1.03] text-primary' : ''
                 }`}
               >
-                {(() => { const m = money(animatedLiveTotalPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                {(() => {
+                  const m = money(animatedLiveTotalPrice, tour.currency)
+                  return `${m.estimate ? '≈ ' : ''}${m.text}`
+                })()}
               </span>
             </div>
             {currentTotalSavings > 0 ? (
@@ -643,22 +687,39 @@ export default function TourDetailsPage() {
                     isSavingsPulsing ? 'scale-[1.02]' : ''
                   }`}
                 >
-                  Discount Applied · You save {(() => { const m = money(animatedCurrentTotalSavings, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                  Discount Applied · You save{' '}
+                  {(() => {
+                    const m = money(animatedCurrentTotalSavings, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}
                 </p>
                 <p className="mt-1 type-caption tabular-nums text-success/90">
-                  {(() => { const m = money(animatedCurrentSavingsPerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} saved per person vs standard rate
+                  {(() => {
+                    const m = money(animatedCurrentSavingsPerPerson, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}{' '}
+                  saved per person vs standard rate
                 </p>
               </div>
             ) : null}
             {nextGroupTier && seatsToNextTier > 0 && canReachNextTierOnThisDeparture ? (
               <div className="rounded-2xl border border-primary/20 bg-primary/8 p-2.5">
                 <p className="type-overline text-primary">
-                  Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock {nextGroupTier.name}
+                  Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock{' '}
+                  {nextGroupTier.name}
                 </p>
                 <p className="mt-1 type-caption text-muted-foreground">
-                  Save up to {(() => { const m = money(nextTierTotalSavingsAtUnlock, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} at {nextGroupTier.minPeople} people
+                  Save up to{' '}
+                  {(() => {
+                    const m = money(nextTierTotalSavingsAtUnlock, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}{' '}
+                  at {nextGroupTier.minPeople} people
                   {nextTierExtraSavingsPerPerson > 0
-                    ? ` (${(() => { const m = money(nextTierExtraSavingsPerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} more per person)`
+                    ? ` (${(() => {
+                        const m = money(nextTierExtraSavingsPerPerson, tour.currency)
+                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                      })()} more per person)`
                     : ''}
                 </p>
               </div>
@@ -671,18 +732,47 @@ export default function TourDetailsPage() {
             <p className="type-overline text-primary">Booking payment terms</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">Upfront payment</p>
-                <p className="mt-1 text-lg font-black text-foreground">{paymentTerms.upfrontPercentage}%</p>
-                <p className="text-xs text-muted-foreground">Pay now: {(() => { const m = money(payNowPerTraveler, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per traveler</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Upfront payment
+                </p>
+                <p className="mt-1 text-lg font-black text-foreground">
+                  {paymentTerms.upfrontPercentage}%
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Pay now:{' '}
+                  {(() => {
+                    const m = money(payNowPerTraveler, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}{' '}
+                  per traveler
+                </p>
               </div>
               <div className="rounded-2xl border border-primary/10 bg-background/80 p-3">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">Pay later</p>
-                <p className="mt-1 text-lg font-black text-foreground">{(() => { const m = money(payLaterPerTraveler, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per traveler</p>
-                <p className="text-xs text-muted-foreground">Paid directly to operator before departure</p>
+                <p className="mt-1 text-lg font-black text-foreground">
+                  {(() => {
+                    const m = money(payLaterPerTraveler, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}{' '}
+                  per traveler
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Paid directly to operator before departure
+                </p>
               </div>
             </div>
             <p className="type-caption text-muted-foreground">
-              Pay {(() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} now to confirm your booking. Remaining {(() => { const m = money(paymentTerms.remainingAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} will be paid directly to the tour operator before departure.
+              Pay{' '}
+              {(() => {
+                const m = money(paymentTerms.upfrontAmount, tour.currency)
+                return `${m.estimate ? '≈ ' : ''}${m.text}`
+              })()}{' '}
+              now to confirm your booking. Remaining{' '}
+              {(() => {
+                const m = money(paymentTerms.remainingAmount, tour.currency)
+                return `${m.estimate ? '≈ ' : ''}${m.text}`
+              })()}{' '}
+              will be paid directly to the tour operator before departure.
             </p>
           </div>
         ) : null}
@@ -698,18 +788,35 @@ export default function TourDetailsPage() {
               : schedule && availableSlots === 0
                 ? 'Sold Out'
                 : requiresDeposit
-                  ? t('detail.payAndConfirm', { amount: (() => { const m = money(paymentTerms.upfrontAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })() })
-                  : t('detail.payAndConfirm', { amount: (() => { const m = money(paymentTerms.totalAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })() })}
+                  ? t('detail.payAndConfirm', {
+                      amount: (() => {
+                        const m = money(paymentTerms.upfrontAmount, tour.currency)
+                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                      })(),
+                    })
+                  : t('detail.payAndConfirm', {
+                      amount: (() => {
+                        const m = money(paymentTerms.totalAmount, tour.currency)
+                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                      })(),
+                    })}
           </Button>
         </motion.div>
 
         {requiresDeposit && canBookNow ? (
           <p className="text-center type-caption text-muted-foreground">
-            Remaining {(() => { const m = money(paymentTerms.remainingAmount, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} will be paid to the operator before departure.
+            Remaining{' '}
+            {(() => {
+              const m = money(paymentTerms.remainingAmount, tour.currency)
+              return `${m.estimate ? '≈ ' : ''}${m.text}`
+            })()}{' '}
+            will be paid to the operator before departure.
           </p>
         ) : null}
 
-        <p className="text-center type-overline text-muted-foreground/70">{cancellationMeta.title}</p>
+        <p className="text-center type-overline text-muted-foreground/70">
+          {cancellationMeta.title}
+        </p>
       </GlassContent>
     </GlassCard>
   )
@@ -857,9 +964,7 @@ export default function TourDetailsPage() {
                     ) : null}
                   </div>
 
-                  <h1 className="type-display text-foreground mb-2 break-words">
-                    {tour.title}
-                  </h1>
+                  <h1 className="type-display text-foreground mb-2 break-words">{tour.title}</h1>
 
                   {/* Short description teaser */}
                   {tour.short_description && (
@@ -892,15 +997,18 @@ export default function TourDetailsPage() {
                       </div>
                       <span className="font-bold text-foreground">
                         {(() => {
-                          const cities: string[] = Array.isArray((tour as any).destination_cities) && (tour as any).destination_cities.length > 0
-                            ? (tour as any).destination_cities
-                            : [tour.location?.city].filter(Boolean)
+                          const cities: string[] =
+                            Array.isArray((tour as any).destination_cities) &&
+                            (tour as any).destination_cities.length > 0
+                              ? (tour as any).destination_cities
+                              : [tour.location?.city].filter(Boolean)
                           if (cities.length > 1) return cities.join(' · ')
                           // Never interpolate raw — a missing city/country used to render the literal
                           // string "undefined, undefined" on the live tour page. Mirrors OperatorCalendarPage:25.
                           return (
-                            [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') ||
-                            'Destination TBD'
+                            [tour.location?.city, tour.location?.country]
+                              .filter(Boolean)
+                              .join(', ') || 'Destination TBD'
                           )
                         })()}
                       </span>
@@ -922,7 +1030,11 @@ export default function TourDetailsPage() {
             {tour.description?.trim() ? (
               // id/scroll-mt-32 pair matches the Overview tab in TourSubNav — scroll-mt keeps the
               // heading clear of the two stacked sticky bars when jumped to.
-              <GlassCard id="overview" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+              <GlassCard
+                id="overview"
+                className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+                variant="card"
+              >
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
                 </GlassHeader>
@@ -952,7 +1064,11 @@ export default function TourDetailsPage() {
             ) : null}
 
             {/* Hosted by — id/scroll-mt-32 target for the "Operator" sub-nav tab. */}
-            <GlassCard id="operator" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+            <GlassCard
+              id="operator"
+              className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+              variant="card"
+            >
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">
                   Hosted by {tour.operator_display_name || 'Tour Operator'}
@@ -960,7 +1076,9 @@ export default function TourDetailsPage() {
               </GlassHeader>
               <GlassContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  {(tour.operator_is_verified ?? tour.is_verified) ? 'Verified Operator' : 'Tour Operator'}
+                  {(tour.operator_is_verified ?? tour.is_verified)
+                    ? 'Verified Operator'
+                    : 'Tour Operator'}
                   {' • '}
                   {tour.max_participants && tour.max_participants > 0
                     ? tour.max_participants <= 12
@@ -998,7 +1116,11 @@ export default function TourDetailsPage() {
             </GlassCard>
 
             {/* Languages + Requirements — id/scroll-mt-32 target for the "Details" sub-nav tab. */}
-            <GlassCard id="details" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+            <GlassCard
+              id="details"
+              className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+              variant="card"
+            >
               <GlassHeader>
                 <GlassTitle className="text-2xl font-bold">Before you go</GlassTitle>
               </GlassHeader>
@@ -1052,23 +1174,26 @@ export default function TourDetailsPage() {
                                 const RequirementIcon = getTourIconComponent(item.icon_key)
 
                                 return (
-                                <motion.div
-                                  key={item.id}
-                                  whileHover={{ y: -3, scale: 1.03 }}
-                                  className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background px-3.5 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-lg"
-                                >
-                                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                    <RequirementIcon className="h-4 w-4" />
-                                  </span>
-                                  <span>{item.label}</span>
-                                </motion.div>
-                              )})}
+                                  <motion.div
+                                    key={item.id}
+                                    whileHover={{ y: -3, scale: 1.03 }}
+                                    className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background px-3.5 py-3 text-sm font-semibold text-foreground shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-lg"
+                                  >
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                      <RequirementIcon className="h-4 w-4" />
+                                    </span>
+                                    <span>{item.label}</span>
+                                  </motion.div>
+                                )
+                              })}
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No special requirements listed</p>
+                      <p className="text-sm text-muted-foreground">
+                        No special requirements listed
+                      </p>
                     )}
                   </div>
                 </div>
@@ -1084,7 +1209,10 @@ export default function TourDetailsPage() {
                   <div className="space-y-4">
                     {pickupLocations.map((pickup: TourPickupLocation, index: number) => {
                       const previewUrl = buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
-                      const directionsUrl = buildGoogleDirectionsUrl(pickup.latitude, pickup.longitude)
+                      const directionsUrl = buildGoogleDirectionsUrl(
+                        pickup.latitude,
+                        pickup.longitude,
+                      )
                       const pickupTime = formatPickupTime(pickup.pickup_time)
 
                       return (
@@ -1109,7 +1237,10 @@ export default function TourDetailsPage() {
                                 </div>
                               )}
                               <div className="absolute left-4 top-4 flex items-center gap-2">
-                                <GlassBadge variant={pickup.is_primary ? 'primary' : 'light'} size="sm">
+                                <GlassBadge
+                                  variant={pickup.is_primary ? 'primary' : 'light'}
+                                  size="sm"
+                                >
                                   {pickup.is_primary ? 'Primary pickup' : `Stop ${index + 1}`}
                                 </GlassBadge>
                               </div>
@@ -1119,15 +1250,21 @@ export default function TourDetailsPage() {
                               <div className="space-y-2">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                   <div>
-                                    <h4 className="text-lg font-bold text-foreground">{pickup.title}</h4>
-                                    <p className="text-sm leading-6 text-muted-foreground">{pickup.formatted_address}</p>
+                                    <h4 className="text-lg font-bold text-foreground">
+                                      {pickup.title}
+                                    </h4>
+                                    <p className="text-sm leading-6 text-muted-foreground">
+                                      {pickup.formatted_address}
+                                    </p>
                                   </div>
                                   {directionsUrl ? (
                                     <Button
                                       type="button"
                                       variant="outline"
                                       className="gap-2 rounded-2xl border-border/60 bg-background hover:border-primary/20 hover:bg-muted/30"
-                                      onClick={() => window.open(directionsUrl, '_blank', 'noopener,noreferrer')}
+                                      onClick={() =>
+                                        window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+                                      }
                                     >
                                       <Navigation className="h-4 w-4" />
                                       Directions
@@ -1168,7 +1305,9 @@ export default function TourDetailsPage() {
                                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Pickup notes
                                   </p>
-                                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{pickup.notes}</p>
+                                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                                    {pickup.notes}
+                                  </p>
                                 </div>
                               ) : null}
                             </div>
@@ -1215,7 +1354,10 @@ export default function TourDetailsPage() {
                           Starting From
                         </p>
                         <p className="text-lg font-black text-foreground">
-                          {(() => { const m = money(basePrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                          {(() => {
+                            const m = money(basePrice, tour.currency)
+                            return `${m.estimate ? '≈ ' : ''}${m.text}`
+                          })()}
                         </p>
                       </div>
                       <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
@@ -1231,7 +1373,10 @@ export default function TourDetailsPage() {
                           Pay Today
                         </p>
                         <p className="text-lg font-black text-foreground">
-                          {(() => { const m = money(payToday, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                          {(() => {
+                            const m = money(payToday, tour.currency)
+                            return `${m.estimate ? '≈ ' : ''}${m.text}`
+                          })()}
                         </p>
                       </div>
                     </div>
@@ -1272,12 +1417,19 @@ export default function TourDetailsPage() {
                                 }`}
                               >
                                 <div className="min-w-0">
-                                  <p className={`text-sm font-bold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}>
+                                  <p
+                                    className={`text-sm font-bold truncate ${isActive ? 'text-primary' : 'text-foreground'}`}
+                                  >
                                     {tier.name} • {tier.minPeople}+
                                   </p>
                                   {savings > 0 ? (
                                     <p className="text-xs text-success font-semibold">
-                                      Save {(() => { const m = money(savings, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()} per person
+                                      Save{' '}
+                                      {(() => {
+                                        const m = money(savings, tour.currency)
+                                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                                      })()}{' '}
+                                      per person
                                     </p>
                                   ) : (
                                     <p className="text-xs text-muted-foreground font-medium">
@@ -1288,16 +1440,23 @@ export default function TourDetailsPage() {
                                 <div className="text-right shrink-0">
                                   {isActive ? (
                                     <div className="text-[10px] font-black uppercase tracking-wider text-primary mb-0.5">
-                                      Active for {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'}
+                                      Active for {selectedSeats}{' '}
+                                      {selectedSeats === 1 ? 'seat' : 'seats'}
                                     </div>
                                   ) : null}
                                   {savings > 0 ? (
                                     <p className="text-[11px] text-muted-foreground line-through font-semibold">
-                                      {(() => { const m = money(basePrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                                      {(() => {
+                                        const m = money(basePrice, tour.currency)
+                                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                                      })()}
                                     </p>
                                   ) : null}
                                   <p className="text-sm md:text-base font-black text-primary">
-                                    {(() => { const m = money(tier.pricePerPerson, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}
+                                    {(() => {
+                                      const m = money(tier.pricePerPerson, tour.currency)
+                                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                                    })()}
                                   </p>
                                 </div>
                               </div>
@@ -1316,18 +1475,23 @@ export default function TourDetailsPage() {
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">{cancellationMeta.title}</p>
-                        <p className="text-sm text-muted-foreground">{cancellationMeta.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {cancellationMeta.description}
+                        </p>
                       </div>
                     </div>
                   </div>
-
                 </div>
               </GlassContent>
             </GlassCard>
 
             {/* Itinerary — id/scroll-mt-32 target for the "Itinerary" sub-nav tab. */}
             {tour.itinerary?.length ? (
-              <GlassCard id="itinerary" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+              <GlassCard
+                id="itinerary"
+                className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+                variant="card"
+              >
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">Itinerary</GlassTitle>
                 </GlassHeader>
@@ -1341,7 +1505,8 @@ export default function TourDetailsPage() {
                         <div className="absolute left-[-11px] top-0 w-5 h-5 rounded-full bg-primary ring-4 ring-background" />
                         <div className="space-y-4">
                           <h4 className="text-lg font-bold text-foreground">
-                            Day {day.day}{day.title ? `: ${day.title}` : ''}
+                            Day {day.day}
+                            {day.title ? `: ${day.title}` : ''}
                           </h4>
                           {/* Activity-based itinerary */}
                           {Array.isArray(day.activities) && day.activities.length > 0 ? (
@@ -1352,19 +1517,31 @@ export default function TourDetailsPage() {
                                   className="flex items-start gap-3 p-3 rounded-xl bg-background/40 border border-border/40"
                                 >
                                   <span className="text-lg flex-shrink-0 leading-tight mt-0.5">
-                                    {act.type === 'transport' ? '🚐'
-                                      : act.type === 'departure_arrival' ? '✈️'
-                                      : act.type === 'meal' ? '🍽️'
-                                      : act.type === 'tea_break' ? '🍵'
-                                      : act.type === 'sightseeing' ? '🏞️'
-                                      : act.type === 'guided_tour' ? '🧭'
-                                      : act.type === 'adventure' ? '🏄'
-                                      : act.type === 'photo_stop' ? '📸'
-                                      : act.type === 'shopping' ? '🛍️'
-                                      : act.type === 'cultural' ? '🎭'
-                                      : act.type === 'free_time' ? '⏳'
-                                      : act.type === 'accommodation' ? '🏨'
-                                      : '✏️'}
+                                    {act.type === 'transport'
+                                      ? '🚐'
+                                      : act.type === 'departure_arrival'
+                                        ? '✈️'
+                                        : act.type === 'meal'
+                                          ? '🍽️'
+                                          : act.type === 'tea_break'
+                                            ? '🍵'
+                                            : act.type === 'sightseeing'
+                                              ? '🏞️'
+                                              : act.type === 'guided_tour'
+                                                ? '🧭'
+                                                : act.type === 'adventure'
+                                                  ? '🏄'
+                                                  : act.type === 'photo_stop'
+                                                    ? '📸'
+                                                    : act.type === 'shopping'
+                                                      ? '🛍️'
+                                                      : act.type === 'cultural'
+                                                        ? '🎭'
+                                                        : act.type === 'free_time'
+                                                          ? '⏳'
+                                                          : act.type === 'accommodation'
+                                                            ? '🏨'
+                                                            : '✏️'}
                                   </span>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -1377,7 +1554,7 @@ export default function TourDetailsPage() {
                                         </span>
                                       )}
                                     </div>
-                                    {(act.description) && (
+                                    {act.description && (
                                       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                                         {act.description}
                                       </p>
@@ -1386,7 +1563,8 @@ export default function TourDetailsPage() {
                                 </div>
                               ))}
                             </div>
-                          ) : typeof day.description === 'string' && day.description.trim().length > 0 ? (
+                          ) : typeof day.description === 'string' &&
+                            day.description.trim().length > 0 ? (
                             /* Fallback: legacy plain-text description */
                             <div className="rounded-2xl border border-border/40 bg-muted/20 p-4">
                               <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
@@ -1406,13 +1584,18 @@ export default function TourDetailsPage() {
                 Empty-state variant renders below when reviews.length === 0 so the tab always has
                 a landing spot rather than silently no-op'ing on a fresh tour. */}
             {reviews.length > 0 ? (
-              <GlassCard id="reviews" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+              <GlassCard
+                id="reviews"
+                className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+                variant="card"
+              >
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">
                     Traveler reviews
                     {tour.rating ? (
                       <span className="ml-3 text-base font-semibold text-muted-foreground">
-                        {Number(tour.rating).toFixed(1)} ★ &middot; {tour.review_count} {tour.review_count === 1 ? 'review' : 'reviews'}
+                        {Number(tour.rating).toFixed(1)} ★ &middot; {tour.review_count}{' '}
+                        {tour.review_count === 1 ? 'review' : 'reviews'}
                       </span>
                     ) : null}
                   </GlassTitle>
@@ -1420,7 +1603,10 @@ export default function TourDetailsPage() {
                 <GlassContent>
                   <div className="space-y-4">
                     {reviews.map((review) => (
-                      <div key={review.id} className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-2">
+                      <div
+                        key={review.id}
+                        className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-2"
+                      >
                         <div className="flex items-center gap-2">
                           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                             T
@@ -1435,16 +1621,29 @@ export default function TourDetailsPage() {
                               ))}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                year: 'numeric',
+                              })}
                             </span>
                           </div>
                         </div>
-                        {review.title ? <p className="text-sm font-semibold text-foreground">{review.title}</p> : null}
-                        {review.body ? <p className="text-sm text-muted-foreground leading-relaxed">{review.body}</p> : null}
+                        {review.title ? (
+                          <p className="text-sm font-semibold text-foreground">{review.title}</p>
+                        ) : null}
+                        {review.body ? (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {review.body}
+                          </p>
+                        ) : null}
                         {review.reply ? (
                           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 space-y-1">
-                            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">Operator reply</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">{review.reply.body}</p>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">
+                              Operator reply
+                            </p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {review.reply.body}
+                            </p>
                           </div>
                         ) : null}
                       </div>
@@ -1455,13 +1654,18 @@ export default function TourDetailsPage() {
             ) : (
               // Empty-state landing card so the Reviews tab always has a target and the CTA never
               // "does nothing" on a tour that has yet to receive its first review.
-              <GlassCard id="reviews" className="scroll-mt-32 rounded-3xl border-none shadow-xl" variant="card">
+              <GlassCard
+                id="reviews"
+                className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+                variant="card"
+              >
                 <GlassHeader>
                   <GlassTitle className="text-2xl font-bold">Traveler reviews</GlassTitle>
                 </GlassHeader>
                 <GlassContent>
                   <p className="text-muted-foreground">
-                    No reviews yet. Once travelers complete this tour, their reviews will appear here.
+                    No reviews yet. Once travelers complete this tour, their reviews will appear
+                    here.
                   </p>
                 </GlassContent>
               </GlassCard>
@@ -1486,9 +1690,16 @@ export default function TourDetailsPage() {
             className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Ready to book</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Ready to book
+              </p>
               <p className="mt-1 text-sm font-semibold text-foreground">
-                {schedule ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => { const m = money(animatedLiveTotalPrice, tour.currency); return `${m.estimate ? '≈ ' : ''}${m.text}` })()}` : 'No departure dates available'}
+                {schedule
+                  ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => {
+                      const m = money(animatedLiveTotalPrice, tour.currency)
+                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                    })()}`
+                  : 'No departure dates available'}
               </p>
             </div>
             {schedule ? (

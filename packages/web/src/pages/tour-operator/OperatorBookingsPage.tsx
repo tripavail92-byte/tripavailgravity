@@ -1,3 +1,4 @@
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { format, isAfter } from 'date-fns'
 import {
   ArrowRight,
@@ -45,7 +46,6 @@ import {
   operatorPortalService,
 } from '@/features/tour-operator/services/operatorPortalService'
 import { useAuth } from '@/hooks/useAuth'
-import { formatMoney } from '@tripavail/shared/utils/money'
 
 type BookingAction = 'cancel' | 'complete' | 'resend_confirmation'
 
@@ -118,8 +118,7 @@ export default function OperatorBookingsPage() {
     // booking with a future date was inflating this — the filter used to be date-only.
     const upcoming = bookings.filter(
       (booking) =>
-        booking.status === 'confirmed' &&
-        isAfter(new Date(booking.tour_schedules.start_time), now),
+        booking.status === 'confirmed' && isAfter(new Date(booking.tour_schedules.start_time), now),
     )
 
     // Revenue must not drop the moment a tour is marked completed. Earned revenue is every
@@ -508,6 +507,31 @@ export default function OperatorBookingsPage() {
                         </TableCell>
                         <TableCell>
                           <span className="font-semibold text-foreground">{booking.pax_count}</span>
+                          {/* Fulfilment details captured at checkout — who is coming, how to
+                              reach them, and where to pick them up. */}
+                          {booking.metadata?.lead_traveller_name ? (
+                            <p className="mt-1 text-xs font-medium text-foreground">
+                              {String(booking.metadata.lead_traveller_name)}
+                            </p>
+                          ) : null}
+                          {booking.metadata?.lead_traveller_phone ? (
+                            <a
+                              href={`tel:${String(booking.metadata.lead_traveller_phone)}`}
+                              className="mt-0.5 block text-xs text-primary hover:underline"
+                            >
+                              {String(booking.metadata.lead_traveller_phone)}
+                            </a>
+                          ) : null}
+                          {booking.metadata?.pickup_location_title ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              Pickup: {String(booking.metadata.pickup_location_title)}
+                            </p>
+                          ) : null}
+                          {booking.metadata?.special_requests ? (
+                            <p className="mt-0.5 text-xs italic text-muted-foreground">
+                              “{String(booking.metadata.special_requests)}”
+                            </p>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <Badge

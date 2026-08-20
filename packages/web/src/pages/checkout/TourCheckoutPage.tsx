@@ -1,7 +1,5 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { formatMoney } from '@tripavail/shared/utils/money'
-
-import { getCancellationMeta } from '@/lib/cancellationPolicy'
 import {
   AlertCircle,
   ArrowLeft,
@@ -30,6 +28,7 @@ import { operatorPublicService } from '@/features/tour-operator/services/operato
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { getSessionCached } from '@/lib/authCache'
+import { getCancellationMeta } from '@/lib/cancellationPolicy'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
 
@@ -45,7 +44,8 @@ function logStripeDebug(event: string, payload: Record<string, unknown> = {}) {
 
   const params = new URLSearchParams(window.location.search)
   const enabled =
-    params.get('stripe_debug') === '1' || window.localStorage.getItem('tripavail:stripe-debug') === '1'
+    params.get('stripe_debug') === '1' ||
+    window.localStorage.getItem('tripavail:stripe-debug') === '1'
 
   if (!enabled) return
 
@@ -75,6 +75,15 @@ export default function TourCheckoutPage() {
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
   const [guestCount, setGuestCount] = useState(requestedGuests)
+  // Traveller details. Without these the operator receives a paid booking and has no
+  // idea who is coming, how to reach them, or which pickup point to use — which is
+  // exactly how travellers end up messaging operators directly instead of booking.
+  const [leadName, setLeadName] = useState('')
+  const [leadPhone, setLeadPhone] = useState('')
+  const [whatsappSame, setWhatsappSame] = useState(true)
+  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [pickupLocationId, setPickupLocationId] = useState('')
+  const [specialRequests, setSpecialRequests] = useState('')
   const [loading, setLoading] = useState(true)
   const [processingBooking, setProcessingBooking] = useState(false)
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -93,6 +102,23 @@ export default function TourCheckoutPage() {
   )
 
   // Fetch tour and schedule details
+  // Prefill the lead traveller from the signed-in profile, and default the pickup
+  // point to the tour's primary one so a single-pickup tour needs no extra input.
+  useEffect(() => {
+    const meta = (user?.user_metadata ?? {}) as Record<string, any>
+    const name = String(meta.full_name || meta.name || '').trim()
+    if (name) setLeadName((prev) => prev || name)
+    const phone = String(meta.phone || meta.phone_number || user?.phone || '').trim()
+    if (phone) setLeadPhone((prev) => prev || phone)
+  }, [user?.id])
+
+  useEffect(() => {
+    const pickups = tour?.pickup_locations ?? []
+    if (!pickups.length) return
+    const primary = pickups.find((p) => p.is_primary) ?? pickups[0]
+    setPickupLocationId((prev) => prev || primary.id)
+  }, [tour?.id, tour?.pickup_locations])
+
   useEffect(() => {
     const fetchDetails = async () => {
       if (!id) return
@@ -385,6 +411,16 @@ export default function TourCheckoutPage() {
       return
     }
 
+    // The operator cannot fulfil a booking without a name and a contact number.
+    if (!leadName.trim()) {
+      setBookingError('Please enter the lead traveller’s name')
+      return
+    }
+    if (!leadPhone.trim()) {
+      setBookingError('Please enter a phone number the operator can reach you on')
+      return
+    }
+
     setProcessingBooking(true)
     setBookingError(null)
 
@@ -406,6 +442,14 @@ export default function TourCheckoutPage() {
           upfront_amount: payNowAmount,
           remaining_amount: payLaterAmount,
           promo_code: promoCode.trim().toUpperCase() || null,
+          // Fulfilment details — surfaced to the operator on their booking page.
+          lead_traveller_name: leadName.trim(),
+          lead_traveller_phone: leadPhone.trim(),
+          lead_traveller_whatsapp: whatsappSame ? leadPhone.trim() : whatsappNumber.trim() || null,
+          pickup_location_id: pickupLocationId || null,
+          pickup_location_title:
+            (tour.pickup_locations ?? []).find((pl) => pl.id === pickupLocationId)?.title ?? null,
+          special_requests: specialRequests.trim() || null,
         },
       })
 
@@ -413,18 +457,20 @@ export default function TourCheckoutPage() {
       setClientSecret(null) // Reset client secret to trigger new payment intent
 
       if (tour.operator_id) {
-        void operatorPublicService.recordStorefrontEvent({
-          operatorId: tour.operator_id,
-          eventType: 'booking_start',
-          tourId: tour.id,
-          metadata: {
-            booking_id: result.booking.id,
-            guest_count: guestCount,
-            schedule_id: schedule.id,
-          },
-        }).catch((eventError) => {
-          console.error('Failed to record booking_start storefront event:', eventError)
-        })
+        void operatorPublicService
+          .recordStorefrontEvent({
+            operatorId: tour.operator_id,
+            eventType: 'booking_start',
+            tourId: tour.id,
+            metadata: {
+              booking_id: result.booking.id,
+              guest_count: guestCount,
+              schedule_id: schedule.id,
+            },
+          })
+          .catch((eventError) => {
+            console.error('Failed to record booking_start storefront event:', eventError)
+          })
       }
 
       // Payment form will be shown automatically via the useEffect
@@ -548,9 +594,7 @@ export default function TourCheckoutPage() {
 
                   {/* Schedule Info */}
                   <div className="p-4 bg-info/10 rounded-xl border border-info/20">
-                    <p className="type-overline text-info mb-2">
-                      Your Departure
-                    </p>
+                    <p className="type-overline text-info mb-2">Your Departure</p>
                     <p className="text-foreground font-bold">
                       {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
                     </p>
@@ -563,7 +607,7 @@ export default function TourCheckoutPage() {
             </GlassCard>
 
             {/* Guest Selector */}
-            {!pendingBooking && !autoStartPayment && (
+            {!pendingBooking && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -578,7 +622,9 @@ export default function TourCheckoutPage() {
                   </p>
                   <p className="type-body-sm text-muted-foreground">
                     Remaining after this booking:{' '}
-                    <span className="text-foreground font-bold">{seatsRemainingAfterSelection}</span>
+                    <span className="text-foreground font-bold">
+                      {seatsRemainingAfterSelection}
+                    </span>
                   </p>
 
                   {/* Guest Counter */}
@@ -619,6 +665,123 @@ export default function TourCheckoutPage() {
               </motion.div>
             )}
 
+            {/* ── Traveller details ──────────────────────────────────────────
+                The operator fulfils the trip from this. Previously checkout
+                collected nothing but a guest count, so a paid booking arrived
+                with no name, no contact number and no pickup point. */}
+            {!pendingBooking && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="bg-background rounded-2xl p-6 border border-border/50 shadow-sm"
+              >
+                <h2 className="type-h2 text-foreground mb-1">Traveller details</h2>
+                <p className="type-body-sm text-muted-foreground mb-4">
+                  Your operator uses these to confirm the booking and meet you at pickup.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="lead-name"
+                      className="block type-body-sm font-semibold text-foreground mb-1.5"
+                    >
+                      Lead traveller name <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      id="lead-name"
+                      type="text"
+                      value={leadName}
+                      onChange={(e) => setLeadName(e.target.value)}
+                      placeholder="Name as it should appear on the booking"
+                      className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="lead-phone"
+                      className="block type-body-sm font-semibold text-foreground mb-1.5"
+                    >
+                      Phone number <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      id="lead-phone"
+                      type="tel"
+                      inputMode="tel"
+                      value={leadPhone}
+                      onChange={(e) => setLeadPhone(e.target.value)}
+                      placeholder="e.g. 0300 1234567"
+                      className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                    />
+                    <label className="mt-2 flex items-center gap-2 type-body-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        checked={whatsappSame}
+                        onChange={(e) => setWhatsappSame(e.target.checked)}
+                        className="h-4 w-4 rounded border-border/60 accent-[hsl(var(--primary))]"
+                      />
+                      This number is on WhatsApp
+                    </label>
+                    {!whatsappSame && (
+                      <input
+                        type="tel"
+                        inputMode="tel"
+                        value={whatsappNumber}
+                        onChange={(e) => setWhatsappNumber(e.target.value)}
+                        placeholder="WhatsApp number"
+                        className="mt-2 w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                      />
+                    )}
+                  </div>
+
+                  {(tour.pickup_locations?.length ?? 0) > 1 && (
+                    <div>
+                      <label
+                        htmlFor="pickup-point"
+                        className="block type-body-sm font-semibold text-foreground mb-1.5"
+                      >
+                        Pickup point <span className="text-destructive">*</span>
+                      </label>
+                      <select
+                        id="pickup-point"
+                        value={pickupLocationId}
+                        onChange={(e) => setPickupLocationId(e.target.value)}
+                        className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                      >
+                        {(tour.pickup_locations ?? []).map((pl) => (
+                          <option key={pl.id} value={pl.id}>
+                            {pl.title}
+                            {pl.pickup_time ? ` · ${pl.pickup_time}` : ''}
+                            {pl.city ? ` — ${pl.city}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label
+                      htmlFor="special-requests"
+                      className="block type-body-sm font-semibold text-foreground mb-1.5"
+                    >
+                      Anything the operator should know?{' '}
+                      <span className="font-normal text-muted-foreground">(optional)</span>
+                    </label>
+                    <textarea
+                      id="special-requests"
+                      rows={3}
+                      value={specialRequests}
+                      onChange={(e) => setSpecialRequests(e.target.value)}
+                      placeholder="Dietary needs, medical conditions, travelling with children…"
+                      className="w-full resize-y rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Pending Booking / Payment State */}
             {pendingBooking && (
               <GlassCard
@@ -633,9 +796,7 @@ export default function TourCheckoutPage() {
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Clock className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="type-h2 text-foreground mb-2">
-                        Booking Hold Active
-                      </h3>
+                      <h3 className="type-h2 text-foreground mb-2">Booking Hold Active</h3>
                       <p className="type-body-sm text-muted-foreground">
                         Your seats are reserved for 10 minutes
                       </p>
@@ -643,9 +804,7 @@ export default function TourCheckoutPage() {
 
                     {/* Countdown Timer */}
                     <div className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 text-center">
-                      <p className="type-body-sm text-muted-foreground mb-2">
-                        Time Remaining
-                      </p>
+                      <p className="type-body-sm text-muted-foreground mb-2">Time Remaining</p>
                       <div className="text-5xl font-black text-primary">
                         {String(countdown.minutes).padStart(2, '0')}:
                         {String(countdown.seconds).padStart(2, '0')}
@@ -670,7 +829,10 @@ export default function TourCheckoutPage() {
                       <div className="flex items-center justify-between text-lg">
                         <span className="text-foreground font-bold">Total booking amount</span>
                         <span className="font-black text-primary">
-                          {formatMoney(Number(pendingBooking.total_price || totalPrice), tour.currency)}
+                          {formatMoney(
+                            Number(pendingBooking.total_price || totalPrice),
+                            tour.currency,
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -678,20 +840,38 @@ export default function TourCheckoutPage() {
                           Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
                         </span>
                         <span className="font-bold text-foreground">
-                          {formatMoney(Number(pendingBooking.upfront_amount ?? payNowAmount), tour.currency)}
+                          {formatMoney(
+                            Number(pendingBooking.upfront_amount ?? payNowAmount),
+                            tour.currency,
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-medium">Pay later to operator</span>
+                        <span className="text-muted-foreground font-medium">
+                          Pay later to operator
+                        </span>
                         <span className="font-bold text-foreground">
-                          {formatMoney(Number(pendingBooking.remaining_amount ?? payLaterAmount), tour.currency)}
+                          {formatMoney(
+                            Number(pendingBooking.remaining_amount ?? payLaterAmount),
+                            tour.currency,
+                          )}
                         </span>
                       </div>
                     </div>
 
                     {usesDeposit ? (
                       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-                        You are paying only {formatMoney(Number(pendingBooking.upfront_amount ?? payNowAmount), tour.currency)} now to confirm your booking. The remaining {formatMoney(Number(pendingBooking.remaining_amount ?? payLaterAmount), tour.currency)} will be paid directly to the tour operator before departure.
+                        You are paying only{' '}
+                        {formatMoney(
+                          Number(pendingBooking.upfront_amount ?? payNowAmount),
+                          tour.currency,
+                        )}{' '}
+                        now to confirm your booking. The remaining{' '}
+                        {formatMoney(
+                          Number(pendingBooking.remaining_amount ?? payLaterAmount),
+                          tour.currency,
+                        )}{' '}
+                        will be paid directly to the tour operator before departure.
                       </div>
                     ) : null}
 
@@ -718,12 +898,16 @@ export default function TourCheckoutPage() {
                             <TourPaymentForm
                               bookingId={pendingBooking.id}
                               chargeAmount={Number(pendingBooking.upfront_amount ?? payNowAmount)}
-                              remainingAmount={Number(pendingBooking.remaining_amount ?? payLaterAmount)}
+                              remainingAmount={Number(
+                                pendingBooking.remaining_amount ?? payLaterAmount,
+                              )}
                               currency={tour.currency}
                             />
                           </Elements>
                           {isTestStripe ? (
-                            <p className="mt-3 text-xs text-muted-foreground">{STRIPE_TEST_CARD_HINT}</p>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              {STRIPE_TEST_CARD_HINT}
+                            </p>
                           ) : null}
                         </div>
                       )}
@@ -787,107 +971,124 @@ export default function TourCheckoutPage() {
                         {appliedPromotion ? (
                           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                             <p className="font-semibold">
-                              {appliedPromotion.code} applied: {formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)} off
+                              {appliedPromotion.code} applied:{' '}
+                              {formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)}{' '}
+                              off
                             </p>
                             <p className="mt-1 text-xs text-emerald-800">
-                              {appliedPromotion.ownerLabel} · {appliedPromotion.fundingSource === 'platform' ? 'TripAvail funded' : 'Operator funded'}
+                              {appliedPromotion.ownerLabel} ·{' '}
+                              {appliedPromotion.fundingSource === 'platform'
+                                ? 'TripAvail funded'
+                                : 'Operator funded'}
                             </p>
                           </div>
                         ) : null}
                       </div>
                     ) : null}
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">Tour price</span>
-                      <span className="text-foreground font-bold">
-                        {formatMoney(effectiveUnitPrice, tour.currency)} per person
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">Travelers</span>
-                      <span className="text-foreground font-bold">{guestCount}</span>
-                    </div>
-                    {applicableTier ? (
-                      <div className="type-caption text-success font-semibold">
-                        Tier applied: {applicableTier.name || `${applicableTier.minPeople}+ guests`}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">Tour price</span>
+                        <span className="text-foreground font-bold">
+                          {formatMoney(effectiveUnitPrice, tour.currency)} per person
+                        </span>
                       </div>
-                    ) : null}
-                    {appliedPromotion ? (
-                      <>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">Original booking total</span>
-                          <span className="text-foreground font-bold">
-                            {formatMoney(basePaymentTerms.totalAmount, tour.currency)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground font-medium">Promo discount</span>
-                          <span className="font-bold text-emerald-700">
-                            -{formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)}
-                          </span>
-                        </div>
-                        <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-900">
-                          Your promo savings are already reflected in the pay-now and remaining-balance amounts below.
-                        </div>
-                      </>
-                    ) : null}
-                    <div className="h-px bg-border/60" />
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">Total booking amount</span>
-                      <span className="text-foreground font-bold">
-                        {formatMoney(totalPrice, tour.currency)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">
-                        Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
-                      </span>
-                      <span className="text-foreground font-bold">
-                        {formatMoney(payNowAmount, tour.currency)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">Pay later to operator</span>
-                      <span className="text-foreground font-bold">
-                        {formatMoney(payLaterAmount, tour.currency)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground font-bold">Payment Summary</span>
-                      <span className="type-h2 text-primary">
-                        {formatMoney(payNowAmount, tour.currency)}
-                      </span>
-                    </div>
-                    {usesDeposit ? (
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-                        You pay {formatMoney(payNowAmount, tour.currency)} now. Remaining {formatMoney(payLaterAmount, tour.currency)} will be paid directly to the tour operator before departure.
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">Travelers</span>
+                        <span className="text-foreground font-bold">{guestCount}</span>
                       </div>
-                    ) : null}
-                  </div>
+                      {applicableTier ? (
+                        <div className="type-caption text-success font-semibold">
+                          Tier applied:{' '}
+                          {applicableTier.name || `${applicableTier.minPeople}+ guests`}
+                        </div>
+                      ) : null}
+                      {appliedPromotion ? (
+                        <>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground font-medium">
+                              Original booking total
+                            </span>
+                            <span className="text-foreground font-bold">
+                              {formatMoney(basePaymentTerms.totalAmount, tour.currency)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground font-medium">
+                              Promo discount
+                            </span>
+                            <span className="font-bold text-emerald-700">
+                              -{formatMoney(appliedPromotion.appliedDiscountValue, tour.currency)}
+                            </span>
+                          </div>
+                          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-900">
+                            Your promo savings are already reflected in the pay-now and
+                            remaining-balance amounts below.
+                          </div>
+                        </>
+                      ) : null}
+                      <div className="h-px bg-border/60" />
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">
+                          Total booking amount
+                        </span>
+                        <span className="text-foreground font-bold">
+                          {formatMoney(totalPrice, tour.currency)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">
+                          Pay now{usesDeposit ? ` (${paymentTerms.upfrontPercentage}%)` : ''}
+                        </span>
+                        <span className="text-foreground font-bold">
+                          {formatMoney(payNowAmount, tour.currency)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground font-medium">
+                          Pay later to operator
+                        </span>
+                        <span className="text-foreground font-bold">
+                          {formatMoney(payLaterAmount, tour.currency)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-foreground font-bold">Payment Summary</span>
+                        <span className="type-h2 text-primary">
+                          {formatMoney(payNowAmount, tour.currency)}
+                        </span>
+                      </div>
+                      {usesDeposit ? (
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                          You pay {formatMoney(payNowAmount, tour.currency)} now. Remaining{' '}
+                          {formatMoney(payLaterAmount, tour.currency)} will be paid directly to the
+                          tour operator before departure.
+                        </div>
+                      ) : null}
+                    </div>
 
-                  {!pendingBooking && (
-                    <Button
-                      onClick={handleCreatePendingBooking}
-                      disabled={
-                        processingBooking ||
-                        (availableSlots !== null && guestCount > availableSlots)
-                      }
-                      className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold mt-6"
-                    >
-                      {processingBooking ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Starting Payment...
-                        </>
-                      ) : (
-                        <>
-                          Pay {formatMoney(payNowAmount, tour.currency)} & Confirm Booking
-                          <ChevronRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                  )}
+                    {!pendingBooking && (
+                      <Button
+                        onClick={handleCreatePendingBooking}
+                        disabled={
+                          processingBooking ||
+                          (availableSlots !== null && guestCount > availableSlots)
+                        }
+                        className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold mt-6"
+                      >
+                        {processingBooking ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Starting Payment...
+                          </>
+                        ) : (
+                          <>
+                            Pay {formatMoney(payNowAmount, tour.currency)} & Confirm Booking
+                            <ChevronRight className="w-4 h-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </GlassContent>
               </GlassCard>
@@ -928,7 +1129,12 @@ export default function TourCheckoutPage() {
   )
 }
 
-function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remainingAmount: number; currency: string }) {
+function TourPaymentForm(props: {
+  bookingId: string
+  chargeAmount: number
+  remainingAmount: number
+  currency: string
+}) {
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -942,9 +1148,9 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
     valueType: string | null
   } | null>(null)
   const stripeDebugEnabled =
-    typeof window !== 'undefined'
-    && (new URLSearchParams(window.location.search).get('stripe_debug') === '1'
-      || window.localStorage.getItem('tripavail:stripe-debug') === '1')
+    typeof window !== 'undefined' &&
+    (new URLSearchParams(window.location.search).get('stripe_debug') === '1' ||
+      window.localStorage.getItem('tripavail:stripe-debug') === '1')
 
   const handlePay = async () => {
     if (!stripe || !elements) {
@@ -989,7 +1195,8 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
         confirmParams: { return_url: returnUrl },
         redirect: 'if_required',
       })
-      const paymentIntentStatus = 'paymentIntent' in result ? result.paymentIntent?.status ?? null : null
+      const paymentIntentStatus =
+        'paymentIntent' in result ? (result.paymentIntent?.status ?? null) : null
 
       if (result.error) {
         logStripeDebug('payment_submit_result', {
@@ -1078,7 +1285,9 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
 
       {stripeDebugEnabled && lastPaymentEvent ? (
         <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          Stripe debug: ready={paymentReady ? 'yes' : 'no'} complete={lastPaymentEvent.complete ? 'yes' : 'no'} empty={lastPaymentEvent.empty ? 'yes' : 'no'} type={lastPaymentEvent.valueType || 'unknown'}
+          Stripe debug: ready={paymentReady ? 'yes' : 'no'} complete=
+          {lastPaymentEvent.complete ? 'yes' : 'no'} empty={lastPaymentEvent.empty ? 'yes' : 'no'}{' '}
+          type={lastPaymentEvent.valueType || 'unknown'}
         </div>
       ) : null}
 
@@ -1095,7 +1304,8 @@ function TourPaymentForm(props: { bookingId: string; chargeAmount: number; remai
       </Button>
       {props.remainingAmount > 0 ? (
         <p className="text-center text-xs text-muted-foreground">
-          Remaining {formatMoney(Number(props.remainingAmount || 0), props.currency)} will be paid directly to the tour operator before departure.
+          Remaining {formatMoney(Number(props.remainingAmount || 0), props.currency)} will be paid
+          directly to the tour operator before departure.
         </p>
       ) : null}
     </div>

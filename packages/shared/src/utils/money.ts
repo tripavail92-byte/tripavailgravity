@@ -43,15 +43,26 @@ export function formatMoney(
   const code = (currencyCode || BASE_CURRENCY).toUpperCase()
   const n = typeof amount === 'number' && Number.isFinite(amount) ? amount : 0
   const m = meta(code)
+  // Whole amounts read clean ("PKR 2,000"), fractional ones show the full minor unit
+  // ("PKR 1,999.50"). With minimumFractionDigits pinned to 0 a half-rupee deposit
+  // rendered as "PKR 1,999.5" — a single stray decimal on the button people press to pay.
+  const hasFraction = Math.abs(n % 1) > Number.EPSILON
+  const fractionDigits = hasFraction ? m.minorUnit : 0
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: code,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: m.minorUnit,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     }).format(n)
   } catch {
-    return m.symbol + n.toLocaleString(locale)
+    return (
+      m.symbol +
+      n.toLocaleString(locale, {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+      })
+    )
   }
 }
 
