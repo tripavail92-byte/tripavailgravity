@@ -1,23 +1,23 @@
+import { canPublishAnotherTrip } from '@tripavail/shared/commercial/engine'
 import { AlertCircle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { canPublishAnotherTrip } from '@tripavail/shared/commercial/engine'
 
-import { StageRail, type StageStatus } from '@/features/wizard/StageRail'
-import { celebrateStage } from '@/features/wizard/celebrateStage'
-import { supabase } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
+import { PublishLimitBanner } from '@/features/tour-operator/components/tier/PublishLimitBanner'
+import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
 import {
-  Tour,
   calculateCompletionPercentage,
+  Tour,
   tourService,
 } from '@/features/tour-operator/services/tourService'
-import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
-import { PublishLimitBanner } from '@/features/tour-operator/components/tier/PublishLimitBanner'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
+import { celebrateStage } from '@/features/wizard/celebrateStage'
+import { StageRail, type StageStatus } from '@/features/wizard/StageRail'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
 
 import { TourBasicsStep } from './components/TourBasicsStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
@@ -75,10 +75,21 @@ function humanizeBackendCode(raw: string): string {
 
 /** Known backend/RPC error codes → friendly, operator-facing sentences. */
 const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
-  { match: 'publish_limit_reached', message: 'You’ve reached the maximum number of published tours for your membership tier this cycle. Upgrade your plan or unpublish another tour to add more.' },
-  { match: 'minimum_deposit_not_met', message: 'Your deposit percentage is below the minimum required for your membership tier. Raise it on the Pricing & Policies step, then try again.' },
+  {
+    match: 'publish_limit_reached',
+    message:
+      'You’ve reached the maximum number of published tours for your membership tier this cycle. Upgrade your plan or unpublish another tour to add more.',
+  },
+  {
+    match: 'minimum_deposit_not_met',
+    message:
+      'Your deposit percentage is below the minimum required for your membership tier. Raise it on the Pricing & Policies step, then try again.',
+  },
   { match: 'setup_not_completed', message: 'Finish your operator setup before publishing tours.' },
-  { match: 'tour_not_found', message: 'We couldn’t find this tour. Reload the page and try again.' },
+  {
+    match: 'tour_not_found',
+    message: 'We couldn’t find this tour. Reload the page and try again.',
+  },
   { match: 'not_authorized', message: 'You don’t have permission to make this change.' },
   { match: 'unauthorized', message: 'You don’t have permission to make this change.' },
   { match: 'row-level security', message: 'You don’t have permission to make this change.' },
@@ -90,7 +101,9 @@ const TOUR_ERROR_MESSAGES: Array<{ match: string; message: string }> = [
  * default title, a deposit the floor-effect wrote, and workflow bookkeeping do NOT count as input.
  */
 function hasMeaningfulTourInput(d: Partial<Tour>): boolean {
-  const title = String(d.title ?? '').trim().toLowerCase()
+  const title = String(d.title ?? '')
+    .trim()
+    .toLowerCase()
   if (title && title !== 'untitled tour') return true
   if (Array.isArray(d.images) && d.images.length > 0) return true
   if (Array.isArray((d as any).itinerary) && (d as any).itinerary.length > 0) return true
@@ -98,7 +111,8 @@ function hasMeaningfulTourInput(d: Partial<Tour>): boolean {
   if (Number(d.price) > 0) return true
   if (String((d as any).short_description ?? '').trim()) return true
   if (String((d as any).description ?? '').trim()) return true
-  if (Array.isArray(d.destination_cities) && d.destination_cities.filter(Boolean).length > 0) return true
+  if (Array.isArray(d.destination_cities) && d.destination_cities.filter(Boolean).length > 0)
+    return true
   return false
 }
 
@@ -205,7 +219,9 @@ export default function CreateTourPage() {
   const [currentTourId, setCurrentTourId] = useState<string | null>(null)
   const [hasUnsaved, setHasUnsaved] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
-  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle',
+  )
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null)
   /** Raw Postgres code + message, surfaced on the label so a screenshot is enough to diagnose. */
   const [saveErrorCode, setSaveErrorCode] = useState<string | null>(null)
@@ -221,6 +237,7 @@ export default function CreateTourPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false)
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]))
   const commercialGate = useOperatorCommercialGate(user?.id)
+
   const ignoreDirtyRef = useRef(false)
   const didMountDirtyRef = useRef(false)
   const autosaveDebounceRef = useRef<number | null>(null)
@@ -239,6 +256,39 @@ export default function CreateTourPage() {
     const raw = searchParams.get('returnTo')
     return raw && OPERATOR_RETURN_PATHS.has(raw) ? raw : DEFAULT_OPERATOR_RETURN_PATH
   }, [searchParams])
+
+  // Deep link: the dashboard "Add dates" nudge sends the operator here with ?focus=schedules
+  // so they land on the departure step of the tour they need to fix. Self-contained (doesn't
+  // depend on goToMissingField, which is defined below an early return) and fires once, after
+  // the edit tour's data has loaded. Placed with the top-level hooks so it's unconditional.
+  const deepLinkFiredRef = useRef(false)
+  useEffect(() => {
+    if (deepLinkFiredRef.current) return
+    const focusField = searchParams.get('focus')
+    const route = focusField ? SUBMIT_FIELD_ROUTES[focusField] : null
+    if (!route) return
+    // Wait until the edited tour has actually loaded (or there's nothing to load).
+    if (tourIdToEdit && !tourData.id) return
+    const stageIndex = STEPS.findIndex((step) => step.id === route.stage)
+    if (stageIndex < 0) return
+    deepLinkFiredRef.current = true
+    setVisitedSteps((prev) => new Set(prev).add(stageIndex))
+    setSubStepByStage((prev) => ({ ...prev, [route.stage]: route.subStep }))
+    setCurrentStep(stageIndex)
+    if (route.focus) {
+      const focus = () => {
+        const el = document.getElementById(route.focus as string)
+        if (!el) return false
+        el.focus({ preventScroll: true })
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return true
+      }
+      window.setTimeout(() => {
+        if (!focus()) window.setTimeout(focus, 160)
+      }, 60)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, tourIdToEdit, tourData.id])
 
   useEffect(() => {
     const checkSetup = async () => {
@@ -285,7 +335,12 @@ export default function CreateTourPage() {
     if (!(min > 0)) return
     const current = Number(tourData.deposit_percentage || 0)
     if (current >= min) return
-    setTourData((prev) => ({ ...prev, deposit_percentage: min, deposit_required: true, require_deposit: true }))
+    setTourData((prev) => ({
+      ...prev,
+      deposit_percentage: min,
+      deposit_required: true,
+      require_deposit: true,
+    }))
   }, [commercialGate.status, commercialGate.minimumDepositPercent, tourData.deposit_percentage])
 
   const isEditingPublishedTour = Boolean(tourIdToEdit && tourData.is_published === true)
@@ -366,14 +421,20 @@ export default function CreateTourPage() {
         const workflow = (existing as any)?.draft_data?._workflow
         if (workflow && typeof workflow === 'object') {
           const savedCurrentStep = Number(workflow.currentStep)
-          if (Number.isInteger(savedCurrentStep) && savedCurrentStep >= 0 && savedCurrentStep < STEPS.length) {
+          if (
+            Number.isInteger(savedCurrentStep) &&
+            savedCurrentStep >= 0 &&
+            savedCurrentStep < STEPS.length
+          ) {
             setCurrentStep(savedCurrentStep)
           }
 
           if (Array.isArray(workflow.visitedSteps)) {
             const sanitized = workflow.visitedSteps
               .map((value: unknown) => Number(value))
-              .filter((value: number) => Number.isInteger(value) && value >= 0 && value < STEPS.length)
+              .filter(
+                (value: number) => Number.isInteger(value) && value >= 0 && value < STEPS.length,
+              )
 
             if (sanitized.length > 0) {
               setVisitedSteps(new Set(sanitized))
@@ -446,31 +507,34 @@ export default function CreateTourPage() {
     setCurrentTourId(tourIdToEdit)
   }, [tourIdToEdit])
 
-  const rememberTourId = useCallback((tourId: string) => {
-    currentTourIdRef.current = tourId
-    setCurrentTourId(tourId)
-    setTourData((prev) => {
-      const previousDraftData =
-        prev.draft_data && typeof prev.draft_data === 'object'
-          ? (prev.draft_data as Record<string, unknown>)
-          : {}
+  const rememberTourId = useCallback(
+    (tourId: string) => {
+      currentTourIdRef.current = tourId
+      setCurrentTourId(tourId)
+      setTourData((prev) => {
+        const previousDraftData =
+          prev.draft_data && typeof prev.draft_data === 'object'
+            ? (prev.draft_data as Record<string, unknown>)
+            : {}
 
-      return {
-        ...prev,
-        id: tourId,
-        draft_data: {
-          ...previousDraftData,
-          _clientDraftId: draftClientIdRef.current,
-        },
-      } as Partial<Tour>
-    })
+        return {
+          ...prev,
+          id: tourId,
+          draft_data: {
+            ...previousDraftData,
+            _clientDraftId: draftClientIdRef.current,
+          },
+        } as Partial<Tour>
+      })
 
-    if (!routeTourId) {
-      const nextSearchParams = new URLSearchParams(searchParams)
-      nextSearchParams.set('tour_id', tourId)
-      navigate({ search: `?${nextSearchParams.toString()}` }, { replace: true })
-    }
-  }, [navigate, routeTourId, searchParams])
+      if (!routeTourId) {
+        const nextSearchParams = new URLSearchParams(searchParams)
+        nextSearchParams.set('tour_id', tourId)
+        navigate({ search: `?${nextSearchParams.toString()}` }, { replace: true })
+      }
+    },
+    [navigate, routeTourId, searchParams],
+  )
 
   const buildDraftPayload = useCallback(
     (sourceData: Partial<Tour>): Partial<Tour> => ({
@@ -486,7 +550,11 @@ export default function CreateTourPage() {
   )
 
   const saveDraft = useCallback(
-    async (options?: { redirectAfter?: string; showOverlay?: boolean; source?: 'manual' | 'auto' }): Promise<boolean> => {
+    async (options?: {
+      redirectAfter?: string
+      showOverlay?: boolean
+      source?: 'manual' | 'auto'
+    }): Promise<boolean> => {
       if (!user) return false
 
       if (saveInFlightRef.current) return saveInFlightRef.current
@@ -682,8 +750,8 @@ export default function CreateTourPage() {
   }
 
   const REQUIRED_FOR_SUBMIT = [
-    { field: 'title',    label: 'Tour title' },
-    { field: 'price',    label: 'Pricing' },
+    { field: 'title', label: 'Tour title' },
+    { field: 'price', label: 'Pricing' },
     { field: 'cancellation_policy', label: 'Cancellation policy' },
   ]
 
@@ -748,8 +816,10 @@ export default function CreateTourPage() {
       missing.push({ field: 'location', label: 'Tour destination city' })
     }
     if (pickupCount <= 0) missing.push({ field: 'pickup_locations', label: 'Pickup locations' })
-    if ((tourData.images?.length ?? 0) === 0) missing.push({ field: 'images', label: 'At least one image' })
-    if ((tourData.itinerary?.length ?? 0) === 0) missing.push({ field: 'itinerary', label: 'Itinerary' })
+    if ((tourData.images?.length ?? 0) === 0)
+      missing.push({ field: 'images', label: 'At least one image' })
+    if ((tourData.itinerary?.length ?? 0) === 0)
+      missing.push({ field: 'itinerary', label: 'Itinerary' })
     if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
     return missing
   }
@@ -794,7 +864,7 @@ export default function CreateTourPage() {
       // Then flip status
       await tourService.submitForReview(savedId, user.id)
       setHasUnsaved(false)
-      toast.success('Tour submitted for review! We\'ll notify you once approved.')
+      toast.success("Tour submitted for review! We'll notify you once approved.")
       navigate(returnPath)
     } catch (error) {
       console.error('Error submitting for review:', error)
@@ -856,7 +926,9 @@ export default function CreateTourPage() {
   const handlePublish = async () => {
     if (!user) return
     if (!publishGate.allowed) {
-      toast.error(publishGate.reason || 'Your membership tier has reached its publish limit for this cycle.')
+      toast.error(
+        publishGate.reason || 'Your membership tier has reached its publish limit for this cycle.',
+      )
       return
     }
     setSubmitAttempted(true)
@@ -889,7 +961,9 @@ export default function CreateTourPage() {
       }
 
       setHasUnsaved(false)
-      toast.success(hadExistingTourId ? 'Tour updated successfully!' : 'Tour published successfully!')
+      toast.success(
+        hadExistingTourId ? 'Tour updated successfully!' : 'Tour published successfully!',
+      )
       navigate(returnPath)
     } catch (error) {
       console.error('Error publishing tour:', error)
@@ -952,7 +1026,10 @@ export default function CreateTourPage() {
               {autosaveStatus === 'saved' && (
                 <span className="flex items-center gap-1 text-xs text-primary shrink-0">
                   <BookmarkCheck className="w-3 h-3" />
-                  Saved {lastSavedAt ? lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  Saved{' '}
+                  {lastSavedAt
+                    ? lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : ''}
                 </span>
               )}
               {autosaveStatus === 'error' && (
@@ -967,7 +1044,10 @@ export default function CreateTourPage() {
                 </span>
               )}
               {hasUnsaved && autosaveStatus === 'idle' && (
-                <span className="w-2 h-2 rounded-full bg-primary/70 shrink-0" title="Unsaved changes" />
+                <span
+                  className="w-2 h-2 rounded-full bg-primary/70 shrink-0"
+                  title="Unsaved changes"
+                />
               )}
             </div>
             {/* Action buttons */}
@@ -983,7 +1063,7 @@ export default function CreateTourPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => hasUnsaved ? setShowExitModal(true) : navigate(returnPath)}
+                onClick={() => (hasUnsaved ? setShowExitModal(true) : navigate(returnPath))}
                 disabled={isSaving || isSubmitting}
                 className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
               >
@@ -995,7 +1075,11 @@ export default function CreateTourPage() {
                 disabled={isSaving || isSubmitting}
                 className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold gap-2 shadow-md shadow-primary/25"
               >
-                {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                {isSubmitting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
                 <span className="hidden sm:inline">Submit for Review</span>
               </Button>
             </div>
@@ -1005,7 +1089,8 @@ export default function CreateTourPage() {
           <StageRail
             stages={STEPS.map((step, idx) => ({
               title: step.title,
-              status: (stepWorkflow[idx]?.status ?? (idx === currentStep ? 'in_progress' : 'not_started')) as StageStatus,
+              status: (stepWorkflow[idx]?.status ??
+                (idx === currentStep ? 'in_progress' : 'not_started')) as StageStatus,
             }))}
             currentIndex={currentStep}
             onSelect={(idx) => {
@@ -1023,7 +1108,10 @@ export default function CreateTourPage() {
         {isVerificationBlocked ? (
           <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" aria-hidden="true" />
+              <AlertCircle
+                className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive"
+                aria-hidden="true"
+              />
               <div>
                 <p className="font-semibold text-destructive">Nothing is being saved</p>
                 <p className="mt-0.5 text-sm text-destructive/90">
@@ -1146,7 +1234,11 @@ export default function CreateTourPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => { setHasUnsaved(false); setShowExitModal(false); navigate(returnPath) }}
+                  onClick={() => {
+                    setHasUnsaved(false)
+                    setShowExitModal(false)
+                    navigate(returnPath)
+                  }}
                   className="w-full"
                 >
                   Discard Changes

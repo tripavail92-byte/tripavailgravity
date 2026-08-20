@@ -1,4 +1,4 @@
-import { Clock, Edit2, ExternalLink, MapPin, Star, Users } from 'lucide-react'
+import { CalendarX2, Clock, Edit2, ExternalLink, MapPin, Star, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 
 import { Badge } from '@/components/ui/badge'
@@ -9,9 +9,14 @@ interface ActiveToursGridProps {
   tours: Tour[]
   onEdit: (tour: Tour) => void
   onView: (tour: Tour) => void
+  /** tourId -> {status, upcomingCount} from useTourBookability, for the date-status pill. */
+  bookabilityById?: Record<
+    string,
+    { status: 'unbookable' | 'thin' | 'healthy'; upcomingCount: number }
+  >
 }
 
-export function ActiveToursGrid({ tours, onEdit, onView }: ActiveToursGridProps) {
+export function ActiveToursGrid({ tours, onEdit, onView, bookabilityById }: ActiveToursGridProps) {
   if (tours.length === 0) return null
 
   return (
@@ -33,6 +38,25 @@ export function ActiveToursGrid({ tours, onEdit, onView }: ActiveToursGridProps)
                 <MapPin className="w-12 h-12 text-muted-foreground/30" />
               </div>
             )}
+            {(() => {
+              const b = bookabilityById?.[tour.id ?? '']
+              if (!b || b.status === 'healthy') return null
+              const critical = b.status === 'unbookable'
+              return (
+                <div className="absolute top-4 left-4">
+                  <Badge
+                    className={`gap-1 border-none backdrop-blur-sm ${
+                      critical
+                        ? 'bg-destructive text-destructive-foreground'
+                        : 'bg-warning text-warning-foreground'
+                    }`}
+                  >
+                    <CalendarX2 className="h-3 w-3" />
+                    {critical ? 'No upcoming dates' : '1 date left'}
+                  </Badge>
+                </div>
+              )
+            })()}
             <div className="absolute top-4 right-4 flex gap-2">
               <Badge className="bg-background/70 backdrop-blur-sm text-foreground border border-border/60">
                 {tour.tour_type}

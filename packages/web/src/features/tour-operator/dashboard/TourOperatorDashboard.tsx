@@ -27,6 +27,7 @@ import { commercialService } from '@/features/commercial/services/commercialServ
 import { OperatorPlanCard } from '@/features/tour-operator/components/tier/OperatorPlanCard'
 import { setupStepSlugForIndex } from '@/features/tour-operator/constants/setupSteps'
 import { useOperatorCommercialGate } from '@/features/tour-operator/hooks/useOperatorCommercialGate'
+import { useTourBookability } from '@/features/tour-operator/hooks/useTourBookability'
 import { hasCompletedTourOperatorSetup } from '@/features/tour-operator/utils/operatorAccess'
 import { getActiveKycSession } from '@/features/verification/services/kycSessionService'
 import { useAuth } from '@/hooks/useAuth'
@@ -34,6 +35,7 @@ import { supabase } from '@/lib/supabase'
 
 import { Tour, tourService } from '../services/tourService'
 import { ActiveToursGrid } from './components/ActiveToursGrid'
+import { AddDatesNudge } from './components/AddDatesNudge'
 import { OperatorRecentBookings } from './components/OperatorRecentBookings'
 
 // Slugs live in one place — see setupStepSlugForIndex's doc comment for why.
@@ -148,15 +150,20 @@ export function TourOperatorDashboard() {
   }
   const handleEditTour = (tour: Tour) =>
     navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tour.id)}`)
+  // Sends the operator straight to the departure step of the tour that needs dates.
+  const handleAddDates = (tourId: string) =>
+    navigate(`/operator/tours/new?tour_id=${encodeURIComponent(tourId)}&focus=schedules`)
   const handleViewTour = (tour: Tour) => window.open(`/tours/${tour.id}`, '_blank')
+  const bookability = useTourBookability(publishedTours)
+  const bookabilityById = Object.fromEntries(
+    bookability.items.map((i) => [i.tour.id, { status: i.status, upcomingCount: i.upcomingCount }]),
+  )
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDeleteDraft = async (tour: Partial<Tour>) => {
     if (!user || !tour.id || deletingId) return
     if (
-      !window.confirm(
-        `Delete "${tour.title || 'Untitled Tour'}"? This draft can't be recovered.`,
-      )
+      !window.confirm(`Delete "${tour.title || 'Untitled Tour'}"? This draft can't be recovered.`)
     )
       return
     setDeletingId(tour.id)
@@ -663,6 +670,13 @@ export function TourOperatorDashboard() {
           >
             {/* Left: Tour Packages */}
             <div className="lg:col-span-2 space-y-5">
+              {!loading && publishedTours.length > 0 && (
+                <AddDatesNudge
+                  unbookable={bookability.unbookable}
+                  thin={bookability.thin}
+                  onAddDates={handleAddDates}
+                />
+              )}
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-black text-foreground flex items-center gap-2 uppercase tracking-wide">
                   <Package className="w-5 h-5 text-primary" />
@@ -687,6 +701,7 @@ export function TourOperatorDashboard() {
                   tours={publishedTours}
                   onEdit={handleEditTour}
                   onView={handleViewTour}
+                  bookabilityById={bookabilityById}
                 />
               ) : (
                 <div className="glass-card border border-border/50 rounded-3xl p-12 text-center">

@@ -4,15 +4,15 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { SubStepProgress } from '@/features/wizard/SubStepProgress'
-import { WizardScreen } from '@/features/wizard/WizardScreen'
-import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
-import { fieldId, type SubStepDef } from '@/features/wizard/types'
 import { CityAutocomplete } from '@/components/ui/CityAutocomplete'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { SubStepProgress } from '@/features/wizard/SubStepProgress'
+import { fieldId, type SubStepDef } from '@/features/wizard/types'
+import { useSubStepFlow } from '@/features/wizard/useSubStepFlow'
+import { WizardScreen } from '@/features/wizard/WizardScreen'
 import { supabase } from '@/lib/supabase'
 
 import {
@@ -99,7 +99,10 @@ const formatDisplayDate = (value: string) => {
   })
 }
 
-const deriveArrivalDate = (departureDate: string | undefined, durationDays: number | null | undefined) => {
+const deriveArrivalDate = (
+  departureDate: string | undefined,
+  durationDays: number | null | undefined,
+) => {
   if (!departureDate) return ''
   const parsed = new Date(`${departureDate}T00:00:00`)
   if (Number.isNaN(parsed.getTime())) return ''
@@ -110,13 +113,6 @@ const deriveArrivalDate = (departureDate: string | undefined, durationDays: numb
   const day = String(parsed.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
-
-
- 
-
-
-
-
 
 interface Template {
   id: string
@@ -178,11 +174,10 @@ export function TourBasicsStep({
     if (data.duration_days == null) {
       onUpdate({ duration_days: 1, duration: '1 day' })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const SHORT_DESC_MAX = 200
-
 
   // Client-side teaser suggestions so AI Suggest is useful on every tier, even when the
   // template library has no rows for this tone/category combination.
@@ -280,6 +275,16 @@ export function TourBasicsStep({
           const first = Array.isArray(d.schedules) ? (d.schedules[0] as any) : null
           if (!first?.date || !first?.time) {
             issues.push({ field: fieldId('departure'), message: 'Pick a departure date and time' })
+          } else {
+            // A tour whose only date is in the past is born unbookable. Catch it here rather
+            // than let it go live with a dead booking button.
+            const when = new Date(`${first.date}T${first.time || '00:00'}`)
+            if (!Number.isNaN(when.getTime()) && when.getTime() <= Date.now()) {
+              issues.push({
+                field: fieldId('departure'),
+                message: 'That date has already passed — pick an upcoming date and time',
+              })
+            }
           }
           return issues
         },
@@ -334,19 +339,19 @@ export function TourBasicsStep({
       >
         {stepId === 'title' ? (
           <>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-              Tour Title *
-            </Label>
-            <Input
-              id={fieldId('title')}
-              aria-invalid={isInvalid('title') || undefined}
-              placeholder="e.g. Historic City Walk"
-              value={data.title || ''}
-              onChange={(e) => onUpdate({ title: e.target.value })}
-              className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                Tour Title *
+              </Label>
+              <Input
+                id={fieldId('title')}
+                aria-invalid={isInvalid('title') || undefined}
+                placeholder="e.g. Historic City Walk"
+                value={data.title || ''}
+                onChange={(e) => onUpdate({ title: e.target.value })}
+                className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+              />
+            </div>
           </>
         ) : null}
 
@@ -360,74 +365,74 @@ export function TourBasicsStep({
             className="outline-none"
             aria-invalid={isInvalid('category') || undefined}
           >
-                  <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                      {CATEGORIES.map((cat) => (
-                        <motion.button
-                          key={cat.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() =>
-                            onUpdate({
-                              tour_type: cat.id,
-                              custom_category_label:
-                                cat.id === 'Custom' ? data.custom_category_label : undefined,
-                            })
-                          }
-                          className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
-                            data.tour_type === cat.id
-                              ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
-                              : 'border-border bg-background hover:border-primary/30 hover:shadow-md'
-                          }`}
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
-                            <cat.icon />
-                          </div>
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${
-                              data.tour_type === cat.id
-                                ? 'text-primary'
-                                : 'text-muted-foreground group-hover:text-foreground'
-                            }`}
-                          >
-                            {cat.label}
-                          </span>
-                          {data.tour_type === cat.id && (
-                            <motion.div
-                              layoutId="selected-category"
-                              className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-md"
-                            >
-                              <Check className="w-3 h-3" />
-                            </motion.div>
-                          )}
-                        </motion.button>
-                      ))}
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                {CATEGORIES.map((cat) => (
+                  <motion.button
+                    key={cat.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() =>
+                      onUpdate({
+                        tour_type: cat.id,
+                        custom_category_label:
+                          cat.id === 'Custom' ? data.custom_category_label : undefined,
+                      })
+                    }
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 gap-2 group ${
+                      data.tour_type === cat.id
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
+                        : 'border-border bg-background hover:border-primary/30 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center group-hover:bg-background transition-colors duration-300">
+                      <cat.icon />
                     </div>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-widest text-center leading-tight ${
+                        data.tour_type === cat.id
+                          ? 'text-primary'
+                          : 'text-muted-foreground group-hover:text-foreground'
+                      }`}
+                    >
+                      {cat.label}
+                    </span>
+                    {data.tour_type === cat.id && (
+                      <motion.div
+                        layoutId="selected-category"
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-md"
+                      >
+                        <Check className="w-3 h-3" />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
+              </div>
 
-                    <AnimatePresence>
-                      {data.tour_type === 'Custom' && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="pt-2 space-y-1">
-                            <Label className="text-xs text-muted-foreground">
-                              Describe your custom category
-                            </Label>
-                            <Input
-                              placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema"
-                              value={data.custom_category_label || ''}
-                              onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
-                              className="h-10 text-sm"
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+              <AnimatePresence>
+                {data.tour_type === 'Custom' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-2 space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Describe your custom category
+                      </Label>
+                      <Input
+                        placeholder="e.g. Night Safari, Glacier Trek, Rooftop Cinema"
+                        value={data.custom_category_label || ''}
+                        onChange={(e) => onUpdate({ custom_category_label: e.target.value })}
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         ) : null}
 
@@ -439,20 +444,20 @@ export function TourBasicsStep({
               className="outline-none"
               aria-invalid={isInvalid('duration') || undefined}
             >
-                    <div className="space-y-2">
-                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-                        Duration *
-                      </Label>
-                      <DurationScroller
-                        value={durationDays}
-                        onChange={(days) =>
-                          onUpdate({
-                            duration_days: days,
-                            duration: `${days} day${days !== 1 ? 's' : ''}`,
-                          })
-                        }
-                      />
-                    </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                  Duration *
+                </Label>
+                <DurationScroller
+                  value={durationDays}
+                  onChange={(days) =>
+                    onUpdate({
+                      duration_days: days,
+                      duration: `${days} day${days !== 1 ? 's' : ''}`,
+                    })
+                  }
+                />
+              </div>
             </div>
             <div
               id={fieldId('city')}
@@ -460,358 +465,363 @@ export function TourBasicsStep({
               className="outline-none"
               aria-invalid={isInvalid('city') || undefined}
             >
-                    <div className="space-y-2">
-                      <div>
-                        <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-                          Tour Destination *
-                        </Label>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          City or region where travellers will experience this tour
-                        </p>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                    Tour Destination *
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    City or region where travellers will experience this tour
+                  </p>
+                </div>
+
+                {/* Primary city */}
+                {allowGoogleMaps ? (
+                  <CityAutocomplete
+                    value={data.location?.city || ''}
+                    onCitySelect={(city, meta) => {
+                      const existing = Array.isArray(data.destination_cities)
+                        ? data.destination_cities.slice(1)
+                        : []
+                      onUpdate({
+                        location: {
+                          ...data.location,
+                          city,
+                          // Take the country the picker resolved. This used to read
+                          // data.location?.country — its own value — so country was never
+                          // written and every tour rendered "undefined, undefined".
+                          country: meta?.country ?? data.location?.country ?? '',
+                        },
+                        destination_cities: [city, ...existing].filter(Boolean),
+                      })
+                    }}
+                    placeholder="Primary city or region…"
+                  />
+                ) : (
+                  <Input
+                    value={data.location?.city || ''}
+                    onChange={(e) => {
+                      const city = e.target.value
+                      const existing = Array.isArray(data.destination_cities)
+                        ? data.destination_cities.slice(1)
+                        : []
+                      onUpdate({
+                        location: {
+                          ...data.location,
+                          city,
+                          country: data.location?.country || '',
+                        },
+                        destination_cities: [city, ...existing].filter(Boolean),
+                      })
+                    }}
+                    placeholder="Primary city or region…"
+                    className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                  />
+                )}
+
+                {!allowGoogleMaps ? (
+                  <p className="text-xs text-muted-foreground">
+                    Google Maps search is not enabled for your current membership tier. Enter city
+                    names manually.
+                  </p>
+                ) : null}
+
+                {/* Additional cities */}
+                {Array.isArray(data.destination_cities) &&
+                  data.destination_cities.slice(1).map((extraCity, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        {allowGoogleMaps ? (
+                          <CityAutocomplete
+                            value={extraCity}
+                            onCitySelect={(city) => {
+                              const cities = Array.isArray(data.destination_cities)
+                                ? [...data.destination_cities]
+                                : [data.location?.city || '']
+                              cities[idx + 1] = city
+                              onUpdate({ destination_cities: cities.filter(Boolean) })
+                            }}
+                            placeholder={`Additional city ${idx + 2}…`}
+                          />
+                        ) : (
+                          <Input
+                            value={extraCity}
+                            onChange={(e) => {
+                              const cities = Array.isArray(data.destination_cities)
+                                ? [...data.destination_cities]
+                                : [data.location?.city || '']
+                              cities[idx + 1] = e.target.value
+                              onUpdate({ destination_cities: cities.filter(Boolean) })
+                            }}
+                            placeholder={`Additional city ${idx + 2}…`}
+                            className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                          />
+                        )}
                       </div>
-
-                      {/* Primary city */}
-                      {allowGoogleMaps ? (
-                        <CityAutocomplete
-                          value={data.location?.city || ''}
-                          onCitySelect={(city, meta) => {
-                            const existing = Array.isArray(data.destination_cities)
-                              ? data.destination_cities.slice(1)
-                              : []
-                            onUpdate({
-                              location: {
-                                ...data.location,
-                                city,
-                                // Take the country the picker resolved. This used to read
-                                // data.location?.country — its own value — so country was never
-                                // written and every tour rendered "undefined, undefined".
-                                country: meta?.country ?? data.location?.country ?? '',
-                              },
-                              destination_cities: [city, ...existing].filter(Boolean),
-                            })
-                          }}
-                          placeholder="Primary city or region…"
-                        />
-                      ) : (
-                        <Input
-                          value={data.location?.city || ''}
-                          onChange={(e) => {
-                            const city = e.target.value
-                            const existing = Array.isArray(data.destination_cities)
-                              ? data.destination_cities.slice(1)
-                              : []
-                            onUpdate({
-                              location: {
-                                ...data.location,
-                                city,
-                                country: data.location?.country || '',
-                              },
-                              destination_cities: [city, ...existing].filter(Boolean),
-                            })
-                          }}
-                          placeholder="Primary city or region…"
-                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
-                        />
-                      )}
-
-                      {!allowGoogleMaps ? (
-                        <p className="text-xs text-muted-foreground">
-                          Google Maps search is not enabled for your current membership tier. Enter city names manually.
-                        </p>
-                      ) : null}
-
-                      {/* Additional cities */}
-                      {Array.isArray(data.destination_cities) &&
-                        data.destination_cities.slice(1).map((extraCity, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="flex-1">
-                              {allowGoogleMaps ? (
-                                <CityAutocomplete
-                                  value={extraCity}
-                                  onCitySelect={(city) => {
-                                    const cities = Array.isArray(data.destination_cities)
-                                      ? [...data.destination_cities]
-                                      : [data.location?.city || '']
-                                    cities[idx + 1] = city
-                                    onUpdate({ destination_cities: cities.filter(Boolean) })
-                                  }}
-                                  placeholder={`Additional city ${idx + 2}…`}
-                                />
-                              ) : (
-                                <Input
-                                  value={extraCity}
-                                  onChange={(e) => {
-                                    const cities = Array.isArray(data.destination_cities)
-                                      ? [...data.destination_cities]
-                                      : [data.location?.city || '']
-                                    cities[idx + 1] = e.target.value
-                                    onUpdate({ destination_cities: cities.filter(Boolean) })
-                                  }}
-                                  placeholder={`Additional city ${idx + 2}…`}
-                                  className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
-                                />
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const cities = Array.isArray(data.destination_cities)
-                                  ? [...data.destination_cities]
-                                  : []
-                                cities.splice(idx + 1, 1)
-                                onUpdate({ destination_cities: cities.filter(Boolean) })
-                              }}
-                              className="shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-
-                      {/* Add city button */}
                       <button
                         type="button"
                         onClick={() => {
-                          const primary = data.location?.city || ''
-                          const existing = Array.isArray(data.destination_cities)
-                            ? data.destination_cities
-                            : primary ? [primary] : []
-                          onUpdate({ destination_cities: [...existing, ''] })
+                          const cities = Array.isArray(data.destination_cities)
+                            ? [...data.destination_cities]
+                            : []
+                          cities.splice(idx + 1, 1)
+                          onUpdate({ destination_cities: cities.filter(Boolean) })
                         }}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
+                        className="shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add another city
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
+                  ))}
+
+                {/* Add city button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const primary = data.location?.city || ''
+                    const existing = Array.isArray(data.destination_cities)
+                      ? data.destination_cities
+                      : primary
+                        ? [primary]
+                        : []
+                    onUpdate({ destination_cities: [...existing, ''] })
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add another city
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
 
         {stepId === 'departure' ? (
           <div className="space-y-5">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-                        Capacity / Seats *
-                      </Label>
-                      <div className="relative max-w-xs">
-                        <Input
-                          id={fieldId('capacity')}
-                          type="number"
-                          min={1}
-                          max={MAX_CAPACITY}
-                          aria-invalid={isInvalid('capacity') || undefined}
-                          placeholder="e.g. 30"
-                          value={data.max_participants || ''}
-                          onChange={(e) => {
-                            const next = Math.max(
-                              1,
-                              Math.min(MAX_CAPACITY, parseInt(e.target.value || '1', 10) || 1),
-                            )
-                            const mergedPrimary = {
-                              id: primarySchedule?.id || crypto.randomUUID(),
-                              date: primarySchedule?.date || '',
-                              time: primarySchedule?.time || DEFAULT_START_TIME,
-                              ...primarySchedule,
-                              capacity: next,
-                            }
-                            onUpdate({
-                              max_participants: next,
-                              min_participants: 1,
-                              schedules: [mergedPrimary, ...schedules.slice(1)],
-                            })
-                          }}
-                          className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        Set your default total seats (1–{MAX_CAPACITY}).
-                      </p>
-                    </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                Capacity / Seats *
+              </Label>
+              <div className="relative max-w-xs">
+                <Input
+                  id={fieldId('capacity')}
+                  type="number"
+                  min={1}
+                  max={MAX_CAPACITY}
+                  aria-invalid={isInvalid('capacity') || undefined}
+                  placeholder="e.g. 30"
+                  value={data.max_participants || ''}
+                  onChange={(e) => {
+                    const next = Math.max(
+                      1,
+                      Math.min(MAX_CAPACITY, parseInt(e.target.value || '1', 10) || 1),
+                    )
+                    const mergedPrimary = {
+                      id: primarySchedule?.id || crypto.randomUUID(),
+                      date: primarySchedule?.date || '',
+                      time: primarySchedule?.time || DEFAULT_START_TIME,
+                      ...primarySchedule,
+                      capacity: next,
+                    }
+                    onUpdate({
+                      max_participants: next,
+                      min_participants: 1,
+                      schedules: [mergedPrimary, ...schedules.slice(1)],
+                    })
+                  }}
+                  className="h-12 border-input focus:border-primary/50 focus:ring-primary/20"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground font-medium">
+                Set your default total seats (1–{MAX_CAPACITY}).
+              </p>
+            </div>
             <div
               id={fieldId('departure')}
               tabIndex={-1}
               className="outline-none"
               aria-invalid={isInvalid('departure') || undefined}
             >
-                    <div className="space-y-4 md:space-y-5">
-                      <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
-                          <Calendar className="w-3.5 h-3.5 text-primary" />
-                          <Label className="text-xs font-black text-foreground uppercase tracking-wider">
-                            Departure Date *
-                          </Label>
-                        </div>
-                        <DateWheelPicker
-                          value={primarySchedule?.date}
-                          onChange={(date) => updatePrimarySchedule({ date })}
-                        />
-                        <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 text-sm md:grid-cols-2">
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                              Departure
-                            </p>
-                            <p className="mt-1 font-semibold text-foreground">
-                              {formatDisplayDate(primarySchedule?.date || '')}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                              Arrival / Return
-                            </p>
-                            <p className="mt-1 font-semibold text-foreground">
-                              {formatDisplayDate(calculatedArrivalDate)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
-                          <Clock3 className="w-3.5 h-3.5 text-primary" />
-                          <Label className="text-xs font-black text-foreground uppercase tracking-wider">
-                            Start Time *
-                          </Label>
-                        </div>
-                        <TimeWheelPicker
-                          value={primarySchedule?.time || DEFAULT_START_TIME}
-                          onChange={(time) => updatePrimarySchedule({ time })}
-                        />
-                      </div>
+              <div className="space-y-4 md:space-y-5">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    <Label className="text-xs font-black text-foreground uppercase tracking-wider">
+                      Departure Date *
+                    </Label>
+                  </div>
+                  <DateWheelPicker
+                    value={primarySchedule?.date}
+                    onChange={(date) => updatePrimarySchedule({ date })}
+                  />
+                  <div className="grid gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 text-sm md:grid-cols-2">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Departure
+                      </p>
+                      <p className="mt-1 font-semibold text-foreground">
+                        {formatDisplayDate(primarySchedule?.date || '')}
+                      </p>
                     </div>
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Arrival / Return
+                      </p>
+                      <p className="mt-1 font-semibold text-foreground">
+                        {formatDisplayDate(calculatedArrivalDate)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-xl bg-background/70 border border-primary/20 shadow-sm">
+                    <Clock3 className="w-3.5 h-3.5 text-primary" />
+                    <Label className="text-xs font-black text-foreground uppercase tracking-wider">
+                      Start Time *
+                    </Label>
+                  </div>
+                  <TimeWheelPicker
+                    value={primarySchedule?.time || DEFAULT_START_TIME}
+                    onChange={(time) => updatePrimarySchedule({ time })}
+                  />
+                </div>
+              </div>
             </div>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Arrival date is calculated automatically from the departure date and {durationDays} day{durationDays !== 1 ? 's' : ''} of trip duration.
-                    </p>
+            <p className="text-xs text-muted-foreground font-medium">
+              Arrival date is calculated automatically from the departure date and {durationDays}{' '}
+              day{durationDays !== 1 ? 's' : ''} of trip duration.
+            </p>
           </div>
         ) : null}
 
         {stepId === 'description' ? (
           <>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
-                Short Description
-              </Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-xs h-7 px-3 border-primary/40 text-primary hover:bg-primary/5"
-                onClick={() => setShowAiPanel((v) => !v)}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                AI Suggest
-              </Button>
-            </div>
-
-            <Textarea
-              placeholder="A brief teaser for the tour card"
-              value={data.short_description || ''}
-              onChange={(e) => onUpdate({ short_description: e.target.value.slice(0, SHORT_DESC_MAX) })}
-              rows={3}
-              maxLength={SHORT_DESC_MAX}
-              className="border-input focus:border-primary/50 focus:ring-primary/20 resize-none"
-            />
-            <p className="text-[11px] text-muted-foreground text-right tabular-nums">
-              {(data.short_description || '').length}/{SHORT_DESC_MAX}
-            </p>
-
-            {/* AI Suggest panel */}
-            <AnimatePresence>
-              {showAiPanel && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-2xl border border-border bg-card shadow-lg p-4 space-y-4"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-bold text-foreground uppercase tracking-wide">
+                  Short Description
+                </Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs h-7 px-3 border-primary/40 text-primary hover:bg-primary/5"
+                  onClick={() => setShowAiPanel((v) => !v)}
                 >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-foreground">
-                      Pick a tone &amp; select a template
-                    </p>
-                    <button
-                      onClick={() => setShowAiPanel(false)}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI Suggest
+                </Button>
+              </div>
 
-                  {/* Tone chips */}
-                  <div className="flex flex-wrap gap-2">
-                    {TONES.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelectedTone(t.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
-                          selectedTone === t.id
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-muted-foreground border-border hover:border-primary/40'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+              <Textarea
+                placeholder="A brief teaser for the tour card"
+                value={data.short_description || ''}
+                onChange={(e) =>
+                  onUpdate({ short_description: e.target.value.slice(0, SHORT_DESC_MAX) })
+                }
+                rows={3}
+                maxLength={SHORT_DESC_MAX}
+                className="border-input focus:border-primary/50 focus:ring-primary/20 resize-none"
+              />
+              <p className="text-[11px] text-muted-foreground text-right tabular-nums">
+                {(data.short_description || '').length}/{SHORT_DESC_MAX}
+              </p>
 
-                  {/* Template list */}
-                  {loadingTemplates ? (
-                    <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
-                      Loading suggestions...
-                    </div>
-                  ) : templates.length === 0 ? (
-                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                      <p className="text-xs text-muted-foreground">
-                        Tap a suggestion to use it, then tweak the wording to match your tour.
+              {/* AI Suggest panel */}
+              <AnimatePresence>
+                {showAiPanel && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="rounded-2xl border border-border bg-card shadow-lg p-4 space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">
+                        Pick a tone &amp; select a template
                       </p>
-                      {fallbackSuggestions.map((text, i) => (
-                        <motion.button
-                          key={i}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={() => applyTemplate(text)}
-                          className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+                      <button
+                        onClick={() => setShowAiPanel(false)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Tone chips */}
+                    <div className="flex flex-wrap gap-2">
+                      {TONES.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setSelectedTone(t.id)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                            selectedTone === t.id
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+                          }`}
                         >
-                          <p className="text-sm text-foreground leading-relaxed">{text}</p>
-                        </motion.button>
+                          {t.label}
+                        </button>
                       ))}
                     </div>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                      {templates.map((tmpl) => (
-                        <motion.button
-                          key={tmpl.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={() => applyTemplate(tmpl.text)}
-                          className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
-                        >
-                          <p className="text-xs text-muted-foreground mb-1 flex gap-2">
-                            <span className="uppercase font-semibold text-primary/70">
-                              {tmpl.tone}
-                            </span>
-                            <span>•</span>
-                            <span>{tmpl.length_class}</span>
-                          </p>
-                          <p className="text-sm text-foreground leading-relaxed line-clamp-3">
-                            {tmpl.text}
-                          </p>
-                        </motion.button>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+
+                    {/* Template list */}
+                    {loadingTemplates ? (
+                      <div className="text-sm text-muted-foreground text-center py-4 animate-pulse">
+                        Loading suggestions...
+                      </div>
+                    ) : templates.length === 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        <p className="text-xs text-muted-foreground">
+                          Tap a suggestion to use it, then tweak the wording to match your tour.
+                        </p>
+                        {fallbackSuggestions.map((text, i) => (
+                          <motion.button
+                            key={i}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => applyTemplate(text)}
+                            className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200"
+                          >
+                            <p className="text-sm text-foreground leading-relaxed">{text}</p>
+                          </motion.button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        {templates.map((tmpl) => (
+                          <motion.button
+                            key={tmpl.id}
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => applyTemplate(tmpl.text)}
+                            className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+                          >
+                            <p className="text-xs text-muted-foreground mb-1 flex gap-2">
+                              <span className="uppercase font-semibold text-primary/70">
+                                {tmpl.tone}
+                              </span>
+                              <span>•</span>
+                              <span>{tmpl.length_class}</span>
+                            </p>
+                            <p className="text-sm text-foreground leading-relaxed line-clamp-3">
+                              {tmpl.text}
+                            </p>
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </>
         ) : null}
       </WizardScreen>
     </div>
   )
-
 
   if (allowGoogleMaps) {
     return (
