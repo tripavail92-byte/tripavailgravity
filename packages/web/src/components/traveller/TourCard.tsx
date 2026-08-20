@@ -114,12 +114,20 @@ export function TourCard({
           <span />
         )}
         {Number(rating) > 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm">
+          // Clickable: opens the tour at its reviews section rather than being a dead stat.
+          <Link
+            to={`${href}#reviews`}
+            target={linkTarget}
+            rel={linkRel}
+            onClick={(e) => e.stopPropagation()}
+            title={`Read ${reviewCount || ''} review${Number(reviewCount) === 1 ? '' : 's'}`.trim()}
+            className="pointer-events-auto inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm transition-transform hover:scale-[1.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             ★ {Number(rating).toFixed(1)}
             {Number(reviewCount) > 0 ? (
               <span className="font-medium text-muted-foreground">({reviewCount})</span>
             ) : null}
-          </span>
+          </Link>
         ) : (
           <span className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-sm">
             {isFeatured ? 'Featured' : 'New'}

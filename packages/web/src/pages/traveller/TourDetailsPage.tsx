@@ -895,9 +895,23 @@ export default function TourDetailsPage() {
                       {tour.tour_type?.replace('-', ' ') || 'Tour'}
                     </GlassBadge>
                     {(tour.operator_is_verified ?? tour.is_verified) ? (
-                      <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                        Verified Operator
-                      </GlassBadge>
+                      // Clickable: a trust badge should let the traveller go and CHECK the
+                      // claim. Links to the operator's public profile when we have a slug.
+                      operatorSlug ? (
+                        <Link
+                          to={`/operators/${operatorSlug}`}
+                          className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          title="View operator profile"
+                        >
+                          <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                            Verified Operator
+                          </GlassBadge>
+                        </Link>
+                      ) : (
+                        <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                          Verified Operator
+                        </GlassBadge>
+                      )
                     ) : null}
                   </div>
 
@@ -912,21 +926,32 @@ export default function TourDetailsPage() {
 
                   <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-medium">
                     {Number(tour.rating) > 0 ? (
-                      <div className="flex items-center gap-2">
+                      // Clickable: jumps to the Traveler reviews section below (#reviews),
+                      // so the score is a way IN to the reviews rather than a dead stat.
+                      <a
+                        href="#reviews"
+                        className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        title="Read traveller reviews"
+                      >
                         <div className="p-1.5 bg-warning/10 rounded-full">
                           <Star size={16} className="text-warning fill-current" />
                         </div>
-                        <span className="font-bold text-foreground">
-                          {tour.rating} ({tour.review_count} reviews)
+                        <span className="font-bold text-foreground underline-offset-4 hover:underline">
+                          {tour.rating} ({tour.review_count}{' '}
+                          {Number(tour.review_count) === 1 ? 'review' : 'reviews'})
                         </span>
-                      </div>
+                      </a>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <a
+                        href="#reviews"
+                        className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                        title="No reviews yet"
+                      >
                         <div className="p-1.5 bg-primary/10 rounded-full">
                           <Star size={16} className="text-primary" />
                         </div>
                         <span className="font-bold text-foreground">New</span>
-                      </div>
+                      </a>
                     )}
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 bg-info/10 rounded-full">
