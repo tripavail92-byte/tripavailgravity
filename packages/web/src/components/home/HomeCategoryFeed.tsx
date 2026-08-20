@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
-import { useNextDepartures } from '@/queries/departureQueries'
+import { type TourDepartureSummary, useTourDepartureSummary } from '@/queries/departureQueries'
 import type { HotelBrowseItem } from '@/queries/hotelQueries'
 import { useHotelBrowse } from '@/queries/hotelQueries'
 import { useCuratedPackages, useFeaturedPackages, useSpecialOffers } from '@/queries/packageQueries'
@@ -65,7 +65,7 @@ function renderPackageCards(pkgs: any[]): ReactNode[] {
 function renderTourCards(
   tours: any[],
   seen?: Set<string>,
-  departures?: Record<string, string>,
+  departures?: Record<string, TourDepartureSummary>,
 ): ReactNode[] {
   const out: ReactNode[] = []
   for (const tour of tours) {
@@ -93,7 +93,7 @@ function renderTourCards(
         type={tour.badge || 'Tour'}
         isFeatured={tour.badge === 'Featured'}
         shortDescription={tour.shortDescription}
-        departureDate={departures?.[tour.id] ?? null}
+        departureSummary={departures?.[tour.id] ?? null}
       />,
     )
   }
@@ -235,7 +235,7 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
     ],
     [mixQ.data, featTourQ.data, northernQ.data, adventureQ.data, hikingQ.data],
   )
-  const { data: departures } = useNextDepartures(departureIds)
+  const { data: departures } = useTourDepartureSummary(departureIds)
 
   const offers = useMemo(() => renderPackageCards(offersQ.data ?? []), [offersQ.data])
   const hotels = useMemo(() => renderHotelCards(hotelsQ.data ?? []), [hotelsQ.data])

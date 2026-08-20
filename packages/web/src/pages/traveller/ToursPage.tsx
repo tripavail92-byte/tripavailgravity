@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useSeo } from '@/hooks/useSeo'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
-import { useNextDepartures } from '@/queries/departureQueries'
+import { useTourDepartureSummary } from '@/queries/departureQueries'
 import { useNearbyTours } from '@/queries/pickupQueries'
 import { type HomepageMixTour, useHomepageMixTours } from '@/queries/tourQueries'
 
@@ -61,7 +61,9 @@ export default function ToursPage() {
   const allToursQuery = useHomepageMixTours(96)
   const tours = useMemo(() => allToursQuery.data ?? [], [allToursQuery.data])
   // Real next-departure dates for the visible cards — one batched query.
-  const { data: departures } = useNextDepartures(useMemo(() => tours.map((t) => t.id), [tours]))
+  const { data: departures } = useTourDepartureSummary(
+    useMemo(() => tours.map((t) => t.id), [tours]),
+  )
 
   useSeo({
     title: 'Tours & trips in Pakistan',
@@ -264,7 +266,7 @@ export default function ToursPage() {
                   type={tour.tourType || 'Tour'}
                   isFeatured={Boolean(tour.isFeatured)}
                   shortDescription={tour.shortDescription ?? undefined}
-                  departureDate={departures?.[tour.id] ?? null}
+                  departureSummary={departures?.[tour.id] ?? null}
                 />
               ))}
             </div>

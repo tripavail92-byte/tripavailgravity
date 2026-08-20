@@ -1,4 +1,4 @@
-import { CalendarDays, Clock, MapPin } from 'lucide-react'
+import { CalendarDays, Clock, MapPin, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -6,7 +6,11 @@ import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
 import { tourImage } from '@/lib/imageUrl'
-import { formatDepartureDate } from '@/queries/departureQueries'
+import {
+  formatDepartureDate,
+  formatDepartureRange,
+  type TourDepartureSummary,
+} from '@/queries/departureQueries'
 
 /**
  * Tour card — image-dominant, everything overlaid.
@@ -37,6 +41,8 @@ interface TourCardProps {
   depositPercentage?: number
   /** ISO start_time of the next upcoming departure — see useNextDepartures. */
   departureDate?: string | null
+  /** Richer departure info (next range, seats left, count) — shown when provided. */
+  departureSummary?: TourDepartureSummary | null
 }
 
 const FALLBACK_IMG =
@@ -58,6 +64,7 @@ export function TourCard({
   depositRequired,
   depositPercentage,
   departureDate,
+  departureSummary,
 }: TourCardProps) {
   const navigate = useNavigate()
   const paymentTerms = getTourPaymentTerms({
@@ -76,7 +83,13 @@ export function TourCard({
   const linkTarget = isDesktop ? '_blank' : undefined
   const linkRel = isDesktop ? 'noopener noreferrer' : undefined
   const href = `/tours/${slug || id}`
-  const departsOn = formatDepartureDate(departureDate)
+  // The pill shows the next departure's date RANGE when we have the richer summary,
+  // else the single start date, else nothing.
+  const departsLabel = departureSummary
+    ? formatDepartureRange(departureSummary.nextStart, departureSummary.nextEnd)
+    : formatDepartureDate(departureDate)
+  const seatsLeft = departureSummary?.seatsLeft ?? null
+  const departureCount = departureSummary?.count ?? 0
   const categoryLabel = (type || '').replace(/-/g, ' ').trim()
 
   return (
@@ -106,12 +119,12 @@ export function TourCard({
 
       {/* Top row: real departure date + status */}
       <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-        {departsOn ? (
+        {departsLabel ? (
           // The pill background is ALWAYS white (over the photo), so its text is pinned to a
           // fixed dark colour — text-foreground flips to near-white in dark mode and vanished.
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-neutral-900 shadow-sm">
             <CalendarDays className="h-3 w-3" />
-            {departsOn}
+            {departureCount > 1 ? `Next ${departsLabel}` : departsLabel}
           </span>
         ) : (
           <span />
@@ -163,11 +176,25 @@ export function TourCard({
           ) : null}
         </div>
 
+        {/* Availability line — seats left on the next departure + how many departures. */}
+        {departureSummary && (seatsLeft != null || departureCount > 0) ? (
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-white/85">
+            {seatsLeft != null ? (
+              <span className="inline-flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left
+              </span>
+            ) : null}
+            {seatsLeft != null && departureCount > 1 ? <span className="opacity-50">·</span> : null}
+            {departureCount > 1 ? <span>{departureCount} departures</span> : null}
+          </p>
+        ) : null}
+
         {/* Price + CTA on ONE line */}
         <div className="mt-3 flex items-end justify-between gap-2">
           <div className="min-w-0 leading-tight">
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/70">
-              {showsDeposit ? 'Pay now' : 'From'}
+              {showsDeposit ? 'Pay now' : 'From / person'}
             </span>
             <span className="block truncate text-[17px] font-extrabold text-white">
               {mainMoney.estimate ? '≈ ' : ''}

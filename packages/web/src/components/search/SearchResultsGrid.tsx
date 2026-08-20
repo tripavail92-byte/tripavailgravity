@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useT } from '@/hooks/useT'
 import { formatTourDuration } from '@/lib/tourDuration'
+import type { TourDepartureSummary } from '@/queries/departureQueries'
 import type { SearchListing } from '@/queries/searchQueries'
 
 const FALLBACK_IMG =
@@ -29,12 +30,12 @@ function ResultCard({
   item,
   showDistance,
   distanceKind,
-  departureDate,
+  departureSummary,
 }: {
   item: SearchListing
   showDistance: boolean
   distanceKind: 'away' | 'pickup'
-  departureDate?: string | null
+  departureSummary?: TourDepartureSummary | null
 }) {
   if (item.listingType === 'tour') {
     return (
@@ -52,7 +53,7 @@ function ResultCard({
           type={item.badge ?? 'Tour'}
           isFeatured={item.isFeatured}
           reviewCount={item.reviewCount ?? 0}
-          departureDate={departureDate ?? null}
+          departureSummary={departureSummary ?? null}
         />
         {showDistance && <DistanceChip km={item.distanceKm} kind={distanceKind} />}
       </div>
@@ -84,15 +85,15 @@ export function SearchResultsGrid({
   isLoading,
   showDistance = false,
   distanceKind = 'away',
-  departuresById,
+  summariesById,
 }: {
   items: SearchListing[]
   isLoading: boolean
   showDistance?: boolean
   /** How to phrase the distance chip — 'pickup' for pickup-ranked tours. */
   distanceKind?: 'away' | 'pickup'
-  /** tourId -> chosen departure ISO (soonest, or soonest on/after the searched date). */
-  departuresById?: Record<string, string | null>
+  /** tourId -> departure summary (next range, seats left, count) for the card. */
+  summariesById?: Record<string, TourDepartureSummary>
 }) {
   const t = useT()
   if (isLoading) {
@@ -133,7 +134,7 @@ export function SearchResultsGrid({
           item={item}
           showDistance={showDistance}
           distanceKind={distanceKind}
-          departureDate={departuresById?.[item.listingId] ?? null}
+          departureSummary={summariesById?.[item.listingId] ?? null}
         />
       ))}
     </div>

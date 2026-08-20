@@ -25,7 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
-import { useUpcomingDepartures } from '@/queries/departureQueries'
+import { useTourDepartureSummary, useUpcomingDepartures } from '@/queries/departureQueries'
 import { useHotelSearch } from '@/queries/hotelQueries'
 import { useSearchPackages } from '@/queries/packageQueries'
 import { useNearbyTours } from '@/queries/pickupQueries'
@@ -206,6 +206,7 @@ export default function SearchPage() {
   // "When" date filter. One batched query over the visible tour ids.
   const tourIdsForDates = useMemo(() => tourItems.map((tt) => tt.listingId), [tourItems])
   const { data: upcomingByTour } = useUpcomingDepartures(tourIdsForDates)
+  const { data: departureSummaries } = useTourDepartureSummary(tourIdsForDates)
   // Chosen departure per tour: the soonest on/after the searched date, else the soonest.
   // start_time is a full ISO timestamp and checkin is YYYY-MM-DD, so a lexical >= compare
   // keeps same-day departures (…-09-14T08:00 >= …-09-14).
@@ -494,7 +495,7 @@ export default function SearchPage() {
                   isLoading={tourLoading}
                   showDistance={showDistance}
                   distanceKind={tourNearby ? 'pickup' : 'away'}
-                  departuresById={departuresById}
+                  summariesById={departureSummaries}
                 />
               ) : (
                 <>
@@ -531,7 +532,7 @@ export default function SearchPage() {
                         isLoading={tourLoading}
                         showDistance={showDistance}
                         distanceKind={tourNearby ? 'pickup' : 'away'}
-                        departuresById={departuresById}
+                        summariesById={departureSummaries}
                       />
                     </section>
                   )}
