@@ -466,7 +466,7 @@ export const tourService = {
       // Anon-reachable (traveller viewing a public tour). Reads the storefront view, not the base
       // table, so it survives dropping the base-table public-read policy (migration 20260714000003).
       (supabase.from('operator_public_storefront_v' as any) as any)
-        .select('company_name, first_name, last_name, account_status')
+        .select('company_name, first_name, last_name, account_status, has_identity_verified, has_business_registration_verified')
         .eq('user_id', data.operator_id)
         .maybeSingle(),
     ])
@@ -492,6 +492,8 @@ export const tourService = {
       first_name?: string | null
       last_name?: string | null
       account_status?: string | null
+      has_identity_verified?: boolean | null
+      has_business_registration_verified?: boolean | null
     } | null
 
     const contactName = [operatorProfile?.first_name, operatorProfile?.last_name]
@@ -503,8 +505,12 @@ export const tourService = {
       String(operatorProfile?.company_name || '').trim() ||
       contactName ||
       'Tour Operator'
+    // "Verified" must mean verified. This previously OR-ed in
+    // `account_status === 'active'` — true for essentially every operator — so the badge
+    // carried no signal and was false wherever KYC had not actually passed. The storefront
+    // view derives has_identity_verified from APPROVED KYC documents, so gate on that.
     const operatorIsVerified =
-      Boolean((data as any).is_verified) || operatorProfile?.account_status === 'active'
+      Boolean((data as any).is_verified) || Boolean(operatorProfile?.has_identity_verified)
 
     // Existing tours have no country stored (the create form used to read its own empty value, so
     // country was never written) and some have no city either. Publishing REQUIRES a pickup point,
@@ -990,11 +996,15 @@ export const tourService = {
    * Get schedule for a tour (typically ONE fixed departure per tour)
    */
   async getTourSchedules(tourId: string) {
+    // Only UPCOMING departures. Without this filter both the detail page and checkout
+    // take schedules[0] — the earliest row ever created — so a traveller in August
+    // could see, select and pay for a departure that left in March.
     const { data, error } = await supabase
       .from('tour_schedules')
       .select('*')
       .eq('tour_id', tourId)
       .eq('status', 'scheduled')
+      .gte('start_time', new Date().toISOString())
       .order('start_time', { ascending: true })
 
     if (error) {

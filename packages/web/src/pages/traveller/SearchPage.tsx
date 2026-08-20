@@ -128,9 +128,15 @@ export default function SearchPage() {
 
   const { data: facets } = useSearchFacets(baseFilters)
 
-  // Does this search resolve to a geo/nearest sort? (explicit sort=nearest, or
-  // no query + coords available → nearest by default).
-  const geoSort = (sort || (effectiveQuery ? '' : coords ? 'nearest' : '')) === 'nearest'
+  // Does this search resolve to a geo/nearest sort? EXPLICIT CHOICE ONLY.
+  //
+  // This used to default to 'nearest' whenever there was no text query and we had
+  // coordinates (granted geolocation OR a stored traveller city). That silently
+  // switched the results to a 500km pickup-radius search while the sort control still
+  // read "Recommended" — so every visitor further than 500km from a pickup point
+  // (Dubai, London, even Karachi) opened /search to an empty page. Nearest is now
+  // something the traveller picks, not something we assume.
+  const geoSort = sort === 'nearest'
 
   // TOURS "nearby" is fundamentally different from hotels: a tour has no single
   // location — it has PICKUP POINTS where the trip departs. So when tours are

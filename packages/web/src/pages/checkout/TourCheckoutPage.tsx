@@ -1,5 +1,7 @@
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { formatMoney } from '@tripavail/shared/utils/money'
+
+import { getCancellationMeta } from '@/lib/cancellationPolicy'
 import {
   AlertCircle,
   ArrowLeft,
@@ -110,7 +112,9 @@ export default function TourCheckoutPage() {
               setAvailableSlots(slots)
             } catch (error) {
               console.error('Error fetching available slots:', error)
-              setAvailableSlots(0)
+              // Don't turn a lookup failure into "sold out" — fall back to capacity;
+              // createBookingWithValidation re-checks availability server-side anyway.
+              setAvailableSlots(null)
             }
           }
         }
@@ -207,6 +211,8 @@ export default function TourCheckoutPage() {
   const payNowAmount = paymentTerms.upfrontAmount
   const payLaterAmount = paymentTerms.remainingAmount
   const usesDeposit = paymentTerms.paymentCollectionMode === 'partial_online'
+  // The traveller must see the SAME cancellation terms here as on the tour page.
+  const cancellationMeta = getCancellationMeta(tour?.cancellation_policy)
   const scheduleCapacity = schedule?.capacity || null
   const liveAvailableSeats = availableSlots ?? scheduleCapacity ?? 0
   const seatsRemainingAfterSelection = Math.max(0, liveAvailableSeats - guestCount)
@@ -907,8 +913,11 @@ export default function TourCheckoutPage() {
               {/* Policy Info */}
               <div className="bg-info/10 border border-info/20 rounded-2xl p-4">
                 <p className="type-caption text-info leading-relaxed">
-                  <span className="font-bold">Free cancellation</span> up to 48 hours before
-                  departure. Your booking hold will expire in 10 minutes.
+                  {/* Reads the tour's real policy — this used to hardcode "free cancellation
+                      up to 48 hours", which contradicted non-refundable tours at the exact
+                      moment the traveller paid. */}
+                  <span className="font-bold">{cancellationMeta.title}:</span>{' '}
+                  {cancellationMeta.description} Your booking hold will expire in 10 minutes.
                 </p>
               </div>
             </div>

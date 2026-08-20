@@ -17,7 +17,8 @@ interface TourCardProps {
   location: string
   duration: string
   rating: number
-  reviewCount: number
+  /** Optional: many list queries don't select review_count. Omitted => no count shown. */
+  reviewCount?: number
   price: number
   currency: string
   type: string
@@ -35,6 +36,7 @@ export function TourCard({
   location,
   duration,
   rating,
+  reviewCount = 0,
   price,
   currency,
   type,
@@ -42,7 +44,7 @@ export function TourCard({
   shortDescription,
   depositRequired,
   depositPercentage,
-}: Omit<TourCardProps, 'reviewCount'>) {
+}: TourCardProps) {
   const paymentTerms = getTourPaymentTerms({
     basePrice: price,
     guestCount: 1,
@@ -134,15 +136,21 @@ export function TourCard({
                 {duration}
               </Badge>
 
-              <Badge variant="secondary" className="rounded-full">
-                <Zap className="w-3.5 h-3.5 mr-1" />
-                Instant confirmation
-              </Badge>
+              {type ? (
+                <Badge variant="secondary" className="rounded-full capitalize">
+                  {String(type).replace(/-/g, ' ')}
+                </Badge>
+              ) : null}
 
-              <Badge variant="secondary" className="rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                Verified operator
-              </Badge>
+              {Number(rating) > 0 ? (
+                <Badge variant="secondary" className="rounded-full">
+                  <Star className="w-3.5 h-3.5 mr-1 fill-current text-warning" />
+                  {Number(rating).toFixed(1)}
+                  {Number(reviewCount) > 0 ? ` · ${reviewCount} ${Number(reviewCount) === 1 ? 'review' : 'reviews'}` : ''}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="rounded-full">New</Badge>
+              )}
             </div>
 
             {/* Short description teaser */}

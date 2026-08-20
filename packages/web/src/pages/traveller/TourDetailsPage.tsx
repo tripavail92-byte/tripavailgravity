@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { ShareButton } from '@/components/share/ShareButton'
 import { TourReviewButton } from '@/components/tour/TourReviewButton'
@@ -53,6 +54,7 @@ import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
+import { cancellationPolicyKey, getCancellationMeta } from '@/lib/cancellationPolicy'
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
@@ -183,8 +185,12 @@ export default function TourDetailsPage() {
               const slots = await tourBookingService.getAvailableSlots(mainSchedule.id)
               setAvailableSlots(slots)
             } catch (slotError) {
+              // A failed seat-count lookup is NOT "sold out". Leaving this null lets the
+              // capacity fallback below take over; forcing 0 rendered the CTA as
+              // "Sold Out", so a transient network error told the buyer the trip was gone.
+              // The server still validates availability when the booking is created.
               console.error('Error fetching available slots:', slotError)
-              setAvailableSlots(0)
+              setAvailableSlots(null)
             }
           }
         }
@@ -296,34 +302,12 @@ export default function TourDetailsPage() {
     })
   }
 
-  const cancellationPolicy = (tour?.cancellation_policy || 'flexible') as
-    | 'flexible'
-    | 'moderate'
-    | 'strict'
-    | 'non-refundable'
-
+  // Shared with checkout so the policy shown when selling === the policy shown when charging.
+  const cancellationPolicy = cancellationPolicyKey(tour?.cancellation_policy)
   const cancellationMeta = {
-    flexible: {
-      iconKey: CANCELLATION_ICON_BY_POLICY.flexible,
-      title: 'Free Cancellation',
-      description: 'Cancel up to 48 hours before departure.',
-    },
-    moderate: {
-      iconKey: CANCELLATION_ICON_BY_POLICY.moderate,
-      title: 'Moderate Cancellation',
-      description: 'Cancel up to 5 days before departure for free.',
-    },
-    strict: {
-      iconKey: CANCELLATION_ICON_BY_POLICY.strict,
-      title: 'Strict Cancellation',
-      description: '50% refund if cancelled 14 days before departure.',
-    },
-    'non-refundable': {
-      iconKey: CANCELLATION_ICON_BY_POLICY['non-refundable'],
-      title: 'Non-Refundable',
-      description: 'No refund after booking confirmation.',
-    },
-  }[cancellationPolicy]
+    ...getCancellationMeta(tour?.cancellation_policy),
+    iconKey: CANCELLATION_ICON_BY_POLICY[cancellationPolicy],
+  }
 
   const CancellationPolicyIcon = getTourIconComponent(cancellationMeta.iconKey)
   const includedFeatures =
@@ -866,9 +850,11 @@ export default function TourDetailsPage() {
                     <GlassBadge variant="primary" size="lg" className="capitalize">
                       {tour.tour_type?.replace('-', ' ') || 'Tour'}
                     </GlassBadge>
-                    <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
-                      Verified Operator
-                    </GlassBadge>
+                    {(tour.operator_is_verified ?? tour.is_verified) ? (
+                      <GlassBadge variant="success" size="lg" icon={<Sparkles size={14} />}>
+                        Verified Operator
+                      </GlassBadge>
+                    ) : null}
                   </div>
 
                   <h1 className="type-display text-foreground mb-2 break-words">
@@ -1524,6 +1510,7 @@ export default function TourDetailsPage() {
 
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
         <DialogContent className="max-w-xl border-none bg-transparent p-0 shadow-none sm:rounded-[2rem]">
+          <DialogTitle className="sr-only">Book {tour.title}</DialogTitle>
           {renderBookingCard({ onPayNow: handleBookFromDialog, inDialog: true })}
         </DialogContent>
       </Dialog>
