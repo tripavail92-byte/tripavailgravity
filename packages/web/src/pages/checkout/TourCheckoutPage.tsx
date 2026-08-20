@@ -24,6 +24,12 @@ import {
   getTourPaymentTerms,
   type ResolvedTourPromotion,
 } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  computeAccommodationTotal,
+  getSharingTier,
+  normalizeAccommodationPricing,
+  seatsUsed,
+} from '@/features/booking/utils/accommodationPricing'
 import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
@@ -70,6 +76,14 @@ export default function TourCheckoutPage() {
   const requestedGuests = Math.max(1, Number(searchParams.get('guests') || '1') || 1)
   const autoStartPayment = searchParams.get('autostart') === '1'
   const requestedScheduleId = searchParams.get('schedule') || null
+  // Room-sharing selection carried from the tour page (multi-day tours).
+  const requestedTierKey = searchParams.get('tier') || null
+  const requestedRoomCounts = {
+    adults: Math.max(0, Number(searchParams.get('adults') || 0) || 0),
+    childrenWithBed: Math.max(0, Number(searchParams.get('cwb') || 0) || 0),
+    childrenNoBed: Math.max(0, Number(searchParams.get('cnb') || 0) || 0),
+    infants: Math.max(0, Number(searchParams.get('inf') || 0) || 0),
+  }
 
   // State
   const [tour, setTour] = useState<Tour | null>(null)
@@ -221,13 +235,34 @@ export default function TourCheckoutPage() {
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
   const applicableTier = rangeMatchedTier || fallbackThresholdTier
 
-  const basePaymentTerms = getTourPaymentTerms({
-    basePrice: baseUnitPrice,
-    guestCount,
-    pricingTiers: tour?.pricing_tiers,
-    depositRequired: tour?.deposit_required,
-    depositPercentage: Number(tour?.deposit_percentage || 0),
-  })
+  // Room-sharing pricing (multi-day tours): recompute the total from the chosen tier + traveller
+  // mix carried in the URL. Falls back to the ordinary per-person pricing when not a room tour.
+  const accommodation = normalizeAccommodationPricing(
+    (tour as { accommodation_pricing?: unknown } | null)?.accommodation_pricing,
+  )
+  const roomTier = accommodation ? getSharingTier(accommodation, requestedTierKey) : null
+  const roomCounts =
+    requestedRoomCounts.adults +
+      requestedRoomCounts.childrenWithBed +
+      requestedRoomCounts.childrenNoBed >
+    0
+      ? requestedRoomCounts
+      : { adults: guestCount, childrenWithBed: 0, childrenNoBed: 0, infants: 0 }
+  const basePaymentTerms =
+    accommodation && roomTier
+      ? buildTourPaymentTermsFromTotal({
+          totalAmount: computeAccommodationTotal(roomTier, roomCounts, accommodation.childRates),
+          guestCount: Math.max(1, seatsUsed(roomCounts)),
+          depositRequired: tour?.deposit_required,
+          depositPercentage: Number(tour?.deposit_percentage || 0),
+        })
+      : getTourPaymentTerms({
+          basePrice: baseUnitPrice,
+          guestCount,
+          pricingTiers: tour?.pricing_tiers,
+          depositRequired: tour?.deposit_required,
+          depositPercentage: Number(tour?.deposit_percentage || 0),
+        })
   const paymentTerms = appliedPromotion
     ? buildTourPaymentTermsFromTotal({
         totalAmount: appliedPromotion.discountedBookingTotal,
@@ -443,6 +478,12 @@ export default function TourCheckoutPage() {
           tour_name: tour.title,
           schedule_start: schedule.start_time,
           guest_count: guestCount,
+          // Room-sharing selection — the server recomputes the charged total from these counts +
+          // the DB's tier prices, so the total can't be tampered with client-side.
+          accommodation_selection:
+            accommodation && roomTier
+              ? { tier: roomTier.key, tierLabel: roomTier.label, counts: roomCounts }
+              : null,
           payment_collection_mode: paymentTerms.paymentCollectionMode,
           upfront_amount: payNowAmount,
           remaining_amount: payLaterAmount,

@@ -61,6 +61,13 @@ export interface Tour {
   seasonal_pricing: boolean
   peak_season_multiplier: number
   off_season_multiplier: number
+  /** Room-sharing pricing for multi-day tours (Quad/Triple/Double/Solo + child rates). Empty /
+   *  not enabled = ordinary single per-person price. See accommodationPricing.ts. */
+  accommodation_pricing?: {
+    enabled?: boolean
+    tiers?: Array<{ key: string; label?: string; pricePerPerson: number }>
+    childRates?: { withBed?: number; noBed?: number; infant?: number }
+  } | null
   deposit_required: boolean
   /** Canonical column; `deposit_required` is the legacy alias the DB trigger keeps in sync. */
   require_deposit?: boolean | null

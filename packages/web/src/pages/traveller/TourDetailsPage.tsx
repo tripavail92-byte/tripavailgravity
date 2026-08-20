@@ -41,7 +41,19 @@ import {
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { tourBookingService } from '@/features/booking'
 import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
-import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  buildTourPaymentTermsFromTotal,
+  getTourPaymentTerms,
+} from '@/features/booking/utils/tourPaymentTerms'
+import {
+  accommodationLineItems,
+  cheapestTierPrice,
+  computeAccommodationTotal,
+  getSharingTier,
+  normalizeAccommodationPricing,
+  seatsUsed,
+  type TravellerCounts,
+} from '@/features/booking/utils/accommodationPricing'
 import {
   CANCELLATION_ICON_BY_POLICY,
   getTourIconComponent,
@@ -165,6 +177,14 @@ export default function TourDetailsPage() {
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
   const [selectedSeats, setSelectedSeats] = useState(1)
+  // Room-sharing booking state (only used when the tour has accommodation_pricing enabled).
+  const [selectedTierKey, setSelectedTierKey] = useState<string | null>(null)
+  const [travellerCounts, setTravellerCounts] = useState<TravellerCounts>({
+    adults: 1,
+    childrenWithBed: 0,
+    childrenNoBed: 0,
+    infants: 0,
+  })
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
@@ -224,12 +244,23 @@ export default function TourDetailsPage() {
 
   const handleBookNow = () => {
     if (!tour?.id) return
-    const guests = Math.max(1, selectedSeats)
     // No &autostart=1: checkout is a reviewable step where the traveller enters
     // their details and applies a promo code, and the 10-minute hold is created when
     // they click — not silently on mount (which also made the promo input flash away).
     // Carry the CHOSEN departure so checkout books that one, not schedules[0].
     const scheduleParam = schedule?.id ? `&schedule=${schedule.id}` : ''
+    // Room-sharing tours carry the chosen tier + traveller mix so checkout can recompute the total.
+    if (accommodation && activeSharingTier) {
+      const c = travellerCounts
+      const roomParams =
+        `&tier=${encodeURIComponent(activeSharingTier.key)}` +
+        `&adults=${c.adults}&cwb=${c.childrenWithBed}&cnb=${c.childrenNoBed}&inf=${c.infants}`
+      navigate(
+        `/checkout/tour/${tour.id || id}?guests=${bookingSeats}${roomParams}${scheduleParam}`,
+      )
+      return
+    }
+    const guests = Math.max(1, selectedSeats)
     navigate(`/checkout/tour/${tour.id || id}?guests=${guests}${scheduleParam}`)
   }
 
@@ -251,6 +282,25 @@ export default function TourDetailsPage() {
   useEffect(() => {
     setSelectedSeats((prev) => Math.min(prev, maxSelectableSeats))
   }, [maxSelectableSeats])
+
+  // Keep the room-sharing traveller mix within live capacity (infants ride on a lap, no seat).
+  useEffect(() => {
+    setTravellerCounts((prev) => {
+      const nonAdultSeats = prev.childrenWithBed + prev.childrenNoBed
+      const maxAdults = Math.max(1, maxSelectableSeats - nonAdultSeats)
+      return prev.adults > maxAdults ? { ...prev, adults: maxAdults } : prev
+    })
+  }, [maxSelectableSeats])
+
+  const changeTravellerCount = (key: keyof TravellerCounts, delta: number) => {
+    setTravellerCounts((prev) => {
+      const min = key === 'adults' ? 1 : 0
+      const next = { ...prev, [key]: Math.max(min, prev[key] + delta) }
+      // Adding a seat-consuming traveller can't exceed live capacity (infants excluded).
+      if (delta > 0 && key !== 'infants' && seatsUsed(next) > maxSelectableSeats) return prev
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!tour?.id) return
@@ -360,6 +410,16 @@ export default function TourDetailsPage() {
   const depositPercentage = Math.max(0, Math.min(90, tour?.deposit_percentage || 0))
   const requiresDeposit = Boolean(tour?.deposit_required)
   const payToday = requiresDeposit ? Math.round((basePrice * depositPercentage) / 100) : basePrice
+
+  // Room-sharing / accommodation pricing (multi-day tours). When present it overrides the plain
+  // per-person pricing below: the traveller picks a sharing tier + a traveller mix and the total
+  // comes from that instead of seats × base price.
+  const accommodation = normalizeAccommodationPricing((tour as any)?.accommodation_pricing)
+  const activeSharingTier = accommodation ? getSharingTier(accommodation, selectedTierKey) : null
+  // Seats this booking consumes against capacity — the traveller mix when room-sharing, else the
+  // plain seat counter.
+  const bookingSeats = accommodation ? Math.max(1, seatsUsed(travellerCounts)) : selectedSeats
+
   const groupPricingTiers = Array.isArray(tour?.pricing_tiers)
     ? [...tour.pricing_tiers]
         .map((tier: any, index: number) => ({
@@ -383,13 +443,25 @@ export default function TourDetailsPage() {
     .filter((tier: any) => selectedSeats >= tier.minPeople)
     .sort((a: any, b: any) => b.minPeople - a.minPeople)[0]
   const activeGroupTier = rangeMatchedTier || fallbackThresholdTier
-  const paymentTerms = getTourPaymentTerms({
-    basePrice,
-    guestCount: selectedSeats,
-    pricingTiers: tour?.pricing_tiers,
-    depositRequired: requiresDeposit,
-    depositPercentage,
-  })
+  const accommodationTotal =
+    accommodation && activeSharingTier
+      ? computeAccommodationTotal(activeSharingTier, travellerCounts, accommodation.childRates)
+      : 0
+  const paymentTerms =
+    accommodation && activeSharingTier
+      ? buildTourPaymentTermsFromTotal({
+          totalAmount: accommodationTotal,
+          guestCount: bookingSeats,
+          depositRequired: requiresDeposit,
+          depositPercentage,
+        })
+      : getTourPaymentTerms({
+          basePrice,
+          guestCount: selectedSeats,
+          pricingTiers: tour?.pricing_tiers,
+          depositRequired: requiresDeposit,
+          depositPercentage,
+        })
   const effectiveUnitPrice = paymentTerms.effectiveUnitPrice
   const liveTotalPrice = paymentTerms.totalAmount
   const standardTotalPrice = basePrice * selectedSeats
@@ -409,14 +481,12 @@ export default function TourDetailsPage() {
     ? Math.max(0, (basePrice - nextGroupTier.pricePerPerson) * nextGroupTier.minPeople)
     : 0
   const payNowPerTraveler = requiresDeposit
-    ? paymentTerms.upfrontAmount / Math.max(selectedSeats, 1)
+    ? paymentTerms.upfrontAmount / Math.max(bookingSeats, 1)
     : effectiveUnitPrice
   const payLaterPerTraveler = requiresDeposit
-    ? paymentTerms.remainingAmount / Math.max(selectedSeats, 1)
+    ? paymentTerms.remainingAmount / Math.max(bookingSeats, 1)
     : 0
-  const seatsRemainingAfterSelection = schedule
-    ? Math.max(0, liveAvailableSeats - selectedSeats)
-    : 0
+  const seatsRemainingAfterSelection = schedule ? Math.max(0, liveAvailableSeats - bookingSeats) : 0
   const canReachNextTierOnThisDeparture = nextGroupTier
     ? selectedSeats + seatsRemainingAfterSelection >= nextGroupTier.minPeople
     : false
@@ -539,6 +609,137 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
+  // Room-sharing booking section (multi-day tours) — replaces the plain seat counter when the tour
+  // has accommodation pricing: a sharing-tier selector, per-type traveller counters, and a live
+  // total. null for ordinary single-price tours.
+  const accommodationBookingSection =
+    accommodation && activeSharingTier ? (
+      <div className="space-y-4 rounded-3xl border border-primary/10 bg-background/80 p-4 backdrop-blur-sm">
+        <div className="space-y-2">
+          <p className="type-overline text-primary/75">Room sharing</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {accommodation.tiers.map((s) => {
+              const selected = s.key === activeSharingTier.key
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setSelectedTierKey(s.key)}
+                  aria-pressed={selected}
+                  className={`rounded-xl border px-2 py-2 text-sm font-semibold capitalize transition-colors ${
+                    selected
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : 'border-border/60 bg-background text-foreground hover:border-primary/40 hover:bg-primary/5'
+                  }`}
+                >
+                  {s.label.replace(/ sharing$/i, '')}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="type-overline text-primary/75">Travellers</p>
+          {(
+            [
+              { key: 'adults', label: 'Adults', rate: 1 },
+              {
+                key: 'childrenWithBed',
+                label: 'Child (with bed)',
+                rate: accommodation.childRates.withBed,
+              },
+              {
+                key: 'childrenNoBed',
+                label: 'Child (no bed)',
+                rate: accommodation.childRates.noBed,
+              },
+              { key: 'infants', label: 'Infants', rate: accommodation.childRates.infant },
+            ] as const
+          ).map((row) => {
+            const unit = Math.round(activeSharingTier.pricePerPerson * row.rate)
+            const min = row.key === 'adults' ? 1 : 0
+            return (
+              <div
+                key={row.key}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/60 p-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground">{row.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {unit > 0
+                      ? (() => {
+                          const m = money(unit, tour.currency)
+                          return `${m.estimate ? '≈ ' : ''}${m.text}`
+                        })()
+                      : 'Free'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => changeTravellerCount(row.key, -1)}
+                    disabled={travellerCounts[row.key] <= min}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={`Remove one ${row.label}`}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="w-6 text-center text-base font-black text-foreground">
+                    {travellerCounts[row.key]}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => changeTravellerCount(row.key, 1)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/10 bg-primary/5 text-primary transition-colors hover:bg-primary/10"
+                    aria-label={`Add one ${row.label}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="space-y-1.5 rounded-2xl border border-primary/10 bg-primary/5 p-3">
+          {accommodationLineItems(activeSharingTier, travellerCounts, accommodation.childRates).map(
+            (li) => (
+              <div
+                key={li.label}
+                className="flex items-center justify-between text-xs text-muted-foreground"
+              >
+                <span>
+                  {li.label} × {li.count}
+                </span>
+                <span className="tabular-nums">
+                  {(() => {
+                    const m = money(li.subtotal, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}
+                </span>
+              </div>
+            ),
+          )}
+          <div className="mt-1 flex items-center justify-between border-t border-primary/10 pt-2 text-sm">
+            <span className="font-semibold text-foreground">
+              Total · {bookingSeats} {bookingSeats === 1 ? 'seat' : 'seats'}
+            </span>
+            <span className="font-black tabular-nums text-foreground">
+              {(() => {
+                const m = money(liveTotalPrice, tour.currency)
+                return `${m.estimate ? '≈ ' : ''}${m.text}`
+              })()}
+            </span>
+          </div>
+          <p className="type-caption text-muted-foreground">
+            {seatsRemainingAfterSelection} seat{seatsRemainingAfterSelection === 1 ? '' : 's'} left
+            on this departure.
+          </p>
+        </div>
+      </div>
+    ) : null
+
   const renderBookingCard = ({
     onPayNow,
     inDialog = false,
@@ -559,10 +760,18 @@ export default function TourDetailsPage() {
       <GlassHeader>
         <GlassTitle className="type-h2 text-foreground">
           {(() => {
-            const m = money(effectiveUnitPrice, tour.currency)
+            const price =
+              accommodation && activeSharingTier
+                ? activeSharingTier.pricePerPerson
+                : effectiveUnitPrice
+            const m = money(price, tour.currency)
             return `${m.estimate ? '≈ ' : ''}${m.text}`
           })()}
-          <span className="type-body-sm text-muted-foreground"> / person</span>
+          <span className="type-body-sm text-muted-foreground">
+            {' '}
+            / person
+            {accommodation && activeSharingTier ? ` (${activeSharingTier.label})` : ''}
+          </span>
         </GlassTitle>
       </GlassHeader>
       <GlassContent className="space-y-4">
@@ -670,122 +879,124 @@ export default function TourDetailsPage() {
           )}
         </div>
 
-        <div className="space-y-3 rounded-3xl border border-primary/10 bg-background/80 p-4 backdrop-blur-sm">
-          <p className="type-overline text-primary/75">Number of Seats</p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
-              disabled={selectedSeats <= 1}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <div className="flex-1 text-center">
-              <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
-              <p className="type-caption text-muted-foreground">
-                {selectedSeats === 1 ? 'Seat' : 'Seats'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
-              disabled={selectedSeats >= maxSelectableSeats}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
-            <p className="type-caption text-muted-foreground">
-              Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves{' '}
-              {seatsRemainingAfterSelection} seat{seatsRemainingAfterSelection === 1 ? '' : 's'}{' '}
-              available on this departure.
-            </p>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {activeGroupTier ? (
-                <p className="type-overline text-primary">
-                  {activeGroupTier.name} applied for {selectedSeats}{' '}
-                  {selectedSeats === 1 ? 'seat' : 'seats'}
-                </p>
-              ) : (
-                <p className="type-overline text-primary/75">Standard rate</p>
-              )}
-              {currentTotalSavings > 0 ? (
-                <GlassBadge
-                  variant="light"
-                  size="sm"
-                  className="border-primary/15 bg-primary/10 text-primary"
-                >
-                  Traveller rate live
-                </GlassBadge>
-              ) : null}
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-muted-foreground">
-                {(() => {
-                  const m = money(effectiveUnitPrice, tour.currency)
-                  return `${m.estimate ? '≈ ' : ''}${m.text}`
-                })()}{' '}
-                × {selectedSeats}
-              </span>
-              <span
-                className={`font-black tabular-nums text-foreground transition-all duration-200 ${
-                  isTotalPulsing ? 'scale-[1.03] text-primary' : ''
-                }`}
+        {accommodationBookingSection ?? (
+          <div className="space-y-3 rounded-3xl border border-primary/10 bg-background/80 p-4 backdrop-blur-sm">
+            <p className="type-overline text-primary/75">Number of Seats</p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedSeats((prev) => Math.max(1, prev - 1))}
+                disabled={selectedSeats <= 1}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {(() => {
-                  const m = money(animatedLiveTotalPrice, tour.currency)
-                  return `${m.estimate ? '≈ ' : ''}${m.text}`
-                })()}
-              </span>
+                <Minus className="h-4 w-4" />
+              </button>
+              <div className="flex-1 text-center">
+                <p className="text-2xl font-black text-foreground">{selectedSeats}</p>
+                <p className="type-caption text-muted-foreground">
+                  {selectedSeats === 1 ? 'Seat' : 'Seats'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedSeats((prev) => Math.min(maxSelectableSeats, prev + 1))}
+                disabled={selectedSeats >= maxSelectableSeats}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/10 bg-primary/5 text-primary transition-all duration-300 hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
-            {currentTotalSavings > 0 ? (
-              <div className="rounded-lg border border-success/30 bg-success/10 p-2.5">
-                <p
-                  className={`type-overline tabular-nums text-success transition-all duration-200 ${
-                    isSavingsPulsing ? 'scale-[1.02]' : ''
+            <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
+              <p className="type-caption text-muted-foreground">
+                Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves{' '}
+                {seatsRemainingAfterSelection} seat{seatsRemainingAfterSelection === 1 ? '' : 's'}{' '}
+                available on this departure.
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {activeGroupTier ? (
+                  <p className="type-overline text-primary">
+                    {activeGroupTier.name} applied for {selectedSeats}{' '}
+                    {selectedSeats === 1 ? 'seat' : 'seats'}
+                  </p>
+                ) : (
+                  <p className="type-overline text-primary/75">Standard rate</p>
+                )}
+                {currentTotalSavings > 0 ? (
+                  <GlassBadge
+                    variant="light"
+                    size="sm"
+                    className="border-primary/15 bg-primary/10 text-primary"
+                  >
+                    Traveller rate live
+                  </GlassBadge>
+                ) : null}
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-muted-foreground">
+                  {(() => {
+                    const m = money(effectiveUnitPrice, tour.currency)
+                    return `${m.estimate ? '≈ ' : ''}${m.text}`
+                  })()}{' '}
+                  × {selectedSeats}
+                </span>
+                <span
+                  className={`font-black tabular-nums text-foreground transition-all duration-200 ${
+                    isTotalPulsing ? 'scale-[1.03] text-primary' : ''
                   }`}
                 >
-                  Discount Applied · You save{' '}
                   {(() => {
-                    const m = money(animatedCurrentTotalSavings, tour.currency)
+                    const m = money(animatedLiveTotalPrice, tour.currency)
                     return `${m.estimate ? '≈ ' : ''}${m.text}`
                   })()}
-                </p>
-                <p className="mt-1 type-caption tabular-nums text-success/90">
-                  {(() => {
-                    const m = money(animatedCurrentSavingsPerPerson, tour.currency)
-                    return `${m.estimate ? '≈ ' : ''}${m.text}`
-                  })()}{' '}
-                  saved per person vs standard rate
-                </p>
+                </span>
               </div>
-            ) : null}
-            {nextGroupTier && seatsToNextTier > 0 && canReachNextTierOnThisDeparture ? (
-              <div className="rounded-2xl border border-primary/20 bg-primary/8 p-2.5">
-                <p className="type-overline text-primary">
-                  Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock{' '}
-                  {nextGroupTier.name}
-                </p>
-                <p className="mt-1 type-caption text-muted-foreground">
-                  Save up to{' '}
-                  {(() => {
-                    const m = money(nextTierTotalSavingsAtUnlock, tour.currency)
-                    return `${m.estimate ? '≈ ' : ''}${m.text}`
-                  })()}{' '}
-                  at {nextGroupTier.minPeople} people
-                  {nextTierExtraSavingsPerPerson > 0
-                    ? ` (${(() => {
-                        const m = money(nextTierExtraSavingsPerPerson, tour.currency)
-                        return `${m.estimate ? '≈ ' : ''}${m.text}`
-                      })()} more per person)`
-                    : ''}
-                </p>
-              </div>
-            ) : null}
+              {currentTotalSavings > 0 ? (
+                <div className="rounded-lg border border-success/30 bg-success/10 p-2.5">
+                  <p
+                    className={`type-overline tabular-nums text-success transition-all duration-200 ${
+                      isSavingsPulsing ? 'scale-[1.02]' : ''
+                    }`}
+                  >
+                    Discount Applied · You save{' '}
+                    {(() => {
+                      const m = money(animatedCurrentTotalSavings, tour.currency)
+                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                    })()}
+                  </p>
+                  <p className="mt-1 type-caption tabular-nums text-success/90">
+                    {(() => {
+                      const m = money(animatedCurrentSavingsPerPerson, tour.currency)
+                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                    })()}{' '}
+                    saved per person vs standard rate
+                  </p>
+                </div>
+              ) : null}
+              {nextGroupTier && seatsToNextTier > 0 && canReachNextTierOnThisDeparture ? (
+                <div className="rounded-2xl border border-primary/20 bg-primary/8 p-2.5">
+                  <p className="type-overline text-primary">
+                    Add {seatsToNextTier} more {seatsToNextTier === 1 ? 'seat' : 'seats'} to unlock{' '}
+                    {nextGroupTier.name}
+                  </p>
+                  <p className="mt-1 type-caption text-muted-foreground">
+                    Save up to{' '}
+                    {(() => {
+                      const m = money(nextTierTotalSavingsAtUnlock, tour.currency)
+                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                    })()}{' '}
+                    at {nextGroupTier.minPeople} people
+                    {nextTierExtraSavingsPerPerson > 0
+                      ? ` (${(() => {
+                          const m = money(nextTierExtraSavingsPerPerson, tour.currency)
+                          return `${m.estimate ? '≈ ' : ''}${m.text}`
+                        })()} more per person)`
+                      : ''}
+                  </p>
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
+        )}
 
         {requiresDeposit ? (
           <div className="space-y-3 rounded-3xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm">

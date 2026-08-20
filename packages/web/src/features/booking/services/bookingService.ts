@@ -8,6 +8,12 @@ import {
   type TourPromotionPreviewResult,
   type TourPromotionResolutionStatus,
 } from '@/features/booking/utils/tourPaymentTerms'
+import {
+  computeAccommodationTotal,
+  getSharingTier,
+  normalizeAccommodationPricing,
+  seatsUsed,
+} from '@/features/booking/utils/accommodationPricing'
 
 function toError(error: unknown, fallbackMessage = 'Request failed'): Error {
   if (error instanceof Error) return error
@@ -46,7 +52,15 @@ export interface TourBooking {
   booking_date: string
   expires_at?: string // 10-minute hold expiration timestamp
   stripe_payment_intent_id?: string
-  payment_status?: 'unpaid' | 'processing' | 'partially_paid' | 'balance_pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
+  payment_status?:
+    | 'unpaid'
+    | 'processing'
+    | 'partially_paid'
+    | 'balance_pending'
+    | 'paid'
+    | 'failed'
+    | 'refunded'
+    | 'partially_refunded'
   payment_collection_mode?: 'full_online' | 'partial_online'
   payment_method?: string
   paid_at?: string
@@ -80,7 +94,15 @@ export interface PackageBooking {
   number_of_nights?: number
   price_per_night?: number
   stripe_payment_intent_id?: string
-  payment_status?: 'unpaid' | 'processing' | 'partially_paid' | 'balance_pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
+  payment_status?:
+    | 'unpaid'
+    | 'processing'
+    | 'partially_paid'
+    | 'balance_pending'
+    | 'paid'
+    | 'failed'
+    | 'refunded'
+    | 'partially_refunded'
   payment_collection_mode?: 'full_online' | 'partial_online'
   payment_method?: string
   paid_at?: string
@@ -135,7 +157,7 @@ export const tourBookingService = {
 
     if (error) throw error
 
-    const row = Array.isArray(data) ? data[0] ?? null : data ?? null
+    const row = Array.isArray(data) ? (data[0] ?? null) : (data ?? null)
     const status = (row?.resolution_status ?? 'invalid') as TourPromotionResolutionStatus
     const message =
       typeof row?.resolution_message === 'string' && row.resolution_message.trim().length > 0
@@ -250,9 +272,8 @@ export const tourBookingService = {
       amount_paid_online: hasOnlinePayment
         ? Number(booking.upfront_amount ?? booking.total_price ?? 0)
         : Number(booking.amount_paid_online ?? 0),
-      amount_due_to_operator: paymentStatus === 'balance_pending'
-        ? Number(booking.remaining_amount ?? 0)
-        : 0,
+      amount_due_to_operator:
+        paymentStatus === 'balance_pending' ? Number(booking.remaining_amount ?? 0) : 0,
     }
 
     if (stripePaymentIntentId) updates.stripe_payment_intent_id = stripePaymentIntentId
@@ -280,7 +301,10 @@ export const tourBookingService = {
     return (data as TourBooking) || null
   },
 
-  async confirmTravelerCompletion(bookingId: string, reason?: string): Promise<{
+  async confirmTravelerCompletion(
+    bookingId: string,
+    reason?: string,
+  ): Promise<{
     bookingId: string
     status: TourBooking['status']
     action: string
@@ -307,16 +331,22 @@ export const tourBookingService = {
     }
   },
 
-  async requestCancellation(bookingId: string, reason?: string): Promise<{
+  async requestCancellation(
+    bookingId: string,
+    reason?: string,
+  ): Promise<{
     bookingId: string
     status: TourBooking['status']
     action: string
     notificationCount: number
   }> {
-    const { data, error } = await supabase.rpc('traveler_request_tour_booking_cancellation' as any, {
-      p_booking_id: bookingId,
-      p_reason: reason?.trim() || null,
-    })
+    const { data, error } = await supabase.rpc(
+      'traveler_request_tour_booking_cancellation' as any,
+      {
+        p_booking_id: bookingId,
+        p_reason: reason?.trim() || null,
+      },
+    )
 
     if (error) throw error
 
@@ -365,19 +395,46 @@ export const tourBookingService = {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // NOW + 10 minutes
     const { data: tourRow, error: tourError } = await supabase
       .from('tours')
-      .select('price, pricing_tiers, deposit_required, deposit_percentage')
+      .select('price, pricing_tiers, deposit_required, deposit_percentage, accommodation_pricing')
       .eq('id', params.tour_id)
       .single()
 
     if (tourError) throw tourError
 
-    const basePaymentTerms = getTourPaymentTerms({
-      basePrice: Number(tourRow?.price || 0),
-      guestCount: params.pax_count,
-      pricingTiers: tourRow?.pricing_tiers,
-      depositRequired: tourRow?.deposit_required,
-      depositPercentage: Number(tourRow?.deposit_percentage || 0),
-    })
+    // Room-sharing pricing (multi-day tours): recompute the total authoritatively from the DB's
+    // tiers + the traveller mix the client recorded in metadata. The per-person tier price comes
+    // from the DB (a client can't inflate/deflate it) — only the counts are the traveller's choice.
+    const accommodation = normalizeAccommodationPricing(
+      (tourRow as { accommodation_pricing?: unknown })?.accommodation_pricing,
+    )
+    const roomSel = (params.metadata as { accommodation_selection?: any })?.accommodation_selection
+    const roomTier =
+      accommodation && roomSel?.tier ? getSharingTier(accommodation, String(roomSel.tier)) : null
+    const roomCounts =
+      roomTier && roomSel?.counts && typeof roomSel.counts === 'object'
+        ? {
+            adults: Math.max(0, Number(roomSel.counts.adults || 0)),
+            childrenWithBed: Math.max(0, Number(roomSel.counts.childrenWithBed || 0)),
+            childrenNoBed: Math.max(0, Number(roomSel.counts.childrenNoBed || 0)),
+            infants: Math.max(0, Number(roomSel.counts.infants || 0)),
+          }
+        : null
+
+    const basePaymentTerms =
+      accommodation && roomTier && roomCounts
+        ? buildTourPaymentTermsFromTotal({
+            totalAmount: computeAccommodationTotal(roomTier, roomCounts, accommodation.childRates),
+            guestCount: Math.max(1, seatsUsed(roomCounts)),
+            depositRequired: tourRow?.deposit_required,
+            depositPercentage: Number(tourRow?.deposit_percentage || 0),
+          })
+        : getTourPaymentTerms({
+            basePrice: Number(tourRow?.price || 0),
+            guestCount: params.pax_count,
+            pricingTiers: tourRow?.pricing_tiers,
+            depositRequired: tourRow?.deposit_required,
+            depositPercentage: Number(tourRow?.deposit_percentage || 0),
+          })
 
     const promoPreview = params.promoCode?.trim()
       ? await this.inspectPromotionPreview({
@@ -416,7 +473,10 @@ export const tourBookingService = {
       payment_status: 'unpaid',
       payment_collection_mode: paymentTerms.paymentCollectionMode,
       deposit_required: paymentTerms.paymentCollectionMode === 'partial_online',
-      deposit_percentage: paymentTerms.paymentCollectionMode === 'partial_online' ? paymentTerms.upfrontPercentage : 0,
+      deposit_percentage:
+        paymentTerms.paymentCollectionMode === 'partial_online'
+          ? paymentTerms.upfrontPercentage
+          : 0,
       upfront_amount: paymentTerms.upfrontAmount,
       remaining_amount: paymentTerms.remainingAmount,
       amount_paid_online: 0,
@@ -500,7 +560,9 @@ export const packageBookingService = {
   async getTravelerBookings(travelerId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)')
+      .select(
+        '*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)',
+      )
       .eq('traveler_id', travelerId)
       .order('booking_date', { ascending: false })
 
@@ -511,7 +573,9 @@ export const packageBookingService = {
   async getTravelerBookingById(travelerId: string, bookingId: string): Promise<any | null> {
     const { data, error } = await supabase
       .from('package_bookings')
-      .select('*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)')
+      .select(
+        '*, packages(id, name, cover_image, package_type, cancellation_policy, payment_terms)',
+      )
       .eq('traveler_id', travelerId)
       .eq('id', bookingId)
       .maybeSingle()
@@ -712,16 +776,22 @@ export const packageBookingService = {
     return (data as PackageBooking) || null
   },
 
-  async requestCancellation(bookingId: string, reason?: string): Promise<{
+  async requestCancellation(
+    bookingId: string,
+    reason?: string,
+  ): Promise<{
     bookingId: string
     status: PackageBooking['status']
     action: string
     notificationCount: number
   }> {
-    const { data, error } = await supabase.rpc('traveler_request_package_booking_cancellation' as any, {
-      p_booking_id: bookingId,
-      p_reason: reason?.trim() || null,
-    })
+    const { data, error } = await supabase.rpc(
+      'traveler_request_package_booking_cancellation' as any,
+      {
+        p_booking_id: bookingId,
+        p_reason: reason?.trim() || null,
+      },
+    )
 
     if (error) throw error
 
@@ -847,28 +917,36 @@ export const bookingService = {
         bookingLabel: booking.tours?.title || 'Tour booking',
         status: booking.status,
         paymentStatus: booking.payment_status || null,
-        paidOnline: Number(booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0),
+        paidOnline: Number(
+          booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0,
+        ),
         totalAmount: Number(booking.total_price ?? 0),
-        cancellationRequestState: typeof booking.metadata?.cancellation_request_state === 'string'
-          ? booking.metadata.cancellation_request_state
-          : null,
-        cancellationRequestedAt: typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
-          ? booking.metadata.traveler_cancellation_requested_at
-          : null,
-        cancellationRequestReason: typeof booking.metadata?.traveler_cancellation_reason === 'string'
-          ? booking.metadata.traveler_cancellation_reason
-          : null,
-        cancellationReviewedAt: typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
-          ? booking.metadata.cancellation_request_reviewed_at
-          : null,
-        cancellationReviewReason: typeof booking.metadata?.cancellation_request_review_reason === 'string'
-          ? booking.metadata.cancellation_request_review_reason
-          : null,
+        cancellationRequestState:
+          typeof booking.metadata?.cancellation_request_state === 'string'
+            ? booking.metadata.cancellation_request_state
+            : null,
+        cancellationRequestedAt:
+          typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
+            ? booking.metadata.traveler_cancellation_requested_at
+            : null,
+        cancellationRequestReason:
+          typeof booking.metadata?.traveler_cancellation_reason === 'string'
+            ? booking.metadata.traveler_cancellation_reason
+            : null,
+        cancellationReviewedAt:
+          typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
+            ? booking.metadata.cancellation_request_reviewed_at
+            : null,
+        cancellationReviewReason:
+          typeof booking.metadata?.cancellation_request_review_reason === 'string'
+            ? booking.metadata.cancellation_request_review_reason
+            : null,
         refundAmount: Number(booking.metadata?.refund_amount || 0),
       }
     }
 
-    const booking = await packageBookingService.getOwnerBookings(partnerId)
+    const booking = await packageBookingService
+      .getOwnerBookings(partnerId)
       .then((rows) => rows.find((item: any) => item.id === bookingId) || null)
 
     if (!booking) return null
@@ -881,23 +959,30 @@ export const bookingService = {
       bookingLabel: packageRow.packages?.name || 'Package booking',
       status: booking.status,
       paymentStatus: booking.payment_status || null,
-      paidOnline: Number(booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0),
+      paidOnline: Number(
+        booking.amount_paid_online ?? booking.upfront_amount ?? booking.total_price ?? 0,
+      ),
       totalAmount: Number(booking.total_price ?? 0),
-      cancellationRequestState: typeof booking.metadata?.cancellation_request_state === 'string'
-        ? booking.metadata.cancellation_request_state
-        : null,
-      cancellationRequestedAt: typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
-        ? booking.metadata.traveler_cancellation_requested_at
-        : null,
-      cancellationRequestReason: typeof booking.metadata?.traveler_cancellation_reason === 'string'
-        ? booking.metadata.traveler_cancellation_reason
-        : null,
-      cancellationReviewedAt: typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
-        ? booking.metadata.cancellation_request_reviewed_at
-        : null,
-      cancellationReviewReason: typeof booking.metadata?.cancellation_request_review_reason === 'string'
-        ? booking.metadata.cancellation_request_review_reason
-        : null,
+      cancellationRequestState:
+        typeof booking.metadata?.cancellation_request_state === 'string'
+          ? booking.metadata.cancellation_request_state
+          : null,
+      cancellationRequestedAt:
+        typeof booking.metadata?.traveler_cancellation_requested_at === 'string'
+          ? booking.metadata.traveler_cancellation_requested_at
+          : null,
+      cancellationRequestReason:
+        typeof booking.metadata?.traveler_cancellation_reason === 'string'
+          ? booking.metadata.traveler_cancellation_reason
+          : null,
+      cancellationReviewedAt:
+        typeof booking.metadata?.cancellation_request_reviewed_at === 'string'
+          ? booking.metadata.cancellation_request_reviewed_at
+          : null,
+      cancellationReviewReason:
+        typeof booking.metadata?.cancellation_request_review_reason === 'string'
+          ? booking.metadata.cancellation_request_review_reason
+          : null,
       refundAmount: Number(booking.metadata?.refund_amount || 0),
     }
   },
@@ -910,14 +995,15 @@ export const bookingService = {
       refundAmount?: number
     },
   ) => {
-    const rpcName = scope === 'tour_booking'
-      ? 'operator_review_tour_cancellation_request'
-      : 'owner_review_package_cancellation_request'
+    const rpcName =
+      scope === 'tour_booking'
+        ? 'operator_review_tour_cancellation_request'
+        : 'owner_review_package_cancellation_request'
     const { data, error } = await supabase.rpc(rpcName as any, {
       p_booking_id: params.bookingId,
       p_action: params.action,
       p_reason: params.reason?.trim() || null,
-      p_refund_amount: params.action === 'refund' ? params.refundAmount ?? null : null,
+      p_refund_amount: params.action === 'refund' ? (params.refundAmount ?? null) : null,
     })
 
     if (error) throw error
