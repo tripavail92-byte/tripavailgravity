@@ -1006,6 +1006,125 @@ export default function TourDetailsPage() {
     </GlassCard>
   )
 
+  // Pickup points — its own section with an anchor, placed in the flow right after the itinerary
+  // (a "Pickup points" tab jumps here) so "where do we meet" sits next to the day-by-day plan.
+  const pickupSection =
+    pickupLocations.length > 0 ? (
+      <GlassCard
+        id="pickup"
+        className="scroll-mt-32 rounded-3xl border-none shadow-xl"
+        variant="card"
+      >
+        <GlassHeader>
+          <GlassTitle className="text-2xl font-bold">Pickup points</GlassTitle>
+        </GlassHeader>
+        <GlassContent>
+          <div className="space-y-4">
+            {pickupLocations.map((pickup: TourPickupLocation, index: number) => {
+              const previewUrl = buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
+              const directionsUrl = buildGoogleDirectionsUrl(pickup.latitude, pickup.longitude)
+              const pickupTime = formatPickupTime(pickup.pickup_time)
+
+              return (
+                <motion.div
+                  key={pickup.id}
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  transition={{ duration: 0.22 }}
+                  className="group overflow-hidden rounded-3xl border border-border/60 bg-background shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10"
+                >
+                  <div className="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className="relative min-h-[180px] bg-muted/40">
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt={pickup.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full min-h-[180px] items-center justify-center bg-muted/40 text-muted-foreground">
+                          <MapPin className="h-8 w-8" />
+                        </div>
+                      )}
+                      <div className="absolute left-4 top-4 flex items-center gap-2">
+                        <GlassBadge variant={pickup.is_primary ? 'primary' : 'light'} size="sm">
+                          {pickup.is_primary ? 'Primary pickup' : `Stop ${index + 1}`}
+                        </GlassBadge>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 p-5 md:p-6">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h4 className="text-lg font-bold text-foreground">{pickup.title}</h4>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                              {pickup.formatted_address}
+                            </p>
+                          </div>
+                          {directionsUrl ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="gap-2 rounded-2xl border-border/60 bg-background hover:border-primary/20 hover:bg-muted/30"
+                              onClick={() =>
+                                window.open(directionsUrl, '_blank', 'noopener,noreferrer')
+                              }
+                            >
+                              <Navigation className="h-4 w-4" />
+                              Directions
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                            Pickup time
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
+                            {pickupTime || 'Not specified'}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                            City
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
+                            {pickup.city || tour.location.city || 'Not specified'}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                            Coordinates
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-foreground">
+                            {pickup.latitude.toFixed(4)}, {pickup.longitude.toFixed(4)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {pickup.notes?.trim() ? (
+                        <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                            Pickup notes
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            {pickup.notes}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        </GlassContent>
+      </GlassCard>
+    ) : null
+
   // Category + "Verified Operator" chips. Shown inline in the meta row under the title (rather
   // than on their own full-height row above it) to save vertical space.
   const badgeChips = (
@@ -1037,16 +1156,14 @@ export default function TourDetailsPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-36">
-      {/* Sub-nav — the first bar under the fixed SiteHeader. The old Back/Share bar was removed:
-          tours open in a NEW TAB (no history to go "back" to, so the button only fell back to
-          /tours and ate a whole bar of height). Share / review / save moved into the title header
-          below. This nav sticks under the SiteHeader as you scroll so the page stays skimmable. */}
+      {/* Section tabs — pinned at the top under the fixed SiteHeader; they stay stuck as you
+          scroll. Tabs mirror the reading order of the cards below and each only appears when its
+          section actually renders, so no tab is ever dead. */}
       <TourSubNav
         sections={[
-          // Tabs mirror the reading order of the cards below, and each only appears when its
-          // section actually renders (Overview/Itinerary are conditional) so no tab is ever dead.
           ...(tour.description?.trim() ? [{ id: 'overview', label: 'Overview' }] : []),
           ...(tour.itinerary?.length ? [{ id: 'itinerary', label: 'Itinerary' }] : []),
+          ...(pickupLocations.length > 0 ? [{ id: 'pickup', label: 'Pickup points' }] : []),
           { id: 'included', label: "What's included" },
           { id: 'details', label: 'Good to know' },
           { id: 'operator', label: 'Operator' },
@@ -1055,8 +1172,7 @@ export default function TourDetailsPage() {
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* Title header — the name, badges, rating and location lead the page (full-width, above
-            the gallery) so travellers see what the trip is and how it's rated before the photos. */}
+        {/* Title header — the name, badges, rating and location lead the page, above the gallery. */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1184,6 +1300,9 @@ export default function TourDetailsPage() {
                 leads the page instead of being buried near the bottom. */}
             {itinerarySection}
 
+            {/* Pickup points — placed right after the itinerary (matches the tab order). */}
+            {pickupSection}
+
             {/* What's included / excluded for the price. */}
             {includedExcludedSection}
 
@@ -1307,125 +1426,7 @@ export default function TourDetailsPage() {
               </GlassCard>
             ) : null}
 
-            {pickupLocations.length > 0 ? (
-              <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-                <GlassHeader>
-                  <GlassTitle className="text-2xl font-bold">Pickup points</GlassTitle>
-                </GlassHeader>
-                <GlassContent>
-                  <div className="space-y-4">
-                    {pickupLocations.map((pickup: TourPickupLocation, index: number) => {
-                      const previewUrl = buildStaticMapPreviewUrl(pickup.latitude, pickup.longitude)
-                      const directionsUrl = buildGoogleDirectionsUrl(
-                        pickup.latitude,
-                        pickup.longitude,
-                      )
-                      const pickupTime = formatPickupTime(pickup.pickup_time)
-
-                      return (
-                        <motion.div
-                          key={pickup.id}
-                          whileHover={{ y: -4, scale: 1.01 }}
-                          transition={{ duration: 0.22 }}
-                          className="group overflow-hidden rounded-3xl border border-border/60 bg-background shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10"
-                        >
-                          <div className="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
-                            <div className="relative min-h-[180px] bg-muted/40">
-                              {previewUrl ? (
-                                <img
-                                  src={previewUrl}
-                                  alt={pickup.title}
-                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="flex h-full min-h-[180px] items-center justify-center bg-muted/40 text-muted-foreground">
-                                  <MapPin className="h-8 w-8" />
-                                </div>
-                              )}
-                              <div className="absolute left-4 top-4 flex items-center gap-2">
-                                <GlassBadge
-                                  variant={pickup.is_primary ? 'primary' : 'light'}
-                                  size="sm"
-                                >
-                                  {pickup.is_primary ? 'Primary pickup' : `Stop ${index + 1}`}
-                                </GlassBadge>
-                              </div>
-                            </div>
-
-                            <div className="space-y-4 p-5 md:p-6">
-                              <div className="space-y-2">
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                  <div>
-                                    <h4 className="text-lg font-bold text-foreground">
-                                      {pickup.title}
-                                    </h4>
-                                    <p className="text-sm leading-6 text-muted-foreground">
-                                      {pickup.formatted_address}
-                                    </p>
-                                  </div>
-                                  {directionsUrl ? (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className="gap-2 rounded-2xl border-border/60 bg-background hover:border-primary/20 hover:bg-muted/30"
-                                      onClick={() =>
-                                        window.open(directionsUrl, '_blank', 'noopener,noreferrer')
-                                      }
-                                    >
-                                      <Navigation className="h-4 w-4" />
-                                      Directions
-                                    </Button>
-                                  ) : null}
-                                </div>
-                              </div>
-
-                              <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    Pickup time
-                                  </p>
-                                  <p className="mt-1 text-sm font-semibold text-foreground">
-                                    {pickupTime || 'Not specified'}
-                                  </p>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    City
-                                  </p>
-                                  <p className="mt-1 text-sm font-semibold text-foreground">
-                                    {pickup.city || tour.location.city || 'Not specified'}
-                                  </p>
-                                </div>
-                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    Coordinates
-                                  </p>
-                                  <p className="mt-1 text-sm font-semibold text-foreground">
-                                    {pickup.latitude.toFixed(4)}, {pickup.longitude.toFixed(4)}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {pickup.notes?.trim() ? (
-                                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    Pickup notes
-                                  </p>
-                                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                                    {pickup.notes}
-                                  </p>
-                                </div>
-                              ) : null}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )
-                    })}
-                  </div>
-                </GlassContent>
-              </GlassCard>
-            ) : null}
+            {/* Pickup points moved up — now rendered as {pickupSection}, right after the itinerary. */}
 
             {/* Experience highlights */}
             {tour.highlights?.length ? (
