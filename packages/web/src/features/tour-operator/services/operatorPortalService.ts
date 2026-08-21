@@ -272,6 +272,33 @@ export const operatorPortalService = {
       notificationCount: Number(row.notification_count || 0),
     }
   },
+
+  // Add / edit / cancel / delete a single departure (tour_schedules row). The RPC mutates the table
+  // directly and re-derives the tours.schedules JSON, without ever unpublishing the tour.
+  async manageDeparture(params: {
+    tourId: string
+    action: 'add' | 'update' | 'cancel' | 'delete'
+    scheduleId?: string | null
+    startTime?: string | null
+    endTime?: string | null
+    capacity?: number | null
+    priceOverride?: number | null
+    status?: string | null
+  }): Promise<{ id: string }> {
+    const { data, error } = await supabase.rpc('operator_manage_tour_departure' as any, {
+      p_tour_id: params.tourId,
+      p_action: params.action,
+      p_schedule_id: params.scheduleId ?? null,
+      p_start_time: params.startTime ?? null,
+      p_end_time: params.endTime ?? null,
+      p_capacity: params.capacity ?? null,
+      p_price_override: params.priceOverride ?? null,
+      p_status: params.status ?? null,
+    })
+    if (error) throw error
+    const row = Array.isArray(data) ? data[0] : data
+    return { id: row?.id ?? params.scheduleId ?? '' }
+  },
 }
 
 function bookingMetadataValue(booking: OperatorBookingRecord, key: string) {

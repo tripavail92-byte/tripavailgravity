@@ -4,17 +4,22 @@ import {
   CalendarDays,
   Clock3,
   Compass,
+  Loader2,
   MapPin,
   Plus,
   Users,
+  X,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { GlassCard } from '@/components/ui/glass'
+import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
 import { operatorPortalService, type OperatorScheduleRecord } from '@/features/tour-operator/services/operatorPortalService'
@@ -47,27 +52,94 @@ export default function OperatorCalendarPage() {
     return () => document.documentElement.removeAttribute('data-role')
   }, [])
 
-  useEffect(() => {
-    const load = async () => {
-      if (!user?.id) return
+  // Departure management (add / cancel).
+  const [actioningId, setActioningId] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [addForm, setAddForm] = useState({ tourId: '', date: '', time: '09:00', capacity: '15' })
 
-      try {
-        setLoading(true)
-        const response = await operatorPortalService.getCalendarData(user.id)
-        setSchedules(response.schedules)
-        setSummary(response.summary)
-        setBookingsPaused(response.summary.bookingsPaused)
-        setError(null)
-      } catch (loadError) {
-        console.error('Failed to load operator calendar:', loadError)
-        setError(loadError instanceof Error ? loadError.message : 'Failed to load calendar')
-      } finally {
-        setLoading(false)
-      }
+  const refresh = useCallback(async () => {
+    if (!user?.id) return
+    try {
+      setLoading(true)
+      const response = await operatorPortalService.getCalendarData(user.id)
+      setSchedules(response.schedules)
+      setSummary(response.summary)
+      setBookingsPaused(response.summary.bookingsPaused)
+      setError(null)
+    } catch (loadError) {
+      console.error('Failed to load operator calendar:', loadError)
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load calendar')
+    } finally {
+      setLoading(false)
     }
-
-    load()
   }, [user?.id])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  // Distinct tours the operator already has departures for — the "add another date" targets.
+  const operatorTours = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const s of schedules) if (!seen.has(s.tours.id)) seen.set(s.tours.id, s.tours.title)
+    return [...seen.entries()].map(([id, title]) => ({ id, title }))
+  }, [schedules])
+
+  const handleCancelDeparture = async (schedule: OperatorScheduleRecord) => {
+    if (schedule.booked_count > 0) {
+      if (!window.confirm(`This departure has ${schedule.booked_count} booking(s). Cancelling stops new bookings but keeps existing travellers — continue?`)) return
+    } else if (!window.confirm('Cancel this departure? It will stop being sold.')) {
+      return
+    }
+    try {
+      setActioningId(schedule.id)
+      await operatorPortalService.manageDeparture({
+        tourId: schedule.tours.id,
+        action: 'cancel',
+        scheduleId: schedule.id,
+      })
+      toast.success('Departure cancelled')
+      await refresh()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not cancel the departure')
+    } finally {
+      setActioningId(null)
+    }
+  }
+
+  const openAddDialog = () => {
+    setAddForm({
+      tourId: operatorTours[0]?.id ?? '',
+      date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+      time: '09:00',
+      capacity: '15',
+    })
+    setAddOpen(true)
+  }
+
+  const handleAddDeparture = async () => {
+    if (!addForm.tourId) return toast.error('Choose a tour')
+    if (!addForm.date) return toast.error('Choose a date')
+    const capacity = Math.max(1, Number(addForm.capacity) || 0)
+    const startIso = new Date(`${addForm.date}T${addForm.time || '09:00'}`).toISOString()
+    try {
+      setAdding(true)
+      await operatorPortalService.manageDeparture({
+        tourId: addForm.tourId,
+        action: 'add',
+        startTime: startIso,
+        capacity,
+      })
+      toast.success('Departure added')
+      setAddOpen(false)
+      await refresh()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not add the departure')
+    } finally {
+      setAdding(false)
+    }
+  }
 
   const departureDays = useMemo(
     () => schedules.map((schedule) => new Date(schedule.start_time)),
@@ -97,11 +169,14 @@ export default function OperatorCalendarPage() {
           subtitle="Plan departures, watch demand, and keep an eye on remaining seats across your tours."
           showBackButton={false}
           actions={
-            <Button asChild className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link to="/operator/tours/new?returnTo=%2Foperator%2Fcalendar">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Departure
-              </Link>
+            <Button
+              onClick={openAddDialog}
+              disabled={operatorTours.length === 0}
+              title={operatorTours.length === 0 ? 'Create a scheduled tour first' : undefined}
+              className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add departure
             </Button>
           }
         />
@@ -252,6 +327,24 @@ export default function OperatorCalendarPage() {
                               <p className="mt-1 text-sm font-semibold text-foreground">{seatsLeft}</p>
                             </div>
                           </div>
+                          {schedule.status === 'scheduled' && (
+                            <div className="mt-3 flex justify-end border-t border-border/40 pt-3">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleCancelDeparture(schedule)}
+                                disabled={actioningId === schedule.id}
+                                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                {actioningId === schedule.id ? (
+                                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <X className="mr-1.5 h-3.5 w-3.5" />
+                                )}
+                                Cancel departure
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )
                     })
@@ -284,6 +377,83 @@ export default function OperatorCalendarPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-md rounded-3xl">
+          <DialogTitle className="text-xl font-black text-foreground">Add a departure</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Open a new date for one of your tours. It goes on sale immediately.
+          </DialogDescription>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="add-tour" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Tour
+              </label>
+              <select
+                id="add-tour"
+                value={addForm.tourId}
+                onChange={(e) => setAddForm((f) => ({ ...f, tourId: e.target.value }))}
+                className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+              >
+                {operatorTours.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="add-date" className="mb-1.5 block text-sm font-semibold text-foreground">
+                  Date
+                </label>
+                <Input
+                  id="add-date"
+                  type="date"
+                  value={addForm.date}
+                  onChange={(e) => setAddForm((f) => ({ ...f, date: e.target.value }))}
+                  className="h-12 rounded-xl"
+                />
+              </div>
+              <div>
+                <label htmlFor="add-time" className="mb-1.5 block text-sm font-semibold text-foreground">
+                  Time
+                </label>
+                <Input
+                  id="add-time"
+                  type="time"
+                  value={addForm.time}
+                  onChange={(e) => setAddForm((f) => ({ ...f, time: e.target.value }))}
+                  className="h-12 rounded-xl"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="add-capacity" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Seats (capacity)
+              </label>
+              <Input
+                id="add-capacity"
+                type="number"
+                min={1}
+                value={addForm.capacity}
+                onChange={(e) => setAddForm((f) => ({ ...f, capacity: e.target.value }))}
+                className="h-12 rounded-xl"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)} className="rounded-xl">
+                <X className="mr-1.5 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button onClick={handleAddDeparture} disabled={adding} className="gap-2 rounded-xl">
+                {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add departure
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
