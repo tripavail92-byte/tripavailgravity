@@ -179,6 +179,41 @@ function buildFallbackSlug(title: string | null | undefined) {
   return `${normalizedBase}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 }
 
+/** A clean, human/SEO-readable slug base derived from the title (no uniqueness suffix). */
+function slugifyTitle(title: string | null | undefined) {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * A slug we minted as a placeholder rather than from real content. Drafts are created titled
+ * "Untitled Tour", which bakes an "untitled-tour-…" slug; those must be regenerated once a real
+ * title exists (otherwise every published tour ships with an untitled-tour-<hash> URL — no SEO,
+ * useless Share links).
+ */
+function isPlaceholderSlug(slug: string | null | undefined) {
+  const s = String(slug || '')
+    .trim()
+    .toLowerCase()
+  return s.length === 0 || s.startsWith('untitled-tour')
+}
+
+/**
+ * The slug to persist when saving/publishing. Keep an existing meaningful slug (so a live URL never
+ * churns), but replace a missing/placeholder one with a title-derived slug. Uniqueness collisions
+ * are handled by the caller's `tours_slug_key` retry (which falls back to buildFallbackSlug).
+ */
+function slugForSave(currentSlug: string | null | undefined, title: string | null | undefined) {
+  if (!isPlaceholderSlug(currentSlug)) return String(currentSlug)
+  const fromTitle = slugifyTitle(title)
+  return fromTitle.length > 0 ? fromTitle : buildFallbackSlug(title)
+}
+
 const toIsoOrNull = (value: unknown): string | null => {
   if (typeof value !== 'string' || value.trim().length === 0) return null
   const parsed = new Date(value)
@@ -340,6 +375,13 @@ export const tourService = {
     // when publishing a tour that was loaded from the DB, and inserting a value into it raises 428C9.
     stripDbManagedTourColumns(payload as Record<string, unknown>)
 
+    // Give the tour a title-based public slug, replacing the "untitled-tour-…" placeholder a draft
+    // is minted with. Collisions fall through to the tours_slug_key retry below.
+    payload.slug = slugForSave(
+      (payload as Record<string, unknown>).slug as string | undefined,
+      payload.title as string | undefined,
+    )
+
     // Cast to any to bypass strict type definition mismatch between Partial<Tour> and Table Insert type
     let createResponse = await supabase
       .from('tours')
@@ -428,12 +470,31 @@ export const tourService = {
     // drop every DB-managed column before the update so an edited tour can be saved and published.
     stripDbManagedTourColumns(payload as Record<string, unknown>)
 
-    const { data, error } = await supabase
+    // Regenerate the public slug from the title when the current one is a placeholder (drafts start
+    // as "untitled-tour-…"); a meaningful existing slug is left untouched so live URLs don't churn.
+    payload.slug = slugForSave(
+      (payload as Record<string, unknown>).slug as string | undefined,
+      payload.title as string | undefined,
+    )
+
+    let updateResponse = await supabase
       .from('tours')
       .update(payload as any)
       .eq('id', id)
       .select()
       .single()
+
+    // Two tours with the same title would collide on tours_slug_key; fall back to a unique suffix.
+    if (updateResponse.error && isSlugConstraintError(updateResponse.error, 'tours_slug_key')) {
+      updateResponse = await supabase
+        .from('tours')
+        .update({ ...payload, slug: buildFallbackSlug(payload.title) } as any)
+        .eq('id', id)
+        .select()
+        .single()
+    }
+
+    const { data, error } = updateResponse
 
     if (error) {
       console.error(`Error updating tour ${id}:`, error)
