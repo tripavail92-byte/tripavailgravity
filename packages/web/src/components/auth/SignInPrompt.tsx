@@ -1,81 +1,188 @@
 import { Mail, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 /**
- * Soft sign-in prompt shown to logged-out visitors shortly after they land, so we capture the
- * login early without blocking browsing. It is dismissible (X / "Maybe later" / click-outside),
- * and once dismissed or signed in it stays quiet for a week. It never shows on the auth pages,
- * and only after auth has finished bootstrapping (so it can't flash before we know the user is
- * actually signed out).
+ * Sign-in capture for logged-out visitors.
  *
- * "Continue with Google" reuses the existing Supabase OAuth redirect — no extra client-side
- * Google client id / One-Tap library needed.
+ * 1. Google One-Tap (the native chip) shows first for anyone with a Google session in the browser —
+ *    lowest-friction, one tap to sign in. Uses a hashed nonce so the returned ID token can't be
+ *    replayed, and exchanges it for a Supabase session via signInWithIdToken.
+ * 2. Soft modal fallback for everyone else (no Google session, One-Tap blocked, or a config gap) —
+ *    "Continue with Google" (the redirect flow) / "Continue with email" / "Maybe later".
+ *
+ * Dismissing (modal or the One-Tap chip) stays quiet for a week; never runs on the /auth pages or
+ * before auth has bootstrapped.
  */
 
 const DISMISS_KEY = 'tripavail_signin_prompt_dismissed_at'
 const DISMISS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
-const SHOW_DELAY_MS = 2200
+
+// The Google OAuth client id — public (it's in every OAuth redirect) and matches the id configured
+// in Supabase's Google provider, so signInWithIdToken accepts One-Tap tokens. Overridable via env.
+const GOOGLE_CLIENT_ID =
+  (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim() ||
+  '347976301399-rqkcoo5g4q2gm696krbmd8n89m3frvs7.apps.googleusercontent.com'
 
 function recentlyDismissed(): boolean {
   try {
-    const raw = window.localStorage.getItem(DISMISS_KEY)
-    const at = raw ? Number(raw) : 0
+    const at = Number(window.localStorage.getItem(DISMISS_KEY) || 0)
     return Number.isFinite(at) && at > 0 && Date.now() - at < DISMISS_WINDOW_MS
   } catch {
     return false
   }
 }
 
+function markDismissed(): void {
+  try {
+    window.localStorage.setItem(DISMISS_KEY, String(Date.now()))
+  } catch {
+    /* private mode — just won't be remembered */
+  }
+}
+
+/** Load Google Identity Services once. Resolves false if it can't load (blocked / offline). */
+function loadGis(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const w = window as any
+    if (w.google?.accounts?.id) return resolve(true)
+    const existing = document.getElementById('google-gsi-client') as HTMLScriptElement | null
+    if (existing) {
+      existing.addEventListener('load', () => resolve(Boolean(w.google?.accounts?.id)))
+      existing.addEventListener('error', () => resolve(false))
+      return
+    }
+    const s = document.createElement('script')
+    s.id = 'google-gsi-client'
+    s.src = 'https://accounts.google.com/gsi/client'
+    s.async = true
+    s.defer = true
+    s.onload = () => resolve(Boolean(w.google?.accounts?.id))
+    s.onerror = () => resolve(false)
+    document.head.appendChild(s)
+  })
+}
+
+/** [rawNonce, sha256HexOfRaw] — Google gets the hash, Supabase gets the raw to verify. */
+async function makeNonce(): Promise<[string, string]> {
+  const bytes = new Uint8Array(32)
+  crypto.getRandomValues(bytes)
+  const raw = btoa(String.fromCharCode(...bytes))
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))
+  const hashed = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+  return [raw, hashed]
+}
+
 export function SignInPrompt() {
-  const { user, initialized, isLoading, signInWithGoogle } = useAuth()
+  const { user, initialized, isLoading } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [busy, setBusy] = useState(false)
+  const startedRef = useRef(false)
 
-  // Don't prompt on the auth pages themselves.
   const onAuthRoute = location.pathname.startsWith('/auth')
+  const eligible = initialized && !isLoading && !user && !onAuthRoute && !recentlyDismissed()
 
+  // One-Tap first, soft modal as the fallback.
   useEffect(() => {
-    if (!initialized || isLoading || user || onAuthRoute || recentlyDismissed()) return
-    const timer = window.setTimeout(() => setOpen(true), SHOW_DELAY_MS)
-    return () => window.clearTimeout(timer)
-  }, [initialized, isLoading, user, onAuthRoute])
+    if (!eligible || startedRef.current) return
+    startedRef.current = true
+    let cancelled = false
 
-  // If the visitor signs in (in another tab, or after returning), close it.
+    const run = async () => {
+      const loaded = await loadGis()
+      const google = (window as any).google
+      if (cancelled) return
+      if (!loaded || !google?.accounts?.id) {
+        setShowModal(true) // GIS unavailable → modal
+        return
+      }
+      try {
+        const [rawNonce, hashedNonce] = await makeNonce()
+        if (cancelled) return
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          nonce: hashedNonce,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          callback: async (resp: { credential?: string }) => {
+            if (!resp?.credential) return
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: resp.credential,
+              nonce: rawNonce,
+            })
+            if (error) {
+              console.warn('[one-tap] signInWithIdToken failed:', error.message)
+              setShowModal(true) // let them use the redirect flow instead
+            }
+            // success → onAuthStateChange updates the store; the effect below closes everything
+          },
+        })
+        google.accounts.id.prompt((n: any) => {
+          // FedCM gives limited signals. Treat an explicit dismissal (not a returned credential) as
+          // an opt-out; "not displayed" / "skipped" (usually no Google session in this browser)
+          // falls back to the modal so we still capture the login.
+          if (n?.isDismissedMoment?.() && n.getDismissedReason?.() !== 'credential_returned') {
+            markDismissed()
+          } else if (n?.isNotDisplayed?.() || n?.isSkippedMoment?.()) {
+            setShowModal(true)
+          }
+        })
+        // Safety net for browsers where the moment callback stops firing (FedCM-mandatory): if
+        // still logged out and not dismissed after a few seconds, show the modal.
+        window.setTimeout(() => {
+          if (!cancelled && !useAuth.getState().user && !recentlyDismissed()) setShowModal(true)
+        }, 6000)
+      } catch (err) {
+        console.warn('[one-tap] init failed:', err)
+        setShowModal(true)
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [eligible])
+
+  // Signed in (via One-Tap, the modal, or another tab) → close everything.
   useEffect(() => {
-    if (user && open) setOpen(false)
-  }, [user, open])
+    if (user) {
+      setShowModal(false)
+      ;(window as any).google?.accounts?.id?.cancel?.()
+    }
+  }, [user])
 
   const dismiss = () => {
-    try {
-      window.localStorage.setItem(DISMISS_KEY, String(Date.now()))
-    } catch {
-      /* private mode — fine, it just won't be remembered */
-    }
-    setOpen(false)
+    markDismissed()
+    setShowModal(false)
+    ;(window as any).google?.accounts?.id?.cancel?.()
   }
 
-  const continueWithGoogle = async () => {
+  // The modal's "Continue with Google" uses the reliable redirect flow.
+  const continueWithGoogleRedirect = async () => {
     setBusy(true)
     try {
-      await signInWithGoogle() // redirects to Google, then back to /auth/callback
+      await useAuth.getState().signInWithGoogle()
     } catch {
       setBusy(false)
-      navigate('/auth') // fall back to the full auth screen
+      navigate('/auth')
     }
   }
 
-  if (!open) return null
+  if (!showModal) return null
 
   return (
     <Dialog
-      open={open}
+      open={showModal}
       onOpenChange={(next) => {
         if (!next) dismiss()
       }}
@@ -102,7 +209,7 @@ export function SignInPrompt() {
             <Button
               type="button"
               variant="outline"
-              onClick={continueWithGoogle}
+              onClick={continueWithGoogleRedirect}
               disabled={busy}
               className="h-12 w-full rounded-2xl border-border bg-background text-base font-semibold shadow-sm hover:bg-muted/40"
             >
@@ -125,7 +232,7 @@ export function SignInPrompt() {
             <Button
               type="button"
               onClick={() => {
-                setOpen(false)
+                setShowModal(false)
                 navigate('/auth')
               }}
               className="h-12 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90"
