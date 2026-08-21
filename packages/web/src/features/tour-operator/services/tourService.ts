@@ -762,6 +762,7 @@ export const tourService = {
       peak_season_multiplier: data.peak_season_multiplier || 1.2,
       off_season_multiplier: data.off_season_multiplier || 0.8,
       pricing_tiers: data.pricing_tiers || [],
+      accommodation_pricing: data.accommodation_pricing ?? {},
       itinerary: data.itinerary || [],
       schedules: data.schedules || [],
       draft_data: normalizedDraftData,
@@ -965,6 +966,7 @@ export const tourService = {
       peak_season_multiplier: data.peak_season_multiplier || 1.2,
       off_season_multiplier: data.off_season_multiplier || 0.8,
       pricing_tiers: data.pricing_tiers || [],
+      accommodation_pricing: data.accommodation_pricing ?? {},
       itinerary: data.itinerary || [],
       schedules: data.schedules || [],
 
