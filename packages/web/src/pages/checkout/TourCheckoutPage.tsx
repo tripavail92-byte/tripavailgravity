@@ -8,6 +8,7 @@ import {
   Clock,
   Loader2,
   Lock,
+  Mail,
   MapPin,
   Shield,
 } from 'lucide-react'
@@ -20,16 +21,16 @@ import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/u
 import { Input } from '@/components/ui/input'
 import { createBookingWithValidation, TourBooking, tourBookingService } from '@/features/booking'
 import {
-  buildTourPaymentTermsFromTotal,
-  getTourPaymentTerms,
-  type ResolvedTourPromotion,
-} from '@/features/booking/utils/tourPaymentTerms'
-import {
   computeAccommodationTotal,
   getSharingTier,
   normalizeAccommodationPricing,
   seatsUsed,
 } from '@/features/booking/utils/accommodationPricing'
+import {
+  buildTourPaymentTermsFromTotal,
+  getTourPaymentTerms,
+  type ResolvedTourPromotion,
+} from '@/features/booking/utils/tourPaymentTerms'
 import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
@@ -37,6 +38,7 @@ import { getSessionCached } from '@/lib/authCache'
 import { getCancellationMeta } from '@/lib/cancellationPolicy'
 import { getStripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
+import { type UserProfile, userProfileService } from '@/services/userProfileService'
 
 const STRIPE_TEST_CARD_HINT = 'Sandbox card: 4242 4242 4242 4242 · any future date · any CVC.'
 
@@ -99,6 +101,9 @@ export default function TourCheckoutPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [pickupLocationId, setPickupLocationId] = useState('')
   const [specialRequests, setSpecialRequests] = useState('')
+  // The signed-in user's saved profile (name, phone + verified flags, email). We prefill
+  // the traveller fields from this so people never re-type contact details we already hold.
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [processingBooking, setProcessingBooking] = useState(false)
   const [bookingError, setBookingError] = useState<string | null>(null)
@@ -116,15 +121,41 @@ export default function TourCheckoutPage() {
     (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined)?.startsWith('pk_test_'),
   )
 
-  // Fetch tour and schedule details
-  // Prefill the lead traveller from the signed-in profile, and default the pickup
-  // point to the tour's primary one so a single-pickup tour needs no extra input.
+  // Prefill the lead traveller from what we already know, richest source first so
+  // people never re-type details the system holds. We only ever fill BLANK fields —
+  // the `prev || value` guard means anything the traveller edits is left untouched.
   useEffect(() => {
-    const meta = (user?.user_metadata ?? {}) as Record<string, any>
-    const name = String(meta.full_name || meta.name || '').trim()
-    if (name) setLeadName((prev) => prev || name)
-    const phone = String(meta.phone || meta.phone_number || user?.phone || '').trim()
-    if (phone) setLeadPhone((prev) => prev || phone)
+    if (!user?.id) return
+    let cancelled = false
+
+    // 1) Instant fill from the auth object so the fields aren't empty on first paint.
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>
+    const metaName = String(meta.full_name || meta.name || '').trim()
+    if (metaName) setLeadName((prev) => prev || metaName)
+    const metaPhone = String(meta.phone || meta.phone_number || user.phone || '').trim()
+    if (metaPhone) setLeadPhone((prev) => prev || metaPhone)
+
+    // 2) Then the authoritative saved profile: full name from first/last, and the
+    //    saved phone — which is usually the ONLY phone we hold, since email/password
+    //    sign-ups carry no phone in auth metadata. This is what "use the number on
+    //    file, especially when it's verified" comes down to.
+    void userProfileService
+      .getProfile()
+      .then((p) => {
+        if (cancelled || !p) return
+        setProfile(p)
+        const dbName = [p.first_name, p.last_name].filter(Boolean).join(' ').trim()
+        if (dbName) setLeadName((prev) => prev || dbName)
+        const dbPhone = String(p.phone || '').trim()
+        if (dbPhone) setLeadPhone((prev) => prev || dbPhone)
+      })
+      .catch(() => {
+        /* best-effort — the auth-metadata prefill above still stands */
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [user?.id])
 
   useEffect(() => {
@@ -490,6 +521,7 @@ export default function TourCheckoutPage() {
           promo_code: promoCode.trim().toUpperCase() || null,
           // Fulfilment details — surfaced to the operator on their booking page.
           lead_traveller_name: leadName.trim(),
+          lead_traveller_email: (profile?.email || user.email || '').trim() || null,
           lead_traveller_phone: leadPhone.trim(),
           lead_traveller_whatsapp: whatsappSame ? leadPhone.trim() : whatsappNumber.trim() || null,
           pickup_location_id: pickupLocationId || null,
@@ -725,9 +757,24 @@ export default function TourCheckoutPage() {
                 <h2 className="type-h2 text-foreground mb-1">Traveller details</h2>
                 <p className="type-body-sm text-muted-foreground mb-4">
                   Your operator uses these to confirm the booking and meet you at pickup.
+                  {profile && ' We’ve filled in what’s on your account — just check it’s right.'}
                 </p>
 
                 <div className="space-y-4">
+                  {(profile?.email || user?.email) && (
+                    <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/40 px-4 py-3">
+                      <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="type-body-sm text-muted-foreground">Booking as</span>
+                      <span className="type-body-sm min-w-0 flex-1 truncate font-medium text-foreground">
+                        {profile?.email || user?.email}
+                      </span>
+                      {profile?.email_verified && (
+                        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Check className="h-3.5 w-3.5" /> Verified
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label
                       htmlFor="lead-name"
@@ -748,9 +795,18 @@ export default function TourCheckoutPage() {
                   <div>
                     <label
                       htmlFor="lead-phone"
-                      className="block type-body-sm font-semibold text-foreground mb-1.5"
+                      className="mb-1.5 flex items-center gap-2 type-body-sm font-semibold text-foreground"
                     >
                       Phone number <span className="text-destructive">*</span>
+                      {Boolean(
+                        profile?.phone_verified &&
+                        profile.phone &&
+                        leadPhone.trim() === String(profile.phone).trim(),
+                      ) && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Check className="h-3.5 w-3.5" /> Verified
+                        </span>
+                      )}
                     </label>
                     <input
                       id="lead-phone"
