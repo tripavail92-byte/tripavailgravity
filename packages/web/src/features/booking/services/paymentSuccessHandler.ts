@@ -90,12 +90,13 @@ export async function handlePaymentSuccess(
       }
     }
 
-    // STEP 4: VALIDATE booking state before confirming
-    // This checks: exists, status=pending, NOT expired
+    // STEP 4: VALIDATE booking state before confirming (exists, status=pending).
+    // The payment has already succeeded by the time we reach here, so an expired 10-min hold must
+    // NOT reject the booking — that would charge the traveller and then refuse them a seat. Only a
+    // genuinely invalid state (missing, or no longer pending) blocks confirmation.
     const validation = await validateBookingBeforePayment(bookingId)
 
-    if (!validation.isValid) {
-      // Graceful failure if booking expired or invalid state
+    if (!validation.isValid && !validation.expired) {
       return {
         success: false,
         error: validation.error || 'Booking validation failed',
@@ -170,9 +171,11 @@ export async function handlePackagePaymentSuccess(
       }
     }
 
+    // Payment already succeeded — an expired hold must not reject a paid booking (see the tour
+    // handler above); only a genuinely invalid state blocks confirmation.
     const validation = await validatePackageBookingBeforePayment(bookingId)
 
-    if (!validation.isValid) {
+    if (!validation.isValid && !validation.expired) {
       return {
         success: false,
         error: validation.error || 'Booking validation failed',

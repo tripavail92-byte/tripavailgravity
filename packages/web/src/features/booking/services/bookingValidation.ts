@@ -157,7 +157,7 @@ export async function isBookingStillValid(bookingId: string): Promise<boolean> {
  */
 export async function validateBookingBeforePayment(
   bookingId: string,
-): Promise<{ isValid: boolean; error?: string }> {
+): Promise<{ isValid: boolean; error?: string; expired?: boolean }> {
   try {
     const booking = await tourBookingService.getPendingBooking(bookingId)
 
@@ -175,7 +175,9 @@ export async function validateBookingBeforePayment(
       }
     }
 
-    // Check expiration
+    // Check expiration. The `expired` flag lets a post-payment caller tell "the 10-min hold aged
+    // out" apart from a genuinely invalid state — a booking whose payment already succeeded must
+    // never be rejected just because its hold expired (that would take the money and refuse a seat).
     if (booking.expires_at) {
       const expiresAt = new Date(booking.expires_at)
       const now = new Date()
@@ -183,6 +185,7 @@ export async function validateBookingBeforePayment(
       if (expiresAt <= now) {
         return {
           isValid: false,
+          expired: true,
           error: 'Booking hold has expired. Please book again.',
         }
       }
@@ -276,7 +279,7 @@ export async function createPackageBookingWithValidation(params: {
  */
 export async function validatePackageBookingBeforePayment(
   bookingId: string,
-): Promise<{ isValid: boolean; error?: string }> {
+): Promise<{ isValid: boolean; error?: string; expired?: boolean }> {
   try {
     const booking = await packageBookingService.getPendingBooking(bookingId)
 
@@ -301,6 +304,7 @@ export async function validatePackageBookingBeforePayment(
       if (expiresAt <= now) {
         return {
           isValid: false,
+          expired: true,
           error: 'Booking hold has expired. Please book again.',
         }
       }

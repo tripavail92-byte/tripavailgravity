@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
+import { packageBookingService } from '@/features/booking'
 import { handlePackagePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
 import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
@@ -141,35 +142,58 @@ export default function PackageBookingConfirmationPage() {
       }
 
       try {
-        // Optional verification step (Edge Function). If not deployed yet, we skip it.
-        try {
+        // Verify the charge with Stripe (server-authoritative) BEFORE confirming — same rationale as
+        // the tour confirmation page. Only a positive verification marks the booking paid; otherwise
+        // we reflect server-side (webhook) state read-only and never write a client-side confirmation.
+        let verified = false
+        for (let attempt = 0; attempt < 2; attempt++) {
           const { data, error: verifyError } = await supabase.functions.invoke(
             'stripe-verify-payment-intent',
             { body: { booking_id: bookingId, payment_intent_id: paymentIntentId } },
           )
-
-          if (verifyError) {
-            throw verifyError
+          if (!verifyError && data?.ok === true) {
+            verified = true
+            break
           }
-
-          if (data && data.ok === false) {
-            throw new Error(data.error || 'Payment not verified')
-          }
-        } catch {
-          // Ignore verification failures for now; confirmation below will still run.
+          // A definitive negative (function ran and said not-ok) is final — don't retry.
+          if (data && data.ok === false) break
         }
 
-        const result = await handlePackagePaymentSuccess(paymentIntentId, bookingId)
-        if (!result.success || !result.booking) {
-          setStatus('error')
-          setError(result.error || 'Failed to confirm booking')
+        if (verified) {
+          const result = await handlePackagePaymentSuccess(paymentIntentId, bookingId)
+          if (!result.success || !result.booking) {
+            setStatus('error')
+            setError(result.error || 'Failed to confirm booking')
+            return
+          }
+          setBooking(result.booking)
+          const packageData = await getPackageById(result.booking.package_id)
+          setPkg(packageData)
+          setStatus('success')
           return
         }
 
-        setBooking(result.booking)
-        const packageData = await getPackageById(result.booking.package_id)
-        setPkg(packageData)
-        setStatus('success')
+        // Not verified from the client — never confirm a pending booking without proof of payment,
+        // but reflect a webhook-confirmed booking if the server already settled it.
+        const existing = await packageBookingService.getBookingById(bookingId)
+        const alreadySettled =
+          existing &&
+          ((existing as any).status === 'confirmed' ||
+            ['paid', 'partially_paid', 'balance_pending'].includes(
+              (existing as any).payment_status || '',
+            ))
+        if (alreadySettled) {
+          setBooking(existing as any)
+          const packageData = await getPackageById((existing as any).package_id)
+          setPkg(packageData)
+          setStatus('success')
+          return
+        }
+
+        setStatus('error')
+        setError(
+          'We couldn’t verify your payment yet. If you completed payment it will appear in “My Trips” shortly — please don’t pay again. Email support@tripavail.com if it doesn’t show up.',
+        )
       } catch (err) {
         setStatus('error')
         setError(err instanceof Error ? err.message : 'Unknown error')

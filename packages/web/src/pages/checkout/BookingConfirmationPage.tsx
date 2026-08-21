@@ -12,6 +12,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
+import { tourBookingService } from '@/features/booking'
 import { handlePaymentSuccess } from '@/features/booking/services/paymentSuccessHandler'
 import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
@@ -92,45 +93,70 @@ export default function BookingConfirmationPage() {
         return
       }
 
+      // Fetch tour + schedule for a confirmed booking (shared by both success paths below).
+      const hydrate = async (booking: any) => {
+        setConfirmedBooking(booking)
+        const foundTour = await tourService.getTourById(booking.tour_id)
+        setTour(foundTour)
+        if (foundTour) {
+          const schedules = await tourService.getTourSchedules(booking.tour_id)
+          setSchedule(schedules.find((s) => s.id === booking.schedule_id) || null)
+        }
+        setConfirmationStatus('success')
+      }
+
       try {
-        try {
+        // Verify the charge with Stripe (server-authoritative) BEFORE confirming anything. Marking a
+        // booking paid used to run even when verification failed — so a visitor hitting this URL with
+        // a fabricated payment_intent could confirm an unpaid booking. Now we only confirm on a
+        // positive verification. Retry once to ride out a transient invoke error.
+        let verified = false
+        for (let attempt = 0; attempt < 2; attempt++) {
           const { data, error: verifyError } = await supabase.functions.invoke(
             'stripe-verify-payment-intent',
-            { body: { booking_id: bookingId, payment_intent_id: paymentIntentId, booking_type: 'tour' } },
+            {
+              body: {
+                booking_id: bookingId,
+                payment_intent_id: paymentIntentId,
+                booking_type: 'tour',
+              },
+            },
           )
-
-          if (verifyError) {
-            throw verifyError
+          if (!verifyError && data?.ok === true) {
+            verified = true
+            break
           }
-
-          if (data && data.ok === false) {
-            throw new Error(data.error || 'Payment not verified')
-          }
-        } catch {
-          // Ignore verification failures for now; confirmation below will still run.
+          // A definitive negative (the function ran and said not-ok) is final — don't retry.
+          if (data && data.ok === false) break
         }
 
-        const result = await handlePaymentSuccess(paymentIntentId, bookingId)
-
-        const booking = result.booking
-        if (result.success && booking) {
-          setConfirmedBooking(booking)
-
-          // Fetch tour and schedule details
-          const foundTour = await tourService.getTourById(booking.tour_id)
-          setTour(foundTour)
-
-          if (foundTour) {
-            const schedules = await tourService.getTourSchedules(booking.tour_id)
-            const mainSchedule = schedules.find((s) => s.id === booking.schedule_id)
-            setSchedule(mainSchedule || null)
+        if (verified) {
+          const result = await handlePaymentSuccess(paymentIntentId, bookingId)
+          if (result.success && result.booking) {
+            await hydrate(result.booking)
+          } else {
+            setConfirmationStatus('error')
+            setError(result.error || 'Failed to confirm booking')
           }
-
-          setConfirmationStatus('success')
-        } else {
-          setConfirmationStatus('error')
-          setError(result.error || 'Failed to confirm booking')
+          return
         }
+
+        // Not verified from the client. Never confirm a pending booking without proof of payment —
+        // but the Stripe webhook may already have confirmed it server-side, so reflect that if so.
+        const existing = await tourBookingService.getBookingById(bookingId)
+        const alreadySettled =
+          existing &&
+          (existing.status === 'confirmed' ||
+            ['paid', 'partially_paid', 'balance_pending'].includes(existing.payment_status || ''))
+        if (alreadySettled) {
+          await hydrate(existing)
+          return
+        }
+
+        setConfirmationStatus('error')
+        setError(
+          'We couldn’t verify your payment yet. If you completed payment it will appear in “My Trips” shortly — please don’t pay again. Email support@tripavail.com if it doesn’t show up.',
+        )
       } catch (err) {
         setConfirmationStatus('error')
         setError(err instanceof Error ? err.message : 'Unknown error')
