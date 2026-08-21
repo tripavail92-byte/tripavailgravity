@@ -29,7 +29,6 @@ import { TourReviewButton } from '@/components/tour/TourReviewButton'
 import { TourSubNav } from '@/components/tour/TourSubNav'
 import { TourGallery } from '@/components/traveller/TourGallery'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   GlassBadge,
   GlassButton,
@@ -185,7 +184,6 @@ export default function TourDetailsPage() {
     childrenNoBed: 0,
     infants: 0,
   })
-  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
   const [operatorSlug, setOperatorSlug] = useState<string | null>(null)
@@ -262,18 +260,6 @@ export default function TourDetailsPage() {
     }
     const guests = Math.max(1, selectedSeats)
     navigate(`/checkout/tour/${tour.id || id}?guests=${guests}${scheduleParam}`)
-  }
-
-  const handleOpenBookingDialog = () => {
-    if (!tour?.id) return
-    if (schedule && availableSlots === 0) return
-    if (!schedule) return
-    setIsBookingDialogOpen(true)
-  }
-
-  const handleBookFromDialog = () => {
-    setIsBookingDialogOpen(false)
-    handleBookNow()
   }
 
   const liveAvailableSeats = Math.max(0, availableSlots ?? schedule?.capacity ?? 0)
@@ -1048,7 +1034,13 @@ export default function TourDetailsPage() {
           </div>
         ) : null}
 
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+        {/* Card's own pay button — desktop only. On mobile the sticky bottom bar is the pay CTA,
+            so this stays hidden to avoid two buttons. */}
+        <motion.div
+          className="hidden lg:block"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
           <Button
             onClick={onPayNow}
             disabled={!canBookNow}
@@ -1883,11 +1875,11 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Booking card — desktop sidebar only. On mobile the sticky bottom bar below is the
-              single booking entry point (opens this same card in a dialog), so the two never both
-              show and there's one flow per screen. */}
-          <div className="hidden lg:col-span-1 lg:block">
-            <div className="sticky top-20 z-30 space-y-6">
+          {/* Booking card. Desktop: sticky sidebar with its own pay button. Mobile: shown inline
+              so the traveller picks departure + people here, while the sticky bottom bar is the
+              single pay button (goes straight to checkout with this selection). */}
+          <div id="booking-card" className="lg:col-span-1">
+            <div className="z-30 space-y-6 lg:sticky lg:top-20">
               {renderBookingCard({ onPayNow: handleBookNow })}
             </div>
           </div>
@@ -1898,9 +1890,12 @@ export default function TourDetailsPage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={handleOpenBookingDialog}
-            disabled={!canBookNow}
-            className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() =>
+              document
+                .getElementById('booking-card')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+            className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30"
           >
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -1923,7 +1918,7 @@ export default function TourDetailsPage() {
           </button>
 
           <Button
-            onClick={handleOpenBookingDialog}
+            onClick={handleBookNow}
             disabled={!canBookNow}
             className="h-14 min-w-[220px] rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
           >
@@ -1931,13 +1926,6 @@ export default function TourDetailsPage() {
           </Button>
         </div>
       </div>
-
-      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-xl border-none bg-transparent p-0 shadow-none sm:rounded-[2rem]">
-          <DialogTitle className="sr-only">Book {tour.title}</DialogTitle>
-          {renderBookingCard({ onPayNow: handleBookFromDialog, inDialog: true })}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
