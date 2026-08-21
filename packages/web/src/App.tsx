@@ -17,6 +17,7 @@ import { AdminGuard } from '@/components/auth/AdminGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { TourManager } from '@/components/tour/TourManager'
+import { SignInPrompt } from '@/components/auth/SignInPrompt'
 import { useAuth } from '@/hooks/useAuth'
 // Eager load critical components
 import AdminLayout from '@/layouts/AdminLayout'
@@ -226,6 +227,8 @@ function App() {
         <AdminRedirector />
         <Toaster position="top-center" />
         <TourManager />
+        {/* Soft sign-in prompt for logged-out visitors — captures the login early, dismissible. */}
+        <SignInPrompt />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/auth" element={<LoginPage />} />
@@ -249,7 +252,10 @@ function App() {
               {/* Launch scope: /explore (Homepage) is a hotel+package discovery
                   surface. Until Phase 3 the trips-only LandingPage is the home, so
                   send /explore there rather than render package rails that dead-end. */}
-              <Route path="/explore" element={HOTELS_ON ? <Homepage /> : <Navigate to="/" replace />} />
+              <Route
+                path="/explore"
+                element={HOTELS_ON ? <Homepage /> : <Navigate to="/" replace />}
+              />
               {/* Hotel Packages Categories */}
               <Route
                 path="/explore/hotel-packages/:kind"
@@ -296,7 +302,9 @@ function App() {
               <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
               <Route
                 path="/booking/package/confirmation"
-                element={HOTELS_ON ? <PackageBookingConfirmationPage /> : <Navigate to="/" replace />}
+                element={
+                  HOTELS_ON ? <PackageBookingConfirmationPage /> : <Navigate to="/" replace />
+                }
               />
 
               {/* Profile & Settings */}
