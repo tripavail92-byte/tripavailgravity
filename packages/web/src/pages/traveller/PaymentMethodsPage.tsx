@@ -294,8 +294,12 @@ export default function PaymentMethodsPage() {
                   <div className="space-y-6">
                     <div className="p-8 rounded-3xl bg-muted/60 border border-border/50 text-center">
                       <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
-                      <p className="text-sm text-muted-foreground font-medium mb-6">
-                        Secure Stripe integration will appear here for card entry.
+                      <p className="text-sm font-semibold text-foreground mb-1">
+                        Saved cards are coming soon
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-6">
+                        You can still pay by card at checkout. To save a method for next time, add a
+                        mobile wallet below.
                       </p>
                       {import.meta.env.DEV ? (
                         <Button
@@ -323,12 +327,7 @@ export default function PaymentMethodsPage() {
                         >
                           {isSubmitting ? <Loader2 className="animate-spin" /> : 'Simulate Add Card'}
                         </Button>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Card payments are coming soon. Use a mobile wallet below to save a payment
-                          method.
-                        </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 ) : (

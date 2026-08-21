@@ -831,6 +831,16 @@ export default function CreateTourPage() {
         typeof schedule?.time === 'string' &&
         schedule.time.trim().length > 0,
     )
+    // A tour whose only departure is already in the past publishes as live-but-unbookable. Require
+    // at least one departure still in the future.
+    const nowMs = Date.now()
+    const hasFutureSchedule = schedules.some((schedule: any) => {
+      if (typeof schedule?.date !== 'string' || !schedule.date.trim()) return false
+      const time =
+        typeof schedule?.time === 'string' && schedule.time.trim() ? schedule.time.trim() : '23:59'
+      const when = new Date(`${schedule.date}T${time}`)
+      return !Number.isNaN(when.getTime()) && when.getTime() > nowMs
+    })
 
     const missing = REQUIRED_FOR_SUBMIT.filter(({ field }) => !(tourData as any)[field])
     // Read the saved pickup array too — the count field can lag if the operator saved a pickup
@@ -845,12 +855,50 @@ export default function CreateTourPage() {
     if (!String((tourData as any).location?.city ?? '').trim()) {
       missing.push({ field: 'location', label: 'Tour destination city' })
     }
+    // Country is what powers the search country facet; without it tours pile into "Unknown Country".
+    if (!String((tourData as any).location?.country ?? '').trim()) {
+      missing.push({ field: 'location', label: 'Tour country' })
+    }
     if (pickupCount <= 0) missing.push({ field: 'pickup_locations', label: 'Pickup locations' })
     if ((tourData.images?.length ?? 0) === 0)
       missing.push({ field: 'images', label: 'At least one image' })
     if ((tourData.itinerary?.length ?? 0) === 0)
       missing.push({ field: 'itinerary', label: 'Itinerary' })
     if (!hasValidSchedule) missing.push({ field: 'schedules', label: 'Availability dates' })
+    else if (!hasFutureSchedule)
+      missing.push({ field: 'schedules', label: 'A departure date in the future' })
+
+    // Floor an implausibly low price (the junk PKR 6 / PKR 10 test tours). A missing price is already
+    // caught above; this rejects a present-but-nonsense value, per currency.
+    const MIN_PRICE_BY_CURRENCY: Record<string, number> = {
+      PKR: 300,
+      INR: 300,
+      BDT: 300,
+      USD: 5,
+      AED: 15,
+      SAR: 15,
+      EUR: 5,
+      GBP: 5,
+    }
+    const priceFloor =
+      MIN_PRICE_BY_CURRENCY[String((tourData as any).currency || 'PKR').toUpperCase()] ?? 5
+    const priceValue = Number((tourData as any).price) || 0
+    if (priceValue > 0 && priceValue < priceFloor) {
+      missing.push({ field: 'price', label: `A realistic price (at least ${priceFloor})` })
+    }
+
+    // Room sharing switched on but no tier priced — the booking card would silently fall back to the
+    // single price. Force at least one priced tier.
+    const acc = (tourData as any).accommodation_pricing || {}
+    if (acc.enabled) {
+      const pricedTiers = Array.isArray(acc.tiers)
+        ? acc.tiers.filter((tier: any) => Number(tier?.pricePerPerson) > 0)
+        : []
+      if (pricedTiers.length === 0) {
+        missing.push({ field: 'price', label: 'Room-sharing prices (you switched room sharing on)' })
+      }
+    }
+
     return missing
   }
 

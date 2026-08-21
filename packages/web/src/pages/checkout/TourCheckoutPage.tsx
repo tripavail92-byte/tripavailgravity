@@ -461,6 +461,15 @@ export default function TourCheckoutPage() {
     setAppliedPromotion(null)
   }
 
+  // Creating the Stripe payment intent can fail transiently (network, cold edge fn). Previously the
+  // "attempted" flag stayed set, so there was no way back — this lets the traveller retry without
+  // re-entering anything; clearing the flag re-runs the create-payment-intent effect.
+  const handleRetryPaymentSetup = () => {
+    setBookingError(null)
+    setClientSecret(null)
+    setPaymentIntentAttempted(false)
+  }
+
   // Check Stripe availability
   const stripePromise = getStripe()
   useEffect(() => {
@@ -1031,10 +1040,21 @@ export default function TourCheckoutPage() {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3"
+                className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex flex-wrap items-center gap-3"
               >
                 <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                <p className="type-body-sm text-destructive">{bookingError}</p>
+                <p className="type-body-sm text-destructive flex-1 min-w-0">{bookingError}</p>
+                {pendingBooking && !clientSecret && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRetryPaymentSetup}
+                    disabled={creatingPaymentIntent}
+                  >
+                    {creatingPaymentIntent ? 'Retrying…' : 'Try again'}
+                  </Button>
+                )}
               </motion.div>
             )}
           </div>

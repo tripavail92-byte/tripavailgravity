@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ClipboardList,
   Globe,
-  Heart,
   Loader2,
   MapPin,
   Minus,
@@ -31,7 +30,6 @@ import { TourGallery } from '@/components/traveller/TourGallery'
 import { Button } from '@/components/ui/button'
 import {
   GlassBadge,
-  GlassButton,
   GlassCard,
   GlassContent,
   GlassHeader,
@@ -1470,7 +1468,8 @@ export default function TourDetailsPage() {
             </div>
           </div>
 
-          {/* Share / write-a-review / save. */}
+          {/* Share / write-a-review. Save-to-wishlist is hidden until the feature is wired end to
+              end (the heart had no handler); re-add it here when wishlist ships. */}
           <div className="flex shrink-0 items-center gap-2">
             <ShareButton
               variant="icon"
@@ -1480,9 +1479,6 @@ export default function TourDetailsPage() {
               className="bg-transparent text-foreground shadow-none hover:bg-muted/40"
             />
             <TourReviewButton tourId={tour.id} />
-            <GlassButton variant="ghost" size="icon" className="rounded-full">
-              <Heart size={18} className="text-primary" />
-            </GlassButton>
           </div>
         </div>
 
