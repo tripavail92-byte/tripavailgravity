@@ -14,12 +14,12 @@ import {
   Loader2,
   Moon,
   Settings,
-  Shield,
   Sun,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
@@ -29,6 +29,7 @@ import { useTheme } from '@/theme/ThemeContext'
 
 export default function AccountSettingsPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const { setMode } = useTheme()
   const [settings, setSettings] = useState<AccountSettings | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -133,26 +134,10 @@ export default function AccountSettingsPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              className="grid grid-cols-1 gap-4"
             >
-              <GlassCard variant="card" className="p-4 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <Shield className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-foreground">Security</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {settings.two_factor_enabled ? '✓ 2FA Enabled' : '⚠ 2FA Disabled'}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setActiveTab('security')}
-                  className="w-full"
-                >
-                  Manage
-                </Button>
-              </GlassCard>
-
+              {/* Security/2FA card removed for launch: 2FA isn't built and its "Manage" opened a
+                  blank tab. In-app password change is a Phase-1 build; reset stays via /auth. */}
               <GlassCard variant="card" className="p-4 rounded-2xl">
                 <div className="flex items-center gap-3 mb-2">
                   <Bell className="w-5 h-5 text-warning" />
@@ -219,45 +204,18 @@ export default function AccountSettingsPage() {
                   disabled={isSaving}
                 />
                 {settings.email_notifications_enabled && (
-                  <>
-                    <ToggleSetting
-                      label="Booking Reminders"
-                      description="Get reminded about your upcoming trips"
-                      enabled={settings.booking_reminders}
-                      onChange={(value) => handleToggle('booking_reminders', value)}
-                      disabled={isSaving}
-                    />
-                    <ToggleSetting
-                      label="Marketing Emails"
-                      description="Receive updates about new features and deals"
-                      enabled={settings.marketing_emails}
-                      onChange={(value) => handleToggle('marketing_emails', value)}
-                      disabled={isSaving}
-                    />
-                  </>
+                  <ToggleSetting
+                    label="Marketing Emails"
+                    description="Receive updates about new features and deals"
+                    enabled={settings.marketing_emails}
+                    onChange={(value) => handleToggle('marketing_emails', value)}
+                    disabled={isSaving}
+                  />
                 )}
               </div>
             </GlassCard>
-
-            <GlassCard variant="card" className="rounded-2xl p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Other Notifications</h2>
-              <div className="space-y-4">
-                <ToggleSetting
-                  label="Push Notifications"
-                  description="Enable notifications in your browser"
-                  enabled={settings.push_notifications_enabled}
-                  onChange={(value) => handleToggle('push_notifications_enabled', value)}
-                  disabled={isSaving}
-                />
-                <ToggleSetting
-                  label="SMS Notifications"
-                  description="Receive SMS for urgent updates"
-                  enabled={settings.sms_notifications_enabled}
-                  onChange={(value) => handleToggle('sms_notifications_enabled', value)}
-                  disabled={isSaving}
-                />
-              </div>
-            </GlassCard>
+            {/* Push + SMS cards removed for launch: no push subscription or SMS delivery path
+                exists yet, so the toggles were no-ops. Re-add when the send path ships. */}
           </motion.div>
         )}
 
@@ -400,7 +358,14 @@ export default function AccountSettingsPage() {
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   Our support team is here to help you with any account or settings questions.
                 </p>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={() => {
+                    window.location.href = 'mailto:support@tripavail.com'
+                  }}
+                >
                   Contact Support
                 </Button>
               </div>
@@ -413,18 +378,26 @@ export default function AccountSettingsPage() {
           <Button
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
+            onClick={() => navigate('/terms')}
           >
             Terms of Service
           </Button>
           <Button
             variant="ghost"
             className="w-full justify-center text-muted-foreground hover:text-foreground"
+            onClick={() => navigate('/privacy')}
           >
             Privacy Policy
           </Button>
+          {/* Self-serve account deletion isn't built yet; route the request to support (an honest,
+              actionable path) rather than a button that does nothing. */}
           <Button
             variant="ghost"
             className="w-full justify-center text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => {
+              window.location.href =
+                'mailto:support@tripavail.com?subject=Account%20deletion%20request'
+            }}
           >
             Delete Account
           </Button>

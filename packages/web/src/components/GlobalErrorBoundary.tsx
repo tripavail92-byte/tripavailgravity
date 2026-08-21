@@ -84,7 +84,8 @@ export class GlobalErrorBoundary extends Component<Props, State> {
               </div>
               <CardTitle className="text-xl text-red-700">Something went wrong</CardTitle>
               <CardDescription>
-                We encountered an unexpected error. Our team has been notified.
+                We hit an unexpected error. Reloading usually clears it — if it keeps happening,
+                email support@tripavail.com.
               </CardDescription>
             </CardHeader>
             <CardContent>

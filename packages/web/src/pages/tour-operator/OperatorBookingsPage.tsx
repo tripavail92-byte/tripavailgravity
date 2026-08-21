@@ -522,6 +522,26 @@ export default function OperatorBookingsPage() {
                               {String(booking.metadata.lead_traveller_phone)}
                             </a>
                           ) : null}
+                          {booking.metadata?.lead_traveller_whatsapp &&
+                          String(booking.metadata.lead_traveller_whatsapp) !==
+                            String(booking.metadata?.lead_traveller_phone ?? '') ? (
+                            <a
+                              href={`https://wa.me/${String(booking.metadata.lead_traveller_whatsapp).replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-0.5 block text-xs text-primary hover:underline"
+                            >
+                              WhatsApp: {String(booking.metadata.lead_traveller_whatsapp)}
+                            </a>
+                          ) : null}
+                          {booking.metadata?.lead_traveller_email ? (
+                            <a
+                              href={`mailto:${String(booking.metadata.lead_traveller_email)}`}
+                              className="mt-0.5 block text-xs text-primary hover:underline"
+                            >
+                              {String(booking.metadata.lead_traveller_email)}
+                            </a>
+                          ) : null}
                           {booking.metadata?.pickup_location_title ? (
                             <p className="mt-0.5 text-xs text-muted-foreground">
                               Pickup: {String(booking.metadata.pickup_location_title)}

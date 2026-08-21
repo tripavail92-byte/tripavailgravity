@@ -55,6 +55,7 @@ const HotelManagerSetupPage = lazy(
 )
 const CreateTourPage = lazy(() => import('@/pages/tour-operator/tours/create/CreateTourPage'))
 const TourDetailsPage = lazy(() => import('@/pages/traveller/TourDetailsPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const TourCheckoutPage = lazy(() => import('@/pages/checkout/TourCheckoutPage'))
 const BookingConfirmationPage = lazy(() => import('@/pages/checkout/BookingConfirmationPage'))
 const PackageBookingConfirmationPage = lazy(
@@ -654,8 +655,8 @@ function App() {
               }
             />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Fallback — a real 404, not a silent redirect to home. */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
         {/* React Query Devtools - Development Only */}
