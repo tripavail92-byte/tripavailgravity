@@ -1412,7 +1412,7 @@ export default function TourDetailsPage() {
   )
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-36">
+    <div className="min-h-screen bg-muted/30 pb-36 lg:pb-16">
       {/* Section tabs — pinned at the top under the fixed SiteHeader; they stay stuck as you
           scroll. Tabs mirror the reading order of the cards below and each only appears when its
           section actually renders, so no tab is ever dead. */}
@@ -1883,8 +1883,10 @@ export default function TourDetailsPage() {
             )}
           </div>
 
-          {/* Booking Card */}
-          <div className="lg:col-span-1">
+          {/* Booking card — desktop sidebar only. On mobile the sticky bottom bar below is the
+              single booking entry point (opens this same card in a dialog), so the two never both
+              show and there's one flow per screen. */}
+          <div className="hidden lg:col-span-1 lg:block">
             <div className="sticky top-20 z-30 space-y-6">
               {renderBookingCard({ onPayNow: handleBookNow })}
             </div>
@@ -1892,7 +1894,7 @@ export default function TourDetailsPage() {
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
