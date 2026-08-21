@@ -127,21 +127,17 @@ export function SignInPrompt() {
             // success → onAuthStateChange updates the store; the effect below closes everything
           },
         })
+        // Track whether One-Tap actually appeared so we never ALSO pop the modal over it.
+        let oneTapShown = false
         google.accounts.id.prompt((n: any) => {
-          // FedCM gives limited signals. Treat an explicit dismissal (not a returned credential) as
-          // an opt-out; "not displayed" / "skipped" (usually no Google session in this browser)
-          // falls back to the modal so we still capture the login.
+          if (n?.isDisplayMoment?.()) oneTapShown = true
           if (n?.isDismissedMoment?.() && n.getDismissedReason?.() !== 'credential_returned') {
-            markDismissed()
-          } else if (n?.isNotDisplayed?.() || n?.isSkippedMoment?.()) {
+            markDismissed() // user closed the One-Tap chip — opt them out
+          } else if ((n?.isNotDisplayed?.() || n?.isSkippedMoment?.()) && !oneTapShown) {
+            // One-Tap never appeared (usually no Google session in this browser) → soft modal.
             setShowModal(true)
           }
         })
-        // Safety net for browsers where the moment callback stops firing (FedCM-mandatory): if
-        // still logged out and not dismissed after a few seconds, show the modal.
-        window.setTimeout(() => {
-          if (!cancelled && !useAuth.getState().user && !recentlyDismissed()) setShowModal(true)
-        }, 6000)
       } catch (err) {
         console.warn('[one-tap] init failed:', err)
         setShowModal(true)
