@@ -592,12 +592,11 @@ export const tourService = {
       String(operatorProfile?.company_name || '').trim() ||
       contactName ||
       'Tour Operator'
-    // "Verified" must mean verified. This previously OR-ed in
-    // `account_status === 'active'` — true for essentially every operator — so the badge
-    // carried no signal and was false wherever KYC had not actually passed. The storefront
-    // view derives has_identity_verified from APPROVED KYC documents, so gate on that.
-    const operatorIsVerified =
-      Boolean((data as any).is_verified) || Boolean(operatorProfile?.has_identity_verified)
+    // "Verified" must mean verified. This previously OR-ed in `tours.is_verified` (true for every
+    // seeded/demo tour and any admin-set row) and, before that, `account_status === 'active'` — so
+    // the badge carried no signal and lied wherever KYC had not actually passed. Derive it SOLELY
+    // from approved KYC: the storefront view sets has_identity_verified from approved documents.
+    const operatorIsVerified = Boolean(operatorProfile?.has_identity_verified)
 
     // Existing tours have no country stored (the create form used to read its own empty value, so
     // country was never written) and some have no city either. Publishing REQUIRES a pickup point,

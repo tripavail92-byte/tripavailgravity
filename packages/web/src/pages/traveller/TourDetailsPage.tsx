@@ -1191,7 +1191,7 @@ export default function TourDetailsPage() {
       </GlassHeader>
       <GlassContent className="space-y-4">
         <p className="text-muted-foreground">
-          {(tour.operator_is_verified ?? tour.is_verified) ? 'Verified Operator' : 'Tour Operator'}
+          {tour.operator_is_verified ? 'Verified Operator' : 'Unverified operator'}
           {' • '}
           {tour.max_participants && tour.max_participants > 0
             ? tour.max_participants <= 12
@@ -1346,26 +1346,30 @@ export default function TourDetailsPage() {
   const locationLabel =
     [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') || 'Destination TBD'
 
-  // Verified-operator badge (links to the operator's profile when we have a slug) — shown in the
-  // trust strip below the hero.
-  const verifiedBadge =
-    (tour.operator_is_verified ?? tour.is_verified) ? (
-      operatorSlug ? (
-        <Link
-          to={`/operators/${operatorSlug}`}
-          className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          title="View operator profile"
-        >
-          <GlassBadge variant="success" size="sm" icon={<Sparkles size={12} />}>
-            Verified Operator
-          </GlassBadge>
-        </Link>
-      ) : (
-        <GlassBadge variant="success" size="sm" icon={<Sparkles size={12} />}>
-          Verified Operator
-        </GlassBadge>
-      )
-    ) : null
+  // Operator trust badge (links to the operator's profile when we have a slug) — shown in the trust
+  // strip below the hero. Verified operators get the green badge; everyone else gets an honest
+  // "Unverified operator" chip rather than nothing, so travellers see the real status.
+  const isVerifiedOperator = Boolean(tour.operator_is_verified)
+  const operatorBadgeInner = isVerifiedOperator ? (
+    <GlassBadge variant="success" size="sm" icon={<Sparkles size={12} />}>
+      Verified Operator
+    </GlassBadge>
+  ) : (
+    <GlassBadge variant="warning" size="sm">
+      Unverified operator
+    </GlassBadge>
+  )
+  const verifiedBadge = operatorSlug ? (
+    <Link
+      to={`/operators/${operatorSlug}`}
+      className="rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      title="View operator profile"
+    >
+      {operatorBadgeInner}
+    </Link>
+  ) : (
+    operatorBadgeInner
+  )
 
   // Hero overlay — the eyebrow (category · city), quick-fact pills (duration / difficulty /
   // location), title and subtitle, laid over the hero photo (white text on a dark scrim).

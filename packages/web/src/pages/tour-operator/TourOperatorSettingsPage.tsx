@@ -95,13 +95,13 @@ const settingsCategories: SettingsCategory[] = [
   },
   {
     id: 'payment',
-    title: 'Payment & Earnings',
-    description: 'Configure payment methods, commission structure, and payout settings',
+    title: 'Payout destination',
+    description: 'Set where you get paid — bank transfer or Stripe',
     icon: CreditCard,
     hasWarning: false,
     badge: null,
     badgeVariant: 'primary',
-    href: '/operator/commercial',
+    href: '/operator/settings#payout',
   },
   {
     id: 'cancellation',
@@ -153,6 +153,14 @@ export default function TourOperatorSettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isSavingPublicProfile, setIsSavingPublicProfile] = useState(false)
+  // Payout destination — where the operator gets paid. The columns + service existed but nothing
+  // ever let an operator set them, so operators had no way to receive money.
+  const [payout, setPayout] = useState({
+    payment_method: '',
+    bank_account_number: '',
+    stripe_account_id: '',
+  })
+  const [isSavingPayout, setIsSavingPayout] = useState(false)
 
   const storefrontSection = useMemo<'all' | 'business-profile' | 'fleet-guides'>(() => {
     if (location.pathname === '/operator-dashboard/business-profile') return 'business-profile'
@@ -187,6 +195,11 @@ export default function TourOperatorSettingsPage() {
         tourOperatorService.getPublicProfileEditorData(user!.id),
       ])
       setSettings(settingsData)
+      setPayout({
+        payment_method: settingsData.payment_method ?? '',
+        bank_account_number: settingsData.bank_account_number ?? '',
+        stripe_account_id: settingsData.stripe_account_id ?? '',
+      })
       setPublicProfile(publicProfileData)
     } catch (error) {
       console.error('Failed to load settings:', error)
@@ -340,6 +353,31 @@ export default function TourOperatorSettingsPage() {
         ? { ...prev, galleryMedia: prev.galleryMedia.filter((_, rowIndex) => rowIndex !== index) }
         : prev
     ))
+  }
+
+  const handleSavePayout = async () => {
+    if (!user?.id) return
+    if (payout.payment_method === 'bank' && !payout.bank_account_number.trim()) {
+      toast.error('Enter the bank account number for bank payouts')
+      return
+    }
+    if (payout.payment_method === 'stripe' && !payout.stripe_account_id.trim()) {
+      toast.error('Enter the Stripe account ID for Stripe payouts')
+      return
+    }
+    try {
+      setIsSavingPayout(true)
+      await tourOperatorSettingsService.updatePaymentMethod(user.id, {
+        payment_method: payout.payment_method,
+        bank_account_number: payout.bank_account_number.trim(),
+        stripe_account_id: payout.stripe_account_id.trim(),
+      })
+      await loadSettings()
+    } catch (error) {
+      console.error('Failed to save payout destination:', error)
+    } finally {
+      setIsSavingPayout(false)
+    }
   }
 
   const handleSavePublicProfile = async () => {
@@ -500,6 +538,76 @@ export default function TourOperatorSettingsPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Payout destination */}
+        <GlassCard id="payout" variant="card" className="rounded-2xl p-6 scroll-mt-24">
+          <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
+            <CreditCard size={20} className="text-primary" />
+            Payout destination
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Where TripAvail sends the money you earn.{' '}
+            {settings?.payment_verified ? (
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">✓ Verified</span>
+            ) : (
+              'Add it so you can be paid out.'
+            )}
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="payout-method" className="block text-sm font-semibold text-foreground mb-1.5">
+                Payout method
+              </label>
+              <select
+                id="payout-method"
+                value={payout.payment_method}
+                onChange={(e) => setPayout((p) => ({ ...p, payment_method: e.target.value }))}
+                className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Select a payout method…</option>
+                <option value="bank">Bank transfer</option>
+                <option value="stripe">Stripe</option>
+              </select>
+            </div>
+            {payout.payment_method === 'bank' && (
+              <div>
+                <label htmlFor="payout-bank" className="block text-sm font-semibold text-foreground mb-1.5">
+                  Bank account number (IBAN)
+                </label>
+                <Input
+                  id="payout-bank"
+                  value={payout.bank_account_number}
+                  onChange={(e) => setPayout((p) => ({ ...p, bank_account_number: e.target.value }))}
+                  placeholder="PK00 XXXX 0000 0000 0000 0000"
+                  className="h-12 rounded-xl"
+                />
+              </div>
+            )}
+            {payout.payment_method === 'stripe' && (
+              <div>
+                <label htmlFor="payout-stripe" className="block text-sm font-semibold text-foreground mb-1.5">
+                  Stripe account ID
+                </label>
+                <Input
+                  id="payout-stripe"
+                  value={payout.stripe_account_id}
+                  onChange={(e) => setPayout((p) => ({ ...p, stripe_account_id: e.target.value }))}
+                  placeholder="acct_..."
+                  className="h-12 rounded-xl"
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Your payout details are private and never shown to travellers.
+              </p>
+              <Button onClick={handleSavePayout} disabled={isSavingPayout} className="gap-2">
+                {isSavingPayout ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save payout
+              </Button>
             </div>
           </div>
         </GlassCard>
