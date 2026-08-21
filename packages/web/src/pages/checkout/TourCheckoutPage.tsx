@@ -454,6 +454,13 @@ export default function TourCheckoutPage() {
     }
   }
 
+  // Clear the promo field/error so a rejected or stale code never leaves the traveller stuck.
+  const handleClearPromo = () => {
+    setPromoCode('')
+    setPromoError(null)
+    setAppliedPromotion(null)
+  }
+
   // Check Stripe availability
   const stripePromise = getStripe()
   useEffect(() => {
@@ -504,7 +511,7 @@ export default function TourCheckoutPage() {
         traveler_id: user.id,
         pax_count: guestCount,
         total_price: totalPrice,
-        promoCode: promoCode.trim() || undefined,
+        promoCode: appliedPromotion?.code || undefined,
         metadata: {
           tour_name: tour.title,
           schedule_start: schedule.start_time,
@@ -518,7 +525,7 @@ export default function TourCheckoutPage() {
           payment_collection_mode: paymentTerms.paymentCollectionMode,
           upfront_amount: payNowAmount,
           remaining_amount: payLaterAmount,
-          promo_code: promoCode.trim().toUpperCase() || null,
+          promo_code: appliedPromotion?.code || null,
           // Fulfilment details — surfaced to the operator on their booking page.
           lead_traveller_name: leadName.trim(),
           lead_traveller_email: (profile?.email || user.email || '').trim() || null,
@@ -1066,6 +1073,17 @@ export default function TourCheckoutPage() {
                           >
                             {promoLoading ? 'Applying...' : 'Apply'}
                           </Button>
+                          {promoCode || appliedPromotion || promoError ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="h-11 rounded-xl"
+                              onClick={handleClearPromo}
+                              disabled={promoLoading}
+                            >
+                              Clear
+                            </Button>
+                          ) : null}
                         </div>
                         {promoError ? (
                           <p className="text-xs text-destructive">{promoError}</p>
@@ -1322,6 +1340,22 @@ function TourPaymentForm(props: {
       if (paymentIntentId && result.paymentIntent?.status === 'succeeded') {
         navigate(
           `/booking/confirmation?booking_id=${encodeURIComponent(props.bookingId)}&payment_intent=${encodeURIComponent(paymentIntentId)}`,
+        )
+      } else if (paymentIntentStatus === 'processing') {
+        // Async payment method still settling — hand off to the confirmation page, which verifies
+        // and polls, rather than leaving the traveller on a spinner that never resolves.
+        navigate(
+          `/booking/confirmation?booking_id=${encodeURIComponent(props.bookingId)}${
+            paymentIntentId ? `&payment_intent=${encodeURIComponent(paymentIntentId)}` : ''
+          }`,
+        )
+      } else {
+        // requires_action / requires_payment_method / any other non-succeeded status: don't let the
+        // button silently do nothing — tell the traveller where they stand so they can act.
+        setError(
+          paymentIntentStatus === 'requires_payment_method'
+            ? 'That payment didn’t go through. Please check your card details or try another method.'
+            : 'Your payment needs another step to complete. Please try again.',
         )
       }
     } catch (err) {
