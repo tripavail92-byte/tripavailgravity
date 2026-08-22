@@ -319,8 +319,14 @@ export default function TourCheckoutPage() {
   )
 
   useEffect(() => {
+    // Don't clamp until the departure's availability is actually known. On first mount both
+    // availableSlots and the schedule are still loading, so liveAvailableSeats is a placeholder 0 and
+    // maxGuests collapses to 1 — clamping then would shrink the guest count carried in from the tour
+    // page (e.g. 5) down to 1 and, since Math.min can only shrink, never restore it. That silently
+    // reset every multi-seat booking to a single traveller and dropped group-pricing tiers.
+    if (availableSlots == null && scheduleCapacity == null) return
     setGuestCount((prev) => Math.min(prev, maxGuests))
-  }, [maxGuests])
+  }, [maxGuests, availableSlots, scheduleCapacity])
 
   useEffect(() => {
     setAppliedPromotion(null)
