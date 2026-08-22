@@ -23,15 +23,14 @@ function statusVariant(status: OperatorBookingRecord['status']) {
 }
 
 function paymentLabel(booking: OperatorBookingRecord) {
+  const currency = (booking as { currency?: string }).currency || 'PKR'
   if (booking.payment_collection_mode === 'partial_online') {
     const paid = Number(booking.amount_paid_online ?? booking.upfront_amount ?? 0)
     const due = Number(booking.amount_due_to_operator ?? booking.remaining_amount ?? 0)
-    // TODO: use booking currency once plumbed.
-    return `Deposit ${formatMoney(paid, 'PKR')} · Due ${formatMoney(due, 'PKR')}`
+    return `Deposit ${formatMoney(paid, currency)} · Due ${formatMoney(due, currency)}`
   }
 
-  // TODO: use booking currency once plumbed.
-  return formatMoney(booking.total_price, 'PKR')
+  return formatMoney(booking.total_price, currency)
 }
 
 export function OperatorRecentBookings({ operatorId }: OperatorRecentBookingsProps) {

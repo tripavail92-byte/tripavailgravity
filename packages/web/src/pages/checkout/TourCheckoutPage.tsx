@@ -721,29 +721,45 @@ export default function TourCheckoutPage() {
                     </span>
                   </p>
 
-                  {/* Guest Counter */}
-                  <div className="flex items-center gap-4 p-4 bg-muted/40 rounded-xl">
-                    <button
-                      onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                      disabled={guestCount <= 1}
-                      className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      −
-                    </button>
-                    <div className="flex-1 text-center">
-                      <p className="text-3xl font-black text-foreground">{guestCount}</p>
-                      <p className="type-caption text-muted-foreground">
-                        {guestCount === 1 ? 'Guest' : 'Guests'}
+                  {/* Guest Counter. For a room-sharing tour the seat count is fixed by the room mix
+                      chosen on the tour page — editing it here would desync pax_count from the priced
+                      mix, so show it read-only and point people back to change it. */}
+                  {accommodation && roomTier ? (
+                    <div className="flex items-center justify-between gap-4 p-4 bg-muted/40 rounded-xl">
+                      <div>
+                        <p className="text-3xl font-black text-foreground">{guestCount}</p>
+                        <p className="type-caption text-muted-foreground">
+                          {guestCount === 1 ? 'Traveller' : 'Travellers'} · {roomTier.label}
+                        </p>
+                      </div>
+                      <p className="type-body-sm text-muted-foreground max-w-[55%] text-right">
+                        Room sharing is set from your selection — go back to the tour to change it.
                       </p>
                     </div>
-                    <button
-                      onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
-                      disabled={guestCount >= maxGuests}
-                      className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      +
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-4 p-4 bg-muted/40 rounded-xl">
+                      <button
+                        onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                        disabled={guestCount <= 1}
+                        className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        −
+                      </button>
+                      <div className="flex-1 text-center">
+                        <p className="text-3xl font-black text-foreground">{guestCount}</p>
+                        <p className="type-caption text-muted-foreground">
+                          {guestCount === 1 ? 'Guest' : 'Guests'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setGuestCount(Math.min(maxGuests, guestCount + 1))}
+                        disabled={guestCount >= maxGuests}
+                        className="w-10 h-10 rounded-lg bg-background border border-border/60 flex items-center justify-center font-bold text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
 
                   {seatsRemainingAfterSelection < 5 && liveAvailableSeats > 0 && (
                     <div className="flex items-center gap-2 p-3 bg-warning/10 rounded-lg border border-warning/20">

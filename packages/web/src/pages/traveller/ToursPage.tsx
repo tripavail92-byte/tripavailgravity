@@ -229,6 +229,18 @@ export default function ToursPage() {
             />
           ) : allToursQuery.isLoading ? (
             skeletons
+          ) : allToursQuery.isError ? (
+            <Card className="rounded-3xl border border-dashed border-destructive/40 bg-destructive/5 px-6 py-16 text-center">
+              <p className="text-lg font-semibold text-foreground">We couldn’t load trips</p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                Something went wrong fetching the catalogue. Please try again.
+              </p>
+              <div className="mt-5 flex justify-center">
+                <Button className="rounded-full" onClick={() => allToursQuery.refetch()}>
+                  Retry
+                </Button>
+              </div>
+            </Card>
           ) : filtered.length === 0 ? (
             <Card className="rounded-3xl border border-dashed border-border/70 bg-muted/20 px-6 py-16 text-center">
               <p className="text-lg font-semibold text-foreground">No trips match those filters</p>

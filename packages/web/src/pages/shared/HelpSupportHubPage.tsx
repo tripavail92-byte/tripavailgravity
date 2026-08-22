@@ -4,11 +4,16 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/glass'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { useAuth } from '@/hooks/useAuth'
 
-const HELP_TOPICS = [
+// The hub is reachable by travellers AND operators. Showing operators' topics (bookings board,
+// verification, payout) to a traveller sent them to /operator/* pages they can't open — an
+// "Access Denied" dead end. Route the content by role.
+
+const OPERATOR_TOPICS = [
   {
     title: 'Bookings & traveler operations',
-    description: 'Handle booking flow questions, departure timing, cancellations, and traveler expectations using a Booking.com partner playbook structure.',
+    description: 'Handle booking flow questions, departure timing, cancellations, and traveler expectations.',
     icon: MessageSquare,
     cta: '/operator/bookings',
     label: 'Open bookings board',
@@ -17,8 +22,8 @@ const HELP_TOPICS = [
     title: 'Payments & payout readiness',
     description: 'Review payment state, payout setup, and booking hold behavior before it becomes a support issue.',
     icon: CreditCard,
-    cta: '/operator/settings',
-    label: 'Review settings',
+    cta: '/operator/settings#payout',
+    label: 'Review payout settings',
   },
   {
     title: 'Verification & trust',
@@ -29,30 +34,74 @@ const HELP_TOPICS = [
   },
   {
     title: 'Legal & policy guidance',
-    description: 'Use the operator legal hub for refunds, privacy, service terms, and contact escalation points.',
+    description: 'Refunds, privacy, service terms, and contact escalation points.',
     icon: BadgeHelp,
     cta: '/legal',
     label: 'Open legal hub',
   },
 ]
 
+const TRAVELLER_TOPICS = [
+  {
+    title: 'Your trips & bookings',
+    description: 'View upcoming and past trips, booking details, pickup points, and confirmations.',
+    icon: MessageSquare,
+    cta: '/trips',
+    label: 'Open my trips',
+  },
+  {
+    title: 'Cancellations & changes',
+    description: "Check each tour's cancellation policy and start a change request from the booking.",
+    icon: CreditCard,
+    cta: '/trips',
+    label: 'Manage a booking',
+  },
+  {
+    title: 'Account & preferences',
+    description: 'Update your contact details, notification, privacy, and app preferences.',
+    icon: ShieldCheck,
+    cta: '/settings',
+    label: 'Open settings',
+  },
+  {
+    title: 'Terms & privacy',
+    description: 'Read our terms of service and privacy policy.',
+    icon: BadgeHelp,
+    cta: '/terms',
+    label: 'Open terms',
+  },
+]
+
 export default function HelpSupportHubPage() {
+  const { activeRole } = useAuth()
+  const isOperator =
+    activeRole?.role_type === 'tour_operator' || activeRole?.role_type === 'hotel_manager'
+  const topics = isOperator ? OPERATOR_TOPICS : TRAVELLER_TOPICS
+
   return (
     <div className="min-h-screen bg-background pb-16">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="Help & Support"
-          subtitle="Structured like a modern host help center: quick routing, operational topics first, and legal escalation one click away."
+          subtitle={
+            isOperator
+              ? 'Quick routing to the tools you need — operational topics first, compliance one click away.'
+              : 'Find your trips, manage a booking, or reach our team.'
+          }
           showBackButton={false}
         />
 
         <GlassCard variant="card" className="mb-6 rounded-3xl p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Partner support desk</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                {isOperator ? 'Partner support desk' : 'Traveler support'}
+              </p>
               <h2 className="mt-2 text-3xl font-black text-foreground">Get to the right answer fast</h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                This support hub follows the Airbnb and Booking.com host pattern: prioritize actions that unblock a live reservation, then route to compliance, policy, or account support.
+                {isOperator
+                  ? 'Prioritize actions that unblock a live reservation, then route to compliance, policy, or account support.'
+                  : "Start with your trips for anything about a booking, then reach our team if you're stuck."}
               </p>
             </div>
             <Button asChild className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90">
@@ -62,9 +111,9 @@ export default function HelpSupportHubPage() {
         </GlassCard>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {HELP_TOPICS.map((topic) => (
+          {topics.map((topic) => (
             <GlassCard key={topic.title} variant="card" className="rounded-3xl p-6">
-              <div className="rounded-2xl bg-primary/12 p-3 text-primary w-fit">
+              <div className="w-fit rounded-2xl bg-primary/12 p-3 text-primary">
                 <topic.icon className="h-5 w-5" />
               </div>
               <h3 className="mt-4 text-lg font-black text-foreground">{topic.title}</h3>
@@ -85,9 +134,13 @@ export default function HelpSupportHubPage() {
               <LifeBuoy className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-foreground">Recommended operator workflow</h3>
+              <h3 className="text-lg font-black text-foreground">
+                {isOperator ? 'Recommended operator workflow' : 'Still need a hand?'}
+              </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                1. Check bookings first for any guest-impacting issue. 2. Review calendar availability if a traveler reports inventory mismatch. 3. Use verification or legal routes for compliance and refunds.
+                {isOperator
+                  ? '1. Check bookings first for any guest-impacting issue. 2. Review calendar availability if a traveler reports an inventory mismatch. 3. Use verification or legal routes for compliance and refunds.'
+                  : 'Email support@tripavail.com and include your booking reference — it’s on the trip in “My Trips”.'}
               </p>
             </div>
           </div>

@@ -15,6 +15,7 @@ const EVENTS_ON = isSurfaceEnabled('events')
 
 import { AdminGuard } from '@/components/auth/AdminGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
+import { AuthGuard } from '@/components/auth/AuthGuard'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { TourManager } from '@/components/tour/TourManager'
 import { SignInPrompt } from '@/components/auth/SignInPrompt'
@@ -248,8 +249,22 @@ function App() {
                 path="/events"
                 element={EVENTS_ON ? <EventsPage /> : <Navigate to="/tours" replace />}
               />
-              <Route path="/dashboard/overview" element={<TravelerDashboardPage />} />
-              <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+              <Route
+                path="/dashboard/overview"
+                element={
+                  <AuthGuard>
+                    <TravelerDashboardPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/payment-methods"
+                element={
+                  <AuthGuard>
+                    <PaymentMethodsPage />
+                  </AuthGuard>
+                }
+              />
               {/* Launch scope: /explore (Homepage) is a hotel+package discovery
                   surface. Until Phase 3 the trips-only LandingPage is the home, so
                   send /explore there rather than render package rails that dead-end. */}
@@ -308,12 +323,47 @@ function App() {
                 }
               />
 
-              {/* Profile & Settings */}
-              <Route path="/profile" element={<TravellerProfilePage />} />
-              <Route path="/wishlist" element={<WishlistPage />} />
-              <Route path="/trips" element={<MyTripsPage />} />
-              <Route path="/trips/:bookingId" element={<TravelerBookingDetailPage />} />
-              <Route path="/settings" element={<AccountSettingsPage />} />
+              {/* Profile & Settings — private: any signed-in user, redirect logged-out to /auth. */}
+              <Route
+                path="/profile"
+                element={
+                  <AuthGuard>
+                    <TravellerProfilePage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/wishlist"
+                element={
+                  <AuthGuard>
+                    <WishlistPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/trips"
+                element={
+                  <AuthGuard>
+                    <MyTripsPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/trips/:bookingId"
+                element={
+                  <AuthGuard>
+                    <TravelerBookingDetailPage />
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <AuthGuard>
+                    <AccountSettingsPage />
+                  </AuthGuard>
+                }
+              />
 
               {/* Legal */}
               <Route path="/terms" element={<TermsPage />} />
