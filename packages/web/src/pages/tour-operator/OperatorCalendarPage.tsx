@@ -58,10 +58,12 @@ export default function OperatorCalendarPage() {
   const [adding, setAdding] = useState(false)
   const [addForm, setAddForm] = useState({ tourId: '', date: '', time: '09:00', capacity: '15' })
 
-  const refresh = useCallback(async () => {
+  // `loading` only fires on the first paint (nothing on screen yet). After an add/cancel we
+  // background-refresh — keeping the calendar visible instead of blanking it with a spinner.
+  const load = useCallback(async (options: { background?: boolean } = {}) => {
     if (!user?.id) return
     try {
-      setLoading(true)
+      if (!options.background) setLoading(true)
       const response = await operatorPortalService.getCalendarData(user.id)
       setSchedules(response.schedules)
       setSummary(response.summary)
@@ -71,13 +73,15 @@ export default function OperatorCalendarPage() {
       console.error('Failed to load operator calendar:', loadError)
       setError(loadError instanceof Error ? loadError.message : 'Failed to load calendar')
     } finally {
-      setLoading(false)
+      if (!options.background) setLoading(false)
     }
   }, [user?.id])
 
+  const refresh = useCallback(() => load({ background: true }), [load])
+
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    void load()
+  }, [load])
 
   // Distinct tours the operator already has departures for — the "add another date" targets.
   const operatorTours = useMemo(() => {
