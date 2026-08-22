@@ -22,6 +22,7 @@ import { GlassCard } from '@/components/ui/glass'
 import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription'
 import { operatorPortalService, type OperatorScheduleRecord } from '@/features/tour-operator/services/operatorPortalService'
 
 function formatDestination(schedule: OperatorScheduleRecord) {
@@ -82,6 +83,16 @@ export default function OperatorCalendarPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  // Live updates: RLS on tour_schedules / tour_bookings restricts realtime events to this
+  // operator's own rows, so a change made from a phone, admin, or another browser tab silently
+  // refreshes this calendar. We refetch (rather than patch state locally) so booked_count and
+  // summary counters recompute correctly on any event shape.
+  const onRealtimeChange = useCallback(() => {
+    void refresh()
+  }, [refresh])
+  useRealtimeSubscription({ table: 'tour_schedules', onData: onRealtimeChange })
+  useRealtimeSubscription({ table: 'tour_bookings', onData: onRealtimeChange })
 
   // Distinct tours the operator already has departures for — the "add another date" targets.
   const operatorTours = useMemo(() => {
