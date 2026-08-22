@@ -504,13 +504,22 @@ export default function TourCheckoutPage() {
       return
     }
 
-    // The operator cannot fulfil a booking without a name and a contact number.
+    // The operator cannot fulfil a booking without a name and a contact number. These fields live in
+    // the left column, well away from the Pay button — so on a miss, take the traveller straight to
+    // the empty field (scroll + focus) instead of just setting an error they may never see.
+    const focusField = (id: string) => {
+      const el = document.getElementById(id) as HTMLInputElement | null
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      window.setTimeout(() => el?.focus({ preventScroll: true }), 300)
+    }
     if (!leadName.trim()) {
-      setBookingError('Please enter the lead traveller’s name')
+      setBookingError('Please enter the lead traveller’s name to continue.')
+      focusField('lead-name')
       return
     }
     if (!leadPhone.trim()) {
-      setBookingError('Please enter a phone number the operator can reach you on')
+      setBookingError('Please enter a phone number the operator can reach you on.')
+      focusField('lead-phone')
       return
     }
 
@@ -1081,9 +1090,11 @@ export default function TourCheckoutPage() {
             )}
           </div>
 
-          {/* Right Column: Price Summary */}
+          {/* Right Column: Price Summary. Cap the sticky sidebar to the viewport and let it scroll
+              internally so the Pay button is always reachable on short screens (it used to sit below
+              the fold). */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
               <GlassCard variant="card" className="rounded-2xl shadow-modern">
                 <GlassHeader className="p-6 pb-0">
                   <GlassTitle>Price Summary</GlassTitle>
@@ -1230,26 +1241,34 @@ export default function TourCheckoutPage() {
                     </div>
 
                     {!pendingBooking && (
-                      <Button
-                        onClick={handleCreatePendingBooking}
-                        disabled={
-                          processingBooking ||
-                          (availableSlots !== null && guestCount > availableSlots)
-                        }
-                        className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold mt-6"
-                      >
-                        {processingBooking ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            Starting Payment...
-                          </>
-                        ) : (
-                          <>
-                            Pay {formatMoney(payNowAmount, tour.currency)} & Confirm Booking
-                            <ChevronRight className="w-4 h-4 ml-2" />
-                          </>
+                      <>
+                        <Button
+                          onClick={handleCreatePendingBooking}
+                          disabled={
+                            processingBooking ||
+                            (availableSlots !== null && guestCount > availableSlots)
+                          }
+                          className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold mt-6"
+                        >
+                          {processingBooking ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                              Starting Payment...
+                            </>
+                          ) : (
+                            <>
+                              Pay {formatMoney(payNowAmount, tour.currency)} & Confirm Booking
+                              <ChevronRight className="w-4 h-4 ml-2" />
+                            </>
+                          )}
+                        </Button>
+                        {bookingError && (
+                          <p className="mt-3 flex items-start gap-2 type-body-sm text-destructive">
+                            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                            <span>{bookingError}</span>
+                          </p>
                         )}
-                      </Button>
+                      </>
                     )}
                   </div>
                 </GlassContent>
