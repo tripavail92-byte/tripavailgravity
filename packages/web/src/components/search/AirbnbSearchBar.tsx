@@ -1063,6 +1063,20 @@ function SingleDateField({
             defaultMonth={value ?? new Date()}
             disabled={{ before: startOfToday() }}
           />
+          {value && (
+            <div className="mt-2 flex justify-end border-t border-border/40 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(undefined)
+                  setOpen(false)
+                }}
+                className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Clear date
+              </button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
       {trailingSearch && onSubmit && (

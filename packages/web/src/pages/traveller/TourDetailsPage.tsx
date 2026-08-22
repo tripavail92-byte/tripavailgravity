@@ -1839,6 +1839,38 @@ export default function TourDetailsPage() {
                             {review.body}
                           </p>
                         ) : null}
+                        {(() => {
+                          const cats: Array<[string, number | null]> = [
+                            ['Communication', review.rating_communication],
+                            ['Punctuality', review.rating_punctuality],
+                            ['Transport', review.rating_transport],
+                            ['Guide', review.rating_guide],
+                            ['Safety', review.rating_safety],
+                            ['Cleanliness', review.rating_cleanliness],
+                            ['Value', review.rating_value],
+                            ['Itinerary', review.rating_itinerary],
+                          ]
+                          const present = cats.filter(
+                            ([, v]) => typeof v === 'number' && v > 0,
+                          ) as Array<[string, number]>
+                          if (present.length === 0) return null
+                          return (
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-1 sm:grid-cols-4">
+                              {present.map(([label, value]) => (
+                                <div
+                                  key={label}
+                                  className="flex items-center justify-between gap-2"
+                                >
+                                  <span className="text-xs text-muted-foreground">{label}</span>
+                                  <span className="flex items-center gap-0.5 text-xs font-semibold text-foreground">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    {value.toFixed(1)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
                         {review.reply ? (
                           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 space-y-1">
                             <p className="text-xs font-semibold uppercase tracking-widest text-primary/70">

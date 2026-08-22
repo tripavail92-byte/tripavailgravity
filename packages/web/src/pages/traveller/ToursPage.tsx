@@ -58,8 +58,12 @@ export default function ToursPage() {
   const [destination, setDestination] = useState<string>('all')
   const [duration, setDuration] = useState<DurationFilter>('any')
 
-  const allToursQuery = useHomepageMixTours(96)
+  // Paginate instead of silently capping at 96: start with a page, load more on demand. Keeping the
+  // previous data while the larger page loads avoids a full skeleton flash.
+  const [take, setTake] = useState(48)
+  const allToursQuery = useHomepageMixTours(take, { placeholderData: (prev) => prev })
   const tours = useMemo(() => allToursQuery.data ?? [], [allToursQuery.data])
+  const hasMore = tours.length >= take
   // Real next-departure dates for the visible cards — one batched query.
   const { data: departures } = useTourDepartureSummary(
     useMemo(() => tours.map((t) => t.id), [tours]),
@@ -261,27 +265,41 @@ export default function ToursPage() {
               </div>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((tour) => (
-                <TourCard
-                  key={tour.id}
-                  id={tour.id}
-                  slug={tour.slug ?? undefined}
-                  image={tour.images?.[0] || ''}
-                  title={tour.title}
-                  location={tour.location}
-                  duration={formatTourDuration(tour.durationDays)}
-                  rating={tour.rating}
-                  reviewCount={tour.reviewCount}
-                  price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
-                  currency={tour.currency || 'PKR'}
-                  type={tour.tourType || 'Tour'}
-                  isFeatured={Boolean(tour.isFeatured)}
-                  shortDescription={tour.shortDescription ?? undefined}
-                  departureSummary={departures?.[tour.id] ?? null}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((tour) => (
+                  <TourCard
+                    key={tour.id}
+                    id={tour.id}
+                    slug={tour.slug ?? undefined}
+                    image={tour.images?.[0] || ''}
+                    title={tour.title}
+                    location={tour.location}
+                    duration={formatTourDuration(tour.durationDays)}
+                    rating={tour.rating}
+                    reviewCount={tour.reviewCount}
+                    price={typeof tour.tourPrice === 'number' ? tour.tourPrice : 0}
+                    currency={tour.currency || 'PKR'}
+                    type={tour.tourType || 'Tour'}
+                    isFeatured={Boolean(tour.isFeatured)}
+                    shortDescription={tour.shortDescription ?? undefined}
+                    departureSummary={departures?.[tour.id] ?? null}
+                  />
+                ))}
+              </div>
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setTake((t) => t + 48)}
+                    disabled={allToursQuery.isFetching}
+                  >
+                    {allToursQuery.isFetching ? 'Loading…' : 'Load more trips'}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

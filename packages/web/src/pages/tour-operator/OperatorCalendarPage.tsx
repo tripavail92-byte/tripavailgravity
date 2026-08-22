@@ -6,6 +6,7 @@ import {
   Compass,
   Loader2,
   MapPin,
+  Pencil,
   Plus,
   Users,
   X,
@@ -53,11 +54,20 @@ export default function OperatorCalendarPage() {
     return () => document.documentElement.removeAttribute('data-role')
   }, [])
 
-  // Departure management (add / cancel).
+  // Departure management (add / edit / cancel).
   const [actioningId, setActioningId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [adding, setAdding] = useState(false)
   const [addForm, setAddForm] = useState({ tourId: '', date: '', time: '09:00', capacity: '15' })
+  const [editOpen, setEditOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    scheduleId: '',
+    tourId: '',
+    capacity: '15',
+    price: '',
+    minCapacity: 0,
+  })
 
   // `loading` only fires on the first paint (nothing on screen yet). After an add/cancel we
   // background-refresh — keeping the calendar visible instead of blanking it with a spinner.
@@ -153,6 +163,44 @@ export default function OperatorCalendarPage() {
       toast.error(err instanceof Error ? err.message : 'Could not add the departure')
     } finally {
       setAdding(false)
+    }
+  }
+
+  const openEditDialog = (schedule: OperatorScheduleRecord) => {
+    setEditForm({
+      scheduleId: schedule.id,
+      tourId: schedule.tours.id,
+      capacity: String(schedule.capacity),
+      price: schedule.price_override != null ? String(schedule.price_override) : '',
+      minCapacity: schedule.booked_count || 0,
+    })
+    setEditOpen(true)
+  }
+
+  const handleEditDeparture = async () => {
+    const capacity = Math.max(1, Number(editForm.capacity) || 0)
+    if (capacity < editForm.minCapacity) {
+      return toast.error(`Capacity can't be below the ${editForm.minCapacity} seat(s) already booked`)
+    }
+    // Blank price leaves the current override unchanged (the RPC keeps it on null); a number sets it.
+    const priceStr = editForm.price.trim()
+    const priceOverride = priceStr === '' ? null : Math.max(0, Number(priceStr) || 0)
+    try {
+      setEditing(true)
+      await operatorPortalService.manageDeparture({
+        tourId: editForm.tourId,
+        action: 'update',
+        scheduleId: editForm.scheduleId,
+        capacity,
+        priceOverride,
+      })
+      toast.success('Departure updated')
+      setEditOpen(false)
+      await refresh()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not update the departure')
+    } finally {
+      setEditing(false)
     }
   }
 
@@ -343,7 +391,16 @@ export default function OperatorCalendarPage() {
                             </div>
                           </div>
                           {schedule.status === 'scheduled' && (
-                            <div className="mt-3 flex justify-end border-t border-border/40 pt-3">
+                            <div className="mt-3 flex justify-end gap-1 border-t border-border/40 pt-3">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(schedule)}
+                                className="text-foreground hover:bg-muted"
+                              >
+                                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                                Edit
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -464,6 +521,60 @@ export default function OperatorCalendarPage() {
               <Button onClick={handleAddDeparture} disabled={adding} className="gap-2 rounded-xl">
                 {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Add departure
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md rounded-3xl">
+          <DialogTitle className="text-xl font-black text-foreground">Edit departure</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Adjust the seats or set a price for this date. Change the date by cancelling and adding a
+            new one.
+          </DialogDescription>
+          <div className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="edit-capacity" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Seats (capacity)
+              </label>
+              <Input
+                id="edit-capacity"
+                type="number"
+                min={Math.max(1, editForm.minCapacity)}
+                value={editForm.capacity}
+                onChange={(e) => setEditForm((f) => ({ ...f, capacity: e.target.value }))}
+                className="h-12 rounded-xl"
+              />
+              {editForm.minCapacity > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {editForm.minCapacity} seat(s) already booked — can’t go lower.
+                </p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="edit-price" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Price override <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Input
+                id="edit-price"
+                type="number"
+                min={0}
+                placeholder="Leave blank to keep the tour’s base price"
+                value={editForm.price}
+                onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))}
+                className="h-12 rounded-xl"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setEditOpen(false)} className="rounded-xl">
+                <X className="mr-1.5 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button onClick={handleEditDeparture} disabled={editing} className="gap-2 rounded-xl">
+                {editing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
+                Save changes
               </Button>
             </div>
           </div>

@@ -496,6 +496,8 @@ export default function SearchPage() {
                   showDistance={showDistance}
                   distanceKind={tourNearby ? 'pickup' : 'away'}
                   summariesById={departureSummaries}
+                  onClearAll={clearAllFilters}
+                  activeFilterCount={activeFilterCount}
                 />
               ) : (
                 <>

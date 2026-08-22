@@ -5,6 +5,7 @@ import {
   CalendarClock,
   CheckCircle2,
   CreditCard,
+  Download,
   Mail,
   MessageSquare,
   Receipt,
@@ -213,6 +214,61 @@ export default function OperatorBookingsPage() {
     }
   }
 
+  // Passenger manifest — download the currently-filtered bookings as a CSV the operator can print or
+  // share at pickup. Uses only data already on the page (no extra fetch).
+  const handleExportManifest = () => {
+    const rows = filteredBookings
+    if (rows.length === 0) {
+      toast.error('No bookings to export in this view')
+      return
+    }
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v)
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+    }
+    const header = [
+      'Tour',
+      'Departure',
+      'Lead traveller',
+      'Phone',
+      'WhatsApp',
+      'Email',
+      'Guests',
+      'Status',
+      'Payment',
+      'Pickup',
+      'Special requests',
+    ]
+    const body = rows.map((b) =>
+      [
+        b.tours?.title,
+        b.tour_schedules?.start_time ? format(new Date(b.tour_schedules.start_time), 'yyyy-MM-dd HH:mm') : '',
+        b.metadata?.lead_traveller_name,
+        b.metadata?.lead_traveller_phone,
+        b.metadata?.lead_traveller_whatsapp,
+        b.metadata?.lead_traveller_email,
+        b.pax_count,
+        b.status,
+        b.payment_status,
+        b.metadata?.pickup_location_title,
+        b.metadata?.special_requests,
+      ]
+        .map(esc)
+        .join(','),
+    )
+    const csv = [header.join(','), ...body].join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `manifest-${activeTab}-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    toast.success(`Exported ${rows.length} booking${rows.length === 1 ? '' : 's'}`)
+  }
+
   const openActionDialog = (booking: OperatorBookingRecord, action: BookingAction) => {
     setPendingAction({ booking, action })
     setActionNote('')
@@ -259,16 +315,26 @@ export default function OperatorBookingsPage() {
           subtitle="Every reservation, its payment state, and the actions you can take — in one place."
           showBackButton={false}
           actions={
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-2xl border-border/60 bg-background/70 hover:bg-accent"
-            >
-              <Link to="/help">
-                Need help
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportManifest}
+                className="rounded-2xl border-border/60 bg-background/70 hover:bg-accent"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export manifest
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-2xl border-border/60 bg-background/70 hover:bg-accent"
+              >
+                <Link to="/help">
+                  Need help
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           }
         />
 

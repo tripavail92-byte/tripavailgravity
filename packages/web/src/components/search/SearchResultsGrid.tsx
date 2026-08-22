@@ -2,6 +2,7 @@ import { MapPin } from 'lucide-react'
 
 import { PackageCard } from '@/components/traveller/PackageCard'
 import { TourCard } from '@/components/traveller/TourCard'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useT } from '@/hooks/useT'
@@ -86,6 +87,8 @@ export function SearchResultsGrid({
   showDistance = false,
   distanceKind = 'away',
   summariesById,
+  onClearAll,
+  activeFilterCount = 0,
 }: {
   items: SearchListing[]
   isLoading: boolean
@@ -94,6 +97,9 @@ export function SearchResultsGrid({
   distanceKind?: 'away' | 'pickup'
   /** tourId -> departure summary (next range, seats left, count) for the card. */
   summariesById?: Record<string, TourDepartureSummary>
+  /** When results are empty because of filters, offer a one-tap reset. */
+  onClearAll?: () => void
+  activeFilterCount?: number
 }) {
   const t = useT()
   if (isLoading) {
@@ -122,6 +128,11 @@ export function SearchResultsGrid({
       <Card className="m-auto w-full max-w-md rounded-2xl border border-border/60 p-10 text-center">
         <p className="text-lg font-semibold text-foreground">{t('search.noResults')}</p>
         <p className="mt-1 text-sm text-muted-foreground">{t('search.noResultsSub')}</p>
+        {onClearAll && activeFilterCount > 0 && (
+          <Button className="mt-5 rounded-full" onClick={onClearAll}>
+            Clear {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'}
+          </Button>
+        )}
       </Card>
     )
   }
