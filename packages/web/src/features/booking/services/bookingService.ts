@@ -365,6 +365,21 @@ export const tourBookingService = {
   },
 
   /**
+   * Move a confirmed booking to another future departure of the SAME tour. The RPC enforces
+   * ownership, the cancellation-policy window, same-tour, seats, and recomputes both departures'
+   * counts. Price is unchanged. Throws with the RPC's friendly message on any rejection.
+   */
+  async rescheduleBooking(bookingId: string, newScheduleId: string): Promise<TourBooking> {
+    const { data, error } = await supabase.rpc('traveler_reschedule_tour_booking' as any, {
+      p_booking_id: bookingId,
+      p_new_schedule_id: newScheduleId,
+    })
+    if (error) throw error
+    const row = Array.isArray(data) ? data[0] : data
+    return row as TourBooking
+  },
+
+  /**
    * Calculate available slots for a schedule
    * Formula: total_capacity - SUM(confirmed pax_count) - SUM(active pending pax_count)
    * Active pending = status='pending' AND expires_at > NOW
@@ -890,6 +905,9 @@ export const bookingService = {
   },
   confirmTravelerTourCompletion: async (bookingId: string, reason?: string) => {
     return tourBookingService.confirmTravelerCompletion(bookingId, reason)
+  },
+  rescheduleBooking: async (bookingId: string, newScheduleId: string) => {
+    return tourBookingService.rescheduleBooking(bookingId, newScheduleId)
   },
   requestTravelerCancellation: async (
     scope: 'tour_booking' | 'package_booking',

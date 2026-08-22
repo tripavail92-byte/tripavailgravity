@@ -98,6 +98,12 @@ export default function TravelerBookingDetailPage() {
   const [showCancellationDialog, setShowCancellationDialog] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
   const [requestingCancellation, setRequestingCancellation] = useState(false)
+  // Reschedule: move to another future departure of the same tour (server enforces policy window).
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
+  const [rescheduling, setRescheduling] = useState(false)
+  const [otherDepartures, setOtherDepartures] = useState<any[]>([])
+  const [loadingDepartures, setLoadingDepartures] = useState(false)
+  const [selectedNewSchedule, setSelectedNewSchedule] = useState<string>('')
   const [existingReview, setExistingReview] = useState<TourReview | null | undefined>(undefined)
   const [showReviewDialog, setShowReviewDialog] = useState(false)
   const [reviewRating, setReviewRating] = useState(0)
@@ -425,6 +431,53 @@ export default function TravelerBookingDetailPage() {
       )
     } finally {
       setRequestingCancellation(false)
+    }
+  }
+
+  const openRescheduleDialog = async () => {
+    setSelectedNewSchedule('')
+    setOtherDepartures([])
+    setShowRescheduleDialog(true)
+    if (!booking?.tours?.id) return
+    try {
+      setLoadingDepartures(true)
+      const schedules = await tourService.getTourSchedules(booking.tours.id)
+      const now = Date.now()
+      const pax = booking.pax_count ?? 1
+      const options = (schedules || []).filter((s: any) => {
+        if (s.id === booking.schedule_id) return false
+        if (s.status && s.status !== 'scheduled') return false
+        if (new Date(s.start_time).getTime() <= now) return false
+        // Seats: hide clearly-full options, but if we can't tell, show it (the RPC re-checks).
+        if (s.capacity != null) {
+          return Math.max(0, s.capacity - (s.booked_count ?? 0)) >= pax
+        }
+        return true
+      })
+      setOtherDepartures(options)
+    } catch (loadErr) {
+      console.error('Failed to load departures for reschedule:', loadErr)
+      setOtherDepartures([])
+    } finally {
+      setLoadingDepartures(false)
+    }
+  }
+
+  const handleReschedule = async () => {
+    if (!booking?.id || !selectedNewSchedule) return
+    try {
+      setRescheduling(true)
+      await bookingService.rescheduleBooking(booking.id, selectedNewSchedule)
+      setShowRescheduleDialog(false)
+      await loadBookingDetails()
+      toast.success('Booking rescheduled')
+    } catch (rescheduleError) {
+      console.error('Failed to reschedule booking:', rescheduleError)
+      toast.error(
+        rescheduleError instanceof Error ? rescheduleError.message : 'Unable to reschedule booking',
+      )
+    } finally {
+      setRescheduling(false)
     }
   }
 
@@ -1205,6 +1258,17 @@ export default function TravelerBookingDetailPage() {
                       {cancellationReviewReason ? (
                         <p className="text-sm text-muted-foreground">{cancellationReviewReason}</p>
                       ) : null}
+                      {booking?.status === 'confirmed' && !cancellationRequestPending ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full rounded-2xl border-border/60 bg-background/80"
+                          onClick={openRescheduleDialog}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Reschedule to another date
+                        </Button>
+                      ) : null}
                       {cancellationRequestPending ? (
                         <Button
                           type="button"
@@ -1315,6 +1379,66 @@ export default function TravelerBookingDetailPage() {
               disabled={requestingCancellation}
             >
               {requestingCancellation ? 'Sending request...' : 'Send cancellation request'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reschedule your booking</DialogTitle>
+            <DialogDescription>
+              Move to another departure of this tour — your price stays the same. Seats and the
+              cancellation-window cutoff are re-checked when you confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] space-y-2 overflow-y-auto py-2">
+            {loadingDepartures ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading dates…
+              </div>
+            ) : otherDepartures.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No other departures are open for this tour right now.
+              </p>
+            ) : (
+              otherDepartures.map((s) => {
+                const selected = selectedNewSchedule === s.id
+                const seatsLeft =
+                  s.capacity != null ? Math.max(0, s.capacity - (s.booked_count ?? 0)) : null
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSelectedNewSchedule(s.id)}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3 text-left transition-colors ${
+                      selected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border/60 hover:bg-muted/40'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {format(new Date(s.start_time), 'EEE, MMM d, yyyy')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(s.start_time), 'h:mm a')}
+                        {seatsLeft != null ? ` · ${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left` : ''}
+                      </p>
+                    </div>
+                    {selected ? <ShieldCheck className="h-5 w-5 text-primary" /> : null}
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReschedule} disabled={rescheduling || !selectedNewSchedule}>
+              {rescheduling ? 'Rescheduling…' : 'Confirm new date'}
             </Button>
           </DialogFooter>
         </DialogContent>
