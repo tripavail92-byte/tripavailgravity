@@ -187,7 +187,12 @@ export function RoleDrawer() {
 
   const roleType = (activeRole?.role_type ?? 'traveller') as 'traveller' | 'tour_operator' | 'hotel_manager'
   const isTraveller = roleType === 'traveller'
-  const items = NAV[roleType] ?? NAV.traveller
+  // Launch scope: with hotels gated, every /manager/* route redirects — so a legacy hotel_manager
+  // must get the traveller nav (working links) instead of a drawer of dead manager entries. Their
+  // real role is untouched; "Switch to Traveler" below still lets them make it permanent.
+  const effectiveRole =
+    roleType === 'hotel_manager' && !isSurfaceEnabled('hotels') ? 'traveller' : roleType
+  const items = NAV[effectiveRole] ?? NAV.traveller
   const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Traveler'
 
   const go = (route: string) => {
@@ -344,7 +349,7 @@ export function RoleDrawer() {
                     <View className="flex-row items-center gap-1 rounded-full border border-line bg-surface-sunken px-2 py-0.5">
                       <MapPin size={9} color={c.inkSoft} />
                       <Text className="text-[9px] font-bold uppercase tracking-wider text-ink-muted">
-                        {roleLabelOf(roleType)}
+                        {roleLabelOf(effectiveRole)}
                       </Text>
                     </View>
                   </View>
