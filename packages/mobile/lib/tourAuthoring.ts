@@ -78,6 +78,42 @@ function buildFallbackSlug(title?: string): string {
   return `${base}-${Date.now().toString(36)}-${rand}`
 }
 
+// ── Slug regeneration (mirrors web tourService slugifyTitle/isPlaceholderSlug/slugForSave) ──
+
+/** A clean, human/SEO-readable slug base derived from the title (no uniqueness suffix). */
+function slugifyTitle(title?: string | null): string {
+  return String(title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * A slug minted as a placeholder rather than from real content. Drafts saved before a title exists
+ * bake an "untitled-tour-…" slug; those must be regenerated once a real title exists — otherwise
+ * published tours ship with untitled-tour-<hash> URLs (no SEO, useless Share links).
+ */
+function isPlaceholderSlug(slug?: string | null): boolean {
+  const s = String(slug || '')
+    .trim()
+    .toLowerCase()
+  return s.length === 0 || s.startsWith('untitled-tour')
+}
+
+/**
+ * The slug to persist when saving/publishing: keep an existing meaningful slug (a live URL never
+ * churns), replace a missing/placeholder one with a title-derived slug. Uniqueness collisions are
+ * handled by the callers' tours_slug_key retry (falls back to buildFallbackSlug).
+ */
+function slugForSave(currentSlug: string | null | undefined, title?: string | null): string {
+  if (!isPlaceholderSlug(currentSlug)) return String(currentSlug)
+  const fromTitle = slugifyTitle(title)
+  return fromTitle.length > 0 ? fromTitle : buildFallbackSlug(title ?? undefined)
+}
+
 /** Applied on EVERY tour write — writes both canonical + legacy column spellings. */
 function normalizeTourWrite(input: Record<string, any>) {
   const normalizedPrice = Number.isFinite(Number(input.price)) ? Number(input.price) : 0
@@ -275,7 +311,7 @@ export async function saveTourDraft(
     }
   }
 
-  const insertPayload = { ...payload, workflow_status: 'draft', slug: payload.slug || buildFallbackSlug(payload.title) }
+  const insertPayload = { ...payload, workflow_status: 'draft', slug: slugForSave(payload.slug, payload.title) }
   const { data: inserted, error: insertError } = await supabase.from('tours').insert(insertPayload).select('id').single()
   if (insertError) {
     const code = (insertError as any).code
@@ -325,10 +361,24 @@ async function createTour(tourData: Record<string, any>): Promise<Record<string,
 
 async function updateTour(id: string, updates: Record<string, any>): Promise<Record<string, any>> {
   const payload: Record<string, any> = { ...stripPrivate(updates), ...normalizeTourWrite(updates), updated_at: nowISO(), last_edited_at: nowISO() }
+  let row: Record<string, any>
   const { data, error } = await supabase.from('tours').update(payload).eq('id', id).select().single()
-  if (error) throw error
+  if (error) {
+    // A regenerated title-based slug can collide with another tour of the same name — retry with a
+    // uniqueness-suffixed fallback rather than failing the publish.
+    if ((error as any).code === '23505' && String((error as any).message || '').includes('tours_slug_key') && payload.slug) {
+      const retry = { ...payload, slug: buildFallbackSlug(payload.title) }
+      const { data: d2, error: e2 } = await supabase.from('tours').update(retry).eq('id', id).select().single()
+      if (e2) throw e2
+      row = d2 as Record<string, any>
+    } else {
+      throw error
+    }
+  } else {
+    row = data as Record<string, any>
+  }
   await syncTourSchedulesFromJson(id, payload.schedules, payload.max_participants || 10, payload.duration_days || 1)
-  return data as Record<string, any>
+  return row as Record<string, any>
 }
 
 /** Publish: self-approve + flip visibility flags. Goes through create/update. */
@@ -337,9 +387,23 @@ export async function publishTour(
   operatorId: string,
   existingTourId?: string | null,
 ): Promise<Record<string, any>> {
+  // A draft saved before its title existed carries an "untitled-tour-…" slug. Regenerate a
+  // title-based slug at publish (keeping any meaningful existing slug so live URLs never churn) —
+  // mirrors the web's slugForSave fix.
+  let currentSlug: string | null = null
+  if (existingTourId) {
+    const { data: existing } = await supabase
+      .from('tours')
+      .select('slug')
+      .eq('id', existingTourId)
+      .maybeSingle()
+    currentSlug = (existing as { slug?: string | null } | null)?.slug ?? null
+  }
+
   const dataToSave: Record<string, any> = {
     ...tourData,
     operator_id: operatorId,
+    slug: slugForSave(currentSlug, tourData.title),
     deposit_required: true,
     is_active: true,
     is_published: true,

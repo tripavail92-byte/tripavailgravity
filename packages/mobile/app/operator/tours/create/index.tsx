@@ -351,11 +351,32 @@ export default function CreateTourScreen() {
     if (!data.title?.trim?.()) miss.push('title')
     if (!data.tour_type) miss.push('category')
     if (!data.location?.city) miss.push('city')
+    // Country powers the search country facet; without it tours pile into "Unknown Country".
+    if (!String(data.location?.country ?? '').trim()) miss.push('country')
     if (!(Number(data.price) > 0)) miss.push('price')
+    else {
+      // Implausibly low price floor per currency — mirrors the web publish validation (kills the
+      // PKR 6/10-style junk tours at the source).
+      const MIN_PRICE_BY_CURRENCY: Record<string, number> = {
+        PKR: 300, INR: 300, BDT: 300, USD: 5, AED: 15, SAR: 15, EUR: 5, GBP: 5,
+      }
+      const floor = MIN_PRICE_BY_CURRENCY[String(data.currency || 'PKR').toUpperCase()] ?? 5
+      if (Number(data.price) < floor) miss.push(`a realistic price (at least ${floor})`)
+    }
     if (!data.description?.trim?.()) miss.push('description')
     if (!(data.itinerary?.length > 0)) miss.push('itinerary')
     if (!(data.images?.length > 0)) miss.push('at least 1 photo')
     if (!data.schedules?.[0]?.date) miss.push('departure date')
+    else {
+      // A tour whose only departure is already in the past publishes live-but-unbookable.
+      const now = Date.now()
+      const hasFuture = (data.schedules as any[]).some((s) => {
+        if (!s?.date) return false
+        const when = new Date(`${s.date}T${s.time || '23:59'}`)
+        return !Number.isNaN(when.getTime()) && when.getTime() > now
+      })
+      if (!hasFuture) miss.push('a departure date in the future')
+    }
     return miss
   }, [data])
 
