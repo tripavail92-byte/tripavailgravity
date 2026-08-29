@@ -801,7 +801,9 @@ function WhereField({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group flex flex-1 flex-col items-start justify-center rounded-full px-5 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-w-[180px]"
+          // Same mobile shrink rule as FieldShell (these fields duplicate that markup rather
+          // than reusing it): min-w-0 under `sm` so the bar fits a phone, 180px from `sm` up.
+          className="group flex min-w-0 flex-1 flex-col items-start justify-center rounded-full px-4 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-5 sm:min-w-[180px]"
         >
           <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
             Where
@@ -935,7 +937,9 @@ function WhenRangeField({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="group flex flex-1 flex-col items-start justify-center rounded-full px-5 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 min-w-[180px]"
+          // Same mobile shrink rule as FieldShell (these fields duplicate that markup rather
+          // than reusing it): min-w-0 under `sm` so the bar fits a phone, 180px from `sm` up.
+          className="group flex min-w-0 flex-1 flex-col items-start justify-center rounded-full px-4 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-5 sm:min-w-[180px]"
         >
           <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
             When
