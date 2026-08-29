@@ -4,7 +4,13 @@ import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { FlatList, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 
+import {
+  EMPTY_TOUR_SEARCH,
+  TourSearchSheet,
+  type TourSearchValue,
+} from '@/components/search/TourSearchSheet'
 import { Badge, Button, Card, EmptyState, Screen, TourCardSkeleton } from '@/components/ui'
+import { useThemeColors } from '@/theme'
 import {
   FALLBACK_TOUR_IMAGE,
   formatTourLocation,
@@ -35,6 +41,7 @@ function parseNumberInput(value: string) {
 }
 
 export default function SearchScreen() {
+  const c = useThemeColors()
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -42,6 +49,9 @@ export default function SearchScreen() {
   const [durationBand, setDurationBand] = useState<DurationBand | null>(null)
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
+  // Airbnb-style stacked search (Where / When / Travellers), tours-shaped — see TourSearchSheet.
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [search, setSearch] = useState<TourSearchValue>(EMPTY_TOUR_SEARCH)
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -64,6 +74,8 @@ export default function SearchScreen() {
       durationBand ?? 'any',
       parsedMinPrice ?? 'none',
       parsedMaxPrice ?? 'none',
+      search.departureFrom ?? 'any',
+      search.travellers ?? 'any',
     ],
     queryFn: () =>
       searchTours({
@@ -72,9 +84,26 @@ export default function SearchScreen() {
         durationBand,
         minPrice: parsedMinPrice,
         maxPrice: parsedMaxPrice,
+        departureFrom: search.departureFrom,
+        departureTo: search.departureTo,
+        travellers: search.travellers,
       }),
     staleTime: 60 * 1000,
   })
+
+  // Destination suggestions for the search sheet, drawn from the live catalogue rather than a
+  // hardcoded list, so we never suggest a city with nothing running.
+  const destinationSuggestions = (() => {
+    const counts = new Map<string, number>()
+    for (const t of tours) {
+      const city = (t.location as { city?: string } | null)?.city?.trim()
+      if (!city) continue
+      counts.set(city, (counts.get(city) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([city, count]) => ({ city, count }))
+  })()
 
   const clearFilters = () => {
     setTourType(null)
@@ -110,6 +139,26 @@ export default function SearchScreen() {
             <Text className="mb-4 mt-1 text-sm text-ink-muted">
               Browse live tours with native search and traveler-friendly filters.
             </Text>
+
+            {/* Collapsed pill → full-screen stacked search (Airbnb's mobile pattern). Shows the
+                live selection so the traveller can see what's applied at a glance. */}
+            <Pressable
+              onPress={() => setSearchOpen(true)}
+              className="mb-3 flex-row items-center rounded-full border border-line bg-surface px-5 py-3.5 shadow-sm"
+            >
+              <Search size={18} color={c.ink} />
+              <View className="ml-3 flex-1">
+                <Text className="text-sm font-bold text-ink" numberOfLines={1}>
+                  {search.where.trim() || 'Start your search'}
+                </Text>
+                <Text className="text-xs text-ink-soft" numberOfLines={1}>
+                  {[
+                    search.whenLabel ?? 'Any time',
+                    search.travellers ? `${search.travellers} travellers` : 'Any travellers',
+                  ].join(' · ')}
+                </Text>
+              </View>
+            </Pressable>
 
             <View className="flex-row items-center gap-3">
               <View className="flex-1 flex-row items-center rounded-2xl border border-line bg-surface px-4">
@@ -314,6 +363,19 @@ export default function SearchScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <TourSearchSheet
+        visible={searchOpen}
+        initial={search}
+        suggestions={destinationSuggestions}
+        onClose={() => setSearchOpen(false)}
+        onSearch={(value) => {
+          setSearch(value)
+          // The free-text field and the sheet's "Where" are the same intent — keep them in sync.
+          setQuery(value.where)
+          setSearchOpen(false)
+        }}
+      />
     </Screen>
   )
 }

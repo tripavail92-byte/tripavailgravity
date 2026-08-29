@@ -30,7 +30,28 @@ interface SearchToursParams {
   maxPrice?: number
   tourType?: TourCategory | null
   durationBand?: DurationBand | null
+  /**
+   * Departure window (ISO). Tours sell fixed departures rather than arbitrary stays, so "when"
+   * means "has a departure running in this window", not a check-in/check-out range.
+   */
+  departureFrom?: string | null
+  departureTo?: string | null
+  /** Seats needed — hides tours whose party size can't take the group. */
+  travellers?: number | null
   limit?: number
+}
+
+/** Tour ids with at least one bookable departure inside the window. */
+async function tourIdsWithDepartureBetween(fromISO: string, toISO?: string | null): Promise<string[]> {
+  let q = supabase
+    .from('tour_schedules')
+    .select('tour_id')
+    .eq('status', 'scheduled')
+    .gte('start_time', fromISO)
+  if (toISO) q = q.lte('start_time', toISO)
+  const { data, error } = await q
+  if (error) throw error
+  return [...new Set((data ?? []).map((r: any) => r.tour_id).filter(Boolean))]
 }
 
 function normalizeTour(row: any): DiscoveryTour {
@@ -149,9 +170,24 @@ export async function searchTours({
   maxPrice,
   tourType,
   durationBand,
+  departureFrom,
+  departureTo,
+  travellers,
   limit = 40,
 }: SearchToursParams): Promise<DiscoveryTour[]> {
   let toursQuery = baseToursQuery()
+
+  // Departure window: resolve to tour ids first, then constrain. An empty result means nothing
+  // departs in that window — return early rather than sending `.in('id', [])`.
+  if (departureFrom) {
+    const ids = await tourIdsWithDepartureBetween(departureFrom, departureTo)
+    if (ids.length === 0) return []
+    toursQuery = toursQuery.in('id', ids)
+  }
+
+  if (typeof travellers === 'number' && travellers > 0) {
+    toursQuery = toursQuery.gte('max_participants', travellers)
+  }
 
   const trimmedQuery = query?.trim()
   if (trimmedQuery) {
