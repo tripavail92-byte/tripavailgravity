@@ -13,12 +13,13 @@
 /online project/
 /extracted_tripavail/
 /tools/
-/scripts/
 /docs/
 __pycache__
 *.pyc
 /.venv/
 *.apk
+# …except the internal test build served at /download (see DownloadPage.tsx).
+!/packages/web/public/download/*.apk
 # NOTE: packages/mobile IS uploaded so its package.json is present for the frozen pnpm
 # install; the build only compiles @tripavail/web and the install is scoped via --filter,
 # so mobile RN/Expo deps are never fetched on the web build.

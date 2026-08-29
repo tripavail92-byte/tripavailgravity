@@ -110,6 +110,7 @@ const AdminKYCPage = lazy(() => import('@/pages/admin/AdminKYCPage'))
 const AdminCommercialPage = lazy(() => import('@/pages/admin/AdminCommercialPage'))
 
 // Legal (public)
+const DownloadPage = lazy(() => import('@/pages/DownloadPage'))
 const TermsPage = lazy(() => import('@/pages/legal/TermsPage'))
 const PrivacyPage = lazy(() => import('@/pages/legal/PrivacyPage'))
 const RefundsPage = lazy(() => import('@/pages/legal/RefundsPage'))
@@ -366,6 +367,8 @@ function App() {
               />
 
               {/* Legal */}
+              {/* Internal app test-build download (noindex; APK ships via the Railway upload). */}
+              <Route path="/download" element={<DownloadPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/refunds" element={<RefundsPage />} />

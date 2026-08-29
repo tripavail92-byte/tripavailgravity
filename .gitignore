@@ -68,3 +68,6 @@ packages/mobile/.env.local
 /.*.png
 /.*.apk
 *.apk
+
+# Large app build artifact served at /download — shipped by the Railway upload, not git.
+packages/web/public/download/*.apk
