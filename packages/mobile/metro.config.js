@@ -21,6 +21,14 @@ const config = getDefaultConfig(projectRoot)
 // Watch all packages in the monorepo
 config.watchFolders = [workspaceRoot]
 
+// Pin Metro's SERVER root to this package. Watching the workspace root makes Metro derive its
+// server root from the common ancestor (D:/Tripfinal), and everything relative is then resolved
+// from there: `--entry-file index.js` looked for <root>/index.js, and babel-preset-expo /
+// metro-runtime were resolved from the workspace root where pnpm doesn't hoist them. Release
+// bundling failed as a result — locally AND on EAS ("Bundle JavaScript" phase) — while dev was
+// unaffected because Metro serves those by URL. Watch folders still cover @tripavail/shared.
+config.server = { ...config.server, unstable_serverRoot: projectRoot }
+
 // Resolve node_modules from both the mobile project and workspace root (pnpm hoisting)
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),

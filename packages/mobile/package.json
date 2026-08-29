@@ -1,7 +1,7 @@
 {
   "name": "@tripavail/mobile",
   "version": "0.0.0",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "scripts": {
     "dev": "expo start",
     "android": "expo run:android",
@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.28.0",
     "@tripavail/shared": "workspace:*",
+    "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.35",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
