@@ -696,7 +696,7 @@ function ExpandedBar({
         )}
 
         {tab !== 'events' && (
-          <div className="flex items-center pr-2">
+          <div className="flex shrink-0 items-center pr-2">
             <SearchCircle onClick={onSubmit} />
           </div>
         )}
@@ -731,8 +731,11 @@ function FieldShell({
       type="button"
       onClick={onClick}
       className={cn(
-        'group flex flex-1 flex-col items-start justify-center rounded-full px-5 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-        wide ? 'min-w-[180px]' : 'min-w-[140px]',
+        // min-w-0 below `sm` so the fields can shrink: the hard 180px + 140px minimums
+        // added up to more than the whole bar on a phone, pushing the search button off
+        // the right edge. The value line already truncates. Desktop sizing is unchanged.
+        'group flex min-w-0 flex-1 flex-col items-start justify-center rounded-full px-4 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:px-5',
+        wide ? 'sm:min-w-[180px]' : 'sm:min-w-[140px]',
       )}
     >
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">{label}</span>
