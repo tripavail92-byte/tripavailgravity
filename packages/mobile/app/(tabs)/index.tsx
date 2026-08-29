@@ -166,7 +166,10 @@ export default function ExploreScreen() {
   return (
     <View className="flex-1 bg-surface-page">
       <StatusBar style="light" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* The tab bar is absolutely positioned (liquid-glass, content scrolls beneath it), so the
+          feed needs bottom padding — without it the last rail's cards sit under the bar and are
+          clipped at the end of the scroll. */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 96 }}>
         {/* Gradient hero */}
         <LinearGradient
           colors={[theme.primary, theme.primaryLight]}
