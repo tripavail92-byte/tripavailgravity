@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useThemeColors } from '@/theme'
 
 export default function LoginScreen() {
-  const { signIn, signUp, signInWithGoogle } = useAuth()
+  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth()
   const c = useThemeColors()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
@@ -16,6 +16,27 @@ export default function LoginScreen() {
   const [fullName, setFullName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const handleForgotPassword = async () => {
+    const address = email.trim()
+    if (!address) {
+      setError('Enter your email address first, then tap “Forgot password?”.')
+      return
+    }
+    setError(null)
+    setNotice(null)
+    setLoading(true)
+    try {
+      await resetPassword(address)
+      // Deliberately not revealing whether the address exists.
+      setNotice(`If an account exists for ${address}, a reset link is on its way.`)
+    } catch (e: any) {
+      setError(e.message || 'Could not send the reset email. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async () => {
     if (!email.trim() || !password) return
@@ -87,7 +108,16 @@ export default function LoginScreen() {
             autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
           />
 
+          {mode === 'login' ? (
+            <Pressable className="mb-4 -mt-1 self-end" onPress={handleForgotPassword} disabled={loading}>
+              <Text className="text-sm font-semibold text-primary-700">Forgot password?</Text>
+            </Pressable>
+          ) : null}
+
           {error ? <Text className="mb-3 text-center text-sm text-danger">{error}</Text> : null}
+          {notice ? (
+            <Text className="mb-3 text-center text-sm text-ink-soft">{notice}</Text>
+          ) : null}
 
           <Button
             label={mode === 'login' ? 'Sign In' : 'Create Account'}

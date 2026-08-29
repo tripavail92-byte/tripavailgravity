@@ -53,6 +53,11 @@ STRIPE_EXPORT.md
 !railway.json
 !*config*.json
 !.vscode/*.json
+# The Expo app config + EAS build profiles are source, not local state: without them a
+# fresh clone (or an EAS build from git) has no app name, bundle id, permissions, plugins,
+# icon or splash. Neither file holds secrets — credentials live in EAS/Expo, not here.
+!packages/mobile/app.json
+!packages/mobile/eas.json
 supabase/.branches/
 # Expo mobile
 packages/mobile/.expo/

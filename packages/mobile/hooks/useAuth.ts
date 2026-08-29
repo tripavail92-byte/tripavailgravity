@@ -55,6 +55,7 @@ interface AuthState {
   initialize: () => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   signUp: (email: string, password: string, fullName: string) => Promise<void>
   signOut: () => Promise<void>
   switchRole: (role: RoleType) => Promise<void>
@@ -118,6 +119,16 @@ export const useAuth = create<AuthState>((set, get) => ({
         }
       }
     }
+  },
+
+  // Password reset. There was no recovery path at all on mobile — someone who forgot their password
+  // simply could not get back in. Supabase emails a recovery link; it opens the app on the
+  // /auth/callback deep link (same scheme the Google flow already uses).
+  resetPassword: async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: Linking.createURL('/auth/callback'),
+    })
+    if (error) throw error
   },
 
   signUp: async (email, password, fullName) => {

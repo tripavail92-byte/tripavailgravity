@@ -32,6 +32,7 @@ import { useRoleTheme, useThemeColors } from '@/theme'
 import { fetchOperatorProfileById } from '@/lib/operatorPublic'
 import { fetchTourReviews, type TourReview } from '@/lib/reviews'
 import { supabase } from '@/lib/supabase'
+import { requirementLabel } from '@/lib/tourRequirements'
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1488085061387-422e29b40080?auto=format&fit=crop&w=800&q=80'
@@ -559,7 +560,7 @@ export default function TourDetailScreen() {
                   {requirements.map((r, i) => (
                     <View key={`req-${i}`} className="mb-2 flex-row items-start">
                       <Check size={15} color={theme.primary} style={{ marginTop: 2 }} />
-                      <Text className="ml-2 flex-1 text-sm text-ink">{r}</Text>
+                      <Text className="ml-2 flex-1 text-sm text-ink">{requirementLabel(r)}</Text>
                     </View>
                   ))}
                 </>
