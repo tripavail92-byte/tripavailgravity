@@ -673,12 +673,14 @@ function ExpandedBar({
             />
           </>
         ) : tab === 'tours' ? (
+          // No `trailingSearch` here: the shared SearchCircle below already renders for every tab
+          // except events. Passing it produced TWO search buttons side by side on the tours tab —
+          // which, trips-first, is the only tab — and on mobile they overflowed off-screen.
           <SingleDateField
             label="When"
             value={singleDate}
             onChange={setSingleDate}
             isDesktop={isDesktop}
-            trailingSearch
             onSubmit={onSubmit}
             onPick={onPickDate}
           />

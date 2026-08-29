@@ -74,6 +74,36 @@ async function fetchFeaturedTours(): Promise<Tour[]> {
   return (data ?? []) as Tour[]
 }
 
+/** Newest live trips — mirrors the web homepage's leading "New on TripAvail" rail. */
+async function fetchNewTours(): Promise<Tour[]> {
+  const { data, error } = await supabase
+    .from('tours')
+    .select('id,title,price,currency,images,location,rating,created_at')
+    .eq('is_active', true)
+    .eq('is_published', true)
+    .eq('status', 'live')
+    .order('created_at', { ascending: false })
+    .limit(10)
+  if (error) throw error
+  return (data ?? []) as Tour[]
+}
+
+// Web homepage trust band, same three promises (HomeCategoryFeed -> TrustBand).
+const TRUST_POINTS = [
+  {
+    title: 'Verified operators',
+    body: 'Operators complete identity and business checks before their trips go live.',
+  },
+  {
+    title: 'Secure checkout',
+    body: 'You pay TripAvail — never a stranger’s personal account.',
+  },
+  {
+    title: 'Clear terms upfront',
+    body: 'Departure, price and cancellation policy shown before you pay.',
+  },
+]
+
 function locationOf(t: Tour) {
   const loc = t.location ?? {}
   return [loc.city, loc.country].filter(Boolean).join(', ')
@@ -99,9 +129,39 @@ export default function ExploreScreen() {
     enabled: isSurfaceEnabled('hotels'),
   })
 
+  // "New on TripAvail" — the web homepage leads with this rail, so mobile does too.
+  const { data: newTours = [], isLoading: newLoading } = useQuery({
+    queryKey: ['tours', 'new-arrivals'],
+    queryFn: fetchNewTours,
+    staleTime: 8 * 60 * 1000,
+  })
+
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] ?? null
   const featured = tours[0]
   const popular = tours.slice(1, 8)
+
+  // "Where to next?" — destination chips with trip counts, derived from the loaded
+  // catalogue (no extra query) to mirror the web's DestinationTiles rail.
+  const destinations = (() => {
+    const counts = new Map<string, number>()
+    for (const t of [...newTours, ...tours]) {
+      const city = (t.location ?? {}).city?.trim()
+      if (!city) continue
+      if (!counts.has(city)) counts.set(city, 0)
+    }
+    // Count each city once per distinct tour id.
+    const seen = new Set<string>()
+    for (const t of [...newTours, ...tours]) {
+      const city = (t.location ?? {}).city?.trim()
+      if (!city || seen.has(t.id)) continue
+      seen.add(t.id)
+      counts.set(city, (counts.get(city) ?? 0) + 1)
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([city, count]) => ({ city, count }))
+  })()
 
   return (
     <View className="flex-1 bg-surface-page">
@@ -193,6 +253,109 @@ export default function ExploreScreen() {
           </>
         )}
 
+        {/* New on TripAvail — leads the feed, matching the web homepage's first rail. */}
+        <View className="mb-1 mt-7 flex-row items-center justify-between px-5">
+          <Text className="text-lg font-bold text-ink">New on TripAvail</Text>
+          <Pressable onPress={() => router.push('/(tabs)/tours')}>
+            <Text className="text-sm font-semibold text-primary-700">See all</Text>
+          </Pressable>
+        </View>
+        <Text className="mb-3 px-5 text-sm text-ink-soft">Freshly added by verified operators</Text>
+        {newLoading ? (
+          <View className="flex-row gap-4 px-5">
+            <View className="w-52">
+              <TourCardSkeleton layout="grid" />
+            </View>
+            <View className="w-52">
+              <TourCardSkeleton layout="grid" />
+            </View>
+          </View>
+        ) : (
+          <FlatList
+            data={newTours}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => `new-${item.id}`}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
+            renderItem={({ item }) => (
+              <Pressable className="mr-4 w-52" style={pressScale} onPress={() => router.push(`/tours/${item.id}`)}>
+                <Card className="w-52 overflow-hidden">
+                  <View>
+                    <Image
+                      source={{ uri: item.images?.[0] ?? FALLBACK_IMAGE }}
+                      style={{ height: 132 }}
+                      className="w-full"
+                      resizeMode="cover"
+                    />
+                    <View className="absolute left-2 top-2 rounded-full bg-primary-600 px-2 py-0.5">
+                      <Text className="text-xs font-bold text-white">New</Text>
+                    </View>
+                  </View>
+                  <View className="p-3">
+                    <Text className="text-sm font-bold text-ink" numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    {locationOf(item) ? (
+                      <Text className="mt-0.5 text-xs text-ink-soft" numberOfLines={1}>
+                        {locationOf(item)}
+                      </Text>
+                    ) : null}
+                    <Text className="mt-1.5 text-sm font-black text-primary-700">
+                      {item.currency} {Number(item.price).toLocaleString()}
+                    </Text>
+                  </View>
+                </Card>
+              </Pressable>
+            )}
+          />
+        )}
+
+        {/* Where to next? — destination entry points, mirroring the web rail. */}
+        {destinations.length > 0 ? (
+          <>
+            <View className="mb-1 mt-7 flex-row items-center justify-between px-5">
+              <Text className="text-lg font-bold text-ink">Where to next?</Text>
+              <Pressable onPress={() => router.push('/(tabs)/tours')}>
+                <Text className="text-sm font-semibold text-primary-700">See all</Text>
+              </Pressable>
+            </View>
+            <Text className="mb-3 px-5 text-sm text-ink-soft">
+              Pick a place — we’ll show you the trips running there.
+            </Text>
+            <FlatList
+              data={destinations}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(d) => d.city}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4 }}
+              renderItem={({ item }) => (
+                <Pressable
+                  className="mr-3"
+                  style={pressScale}
+                  onPress={() => router.push(`/(tabs)/search?q=${encodeURIComponent(item.city)}` as Href)}
+                >
+                  <Card className="px-4 py-3">
+                    <Text className="text-sm font-bold text-ink">{item.city}</Text>
+                    <Text className="mt-0.5 text-xs text-ink-soft">
+                      {item.count} {item.count === 1 ? 'trip' : 'trips'}
+                    </Text>
+                  </Card>
+                </Pressable>
+              )}
+            />
+          </>
+        ) : null}
+
+        {/* Trust band — the same three promises as the web homepage. */}
+        <View className="mt-7 gap-3 px-5">
+          {TRUST_POINTS.map((p) => (
+            <Card key={p.title} className="p-4">
+              <Text className="text-sm font-bold text-ink">{p.title}</Text>
+              <Text className="mt-1 text-xs leading-5 text-ink-soft">{p.body}</Text>
+            </Card>
+          ))}
+        </View>
+
         {/* Featured */}
         <View className="mb-3 mt-7 flex-row items-center gap-1.5 px-5">
           <Text className="text-lg font-bold text-ink">Featured tour</Text>
@@ -244,13 +407,14 @@ export default function ExploreScreen() {
           ) : null}
         </View>
 
-        {/* Popular */}
-        <View className="mb-3 mt-7 flex-row items-center justify-between px-5">
-          <Text className="text-lg font-bold text-ink">Popular right now</Text>
+        {/* Handpicked — same title/subtitle as the web homepage rail. */}
+        <View className="mb-1 mt-7 flex-row items-center justify-between px-5">
+          <Text className="text-lg font-bold text-ink">Handpicked by TripAvail</Text>
           <Pressable onPress={() => router.push('/(tabs)/tours')}>
             <Text className="text-sm font-semibold text-primary-700">See all</Text>
           </Pressable>
         </View>
+        <Text className="mb-3 px-5 text-sm text-ink-soft">Real photos, transparent pricing</Text>
 
         {isLoading ? (
           <View className="flex-row gap-4 px-5">
