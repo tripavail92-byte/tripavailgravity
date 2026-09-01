@@ -56,6 +56,7 @@ const HotelManagerSetupPage = lazy(
   () => import('@/pages/hotel-manager/setup/HotelManagerSetupPage'),
 )
 const CreateTourPage = lazy(() => import('@/pages/tour-operator/tours/create/CreateTourPage'))
+const TourPreviewPage = lazy(() => import('@/pages/tour-operator/tours/create/TourPreviewPage'))
 const TourDetailsPage = lazy(() => import('@/pages/traveller/TourDetailsPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const TourCheckoutPage = lazy(() => import('@/pages/checkout/TourCheckoutPage'))
@@ -484,6 +485,16 @@ function App() {
                 element={
                   <RoleGuard allowedRoles={['tour_operator']}>
                     <CreateTourPage />
+                  </RoleGuard>
+                }
+              />
+
+              {/* Live preview of an unsaved draft — opened in a new tab by the wizard. */}
+              <Route
+                path="/operator/tours/preview"
+                element={
+                  <RoleGuard allowedRoles={['tour_operator']}>
+                    <TourPreviewPage />
                   </RoleGuard>
                 }
               />

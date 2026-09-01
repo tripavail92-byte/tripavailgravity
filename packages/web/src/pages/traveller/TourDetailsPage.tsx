@@ -164,12 +164,21 @@ function useValuePulse(value: number, duration = 260) {
   return pulsing
 }
 
-export default function TourDetailsPage() {
+/**
+ * The traveller-facing tour page. Also the operator's PREVIEW: passing `previewTour` renders an
+ * unsaved wizard draft through this exact component, so what an operator checks before publishing
+ * is the real page, not a mock-up that can drift from it. Preview does no network calls and
+ * cannot book — everything else is identical.
+ */
+export default function TourDetailsPage({
+  previewTour,
+}: { previewTour?: Tour | null } = {}): JSX.Element {
+  const preview = Boolean(previewTour)
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const money = useMoney()
   const t = useT()
-  const [tour, setTour] = useState<Tour | null>(null)
+  const [tour, setTour] = useState<Tour | null>(previewTour ?? null)
   const [schedules, setSchedules] = useState<TourSchedule[]>([])
   const [schedule, setSchedule] = useState<TourSchedule | null>(null)
   const [availableSlots, setAvailableSlots] = useState<number | null>(null)
@@ -182,16 +191,54 @@ export default function TourDetailsPage() {
     childrenNoBed: 0,
     infants: 0,
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!previewTour)
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
   const [operatorSlug, setOperatorSlug] = useState<string | null>(null)
   // "Good to know" keeps only the first few requirement chips visible; the rest live behind a
   // "Show all" toggle so the section stays short.
   const [showAllReqs, setShowAllReqs] = useState(false)
 
+  // Preview renders the draft it was handed. Departures come from the wizard's own list
+  // (which carries date + time, not a saved tour_schedules row), numbered so the departure
+  // picker behaves exactly as it will once published.
+  useEffect(() => {
+    if (!previewTour) return
+    setTour(previewTour)
+    const raw = Array.isArray(previewTour.schedules) ? previewTour.schedules : []
+    const mapped: TourSchedule[] = raw
+      .map((row: any, i: number) => {
+        const start =
+          row?.start_time || (row?.date ? `${row.date}T${row.time || '00:00'}:00` : null)
+        if (!start) return null
+        // The wizard stores a departure date, not a return date. Derive the return from the
+        // trip's length so a 4-day draft previews as a 4-day trip rather than a day trip.
+        const days = Math.max(1, Number(previewTour.duration_days) || 1)
+        const derivedEnd = new Date(start)
+        derivedEnd.setDate(derivedEnd.getDate() + days - 1)
+        return {
+          id: `preview-${i}`,
+          tour_id: previewTour.id || 'preview',
+          start_time: start,
+          end_time:
+            row?.end_time ||
+            (Number.isNaN(derivedEnd.getTime()) ? start : derivedEnd.toISOString()),
+          capacity: Number(row?.capacity) || Number(previewTour.max_participants) || 0,
+          booked_count: 0,
+          status: (row?.status as TourSchedule['status']) || 'scheduled',
+          created_at: new Date().toISOString(),
+        }
+      })
+      .filter((x): x is TourSchedule => x !== null)
+      .sort((a, b) => a.start_time.localeCompare(b.start_time))
+    setSchedules(mapped)
+    setSchedule(mapped[0] ?? null)
+    setAvailableSlots(mapped[0]?.capacity ?? null)
+    setLoading(false)
+  }, [previewTour])
+
   useEffect(() => {
     const fetchTourDetails = async () => {
-      if (!id) return
+      if (preview || !id) return
       try {
         // Fetch tour
         const foundTour = await tourService.getTourById(id)
@@ -215,7 +262,7 @@ export default function TourDetailsPage() {
     }
 
     fetchTourDetails()
-  }, [id])
+  }, [id, preview])
 
   // Load live seat count for a specific departure. A failed lookup stays null (NOT 0)
   // so the capacity fallback applies rather than falsely showing "Sold Out".
@@ -234,12 +281,18 @@ export default function TourDetailsPage() {
   const handleSelectSchedule = (next: TourSchedule) => {
     if (next.id === schedule?.id) return
     setSchedule(next)
+    // A preview departure has no row to look up — its seats are the capacity the operator typed.
+    if (preview) {
+      setAvailableSlots(next.capacity ?? null)
+      return
+    }
     setAvailableSlots(null)
     void loadSlotsFor(next.id)
   }
 
   const handleBookNow = () => {
-    if (!tour?.id) return
+    // Preview is a look, not a purchase — the draft has no bookable departure yet.
+    if (preview || !tour?.id) return
     // No &autostart=1: checkout is a reviewable step where the traveller enters
     // their details and applies a promo code, and the 10-minute hold is created when
     // they click — not silently on mount (which also made the promo input flash away).
@@ -287,7 +340,7 @@ export default function TourDetailsPage() {
   }
 
   useEffect(() => {
-    if (!tour?.id) return
+    if (preview || !tour?.id) return
     reviewService
       .getTourReviewsWithReplies(tour.id)
       .then(setReviews)
@@ -295,7 +348,7 @@ export default function TourDetailsPage() {
   }, [tour?.id])
 
   useEffect(() => {
-    if (!tour?.operator_id) return
+    if (preview || !tour?.operator_id) return
     operatorPublicService
       .getProfileById(tour.operator_id)
       .then((prof) => setOperatorSlug(prof?.slug ?? null))
@@ -479,7 +532,7 @@ export default function TourDetailsPage() {
   const animatedCurrentSavingsPerPerson = useCountUp(currentSavingsPerPerson)
   const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
   const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
-  const canBookNow = Boolean(schedule) && liveAvailableSeats > 0
+  const canBookNow = !preview && Boolean(schedule) && liveAvailableSeats > 0
 
   if (loading) {
     return (
@@ -1336,12 +1389,15 @@ export default function TourDetailsPage() {
       </GlassCard>
     ) : null
 
-  const durationDays = tour.itinerary?.length ?? 0
+  // duration_days is the length the operator actually sold (and what every card shows). The
+  // itinerary is only a fallback: one live trip is listed as 2 days with 3 itinerary entries,
+  // and reading the itinerary made the hero contradict its own search card.
+  const durationDays = Number(tour.duration_days) || (tour.itinerary?.length ?? 0)
   const durationLabel =
     durationDays >= 1
       ? durationDays === 1
         ? '1 day'
-        : `${durationDays} days / ${durationDays - 1} nights`
+        : `${durationDays} days / ${durationDays - 1} night${durationDays === 2 ? '' : 's'}`
       : null
   const locationLabel =
     [tour.location?.city, tour.location?.country].filter(Boolean).join(', ') || 'Destination TBD'

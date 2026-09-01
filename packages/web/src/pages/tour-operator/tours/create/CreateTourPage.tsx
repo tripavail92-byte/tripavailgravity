@@ -1,5 +1,5 @@
 import { canPublishAnotherTrip } from '@tripavail/shared/commercial/engine'
-import { AlertCircle, BookmarkCheck, Loader2, LogOut, Send } from 'lucide-react'
+import { AlertCircle, BookmarkCheck, Eye, Loader2, LogOut, Send } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
@@ -19,6 +19,7 @@ import { StageRail, type StageStatus } from '@/features/wizard/StageRail'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 
+import { TOUR_PREVIEW_KEY } from './previewDraft'
 import { TourBasicsStep } from './components/TourBasicsStep'
 import { TourDetailsStep } from './components/TourDetailsStep'
 import { TourItineraryStep } from './components/TourItineraryStep'
@@ -769,6 +770,20 @@ export default function CreateTourPage() {
     setTourData((prev) => ({ ...prev, ...data }))
   }
 
+  // Open the draft as travellers will see it. sessionStorage + a new tab, so the operator keeps
+  // their place in the form and nothing has to be saved first — the point is to check the trip
+  // BEFORE committing to it.
+  const handlePreview = () => {
+    try {
+      sessionStorage.setItem(TOUR_PREVIEW_KEY, JSON.stringify(tourData))
+    } catch (e) {
+      console.error('[CreateTourPage] Could not stage the preview draft', e)
+      toast.error('Preview needs browser storage, which is blocked here.')
+      return
+    }
+    window.open('/operator/tours/preview', '_blank', 'noopener')
+  }
+
   const handleSaveDraft = async () => {
     const ok = await performSave()
     if (ok) toast.success('Draft saved')
@@ -1130,6 +1145,16 @@ export default function CreateTourPage() {
             </div>
             {/* Action buttons */}
             <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                onClick={handlePreview}
+                disabled={isSaving || isSubmitting}
+                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
+                title="See this trip exactly as travellers will"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Preview</span>
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
