@@ -112,7 +112,7 @@ export function useNearestToursByPickup(
 // ---------------------------------------------------------------------------
 
 const TOUR_COLUMNS =
-  'id,slug,title,location,price,currency,rating,review_count,tour_type,is_featured,duration_days,images'
+  'id,slug,title,location,price,currency,rating,review_count,tour_type,is_featured,duration_days,difficulty_level,images'
 
 function mapTourRowToSearchListing(t: any, distanceKm: number | null): SearchListing {
   const loc = (t?.location && typeof t.location === 'object' ? t.location : {}) as Record<
@@ -136,6 +136,7 @@ function mapTourRowToSearchListing(t: any, distanceKm: number | null): SearchLis
     reviewCount: t.review_count != null ? Number(t.review_count) : null,
     images: Array.isArray(t.images) ? t.images.filter((x: unknown) => typeof x === 'string') : [],
     durationDays: t.duration_days != null ? Number(t.duration_days) : null,
+    difficultyLevel: (typeof t.difficulty_level === 'string' && t.difficulty_level.trim()) || null,
     badge: (typeof t.tour_type === 'string' && t.tour_type.trim()) || 'Tour',
     isFeatured: Boolean(t.is_featured),
     distanceKm,

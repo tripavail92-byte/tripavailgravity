@@ -55,6 +55,7 @@ function mapListing(r: Record<string, unknown>): SearchListing {
       ? ((r.images as unknown[]).filter((x) => typeof x === 'string') as string[])
       : [],
     durationDays: num(r.duration_days),
+    difficultyLevel: (r.difficulty_level as string) ?? null,
     badge: (r.badge as string) ?? null,
     isFeatured: Boolean(r.is_featured),
     distanceKm: num(r.distance_km),

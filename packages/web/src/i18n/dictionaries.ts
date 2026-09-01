@@ -75,6 +75,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     'search.exploreEverything': 'Explore everything',
     'search.searching': 'Searching…',
     'search.results': '{count} results',
+    'search.resultsOne': '{count} result',
     'search.loading': 'Loading…',
     'search.loadMore': 'Load more',
     'search.noResults': 'No experiences match your search',

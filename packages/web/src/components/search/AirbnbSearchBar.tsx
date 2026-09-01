@@ -24,7 +24,7 @@ import {
 } from 'react'
 import type { DateRange } from 'react-day-picker'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { TravelBot } from '@/components/icons/TravelBot'
 import { Calendar } from '@/components/ui/calendar'
@@ -274,6 +274,15 @@ function toIso(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+/** Inverse of toIso: 'YYYY-MM-DD' -> a LOCAL Date. `new Date('2026-09-08')` parses as UTC
+ *  midnight, which renders as the 7th for anyone west of UTC. */
+function fromIso(v: string | null): Date | undefined {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return undefined
+  const [y, m, d] = v.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return Number.isNaN(dt.getTime()) ? undefined : dt
+}
+
 function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
@@ -340,6 +349,23 @@ export function AirbnbSearchBar({
   const [rooms, setRooms] = useState<number>(1)
 
   const [assistantOpen, setAssistantOpen] = useState<boolean>(false)
+
+  // Seed the fields from the URL on mount. A shared or refreshed /search link carries real
+  // filters (?q=…&checkin=…) that narrow the results, so the bar has to show them — it used to
+  // read "Anywhere / Add date" while a date in the URL was quietly removing trips from the page.
+  // Mount-only: after that the fields are the traveller's to edit.
+  const [urlParams] = useSearchParams()
+  useEffect(() => {
+    const q = (urlParams.get('q') || urlParams.get('location') || '').trim()
+    if (q) setWhere(q)
+    const from = fromIso(urlParams.get('checkin'))
+    const to = fromIso(urlParams.get('checkout'))
+    if (from) {
+      setSingleDate(from)
+      setRange({ from, to })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Scroll morph via a plain passive scroll listener on the sentinel ───
   //

@@ -106,12 +106,17 @@ export interface TourDepartureSummary {
 /**
  * Per-tour departure summary for the cards: next departure (start/end), seats left on it,
  * and how many upcoming departures exist — resolved for all visible tours in ONE query.
+ *
+ * `fromIso` (YYYY-MM-DD) shifts "next" to the first departure on or after that date. Search
+ * passes the traveller's chosen date, so a card found by searching 8 Sept says "8 Sept", not
+ * the tour's soonest departure on the 5th — which would look like the date filter was ignored.
  */
-export function useTourDepartureSummary(tourIds: string[]) {
+export function useTourDepartureSummary(tourIds: string[], fromIso?: string | null) {
   const ids = [...new Set(tourIds.filter(Boolean))].sort()
+  const from = fromIso && fromIso.trim() ? fromIso.trim() : null
 
   return useQuery({
-    queryKey: ['tours', 'departure-summary', ids],
+    queryKey: ['tours', 'departure-summary', ids, from],
     enabled: ids.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
@@ -137,6 +142,9 @@ export function useTourDepartureSummary(tourIds: string[]) {
         capacity: number | null
         booked_count: number | null
       }[]) {
+        // Lexical compare is safe: start_time is a full ISO timestamp and `from` is
+        // YYYY-MM-DD, so a same-day departure ("…-09-08T08:00" >= "…-09-08") still counts.
+        if (from && row.start_time < from) continue
         const cur = out[row.tour_id]
         if (!cur) {
           // First row per tour (ascending) is the soonest departure.

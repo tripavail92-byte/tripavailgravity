@@ -4,6 +4,23 @@ import { supabase } from '@/lib/supabase'
 
 export type SearchSort = 'relevance' | 'nearest' | 'price_asc' | 'price_desc' | 'rating' | 'newest'
 export type SearchListingType = 'tour' | 'package'
+/** Trip-length buckets. The keys are the contract with the facets RPC, which returns
+ *  counts under exactly these labels. */
+export type SearchDurationBucket = '1' | '2-3' | '4-7' | '8+'
+
+/** Bucket → the (inclusive) day range the RPC filters on. */
+const DURATION_RANGE: Record<SearchDurationBucket, [number, number | null]> = {
+  '1': [1, 1],
+  '2-3': [2, 3],
+  '4-7': [4, 7],
+  '8+': [8, null],
+}
+
+export const DURATION_BUCKETS = Object.keys(DURATION_RANGE) as SearchDurationBucket[]
+
+export function isDurationBucket(v: string): v is SearchDurationBucket {
+  return v in DURATION_RANGE
+}
 
 export interface UnifiedSearchParams {
   query?: string | null
@@ -16,6 +33,13 @@ export interface UnifiedSearchParams {
   minRating?: number | null
   country?: string | null
   category?: string | null
+  /** Trip length, as a bucket key. */
+  duration?: SearchDurationBucket | null
+  /** Difficulty levels to include (matched case-insensitively). */
+  difficulty?: string[] | null
+  /** ISO dates (YYYY-MM-DD). Keeps only trips with a bookable departure in the window. */
+  departureFrom?: string | null
+  departureTo?: string | null
   sort?: SearchSort
 }
 
@@ -33,6 +57,7 @@ export interface SearchListing {
   reviewCount: number | null
   images: string[]
   durationDays: number | null
+  difficultyLevel: string | null
   badge: string | null
   isFeatured: boolean
   distanceKm: number | null
@@ -43,6 +68,8 @@ export interface SearchFacets {
   total: number
   types: Record<string, number>
   countries: { country: string; count: number }[]
+  durations: { bucket: SearchDurationBucket; count: number }[]
+  difficulties: { level: string; count: number }[]
   priceMin: number | null
   priceMax: number | null
 }
@@ -61,6 +88,7 @@ const clean = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null
 
 /** Shared filter args (everything except type/sort/pagination). */
 function filterArgs(p: UnifiedSearchParams) {
+  const bucket = p.duration && isDurationBucket(p.duration) ? DURATION_RANGE[p.duration] : null
   return {
     p_query: clean(p.query),
     p_lat: p.lat ?? null,
@@ -71,6 +99,11 @@ function filterArgs(p: UnifiedSearchParams) {
     p_min_rating: p.minRating ?? null,
     p_country: clean(p.country),
     p_category: clean(p.category),
+    p_min_duration: bucket ? bucket[0] : null,
+    p_max_duration: bucket ? bucket[1] : null,
+    p_difficulty: p.difficulty && p.difficulty.length ? p.difficulty : null,
+    p_departure_from: clean(p.departureFrom),
+    p_departure_to: clean(p.departureTo),
   }
 }
 
@@ -89,6 +122,7 @@ function mapRow(r: any): SearchListing & { totalCount: number } {
     reviewCount: r.review_count != null ? Number(r.review_count) : null,
     images: Array.isArray(r.images) ? r.images.filter((x: unknown) => typeof x === 'string') : [],
     durationDays: r.duration_days != null ? Number(r.duration_days) : null,
+    difficultyLevel: r.difficulty_level ?? null,
     badge: r.badge ?? null,
     isFeatured: Boolean(r.is_featured),
     distanceKm: r.distance_km != null ? Number(r.distance_km) : null,
@@ -164,6 +198,20 @@ export function useSearchFacets(
         types: (f.types && typeof f.types === 'object' ? f.types : {}) as Record<string, number>,
         countries: Array.isArray(f.countries)
           ? f.countries.map((c: any) => ({ country: String(c.country), count: Number(c.count) || 0 }))
+          : [],
+        durations: Array.isArray(f.durations)
+          ? f.durations
+              .filter((d: any) => isDurationBucket(String(d.bucket)))
+              .map((d: any) => ({
+                bucket: String(d.bucket) as SearchDurationBucket,
+                count: Number(d.count) || 0,
+              }))
+          : [],
+        difficulties: Array.isArray(f.difficulties)
+          ? f.difficulties.map((d: any) => ({
+              level: String(d.level),
+              count: Number(d.count) || 0,
+            }))
           : [],
         priceMin: f.price_min != null ? Number(f.price_min) : null,
         priceMax: f.price_max != null ? Number(f.price_max) : null,

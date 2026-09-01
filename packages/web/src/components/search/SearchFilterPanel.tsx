@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider'
 import { useMoney } from '@/hooks/useMoney'
 import { useT } from '@/hooks/useT'
 import { cn } from '@/lib/utils'
-import type { SearchFacets } from '@/queries/searchQueries'
+import type { SearchDurationBucket, SearchFacets } from '@/queries/searchQueries'
 
 /**
  * SearchFilterPanel — the faceted filter controls for /search, rendered BOTH
@@ -25,6 +25,8 @@ import type { SearchFacets } from '@/queries/searchQueries'
  *                        active. Options are the distinct badges present in
  *                        the tour results, which is exactly what p_category
  *                        matches, so a click always narrows correctly.
+ *   • Duration         → p_min_duration / p_max_duration  — TOURS ONLY
+ *   • Difficulty       → p_difficulty                     — TOURS ONLY
  *
  * Amenities/features are intentionally absent: there is no server-side
  * amenity filter yet, and a control that does not filter would be worse than
@@ -33,6 +35,16 @@ import type { SearchFacets } from '@/queries/searchQueries'
 
 const RATINGS = [0, 3, 4, 4.5] as const
 
+/** Bucket keys come from the facets RPC; these are how they read to a traveller. */
+const DURATION_LABEL: Record<SearchDurationBucket, string> = {
+  '1': 'Day trip',
+  '2-3': '2-3 days',
+  '4-7': '4-7 days',
+  '8+': '8+ days',
+}
+
+const titleCase = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
+
 export interface SearchFilterPanelProps {
   activeType: 'all' | 'hotel' | 'tour' | 'package'
   minPrice: number | null
@@ -40,6 +52,8 @@ export interface SearchFilterPanelProps {
   minRating: number | null
   country: string
   category: string
+  duration: string
+  difficulty: string
   facets?: SearchFacets
   /** Distinct tour badges → category chips. Empty for hotels. */
   categoryOptions: { label: string; count: number }[]
@@ -58,6 +72,8 @@ export function SearchFilterPanel({
   minRating,
   country,
   category,
+  duration,
+  difficulty,
   facets,
   categoryOptions,
   activeFilterCount,
@@ -67,6 +83,10 @@ export function SearchFilterPanel({
 }: SearchFilterPanelProps): JSX.Element {
   const t = useT()
   const showCategory = activeType === 'tour' && categoryOptions.length > 0
+  // Trip length and difficulty are properties of a tour; a hotel stay has neither.
+  const showTourTraits = activeType === 'tour' || activeType === 'all'
+  const durationOptions = showTourTraits ? (facets?.durations ?? []) : []
+  const difficultyOptions = showTourTraits ? (facets?.difficulties ?? []) : []
   const isTopRated = (minRating ?? 0) >= 4.5
 
   return (
@@ -176,6 +196,55 @@ export function SearchFilterPanel({
                   onClick={() => onSetParam('category', c.label)}
                 >
                   {c.label} <span className="opacity-60">({c.count})</span>
+                </ChipButton>
+              ))}
+            </div>
+          </Section>
+        </>
+      )}
+
+      {/* Trip length — tours only. Buckets, not exact day counts: "3 days (1)"
+          beside "4 days (1)" is a list of trips, not a filter. */}
+      {durationOptions.length > 0 && (
+        <>
+          <Divider />
+          <Section title="Trip length">
+            <div className="flex flex-wrap gap-2">
+              <ChipButton active={!duration} onClick={() => onSetParam('duration', null)}>
+                {t('search.any')}
+              </ChipButton>
+              {durationOptions.map((d) => (
+                <ChipButton
+                  key={d.bucket}
+                  active={duration === d.bucket}
+                  onClick={() => onSetParam('duration', duration === d.bucket ? null : d.bucket)}
+                >
+                  {DURATION_LABEL[d.bucket]} <span className="opacity-60">({d.count})</span>
+                </ChipButton>
+              ))}
+            </div>
+          </Section>
+        </>
+      )}
+
+      {/* Difficulty — tours only, from the operator's own grading. */}
+      {difficultyOptions.length > 0 && (
+        <>
+          <Divider />
+          <Section title="Difficulty">
+            <div className="flex flex-wrap gap-2">
+              <ChipButton active={!difficulty} onClick={() => onSetParam('difficulty', null)}>
+                {t('search.any')}
+              </ChipButton>
+              {difficultyOptions.map((d) => (
+                <ChipButton
+                  key={d.level}
+                  active={difficulty.toLowerCase() === d.level}
+                  onClick={() =>
+                    onSetParam('difficulty', difficulty.toLowerCase() === d.level ? null : d.level)
+                  }
+                >
+                  {titleCase(d.level)} <span className="opacity-60">({d.count})</span>
                 </ChipButton>
               ))}
             </div>

@@ -29,7 +29,12 @@ import { useTourDepartureSummary, useUpcomingDepartures } from '@/queries/depart
 import { useHotelSearch } from '@/queries/hotelQueries'
 import { useSearchPackages } from '@/queries/packageQueries'
 import { useNearbyTours } from '@/queries/pickupQueries'
-import { type SearchSort, useSearchFacets, useUnifiedSearch } from '@/queries/searchQueries'
+import {
+  type SearchFacets,
+  type SearchSort,
+  useSearchFacets,
+  useUnifiedSearch,
+} from '@/queries/searchQueries'
 import { useTravellerCityStore } from '@/store/travellerCityStore'
 
 type SearchType = 'hotel' | 'tour' | 'package'
@@ -90,7 +95,12 @@ export default function SearchPage() {
   const maxPrice = numOrNull(searchParams.get('maxPrice'))
   const minRating = numOrNull(searchParams.get('minRating'))
   const sort = (searchParams.get('sort') || '') as SearchSort | ''
+  const duration = searchParams.get('duration') || ''
+  const difficulty = searchParams.get('difficulty') || ''
   // A date chosen in the search bar's "When" field: show only trips departing on/after it.
+  // This is a REAL filter now — the RPC applies it (see migration 20260902000001), so the
+  // result count and every page of results agree. It used to be filtered in the browser over
+  // the current page only, which made the count wrong and hid matching trips on later pages.
   const checkin = searchParams.get('checkin') || ''
 
   const baseFilters = useMemo(
@@ -103,6 +113,9 @@ export default function SearchPage() {
       minRating,
       country: country || null,
       category: category || null,
+      duration: (duration || null) as never,
+      difficulty: difficulty ? [difficulty] : null,
+      departureFrom: checkin || null,
     }),
     [
       effectiveQuery,
@@ -113,6 +126,9 @@ export default function SearchPage() {
       minRating,
       country,
       category,
+      duration,
+      difficulty,
+      checkin,
     ],
   )
 
@@ -215,7 +231,7 @@ export default function SearchPage() {
   // "When" date filter. One batched query over the visible tour ids.
   const tourIdsForDates = useMemo(() => tourItems.map((tt) => tt.listingId), [tourItems])
   const { data: upcomingByTour } = useUpcomingDepartures(tourIdsForDates)
-  const { data: departureSummaries } = useTourDepartureSummary(tourIdsForDates)
+  const { data: departureSummaries } = useTourDepartureSummary(tourIdsForDates, checkin)
   // Chosen departure per tour: the soonest on/after the searched date, else the soonest.
   // start_time is a full ISO timestamp and checkin is YYYY-MM-DD, so a lexical >= compare
   // keeps same-day departures (…-09-14T08:00 >= …-09-14).
@@ -227,10 +243,14 @@ export default function SearchPage() {
     }
     return out
   }, [tourIdsForDates, upcomingByTour, checkin])
-  // When a date is chosen, drop trips that have no departure on/after it.
+  // The unified RPC already applies the date filter. The pickup-ranked "nearby" query is a
+  // different RPC that has no date parameter, so that path still filters here.
   const visibleTourItems = useMemo(
-    () => (checkin ? tourItems.filter((tt) => departuresById[tt.listingId]) : tourItems),
-    [checkin, tourItems, departuresById],
+    () =>
+      checkin && tourNearby
+        ? tourItems.filter((tt) => departuresById[tt.listingId])
+        : tourItems,
+    [checkin, tourNearby, tourItems, departuresById],
   )
 
   // Ids already on screen — so the "Recommended for you" row never repeats a card.
@@ -245,11 +265,9 @@ export default function SearchPage() {
   )
 
   const hotelTotal = hotelQuery.data?.pages?.[0]?.total ?? 0
-  const tourTotal = checkin
+  const tourTotal = tourNearby
     ? visibleTourItems.length
-    : tourNearby
-      ? tourItems.length
-      : (tourQuery.data?.pages?.[0]?.total ?? 0)
+    : (tourQuery.data?.pages?.[0]?.total ?? 0)
   const packageTotal = packageItems.length
   const total =
     activeType === 'hotel'
@@ -290,7 +308,16 @@ export default function SearchPage() {
 
   const clearAllFilters = () => {
     const next = new URLSearchParams(searchParams)
-    for (const k of ['minPrice', 'maxPrice', 'minRating', 'country', 'category']) next.delete(k)
+    for (const k of [
+      'minPrice',
+      'maxPrice',
+      'minRating',
+      'country',
+      'category',
+      'duration',
+      'difficulty',
+    ])
+      next.delete(k)
     setSearchParams(next)
   }
 
@@ -320,12 +347,40 @@ export default function SearchPage() {
   }, [category, categoryOptionsLive])
   const categoryOptions = category && categoryCache.length ? categoryCache : categoryOptionsLive
 
+  // Same trap as categories: once a duration/difficulty is picked, the facet counts come back
+  // holding only that bucket, and the traveller can't switch without clearing first. Cache the
+  // unfiltered list and keep showing it while a selection is active.
+  const durationsLive = facets?.durations ?? []
+  const difficultiesLive = facets?.difficulties ?? []
+  const [durationCache, setDurationCache] = useState<SearchFacets['durations']>([])
+  const [difficultyCache, setDifficultyCache] = useState<SearchFacets['difficulties']>([])
+  useEffect(() => {
+    if (!duration && durationsLive.length) setDurationCache(durationsLive)
+  }, [duration, durationsLive])
+  useEffect(() => {
+    if (!difficulty && difficultiesLive.length) setDifficultyCache(difficultiesLive)
+  }, [difficulty, difficultiesLive])
+  const facetsForPanel = useMemo(
+    () =>
+      facets
+        ? {
+            ...facets,
+            durations: duration && durationCache.length ? durationCache : durationsLive,
+            difficulties:
+              difficulty && difficultyCache.length ? difficultyCache : difficultiesLive,
+          }
+        : facets,
+    [facets, duration, difficulty, durationCache, difficultyCache, durationsLive, difficultiesLive],
+  )
+
   const activeFilterCount =
     (minPrice != null ? 1 : 0) +
     (maxPrice != null ? 1 : 0) +
     (minRating ? 1 : 0) +
     (country ? 1 : 0) +
-    (category ? 1 : 0)
+    (category ? 1 : 0) +
+    (duration ? 1 : 0) +
+    (difficulty ? 1 : 0)
 
   const heading = effectiveQuery
     ? t('search.resultsFor', { query: effectiveQuery })
@@ -367,7 +422,9 @@ export default function SearchPage() {
             <p className="text-sm text-muted-foreground mt-1">
               {isLoading
                 ? t('search.searching')
-                : t('search.results', { count: total.toLocaleString() })}
+                : t(total === 1 ? 'search.resultsOne' : 'search.results', {
+                    count: total.toLocaleString(),
+                  })}
             </p>
           </div>
 
@@ -445,7 +502,9 @@ export default function SearchPage() {
                     minRating={minRating}
                     country={country}
                     category={category}
-                    facets={facets}
+                    duration={duration}
+                    difficulty={difficulty}
+                    facets={facetsForPanel}
                     categoryOptions={categoryOptions}
                     activeFilterCount={activeFilterCount}
                     onSetParam={setParam}
@@ -474,7 +533,9 @@ export default function SearchPage() {
                 minRating={minRating}
                 country={country}
                 category={category}
-                facets={facets}
+                duration={duration}
+                difficulty={difficulty}
+                facets={facetsForPanel}
                 categoryOptions={categoryOptions}
                 activeFilterCount={activeFilterCount}
                 onSetParam={setParam}
