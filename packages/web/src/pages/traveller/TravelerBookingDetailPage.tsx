@@ -12,6 +12,7 @@ import {
   Receipt,
   ShieldCheck,
   Star,
+  Ticket,
   Users,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -37,6 +38,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { bookingService } from '@/features/booking/services/bookingService'
 import { reviewService, type TourReview } from '@/features/booking/services/reviewService'
+import { BookingVoucher } from '@/features/booking/components/BookingVoucher'
 import { downloadBookingReceipt } from '@/features/booking/utils/bookingReceiptDownload'
 import {
   getTravelerBookingOutcomeSummary,
@@ -100,6 +102,8 @@ export default function TravelerBookingDetailPage() {
   const [requestingCancellation, setRequestingCancellation] = useState(false)
   // Reschedule: move to another future departure of the same tour (server enforces policy window).
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false)
+  // Trip voucher / e-ticket — the thing you actually show at pickup.
+  const [showVoucher, setShowVoucher] = useState(false)
   const [rescheduling, setRescheduling] = useState(false)
   const [otherDepartures, setOtherDepartures] = useState<any[]>([])
   const [loadingDepartures, setLoadingDepartures] = useState(false)
@@ -600,6 +604,17 @@ export default function TravelerBookingDetailPage() {
                 <Receipt className="mr-2 h-4 w-4" />
                 Download receipt
               </Button>
+              {booking?.status === 'confirmed' ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-2xl border-border/60 bg-background/80"
+                  onClick={() => setShowVoucher(true)}
+                >
+                  <Ticket className="mr-2 h-4 w-4" />
+                  Trip voucher
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 className="rounded-2xl"
@@ -1380,6 +1395,39 @@ export default function TravelerBookingDetailPage() {
             >
               {requestingCancellation ? 'Sending request...' : 'Send cancellation request'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showVoucher} onOpenChange={setShowVoucher}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="voucher-no-print">
+            <DialogTitle>Trip voucher</DialogTitle>
+            <DialogDescription>
+              Show this at pickup. Works offline once the page has loaded.
+            </DialogDescription>
+          </DialogHeader>
+          <BookingVoucher
+            bookingId={booking.id}
+            reference={booking.id.slice(0, 8).toUpperCase()}
+            tourTitle={booking?.tours?.title ?? 'Your trip'}
+            travellerName={booking?.metadata?.lead_traveller_name ?? null}
+            seats={booking?.pax_count ?? 1}
+            departureISO={schedule?.start_time ?? null}
+            pickupTitle={booking?.metadata?.pickup_location_title ?? null}
+            pickupTime={booking?.metadata?.pickup_time ?? null}
+            manifest={
+              Array.isArray(booking?.metadata?.traveller_manifest)
+                ? booking.metadata.traveller_manifest
+                : undefined
+            }
+            operatorName={booking?.tours?.operator_display_name ?? null}
+          />
+          <DialogFooter className="voucher-no-print">
+            <Button variant="outline" onClick={() => setShowVoucher(false)}>
+              Close
+            </Button>
+            <Button onClick={() => window.print()}>Print / Save PDF</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
