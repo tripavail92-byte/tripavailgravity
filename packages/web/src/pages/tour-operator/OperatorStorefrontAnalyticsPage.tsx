@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { OperatorEarningsChart } from '@/components/operator/OperatorEarningsChart'
 import { PageHeader } from '@/components/ui/PageHeader'
 import {
   operatorPublicService,
@@ -338,6 +339,10 @@ export default function OperatorStorefrontAnalyticsPage() {
               {loadError}
             </div>
           ) : null}
+
+          {/* Storefront analytics was funnel-only (views / clicks). Money is the number an operator
+              actually plans around, so lead with earnings. */}
+          {user?.id ? <OperatorEarningsChart operatorId={user.id} /> : null}
 
           {eventsTruncated ? (
             <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
