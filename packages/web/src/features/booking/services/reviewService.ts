@@ -20,6 +20,8 @@ export interface TourReview {
   rating_cleanliness: number | null
   rating_value: number | null
   rating_itinerary: number | null
+  /** First name + last initial, frozen at submit time (see migration 20260901000002). */
+  reviewer_display_name: string | null
 }
 
 export interface SubmitReviewParams {

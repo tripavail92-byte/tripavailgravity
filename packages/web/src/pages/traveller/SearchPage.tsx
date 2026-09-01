@@ -138,7 +138,16 @@ export default function SearchPage() {
     { enabled: wantsHotels || wantsPackages },
   )
 
-  const { data: facets } = useSearchFacets(baseFilters)
+  // Scope the facet counts to the types actually on screen — otherwise the sidebar counts hotel
+  // packages that trips-first hides (see migration 20260901000003).
+  const facetTypes = useMemo(
+    () =>
+      (activeType === 'all'
+        ? (['tour', 'package'] as const)
+        : ([activeType] as const)) as unknown as ('tour' | 'package' | 'hotel')[],
+    [activeType],
+  )
+  const { data: facets } = useSearchFacets({ ...baseFilters, types: facetTypes as never })
 
   // Does this search resolve to a geo/nearest sort? EXPLICIT CHOICE ONLY.
   //

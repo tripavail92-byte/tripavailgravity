@@ -107,7 +107,7 @@ function defaultSort(p: UnifiedSearchParams): SearchSort {
 export const searchKeys = {
   all: ['unified-search'] as const,
   results: (p: UnifiedSearchParams) => [...searchKeys.all, 'results', p] as const,
-  facets: (p: Omit<UnifiedSearchParams, 'types' | 'sort'>) => [...searchKeys.all, 'facets', p] as const,
+  facets: (p: Omit<UnifiedSearchParams, 'sort'>) => [...searchKeys.all, 'facets', p] as const,
 }
 
 /** Paginated unified search across tours + packages (FTS + geo ranked). */
@@ -143,13 +143,20 @@ export function useUnifiedSearch(p: UnifiedSearchParams, options?: { enabled?: b
 
 /** Facet counts (types, countries, price range) for the current filter set. */
 export function useSearchFacets(
-  p: Omit<UnifiedSearchParams, 'types' | 'sort'>,
+  p: Omit<UnifiedSearchParams, 'sort'>,
   options?: Omit<UseQueryOptions<SearchFacets, Error>, 'queryKey' | 'queryFn'>,
 ) {
+  // Facets MUST use the same type scope as the results. The RPC unions tours + hotel packages, so
+  // without this the sidebar counted packages the page wasn't showing (trips-first made that
+  // obvious: 16 tours but a "Pakistan (23) / Unknown Country (6)" country facet).
+  const types = p.types && p.types.length ? p.types : (['tour', 'package'] as SearchListingType[])
   return useQuery({
-    queryKey: searchKeys.facets(p),
+    queryKey: searchKeys.facets({ ...p, types }),
     queryFn: async (): Promise<SearchFacets> => {
-      const { data, error } = await rpc('search_listings_facets', filterArgs(p))
+      const { data, error } = await rpc('search_listings_facets', {
+        ...filterArgs(p),
+        p_types: types,
+      })
       if (error) throw error as Error
       const f = (data ?? {}) as any
       return {

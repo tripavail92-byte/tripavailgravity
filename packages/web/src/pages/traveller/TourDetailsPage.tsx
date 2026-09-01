@@ -1812,9 +1812,12 @@ export default function TourDetailsPage() {
                       >
                         <div className="flex items-center gap-2">
                           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                            T
+                            {(review.reviewer_display_name || 'Traveller').charAt(0).toUpperCase()}
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-foreground">
+                              {review.reviewer_display_name || 'Traveller'}
+                            </span>
                             <div className="flex gap-0.5">
                               {[1, 2, 3, 4, 5].map((i) => (
                                 <Star
