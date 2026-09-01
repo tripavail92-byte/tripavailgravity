@@ -1,4 +1,5 @@
 import { QueryErrorResetBoundary } from '@tanstack/react-query'
+import { useLocation } from 'react-router-dom'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 
 import { Button } from '@/components/ui/button'
@@ -49,10 +50,18 @@ function QueryErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
  * </QueryErrorBoundaryWrapper>
  */
 export function QueryErrorBoundaryWrapper({ children }: { children: React.ReactNode }) {
+  // resetKeys on the pathname is what makes this safe to wrap the whole app in: without it a
+  // single failed query leaves the fallback on screen forever, because navigating elsewhere
+  // doesn't clear a tripped boundary — the user would be stuck until a hard reload.
+  const location = useLocation()
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
-        <ErrorBoundary onReset={reset} FallbackComponent={QueryErrorFallback}>
+        <ErrorBoundary
+          onReset={reset}
+          resetKeys={[location.pathname]}
+          FallbackComponent={QueryErrorFallback}
+        >
           {children}
         </ErrorBoundary>
       )}

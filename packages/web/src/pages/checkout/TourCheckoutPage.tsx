@@ -101,6 +101,10 @@ export default function TourCheckoutPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [pickupLocationId, setPickupLocationId] = useState('')
   const [specialRequests, setSpecialRequests] = useState('')
+  // Names of the OTHER travellers (index 0 is the lead, captured above). Operators need a
+  // passenger list at pickup; previously only the lead traveller was ever recorded, so a
+  // 5-seat booking arrived as one name and four anonymous seats.
+  const [companions, setCompanions] = useState<{ name: string; age: string }[]>([])
   // The signed-in user's saved profile (name, phone + verified flags, email). We prefill
   // the traveller fields from this so people never re-type contact details we already hold.
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -559,6 +563,15 @@ export default function TourCheckoutPage() {
           pickup_location_title:
             (tour.pickup_locations ?? []).find((pl) => pl.id === pickupLocationId)?.title ?? null,
           special_requests: specialRequests.trim() || null,
+          // Full passenger manifest: lead + companions, in seat order.
+          traveller_manifest: [
+            { name: leadName.trim(), age: null, lead: true },
+            ...companions.slice(0, Math.max(0, guestCount - 1)).map((c) => ({
+              name: c.name.trim(),
+              age: c.age.trim() ? Number(c.age) : null,
+              lead: false,
+            })),
+          ].filter((t) => t.name.length > 0),
         },
       })
 
@@ -907,6 +920,57 @@ export default function TourCheckoutPage() {
                           </option>
                         ))}
                       </select>
+                    </div>
+                  )}
+
+                  {/* Other travellers — the operator needs a passenger list at pickup, not just
+                      the lead. Names only (age optional) so it stays quick to fill. */}
+                  {guestCount > 1 && (
+                    <div>
+                      <label className="block type-body-sm font-semibold text-foreground mb-1.5">
+                        Who else is travelling?{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({guestCount - 1} more {guestCount - 1 === 1 ? 'traveller' : 'travellers'})
+                        </span>
+                      </label>
+                      <div className="space-y-2">
+                        {Array.from({ length: guestCount - 1 }).map((_, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={companions[i]?.name ?? ''}
+                              onChange={(e) =>
+                                setCompanions((prev) => {
+                                  const next = [...prev]
+                                  next[i] = { name: e.target.value, age: next[i]?.age ?? '' }
+                                  return next
+                                })
+                              }
+                              placeholder={`Traveller ${i + 2} full name`}
+                              className="flex-1 min-w-0 rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                            />
+                            <input
+                              type="number"
+                              min={0}
+                              max={120}
+                              value={companions[i]?.age ?? ''}
+                              onChange={(e) =>
+                                setCompanions((prev) => {
+                                  const next = [...prev]
+                                  next[i] = { name: next[i]?.name ?? '', age: e.target.value }
+                                  return next
+                                })
+                              }
+                              placeholder="Age"
+                              className="w-20 shrink-0 rounded-xl border border-border/60 bg-background px-3 py-3 text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-1.5 type-caption text-muted-foreground">
+                        Helpful for pickup and any age-restricted activities. You can add these later
+                        if you don't have them now.
+                      </p>
                     </div>
                   )}
 

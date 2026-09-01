@@ -238,6 +238,7 @@ export default function OperatorBookingsPage() {
       'Payment',
       'Pickup',
       'Special requests',
+      'All travellers',
     ]
     const body = rows.map((b) =>
       [
@@ -252,6 +253,11 @@ export default function OperatorBookingsPage() {
         b.payment_status,
         b.metadata?.pickup_location_title,
         b.metadata?.special_requests,
+        Array.isArray(b.metadata?.traveller_manifest)
+          ? (b.metadata.traveller_manifest as { name: string; age: number | null }[])
+              .map((t) => (t.age ? `${t.name} (${t.age})` : t.name))
+              .join('; ')
+          : '',
       ]
         .map(esc)
         .join(','),
@@ -607,6 +613,16 @@ export default function OperatorBookingsPage() {
                             >
                               {String(booking.metadata.lead_traveller_email)}
                             </a>
+                          ) : null}
+                          {Array.isArray(booking.metadata?.traveller_manifest) &&
+                          (booking.metadata.traveller_manifest as unknown[]).length > 1 ? (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              +{' '}
+                              {(booking.metadata.traveller_manifest as { name: string; age: number | null; lead?: boolean }[])
+                                .filter((t) => !t.lead)
+                                .map((t) => (t.age ? `${t.name} (${t.age})` : t.name))
+                                .join(', ')}
+                            </p>
                           ) : null}
                           {booking.metadata?.pickup_location_title ? (
                             <p className="mt-0.5 text-xs text-muted-foreground">

@@ -17,6 +17,7 @@ import { AdminGuard } from '@/components/auth/AdminGuard'
 import { DashboardRedirect } from '@/components/auth/DashboardRedirect'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { RoleGuard } from '@/components/auth/RoleGuard'
+import { QueryErrorBoundaryWrapper } from '@/components/QueryErrorBoundary'
 import { TourManager } from '@/components/tour/TourManager'
 import { SignInPrompt } from '@/components/auth/SignInPrompt'
 import { useAuth } from '@/hooks/useAuth'
@@ -232,6 +233,11 @@ function App() {
         <TourManager />
         {/* Soft sign-in prompt for logged-out visitors — captures the login early, dismissible. */}
         <SignInPrompt />
+        {/* App-wide retryable error UI: a failed query anywhere now renders the fallback with a
+            Try again button instead of an empty screen. It resets on navigation (resetKeys on the
+            pathname), so an error on one page can't strand the user site-wide. GlobalErrorBoundary
+            still sits above this for non-query render crashes. */}
+        <QueryErrorBoundaryWrapper>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/auth" element={<LoginPage />} />
@@ -712,6 +718,7 @@ function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        </QueryErrorBoundaryWrapper>
         {/* React Query Devtools - Development Only */}
         {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
       </BrowserRouter>
