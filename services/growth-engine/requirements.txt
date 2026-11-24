@@ -1,0 +1,8 @@
+crawlee[playwright]==1.11.3
+playwright==1.65.2
+anthropic==2.13.0
+pydantic==2.14.4
+python-dotenv==1.2.4
+httpx==0.28.1
+pillow==13.0.0
+openai==3.58.0

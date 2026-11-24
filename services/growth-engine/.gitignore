@@ -1,0 +1,10 @@
+.venv/
+.env
+.env.publish
+__pycache__/
+*.pyc
+# Logged-in browser profile for the scraping account — never commit.
+session/
+# Proof-of-concept outputs (scraped content, downloaded media).
+out/
+storage/
