@@ -24,24 +24,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { ShareButton } from '@/components/share/ShareButton'
+import { EnquiryCard, enquiryMessage, whatsAppHref } from '@/components/tour/EnquiryCard'
 import { TourReviewButton } from '@/components/tour/TourReviewButton'
 import { TourSubNav } from '@/components/tour/TourSubNav'
 import { TourGallery } from '@/components/traveller/TourGallery'
 import { Button } from '@/components/ui/button'
-import {
-  GlassBadge,
-  GlassCard,
-  GlassContent,
-  GlassHeader,
-  GlassTitle,
-} from '@/components/ui/glass'
+import { GlassBadge, GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/ui/glass'
 import { groupTourRequirementsByCategory } from '@/config/tourRequirements'
 import { tourBookingService } from '@/features/booking'
 import { reviewService, type TourReviewWithReply } from '@/features/booking/services/reviewService'
-import {
-  buildTourPaymentTermsFromTotal,
-  getTourPaymentTerms,
-} from '@/features/booking/utils/tourPaymentTerms'
 import {
   accommodationLineItems,
   cheapestTierPrice,
@@ -52,11 +43,18 @@ import {
   type TravellerCounts,
 } from '@/features/booking/utils/accommodationPricing'
 import {
+  buildTourPaymentTermsFromTotal,
+  getTourPaymentTerms,
+} from '@/features/booking/utils/tourPaymentTerms'
+import {
   CANCELLATION_ICON_BY_POLICY,
   getTourIconComponent,
   TourFeatureItem,
 } from '@/features/tour-operator/assets/TourIconRegistry'
-import { operatorPublicService } from '@/features/tour-operator/services/operatorPublicService'
+import {
+  type OperatorListingContact,
+  operatorPublicService,
+} from '@/features/tour-operator/services/operatorPublicService'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
@@ -194,6 +192,8 @@ export default function TourDetailsPage({
   const [loading, setLoading] = useState(!previewTour)
   const [reviews, setReviews] = useState<TourReviewWithReply[]>([])
   const [operatorSlug, setOperatorSlug] = useState<string | null>(null)
+  // Listed from an operator who hasn't joined yet: WhatsApp enquiry instead of checkout.
+  const [listingContact, setListingContact] = useState<OperatorListingContact | null>(null)
   // "Good to know" keeps only the first few requirement chips visible; the rest live behind a
   // "Show all" toggle so the section stays short.
   const [showAllReqs, setShowAllReqs] = useState(false)
@@ -292,7 +292,7 @@ export default function TourDetailsPage({
 
   const handleBookNow = () => {
     // Preview is a look, not a purchase — the draft has no bookable departure yet.
-    if (preview || !tour?.id) return
+    if (preview || !tour?.id || tour.booking_mode === 'enquiry') return
     // No &autostart=1: checkout is a reviewable step where the traveller enters
     // their details and applies a promo code, and the 10-minute hold is created when
     // they click — not silently on mount (which also made the promo input flash away).
@@ -353,7 +353,13 @@ export default function TourDetailsPage({
       .getProfileById(tour.operator_id)
       .then((prof) => setOperatorSlug(prof?.slug ?? null))
       .catch(() => {})
-  }, [tour?.operator_id])
+    if (tour.booking_mode === 'enquiry') {
+      operatorPublicService
+        .getListingContact(tour.operator_id)
+        .then(setListingContact)
+        .catch(() => {})
+    }
+  }, [tour?.operator_id, tour?.booking_mode])
 
   // ── SEO: per-tour title/description/OG + schema.org Product structured data ──────
   const seoImgs = Array.isArray(tour?.images) ? (tour!.images as unknown[]) : []
@@ -533,6 +539,34 @@ export default function TourDetailsPage({
   const isTotalPulsing = useValuePulse(animatedLiveTotalPrice)
   const isSavingsPulsing = useValuePulse(animatedCurrentTotalSavings)
   const canBookNow = !preview && Boolean(schedule) && liveAvailableSeats > 0
+
+  // ── Enquiry listings (operator not on TripAvail yet): WhatsApp instead of checkout ──────
+  const isEnquiry = tour?.booking_mode === 'enquiry'
+  const enquiryOperatorName = tour?.operator_display_name || 'the operator'
+  const enquiryPageUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : ''
+  const enquiryDepartures = schedules
+    .filter((s) => new Date(s.start_time).getTime() > Date.now())
+    .map((s) => formatDate(s.start_time))
+  const enquiryPrice =
+    tour && !tour.price_on_request && Number(tour.price) > 0
+      ? (() => {
+          const m = money(Number(tour.price), tour.currency)
+          return `${m.estimate ? '≈ ' : ''}${m.text}`
+        })()
+      : null
+  const trackEnquiry = (eventType: 'whatsapp_click' | 'claim_click') => {
+    if (!tour?.operator_id) return
+    void operatorPublicService
+      .recordStorefrontEvent({
+        operatorId: tour.operator_id,
+        eventType,
+        slug: operatorSlug,
+        tourId: tour.id,
+        metadata: { surface: 'tour_page' },
+      })
+      .catch(() => {})
+  }
 
   if (loading) {
     return (
@@ -1971,52 +2005,104 @@ export default function TourDetailsPage({
               single pay button (goes straight to checkout with this selection). */}
           <div id="booking-card" className="lg:col-span-1">
             <div className="z-30 space-y-6 lg:sticky lg:top-20">
-              {renderBookingCard({ onPayNow: handleBookNow })}
+              {isEnquiry ? (
+                <EnquiryCard
+                  tourTitle={tour.title}
+                  operatorName={enquiryOperatorName}
+                  whatsapp={listingContact?.public_whatsapp ?? null}
+                  websiteUrl={listingContact?.website_url ?? null}
+                  priceText={enquiryPrice}
+                  departures={enquiryDepartures}
+                  pageUrl={enquiryPageUrl}
+                  onWhatsAppClick={() => trackEnquiry('whatsapp_click')}
+                  onClaimClick={() => trackEnquiry('claim_click')}
+                />
+              ) : (
+                renderBookingCard({ onPayNow: handleBookNow })
+              )}
             </div>
           </div>
         </div>
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            onClick={() =>
-              document
-                .getElementById('booking-card')
-                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
-            className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30"
-          >
-            <div>
+      {isEnquiry ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Ready to book
+                Book with the operator
               </p>
-              <p className="mt-1 text-sm font-semibold text-foreground">
-                {schedule
-                  ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => {
-                      const m = money(animatedLiveTotalPrice, tour.currency)
-                      return `${m.estimate ? '≈ ' : ''}${m.text}`
-                    })()}`
-                  : 'No departure dates available'}
+              <p className="mt-1 truncate text-sm font-semibold text-foreground">
+                {enquiryPrice ? `${enquiryPrice} / person` : 'Price on request'}
               </p>
             </div>
-            {schedule ? (
-              <p className="text-xs font-medium text-muted-foreground">
-                {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
-              </p>
+            {listingContact?.public_whatsapp ? (
+              <Button
+                asChild
+                className="h-12 shrink-0 rounded-2xl bg-primary px-5 text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
+              >
+                <a
+                  href={whatsAppHref(
+                    listingContact.public_whatsapp,
+                    enquiryMessage(
+                      enquiryOperatorName,
+                      tour.title,
+                      enquiryPageUrl,
+                      enquiryDepartures[0],
+                    ),
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackEnquiry('whatsapp_click')}
+                >
+                  Enquire on WhatsApp
+                </a>
+              </Button>
             ) : null}
-          </button>
-
-          <Button
-            onClick={handleBookNow}
-            disabled={!canBookNow}
-            className="h-14 min-w-[220px] rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
-          >
-            {!schedule ? 'No Dates Available' : availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
-          </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById('booking-card')
+                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                  Ready to book
+                </p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {schedule
+                    ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => {
+                        const m = money(animatedLiveTotalPrice, tour.currency)
+                        return `${m.estimate ? '≈ ' : ''}${m.text}`
+                      })()}`
+                    : 'No departure dates available'}
+                </p>
+              </div>
+              {schedule ? (
+                <p className="text-xs font-medium text-muted-foreground">
+                  {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+                </p>
+              ) : null}
+            </button>
+
+            <Button
+              onClick={handleBookNow}
+              disabled={!canBookNow}
+              className="h-14 min-w-[220px] rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
+            >
+              {!schedule ? 'No Dates Available' : availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

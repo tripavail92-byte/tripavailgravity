@@ -146,8 +146,22 @@ const TOUR_FIELDS = [
 const OPERATOR_FIELDS =
   'user_id,slug,company_name,business_name,company_logo_url,description,primary_city,years_experience,has_identity_verified'
 
+// booking_mode / price_on_request arrive with migration 20261125000001; until then, the old shape.
+const LISTING_FIELDS = 'booking_mode,price_on_request'
 const loadTours = () =>
-  cached('tours', () => sbFetch(`tours?${LIVE_TOURS}&select=${TOUR_FIELDS}&order=updated_at.desc&limit=1000`))
+  cached('tours', () =>
+    sbFetch(`tours?${LIVE_TOURS}&select=${TOUR_FIELDS},${LISTING_FIELDS}&order=updated_at.desc&limit=1000`).catch(() =>
+      sbFetch(`tours?${LIVE_TOURS}&select=${TOUR_FIELDS}&order=updated_at.desc&limit=1000`),
+    ),
+  )
+
+/** Unclaimed (not-yet-joined) operators' public contact, keyed by user id. Empty before the migration. */
+const loadListingContacts = () =>
+  cached('listing-contacts', () =>
+    sbFetch('operator_public_listing_v?select=user_id,listing_status,public_whatsapp,website_url&limit=5000')
+      .then((rows) => new Map(rows.map((r) => [r.user_id, r])))
+      .catch(() => new Map()),
+  )
 
 const loadOperators = () =>
   cached('operators', () =>
@@ -182,11 +196,13 @@ const loadSlugRedirect = (slug) =>
   )
 
 async function loadSite() {
-  const [tours, operators, departures] = await Promise.all([
+  const [tours, baseOperators, departures, contacts] = await Promise.all([
     loadTours(),
     loadOperators().catch(() => []),
     loadDepartures().catch(() => new Map()),
+    loadListingContacts(),
   ])
+  const operators = baseOperators.map((o) => ({ ...o, ...(contacts.get(o.user_id) || {}) }))
   const opById = new Map(operators.map((o) => [o.user_id, o]))
   const toursByOp = new Map()
   for (const t of tours) {
@@ -214,7 +230,10 @@ async function findTour(site, slugOrId) {
   const key = isId ? 'id' : 'slug'
   const rows = await cached(
     `tour:${key}:${needle}`,
-    () => sbFetch(`tours?${key}=eq.${encodeURIComponent(needle)}&${LIVE_TOURS}&select=${TOUR_FIELDS}&limit=1`),
+    () =>
+      sbFetch(`tours?${key}=eq.${encodeURIComponent(needle)}&${LIVE_TOURS}&select=${TOUR_FIELDS},${LISTING_FIELDS}&limit=1`).catch(
+        () => sbFetch(`tours?${key}=eq.${encodeURIComponent(needle)}&${LIVE_TOURS}&select=${TOUR_FIELDS}&limit=1`),
+      ),
     60_000,
   )
   return rows[0] || null
@@ -265,7 +284,9 @@ function tourDays(t) {
   return n > 0 ? n : 0
 }
 const daysLabel = (n) => (n === 1 ? '1 day' : `${n} days`)
-const tourPrice = (t) => Number(t.price) || 0
+// Listed from an operator who hasn't joined TripAvail: booked directly with them on WhatsApp.
+const isEnquiry = (t) => t.booking_mode === 'enquiry'
+const tourPrice = (t) => (t.price_on_request ? 0 : Number(t.price) || 0)
 const priceLabel = (t) =>
   tourPrice(t) > 0 ? `from ${fmtMoney(tourPrice(t), t.currency)} per person` : 'price on request'
 function tourImages(t) {
@@ -335,6 +356,7 @@ function tourFacts(site, t, { withOperator = true } = {}) {
   if (next) parts.push(`next departure ${fmtDate(next.start_time)}`)
   const op = site.opById.get(t.operator_id)
   if (withOperator && op) parts.push(`operator ${opName(op)}`)
+  if (isEnquiry(t)) parts.push('booked directly with the operator')
   return parts.join(' · ')
 }
 
@@ -508,6 +530,7 @@ ${liveOperators.length ? `<section>\n<h2>Tour operators on TripAvail</h2>\n<ul>\
 <li>Open a tour to read the full itinerary, what is included and the operator's cancellation policy.</li>
 <li>Pick a departure date and book on TripAvail. Your booking and trip voucher appear under My Trips.</li>
 </ol>
+${tours.some(isEnquiry) ? '<p>Some trips are listed from operators who are not on TripAvail yet. Those you book directly with the operator on WhatsApp; the listing says so.</p>' : ''}
 <p>Prices, dates and itineraries are set by each tour operator. See <a href="/refunds">cancellations and refunds</a>.</p>
 </section>
 <section>
@@ -593,6 +616,12 @@ function tourPage(site, t) {
     ],
     reviews > 0 && rating > 0 && ['Rating', `${rating.toFixed(1)} out of 5 from ${reviews} ${reviews === 1 ? 'review' : 'reviews'}`],
     op && ['Operator', `${link(opPath(op), opName(op))}${op.has_identity_verified ? ' (ID verified)' : ''}`],
+    isEnquiry(t) && [
+      'How to book',
+      op?.public_whatsapp
+        ? `Directly with the operator on <a href="https://wa.me/${esc(String(op.public_whatsapp).replace(/\D/g, ''))}" rel="nofollow noopener">WhatsApp</a>`
+        : 'Directly with the operator',
+    ],
   ].filter(Boolean)
 
   const sameCity = site.tours.filter((x) => x.id !== t.id && city && tourCity(x) === city).slice(0, 6)
@@ -647,7 +676,7 @@ ${
 </section>
 ${
   op
-    ? `<section>\n<h2>About the operator</h2>\n<p>This tour is run by ${link(opPath(op), opName(op))}${op.primary_city ? `, based in ${esc(clean(op.primary_city))}` : ''}.${op.has_identity_verified ? ' TripAvail has verified the operator\'s identity.' : ''}</p>\n</section>`
+    ? `<section>\n<h2>About the operator</h2>\n<p>This tour is run by ${link(opPath(op), opName(op))}${op.primary_city ? `, based in ${esc(clean(op.primary_city))}` : ''}.${op.has_identity_verified ? ' TripAvail has verified the operator\'s identity.' : ''}${isEnquiry(t) ? ' The operator is not on TripAvail yet: TripAvail lists this trip from their public listings, and you book it directly with them. Confirm the price and dates before you pay.' : ''}</p>\n</section>`
     : ''
 }
 </article>
@@ -739,6 +768,7 @@ function operatorPage(site, o) {
   const main = `<nav aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/tours">Tours</a> › ${esc(name)}</nav>
 <h1>${esc(name)}</h1>
 <p>Tour operator${city ? ` based in ${esc(city)}` : ''}.${years > 0 ? ` ${years} ${years === 1 ? 'year' : 'years'} of experience.` : ''}${verified ? ' TripAvail has verified this operator\'s identity.' : ''}</p>
+${o.listing_status === 'unclaimed' ? `<p>Not on TripAvail yet: TripAvail set up this profile from ${esc(name)}'s public listings. Their trips are booked directly with them${o.public_whatsapp ? ` on <a href="https://wa.me/${esc(String(o.public_whatsapp).replace(/\D/g, ''))}" rel="nofollow noopener">WhatsApp</a>` : ''}.</p>` : ''}
 ${o.description ? `<section>\n<h2>About ${esc(name)}</h2>\n${paragraphs(o.description)}\n</section>` : ''}
 <section>
 <h2>Tours by ${esc(name)}</h2>

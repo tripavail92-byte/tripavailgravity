@@ -14,6 +14,15 @@ function isMissingRpcError(error: any) {
   return message.includes('schema cache') || message.includes('could not find the function')
 }
 
+export interface OperatorListingContact {
+  user_id: string
+  slug: string | null
+  listing_status: 'member' | 'unclaimed'
+  public_whatsapp: string | null
+  website_url: string | null
+  listing_source: string | null
+}
+
 export interface OperatorPublicProfile {
   user_id: string
   slug: string | null
@@ -113,9 +122,10 @@ function getOrCreateStorefrontSessionId(): string | null {
   const existing = window.localStorage.getItem(storageKey)
   if (existing) return existing
 
-  const next = typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `storefront-${Date.now()}`
+  const next =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `storefront-${Date.now()}`
 
   window.localStorage.setItem(storageKey, next)
   return next
@@ -140,6 +150,17 @@ export const operatorPublicService = {
     return data as OperatorPublicProfile | null
   },
 
+  /** Public contact for listings of operators who haven't joined yet (business WhatsApp, website). */
+  async getListingContact(operatorId: string): Promise<OperatorListingContact | null> {
+    const { data, error } = await (supabase as any)
+      .from('operator_public_listing_v')
+      .select('user_id, slug, listing_status, public_whatsapp, website_url, listing_source')
+      .eq('user_id', operatorId)
+      .maybeSingle()
+    if (error) return null
+    return (data ?? null) as OperatorListingContact | null
+  },
+
   async getProfileById(operatorId: string): Promise<OperatorPublicProfile | null> {
     const { data, error } = await supabase
       // Reads the derived-boolean storefront view (migration 20260714000002), NOT the base table.
@@ -160,7 +181,9 @@ export const operatorPublicService = {
   async getMetrics(operatorId: string): Promise<OperatorPublicMetrics | null> {
     const { data, error } = await supabase
       .from('operator_public_metrics')
-      .select('avg_rating, total_reviews, total_completed_bookings, total_travelers_served, cancellation_rate, verified_badge_count, avg_communication, avg_punctuality, avg_transport, avg_guide, avg_safety, avg_cleanliness, avg_value, avg_itinerary')
+      .select(
+        'avg_rating, total_reviews, total_completed_bookings, total_travelers_served, cancellation_rate, verified_badge_count, avg_communication, avg_punctuality, avg_transport, avg_guide, avg_safety, avg_cleanliness, avg_value, avg_itinerary',
+      )
       .eq('operator_id', operatorId)
       .maybeSingle()
 
@@ -171,7 +194,9 @@ export const operatorPublicService = {
   async getPublishedTours(operatorId: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('tours')
-      .select('id, title, description, price, currency, duration, location, images, rating, review_count, difficulty_level')
+      .select(
+        'id, title, description, price, currency, duration, location, images, rating, review_count, difficulty_level',
+      )
       .eq('operator_id', operatorId)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -190,7 +215,9 @@ export const operatorPublicService = {
   async getAllReviewsWithReplies(operatorId: string): Promise<TourReviewWithReply[]> {
     const { data, error } = await supabase
       .from('tour_booking_reviews')
-      .select('*, tours!inner(operator_id, title), reply:tour_review_replies(id, review_id, operator_id, body, created_at, updated_at)')
+      .select(
+        '*, tours!inner(operator_id, title), reply:tour_review_replies(id, review_id, operator_id, body, created_at, updated_at)',
+      )
       .eq('tours.operator_id', operatorId)
       .eq('status', 'published')
       .order('created_at', { ascending: false })
@@ -207,13 +234,17 @@ export const operatorPublicService = {
   async getAwards(operatorId: string): Promise<OperatorAward[]> {
     const { data, error } = await supabase
       .from('operator_awards')
-      .select('id, award_code, award_name, awarded_at, expires_at, metadata, award_source, admin_note')
+      .select(
+        'id, award_code, award_name, awarded_at, expires_at, metadata, award_source, admin_note',
+      )
       .eq('operator_id', operatorId)
       .order('awarded_at', { ascending: false })
 
     if (error) throw new Error(error.message)
     const now = Date.now()
-    return ((data ?? []) as OperatorAward[]).filter((award) => !award.expires_at || new Date(award.expires_at).getTime() > now)
+    return ((data ?? []) as OperatorAward[]).filter(
+      (award) => !award.expires_at || new Date(award.expires_at).getTime() > now,
+    )
   },
 
   async getVerificationReviews(operatorId: string): Promise<OperatorVerificationReview[]> {
@@ -229,7 +260,13 @@ export const operatorPublicService = {
 
   async recordStorefrontEvent(params: {
     operatorId: string
-    eventType: 'profile_view' | 'cta_click' | 'tour_click' | 'booking_start'
+    eventType:
+      | 'profile_view'
+      | 'cta_click'
+      | 'tour_click'
+      | 'booking_start'
+      | 'whatsapp_click'
+      | 'claim_click'
     slug?: string | null
     tourId?: string | null
     metadata?: Record<string, unknown>
@@ -247,7 +284,10 @@ export const operatorPublicService = {
     return { success: true }
   },
 
-  async getStorefrontAnalytics(operatorId: string, days = 30): Promise<OperatorStorefrontAnalytics | null> {
+  async getStorefrontAnalytics(
+    operatorId: string,
+    days = 30,
+  ): Promise<OperatorStorefrontAnalytics | null> {
     const { data, error } = await (supabase as any).rpc('get_operator_storefront_analytics', {
       p_operator_id: operatorId,
       p_days: days,
@@ -258,11 +298,17 @@ export const operatorPublicService = {
     return (row ?? null) as OperatorStorefrontAnalytics | null
   },
 
-  async getStorefrontResponseMetrics(operatorId: string, days = 90): Promise<OperatorStorefrontResponseMetrics | null> {
-    const { data, error } = await (supabase as any).rpc('get_operator_storefront_response_metrics', {
-      p_operator_id: operatorId,
-      p_days: days,
-    })
+  async getStorefrontResponseMetrics(
+    operatorId: string,
+    days = 90,
+  ): Promise<OperatorStorefrontResponseMetrics | null> {
+    const { data, error } = await (supabase as any).rpc(
+      'get_operator_storefront_response_metrics',
+      {
+        p_operator_id: operatorId,
+        p_days: days,
+      },
+    )
 
     if (error) {
       if (isMissingRpcError(error)) return null
@@ -293,9 +339,7 @@ export const operatorPublicService = {
       query = query.gte('created_at', since.toISOString())
     }
 
-    const { data, error } = await query
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(limit)
 
     if (error) throw new Error(error.message)
     return (data ?? []) as OperatorStorefrontEvent[]

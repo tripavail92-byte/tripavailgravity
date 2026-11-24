@@ -16,6 +16,11 @@ export interface Tour {
   operator_display_name?: string
   operator_is_verified?: boolean
   is_published?: boolean | null
+  /** 'enquiry': listed from an operator who hasn't joined yet — WhatsApp enquiry, no checkout. */
+  booking_mode?: 'instant' | 'enquiry'
+  price_on_request?: boolean
+  source?: string | null
+  source_url?: string | null
   title: string
   tour_type: string
   location: {

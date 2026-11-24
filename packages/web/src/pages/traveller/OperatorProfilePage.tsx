@@ -27,6 +27,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
+import { claimHref, whatsAppHref } from '@/components/tour/EnquiryCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,6 +42,7 @@ import { GlassCard, GlassContent, GlassHeader, GlassTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea'
 import { type TourReviewWithReply } from '@/features/booking/services/reviewService'
 import {
+  type OperatorListingContact,
   type OperatorPublicMetrics,
   type OperatorPublicProfile,
   operatorPublicService,
@@ -479,6 +481,8 @@ export default function OperatorProfilePage() {
   const [awards, setAwards] = useState<OperatorAward[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  // Set for profiles TripAvail built from public listings before the operator joined.
+  const [listingContact, setListingContact] = useState<OperatorListingContact | null>(null)
   const [starFilter, setStarFilter] = useState<number | null>(null)
   const [reviewSort, setReviewSort] = useState<'newest' | 'top_rated'>('newest')
   const [reportDialogOpen, setReportDialogOpen] = useState(false)
@@ -516,7 +520,7 @@ export default function OperatorProfilePage() {
   })
 
   const trackStorefrontEvent = (
-    eventType: 'profile_view' | 'cta_click' | 'tour_click',
+    eventType: 'profile_view' | 'cta_click' | 'tour_click' | 'whatsapp_click' | 'claim_click',
     options?: { tourId?: string; metadata?: Record<string, unknown> },
   ) => {
     if (!profile) return
@@ -548,6 +552,10 @@ export default function OperatorProfilePage() {
         }
 
         setProfile(currentProfile)
+        void operatorPublicService
+          .getListingContact(currentProfile.user_id)
+          .then(setListingContact)
+          .catch(() => setListingContact(null))
 
         const [
           currentMetrics,
@@ -816,6 +824,59 @@ export default function OperatorProfilePage() {
                       {category}
                     </Badge>
                   ))}
+                </div>
+              ) : null}
+
+              {listingContact?.listing_status === 'unclaimed' ? (
+                <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+                  <p>
+                    <span className="font-semibold text-foreground">Not on TripAvail yet.</span>{' '}
+                    TripAvail set up this profile from {name}&apos;s public listings. Their trips
+                    are booked directly with them, so confirm prices and dates before you pay.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {listingContact.public_whatsapp ? (
+                      <Button asChild size="sm" className="rounded-full">
+                        <a
+                          href={whatsAppHref(
+                            listingContact.public_whatsapp,
+                            `Hi ${name}, I found your profile on TripAvail (${typeof window !== 'undefined' ? window.location.href : ''}). I'd like to ask about your trips.`,
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() =>
+                            trackStorefrontEvent('whatsapp_click', {
+                              metadata: { surface: 'profile' },
+                            })
+                          }
+                        >
+                          WhatsApp {name}
+                        </a>
+                      </Button>
+                    ) : null}
+                    {listingContact.website_url ? (
+                      <a
+                        href={listingContact.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-primary underline-offset-4 hover:underline"
+                      >
+                        Their website
+                      </a>
+                    ) : null}
+                    <a
+                      href={claimHref(
+                        name,
+                        typeof window !== 'undefined' ? window.location.href : '',
+                      )}
+                      onClick={() =>
+                        trackStorefrontEvent('claim_click', { metadata: { surface: 'profile' } })
+                      }
+                      className="font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Run {name}? Claim this profile
+                    </a>
+                  </div>
                 </div>
               ) : null}
             </div>

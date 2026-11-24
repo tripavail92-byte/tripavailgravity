@@ -174,6 +174,12 @@ export default function TourCheckoutPage() {
       if (!id) return
       try {
         const foundTour = await tourService.getTourById(id)
+        // Listings of operators not on TripAvail are booked with the operator on WhatsApp;
+        // there is nothing to pay for here, so send the traveller back to the trip page.
+        if (foundTour?.booking_mode === 'enquiry') {
+          navigate(`/tours/${foundTour.slug || foundTour.id}`, { replace: true })
+          return
+        }
         setTour(foundTour)
 
         if (foundTour) {
@@ -930,7 +936,8 @@ export default function TourCheckoutPage() {
                       <label className="block type-body-sm font-semibold text-foreground mb-1.5">
                         Who else is travelling?{' '}
                         <span className="font-normal text-muted-foreground">
-                          ({guestCount - 1} more {guestCount - 1 === 1 ? 'traveller' : 'travellers'})
+                          ({guestCount - 1} more {guestCount - 1 === 1 ? 'traveller' : 'travellers'}
+                          )
                         </span>
                       </label>
                       <div className="space-y-2">
@@ -968,8 +975,8 @@ export default function TourCheckoutPage() {
                         ))}
                       </div>
                       <p className="mt-1.5 type-caption text-muted-foreground">
-                        Helpful for pickup and any age-restricted activities. You can add these later
-                        if you don't have them now.
+                        Helpful for pickup and any age-restricted activities. You can add these
+                        later if you don't have them now.
                       </p>
                     </div>
                   )}
