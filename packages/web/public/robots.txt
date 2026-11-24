@@ -1,10 +1,52 @@
+# TripAvail — tours and trips in Pakistan.
+# Search engines and AI assistants are welcome to read, quote and link to our public pages:
+# tour listings, operator profiles and the guides at /llms.txt and /llms-full.txt.
+# The AI crawlers are named explicitly so the intent is unambiguous; they share one rule set.
+
 User-agent: *
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: DuckDuckBot
+User-agent: Applebot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: DuckAssistBot
+User-agent: Amazonbot
+User-agent: meta-externalagent
+User-agent: CCBot
 Allow: /
 
 # Launch scope (Trips-only): hotels/packages redirect to /tours until Phase 3.
-# Keep crawlers off those paths so they aren't indexed as soft-redirects.
 # Remove these two lines when Phase 3 re-enables hotels.
 Disallow: /hotels
 Disallow: /packages
+
+# Accounts, checkout and dashboards: private, nothing to index.
+Disallow: /auth
+Disallow: /checkout
+Disallow: /booking
+Disallow: /dashboard
+Disallow: /trips
+Disallow: /profile
+Disallow: /settings
+Disallow: /messages
+Disallow: /wishlist
+Disallow: /payment-methods
+Disallow: /kyc
+Disallow: /help
+Disallow: /legal
+Disallow: /operator/
+Disallow: /manager
+Disallow: /admin
+# Search result pages are endless combinations of filters; /tours lists everything.
+Disallow: /search
 
 Sitemap: https://tripavail.com/sitemap.xml
