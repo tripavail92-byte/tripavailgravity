@@ -211,6 +211,14 @@ def publish_run(run_dir: Path, apply: bool = False, include_review: bool = False
                 booking_mode="enquiry",
                 require_deposit=False,
                 deposit_required=False,
+                # Column defaults ('flexible' cancellation, 20 travellers, ages 0-100) are TripAvail
+                # member settings; for an operator's own listing they would be invented facts.
+                cancellation_policy=None,
+                cancellation_policy_type=None,
+                max_participants=None,
+                min_participants=None,
+                min_age=None,
+                max_age=None,
                 is_active=True,
                 is_published=True,
                 status="live",

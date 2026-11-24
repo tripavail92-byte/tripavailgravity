@@ -494,12 +494,26 @@ export default function OperatorProfilePage() {
   // site title. Falls back to the site default until the profile loads.
   const operatorName = profile ? displayName(profile) : ''
   const operatorCity = profile?.primary_city?.trim() || ''
+  // Claims must be true for THIS operator: "ID-verified" only when identity is verified, and no
+  // "secure payment" for operators not on TripAvail (their trips are booked with them directly).
+  const idVerified = Boolean(profile?.has_identity_verified)
+  const unclaimed = listingContact?.listing_status === 'unclaimed'
   useSeo({
-    title: operatorName ? `${operatorName} — verified tour operator` : undefined,
+    title: operatorName
+      ? `${operatorName} — ${idVerified ? 'ID-verified ' : ''}tour operator${operatorCity ? ` in ${operatorCity}` : ''}`
+      : undefined,
     description: operatorName
-      ? `Book trips with ${operatorName}${operatorCity ? ` in ${operatorCity}` : ''} on TripAvail — ${
-          tours.length > 0 ? `${tours.length} live trip${tours.length === 1 ? '' : 's'}, ` : ''
-        }verified operator, secure payment.`
+      ? `${operatorName} is a tour operator${operatorCity ? ` based in ${operatorCity}` : ''}${
+          tours.length > 0
+            ? ` with ${tours.length} trip${tours.length === 1 ? '' : 's'} on TripAvail`
+            : ''
+        }.${
+          unclaimed
+            ? ' Book directly with the operator on WhatsApp.'
+            : idVerified
+              ? ' Identity verified by TripAvail.'
+              : ''
+        }`
       : undefined,
     canonicalPath: slug ? `/operators/${slug}` : undefined,
     image: profile?.company_logo_url || undefined,
@@ -831,8 +845,9 @@ export default function OperatorProfilePage() {
                 <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
                   <p>
                     <span className="font-semibold text-foreground">Not on TripAvail yet.</span>{' '}
-                    TripAvail set up this profile from {name}&apos;s public listings. Their trips
-                    are booked directly with them, so confirm prices and dates before you pay.
+                    TripAvail set up this profile from {name}
+                    {name.endsWith('s') ? '’' : '’s'} public listings. Their trips are booked
+                    directly with them, so confirm prices and dates before you pay.
                   </p>
                   <div className="flex flex-wrap items-center gap-3">
                     {listingContact.public_whatsapp ? (

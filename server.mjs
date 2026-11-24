@@ -610,10 +610,13 @@ function tourPage(site, t) {
     Number(t.max_participants) > 0 && ['Group size', `Up to ${Number(t.max_participants)} travellers`],
     Number(t.min_age) > 0 && ['Minimum age', String(Number(t.min_age))],
     languages.length && ['Languages', esc(languages.join(', '))],
-    t.cancellation_policy_type && [
-      'Cancellation',
-      `${esc(capital(t.cancellation_policy_type))} (<a href="/refunds">how cancellations work</a>)`,
-    ],
+    // Enquiry trips aren't sold through TripAvail; a trigger fills a 'flexible' default that isn't theirs.
+    isEnquiry(t)
+      ? ['Cancellation', 'Set by the operator; ask them before you pay']
+      : t.cancellation_policy_type && [
+          'Cancellation',
+          `${esc(capital(t.cancellation_policy_type))} (<a href="/refunds">how cancellations work</a>)`,
+        ],
     reviews > 0 && rating > 0 && ['Rating', `${rating.toFixed(1)} out of 5 from ${reviews} ${reviews === 1 ? 'review' : 'reviews'}`],
     op && ['Operator', `${link(opPath(op), opName(op))}${op.has_identity_verified ? ' (ID verified)' : ''}`],
     isEnquiry(t) && [
@@ -968,7 +971,8 @@ function buildLlmsFullTxt(site) {
       if (Number(t.max_participants) > 0) out.push(`- Group size: up to ${Number(t.max_participants)}`)
       if (Number(t.min_age) > 0) out.push(`- Minimum age: ${Number(t.min_age)}`)
       if (languages.length) out.push(`- Languages: ${languages.join(', ')}`)
-      if (t.cancellation_policy_type) out.push(`- Cancellation policy: ${capital(t.cancellation_policy_type)}`)
+      if (isEnquiry(t)) out.push('- Booking: directly with the operator (not through TripAvail); cancellation terms are set by the operator')
+      else if (t.cancellation_policy_type) out.push(`- Cancellation policy: ${capital(t.cancellation_policy_type)}`)
       if (op) out.push(`- Operator: ${opName(op)}${opPath(op) ? ` (${SITE}${opPath(op)})` : ''}${op.has_identity_verified ? ', ID verified' : ''}`)
       out.push(
         `- Departures: ${

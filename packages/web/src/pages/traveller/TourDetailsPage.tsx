@@ -1857,12 +1857,24 @@ export default function TourDetailsPage({
                       <div className="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center shrink-0">
                         <CancellationPolicyIcon className="w-5 h-5" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{cancellationMeta.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {cancellationMeta.description}
-                        </p>
-                      </div>
+                      {isEnquiry ? (
+                        // Not sold through TripAvail: there is no TripAvail policy to show.
+                        <div>
+                          <p className="font-semibold text-foreground">Set by the operator</p>
+                          <p className="text-sm text-muted-foreground">
+                            Ask {enquiryOperatorName} about cancellations and refunds before you
+                            pay. TripAvail&apos;s cancellation policy doesn&apos;t apply to trips
+                            booked directly with the operator.
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="font-semibold text-foreground">{cancellationMeta.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {cancellationMeta.description}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
