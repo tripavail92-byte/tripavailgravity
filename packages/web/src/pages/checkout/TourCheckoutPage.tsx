@@ -673,9 +673,9 @@ export default function TourCheckoutPage() {
   }
 
   return (
-    <div className="bg-muted/30 min-h-screen pb-20">
+    <div className="min-h-screen bg-muted/30 pb-32 lg:pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-background border-b border-border/50">
+      <div className="z-40 border-b border-border/50 bg-background lg:sticky lg:top-0">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
@@ -1113,7 +1113,7 @@ export default function TourCheckoutPage() {
                           </p>
                         </div>
                       ) : (
-                        <div className="p-4 bg-muted/40 rounded-xl border border-border/60">
+                        <div id="payment-section" className="scroll-mt-24 p-4 bg-muted/40 rounded-xl border border-border/60">
                           <Elements stripe={stripePromise} options={{ clientSecret }}>
                             <TourPaymentForm
                               bookingId={pendingBooking.id}
@@ -1165,7 +1165,7 @@ export default function TourCheckoutPage() {
               internally so the Pay button is always reachable on short screens (it used to sit below
               the fold). */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
+            <div className="space-y-6 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
               <GlassCard variant="card" className="rounded-2xl shadow-modern">
                 <GlassHeader className="p-6 pb-0">
                   <GlassTitle>Price Summary</GlassTitle>
@@ -1185,7 +1185,7 @@ export default function TourCheckoutPage() {
                             value={promoCode}
                             onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                             placeholder="Enter promo code"
-                            className="h-11 rounded-xl"
+                            className="h-11 rounded-xl text-base sm:text-sm"
                             aria-label="Promo code"
                           />
                           <Button
@@ -1375,6 +1375,40 @@ export default function TourCheckoutPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Phones: the pay button sat ~2 screens down, below a long summary. Keep the amount and the
+          action in a slim fixed bar; it runs the same step as the in-page button (which scrolls to
+          any missing traveller detail), or jumps to the card form once payment has started. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+              {usesDeposit ? 'Pay now (deposit)' : 'Total'}
+            </p>
+            <p className="truncate text-lg font-black tabular-nums text-foreground">
+              {formatMoney(payNowAmount, tour.currency)}
+            </p>
+          </div>
+          {pendingBooking ? (
+            <Button
+              onClick={() =>
+                document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              className="h-12 shrink-0 rounded-2xl px-6 font-bold"
+            >
+              Enter card details
+            </Button>
+          ) : (
+            <Button
+              onClick={handleCreatePendingBooking}
+              disabled={processingBooking || (availableSlots !== null && guestCount > availableSlots)}
+              className="h-12 shrink-0 rounded-2xl px-6 font-bold"
+            >
+              {processingBooking ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continue to payment'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

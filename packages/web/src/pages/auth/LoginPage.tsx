@@ -2,6 +2,8 @@ import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import { formatMoney } from '@tripavail/shared/utils/money'
+
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -53,6 +56,41 @@ export default function LoginPage() {
 
   const notice = searchParams.get('notice')
   const showCheckoutNotice = notice === 'checkout'
+
+  // Coming from checkout: keep the trip in view, so signing up doesn't feel like losing the booking.
+  const [bookingContext, setBookingContext] = useState<{
+    title: string
+    price: number
+    currency: string
+    image: string | null
+    guests: number
+  } | null>(null)
+  useEffect(() => {
+    if (!showCheckoutNotice || !safeRedirect) return
+    const m = safeRedirect.match(/^\/checkout\/tour\/([0-9a-f-]{36})(?:\?(.*))?$/i)
+    if (!m) return
+    const guests = Math.max(1, Number(new URLSearchParams(m[2] || '').get('guests')) || 1)
+    let cancelled = false
+    void supabase
+      .from('tours')
+      .select('title, price, currency, images')
+      .eq('id', m[1])
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        const images = Array.isArray(data.images) ? (data.images as string[]) : []
+        setBookingContext({
+          title: String(data.title || ''),
+          price: Number(data.price) || 0,
+          currency: String(data.currency || 'PKR'),
+          image: images[0] ?? null,
+          guests,
+        })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [showCheckoutNotice, safeRedirect])
 
   useEffect(() => {
     const mode = searchParams.get('mode')
@@ -149,6 +187,23 @@ export default function LoginPage() {
           ← Back to TripAvail
         </Link>
       </div>
+      {bookingContext ? (
+        <div className="flex w-full max-w-md items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          {bookingContext.image ? (
+            <img src={bookingContext.image} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+          ) : null}
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-primary">You&apos;re booking</p>
+            <p className="truncate text-sm font-semibold text-foreground">{bookingContext.title}</p>
+            <p className="text-xs text-muted-foreground tabular-nums">
+              {bookingContext.guests} {bookingContext.guests === 1 ? 'traveller' : 'travellers'}
+              {bookingContext.price > 0
+                ? ` · ${formatMoney(bookingContext.price * bookingContext.guests, bookingContext.currency)}`
+                : ''}
+            </p>
+          </div>
+        </div>
+      ) : null}
       <Card className="w-full max-w-md border border-border/60 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-primary">

@@ -929,18 +929,14 @@ export default function TourDetailsPage({
               </div>
               <div className="h-px bg-primary/10" />
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary/75">
+                <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-primary/75">
                   <Users className="h-4 w-4" />
-                  Seats Remaining
+                  Seats left
                 </span>
-                <span className="text-lg font-black text-foreground">
-                  {schedule ? seatsRemainingAfterSelection : '—'}
+                <span className="text-lg font-black tabular-nums text-foreground">
+                  {schedule ? liveAvailableSeats : '—'}
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-muted-foreground">
-                Live capacity {liveAvailableSeats} seat{liveAvailableSeats === 1 ? '' : 's'} before
-                this booking.
-              </p>
               {schedule && seatsRemainingAfterSelection < 3 && liveAvailableSeats > 0 && (
                 <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-2">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 text-warning" />
@@ -988,11 +984,6 @@ export default function TourDetailsPage({
               </button>
             </div>
             <div className="space-y-2 rounded-2xl border border-primary/10 bg-gradient-to-br from-background/90 to-primary/5 p-3">
-              <p className="type-caption text-muted-foreground">
-                Selecting {selectedSeats} {selectedSeats === 1 ? 'seat' : 'seats'} leaves{' '}
-                {seatsRemainingAfterSelection} seat{seatsRemainingAfterSelection === 1 ? '' : 's'}{' '}
-                available on this departure.
-              </p>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 {activeGroupTier ? (
                   <p className="type-overline text-primary">
@@ -2140,7 +2131,9 @@ export default function TourDetailsPage({
         </div>
       ) : (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl lg:hidden">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* One slim row (was two stacked rows, ~160px of a phone screen). The summary taps
+              through to the date / seats picker; the button goes to checkout to review and pay. */}
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <button
               type="button"
               onClick={() =>
@@ -2148,24 +2141,21 @@ export default function TourDetailsPage({
                   .getElementById('booking-card')
                   ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }
-              className="flex flex-1 items-center justify-between rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-left transition-all duration-300 hover:border-primary/20 hover:bg-muted/30"
+              className="min-w-0 flex-1 text-left"
             >
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Ready to book
-                </p>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {schedule
-                    ? `${selectedSeats} ${selectedSeats === 1 ? 'seat' : 'seats'} · ${(() => {
-                        const m = money(animatedLiveTotalPrice, tour.currency)
-                        return `${m.estimate ? '≈ ' : ''}${m.text}`
-                      })()}`
-                    : 'No departure dates available'}
-                </p>
-              </div>
+              <p className="truncate text-base font-black tabular-nums text-foreground">
+                {schedule
+                  ? (() => {
+                      // The real total, not the count-up: a price bar must never show "PKR 0".
+                      const m = money(liveTotalPrice, tour.currency)
+                      return `${m.estimate ? '≈ ' : ''}${m.text}`
+                    })()
+                  : 'No dates available'}
+              </p>
               {schedule ? (
-                <p className="text-xs font-medium text-muted-foreground">
-                  {formatDate(schedule.start_time)} at {formatTime(schedule.start_time)}
+                <p className="truncate text-xs font-medium text-muted-foreground underline decoration-dotted underline-offset-2">
+                  {formatDate(schedule.start_time)} · {selectedSeats}{' '}
+                  {selectedSeats === 1 ? 'seat' : 'seats'} · Change
                 </p>
               ) : null}
             </button>
@@ -2173,9 +2163,9 @@ export default function TourDetailsPage({
             <Button
               onClick={handleBookNow}
               disabled={!canBookNow}
-              className="h-14 min-w-[220px] rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
+              className="h-12 shrink-0 rounded-2xl bg-primary px-6 font-bold text-primary-foreground shadow-xl shadow-primary/20 hover:bg-primary/90"
             >
-              {!schedule ? 'No Dates Available' : availableSlots === 0 ? 'Sold Out' : 'Pay Now'}
+              {!schedule ? 'No dates' : availableSlots === 0 ? 'Sold out' : 'Book now'}
             </Button>
           </div>
         </div>
