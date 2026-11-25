@@ -468,7 +468,7 @@ export default function OperatorStorefrontAnalyticsPage() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, delay: 0.1 }}
-              className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.9fr)]"
+              className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.9fr)]"
             >
               <Card className="glass-card border-border/50 rounded-3xl">
                 <CardHeader>

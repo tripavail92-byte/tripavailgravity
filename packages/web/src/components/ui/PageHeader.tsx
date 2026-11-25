@@ -37,8 +37,11 @@ export function PageHeader({
   }
 
   return (
-    <div className={cn('flex items-center justify-between gap-4 mb-6', className)}>
-      <div className="flex items-center gap-4 min-w-0 flex-1">
+    // flex-wrap + a 16rem floor on the title block: when the actions don't fit beside the title
+    // they drop onto their own line. Without it, two buttons on a phone squeezed the title to
+    // "B…" and set the subtitle one word per line.
+    <div className={cn('flex flex-wrap items-center justify-between gap-x-4 gap-y-3 mb-6', className)}>
+      <div className="flex min-w-[min(100%,16rem)] flex-1 items-center gap-4">
         {shouldShowBackButton ? (
           <Button
             variant="ghost"
@@ -55,7 +58,7 @@ export function PageHeader({
           {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="shrink-0">{actions}</div>}
+      {actions && <div className="max-w-full shrink-0">{actions}</div>}
     </div>
   )
 }

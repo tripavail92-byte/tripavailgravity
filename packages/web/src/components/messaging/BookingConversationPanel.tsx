@@ -193,7 +193,7 @@ export function BookingConversationPanel({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
       <GlassCard variant="card" className="rounded-3xl border border-border/60 p-0 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
           <div>

@@ -47,6 +47,7 @@ import {
   operatorPortalService,
 } from '@/features/tour-operator/services/operatorPortalService'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 type BookingAction = 'cancel' | 'complete' | 'resend_confirmation'
 
@@ -344,14 +345,15 @@ export default function OperatorBookingsPage() {
           }
         />
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GlassCard variant="card" className="rounded-3xl p-5">
+        {/* 2-up on a phone: four full-width tiles were a whole screen of zeros before any booking. */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
             <StatCard icon={Ticket} label="Confirmed" value={String(stats.confirmed)} />
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
             <StatCard icon={CalendarClock} label="Upcoming" value={String(stats.upcoming)} />
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
             <StatCard
               icon={Receipt}
               label="Revenue"
@@ -366,7 +368,7 @@ export default function OperatorBookingsPage() {
               }
             />
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
             <StatCard icon={Users} label="Travellers" value={String(stats.travellers)} />
           </GlassCard>
         </div>
@@ -451,7 +453,8 @@ export default function OperatorBookingsPage() {
         ) : null}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4 h-auto rounded-2xl bg-muted/60 p-1">
+          {/* Wraps on a phone — five tabs in one row pushed "Cancelled" off the screen. */}
+          <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start rounded-2xl bg-muted/60 p-1 sm:inline-flex sm:w-auto">
             <TabsTrigger value="all" className="rounded-2xl">
               All
             </TabsTrigger>
@@ -486,8 +489,10 @@ export default function OperatorBookingsPage() {
                   </p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
+                // Phone: each booking is a labelled card (CSS only — same cells, no second
+                // markup to keep in sync). An 8-column table meant side-scrolling every row.
+                <Table className="block md:table">
+                  <TableHeader className="hidden md:table-header-group">
                     <TableRow>
                       <TableHead>Reservation</TableHead>
                       <TableHead>Traveler</TableHead>
@@ -499,18 +504,18 @@ export default function OperatorBookingsPage() {
                       <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody className="block md:table-row-group">
                     {filteredBookings.map((booking) => (
                       <TableRow
                         key={booking.id}
                         id={`operator-booking-row-${booking.id}`}
-                        className={
-                          booking.id === highlightedBooking?.id
-                            ? 'bg-primary/5 ring-1 ring-primary/30'
-                            : undefined
-                        }
+                        className={cn(
+                          'grid grid-cols-2 gap-x-4 px-4 py-3 md:table-row md:p-0',
+                          booking.id === highlightedBooking?.id &&
+                            'bg-primary/5 ring-1 ring-primary/30',
+                        )}
                       >
-                        <TableCell>
+                        <TableCell className={cn(STACK_CELL_FIRST, 'col-span-2')}>
                           <div>
                             <p className="font-semibold text-foreground">{booking.tours.title}</p>
                             <p className="mt-1 text-xs text-muted-foreground">
@@ -519,7 +524,7 @@ export default function OperatorBookingsPage() {
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Traveler" className={cn(STACK_CELL, 'col-span-2')}>
                           <div className="space-y-2">
                             <div>
                               <p className="font-semibold text-foreground">
@@ -567,7 +572,7 @@ export default function OperatorBookingsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Departure" className={STACK_CELL}>
                           <div>
                             <p className="font-medium text-foreground">
                               {format(new Date(booking.tour_schedules.start_time), 'EEE, MMM d')}
@@ -577,7 +582,7 @@ export default function OperatorBookingsPage() {
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Pax" className={STACK_CELL}>
                           <span className="font-semibold text-foreground">{booking.pax_count}</span>
                           {/* Fulfilment details captured at checkout — who is coming, how to
                               reach them, and where to pick them up. */}
@@ -635,7 +640,7 @@ export default function OperatorBookingsPage() {
                             </p>
                           ) : null}
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Status" className={STACK_CELL}>
                           <Badge
                             variant={statusVariant(booking.status)}
                             className={
@@ -667,7 +672,7 @@ export default function OperatorBookingsPage() {
                             </p>
                           ) : null}
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Payment" className={STACK_CELL}>
                           <div className="flex items-center gap-2">
                             <CreditCard
                               className={`h-4 w-4 ${paymentTone(booking.payment_status)}`}
@@ -676,7 +681,7 @@ export default function OperatorBookingsPage() {
                               <span
                                 className={`text-sm font-medium ${paymentTone(booking.payment_status)}`}
                               >
-                                {booking.payment_status || 'unpaid'}
+                                {(booking.payment_status || 'unpaid').replace(/_/g, ' ')}
                               </span>
                               {Number(booking.remaining_amount || 0) > 0 ? (
                                 <p className="mt-1 text-xs text-muted-foreground">
@@ -699,7 +704,7 @@ export default function OperatorBookingsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell data-label="Actions" className={cn(STACK_CELL, 'col-span-2')}>
                           <div className="flex flex-wrap gap-2">
                             <Button
                               asChild
@@ -756,7 +761,7 @@ export default function OperatorBookingsPage() {
                             ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-foreground">
+                        <TableCell data-label="Total" className={cn(STACK_CELL, 'col-span-2 font-semibold text-foreground md:text-right')}>
                           <div>
                             <p>{formatMoney(booking.total_price, booking.tours.currency)}</p>
                             {Number(booking.promo_discount_value || 0) > 0 ? (
@@ -861,6 +866,13 @@ export default function OperatorBookingsPage() {
   )
 }
 
+// Bookings table cells: table cells from md up; on a phone, a 2-column grid of blocks (short
+// fields paired, long ones col-span-2) with the column name as a small label above each value
+// (from data-label). col-span-* is inert once the row is a table-row.
+const STACK_CELL =
+  "block px-0 py-2 md:table-cell md:p-4 before:mb-1 before:block before:text-[10px] before:font-bold before:uppercase before:tracking-[0.16em] before:text-muted-foreground before:content-[attr(data-label)] md:before:hidden"
+const STACK_CELL_FIRST = 'block px-0 pb-2 pt-1 md:table-cell md:p-4'
+
 function StatCard({
   icon: Icon,
   label,
@@ -871,15 +883,16 @@ function StatCard({
   value: string
 }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="rounded-2xl bg-primary/12 p-3 text-primary">
+    // Phone: icon above the figures so a half-width tile still fits "TRAVELLERS".
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div className="rounded-2xl bg-primary/12 p-2.5 text-primary sm:p-3">
         <Icon className="h-5 w-5" />
       </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">
           {label}
         </p>
-        <p className="mt-1 text-2xl font-black text-foreground">{value}</p>
+        <p className="mt-1 break-words text-xl font-black text-foreground sm:text-2xl">{value}</p>
       </div>
     </div>
   )

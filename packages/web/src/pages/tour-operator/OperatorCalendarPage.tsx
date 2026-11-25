@@ -265,40 +265,41 @@ export default function OperatorCalendarPage() {
           </GlassCard>
         )}
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <GlassCard variant="card" className="rounded-3xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-primary/12 p-3 text-primary"><CalendarDays className="h-5 w-5" /></div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Upcoming departures</p>
-                <p className="mt-1 text-2xl font-black text-foreground">{summary.upcomingDepartures}</p>
+        {/* 2-up on a phone (icon above the figure) — four full-width tiles filled the first screen. */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="rounded-2xl bg-primary/12 p-2.5 text-primary sm:p-3"><CalendarDays className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">Upcoming departures</p>
+                <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.upcomingDepartures}</p>
               </div>
             </div>
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-primary/12 p-3 text-primary"><Users className="h-5 w-5" /></div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Seats sold</p>
-                <p className="mt-1 text-2xl font-black text-foreground">{summary.seatsSold}</p>
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="rounded-2xl bg-primary/12 p-2.5 text-primary sm:p-3"><Users className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">Seats sold</p>
+                <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.seatsSold}</p>
               </div>
             </div>
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-primary/12 p-3 text-primary"><Compass className="h-5 w-5" /></div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Occupancy</p>
-                <p className="mt-1 text-2xl font-black text-foreground">{summary.occupancyRate}%</p>
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="rounded-2xl bg-primary/12 p-2.5 text-primary sm:p-3"><Compass className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">Occupancy</p>
+                <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.occupancyRate}%</p>
               </div>
             </div>
           </GlassCard>
-          <GlassCard variant="card" className="rounded-3xl p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-primary/12 p-3 text-primary"><Clock3 className="h-5 w-5" /></div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Active days</p>
-                <p className="mt-1 text-2xl font-black text-foreground">{summary.activeDays}</p>
+          <GlassCard variant="card" className="rounded-3xl p-4 sm:p-5">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="rounded-2xl bg-primary/12 p-2.5 text-primary sm:p-3"><Clock3 className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">Active days</p>
+                <p className="mt-1 text-xl font-black text-foreground sm:text-2xl">{summary.activeDays}</p>
               </div>
             </div>
           </GlassCard>
@@ -326,7 +327,7 @@ export default function OperatorCalendarPage() {
             </Button>
           </GlassCard>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(360px,420px)_minmax(0,1fr)]">
             <GlassCard variant="card" className="rounded-3xl p-4">
               <Calendar
                 mode="single"
@@ -376,17 +377,17 @@ export default function OperatorCalendarPage() {
                               {schedule.status}
                             </Badge>
                           </div>
-                          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                          <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
                             <div>
-                              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Departure</p>
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.18em]">Departure</p>
                               <p className="mt-1 text-sm font-semibold text-foreground">{format(new Date(schedule.start_time), 'h:mm a')}</p>
                             </div>
                             <div>
-                              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Seats sold</p>
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.18em]">Seats sold</p>
                               <p className="mt-1 text-sm font-semibold text-foreground">{schedule.booked_count} / {schedule.capacity}</p>
                             </div>
                             <div>
-                              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Seats left</p>
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground sm:text-xs sm:tracking-[0.18em]">Seats left</p>
                               <p className="mt-1 text-sm font-semibold text-foreground">{seatsLeft}</p>
                             </div>
                           </div>
@@ -428,17 +429,17 @@ export default function OperatorCalendarPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-black text-foreground">Next departures</h2>
-                    <p className="text-sm text-muted-foreground">High-signal agenda view for the next few sellable departures.</p>
+                    <p className="text-sm text-muted-foreground">Your next departures that still have seats.</p>
                   </div>
                 </div>
                 <div className="space-y-3">
                   {nextSchedules.map((schedule) => (
-                    <div key={schedule.id} className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/40 px-4 py-3">
-                      <div>
+                    <div key={schedule.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-background/40 px-4 py-3">
+                      <div className="min-w-0">
                         <p className="font-semibold text-foreground">{schedule.tours.title}</p>
                         <p className="text-sm text-muted-foreground">{format(new Date(schedule.start_time), 'EEE, MMM d · h:mm a')}</p>
                       </div>
-                      <Badge variant="outline" className="border-border/60 bg-background/60 text-foreground">
+                      <Badge variant="outline" className="shrink-0 whitespace-nowrap border-border/60 bg-background/60 text-foreground">
                         {Math.max(0, schedule.capacity - schedule.booked_count)} seats left
                       </Badge>
                     </div>

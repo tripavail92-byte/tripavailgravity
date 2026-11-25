@@ -32,6 +32,7 @@ import { TrustDocsSection } from './components/TrustDocsSection'
 import { COMPANY } from '@/config/company'
 import { Input } from '@/components/ui/input'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import {
   tourOperatorService,
@@ -975,24 +976,20 @@ interface ToggleSetting {
 
 function ToggleSetting({ label, description, enabled, onChange, disabled }: ToggleSetting) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-      <div>
+    // The shared Switch: the hand-rolled toggle was a dark thumb on a dark track in dark mode
+    // (invisible when off), had no role/aria-checked, and defaulted to type="submit".
+    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+      <div className="min-w-0">
         <p className="font-medium text-foreground">{label}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <button
-        onClick={() => onChange(!enabled)}
+      <Switch
+        checked={enabled}
+        onCheckedChange={onChange}
         disabled={disabled}
-        className={`relative w-11 h-6 rounded-full transition-colors ${
-          enabled ? 'bg-primary' : 'bg-input'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-      >
-        <div
-          className={`absolute top-1 w-4 h-4 rounded-full bg-background transition-transform ${
-            enabled ? 'right-1' : 'left-1'
-          }`}
-        />
-      </button>
+        aria-label={label}
+        className="shrink-0"
+      />
     </div>
   )
 }

@@ -106,7 +106,7 @@ export default function MessagesInboxPage() {
           }
         />
 
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
           <GlassCard variant="card" className="rounded-3xl border border-border/60 p-5">
             <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/80 px-3 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />

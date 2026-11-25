@@ -212,7 +212,7 @@ export function GuidesStep({ onNext, onUpdate, data }: StepProps) {
       {isEditorOpen ? (
         <div className="space-y-3">
           <RevealStage index={1} title="Who is this guide?" complete={hasName}>
-            <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px]">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Full name
