@@ -1,7 +1,8 @@
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
+import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -140,8 +141,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
+    // bg-background, not a hard-coded light grey: in dark mode that put a dark card on a white page.
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background p-4">
+      <div className="flex w-full max-w-md items-center justify-between">
+        <Logo />
+        <Link to="/" className="text-sm font-semibold text-muted-foreground hover:text-foreground">
+          ← Back to TripAvail
+        </Link>
+      </div>
+      <Card className="w-full max-w-md border border-border/60 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-primary">
             {isLogin ? 'Welcome Back' : 'Create Account'}

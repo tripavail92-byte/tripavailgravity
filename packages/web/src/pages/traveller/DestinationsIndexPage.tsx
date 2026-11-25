@@ -1,9 +1,10 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
-import { HUB_MIN, hubFacts } from '@/lib/destinations'
+import { destKey, HUB_MIN, hubFacts } from '@/lib/destinations'
 import { tourImage } from '@/lib/imageUrl'
 import { useDestinationCatalog } from '@/queries/destinationQueries'
 
@@ -11,6 +12,22 @@ import { useDestinationCatalog } from '@/queries/destinationQueries'
 export default function DestinationsIndexPage() {
   const money = useMoney()
   const { hubs, isLoading } = useDestinationCatalog()
+
+  // One distinct photo per place: prefer a trip whose main destination IS this place, and skip a
+  // photo an earlier (bigger) place already uses — otherwise Skardu, Hunza and Gilgit all showed the
+  // same picture from the one big northern-areas trip.
+  const tileImages = useMemo(() => {
+    const used = new Set<string>()
+    const out = new Map<string, string | undefined>()
+    for (const h of hubs) {
+      const main = h.tours.filter((t) => destKey(typeof t.location === 'string' ? t.location : t.location?.city) === h.slug)
+      const pool = [...main, ...h.tours].flatMap((t) => (t.images ?? []).slice(0, 3))
+      const pick = pool.find((u) => u && !used.has(u)) ?? pool[0]
+      if (pick) used.add(pick)
+      out.set(h.slug, pick)
+    }
+    return out
+  }, [hubs])
 
   useSeo({
     title: 'Tour destinations — trips, prices and dates',
@@ -40,7 +57,7 @@ export default function DestinationsIndexPage() {
           {hubs.map((h, i) => {
             const m = hubFacts(h).currencies[0]
             const from = m ? money(m.min, m.currency) : null
-            const img = h.tours.find((t) => t.images?.[0])?.images?.[0]
+            const img = tileImages.get(h.slug)
             return (
               <Link
                 key={h.slug}

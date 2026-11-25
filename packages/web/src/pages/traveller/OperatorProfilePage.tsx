@@ -757,7 +757,7 @@ export default function OperatorProfilePage() {
         >
           <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 -translate-y-12 translate-x-12 rounded-full bg-primary/10 blur-3xl" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 -translate-x-8 translate-y-8 rounded-full bg-primary/5 blur-3xl" />
-          <GlassContent className="relative z-10 flex flex-col gap-6 p-8 sm:flex-row sm:items-start">
+          <GlassContent className="relative z-10 flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:gap-6 sm:p-8">
             <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-border/60 bg-muted/30 shadow-xl">
               {profile.company_logo_url ? (
                 <img
@@ -816,18 +816,21 @@ export default function OperatorProfilePage() {
                 <p className="text-sm text-muted-foreground">No reviews yet</p>
               )}
 
-              {responseMetrics ? (
+              {/* Only with real messages behind it: with none, "Replies to 0% … about 0 min" read
+                  as a bad operator when there is simply no data. */}
+              {responseMetrics && Number(responseMetrics.traveler_messages) > 0 ? (
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                   <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1">
                     <Clock className="h-4 w-4 text-primary/70" />
                     Replies to {Math.round(responseMetrics.response_rate ?? 0)}% of traveler
                     messages
                   </span>
-                  <span>
-                    {responseMetrics.avg_response_minutes != null
-                      ? `Usually replies in about ${Math.round(responseMetrics.avg_response_minutes)} min`
-                      : 'Reply time will appear once travelers start messaging'}
-                  </span>
+                  {Number(responseMetrics.responded_messages) > 0 &&
+                  responseMetrics.avg_response_minutes != null ? (
+                    <span>
+                      Usually replies in about {Math.round(responseMetrics.avg_response_minutes)} min
+                    </span>
+                  ) : null}
                 </div>
               ) : null}
 

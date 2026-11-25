@@ -129,6 +129,9 @@ export function BottomTabsNav() {
   // browsing the public storefront keeps their own context instead of a traveller bar.
   const roleType = activeRole?.role_type
   if (roleType && roleType !== 'traveller') return null
+  // A trip page and checkout have their own fixed action bar (Enquire / Book / Pay) at the bottom;
+  // the tab bar sat on top of it and hid the button. Those pages have a back button instead.
+  if (/^\/(tours|packages|hotels)\/[^/]+\/?$/.test(pathname) || pathname.startsWith('/checkout')) return null
 
   const isAuthenticated = Boolean(user && activeRole)
 

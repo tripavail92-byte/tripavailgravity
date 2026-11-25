@@ -119,7 +119,9 @@ export function TourCard({
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
       />
       {/* Legibility scrim — strongest at the bottom where the text and CTA live. */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
+      {/* Legibility: operator photos are often posters with their own lettering, so the lower half
+          (where our title, price and button sit) gets a near-solid fade, the top stays clear. */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.82)_38%,rgba(0,0,0,0.35)_62%,rgba(0,0,0,0.12)_100%)]" />
 
       {/* Top row: real departure date + status */}
       <div className="pointer-events-none absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">

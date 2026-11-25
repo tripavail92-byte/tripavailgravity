@@ -1491,9 +1491,11 @@ export default function TourDetailsPage({
           {locationLabel}
         </span>
       </div>
-      <h1 className="type-display text-white drop-shadow-sm">{tour.title}</h1>
+      <h1 className="text-[1.75rem] font-extrabold leading-tight tracking-tight text-white drop-shadow-sm text-balance sm:text-4xl md:text-5xl">
+        {tour.title}
+      </h1>
       {tour.short_description ? (
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/85 sm:text-lg">
+        <p className="mt-2 line-clamp-3 max-w-2xl text-sm leading-relaxed text-white/85 sm:line-clamp-none sm:text-lg">
           {tour.short_description}
         </p>
       ) : null}
@@ -1623,7 +1625,7 @@ export default function TourDetailsPage({
                   <GlassTitle className="text-2xl font-bold">About the Journey</GlassTitle>
                 </GlassHeader>
                 <GlassContent>
-                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                  <p className="text-muted-foreground leading-relaxed text-base whitespace-pre-line sm:text-lg">
                     {tour.description}
                   </p>
                 </GlassContent>
@@ -1724,7 +1726,7 @@ export default function TourDetailsPage({
                   </GlassTitle>
                 </GlassHeader>
                 <GlassContent>
-                  <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+                  <p className="text-muted-foreground leading-relaxed text-base whitespace-pre-line sm:text-lg">
                     {(tour as any).physical_requirements}
                   </p>
                 </GlassContent>

@@ -765,7 +765,7 @@ function FieldShell({
       )}
     >
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">{label}</span>
-      <span className="mt-0.5 truncate text-sm text-muted-foreground group-hover:text-foreground">
+      <span className="mt-0.5 w-full truncate text-sm text-muted-foreground group-hover:text-foreground">
         {value}
       </span>
     </button>
@@ -836,18 +836,25 @@ function WhereField({
           </span>
           <span
             className={cn(
-              'mt-0.5 truncate text-sm',
+              // w-full so truncate has a width to cut at: in a flex column an item is only as wide
+              // as its text, so "Search destinations" spilled into the When field on phones.
+              'mt-0.5 w-full truncate text-sm',
               value ? 'text-foreground' : 'text-muted-foreground',
             )}
           >
-            {value || 'Search destinations'}
+            {value || (
+              <>
+                <span className="sm:hidden">Anywhere</span>
+                <span className="hidden sm:inline">Search destinations</span>
+              </>
+            )}
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
         sideOffset={12}
-        className={cn(POPOVER_PREMIUM, 'w-[360px] overflow-hidden p-0')}
+        className={cn(POPOVER_PREMIUM, 'w-[min(360px,calc(100vw-2rem))] overflow-hidden p-0')}
       >
         <div className="border-b border-border p-3">
           <input
@@ -1159,7 +1166,7 @@ function GuestsField({
           <FieldShell label="Who" value={display} onClick={() => setOpen(true)} wide />
         </div>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={12} className={cn(POPOVER_PREMIUM, 'w-[320px] p-4')}>
+      <PopoverContent align="end" sideOffset={12} className={cn(POPOVER_PREMIUM, 'w-[min(320px,calc(100vw-2rem))] p-4')}>
         <StepperRow title="Adults" sub="Ages 13+" value={adults} onChange={setAdults} min={1} />
         <div className="my-3 h-px bg-border" />
         <StepperRow title="Children" sub="Ages 2 – 12" value={kids} onChange={setKids} min={0} />

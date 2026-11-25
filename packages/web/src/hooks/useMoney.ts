@@ -14,6 +14,13 @@ export interface DisplayMoney {
   currency: string
 }
 
+/** Round to 3 significant figures, never below a whole unit (1,000,152 → 1,000,000; 39.6 → 40). */
+export function roundEstimate(x: number): number {
+  if (!Number.isFinite(x) || x <= 0) return 0
+  const step = Math.max(1, 10 ** (Math.floor(Math.log10(x)) - 2))
+  return Math.round(x / step) * step
+}
+
 /**
  * Returns a formatter that renders a listing price in the traveller's chosen
  * display currency. Converts via the FX table when a rate exists; otherwise
@@ -35,8 +42,9 @@ export function useMoney() {
       const rate = rates?.[`${from}->${to}`]
       if (!rate) return { text: formatMoney(n, from), estimate: false, currency: from }
 
-      // Round the converted estimate to a whole unit — cleaner than "AED 39.6".
-      return { text: formatMoney(Math.round(n * rate), to), estimate: true, currency: to }
+      // A converted price is an estimate, so show it like one: three significant figures
+      // ("≈ PKR 1,000,000", "≈ AED 39.6" → "≈ AED 40") instead of a falsely exact 1,000,152.
+      return { text: formatMoney(roundEstimate(n * rate), to), estimate: true, currency: to }
     },
     [display, rates],
   )

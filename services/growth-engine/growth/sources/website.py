@@ -30,6 +30,9 @@ NOT_A_TOUR = re.compile(
 LISTING_ROOT = re.compile(r"(?i)^/(tours?|trips?|packages?|tour-packages?|expeditions?|treks?|holidays?)/?$")
 CHROME = re.compile(r"(?is)<(header|nav|footer|aside|form)\b[^>]*>.*?</\1>")
 JUNK_IMG = re.compile(r"(?i)logo|icon|avatar|sprite|placeholder|loader|payment|flag|badge|\.svg|\.gif|data:")
+# A site-wide sharing image (og.png, og-image.jpg, social-share.png, default.jpg) is branding, not a
+# photo of this trip — it put a big logo on a trip card.
+GENERIC_SHARE_IMG = re.compile(r"(?i)/(og|og[-_]?image|opengraph|social([-_]share)?|share|default([-_]image)?|cover[-_]?image|site[-_]?image)[-_0-9]*\.(png|jpe?g|webp)(\?|$)")
 
 
 def _meta(html: str, prop: str) -> str | None:
@@ -41,7 +44,7 @@ def _meta(html: str, prop: str) -> str | None:
 def _images(html: str, base: str, limit: int) -> list[str]:
     found: list[str] = []
     og = _meta(html, "og:image")
-    if og:
+    if og and not JUNK_IMG.search(og) and not GENERIC_SHARE_IMG.search(urljoin(base, og)):
         found.append(urljoin(base, og))
     body = CHROME.sub(" ", html)
     for tag in re.findall(r"(?is)<img\b[^>]*>", body):

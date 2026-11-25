@@ -153,10 +153,17 @@ function FeedSection({
           <Link to={viewAllHref}>See all</Link>
         </Button>
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading && cards.length === 0
+      {/* Phones: a swipeable rail (~1¼ cards in view) instead of one full-screen card per row —
+          stacking every card made the home page an endless scroll. Tablet up: the grid. */}
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+        {(isLoading && cards.length === 0
           ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
-          : cards.slice(0, ROW_SIZE)}
+          : cards.slice(0, ROW_SIZE)
+        ).map((card, i) => (
+          <div key={i} className="w-[78%] max-w-[300px] shrink-0 snap-start sm:w-auto sm:max-w-none">
+            {card}
+          </div>
+        ))}
       </div>
     </section>
   )
@@ -390,7 +397,7 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
             {/* New on TripAvail leads the page, then destinations, then trust + rails. */}
             <FeedSection
               title="New on TripAvail"
-              subtitle="Freshly added by verified operators"
+              subtitle="Freshly added trips from local tour operators"
               viewAllHref="/search?types=tour&sort=newest"
               isLoading={mixQ.isLoading}
               cards={tourRails.newArrivals}

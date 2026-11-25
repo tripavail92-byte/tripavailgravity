@@ -80,6 +80,24 @@ async function makeNonce(): Promise<[string, string]> {
   return [raw, hashed]
 }
 
+const PAGES_KEY = 'tripavail_pages_this_visit'
+
+/** Distinct pages seen in this browser tab's visit (sessionStorage; 1 when storage is blocked). */
+function usePagesViewedThisVisit(pathname: string): number {
+  const [count, setCount] = useState(1)
+  useEffect(() => {
+    try {
+      const seen: string[] = JSON.parse(window.sessionStorage.getItem(PAGES_KEY) || '[]')
+      if (!seen.includes(pathname)) seen.push(pathname)
+      window.sessionStorage.setItem(PAGES_KEY, JSON.stringify(seen.slice(-20)))
+      setCount(seen.length)
+    } catch {
+      setCount(1)
+    }
+  }, [pathname])
+  return count
+}
+
 export function SignInPrompt() {
   const { user, initialized, isLoading } = useAuth()
   const location = useLocation()
@@ -91,7 +109,17 @@ export function SignInPrompt() {
   // No traveller sign-in prompt on the sign-in page itself, nor while an operator claims a listing
   // (they're setting up a business account there, not signing in as a traveller).
   const onAuthRoute = location.pathname.startsWith('/auth') || location.pathname.startsWith('/claim/')
-  const eligible = initialized && !isLoading && !user && !onAuthRoute && !recentlyDismissed()
+  // Never on the page someone lands on: a popup covering the content straight after arriving is
+  // what Google calls an intrusive interstitial on mobile (a ranking penalty), and it's annoying.
+  // Ask only once a visitor is browsing — their third page in this visit.
+  const pagesViewed = usePagesViewedThisVisit(location.pathname)
+  const eligible =
+    initialized && !isLoading && !user && !onAuthRoute && pagesViewed >= 3 && !recentlyDismissed()
+
+  // Opened on one page, it must not follow the visitor onto the sign-in or claim page.
+  useEffect(() => {
+    if (onAuthRoute) setShowModal(false)
+  }, [onAuthRoute])
 
   // One-Tap first, soft modal as the fallback.
   useEffect(() => {

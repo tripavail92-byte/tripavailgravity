@@ -18,6 +18,7 @@ import { useSeo } from '@/hooks/useSeo'
 import { useTravellerCoords } from '@/hooks/useTravellerCoords'
 import { formatTourDuration, isExpedition, isShortEscape } from '@/lib/tourDuration'
 import { useTourDepartureSummary } from '@/queries/departureQueries'
+import { useDestinationCatalog } from '@/queries/destinationQueries'
 import { useNearbyTours } from '@/queries/pickupQueries'
 import { type HomepageMixTour, useHomepageMixTours } from '@/queries/tourQueries'
 
@@ -62,6 +63,8 @@ export default function ToursPage() {
   // previous data while the larger page loads avoids a full skeleton flash.
   const [take, setTake] = useState(48)
   const allToursQuery = useHomepageMixTours(take, { placeholderData: (prev) => prev })
+  // The real catalogue size for the heading — the list below loads 48 at a time.
+  const catalogTotal = useDestinationCatalog().data?.length ?? 0
   const tours = useMemo(() => allToursQuery.data ?? [], [allToursQuery.data])
   const hasMore = tours.length >= take
   // Real next-departure dates for the visible cards — one batched query.
@@ -151,17 +154,18 @@ export default function ToursPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {allToursQuery.isLoading
               ? 'Loading trips…'
-              : `${filtered.length} ${filtered.length === 1 ? 'trip' : 'trips'}${
-                  hasFilters ? ` of ${tours.length}` : ''
-                } from verified operators`}
+              : hasFilters
+                ? `${filtered.length} matching ${filtered.length === 1 ? 'trip' : 'trips'}`
+                : `${catalogTotal || tours.length} trips from local tour operators`}
           </p>
         </header>
 
         {/* Filters — derived from the live catalogue */}
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+        {/* Phones: a tidy 2×2 grid of filters; wider screens: one wrapping row. */}
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
           {categories.length > 1 && (
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-10 w-[170px] rounded-full">
+              <SelectTrigger className="h-10 w-full rounded-full sm:w-[170px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +181,7 @@ export default function ToursPage() {
 
           {destinations.length > 1 && (
             <Select value={destination} onValueChange={setDestination}>
-              <SelectTrigger className="h-10 w-[180px] rounded-full">
+              <SelectTrigger className="h-10 w-full rounded-full sm:w-[180px]">
                 <SelectValue placeholder="Destination" />
               </SelectTrigger>
               <SelectContent>
@@ -192,7 +196,7 @@ export default function ToursPage() {
           )}
 
           <Select value={duration} onValueChange={(v) => setDuration(v as DurationFilter)}>
-            <SelectTrigger className="h-10 w-[150px] rounded-full">
+            <SelectTrigger className="h-10 w-full rounded-full sm:w-[150px]">
               <SelectValue placeholder="Trip length" />
             </SelectTrigger>
             <SelectContent>
@@ -205,7 +209,7 @@ export default function ToursPage() {
           </Select>
 
           <Select value={sortMode} onValueChange={(v) => setSortMode(v as SortMode)}>
-            <SelectTrigger className="h-10 w-[170px] rounded-full">
+            <SelectTrigger className="h-10 w-full rounded-full sm:w-[170px]">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>

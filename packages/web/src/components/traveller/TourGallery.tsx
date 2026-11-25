@@ -117,20 +117,24 @@ export function TourGallery({
     return (
       <>
         <div className="relative mb-4 overflow-hidden rounded-3xl shadow-2xl">
+          {/* The photo fills the box; the box grows with the overlay (min height = the old fixed
+              height). A fixed-height box clipped the top of a long title on phones. */}
           {hero ? (
             <img
               src={tourImage(hero, 1600)}
               alt={title}
               loading="eager"
-              className="h-[360px] w-full object-cover sm:h-[440px] md:h-[520px]"
+              className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
-            <div className="h-[360px] w-full bg-gradient-to-br from-primary/30 to-muted sm:h-[440px] md:h-[520px]" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-muted" />
           )}
           {/* Legibility scrim — strongest at the bottom where the title sits. */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/5" />
-          {/* Overlaid title / badges / subtitle. */}
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 md:p-10">{overlay}</div>
+          {/* Overlaid title / badges / subtitle — top padding leaves room for the photos button. */}
+          <div className="relative flex min-h-[340px] flex-col justify-end p-5 pt-16 sm:min-h-[440px] sm:p-8 sm:pt-16 md:min-h-[520px] md:p-10">
+            {overlay}
+          </div>
           {photos.length > 1 && (
             <button
               type="button"
