@@ -26,15 +26,17 @@ export function TourManager() {
       setIsActive(false)
       return
     }
-    // A partner's tour points at their dashboard (stats, bookings…): run it only there. It used to
-    // start on any page — on a phone it covered the operator setup wizard before setup was done.
-    const partnerDashboard =
+    // Each tour points at one page's UI, so run it only there. They used to start on any page — on
+    // a phone the card docks over the bottom of the screen, which covered the operator setup
+    // wizard, and for a traveller who signed up mid-booking it covered the checkout pay bar.
+    // The traveller tour's targets (search bar, menu button) live on the home page.
+    const tourPage =
       activeRole.role_type === 'tour_operator'
         ? '/operator/dashboard'
         : activeRole.role_type === 'hotel_manager'
           ? '/manager/dashboard'
-          : null
-    if (partnerDashboard && pathname !== partnerDashboard) {
+          : '/'
+    if (pathname !== tourPage) {
       setIsActive(false)
       return
     }

@@ -2,6 +2,7 @@ import { Heart, Loader2, Trash2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 
 import { isSurfaceEnabled } from '@tripavail/shared/config/launchScope'
 
@@ -12,6 +13,8 @@ import { getPackagesByIds } from '@/features/package-creation/services/packageSe
 import { tourService } from '@/features/tour-operator/services/tourService'
 import { useAuth } from '@/hooks/useAuth'
 import { wishlistService } from '@/lib/wishlistService'
+
+const FILTER_LABEL = { all: 'All', tour: 'Trips', package: 'Packages' } as const
 
 export default function WishlistPage() {
   const { user } = useAuth()
@@ -89,8 +92,10 @@ export default function WishlistPage() {
     <div className="min-h-screen bg-muted/50 pb-20">
       {/* Header */}
       <div className="bg-background border-b border-border/50 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-          <div>
+        {/* Phone: title row, then the filter underneath. Below lg the layout pins a menu button
+            at the top-right corner, so the row(s) it overlaps keep pr-20 clear. */}
+        <div className="max-w-7xl mx-auto flex flex-col gap-3 px-4 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0 sm:max-lg:pr-20">
+          <div className="max-sm:pr-20">
             <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
               <Heart className="w-6 h-6 text-primary fill-primary" />
               My Wishlist
@@ -100,7 +105,7 @@ export default function WishlistPage() {
             </p>
           </div>
 
-          <div className="flex bg-muted p-1 rounded-xl">
+          <div className="flex bg-muted p-1 rounded-xl max-sm:w-full">
             {/* Launch scope: no 'packages' tab until Phase 3 (saved packages are hidden). */}
             {(isSurfaceEnabled('hotels')
               ? (['all', 'tour', 'package'] as const)
@@ -109,20 +114,21 @@ export default function WishlistPage() {
               <button
                 key={t}
                 onClick={() => setFilter(t)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all max-sm:flex-1 ${
                   filter === t
                     ? 'bg-background text-primary shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {t}s
+                {/* Was `{t}s`, which rendered "ALLS". */}
+                {FILTER_LABEL[t]}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:py-10">
         {items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -139,17 +145,21 @@ export default function WishlistPage() {
                 : 'Save your favorite tours while you browse to keep them all in one place.'}
             </p>
             <Button asChild className="rounded-full px-8">
-              <a href={isSurfaceEnabled('hotels') ? '/explore' : '/tours'}>Start Exploring</a>
+              <Link to={isSurfaceEnabled('hotels') ? '/explore' : '/tours'}>Start Exploring</Link>
             </Button>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 xl:grid-cols-4">
             {filteredItems.map((item) => (
               <div key={item.id} className="relative group">
                 <button
                   onClick={() => handleRemove(item.id, item.type)}
-                  className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/90 backdrop-blur-sm text-muted-foreground/70 hover:text-primary shadow-sm transition-all opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
+                  // Hover-to-reveal only where hover exists: on a phone (no hover) it stayed at
+                  // opacity-0, so a saved trip could not be removed. Top-LEFT: the card's rating
+                  // pill owns the top-right corner.
+                  className="absolute top-4 left-4 z-10 p-2 rounded-full bg-background/90 backdrop-blur-sm text-muted-foreground/70 hover:text-primary shadow-sm transition-all focus-visible:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:scale-90 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-hover:scale-100"
                   title="Remove from wishlist"
+                  aria-label="Remove from wishlist"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

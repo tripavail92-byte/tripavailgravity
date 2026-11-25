@@ -1,3 +1,4 @@
+import { formatMoney } from '@tripavail/shared/utils/money'
 import { format } from 'date-fns'
 import { BadgeCheck, Calendar, ChevronRight, Clock, Loader2, Luggage, MapPin, MessageSquare } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -90,8 +91,11 @@ export default function MyTripsPage() {
     <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header */}
       <div className="bg-background border-b border-border/50 sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
-          <div>
+        {/* Phone: title row, then the bell + full-width Upcoming/Past toggle underneath. Below lg
+            the layout pins a menu button at the top-right corner, so the row(s) it overlaps keep
+            pr-20 clear — it used to sit on top of the "Past" tab. */}
+        <div className="max-w-4xl mx-auto flex flex-col gap-3 px-4 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0 sm:max-lg:pr-20">
+          <div className="max-sm:pr-20">
             <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
               <Luggage className="w-6 h-6 text-primary" />
               My Trips
@@ -103,12 +107,12 @@ export default function MyTripsPage() {
 
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <div className="flex bg-muted p-1 rounded-xl">
+            <div className="flex flex-1 bg-muted p-1 rounded-xl sm:flex-none">
               {(['upcoming', 'past'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                  className={`flex-1 px-5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all sm:flex-none ${
                     activeTab === tab
                       ? 'bg-background text-primary shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -122,7 +126,7 @@ export default function MyTripsPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
         <AnimatePresence mode="wait">
           {displayedTrips.length === 0 ? (
             <motion.div
@@ -130,7 +134,7 @@ export default function MyTripsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-background rounded-3xl border border-dashed border-border p-12 text-center"
+              className="bg-background rounded-3xl border border-dashed border-border p-8 text-center sm:p-12"
             >
               <div className="w-20 h-20 bg-muted/60 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Calendar className="w-8 h-8 text-muted-foreground/40" />
@@ -145,7 +149,8 @@ export default function MyTripsPage() {
               </p>
               {activeTab === 'upcoming' && (
                 <Button asChild className="rounded-full px-8">
-                  <a href="/explore">Browse Experiences</a>
+                  {/* /explore only redirects home (trips-first launch), and the <a> reloaded the app. */}
+                  <Link to="/tours">Browse trips</Link>
                 </Button>
               )}
             </motion.div>
@@ -157,18 +162,20 @@ export default function MyTripsPage() {
                   trip.tour_schedules?.start_time || trip.booking_date || trip.start_time || trip.check_in_date
                 const settlementState = getTravelerBookingSettlementState(trip)
                 const summaryPills: string[] = []
+                // The trip's own currency — a hard-coded "PKR" label was wrong for any AED/USD trip.
+                const money = (amount: number) => formatMoney(amount, details?.currency || 'PKR')
 
                 if (settlementState.hasPromo) {
-                  summaryPills.push(`Promo saved PKR ${settlementState.promoDiscountValue.toLocaleString()}`)
+                  summaryPills.push(`Promo saved ${money(settlementState.promoDiscountValue)}`)
                 }
 
                 if (settlementState.isRefunded) {
-                  summaryPills.push(`Refunded PKR ${settlementState.refundAmount.toLocaleString()}`)
+                  summaryPills.push(`Refunded ${money(settlementState.refundAmount)}`)
                 } else if (settlementState.isDeposit) {
-                  summaryPills.push(`Paid PKR ${settlementState.paidOnline.toLocaleString()} now`)
-                  summaryPills.push(`Remaining PKR ${settlementState.remainingAmount.toLocaleString()}`)
+                  summaryPills.push(`Paid ${money(settlementState.paidOnline)} now`)
+                  summaryPills.push(`Remaining ${money(settlementState.remainingAmount)}`)
                 } else {
-                  summaryPills.push(`Paid online PKR ${settlementState.paidOnline.toLocaleString()}`)
+                  summaryPills.push(`Paid online ${money(settlementState.paidOnline)}`)
                 }
 
                 return (
@@ -205,7 +212,7 @@ export default function MyTripsPage() {
                         </div>
 
                         {/* Right: Content */}
-                        <div className="flex-1 p-6 md:p-8 flex flex-col justify-between">
+                        <div className="flex-1 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
                           <div>
                             <div className="flex items-start justify-between gap-4 mb-2">
                               <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-widest">
@@ -223,7 +230,7 @@ export default function MyTripsPage() {
                               </Link>
                             </h3>
 
-                            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-4 sm:gap-x-8">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 bg-muted/60 rounded-xl flex items-center justify-center">
                                   <Calendar className="w-4 h-4 text-muted-foreground/70" />
@@ -268,28 +275,30 @@ export default function MyTripsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-8 pt-6 border-t border-border/50 flex items-center justify-between gap-3">
+                          {/* Phone: total on top, the two buttons share the row below — beside the
+                              total they ran off the card. */}
+                          <div className="mt-6 pt-4 border-t border-border/50 flex flex-col gap-3 sm:mt-8 sm:pt-6 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-col">
                               <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest leading-none mb-1">
                                 Booking total
                               </span>
                               <span className="text-lg font-black text-foreground leading-none">
-                                PKR {settlementState.totalAmount.toLocaleString()}
+                                {money(settlementState.totalAmount)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button asChild variant="outline" className="rounded-full px-5 group/btn">
+                              <Button asChild variant="outline" className="flex-1 rounded-full px-5 group/btn sm:flex-none">
                                 <Link to={`/trips/${trip.id}`}>
                                   Manage booking
                                   <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
                                 </Link>
                               </Button>
-                              <Button asChild variant="outline" className="rounded-full px-5">
+                              <Button asChild variant="outline" className="flex-1 rounded-full px-5 sm:flex-none">
                                 <Link
                                   to={`/messages?scope=${trip.tours ? 'tour_booking' : 'package_booking'}&bookingId=${trip.id}`}
                                 >
                                   <MessageSquare className="w-4 h-4 mr-2" />
-                                  Thread
+                                  Message
                                 </Link>
                               </Button>
                             </div>
@@ -305,7 +314,7 @@ export default function MyTripsPage() {
         </AnimatePresence>
 
         {/* Info Card */}
-        <div className="mt-12 bg-primary/5 rounded-3xl p-8 border border-primary/10 flex items-start gap-4">
+        <div className="mt-12 bg-primary/5 rounded-3xl p-5 border border-primary/10 flex items-start gap-4 sm:p-8">
           <div className="w-12 h-12 bg-background rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
             <BadgeCheck className="w-6 h-6 text-primary" />
           </div>

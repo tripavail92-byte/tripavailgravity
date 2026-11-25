@@ -95,7 +95,7 @@ export default function MessagesInboxPage() {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title="Messages"
-          subtitle="Reservation-scoped inbox with unread state, mute controls, and direct booking context for every conversation."
+          subtitle="Conversations about your bookings, all in one place."
           showBackButton={false}
           actions={
             // No NotificationBell here — DashboardLayout already renders one in the shared

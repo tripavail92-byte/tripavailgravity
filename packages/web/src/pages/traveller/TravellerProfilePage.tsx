@@ -391,7 +391,7 @@ export default function TravellerProfilePage() {
                 value={editingData.bio || ''}
                 onChange={(e) => handleFieldChange('bio', e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-input rounded-lg text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-6"
+                className="w-full px-4 py-2 border border-input rounded-lg text-muted-foreground text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-6"
               />
             ) : (
               <>
@@ -489,13 +489,13 @@ export default function TravellerProfilePage() {
                 <Popover key={item.id} open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <motion.div
-                      className={`p-6 ${isEditing ? 'cursor-text' : 'hover:bg-muted/40'} transition-colors`}
+                      className={`px-4 py-4 sm:p-6 ${isEditing ? 'cursor-text' : 'hover:bg-muted/40'} transition-colors`}
                       whileHover={!isEditing ? { x: 4 } : {}}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center ${
                               item.isRoseAccent ? 'bg-primary/10' : 'bg-muted'
                             }`}
                           >
@@ -504,7 +504,7 @@ export default function TravellerProfilePage() {
                               className={item.isRoseAccent ? 'text-primary' : 'text-foreground/80'}
                             />
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <div className="text-sm text-muted-foreground">{item.label}</div>
                             <div
                               className={
@@ -518,7 +518,7 @@ export default function TravellerProfilePage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                           {item.verified && (
                             <GlassBadge
                               variant="info"
@@ -554,22 +554,22 @@ export default function TravellerProfilePage() {
               ) : item.id === 'email' ? (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors cursor-pointer`}
+                  className={`px-4 py-4 sm:p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors cursor-pointer`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                   onClick={() => !profile.email_verified && setShowEmailVerification(true)}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 shrink-0 bg-muted rounded-full flex items-center justify-center">
                         <item.icon size={20} className="text-foreground/80" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-sm text-muted-foreground">{item.label}</div>
-                        <div className="font-medium text-foreground">{item.value}</div>
+                        <div className="break-all font-medium text-foreground">{item.value}</div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                       {item.verified ? (
                         <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
                           Verified
@@ -594,15 +594,15 @@ export default function TravellerProfilePage() {
               ) : item.id === 'phone' ? (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
+                  className={`px-4 py-4 sm:p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 shrink-0 bg-muted rounded-full flex items-center justify-center">
                         <item.icon size={20} className="text-foreground/80" />
                       </div>
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm text-muted-foreground">{item.label}</div>
                         {isEditing ? (
                           <input
@@ -610,7 +610,7 @@ export default function TravellerProfilePage() {
                             placeholder="Enter phone number"
                             value={editingData.phone || ''}
                             onChange={(e) => handleFieldChange('phone', e.target.value)}
-                            className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                            className="w-full px-3 py-1 border border-border/60 bg-background rounded text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                           />
                         ) : (
                           <div className="font-medium text-foreground">{item.value}</div>
@@ -619,7 +619,7 @@ export default function TravellerProfilePage() {
                     </div>
 
                     {!isEditing && (
-                      <div className="flex items-center gap-3">
+                      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                         {item.verified ? (
                           <GlassBadge variant="info" size="sm" icon={<Check className="w-3 h-3" />}>
                             Verified
@@ -645,15 +645,15 @@ export default function TravellerProfilePage() {
               ) : (
                 <motion.div
                   key={item.id}
-                  className={`p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
+                  className={`px-4 py-4 sm:p-6 ${isEditing ? '' : 'hover:bg-muted/40'} transition-colors`}
                   whileHover={!isEditing ? { x: 4 } : {}}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 shrink-0 bg-muted rounded-full flex items-center justify-center">
                         <item.icon size={20} className="text-foreground/80" />
                       </div>
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm text-muted-foreground">{item.label}</div>
                         {isEditing ? (
                           item.id === 'address' ? (
@@ -662,7 +662,7 @@ export default function TravellerProfilePage() {
                               placeholder="Enter address"
                               value={editingData.address || ''}
                               onChange={(e) => handleFieldChange('address', e.target.value)}
-                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                             />
                           ) : item.id === 'location' ? (
                             <input
@@ -670,7 +670,7 @@ export default function TravellerProfilePage() {
                               placeholder="Enter city"
                               value={editingData.city || ''}
                               onChange={(e) => handleFieldChange('city', e.target.value)}
-                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
+                              className="w-full px-3 py-1 border border-border/60 bg-background rounded text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 mt-1"
                             />
                           ) : (
                             <div className="font-medium text-foreground">{item.value}</div>

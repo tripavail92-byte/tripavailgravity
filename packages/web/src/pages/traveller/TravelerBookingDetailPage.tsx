@@ -558,13 +558,16 @@ export default function TravelerBookingDetailPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-16">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* pt-16 below lg clears the layout's pinned menu button (top-right), which sat on the title. */}
+      <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 sm:px-6 lg:px-8 lg:pt-8">
         <PageHeader
           title={bookingLabel}
-          subtitle="Reservation workspace with secure operator messaging for this booked trip."
+          subtitle="Your booking details, payments, and messages with the operator."
           backPath="/trips"
           actions={
-            <div className="flex items-center gap-2">
+            // Wraps: in one row, Download receipt / Trip voucher / Message operator were pushed
+            // off a phone screen entirely.
+            <div className="flex flex-wrap items-center gap-2">
               <NotificationBell />
               <Button
                 asChild
@@ -632,7 +635,7 @@ export default function TravelerBookingDetailPage() {
           variant="card"
           className="overflow-hidden rounded-[32px] border border-border/60 p-0 shadow-sm"
         >
-          <div className="grid gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
             <div className="relative min-h-[260px] overflow-hidden bg-muted">
               <img src={imageSrc} alt={bookingLabel} className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />

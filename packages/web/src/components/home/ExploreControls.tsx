@@ -42,7 +42,9 @@ export function ExploreControls({
 }: ExploreControlsProps): JSX.Element {
   const tab = modeToTab(activeMode)
   return (
-    <section aria-label="Explore" className={cn(className)}>
+    // data-tour: step 1 of the traveller walkthrough points here. The target was missing, so
+    // that step always fell back to a floating card with nothing to point at.
+    <section aria-label="Explore" data-tour="search-bar" className={cn(className)}>
       <AirbnbSearchBar
         // Controlled tab: parent drives which tab is active, so tab clicks
         // update the host page's mode (home-page section grid) or navigate
