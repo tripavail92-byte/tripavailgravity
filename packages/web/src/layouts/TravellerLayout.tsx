@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { Logo } from '@/components/brand/Logo'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { BottomTabsNav } from '@/components/navigation/BottomTabsNav'
@@ -52,17 +53,9 @@ export default function TravellerLayout() {
         } as React.CSSProperties
       }
     >
-      {/* Account area only, never the public storefront. Desktop gets the collapsed sidebar; the
-          sidebar is hidden on mobile, so mobile gets the same hamburger drawer the rest of the app
-          uses (the traveller dashboard has no menu of its own). */}
-      {showSidebar ? (
-        <>
-          <CollapsibleSidebar />
-          <div className="fixed right-3 top-3 z-50 lg:hidden">
-            <RoleBasedDrawer />
-          </div>
-        </>
-      ) : null}
+      {/* Account area only, never the public storefront. Desktop gets the collapsed sidebar; below
+          lg the sidebar is hidden, so the account pages get a slim top bar (below). */}
+      {showSidebar ? <CollapsibleSidebar /> : null}
       <div
         className={cn(
           'transition-[padding] duration-200',
@@ -81,6 +74,17 @@ export default function TravellerLayout() {
             The account area opts out: it already has the sidebar and its own chrome, and would
             otherwise show two navigations at once. */}
         {!showSidebar ? <SiteHeader /> : null}
+
+        {/* Account area, below lg: a slim sticky bar — logo (home) + menu. This replaced a menu
+            button pinned at the top-right corner, which floated over every page's own header and
+            over content as you scrolled. Account pages' own sticky bars sit under it at top-14
+            (h-14 = this bar) and go back to top-0 from lg, where this bar is hidden. */}
+        {showSidebar ? (
+          <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border/60 bg-background/90 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/75 lg:hidden">
+            <Logo variant="emblem" emblemClassName="h-8 w-8" />
+            <RoleBasedDrawer />
+          </div>
+        ) : null}
 
         {/* SiteHeader is `fixed`, so nothing below it reserves space on its own. Applying the
             offset once here means a new storefront page cannot forget it — which is exactly how

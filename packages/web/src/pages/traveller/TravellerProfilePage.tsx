@@ -269,7 +269,9 @@ export default function TravellerProfilePage() {
       icon: Calendar,
       label: 'Date of Birth',
       value: dateOfBirth ? format(dateOfBirth, 'MMMM dd, yyyy') : 'Not added',
-      verified: true,
+      // A self-entered birthday is never verified; this was hard-coded true, so the row showed a
+      // "Verified" badge even when no date had been added.
+      verified: false,
       isCalendar: true,
       isRoseAccent: true,
     },
@@ -278,7 +280,8 @@ export default function TravellerProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+      {/* top-14 = under the layout's slim phone bar; top-0 from lg, where that bar is hidden. */}
+      <div className="sticky top-14 z-10 bg-background/80 backdrop-blur-lg border-b border-border lg:top-0">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-foreground">Profile</h1>
           <Button

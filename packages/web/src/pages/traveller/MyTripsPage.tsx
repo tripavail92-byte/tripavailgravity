@@ -90,12 +90,12 @@ export default function MyTripsPage() {
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header */}
-      <div className="bg-background border-b border-border/50 sticky top-0 z-20">
-        {/* Phone: title row, then the bell + full-width Upcoming/Past toggle underneath. Below lg
-            the layout pins a menu button at the top-right corner, so the row(s) it overlaps keep
-            pr-20 clear — it used to sit on top of the "Past" tab. */}
-        <div className="max-w-4xl mx-auto flex flex-col gap-3 px-4 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0 sm:max-lg:pr-20">
-          <div className="max-sm:pr-20">
+      {/* top-14 = under the layout's slim phone bar; top-0 from lg, where that bar is hidden.
+          Phones: not sticky — this header is two rows there, and with the bar it pinned ~180px. */}
+      <div className="bg-background border-b border-border/50 sticky top-14 z-20 max-sm:static lg:top-0">
+        {/* Phone: title row, then the bell + full-width Upcoming/Past toggle underneath. */}
+        <div className="max-w-4xl mx-auto flex flex-col gap-3 px-4 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+          <div>
             <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
               <Luggage className="w-6 h-6 text-primary" />
               My Trips

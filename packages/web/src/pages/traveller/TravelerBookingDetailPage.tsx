@@ -558,8 +558,7 @@ export default function TravelerBookingDetailPage() {
 
   return (
     <div className="min-h-screen bg-muted/30 pb-16">
-      {/* pt-16 below lg clears the layout's pinned menu button (top-right), which sat on the title. */}
-      <div className="mx-auto max-w-6xl px-4 pb-8 pt-16 sm:px-6 lg:px-8 lg:pt-8">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <PageHeader
           title={bookingLabel}
           subtitle="Your booking details, payments, and messages with the operator."

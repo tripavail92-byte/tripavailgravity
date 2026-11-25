@@ -92,10 +92,9 @@ export default function AccountSettingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 pb-20">
       {/* Header — scrolls away; only the tab bar sticks. Both used to be sticky, the tabs at a
-          hard-coded top-16 under a header that is ~100px tall, so the tabs covered its subtitle.
-          max-lg:pr-20 clears the layout's pinned menu button (top-right below lg). */}
+          hard-coded top-16 under a header that is ~100px tall, so the tabs covered its subtitle. */}
       <div className="bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="max-w-3xl mx-auto px-4 py-6 max-lg:pr-20">
+        <div className="max-w-3xl mx-auto px-4 py-6">
           <h1 className="text-xl font-semibold text-foreground mb-1">Account Settings</h1>
           <p className="text-sm text-muted-foreground">
             Manage your account security and preferences
@@ -104,7 +103,8 @@ export default function AccountSettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 max-lg:pr-20">
+      {/* top-14 = under the layout's slim phone bar; top-0 from lg, where that bar is hidden. */}
+      <div className="sticky top-14 z-10 bg-background/80 backdrop-blur-lg border-b border-border/50 px-4 lg:top-0">
         <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto py-3">
           {[
             { id: 'overview', label: 'Overview' },
