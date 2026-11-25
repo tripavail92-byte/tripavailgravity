@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Loader2,
   MessageSquare,
   Pencil,
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -88,10 +90,18 @@ export default function OperatorReviewsPage() {
         <div className="absolute bottom-0 right-0 w-[520px] h-[520px] rounded-full bg-amber-500/10 blur-[110px] opacity-60" />
       </div>
       <div className="relative z-10 mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      {/* A top-level menu entry now, so no back arrow — the ratings overview is a button. */}
       <PageHeader
         title="Reviews"
         subtitle="Read traveler feedback and reply publicly to build trust."
-        backPath="/operator/reputation"
+        actions={
+          <Button asChild variant="outline" className="rounded-2xl">
+            <Link to="/operator/reputation">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Ratings overview
+            </Link>
+          </Button>
+        }
       />
 
       {reviews.length === 0 ? (

@@ -17,6 +17,7 @@ import {
   Plus,
   Settings,
   ShieldCheck,
+  Star,
   UserCircle,
 } from 'lucide-react'
 import { LucideIcon } from 'lucide-react'
@@ -86,6 +87,9 @@ export const ROLE_NAVIGATION: Record<RoleType, NavItem[]> = {
     { label: 'Calendar', icon: Calendar, href: '/operator/calendar' },
     { label: 'Bookings', icon: BookCheck, href: '/operator/bookings' },
     { label: 'Messages', icon: MessageSquare, href: '/messages' },
+    // Straight to the reply inbox. It used to be reachable only via Analytics → Reputation →
+    // Review Inbox; the ratings overview is one tap from the inbox header.
+    { label: 'Reviews', icon: Star, href: '/operator/reviews' },
     { label: 'Settings', icon: Settings, href: '/operator/settings' },
     { label: 'Help & Support', icon: HelpCircle, href: '/help' },
     { label: 'Legal & Policies', icon: ShieldCheck, href: '/legal' },
