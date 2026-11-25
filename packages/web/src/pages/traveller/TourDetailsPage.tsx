@@ -57,6 +57,8 @@ import {
   operatorPublicService,
 } from '@/features/tour-operator/services/operatorPublicService'
 import { Tour, TourSchedule, tourService } from '@/features/tour-operator/services/tourService'
+import { type DestinationTour, tourDestKeys } from '@/lib/destinations'
+import { useDestinationCatalog } from '@/queries/destinationQueries'
 import { useMoney } from '@/hooks/useMoney'
 import { useSeo } from '@/hooks/useSeo'
 import { useT } from '@/hooks/useT'
@@ -543,6 +545,13 @@ export default function TourDetailsPage({
 
   // ── Enquiry listings (operator not on TripAvail yet): WhatsApp instead of checkout ──────
   const isEnquiry = tour?.booking_mode === 'enquiry'
+  const { hubs: allHubs } = useDestinationCatalog()
+  const tripHubs = tour
+    ? [...tourDestKeys(tour as unknown as DestinationTour).keys()]
+        .map((k) => allHubs.find((h) => h.slug === k))
+        .filter((h): h is NonNullable<typeof h> => Boolean(h))
+        .slice(0, 8)
+    : []
   const enquiryOperatorName = tour?.operator_display_name || 'the operator'
   const enquiryPageUrl =
     typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : ''
@@ -1921,6 +1930,22 @@ export default function TourDetailsPage({
               </GlassContent>
             </GlassCard>
 
+            {/* Destinations this trip visits — each links to its destination page. */}
+            {tripHubs.length ? (
+              <nav aria-label="Destinations on this trip" className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-semibold text-muted-foreground">Destinations:</span>
+                {tripHubs.map((h) => (
+                  <Link
+                    key={h.slug}
+                    to={`/destinations/${h.slug}`}
+                    className="rounded-full border border-border/60 bg-background px-3 py-1 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                  >
+                    {h.name} tours
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+
             {/* Traveler reviews — id/scroll-mt-32 target for the "Reviews" sub-nav tab.
                 Empty-state variant renders below when reviews.length === 0 so the tab always has
                 a landing spot rather than silently no-op'ing on a fresh tour. */}
@@ -2062,6 +2087,7 @@ export default function TourDetailsPage({
                   priceText={enquiryPrice}
                   departures={enquiryDepartures}
                   anyDate={tour.availability === 'on_request'}
+                  claimUrl={operatorSlug ? `/claim/${operatorSlug}` : null}
                   pageUrl={enquiryPageUrl}
                   onWhatsAppClick={() => trackEnquiry('whatsapp_click')}
                   onClaimClick={() => trackEnquiry('claim_click')}

@@ -6,6 +6,7 @@ import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { useIsDesktop } from '@/hooks/useIsDesktop'
 import { useMoney } from '@/hooks/useMoney'
 import { tourImage } from '@/lib/imageUrl'
+import { useEnquiryTourIds } from '@/queries/enquiryQueries'
 import {
   formatDepartureDate,
   formatDepartureRange,
@@ -67,6 +68,8 @@ export function TourCard({
   departureSummary,
 }: TourCardProps) {
   const navigate = useNavigate()
+  // An enquiry listing is booked with the operator on WhatsApp, not on TripAvail.
+  const isEnquiry = useEnquiryTourIds().data?.has(id) ?? false
   const paymentTerms = getTourPaymentTerms({
     basePrice: price,
     guestCount: 1,
@@ -226,7 +229,7 @@ export function TourCard({
             }}
             className="pointer-events-auto shrink-0 rounded-full bg-primary px-4 py-2 text-[13px] font-bold text-primary-foreground shadow-lg shadow-primary/30 transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
           >
-            Book Now
+            {isEnquiry ? 'Enquire' : 'Book Now'}
           </button>
         </div>
       </div>

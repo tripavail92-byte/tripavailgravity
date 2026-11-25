@@ -88,7 +88,9 @@ export function SignInPrompt() {
   const [busy, setBusy] = useState(false)
   const startedRef = useRef(false)
 
-  const onAuthRoute = location.pathname.startsWith('/auth')
+  // No traveller sign-in prompt on the sign-in page itself, nor while an operator claims a listing
+  // (they're setting up a business account there, not signing in as a traveller).
+  const onAuthRoute = location.pathname.startsWith('/auth') || location.pathname.startsWith('/claim/')
   const eligible = initialized && !isLoading && !user && !onAuthRoute && !recentlyDismissed()
 
   // One-Tap first, soft modal as the fallback.

@@ -381,7 +381,7 @@ function chrome(main) {
   return `<div id="ssr-content">
 <header>
 <p><a href="/">TripAvail</a></p>
-<nav aria-label="Main"><a href="/">Home</a> · <a href="/tours">All tours</a> · <a href="/partner/onboarding">List your tours</a> · <a href="/contact">Contact</a></nav>
+<nav aria-label="Main"><a href="/">Home</a> · <a href="/tours">All tours</a> · <a href="/destinations">Destinations</a> · <a href="/partner/onboarding">List your tours</a> · <a href="/contact">Contact</a></nav>
 </header>
 <main>
 ${main}
@@ -524,6 +524,18 @@ ${
         .join('\n')}\n</ul>\n</section>`
     : ''
 }
+${(() => {
+  const hubs = destinationHubs(site).list.slice(0, 16)
+  return hubs.length
+    ? `<section>
+<h2>Popular destinations</h2>
+<ul>
+${hubs.map((h) => `<li>${link(destPath(h), `${h.name} tours`)} (${h.tours.length} trips)</li>`).join('\n')}
+</ul>
+<p>${link('/destinations', 'All destinations')}</p>
+</section>`
+    : ''
+})()}
 <section>
 <h2>Tours by destination</h2>
 ${destinationSections(site, groups, 'h3')}
@@ -558,6 +570,266 @@ ${tours.some(isEnquiry) ? '<p>Some trips are listed from operators who are not o
     jsonLd: { '@context': 'https://schema.org', '@graph': [ORGANIZATION, WEBSITE] },
     body: chrome(main),
   }
+}
+
+// ─── Destination hubs (/destinations/:slug) ─────────────────────────────────
+// One page per place travellers search for ("Hunza tours"), listing every live trip that visits
+// it. Facts only: counts, price ranges, lengths and dates are computed from the listings below, and
+// the FAQ answers are built from the same numbers. Big departure cities and overnight stops are not
+// destinations; spelling variants ("Hunza Valley", "Karimabad (Hunza)") are merged by key. A place
+// needs HUB_MIN trips to get a page, so no thin pages are published.
+const HUB_MIN = 4
+const DEST_STOP = new Set([
+  'islamabad', 'rawalpindi', 'lahore', 'karachi', 'peshawar', 'multan', 'faisalabad', 'sialkot', 'quetta',
+  'hyderabad', 'gujranwala', 'mirpur', 'besham', 'chilas', 'dassu', 'raikot-bridge', 'jaglot', 'mansehra',
+  'abbottabad', 'balakot', 'pakistan', 'northern-pakistan', 'north-pakistan', 'northern-areas',
+])
+function destKey(name) {
+  return plainLatin(String(name || ''))
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/\b(valley|city|national park|plains|district|pass|top)\b/g, ' ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+const destLabel = (name) => titleCase(plainLatin(String(name || '').replace(/\s*\(.*?\)\s*/g, ' ').trim()))
+function tourDestKeys(t) {
+  const loc = t.location
+  const raw = [typeof loc === 'string' ? loc : loc?.city, ...arr(t.destination_cities)]
+  const keys = new Map()
+  for (const r of raw) {
+    const k = destKey(r)
+    if (k && !DEST_STOP.has(k) && !keys.has(k)) keys.set(k, destLabel(r))
+  }
+  return keys
+}
+function destinationHubs(site) {
+  if (site._hubs) return site._hubs
+  const hubs = new Map()
+  for (const t of site.tours) {
+    for (const [k, label] of tourDestKeys(t)) {
+      if (!hubs.has(k)) hubs.set(k, { slug: k, labels: new Map(), tours: [] })
+      const h = hubs.get(k)
+      h.tours.push(t)
+      h.labels.set(label, (h.labels.get(label) || 0) + 1)
+    }
+  }
+  const list = [...hubs.values()]
+    .filter((h) => h.tours.length >= HUB_MIN)
+    .map((h) => ({ ...h, name: [...h.labels.entries()].sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)[0][0] }))
+    .sort((a, b) => b.tours.length - a.tours.length || a.name.localeCompare(b.name))
+  site._hubs = { list, bySlug: new Map(list.map((h) => [h.slug, h])) }
+  return site._hubs
+}
+const destPath = (h) => `/destinations/${h.slug}`
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b)
+  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : 0
+}
+const mode = (xs) => {
+  const c = new Map()
+  for (const x of xs) c.set(x, (c.get(x) || 0) + 1)
+  return [...c.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] || 0
+}
+
+/** The numbers a destination page and its FAQ are built from — all computed from live listings. */
+function hubFacts(site, h) {
+  const priced = h.tours.filter((t) => tourPrice(t) > 0)
+  const byCur = new Map()
+  for (const t of priced) {
+    const c = (t.currency || 'PKR').toUpperCase()
+    if (!byCur.has(c)) byCur.set(c, [])
+    byCur.get(c).push(tourPrice(t))
+  }
+  const currencies = [...byCur.entries()]
+    .map(([currency, xs]) => ({ currency, min: Math.min(...xs), max: Math.max(...xs), median: median(xs), n: xs.length }))
+    // Rupee prices lead for a Pakistani audience; then whichever currency most trips use.
+    .sort((a, b) => (b.currency === 'PKR') - (a.currency === 'PKR') || b.n - a.n)
+  const days = h.tours.map(tourDays).filter((d) => d > 0)
+  const departures = h.tours
+    .flatMap((t) => site.upcoming(t).slice(0, 3).map((d) => ({ t, d })))
+    .sort((a, b) => Date.parse(a.d.start_time) - Date.parse(b.d.start_time))
+  const anyDateTrips = h.tours.filter((t) => anyDate(t) && !site.upcoming(t).length)
+  const ops = [...new Set(h.tours.map((t) => t.operator_id))].map((id) => site.opById.get(id)).filter(Boolean)
+  return {
+    currencies,
+    onRequest: h.tours.length - priced.length,
+    days: days.length ? { min: Math.min(...days), max: Math.max(...days), common: mode(days) } : null,
+    departures,
+    anyDateTrips,
+    ops,
+  }
+}
+
+function hubFaq(site, h, f) {
+  const qa = []
+  const name = h.name
+  if (f.currencies.length) {
+    const main = f.currencies[0]
+    const others = f.currencies.slice(1).map((c) => `${c.n} priced in ${c.currency} from ${fmtMoney(c.min, c.currency)}`)
+    qa.push([
+      `How much does a ${name} tour cost?`,
+      `${name} trips listed on TripAvail cost from ${fmtMoney(main.min, main.currency)} to ${fmtMoney(main.max, main.currency)} per person; ` +
+        `the median price is ${fmtMoney(main.median, main.currency)} (${main.n} priced in ${main.currency}).` +
+        (others.length ? ` International trips: ${others.join('; ')}.` : '') +
+        (f.onRequest ? ` ${f.onRequest} more ${f.onRequest === 1 ? 'trip quotes' : 'trips quote'} the price on request.` : '') +
+        ' Prices are set by each tour operator.',
+    ])
+  }
+  if (f.days) {
+    qa.push([
+      `How many days do you need for a ${name} trip?`,
+      f.days.min === f.days.max
+        ? `The listed ${name} trips run ${daysLabel(f.days.min)}.`
+        : `Listed ${name} trips run from ${daysLabel(f.days.min)} to ${daysLabel(f.days.max)}; the most common length is ${daysLabel(f.days.common)}.`,
+    ])
+  }
+  const soon = f.departures.slice(0, 4).map(({ t, d }) => `${fmtDate(d.start_time)} (${t.title})`)
+  qa.push([
+    `When do ${name} trips depart?`,
+    (soon.length ? `The next listed departures are ${soon.join(', ')}.` : 'None of the listed trips has a fixed departure coming up right now.') +
+      (f.anyDateTrips.length
+        ? ` ${f.anyDateTrips.length} private ${f.anyDateTrips.length === 1 ? 'trip runs' : 'trips run'} on the dates you choose.`
+        : ''),
+  ])
+  if (f.ops.length) {
+    const names = f.ops.slice(0, 8).map(opName)
+    qa.push([
+      `Which tour operators run ${name} trips?`,
+      `${f.ops.length} ${f.ops.length === 1 ? 'operator lists' : 'operators list'} ${name} trips on TripAvail: ${names.join(', ')}${f.ops.length > 8 ? ` and ${f.ops.length - 8} more` : ''}.`,
+    ])
+  }
+  const enquiry = h.tours.filter(isEnquiry).length
+  qa.push([
+    `How do I book a ${name} trip?`,
+    enquiry === h.tours.length
+      ? `Each ${name} trip here is booked directly with its tour operator on WhatsApp; the trip page has the button. Confirm the price and dates with them before you pay.`
+      : enquiry
+        ? `Trips from operators on TripAvail are booked on the site. Trips from operators not on TripAvail yet are booked directly with the operator on WhatsApp; each trip page says which.`
+        : `Pick a trip and a departure date, then book on TripAvail.`,
+  ])
+  return qa
+}
+const faqLd = (qa, id) => ({
+  '@type': 'FAQPage',
+  '@id': id,
+  mainEntity: qa.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+})
+const faqHtml = (qa, heading) =>
+  `<section>\n<h2>${esc(heading)}</h2>\n${qa.map(([q, a]) => `<h3>${esc(q)}</h3>\n<p>${esc(a)}</p>`).join('\n')}\n</section>`
+
+function destinationPage(site, h) {
+  const f = hubFacts(site, h)
+  const qa = hubFaq(site, h, f)
+  const canonical = `${SITE}${destPath(h)}`
+  const main0 = f.currencies[0]
+  const upcomingTrips = h.tours.filter((t) => site.upcoming(t).length)
+  const pastTrips = h.tours.filter((t) => !site.upcoming(t).length && !anyDate(t))
+  const others = destinationHubs(site).list.filter((x) => x.slug !== h.slug).slice(0, 12)
+  const summary = [
+    `${h.tours.length} trips to ${h.name} from ${f.ops.length} local tour ${f.ops.length === 1 ? 'operator' : 'operators'}.`,
+    main0 ? `Prices from ${fmtMoney(main0.min, main0.currency)} per person.` : '',
+    f.days ? `Trips run ${f.days.min === f.days.max ? daysLabel(f.days.min) : `${f.days.min}–${f.days.max} days`}.` : '',
+    f.departures.length ? `Next departure ${fmtDate(f.departures[0].d.start_time)}.` : '',
+  ].filter(Boolean)
+  const main = `<nav aria-label="Breadcrumb"><a href="/">Home</a> › <a href="/destinations">Destinations</a> › ${esc(h.name)}</nav>
+<h1>${esc(h.name)} tours: ${h.tours.length} trips with prices and dates</h1>
+<p>${esc(summary.join(' '))}</p>
+${
+  f.departures.length
+    ? `<section>\n<h2>${esc(h.name)} trips departing soon</h2>\n<ul>\n${f.departures
+        .slice(0, 12)
+        .map(({ t, d }) => {
+          const price = Number(d.price_override) || tourPrice(t)
+          return `<li>${esc(fmtDate(d.start_time))} — ${link(tourPath(t), t.title)}${price > 0 ? ` — ${esc(fmtMoney(price, t.currency))} per person` : ''}</li>`
+        })
+        .join('\n')}\n</ul>\n</section>`
+    : ''
+}
+${upcomingTrips.length ? `<section>\n<h2>${esc(h.name)} trips with upcoming dates</h2>\n<ul>\n${upcomingTrips.map((t) => tourItem(site, t)).join('\n')}\n</ul>\n</section>` : ''}
+${f.anyDateTrips.length ? `<section>\n<h2>Private ${esc(h.name)} trips on dates you choose</h2>\n<ul>\n${f.anyDateTrips.map((t) => tourItem(site, t)).join('\n')}\n</ul>\n</section>` : ''}
+${pastTrips.length ? `<section>\n<h2>Past ${esc(h.name)} trips</h2>\n<p>No departures coming up; ask the operator about new dates.</p>\n<ul>\n${pastTrips.map((t) => tourItem(site, t)).join('\n')}\n</ul>\n</section>` : ''}
+${faqHtml(qa, `${h.name} trips: common questions`)}
+${f.ops.length ? `<section>\n<h2>Tour operators for ${esc(h.name)}</h2>\n<ul>\n${f.ops.map((o) => `<li>${link(opPath(o), opName(o))}</li>`).join('\n')}\n</ul>\n</section>` : ''}
+${others.length ? `<section>\n<h2>Other destinations</h2>\n<ul>\n${others.map((x) => `<li>${link(destPath(x), `${x.name} tours`)} (${x.tours.length})</li>`).join('\n')}\n</ul>\n</section>` : ''}`
+
+  return {
+    title: `${h.name} tours — ${h.tours.length} trips with prices and dates`,
+    description: clip(
+      `Compare ${h.tours.length} ${h.name} tours from ${f.ops.length} local operators.` +
+        (main0 ? ` Prices from ${fmtMoney(main0.min, main0.currency)} per person.` : '') +
+        (f.days ? ` ${f.days.min}–${f.days.max} days.` : '') +
+        (f.departures.length ? ` Next departure ${fmtDate(f.departures[0].d.start_time)}.` : ''),
+      160,
+    ),
+    canonical,
+    image: tourImages(h.tours[0])[0],
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'CollectionPage', '@id': `${canonical}#page`, url: canonical, name: `${h.name} tours`, isPartOf: { '@id': `${SITE}/#website` }, mainEntity: itemList(h.tours) },
+        faqLd(qa, `${canonical}#faq`),
+        breadcrumbs([['Home', `${SITE}/`], ['Destinations', `${SITE}/destinations`], [h.name, canonical]]),
+      ],
+    },
+    body: chrome(main),
+  }
+}
+
+function destinationsIndexPage(site) {
+  const { list } = destinationHubs(site)
+  const canonical = `${SITE}/destinations`
+  const item = (h) => {
+    const m = hubFacts(site, h).currencies[0]
+    return `<li>${link(destPath(h), `${h.name} tours`)} — ${h.tours.length} trips${m ? `, from ${esc(fmtMoney(m.min, m.currency))} per person` : ''}</li>`
+  }
+  const main = `<nav aria-label="Breadcrumb"><a href="/">Home</a> › Destinations</nav>
+<h1>Tour destinations: ${list.length} places with trips, prices and dates</h1>
+<p>Every destination with at least ${HUB_MIN} live trips on TripAvail. Each page lists the trips that go there, their prices per person, how many days they take and the next departure dates.</p>
+<ul>\n${list.map(item).join('\n')}\n</ul>`
+  return {
+    title: `Tour destinations — ${list.length} places with trips, prices and dates`,
+    description: clip(`Trips to ${list.slice(0, 6).map((h) => h.name).join(', ')} and more — compare prices per person, trip length and departure dates from local tour operators.`, 160),
+    canonical,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'CollectionPage', '@id': `${canonical}#page`, url: canonical, name: 'Tour destinations', isPartOf: { '@id': `${SITE}/#website` } },
+        breadcrumbs([['Home', `${SITE}/`], ['Destinations', canonical]]),
+      ],
+    },
+    body: chrome(main),
+  }
+}
+
+/** A trip's own FAQ, from its listing: price, dates, inclusions, how to book. */
+function tourFaq(site, t, op) {
+  const qa = []
+  const price = tourPrice(t)
+  const upcoming = site.upcoming(t)
+  qa.push([
+    `How much does ${t.title} cost?`,
+    price > 0
+      ? `${capital(priceLabel(t))}, as listed by ${op ? opName(op) : 'the operator'}.`
+      : `The operator quotes the price on request; ask them on WhatsApp.`,
+  ])
+  qa.push([
+    `When does ${t.title} depart?`,
+    upcoming.length
+      ? `Upcoming departures: ${upcoming.slice(0, 6).map((d) => fmtDate(d.start_time)).join(', ')}.`
+      : anyDate(t)
+        ? 'It runs on the dates you choose; tell the operator your dates.'
+        : 'There are no departures coming up right now; ask the operator about new dates.',
+  ])
+  const inc = strList(t.inclusions)
+  if (inc.length) qa.push([`What is included in ${t.title}?`, `${inc.slice(0, 8).join('; ')}.`])
+  qa.push([
+    `How do I book ${t.title}?`,
+    isEnquiry(t)
+      ? `You book it directly with ${op ? opName(op) : 'the operator'} on WhatsApp; the operator is not on TripAvail yet. Confirm the price and dates before you pay.`
+      : 'Choose a departure date on TripAvail and book online.',
+  ])
+  return qa
 }
 
 function toursIndexPage(site) {
@@ -690,6 +962,14 @@ ${
     ? `<section>\n<h2>About the operator</h2>\n<p>This tour is run by ${link(opPath(op), opName(op))}${op.primary_city ? `, based in ${esc(clean(op.primary_city))}` : ''}.${op.has_identity_verified ? ' TripAvail has verified the operator\'s identity.' : ''}${isEnquiry(t) ? ' The operator is not on TripAvail yet: TripAvail lists this trip from their public listings, and you book it directly with them. Confirm the price and dates before you pay.' : ''}</p>\n</section>`
     : ''
 }
+${(() => {
+  const hubs = [...tourDestKeys(t).keys()].map((k) => destinationHubs(site).bySlug.get(k)).filter(Boolean)
+  return hubs.length ? `<section>
+<h2>Destinations on this trip</h2>
+<p>${hubs.map((h) => link(destPath(h), `${h.name} tours`)).join(' · ')}</p>
+</section>` : ''
+})()}
+${faqHtml(tourFaq(site, t, op), 'Questions about this trip')}
 </article>
 ${sameCity.length ? `<section>\n<h2>More tours in ${esc(city)}</h2>\n<ul>\n${sameCity.map((x) => tourItem(site, x)).join('\n')}\n</ul>\n</section>` : ''}
 ${op && sameOp.length ? `<section>\n<h2>More tours from ${esc(opName(op))}</h2>\n<ul>\n${sameOp.map((x) => tourItem(site, x, { withOperator: false })).join('\n')}\n</ul>\n</section>` : ''}`
@@ -762,7 +1042,11 @@ ${op && sameOp.length ? `<section>\n<h2>More tours from ${esc(opName(op))}</h2>\
     ogType: 'product',
     jsonLd: {
       '@context': 'https://schema.org',
-      '@graph': [trip, breadcrumbs([['Home', `${SITE}/`], ['Tours', `${SITE}/tours`], [t.title, canonical]])],
+      '@graph': [
+        trip,
+        faqLd(tourFaq(site, t, op), `${canonical}#faq`),
+        breadcrumbs([['Home', `${SITE}/`], ['Tours', `${SITE}/tours`], [t.title, canonical]]),
+      ],
     },
     body: chrome(main),
   }
@@ -881,6 +1165,7 @@ async function buildSitemap() {
   const statics = [
     ['/', '1.0', newest(site.tours)],
     ['/tours', '0.9', newest(site.tours)],
+    ['/destinations', '0.8', newest(site.tours)],
     ...(LAUNCH_HOTELS ? [['/hotels', '0.7', ''], ['/explore', '0.7', '']] : []),
     ['/contact', '0.3', ''],
     ['/refunds', '0.3', ''],
@@ -890,6 +1175,7 @@ async function buildSitemap() {
   const urls = [
     ...statics.map(([p, priority, lastmod]) => ({ loc: `${SITE}${p}`, priority, lastmod })),
     ...site.tours.map((t) => ({ loc: `${SITE}${tourPath(t)}`, priority: '0.8', lastmod: day(t.updated_at) })),
+    ...destinationHubs(site).list.map((h) => ({ loc: `${SITE}${destPath(h)}`, priority: '0.8', lastmod: newest(h.tours) })),
     ...pkgs.map((p) => ({ loc: `${SITE}/packages/${p.slug || p.id}`, priority: '0.8', lastmod: '' })),
     ...site.liveOperators.map((o) => ({
       loc: `${SITE}${opPath(o)}`,
@@ -925,6 +1211,7 @@ function buildLlmsTxt(site) {
     '## Main pages',
     '',
     `- [All tours](${SITE}/tours): every live tour, grouped by destination, with length, price and next departure`,
+    `- [Destinations](${SITE}/destinations): one page per destination with its trips, price range, trip lengths and next departures`,
     `- [Cancellations and refunds](${SITE}/refunds): how cancellations and refunds work on TripAvail`,
     `- [Contact](${SITE}/contact): support for travellers and tour operators (${SUPPORT_EMAIL})`,
     `- [List your tours](${SITE}/partner/onboarding): for tour operators who want to sell on TripAvail`,
@@ -934,6 +1221,14 @@ function buildLlmsTxt(site) {
   ]
   for (const [, list] of byDestination(tours)) {
     for (const t of list) out.push(`- [${mdText(t.title)}](${SITE}${tourPath(t)}): ${tourFacts(site, t)}`)
+  }
+  const hubs = destinationHubs(site).list
+  if (hubs.length) {
+    out.push('', '## Destinations', '')
+    for (const h of hubs) {
+      const m = hubFacts(site, h).currencies[0]
+      out.push(`- [${mdText(h.name)} tours](${SITE}${destPath(h)}): ${h.tours.length} trips${m ? `, from ${fmtMoney(m.min, m.currency)} per person` : ''}`)
+    }
   }
   if (liveOperators.length) {
     out.push('', '## Tour operators', '')
@@ -1090,6 +1385,26 @@ async function handlePublicRoute(pathname, search, res) {
   }
   if (pathname === '/') {
     sendHtml(res, renderShell(homePage(await loadSite())))
+    return true
+  }
+  if (/^\/destinations\/?$/.test(pathname)) {
+    sendHtml(res, renderShell(destinationsIndexPage(await loadSite())))
+    return true
+  }
+  const dm = pathname.match(/^\/destinations\/([^/]+)\/?$/)
+  if (dm) {
+    const site = await loadSite()
+    const want = destKey(decodeURIComponent(dm[1]))
+    const hub = destinationHubs(site).bySlug.get(want)
+    if (!hub) {
+      sendNotFound(res)
+      return true
+    }
+    if (dm[1] !== hub.slug) {
+      redirect(res, `${destPath(hub)}${search}`)
+      return true
+    }
+    sendHtml(res, renderShell(destinationPage(site, hub)))
     return true
   }
   if (/^\/tours\/?$/.test(pathname)) {

@@ -92,6 +92,9 @@ const OperatorStorefrontAnalyticsPage = lazy(
   () => import('@/pages/tour-operator/OperatorStorefrontAnalyticsPage'),
 )
 const OperatorProfilePage = lazy(() => import('@/pages/traveller/OperatorProfilePage'))
+const ClaimListingPage = lazy(() => import('@/pages/traveller/ClaimListingPage'))
+const DestinationPage = lazy(() => import('@/pages/traveller/DestinationPage'))
+const DestinationsIndexPage = lazy(() => import('@/pages/traveller/DestinationsIndexPage'))
 const VerificationStatusPage = lazy(() => import('@/pages/shared/VerificationStatusPage'))
 const HelpSupportHubPage = lazy(() => import('@/pages/shared/HelpSupportHubPage'))
 const LegalPoliciesHubPage = lazy(() => import('@/pages/shared/LegalPoliciesHubPage'))
@@ -318,6 +321,11 @@ function App() {
               <Route path="/tours/:id" element={<TourDetailsPage />} />
               {/* Public operator storefront */}
               <Route path="/operators/:slug" element={<OperatorProfilePage />} />
+              {/* Self-serve claim of an unclaimed operator listing (WhatsApp code) */}
+              <Route path="/claim/:slug" element={<ClaimListingPage />} />
+              {/* Destination hubs — one page per place, every trip that goes there */}
+              <Route path="/destinations" element={<DestinationsIndexPage />} />
+              <Route path="/destinations/:slug" element={<DestinationPage />} />
               <Route path="/checkout/tour/:id" element={<TourCheckoutPage />} />
               <Route
                 path="/checkout/package/:id"

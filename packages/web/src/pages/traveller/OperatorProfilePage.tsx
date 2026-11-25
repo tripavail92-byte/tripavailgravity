@@ -880,10 +880,11 @@ export default function OperatorProfilePage() {
                       </a>
                     ) : null}
                     <a
-                      href={claimHref(
-                        name,
-                        typeof window !== 'undefined' ? window.location.href : '',
-                      )}
+                      href={
+                        profile?.slug
+                          ? `/claim/${profile.slug}`
+                          : claimHref(name, typeof window !== 'undefined' ? window.location.href : '')
+                      }
                       onClick={() =>
                         trackStorefrontEvent('claim_click', { metadata: { surface: 'profile' } })
                       }

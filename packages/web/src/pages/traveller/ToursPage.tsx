@@ -72,7 +72,7 @@ export default function ToursPage() {
   useSeo({
     title: 'Tours & trips in Pakistan',
     description:
-      'Browse verified guided tours and trips across northern Pakistan — Hunza, Skardu, Naran, Swat and more. Transparent pricing and secure booking.',
+      'Browse tours and trips across Pakistan — Hunza, Skardu, Naran, Swat and more — with prices, dates and day-by-day itineraries from local tour operators.',
     canonicalPath: '/tours',
   })
 

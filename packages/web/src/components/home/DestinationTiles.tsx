@@ -2,6 +2,8 @@ import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { tourImage } from '@/lib/imageUrl'
+import { destKey } from '@/lib/destinations'
+import { useDestinationCatalog } from '@/queries/destinationQueries'
 import { useHomepageMixTours } from '@/queries/tourQueries'
 
 /**
@@ -27,6 +29,9 @@ export function DestinationTiles({
 }) {
   // 96 rows is the whole live catalogue at present — enough to count accurately.
   const { data: tours = [], isLoading } = useHomepageMixTours(96, undefined, { upcomingOnly: true })
+  // Places with their own destination page link there; anything smaller falls back to search.
+  const { hubs } = useDestinationCatalog()
+  const hubSlugs = new Set(hubs.map((h) => h.slug))
 
   const destinations = (() => {
     const byCity = new Map<string, { city: string; count: number; image: string }>()
@@ -68,7 +73,11 @@ export function DestinationTiles({
         {destinations.map((d, i) => (
           <Link
             key={d.city}
-            to={`/search?types=tour&q=${encodeURIComponent(d.city)}`}
+            to={
+              hubSlugs.has(destKey(d.city))
+                ? `/destinations/${destKey(d.city)}`
+                : `/search?types=tour&q=${encodeURIComponent(d.city)}`
+            }
             className="group relative aspect-square w-40 shrink-0 snap-start overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:w-44"
           >
             <img

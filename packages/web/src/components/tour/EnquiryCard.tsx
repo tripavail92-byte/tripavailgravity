@@ -46,6 +46,8 @@ interface EnquiryCardProps {
   /** The operator runs this trip on dates the traveller chooses (no fixed departures). */
   anyDate?: boolean
   pageUrl: string
+  /** The self-serve claim page for this operator; falls back to an email. */
+  claimUrl?: string | null
   onWhatsAppClick: () => void
   onClaimClick: () => void
 }
@@ -59,6 +61,7 @@ export function EnquiryCard({
   departures,
   anyDate = false,
   pageUrl,
+  claimUrl = null,
   onWhatsAppClick,
   onClaimClick,
 }: EnquiryCardProps) {
@@ -145,7 +148,7 @@ export function EnquiryCard({
         <p className="text-center text-xs text-muted-foreground">
           Run {operatorName}?{' '}
           <a
-            href={claimHref(operatorName, pageUrl)}
+            href={claimUrl || claimHref(operatorName, pageUrl)}
             onClick={onClaimClick}
             className="font-semibold text-primary underline-offset-4 hover:underline"
           >
