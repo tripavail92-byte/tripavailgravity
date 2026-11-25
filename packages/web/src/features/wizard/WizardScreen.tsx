@@ -150,8 +150,10 @@ export function WizardScreen({
       {hideFooter ? null : (
       <footer
         className={cn(
-          'sticky bottom-0 -mx-6 flex items-center justify-between gap-3 border-t border-border/60',
-          'bg-background/85 px-6 py-4 backdrop-blur-xl md:-mx-8 md:px-8',
+          // Bleeds to the card edges, so these negative margins must track the card's padding in
+          // CreateTourPage (p-4 / sm:p-6 / md:p-8).
+          'sticky bottom-0 -mx-4 flex items-center justify-between gap-3 border-t border-border/60',
+          'bg-background/85 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 sm:py-4 md:-mx-8 md:px-8',
         )}
       >
         <Button variant="outline" size="lg" onClick={onBack} className="gap-2 px-6">

@@ -45,11 +45,12 @@ export function DashboardHeader() {
               lg:hidden — from lg up the CollapsibleSidebar renders its own emblem, and showing both
               put two logos side by side. Below lg the sidebar is hidden, so this stays as the only
               home button. */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <Logo variant="emblem" emblemClassName="h-9 w-9" className="lg:hidden" />
+            {/* One line: at text-xl "Tour Operator" broke onto two lines on a 375px phone. */}
             <h2
               className={cn(
-                'text-xl font-semibold',
+                'truncate whitespace-nowrap text-lg font-semibold sm:text-xl',
                 isPartnerChrome ? 'text-white' : 'text-foreground',
               )}
             >
@@ -81,7 +82,7 @@ export function DashboardHeader() {
           )}
 
           {/* Right Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {/* Dark / light mode toggle */}
             <ThemeToggle inverted={isPartnerChrome} />
 

@@ -65,7 +65,8 @@ export function StageRail({
                 aria-current={isCurrent ? 'step' : undefined}
                 aria-label={`${stage.title} — ${STATUS_LABEL[stage.status]}`}
                 className={cn(
-                  'block h-1.5 rounded-full transition-all duration-300',
+                  // The bar is 6px tall; the ::after pad gives a thumb something to hit.
+                  "relative block h-1.5 rounded-full transition-all duration-300 after:absolute after:-inset-x-0.5 after:-inset-y-3 after:content-['']",
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   isCurrent ? 'w-8' : 'w-5',
                   selectable ? 'cursor-pointer' : 'cursor-default',

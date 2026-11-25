@@ -30,11 +30,11 @@ export function RevealStage({
   return (
     <section
       className={cn(
-        'rounded-[24px] border border-border/60 bg-background/70 p-5 shadow-sm sm:p-6',
+        'rounded-[24px] border border-border/60 bg-background/70 p-4 shadow-sm sm:p-6',
         className,
       )}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         <div
           className={cn(
             'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300',
@@ -44,16 +44,17 @@ export function RevealStage({
         >
           {complete ? <Check className="h-4 w-4" /> : index}
         </div>
-        <div className="min-w-0 flex-1 space-y-4">
-          <div>
-            <h3 className="text-base font-bold leading-tight text-foreground">{title}</h3>
-            {description ? (
-              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-            ) : null}
-          </div>
-          {children}
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-bold leading-tight text-foreground">{title}</h3>
+          {description ? (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          ) : null}
         </div>
       </div>
+      {/* The answer sits under the question, indented past the number badge (h-8 + gap-4 = pl-12)
+          from sm up. On a phone it takes the full width — these stages live inside two or three
+          other cards, and the indent left a search box about 150px wide. */}
+      <div className="mt-4 min-w-0 space-y-4 sm:pl-12">{children}</div>
     </section>
   )
 }

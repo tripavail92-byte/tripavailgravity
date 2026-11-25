@@ -1101,13 +1101,17 @@ export default function CreateTourPage() {
         <div className="absolute bottom-20 -right-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <div className="sticky top-0 z-10 border-b border-border/60 bg-background/85 px-6 py-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+      {/* Header. Sticky from sm up, offset by the 64px dashboard header — at top-0 it slid UNDER
+          that header (z-50) on scroll and hid the Save/Submit row. On a phone it scrolls away: a
+          146px pinned block plus the app header would eat a quarter of the screen, and the
+          wizard's own sticky footer already carries Back/Next. */}
+      <div className="relative z-10 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 sm:sticky sm:top-16 sm:px-6 sm:py-4">
         <div className="max-w-5xl mx-auto space-y-3">
           {/* Title row */}
           <div className="flex justify-between items-center gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <h1 className="text-xl font-bold text-foreground truncate">
+            {/* Phone: status sits under the title so four buttons don't squeeze it to "T…". */}
+            <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+              <h1 className="truncate text-lg font-bold text-foreground sm:text-xl">
                 {tourData.title || 'Create New Tour'}
               </h1>
               {/* Autosave indicator */}
@@ -1143,14 +1147,15 @@ export default function CreateTourPage() {
                 />
               )}
             </div>
-            {/* Action buttons */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Action buttons — square icon buttons on a phone (labels return from sm up). */}
+            <div className="flex items-center gap-1.5 shrink-0 sm:gap-2">
               <Button
                 variant="outline"
                 onClick={handlePreview}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
+                className="h-10 w-10 p-0 rounded-xl text-sm font-semibold gap-2 sm:h-11 sm:w-auto sm:px-6"
                 title="See this trip exactly as travellers will"
+                aria-label="Preview"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Preview</span>
@@ -1159,7 +1164,8 @@ export default function CreateTourPage() {
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
+                className="h-10 w-10 p-0 rounded-xl text-sm font-semibold gap-2 sm:h-11 sm:w-auto sm:px-6"
+                aria-label="Save draft"
               >
                 <BookmarkCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save Draft</span>
@@ -1168,7 +1174,8 @@ export default function CreateTourPage() {
                 variant="outline"
                 onClick={() => (hasUnsaved ? setShowExitModal(true) : navigate(returnPath))}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl text-sm font-semibold gap-2"
+                className="h-10 w-10 p-0 rounded-xl text-sm font-semibold gap-2 sm:h-11 sm:w-auto sm:px-6"
+                aria-label="Save and exit"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Save & Exit</span>
@@ -1176,7 +1183,8 @@ export default function CreateTourPage() {
               <Button
                 onClick={handleSubmitForReview}
                 disabled={isSaving || isSubmitting}
-                className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold gap-2 shadow-md shadow-primary/25"
+                className="h-10 w-10 p-0 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold gap-2 shadow-md shadow-primary/25 sm:h-11 sm:w-auto sm:px-6"
+                aria-label="Submit for review"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1205,7 +1213,7 @@ export default function CreateTourPage() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto flex-1 w-full max-w-5xl p-6 md:p-8">
+      <div className="relative mx-auto flex-1 w-full max-w-5xl px-4 py-5 sm:p-6 md:p-8">
         {/* A save that can never succeed by retrying. Say what actually failed, and show the raw
             Postgres code — guessing at the cause is what produced the wrong diagnosis before. */}
         {isVerificationBlocked ? (
@@ -1248,7 +1256,7 @@ export default function CreateTourPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="rounded-3xl border border-border/60 bg-background/80 p-6 shadow-xl backdrop-blur-xl md:p-8"
+            className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-xl backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-8"
           >
             <Suspense
               fallback={

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { getTourPaymentTerms } from '@/features/booking/utils/tourPaymentTerms'
 import { Tour } from '@/features/tour-operator/services/tourService'
+import { cn } from '@/lib/utils'
 
 interface TourReviewStepProps {
   data: Partial<Tour>
@@ -39,8 +40,13 @@ function ReviewRow({
 }) {
   return (
     <div className="flex justify-between items-start gap-4 py-2 border-b border-border/60 last:border-b-0">
-      <span className="text-muted-foreground text-sm font-medium">{label}</span>
-      <span className={highlight ? 'text-primary font-bold text-lg text-right' : 'text-foreground font-bold text-right'}>
+      <span className="max-w-[45%] shrink-0 text-muted-foreground text-sm font-medium">{label}</span>
+      <span
+        className={cn(
+          'min-w-0 break-words text-right font-bold',
+          highlight ? 'text-primary text-lg' : 'text-foreground',
+        )}
+      >
         {value}
       </span>
     </div>
@@ -112,7 +118,7 @@ export function TourReviewStep({
 
   return (
     <div className="space-y-6">
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl overflow-hidden">
+      <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-border/40 shadow-lg">
@@ -125,8 +131,10 @@ export function TourReviewStep({
         </div>
       </div>
 
-      <div className="grid gap-6">
-        <div className="glass-card rounded-2xl p-6">
+      {/* grid-cols-1 = minmax(0,1fr): a bare implicit track sized itself to its content and
+          rendered every card 427px wide on a 375px phone, clipping the values. */}
+      <div className="grid grid-cols-1 gap-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <Info className="w-4 h-4 text-primary" /> Basic Information
           </h3>
@@ -147,7 +155,7 @@ export function TourReviewStep({
           </div>
         </div>
 
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-primary" /> Experience Details
           </h3>
@@ -173,7 +181,7 @@ export function TourReviewStep({
           </div>
         </div>
 
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" /> Pricing & Policies
           </h3>
@@ -213,7 +221,7 @@ export function TourReviewStep({
           </div>
         </div>
 
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-4 sm:p-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-primary" /> Scheduling
           </h3>
@@ -228,17 +236,28 @@ export function TourReviewStep({
               value={schedules[0]?.date ? formatDateDisplay(deriveArrivalDate(schedules[0].date, durationDays)) : '—'}
             />
             {schedulePreview.length > 0 ? (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1 overflow-x-auto">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground grid grid-cols-4 gap-2 min-w-[22rem] pb-1">
+              // Phone: each departure is a 2×2 block with inline labels instead of a 4-column table
+              // that had to be side-scrolled. The column headings return from sm up.
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2 sm:space-y-1">
+                <div className="hidden text-[11px] font-bold uppercase tracking-wider text-muted-foreground sm:grid sm:grid-cols-4 sm:gap-2 sm:pb-1">
                   <span>Departure</span>
                   <span>Arrival</span>
                   <span>Time</span>
                   <span className="text-right">Capacity</span>
                 </div>
                 {schedulePreview.map((schedule, index) => (
-                  <div key={`${schedule.dateText}-${schedule.timeText}-${index}`} className="text-xs text-foreground font-semibold grid grid-cols-4 gap-2 min-w-[22rem]">
-                    <span>{schedule.dateText}</span>
-                    <span>{schedule.arrivalText}</span>
+                  <div
+                    key={`${schedule.dateText}-${schedule.timeText}-${index}`}
+                    className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-primary/10 pb-2 text-xs font-semibold text-foreground last:border-b-0 last:pb-0 sm:grid-cols-4 sm:gap-2 sm:border-b-0 sm:pb-0"
+                  >
+                    <span>
+                      <span className="font-medium text-muted-foreground sm:hidden">Departs </span>
+                      {schedule.dateText}
+                    </span>
+                    <span className="text-right sm:text-left">
+                      <span className="font-medium text-muted-foreground sm:hidden">Returns </span>
+                      {schedule.arrivalText}
+                    </span>
                     <span>{schedule.timeText}</span>
                     <span className="text-right">{schedule.capacityText}</span>
                   </div>

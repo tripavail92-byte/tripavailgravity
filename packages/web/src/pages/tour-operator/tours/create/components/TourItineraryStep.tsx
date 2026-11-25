@@ -328,7 +328,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4"
+      className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-4 sm:p-4"
     >
       <p className="text-xs font-black uppercase tracking-wider text-primary">
         {editingId ? 'Edit Activity' : 'New Activity'}
@@ -463,7 +463,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
       exit={{ opacity: 0, y: -20 }}
     >
       {/* ── Header ── */}
-      <div className="relative p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl overflow-hidden">
+      <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl overflow-hidden">
         <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
@@ -513,7 +513,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
               <button
                 type="button"
                 onClick={() => toggleDay(day.day)}
-                className="w-full flex items-center gap-3 px-5 py-3.5 bg-primary/10 border-b border-primary/20 hover:bg-primary/15 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3.5 sm:px-5 bg-primary/10 border-b border-primary/20 hover:bg-primary/15 transition-colors text-left"
               >
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-sm shadow-primary/30">
                   <span className="text-xs font-black text-primary-foreground">{day.day}</span>
@@ -540,7 +540,7 @@ export function TourItineraryStep({ data, onUpdate, onNext, onBack }: TourItiner
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                     className="overflow-hidden"
                   >
-                    <div className="p-5 space-y-4">
+                    <div className="space-y-4 p-3 sm:p-5">
                       {/* Optional day title */}
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">

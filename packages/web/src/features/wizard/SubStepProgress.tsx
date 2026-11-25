@@ -52,7 +52,8 @@ export function SubStepProgress({
                 aria-label={`Go to step ${i + 1} of ${total}${hasIssue ? ' — needs attention' : ''}`}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  'block rounded-full transition-all',
+                  // ::after widens the 8–10px dot into a tappable target without changing its look.
+                  "relative block rounded-full transition-all after:absolute after:-inset-x-0.5 after:-inset-y-3 after:content-['']",
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   // "You are here" must always win over "this one is missing something", otherwise
                   // the operator loses track of the screen they are actually on.

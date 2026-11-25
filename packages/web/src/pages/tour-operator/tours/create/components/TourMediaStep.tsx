@@ -200,7 +200,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
+      <Card className="p-4 sm:p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-xl rounded-2xl overflow-hidden relative">
         <div className="absolute inset-0 bg-background/10 backdrop-blur-sm" />
         <div className="relative flex items-center gap-4">
           <div className="w-12 h-12 bg-background/20 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -252,7 +252,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
       <div
         {...getRootProps()}
         className={cn(
-          'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300',
+          'border-2 border-dashed rounded-2xl px-4 py-8 text-center cursor-pointer transition-all duration-300 sm:p-12',
           'bg-background/70 hover:bg-background/85 backdrop-blur-sm',
           isDragActive
             ? 'border-primary/50 bg-primary/10 ring-4 ring-primary/20 shadow-lg'
@@ -269,8 +269,16 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
             )}
           </div>
           <div>
-            <p className="text-xl font-bold text-foreground">
-              {isUploading ? 'Uploading High-Quality Media...' : 'Drop your tour photos here'}
+            <p className="text-lg font-bold text-foreground sm:text-xl">
+              {isUploading ? (
+                'Uploading High-Quality Media...'
+              ) : (
+                <>
+                  {/* There's nothing to drop on a phone — the tap opens the photo picker. */}
+                  <span className="sm:hidden">Add your tour photos</span>
+                  <span className="hidden sm:inline">Drop your tour photos here</span>
+                </>
+              )}
             </p>
             <p className="text-sm text-muted-foreground mt-2 font-medium">
               Support for PNG, JPG and WebP (max. 10MB each)
@@ -325,7 +333,9 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
                       className="h-8 px-2 text-xs"
                     >
                       <Star className="w-3.5 h-3.5 mr-1" />
-                      Set as cover
+                      {/* A 2-up phone tile is ~140px; the full label plus the remove button overflowed it. */}
+                      <span className="sm:hidden">Cover</span>
+                      <span className="hidden sm:inline">Set as cover</span>
                     </Button>
                   )}
                   <Button
@@ -352,17 +362,19 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
         </div>
       )}
 
-      <div className="flex justify-between pt-6 border-t border-border">
+      {/* Phone: stacked, primary last — nearest the thumb, same as the Review step. Three buttons
+          in one row pushed "Next Step" off the right edge of a 375px screen. */}
+      <div className="flex flex-col gap-2 pt-6 border-t border-border sm:flex-row sm:justify-between sm:gap-3">
         <Button
           variant="outline"
           onClick={onBack}
           size="lg"
-          className="px-8 border-input flex-1 sm:flex-none"
+          className="w-full px-8 border-input sm:w-auto"
         >
           Back
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {!hasImages && (
             <Button
               type="button"
@@ -370,7 +382,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
               size="lg"
               onClick={handleSkip}
               disabled={isUploading}
-              className="px-6 border-input"
+              className="w-full px-6 border-input sm:w-auto"
             >
               Confirm Skip
             </Button>
@@ -378,7 +390,7 @@ export function TourMediaStep({ data, onUpdate, onNext, onBack, tourId, ensureTo
           <Button
             onClick={onNext}
             size="lg"
-            className="px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex-1 sm:flex-none shadow-lg shadow-primary/25"
+            className="w-full px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold sm:w-auto shadow-lg shadow-primary/25"
             disabled={!canProceed}
           >
             Next Step
