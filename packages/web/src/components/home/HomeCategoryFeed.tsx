@@ -30,6 +30,8 @@ import {
   useToursByCategory,
 } from '@/queries/tourQueries'
 
+const HOME_SCOPE = { upcomingOnly: true } as const
+
 const TOUR_FALLBACK_IMG =
   'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&auto=format&fit=crop'
 
@@ -214,14 +216,16 @@ export function HomeCategoryFeed({ hero }: { hero?: ReactNode }) {
   const familyQ = useCuratedPackages('family_friendly', { enabled: hotelsOn })
   const weekendQ = useCuratedPackages('weekend_getaways', { enabled: hotelsOn })
   const newQ = useCuratedPackages('new_arrivals', { enabled: hotelsOn })
-  const featTourQ = useFeaturedTours()
-  const adventureQ = useToursByCategory('adventure-trips')
-  const hikingQ = useToursByCategory('hiking-trips')
-  const northernQ = usePakistanNorthernTours()
+  // The home page advertises only trips with a departure still ahead; past trips stay on their own
+  // pages and under their operator (archived), just not on the front page.
+  const featTourQ = useFeaturedTours(undefined, HOME_SCOPE)
+  const adventureQ = useToursByCategory('adventure-trips', undefined, HOME_SCOPE)
+  const hikingQ = useToursByCategory('hiking-trips', undefined, HOME_SCOPE)
+  const northernQ = usePakistanNorthernTours(undefined, HOME_SCOPE)
   // The whole live catalogue, newest first — powers New arrivals + the trip-length rails.
   // This hook already existed and was already ordered created_at desc; the homepage
   // simply never called it, which is why there was no "New arrivals" row.
-  const mixQ = useHomepageMixTours(96)
+  const mixQ = useHomepageMixTours(96, undefined, HOME_SCOPE)
   // Real departure dates for the cards — one batched query over the ids on screen.
   const departureIds = useMemo(
     () => [

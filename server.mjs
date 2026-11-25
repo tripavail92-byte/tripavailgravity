@@ -494,7 +494,11 @@ function operatorItems(site) {
 }
 
 function homePage(site) {
-  const { tours, liveOperators } = site
+  const { liveOperators } = site
+  // The front page lists trips with a departure still ahead; past trips stay on their own pages
+  // and under their operator (archived). Fall back to everything if nothing is upcoming.
+  const upcoming = site.tours.filter((t) => site.upcoming(t).length > 0)
+  const tours = upcoming.length ? upcoming : site.tours
   const country = mainCountry(tours)
   const groups = byDestination(tours)
   const topCities = groups.map(([c]) => c).filter((c) => c !== 'Other destinations').slice(0, 5)
@@ -504,7 +508,7 @@ function homePage(site) {
     .slice(0, 12)
 
   const main = `<h1>Tours and trips in ${esc(country)}, with prices and dates</h1>
-<p>TripAvail lists ${tours.length} tours from ${liveOperators.length} local tour operators. Every listing shows the price per person, a day-by-day itinerary, what is included and the upcoming departure dates, so you can compare trips before you book.</p>
+<p>TripAvail lists ${tours.length} ${upcoming.length ? 'upcoming ' : ''}tours from ${liveOperators.length} local tour operators. Each listing shows the price (or that it is on request), a day-by-day itinerary, what is included and the departure dates, so you can compare trips before you book. Past trips stay on each operator's page.</p>
 ${topCities.length ? `<p>Destinations: ${topCities.map(esc).join(', ')}${groups.length > topCities.length ? ' and more' : ''}.</p>` : ''}
 ${
   soon.length

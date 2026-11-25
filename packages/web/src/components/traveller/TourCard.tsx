@@ -73,7 +73,8 @@ export function TourCard({
     depositRequired,
     depositPercentage,
   })
-  const showsDeposit = Boolean(depositRequired) && paymentTerms.remainingAmount > 0
+  const hasPrice = Number.isFinite(price) && price > 0
+  const showsDeposit = hasPrice && Boolean(depositRequired) && paymentTerms.remainingAmount > 0
   const money = useMoney()
   const mainMoney = money(showsDeposit ? paymentTerms.upfrontAmount : price, currency)
 
@@ -193,13 +194,28 @@ export function TourCard({
         {/* Price + CTA on ONE line */}
         <div className="mt-3 flex items-end justify-between gap-2">
           <div className="min-w-0 leading-tight">
-            <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/70">
-              {showsDeposit ? 'Pay now' : 'From / person'}
-            </span>
-            <span className="block truncate text-[17px] font-extrabold text-white">
-              {mainMoney.estimate ? '≈ ' : ''}
-              {mainMoney.text}
-            </span>
+            {hasPrice ? (
+              <>
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                  {showsDeposit ? 'Pay now' : 'From / person'}
+                </span>
+                <span className="block truncate text-[17px] font-extrabold text-white">
+                  {mainMoney.estimate ? '≈ ' : ''}
+                  {mainMoney.text}
+                </span>
+              </>
+            ) : (
+              // No price published (e.g. an operator who quotes on request). Never print "PKR 0",
+              // which reads as free.
+              <>
+                <span className="block text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                  Price
+                </span>
+                <span className="block truncate text-[17px] font-extrabold text-white">
+                  On request
+                </span>
+              </>
+            )}
           </div>
           <button
             type="button"

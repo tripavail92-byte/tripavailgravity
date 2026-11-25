@@ -20,11 +20,12 @@ def _provider() -> str:
 
 
 AI_PROVIDER = _provider()
-# (reader, writer). Reading posts is high-volume, so it gets the cheaper model; writing the
-# public listing is low-volume and quality-sensitive, so it gets the stronger one.
+# (reader, writer). OpenAI runs both on the small model at low effort — the owner's call (Nov 25 2026)
+# to cut cost: the facts that matter (price, dates, pickup) are checked deterministically in
+# validate.py anyway. Override with GROWTH_READER_MODEL / GROWTH_WRITER_MODEL / GROWTH_*_EFFORT.
 DEFAULT_MODELS = {
     "anthropic": ("claude-haiku-5-5", "claude-opus-5-5"),
-    "openai": ("gpt-5-mini", "gpt-5"),
+    "openai": ("gpt-5-mini", "gpt-5-mini"),
 }
 
 
@@ -33,7 +34,8 @@ class Settings:
     ai_provider: str = AI_PROVIDER
     reader_model: str = os.getenv("GROWTH_READER_MODEL") or DEFAULT_MODELS[AI_PROVIDER][0]
     writer_model: str = os.getenv("GROWTH_WRITER_MODEL") or DEFAULT_MODELS[AI_PROVIDER][1]
-    writer_effort: str = os.getenv("GROWTH_WRITER_EFFORT", "medium")
+    writer_effort: str = os.getenv("GROWTH_WRITER_EFFORT", "low" if AI_PROVIDER == "openai" else "medium")
+    reader_effort: str = os.getenv("GROWTH_READER_EFFORT", "low" if AI_PROVIDER == "openai" else "medium")
 
     session_dir: Path = ROOT / "session" / "facebook"
     out_dir: Path = ROOT / "out"

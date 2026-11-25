@@ -43,7 +43,12 @@ Rules:
 - price_amount: the per-person base price exactly as shown. When several sharing options are listed,
   put each in price_variants and the lowest per-person option in price_amount. When no price appears
   anywhere, price_amount is null and price_found_in is 'none'.
-- price_evidence: copy the exact words and numbers where the price appears.
+- price_evidence: copy the exact words and numbers where the price appears, including its currency
+  symbol (Rs, $, €) and who it covers.
+- price_basis: who the price covers, in the operator's words: 'per person', 'For 02 Persons',
+  'for two adults', 'per couple'. A total for several people is NOT per person — say so here.
+- Look everywhere for the price: price tables, 'Dates & Prices', 'Starting from', booking boxes,
+  sidebars of the same tour. Only when none appears for THIS tour is it null.
 - meeting_point: only when the operator names a specific pickup or meeting place ('we gather at I-8
   Markaz', 'pickup from Faizabad'). A departure city on its own ('from Islamabad'), 'hotel pickup' with
   no place, or 'pickup on request' is NOT a meeting point — leave it null. Never guess one.
@@ -79,5 +84,5 @@ def read_post(caption: str, images: list[bytes], operator_name: str, today: date
         text=f"Operator: {operator_name}\n\nPost caption:\n{caption or '(no caption)'}",
         schema=TripFacts,
         images=images,
-        effort="medium",
+        effort=SETTINGS.reader_effort,
     )

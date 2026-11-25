@@ -1132,59 +1132,99 @@ export default function OperatorProfilePage() {
             ) : null}
 
             {tours.length > 0 ? (
-              <section id="tours">
-                <GlassCard variant="card" className="rounded-3xl border-none shadow-xl">
-                  <GlassHeader>
-                    <GlassTitle className="text-2xl font-bold">Tours by {name}</GlassTitle>
-                  </GlassHeader>
-                  <GlassContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {tours.map((tour) => (
-                        <Link
-                          key={tour.id}
-                          to={`/tours/${tour.id}`}
-                          onClick={() =>
-                            trackStorefrontEvent('tour_click', {
-                              tourId: tour.id,
-                              metadata: { title: tour.title },
-                            })
-                          }
-                          className="group overflow-hidden rounded-3xl border border-border/60 bg-background transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
-                        >
-                          {tour.cover_image_url ? (
-                            <img
-                              src={tour.cover_image_url}
-                              alt={tour.title}
-                              className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="flex h-40 items-center justify-center bg-muted/40 text-muted-foreground/30">
-                              <Building2 className="h-10 w-10" />
-                            </div>
-                          )}
-                          <div className="space-y-2 p-4">
-                            <p className="line-clamp-2 text-sm font-semibold text-foreground">
-                              {tour.title}
-                            </p>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                {tour.currency} {Number(tour.price_per_person).toLocaleString()} /
-                                person
-                              </span>
-                              {tour.rating > 0 ? (
-                                <span className="flex items-center gap-1 font-semibold text-amber-500">
-                                  <Star className="h-3 w-3 fill-current" />
-                                  {Number(tour.rating).toFixed(1)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </GlassContent>
-                </GlassCard>
+              <section id="tours" className="space-y-8">
+                {[
+                  {
+                    key: 'upcoming',
+                    title: `Upcoming trips by ${name}`,
+                    note: null,
+                    list: tours.filter((t) => !t.is_archived),
+                  },
+                  {
+                    key: 'past',
+                    title: 'Past trips',
+                    note: `These trips have no departures coming up. Ask ${name} about new dates.`,
+                    list: tours.filter((t) => t.is_archived),
+                  },
+                ]
+                  .filter((group) => group.list.length > 0)
+                  .map((group) => (
+                    <GlassCard
+                      key={group.key}
+                      variant="card"
+                      className="rounded-3xl border-none shadow-xl"
+                    >
+                      <GlassHeader>
+                        <GlassTitle className="text-2xl font-bold">{group.title}</GlassTitle>
+                        {group.note ? (
+                          <p className="text-sm text-muted-foreground">{group.note}</p>
+                        ) : null}
+                      </GlassHeader>
+                      <GlassContent>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {group.list.map((tour) => (
+                            <Link
+                              key={tour.id}
+                              to={`/tours/${tour.slug || tour.id}`}
+                              onClick={() =>
+                                trackStorefrontEvent('tour_click', {
+                                  tourId: tour.id,
+                                  metadata: { title: tour.title },
+                                })
+                              }
+                              className="group overflow-hidden rounded-3xl border border-border/60 bg-background transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
+                            >
+                              {tour.cover_image_url ? (
+                                <img
+                                  src={tour.cover_image_url}
+                                  alt={tour.title}
+                                  className="h-40 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="flex h-40 items-center justify-center bg-muted/40 text-muted-foreground/30">
+                                  <Building2 className="h-10 w-10" />
+                                </div>
+                              )}
+                              <div className="space-y-2 p-4">
+                                {tour.is_archived ? (
+                                  <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                    Past trip
+                                  </span>
+                                ) : tour.next_departure ? (
+                                  <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                    Next departure{' '}
+                                    {new Date(tour.next_departure).toLocaleDateString('en-GB', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      timeZone: 'Asia/Karachi',
+                                    })}
+                                  </span>
+                                ) : null}
+                                <p className="line-clamp-2 text-sm font-semibold text-foreground">
+                                  {tour.title}
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>
+                                    {Number(tour.price_per_person) > 0
+                                      ? `${tour.currency} ${Number(tour.price_per_person).toLocaleString()} / person`
+                                      : 'Price on request'}
+                                  </span>
+                                  {tour.rating > 0 ? (
+                                    <span className="flex items-center gap-1 font-semibold text-amber-500">
+                                      <Star className="h-3 w-3 fill-current" />
+                                      {Number(tour.rating).toFixed(1)}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </GlassContent>
+                    </GlassCard>
+                  ))}
               </section>
             ) : null}
 

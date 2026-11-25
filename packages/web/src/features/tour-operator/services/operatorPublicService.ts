@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase'
 import type { TourReviewWithReply } from '@/features/booking/services/reviewService'
 import type {
   OperatorAward,
@@ -8,6 +7,7 @@ import type {
   OperatorProfileDocumentLinks,
   OperatorPublicPolicies,
 } from '@/features/tour-operator/types/operatorProfile'
+import { supabase } from '@/lib/supabase'
 
 function isMissingRpcError(error: any) {
   const message = String(error?.message || error || '').toLowerCase()
@@ -195,7 +195,7 @@ export const operatorPublicService = {
     const { data, error } = await supabase
       .from('tours')
       .select(
-        'id, title, description, price, currency, duration, location, images, rating, review_count, difficulty_level',
+        'id, slug, title, description, price, currency, price_on_request, duration, location, images, rating, review_count, difficulty_level, tour_schedules(start_time, status)',
       )
       .eq('operator_id', operatorId)
       .eq('is_active', true)
@@ -203,13 +203,25 @@ export const operatorPublicService = {
       .limit(50)
 
     if (error) throw new Error(error.message)
-    return (data ?? []).map((tour: any) => ({
-      ...tour,
-      price_per_person: Number(tour.price ?? 0),
-      duration_days: tour.duration ?? null,
-      cover_image_url: Array.isArray(tour.images) ? (tour.images[0] ?? null) : null,
-      tags: [],
-    }))
+    const now = Date.now()
+    return (data ?? []).map((tour: any) => {
+      const { tour_schedules: schedules, ...rest } = tour
+      // A trip with no scheduled departure still ahead is archived: kept on the operator's
+      // profile (and at its own URL) as a past trip, but no longer advertised on the home page.
+      const upcoming = (Array.isArray(schedules) ? schedules : [])
+        .filter((s: any) => s?.status === 'scheduled' && Date.parse(s.start_time) >= now)
+        .map((s: any) => s.start_time as string)
+        .sort()
+      return {
+        ...rest,
+        price_per_person: tour.price_on_request ? 0 : Number(tour.price ?? 0),
+        duration_days: tour.duration ?? null,
+        cover_image_url: Array.isArray(tour.images) ? (tour.images[0] ?? null) : null,
+        next_departure: upcoming[0] ?? null,
+        is_archived: upcoming.length === 0,
+        tags: [],
+      }
+    })
   },
 
   async getAllReviewsWithReplies(operatorId: string): Promise<TourReviewWithReply[]> {

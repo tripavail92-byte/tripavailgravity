@@ -26,7 +26,7 @@ export function DestinationTiles({
   seeAllHref?: string
 }) {
   // 96 rows is the whole live catalogue at present — enough to count accurately.
-  const { data: tours = [], isLoading } = useHomepageMixTours(96)
+  const { data: tours = [], isLoading } = useHomepageMixTours(96, undefined, { upcomingOnly: true })
 
   const destinations = (() => {
     const byCity = new Map<string, { city: string; count: number; image: string }>()

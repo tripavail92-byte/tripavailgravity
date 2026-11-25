@@ -1579,6 +1579,22 @@ export default function TourDetailsPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
+            {/* Archived: every departure has passed. The trip stays published under its operator,
+                but say so plainly instead of letting it look bookable. */}
+            {!preview && schedules.length === 0 ? (
+              <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5">
+                <p className="font-bold text-foreground">This is a past trip</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  It has no departures coming up. Ask {tour.operator_display_name || 'the operator'}{' '}
+                  whether they&apos;re running it again, or{' '}
+                  <Link to="/" className="font-semibold text-primary underline-offset-4 hover:underline">
+                    see trips with upcoming dates
+                  </Link>
+                  .
+                </p>
+              </div>
+            ) : null}
+
             {/* Operator / host leads the trip content: travellers see who runs the trip (and whether
                 they're verified) before reading about it. */}
             {operatorSection}
@@ -1742,10 +1758,12 @@ export default function TourDetailsPage({
                           Starting From
                         </p>
                         <p className="text-lg font-black text-foreground">
-                          {(() => {
-                            const m = money(basePrice, tour.currency)
-                            return `${m.estimate ? '≈ ' : ''}${m.text}`
-                          })()}
+                          {basePrice > 0 && !tour.price_on_request
+                            ? (() => {
+                                const m = money(basePrice, tour.currency)
+                                return `${m.estimate ? '≈ ' : ''}${m.text}`
+                              })()
+                            : 'On request'}
                         </p>
                       </div>
                       {isEnquiry ? (

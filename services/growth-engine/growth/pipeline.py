@@ -6,6 +6,7 @@ visiting Facebook again. Nothing here touches the TripAvail database.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
@@ -64,15 +65,57 @@ def _duration_label(days: int, nights: int | None) -> str:
     return f"{days} days / {n} night{'' if n == 1 else 's'}"
 
 
+_GROUP = re.compile(
+    r"\b(?:for|per)\s*(0?\d|two|three|four|five|six)\s*(?:persons?|people|adults|pax|travell?ers|guests)\b"
+    r"|\b(?:price|total)\s+for\s+(0?\d|two)\b|\bper\s+couple\b|\bfor\s+(?:a|the|one)\s+couple\b"
+    r"|\bcouple\s*\((?:total|price)", re.I)
+_NUM = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+
+
+def group_size(text: str | None) -> int:
+    """How many people a quoted amount covers, from the operator's own words ('For 02 Persons',
+    'for two adults', 'per couple'). 1 when it doesn't say — the amount is taken as per person."""
+    m = _GROUP.search(text or "")
+    if not m:
+        return 1
+    word = next((g for g in m.groups() if g), None)
+    if word is None:  # per couple / for a couple
+        return 2
+    n = _NUM.get(word.lower()) or int(word)
+    return n if 1 <= n <= 20 else 1
+
+
+def per_person(amount: float | None, *basis: str | None) -> float | None:
+    """TripAvail shows every price per person, so a total for N people is divided by N."""
+    if not amount:
+        return amount
+    n = max(group_size(b) for b in basis) if basis else 1
+    return round(amount / n, 2)
+
+
+def price_currency(facts: TripFacts) -> str:
+    """The currency the operator shows next to the price: a '€' or '$' in the quoted text wins over
+    a model's guess (a page showing '€2,730' was once stored as USD)."""
+    ev = facts.price_evidence or ""
+    if "€" in ev or re.search(r"\bEUR\b", ev):
+        return "EUR"
+    if "£" in ev or re.search(r"\bGBP\b", ev):
+        return "GBP"
+    if re.search(r"US\$|\bUSD\b|\$\s?\d", ev):
+        return "USD"
+    return (facts.price_currency or "PKR").upper().replace("RS.", "PKR").replace("RS", "PKR")
+
+
 def _accommodation_pricing(facts: TripFacts) -> dict:
-    """Map 'Quad / Triple / Double' price variants onto TripAvail's room-sharing tiers."""
+    """Map 'Quad / Triple / Double' price variants onto TripAvail's room-sharing tiers, per person
+    ('Double Sharing (Price for 2 adults) Rs 104,000' is 52,000 each)."""
     words = {"quad": "quad", "triple": "triple", "double": "double", "twin": "double",
              "couple": "double", "single": "solo", "solo": "solo"}
     tiers: list[dict] = []
     for v in facts.price_variants:
         key = next((k for w, k in words.items() if w in v.label.lower()), None)
         if key and all(t["key"] != key for t in tiers):
-            tiers.append({"key": key, "label": v.label, "pricePerPerson": v.amount})
+            tiers.append({"key": key, "label": v.label, "pricePerPerson": per_person(v.amount, v.label)})
     return {"enabled": True, "tiers": tiers} if len(tiers) >= 2 else {}
 
 
@@ -86,8 +129,8 @@ def _tour_record(facts: TripFacts, listing: TripListing, item: dict) -> dict:
         "destination_cities": listing.destination_cities,
         "duration": _duration_label(facts.duration_days, facts.duration_nights),
         "duration_days": facts.duration_days,
-        "price": facts.price_amount or 0,
-        "currency": (facts.price_currency or "PKR").upper().replace("RS.", "PKR").replace("RS", "PKR"),
+        "price": per_person(facts.price_amount, facts.price_basis, facts.price_evidence) or 0,
+        "currency": price_currency(facts),
         "price_on_request": facts.price_amount is None,
         "accommodation_pricing": _accommodation_pricing(facts),
         "short_description": listing.short_description,

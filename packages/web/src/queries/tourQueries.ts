@@ -40,6 +40,19 @@ export const tourKeys = {
   homepageMix: (take: number) => [...tourKeys.all, 'homepage_mix', take] as const,
 }
 
+/**
+ * Where a tour list is shown. The home page passes `upcomingOnly`: it advertises only trips that
+ * still have a scheduled departure ahead. A trip whose dates have all passed stays published —
+ * its own page and its operator's profile still show it, as a past (archived) trip — it just
+ * isn't put in front of travellers on the home page. Other pages (/tours, search) are unchanged.
+ */
+export interface TourListScope {
+  upcomingOnly?: boolean
+}
+
+// An inner join on tour_schedules makes PostgREST keep only tours with a matching schedule row.
+const UPCOMING_JOIN = ',tour_schedules!inner(start_time)'
+
 export type TourCategoryKind = 'adventure-trips' | 'hiking-trips'
 
 function tourTypeForCategory(category: TourCategoryKind): string {
@@ -153,17 +166,25 @@ export function useHomepageMergeTours(
   })
 }
 
-async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
-  const { data, error } = await supabase
+async function fetchHomepageMixTours(
+  take: number,
+  { upcomingOnly = false }: TourListScope = {},
+): Promise<HomepageMixTour[]> {
+  let query = supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,tour_type,duration_days,images,created_at,updated_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,review_count,is_featured,tour_type,duration_days,images,created_at,updated_at' +
+        (upcomingOnly ? UPCOMING_JOIN : ''),
     )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
-    .order('created_at', { ascending: false })
-    .limit(take)
+  if (upcomingOnly) {
+    query = query
+      .eq('tour_schedules.status', 'scheduled')
+      .gte('tour_schedules.start_time', new Date().toISOString())
+  }
+  const { data, error } = await query.order('created_at', { ascending: false }).limit(take)
 
   if (error) {
     if (isAbortError(error)) {
@@ -227,10 +248,11 @@ async function fetchHomepageMixTours(take: number): Promise<HomepageMixTour[]> {
 export function useHomepageMixTours(
   take: number,
   options?: Omit<UseQueryOptions<HomepageMixTour[], Error>, 'queryKey' | 'queryFn'>,
+  scope: TourListScope = {},
 ) {
   return useQuery({
-    queryKey: tourKeys.homepageMix(take),
-    queryFn: () => fetchHomepageMixTours(take),
+    queryKey: [...tourKeys.homepageMix(take), scope.upcomingOnly ? 'upcoming' : 'all'] as const,
+    queryFn: () => fetchHomepageMixTours(take, scope),
     staleTime: 6 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -241,15 +263,24 @@ export function useHomepageMixTours(
 /**
  * Fetch featured tours with proper typing
  */
-async function fetchFeaturedTours(): Promise<MappedTour[]> {
-  const { data, error } = await supabase
+async function fetchFeaturedTours({ upcomingOnly = false }: TourListScope = {}): Promise<
+  MappedTour[]
+> {
+  let query = supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at' +
+        (upcomingOnly ? UPCOMING_JOIN : ''),
     )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
+  if (upcomingOnly) {
+    query = query
+      .eq('tour_schedules.status', 'scheduled')
+      .gte('tour_schedules.start_time', new Date().toISOString())
+  }
+  const { data, error } = await query
     .order('is_featured', { ascending: false })
     .order('rating', { ascending: false })
     .limit(10)
@@ -306,13 +337,15 @@ async function fetchFeaturedTours(): Promise<MappedTour[]> {
 async function fetchToursByCategory(
   category: TourCategoryKind,
   take: number = 12,
+  { upcomingOnly = false }: TourListScope = {},
 ): Promise<MappedTour[]> {
   const tourType = tourTypeForCategory(category)
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at' +
+        (upcomingOnly ? UPCOMING_JOIN : ''),
     )
     .eq('is_active', true)
     .eq('is_published', true)
@@ -323,6 +356,12 @@ async function fetchToursByCategory(
     // the category rails populate for BOTH, instead of silently returning zero
     // rows for every wizard-created tour.
     .ilike('tour_type', tourType)
+  if (upcomingOnly) {
+    query = query
+      .eq('tour_schedules.status', 'scheduled')
+      .gte('tour_schedules.start_time', new Date().toISOString())
+  }
+  const { data, error } = await query
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(take)
@@ -375,17 +414,27 @@ async function fetchToursByCategory(
   })
 }
 
-async function fetchPakistanNorthernTours(take: number = 12): Promise<MappedTour[]> {
-  const { data, error } = await supabase
+async function fetchPakistanNorthernTours(
+  take: number = 12,
+  { upcomingOnly = false }: TourListScope = {},
+): Promise<MappedTour[]> {
+  let query = supabase
     .from('tours')
     .select(
-      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at',
+      'id,slug,title,location,destination_cities,short_description,price,currency,rating,tour_type,is_featured,duration_days,images,created_at' +
+        (upcomingOnly ? UPCOMING_JOIN : ''),
     )
     .eq('is_active', true)
     .eq('is_published', true)
     .eq('status', 'live')
     // PostgREST JSON path filter
     .eq('location->>country', 'Pakistan')
+  if (upcomingOnly) {
+    query = query
+      .eq('tour_schedules.status', 'scheduled')
+      .gte('tour_schedules.start_time', new Date().toISOString())
+  }
+  const { data, error } = await query
     .order('is_featured', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(take)
@@ -533,10 +582,11 @@ export function usePopularInCountryTours(
  */
 export function useFeaturedTours(
   options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
+  scope: TourListScope = {},
 ) {
   return useQuery({
-    queryKey: tourKeys.featured(),
-    queryFn: fetchFeaturedTours,
+    queryKey: [...tourKeys.featured(), scope.upcomingOnly ? 'upcoming' : 'all'] as const,
+    queryFn: () => fetchFeaturedTours(scope),
     staleTime: 8 * 60 * 1000, // 8 minutes
     gcTime: 15 * 60 * 1000,
     refetchOnMount: true,
@@ -548,10 +598,11 @@ export function useFeaturedTours(
 export function useToursByCategory(
   category: TourCategoryKind,
   options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
+  scope: TourListScope = {},
 ) {
   return useQuery({
-    queryKey: tourKeys.category(category),
-    queryFn: () => fetchToursByCategory(category, 12),
+    queryKey: [...tourKeys.category(category), scope.upcomingOnly ? 'upcoming' : 'all'] as const,
+    queryFn: () => fetchToursByCategory(category, 12, scope),
     staleTime: 8 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnMount: true,
@@ -577,10 +628,11 @@ export function useToursByCategoryFull(
 
 export function usePakistanNorthernTours(
   options?: Omit<UseQueryOptions<MappedTour[], Error>, 'queryKey' | 'queryFn'>,
+  scope: TourListScope = {},
 ) {
   return useQuery({
-    queryKey: tourKeys.pakistanNorthern(),
-    queryFn: () => fetchPakistanNorthernTours(12),
+    queryKey: [...tourKeys.pakistanNorthern(), scope.upcomingOnly ? 'upcoming' : 'all'] as const,
+    queryFn: () => fetchPakistanNorthernTours(12, scope),
     staleTime: 8 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnMount: true,

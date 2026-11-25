@@ -172,6 +172,34 @@ class FacebookDates(unittest.TestCase):
         self.assertNotIn("Comment as", clean_text("Trip to Swat\nComment as Someone"))
 
 
+class PricesArePerPerson(unittest.TestCase):
+    """The site shows every price per person; operators often quote a total for 2 or 5 people."""
+
+    def test_group_totals_are_divided(self):
+        from growth.pipeline import per_person
+        self.assertEqual(per_person(237000, "For 2 Persons"), 118500)
+        self.assertEqual(per_person(254000, "for 02 Persons"), 127000)
+        self.assertEqual(per_person(358000, "Explorer Package - For 05 Persons"), 71600)
+        self.assertEqual(per_person(107000, "for two adults"), 53500)
+        self.assertEqual(per_person(104000, "Double Sharing (Price for 2 adults)"), 52000)
+        self.assertEqual(per_person(80000, "Couple (total for two adults)"), 40000)
+        self.assertEqual(per_person(90000, None, "PKR 90,000 per couple"), 45000)
+
+    def test_per_person_prices_are_untouched(self):
+        from growth.pipeline import per_person
+        self.assertEqual(per_person(44000, "per person"), 44000)
+        self.assertEqual(per_person(1450, "per person (twin sharing)"), 1450)
+        self.assertEqual(per_person(23000, None), 23000)
+        self.assertIsNone(per_person(None, "For 2 Persons"))
+
+    def test_currency_follows_the_symbol_shown(self):
+        from growth.pipeline import price_currency
+        self.assertEqual(price_currency(facts(price_currency="USD",
+                                              price_evidence="Pakistan and Iran Tour - 21 Days €2,730")), "EUR")
+        self.assertEqual(price_currency(facts(price_currency="PKR", price_evidence="From US$1,600")), "USD")
+        self.assertEqual(price_currency(facts(price_currency="Rs", price_evidence="Rs. 44,000")), "PKR")
+
+
 class PickupNeverGuessed(unittest.TestCase):
     """A pickup point appears only when the operator states one."""
 

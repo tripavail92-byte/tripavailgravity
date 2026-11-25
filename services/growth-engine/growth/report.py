@@ -7,7 +7,8 @@ from html import escape
 from pathlib import Path
 
 # $ per million tokens (input, output). Output includes thinking tokens.
-PRICES = {"claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.00, 20.00), "claude-sonnet-5-5": (2.00, 10.00)}
+PRICES = {"claude-haiku-5-5": (0.10, 0.50), "claude-opus-5-5": (4.00, 20.00), "claude-sonnet-5-5": (2.00, 10.00),
+          "gpt-5-mini": (0.25, 2.00), "gpt-5": (1.25, 10.00)}  # USD per million tokens (in, out)
 
 CSS = """
 :root{--ink:#16201e;--muted:#5d6b67;--line:#e4ded3;--bg:#f6f4ef;--card:#fff;--rose:#e11d48;
