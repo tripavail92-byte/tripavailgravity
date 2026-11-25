@@ -106,9 +106,14 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-background text-foreground flex">
-      {/* Mobile top bar + collapsible nav */}
-      <div className="md:hidden w-full border-b border-border bg-background">
+    // Column on a phone (top bar, then the page), row from md (sidebar | page). This was a plain
+    // `flex` row at every width: on a phone the w-full top bar took the whole row and pushed <main>
+    // past the right edge, where overflow-x-clip hid it — the admin panel showed a title and
+    // nothing else.
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground flex flex-col md:flex-row">
+      {/* Mobile top bar + collapsible nav. Sticky, so Menu is reachable from anywhere on a long page. */}
+      <div className="sticky top-0 z-40 md:hidden w-full border-b border-border bg-background/95 backdrop-blur-xl">
+
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold">TripAvail</div>

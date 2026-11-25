@@ -96,21 +96,24 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* 2-up on a phone — six full-width tiles were three screens of scrolling. */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         {STAT_CONFIG.map(({ key, label, emoji, description }) => (
           <Card key={key}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
+            <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 sm:text-base">
                 <span>{emoji}</span>
                 {label}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
               {loading ? (
                 <Skeleton className="h-9 w-20" />
               ) : (
-                <p className="text-3xl font-bold text-foreground">
-                  {stats ? stats[key].toLocaleString() : '—'}
+                <p className="text-2xl font-bold text-foreground sm:text-3xl">
+                  {/* A field missing from the RPC used to throw on .toLocaleString() and take the
+                      whole dashboard down. Unknown is "—", never a made-up 0. */}
+                  {typeof stats?.[key] === 'number' ? stats[key].toLocaleString() : '—'}
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">{description}</p>
