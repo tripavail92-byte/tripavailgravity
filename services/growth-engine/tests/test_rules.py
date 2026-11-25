@@ -172,6 +172,24 @@ class FacebookDates(unittest.TestCase):
         self.assertNotIn("Comment as", clean_text("Trip to Swat\nComment as Someone"))
 
 
+class DatesAreRealDepartures(unittest.TestCase):
+    def test_a_date_range_read_day_by_day_is_one_departure(self):
+        from growth.validate import clean_stated_dates
+        oct_ = [date(2027, 10, d) for d in range(4, 20)]  # "Oct 4 – Oct 19", 16 days
+        self.assertEqual(clean_stated_dates(oct_, 16), [date(2027, 10, 4)])
+
+    def test_return_dates_are_not_departures(self):
+        from growth.validate import clean_stated_dates
+        table = [date(2027, 6, 1), date(2027, 6, 12), date(2027, 6, 15), date(2027, 6, 26)]  # 12-day trek
+        self.assertEqual(clean_stated_dates(table, 12), [date(2027, 6, 1), date(2027, 6, 15)])
+
+    def test_daily_is_any_date_not_fixed_departures(self):
+        from growth.validate import upcoming_departures
+        daily = facts(departure_dates=[], recurrence=Recurrence(weekdays=list(range(7)), starts_on=None,
+                                                                ends_on=None, description="Daily"))
+        self.assertEqual(upcoming_departures(daily, TODAY), [])
+
+
 class PricesArePerPerson(unittest.TestCase):
     """The site shows every price per person; operators often quote a total for 2 or 5 people."""
 
@@ -192,12 +210,24 @@ class PricesArePerPerson(unittest.TestCase):
         self.assertEqual(per_person(23000, None), 23000)
         self.assertIsNone(per_person(None, "For 2 Persons"))
 
+    def test_stated_per_person_wins_over_other_prices_quoted(self):
+        from growth.pipeline import per_person
+        self.assertEqual(per_person(28500, "per person", "Rs 28,500 per person · Couple Rs 57,000"), 28500)
+
+    def test_no_stated_currency_means_price_on_request(self):
+        from growth.pipeline import price_currency
+        self.assertIsNone(price_currency(facts(price_currency=None,
+                                               price_evidence="International Tourists 5+ Persons 1180")))
+
     def test_currency_follows_the_symbol_shown(self):
         from growth.pipeline import price_currency
         self.assertEqual(price_currency(facts(price_currency="USD",
                                               price_evidence="Pakistan and Iran Tour - 21 Days €2,730")), "EUR")
         self.assertEqual(price_currency(facts(price_currency="PKR", price_evidence="From US$1,600")), "USD")
         self.assertEqual(price_currency(facts(price_currency="Rs", price_evidence="Rs. 44,000")), "PKR")
+        both = facts(price_amount=2290, price_currency="USD",
+                     price_evidence="Snow Lake Trek (17 days) – TREK ONLY US$2,290 €2,020")
+        self.assertEqual(price_currency(both), "USD")
 
 
 class PickupNeverGuessed(unittest.TestCase):
@@ -229,6 +259,15 @@ class PickupNeverGuessed(unittest.TestCase):
             self.assertEqual(geocode.pickup_locations(facts(), cap, "Pakistan"), [])  # none stated
         with mock.patch.object(geocode, "geocode", return_value=None):
             self.assertEqual(geocode.pickup_locations(named, cap, "Pakistan"), [])  # map can't find it
+
+    def test_a_city_alone_is_not_a_pickup_point(self):
+        from unittest import mock
+        from growth import geocode
+        from growth.models import MeetingPoint
+        city = facts(departure_city="Lahore", meeting_point=MeetingPoint(
+            place="Lahore", city="Lahore", time="22:00", quote="Pickups: Lahore (10:00pm)"))
+        with mock.patch.object(geocode, "geocode", return_value={"lat": 31.5, "lng": 74.3, "name": "x"}):
+            self.assertEqual(geocode.pickup_locations(city, "Pickups: Lahore (10:00pm)", "Pakistan"), [])
 
 
 if __name__ == "__main__":

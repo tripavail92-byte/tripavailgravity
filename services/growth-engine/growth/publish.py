@@ -348,6 +348,20 @@ def publish_run(run_dir: Path, apply: bool = False, include_review: bool = False
             continue
         mine = [t for t in trips if t.get("operator_handle") == op["handle"] and t.get("decision") in wanted
                 and t.get("tour")]
+        if wizard:
+            # Only trips that pass the wizard's publish checks; an operator with none gets no profile
+            # (an empty unclaimed profile helps nobody).
+            postable = []
+            for t in mine:
+                rec = t["tour"]
+                imgs = [f for f in (_local(run_dir, sp) for sp in rec.get("images") or []) if f]
+                missing = preflight(rec, imgs, wizard_schedules(rec, today))
+                if missing:
+                    out["skipped"].append({"operator": op["name"], "trip": rec.get("title"),
+                                           "reason": "held: " + ", ".join(missing)})
+                else:
+                    postable.append(t)
+            mine = postable
         if not mine:
             continue
         source_url = op["page_url"]

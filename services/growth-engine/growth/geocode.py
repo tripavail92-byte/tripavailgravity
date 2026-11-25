@@ -52,6 +52,11 @@ def pickup_locations(facts: TripFacts, caption: str, country: str, operator: str
     if _norm(mp.place) not in _norm(caption):  # the reader must not have made the place up
         return []
     city = mp.city or facts.departure_city
+    # "Pickups: Lahore (10 pm)" names a city, not a spot: a pin at the city centre would send people
+    # to the wrong place. Only a named place within the city (a Markaz, an interchange, a hotel) is pinned.
+    if _norm(mp.place) in {_norm(city or ""), _norm(facts.departure_city or "")} or \
+            _norm(mp.place.split(",")[0]) in {_norm(city or ""), _norm(facts.departure_city or "")}:
+        return []
     hit = geocode(", ".join(x for x in (mp.place, city, country) if x))
     if not hit:
         return []

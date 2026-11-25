@@ -85,9 +85,31 @@ def expand_recurrence(weekdays: list[int], today: date, horizon_days: int = 60,
     return out
 
 
+def clean_stated_dates(dates: list[date], duration_days: int | None) -> list[date]:
+    """Departure dates as the operator meant them, not as a model listed them:
+    - a run of consecutive days as long as the trip ('Oct 4-19' read day by day) is ONE departure;
+    - a date that is exactly where an earlier departure ends ('1 June – 12 June') is a return date."""
+    dates = sorted(set(dates))
+    days = duration_days or 0
+    if days > 1 and len(dates) >= 3 and all((b - a).days == 1 for a, b in zip(dates, dates[1:])) \
+            and abs(len(dates) - days) <= 1:
+        return dates[:1]
+    if days > 1:
+        starts: list[date] = []
+        for d in dates:
+            if any((d - s).days in (days - 1, days) for s in starts):
+                continue  # the end of a departure already listed
+            starts.append(d)
+        dates = starts
+    return dates
+
+
 def upcoming_departures(facts: TripFacts, today: date) -> list[date]:
-    dated = sorted({d for d in (_parse_iso(x) for x in facts.departure_dates) if d and d >= today})
-    if facts.recurrence and facts.recurrence.weekdays:
+    stated = clean_stated_dates([d for d in (_parse_iso(x) for x in facts.departure_dates) if d],
+                                facts.duration_days)
+    dated = sorted(d for d in stated if d >= today)
+    # "Daily" / "open all year" is a trip you can take on any date — not dozens of fixed departures.
+    if facts.recurrence and facts.recurrence.weekdays and len(set(facts.recurrence.weekdays)) < 7:
         dated = sorted(set(dated) | set(expand_recurrence(
             facts.recurrence.weekdays, today,
             starts_on=_parse_iso(facts.recurrence.starts_on or ""),

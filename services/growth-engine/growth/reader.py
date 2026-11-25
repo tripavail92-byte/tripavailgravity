@@ -77,12 +77,12 @@ def read_profile(page_text: str, page_url: str, source: str = "facebook") -> Pag
 
 
 def read_post(caption: str, images: list[bytes], operator_name: str, today: date,
-              source: str = "facebook") -> TripFacts:
+              source: str = "facebook", effort: str | None = None) -> TripFacts:
     return ai.parse(
         model=SETTINGS.reader_model,
         system=POST_SYSTEM.format(intro=POST_INTRO.get(source, POST_INTRO["facebook"]), today=today.isoformat()),
         text=f"Operator: {operator_name}\n\nPost caption:\n{caption or '(no caption)'}",
         schema=TripFacts,
         images=images,
-        effort=SETTINGS.reader_effort,
+        effort=effort or SETTINGS.reader_effort,
     )

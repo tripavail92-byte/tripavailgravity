@@ -85,25 +85,52 @@ def group_size(text: str | None) -> int:
     return n if 1 <= n <= 20 else 1
 
 
-def per_person(amount: float | None, *basis: str | None) -> float | None:
-    """TripAvail shows every price per person, so a total for N people is divided by N."""
+SHOWS_MONEY = re.compile(r"(?:PKR|PRK|Rs\.?|₨|€|\$|USD|US\$|EUR)\s?\d[\d,]{2,}|\d[\d,]{3,}\s?(?:PKR|USD|/-)")
+
+
+def per_person(amount: float | None, basis: str | None = None, evidence: str | None = None) -> float | None:
+    """TripAvail shows every price per person, so a total for N people is divided by N. The stated
+    basis decides ('per person' stays as is); the quoted evidence is used only when no basis is
+    given, since it can mention other prices on the page ('couple: Rs 57,000')."""
     if not amount:
         return amount
-    n = max(group_size(b) for b in basis) if basis else 1
+    if basis and basis.strip():
+        n = 1 if re.search(r"\bper\s+(?:person|head|pax|adult)\b|\bpp\b", basis, re.I) else group_size(basis)
+    else:
+        n = group_size(evidence)
     return round(amount / n, 2)
 
 
-def price_currency(facts: TripFacts) -> str:
+def price_currency(facts: TripFacts) -> str | None:
     """The currency the operator shows next to the price: a '€' or '$' in the quoted text wins over
-    a model's guess (a page showing '€2,730' was once stored as USD)."""
+    a model's guess (a page showing '€2,730' was once stored as USD). None when the page never says
+    which currency — a bare '1180' for 'International Tourists' must not be shown as PKR 1,180."""
     ev = facts.price_evidence or ""
+    # Several currencies quoted ('US$2,290 €2,020'): take the one written next to THIS amount.
+    if facts.price_amount:
+        n = int(facts.price_amount)
+        num = rf"(?:{n:,}|{n})(?![\d,])"
+        near = re.search(rf"(US\$|USD|\$|€|EUR|£|GBP|PKR|PRK|Rs\.?|₨)\s?{num}|{num}\s?(USD|EUR|PKR|€|\$)", ev)
+        if near:
+            sym = (near.group(1) or near.group(2) or "").upper()
+            if sym in ("€", "EUR"):
+                return "EUR"
+            if sym in ("£", "GBP"):
+                return "GBP"
+            if sym in ("US$", "USD", "$"):
+                return "USD"
+            return "PKR"
     if "€" in ev or re.search(r"\bEUR\b", ev):
         return "EUR"
     if "£" in ev or re.search(r"\bGBP\b", ev):
         return "GBP"
     if re.search(r"US\$|\bUSD\b|\$\s?\d", ev):
         return "USD"
-    return (facts.price_currency or "PKR").upper().replace("RS.", "PKR").replace("RS", "PKR")
+    if re.search(r"\b(?:PKR|PRK|Rs\.?)|₨", ev, re.I):
+        return "PKR"
+    if not facts.price_currency:
+        return None
+    return facts.price_currency.upper().replace("RS.", "PKR").replace("RS", "PKR")
 
 
 def _accommodation_pricing(facts: TripFacts) -> dict:
@@ -115,7 +142,10 @@ def _accommodation_pricing(facts: TripFacts) -> dict:
     for v in facts.price_variants:
         key = next((k for w, k in words.items() if w in v.label.lower()), None)
         if key and all(t["key"] != key for t in tiers):
-            tiers.append({"key": key, "label": v.label, "pricePerPerson": per_person(v.amount, v.label)})
+            # "Couple: PKR 80,000" is the price for the two of them.
+            n_basis = v.label if not re.search(r"\bcouple\b", v.label, re.I) or \
+                re.search(r"per\s+person", v.label, re.I) else "per couple"
+            tiers.append({"key": key, "label": v.label, "pricePerPerson": per_person(v.amount, n_basis)})
     return {"enabled": True, "tiers": tiers} if len(tiers) >= 2 else {}
 
 
@@ -129,9 +159,11 @@ def _tour_record(facts: TripFacts, listing: TripListing, item: dict) -> dict:
         "destination_cities": listing.destination_cities,
         "duration": _duration_label(facts.duration_days, facts.duration_nights),
         "duration_days": facts.duration_days,
-        "price": per_person(facts.price_amount, facts.price_basis, facts.price_evidence) or 0,
-        "currency": price_currency(facts),
-        "price_on_request": facts.price_amount is None,
+        # No stated currency means no price we can show honestly: it becomes "price on request".
+        "price": (per_person(facts.price_amount, facts.price_basis, facts.price_evidence) or 0)
+        if price_currency(facts) else 0,
+        "currency": price_currency(facts) or "PKR",
+        "price_on_request": facts.price_amount is None or price_currency(facts) is None,
         "accommodation_pricing": _accommodation_pricing(facts),
         "short_description": listing.short_description,
         "description": listing.description,
@@ -258,6 +290,12 @@ def _process_post(post: RawPost, operator: dict, media_dir: Path, today: date) -
     }
     try:
         facts = read_post(post.caption, images, operator["name"], today, post.source)
+        # The small model at low effort sometimes misses a price that is plainly on the page. When
+        # the page text shows money but no price came back, read that one page again more carefully.
+        if facts.is_trip and facts.price_amount is None and SHOWS_MONEY.search(post.caption or ""):
+            retry = read_post(post.caption, images, operator["name"], today, post.source, effort="medium")
+            if retry.price_amount is not None:
+                facts = retry
     except Exception as e:  # one unreadable post goes to review; it must not stop the run
         if is_fatal(e):
             raise
