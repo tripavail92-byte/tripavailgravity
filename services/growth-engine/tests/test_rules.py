@@ -172,5 +172,36 @@ class FacebookDates(unittest.TestCase):
         self.assertNotIn("Comment as", clean_text("Trip to Swat\nComment as Someone"))
 
 
+class PickupNeverGuessed(unittest.TestCase):
+    """A pickup point appears only when the operator states one."""
+
+    def test_unstated_pickup_in_copy_is_flagged(self):
+        from growth.validate import invented_pickups
+        self.assertEqual(invented_pickups("Pickup in Islamabad and trip briefing", CAPTION), ["Pickup"])
+        self.assertEqual(invented_pickups("Return with drop-off at the original meeting point", CAPTION),
+                         ["drop-off", "meeting point"])
+
+    def test_stated_pickup_and_shopping_are_fine(self):
+        from growth.validate import invented_pickups
+        stated = CAPTION + " Our driver will pick you up early in the morning in Islamabad."
+        self.assertEqual(invented_pickups("Pickup in Islamabad", stated), [])
+        self.assertEqual(invented_pickups("Pick up souvenirs in the bazaar", CAPTION), [])
+
+    def test_pickup_row_only_for_a_place_the_operator_names_and_the_map_finds(self):
+        from unittest import mock
+        from growth import geocode
+        from growth.models import MeetingPoint
+        named = facts(meeting_point=MeetingPoint(place="I-8 Markaz", city="Islamabad", time="23:00",
+                                                 quote="We gather at I-8 Markaz"))
+        cap = CAPTION + " We gather at I-8 Markaz, Islamabad at 11 PM."
+        with mock.patch.object(geocode, "geocode", return_value={"lat": 33.668, "lng": 73.075, "name": "x"}):
+            rows = geocode.pickup_locations(named, cap, "Pakistan")
+            self.assertEqual((rows[0]["title"], rows[0]["pickup_time"]), ("I-8 Markaz, Islamabad", "23:00"))
+            self.assertEqual(geocode.pickup_locations(named, CAPTION, "Pakistan"), [])  # not in their text
+            self.assertEqual(geocode.pickup_locations(facts(), cap, "Pakistan"), [])  # none stated
+        with mock.patch.object(geocode, "geocode", return_value=None):
+            self.assertEqual(geocode.pickup_locations(named, cap, "Pakistan"), [])  # map can't find it
+
+
 if __name__ == "__main__":
     unittest.main()

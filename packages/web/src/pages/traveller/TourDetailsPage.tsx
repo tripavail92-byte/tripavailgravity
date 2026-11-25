@@ -1554,12 +1554,16 @@ export default function TourDetailsPage({
                 <span className="font-bold text-foreground">New</span>
               </a>
             )}
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-success/10 rounded-full">
-                <Shield size={16} className="text-success" />
+            {/* TripAvail's payment protection only covers trips booked through TripAvail; an
+                enquiry trip is paid to the operator, so it must not claim it. */}
+            {!isEnquiry && (
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-success/10 rounded-full">
+                  <Shield size={16} className="text-success" />
+                </div>
+                <span className="font-bold text-foreground">Secure Booking</span>
               </div>
-              <span className="font-bold text-foreground">Secure Booking</span>
-            </div>
+            )}
           </div>
 
           {/* Share / write-a-review. Save-to-wishlist is hidden until the feature is wired end to
@@ -1744,25 +1748,43 @@ export default function TourDetailsPage({
                           })()}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                          Deposit Required
-                        </p>
-                        <p className="text-lg font-black text-foreground">
-                          {requiresDeposit ? `${depositPercentage}%` : 'No'}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl border border-border/60 bg-primary/10 p-4">
-                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                          Pay Today
-                        </p>
-                        <p className="text-lg font-black text-foreground">
-                          {(() => {
-                            const m = money(payToday, tour.currency)
-                            return `${m.estimate ? '≈ ' : ''}${m.text}`
-                          })()}
-                        </p>
-                      </div>
+                      {isEnquiry ? (
+                        // Deposit and "pay today" are TripAvail checkout terms. An enquiry trip is paid
+                        // to the operator on their own terms, which TripAvail doesn't set or know.
+                        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 md:col-span-2">
+                          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                            Payment
+                          </p>
+                          <p className="text-lg font-black text-foreground">
+                            Paid to {enquiryOperatorName}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Ask them about deposits and how to pay before you book.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                              Deposit Required
+                            </p>
+                            <p className="text-lg font-black text-foreground">
+                              {requiresDeposit ? `${depositPercentage}%` : 'No'}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-border/60 bg-primary/10 p-4">
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                              Pay Today
+                            </p>
+                            <p className="text-lg font-black text-foreground">
+                              {(() => {
+                                const m = money(payToday, tour.currency)
+                                return `${m.estimate ? '≈ ' : ''}${m.text}`
+                              })()}
+                            </p>
+                          </div>
+                        </>
+                      )}
                     </div>
                     {tour.group_discounts && groupPricingTiers.length > 0 ? (
                       <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-background/80 via-background/65 to-primary/10 backdrop-blur-md p-4 md:p-5 space-y-4 shadow-sm">

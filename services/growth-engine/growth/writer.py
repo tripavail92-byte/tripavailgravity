@@ -25,6 +25,9 @@ Fixed facts — never change, add to, or contradict them:
 - Prices: do not mention any price, discount or amount anywhere in the copy. Prices are shown
   separately by the website.
 - Do not mention dates, phone numbers, WhatsApp or booking instructions in the copy.
+- Pickup and meeting points: never write a pickup, meeting point, hotel collection, airport transfer
+  or drop-off unless the facts (meeting_point, the day plan or the inclusions) state it. Otherwise
+  the first activity is simply the departure from the departure city.
 
 Description: three short paragraphs. Specific and vivid about the actual places — landscapes,
 what the days feel like, who the trip suits. No hype words ('best', 'luxury', 'world-class',

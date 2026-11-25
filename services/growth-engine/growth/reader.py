@@ -44,6 +44,9 @@ Rules:
   put each in price_variants and the lowest per-person option in price_amount. When no price appears
   anywhere, price_amount is null and price_found_in is 'none'.
 - price_evidence: copy the exact words and numbers where the price appears.
+- meeting_point: only when the operator names a specific pickup or meeting place ('we gather at I-8
+  Markaz', 'pickup from Faizabad'). A departure city on its own ('from Islamabad'), 'hotel pickup' with
+  no place, or 'pickup on request' is NOT a meeting point — leave it null. Never guess one.
 - Recurring trips ('every Friday', 'har Jumma') go in recurrence, weekdays 0=Monday ... 6=Sunday.
 - '3 Days 2 Nights' -> duration_days 3, duration_nights 2. A day trip is 1 day.
 - status is 'cancelled', 'postponed', 'sold_out' or 'few_seats_left' only when the post says so.

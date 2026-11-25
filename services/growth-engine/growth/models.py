@@ -57,6 +57,14 @@ class PostedDay(BaseModel):
     details: str
 
 
+class MeetingPoint(BaseModel):
+    """Where travellers are picked up or meet — ONLY when the operator names it."""
+    place: str = Field(description="The place exactly as named, e.g. 'I-8 Markaz', 'Faizabad Interchange'")
+    city: str | None = Field(description="City of that place, if stated or obvious from the place name")
+    time: str | None = Field(description="24h 'HH:MM' only if the operator states the meeting/pickup time")
+    quote: str = Field(description="The operator's exact words naming the place")
+
+
 class TripFacts(BaseModel):
     is_trip: bool
     trip_kind: Literal["scheduled_departure", "recurring_departure", "on_request", "not_a_trip"]
@@ -76,6 +84,9 @@ class TripFacts(BaseModel):
     inclusions: list[str]
     exclusions: list[str]
     itinerary_as_posted: list[PostedDay] = Field(description="Only if the operator wrote a day plan")
+    meeting_point: MeetingPoint | None = Field(
+        default=None,
+        description="Only if the operator names a specific pickup or meeting place; a departure city alone is not one")
     contact_phone: str | None
     status: Literal["open", "few_seats_left", "sold_out", "cancelled", "postponed", "unknown"]
     evidence: list[str] = Field(description="Short quotes from the caption or poster backing the key fields")

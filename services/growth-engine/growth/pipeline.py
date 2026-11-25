@@ -14,6 +14,7 @@ from pathlib import Path
 from . import media
 from .config import REQUIREMENT_IDS, SETTINGS
 from .dedupe import collapse_duplicates, diff_scans
+from .geocode import pickup_locations
 from .models import PageProfile, RawPage, RawPost, TripFacts, TripListing
 from .ai import USAGE, ModelDeclined, is_fatal
 from .reader import read_post, read_profile
@@ -111,6 +112,8 @@ def _tour_record(facts: TripFacts, listing: TripListing, item: dict) -> dict:
         "requirements": [r for r in listing.requirements if r in REQUIREMENT_IDS],
         "physical_requirements": listing.physical_requirements,
         "departures": item["upcoming"],
+        # Only a meeting point the operator names, found on the map; otherwise none (never guessed).
+        "pickup_locations": pickup_locations(facts, item.get("caption") or "", listing.primary_country),
         "images": [m["stored_path"] for m in item["media"]],
         # Not stated by the operator, so the listing shows "Confirm with the operator".
         "cancellation_policy": None,
@@ -244,7 +247,7 @@ def _write(item: dict, operator: dict) -> None:
         item.update(decision="review", reasons=report.reasons + [f"could not write listing: {e}"[:300]],
                     validation=report.as_dict())
         return
-    final = merge_listing_checks(report, validate_listing(listing, facts), facts.confidence)
+    final = merge_listing_checks(report, validate_listing(listing, facts, item["caption"]), facts.confidence)
     item.update(
         listing=listing.model_dump(),
         listing_title=listing.title,

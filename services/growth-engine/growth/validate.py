@@ -165,7 +165,27 @@ def validate_facts(facts: TripFacts, caption: str, usable_images: int, today: da
     return _decide(checks, facts.confidence)
 
 
-def validate_listing(listing: TripListing, facts: TripFacts) -> list[Check]:
+PICKUP_WORDS = re.compile(
+    r"\b(pick[\s-]?ups?|picked up|drop[\s-]?offs?|meeting point|meet (?:at|your)|assembl\w* at|gather\w* at|"
+    r"collect\w* (?:you|from)|airport transfers?)\b", re.I)
+NOT_A_PICKUP = re.compile(r"\bpick[\s-]?up (?:some |a |local )?(?:souvenir|handicraft|walnut|apricot|honey|dry|spice|"
+                          r"textile|shawl|gift|keepsake|snack)", re.I)
+
+
+# How operators phrase it: "our driver will pick you up", "we gather at", "airport transfer"…
+OPERATOR_PICKUP = re.compile(r"\b(pick(?:ed)?[\s-]?(?:\w+\s)?up|pickups?|drop[\s-]?offs?|meet\w*|assembl\w*|"
+                             r"gather\w*|collect\w*|transfers?|report\w* at)\b", re.I)
+
+
+def invented_pickups(listing_text: str, caption: str) -> list[str]:
+    """Pickup / meeting-point wording in our copy when the operator's own text has none. A pickup
+    point is never guessed: if the operator didn't mention one, the listing can't either."""
+    if OPERATOR_PICKUP.search(caption or ""):
+        return []
+    return [m.group(0) for m in PICKUP_WORDS.finditer(NOT_A_PICKUP.sub("", listing_text))]
+
+
+def validate_listing(listing: TripListing, facts: TripFacts, caption: str = "") -> list[Check]:
     """Checks on what Claude wrote, so the copy can't drift from the facts."""
     checks: list[Check] = []
 
@@ -185,6 +205,9 @@ def validate_listing(listing: TripListing, facts: TripFacts) -> list[Check]:
     money = re.findall(r"(?:PKR|Rs\.?|Rupees|USD|\$)\s*(\d[\d,]*)", text, flags=re.I)  # "USD," is not a price
     rogue = sorted({_digits(m) for m in money} - allowed)
     checks.append(Check("no_invented_prices", not rogue, "hard", ", ".join(rogue)))
+
+    guessed = invented_pickups(text, caption)
+    checks.append(Check("no_invented_pickup", not guessed, "hard", ", ".join(sorted(set(guessed)))))
 
     unknown_reqs = [r for r in listing.requirements if r not in REQUIREMENT_IDS]
     checks.append(Check("requirements_known", not unknown_reqs, "soft", ", ".join(unknown_reqs)))
