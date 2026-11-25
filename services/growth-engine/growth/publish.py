@@ -171,6 +171,17 @@ def wizard_schedules(rec: dict, today: date) -> list[dict]:
     return out
 
 
+def availability_of(trip: dict) -> str:
+    """'on_request' for a trip the traveller can take on any date they choose: the operator sells it
+    without fixed departures (trip_kind on_request), or says it runs daily / all year. Otherwise
+    'scheduled' — fixed departures, which must exist and lie ahead to be listed."""
+    rec, facts = trip.get("tour") or {}, trip.get("facts") or {}
+    if rec.get("departures"):
+        return "scheduled"
+    rec_days = set(((facts.get("recurrence") or {}).get("weekdays")) or [])
+    return "on_request" if facts.get("trip_kind") == "on_request" or len(rec_days) == 7 else "scheduled"
+
+
 def preflight(rec: dict, images: list, schedules: list) -> list[str]:
     """CreateTourPage.collectMissingFields — the checks the wizard runs before Publish now.
 
@@ -189,7 +200,8 @@ def preflight(rec: dict, images: list, schedules: list) -> list[str]:
         missing.append("Tour country")
     if not images:
         missing.append("At least one image")
-    if not schedules:
+    # An any-date trip (runs on dates the traveller picks) has no fixed departures by design.
+    if not schedules and rec.get("availability") != "on_request":
         missing.append("A departure date in the future")
     price = float(rec.get("price") or 0)
     floor = MIN_PRICE.get((rec.get("currency") or "PKR").upper(), 5)
@@ -259,6 +271,7 @@ def post_via_wizard_flow(sb: "Supabase", run_dir: Path, uid: str, rec: dict, tod
         schedules=[{k: s[k] for k in ("id", "date", "time", "capacity", "end_time") if s[k] != ""} for s in schedules],
         draft_data={"pickup_locations_count": len(pickups), "posted_by": "growth-engine",
                     "source_url": rec.get("source_url")},
+        availability="on_request" if rec.get("availability") == "on_request" and not schedules else "scheduled",
         # Enquiry listing provenance
         booking_mode="enquiry", source=rec.get("source"), source_url=rec.get("source_url"),
         source_checked_at=datetime.now(timezone.utc).isoformat(),
@@ -354,6 +367,7 @@ def publish_run(run_dir: Path, apply: bool = False, include_review: bool = False
             postable = []
             for t in mine:
                 rec = t["tour"]
+                rec.setdefault("availability", availability_of(t))
                 imgs = [f for f in (_local(run_dir, sp) for sp in rec.get("images") or []) if f]
                 missing = preflight(rec, imgs, wizard_schedules(rec, today))
                 if missing:

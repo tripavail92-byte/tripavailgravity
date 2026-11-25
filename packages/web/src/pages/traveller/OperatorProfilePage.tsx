@@ -1138,7 +1138,13 @@ export default function OperatorProfilePage() {
                     key: 'upcoming',
                     title: `Upcoming trips by ${name}`,
                     note: null,
-                    list: tours.filter((t) => !t.is_archived),
+                    list: tours.filter((t) => !t.is_archived && !t.is_any_date),
+                  },
+                  {
+                    key: 'any-date',
+                    title: 'Available on request',
+                    note: `Private trips ${name} runs on the dates you choose — tell them your dates on WhatsApp.`,
+                    list: tours.filter((t) => t.is_any_date),
                   },
                   {
                     key: 'past',
@@ -1190,6 +1196,10 @@ export default function OperatorProfilePage() {
                                 {tour.is_archived ? (
                                   <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                                     Past trip
+                                  </span>
+                                ) : tour.is_any_date ? (
+                                  <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                    Any date
                                   </span>
                                 ) : tour.next_departure ? (
                                   <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">

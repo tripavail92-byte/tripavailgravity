@@ -18,6 +18,8 @@ export interface Tour {
   is_published?: boolean | null
   /** 'enquiry': listed from an operator who hasn't joined yet — WhatsApp enquiry, no checkout. */
   booking_mode?: 'instant' | 'enquiry'
+  /** 'on_request': runs on dates the traveller chooses (no fixed departures); never "past". */
+  availability?: 'scheduled' | 'on_request'
   price_on_request?: boolean
   source?: string | null
   source_url?: string | null

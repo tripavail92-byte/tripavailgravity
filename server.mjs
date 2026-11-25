@@ -147,7 +147,7 @@ const OPERATOR_FIELDS =
   'user_id,slug,company_name,business_name,company_logo_url,description,primary_city,years_experience,has_identity_verified'
 
 // booking_mode / price_on_request arrive with migration 20261125000001; until then, the old shape.
-const LISTING_FIELDS = 'booking_mode,price_on_request'
+const LISTING_FIELDS = 'booking_mode,price_on_request,availability'
 const loadTours = () =>
   cached('tours', () =>
     sbFetch(`tours?${LIVE_TOURS}&select=${TOUR_FIELDS},${LISTING_FIELDS}&order=updated_at.desc&limit=1000`).catch(() =>
@@ -286,6 +286,8 @@ function tourDays(t) {
 const daysLabel = (n) => (n === 1 ? '1 day' : `${n} days`)
 // Listed from an operator who hasn't joined TripAvail: booked directly with them on WhatsApp.
 const isEnquiry = (t) => t.booking_mode === 'enquiry'
+// Runs on dates the traveller chooses (no fixed departures); never a past trip.
+const anyDate = (t) => t.availability === 'on_request'
 const tourPrice = (t) => (t.price_on_request ? 0 : Number(t.price) || 0)
 const priceLabel = (t) =>
   tourPrice(t) > 0 ? `from ${fmtMoney(tourPrice(t), t.currency)} per person` : 'price on request'
@@ -678,7 +680,9 @@ ${
           return `<li>${esc(fmtDate(d.start_time))}${bits.some(Boolean) ? ` — ${esc(bits.filter(Boolean).join(' · '))}` : ''}</li>`
         })
         .join('\n')}\n</ul>`
-    : '<p>No departure dates are listed right now.</p>'
+    : anyDate(t)
+      ? '<p>Runs on dates you choose: the operator runs this trip on request, so ask them for your dates.</p>'
+      : '<p>No departure dates are listed right now.</p>'
 }
 </section>
 ${
@@ -988,7 +992,7 @@ function buildLlmsFullTxt(site) {
                   return `${fmtDate(d.start_time)}${left !== null ? ` (${left} seats left)` : ''}`
                 })
                 .join('; ')
-            : 'none scheduled right now'
+            : anyDate(t) ? 'any date you choose (runs on request)' : 'none scheduled right now'
         }`,
       )
       out.push('')

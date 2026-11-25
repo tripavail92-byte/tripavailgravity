@@ -195,7 +195,7 @@ export const operatorPublicService = {
     const { data, error } = await supabase
       .from('tours')
       .select(
-        'id, slug, title, description, price, currency, price_on_request, duration, location, images, rating, review_count, difficulty_level, tour_schedules(start_time, status)',
+        'id, slug, title, description, price, currency, price_on_request, availability, duration, location, images, rating, review_count, difficulty_level, tour_schedules(start_time, status)',
       )
       .eq('operator_id', operatorId)
       .eq('is_active', true)
@@ -218,7 +218,9 @@ export const operatorPublicService = {
         duration_days: tour.duration ?? null,
         cover_image_url: Array.isArray(tour.images) ? (tour.images[0] ?? null) : null,
         next_departure: upcoming[0] ?? null,
-        is_archived: upcoming.length === 0,
+        // Any-date trips (run on request) have no fixed departures and are never past.
+        is_any_date: tour.availability === 'on_request' && upcoming.length === 0,
+        is_archived: upcoming.length === 0 && tour.availability !== 'on_request',
         tags: [],
       }
     })

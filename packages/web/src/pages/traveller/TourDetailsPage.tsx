@@ -1581,7 +1581,7 @@ export default function TourDetailsPage({
           <div className="lg:col-span-2 space-y-12">
             {/* Archived: every departure has passed. The trip stays published under its operator,
                 but say so plainly instead of letting it look bookable. */}
-            {!preview && schedules.length === 0 ? (
+            {!preview && schedules.length === 0 && tour.availability !== 'on_request' ? (
               <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5">
                 <p className="font-bold text-foreground">This is a past trip</p>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -2061,6 +2061,7 @@ export default function TourDetailsPage({
                   websiteUrl={listingContact?.website_url ?? null}
                   priceText={enquiryPrice}
                   departures={enquiryDepartures}
+                  anyDate={tour.availability === 'on_request'}
                   pageUrl={enquiryPageUrl}
                   onWhatsAppClick={() => trackEnquiry('whatsapp_click')}
                   onClaimClick={() => trackEnquiry('claim_click')}

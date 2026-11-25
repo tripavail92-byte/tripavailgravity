@@ -43,6 +43,8 @@ interface EnquiryCardProps {
   priceText: string | null
   /** Upcoming departure dates, already formatted. */
   departures: string[]
+  /** The operator runs this trip on dates the traveller chooses (no fixed departures). */
+  anyDate?: boolean
   pageUrl: string
   onWhatsAppClick: () => void
   onClaimClick: () => void
@@ -55,6 +57,7 @@ export function EnquiryCard({
   websiteUrl,
   priceText,
   departures,
+  anyDate = false,
   pageUrl,
   onWhatsAppClick,
   onClaimClick,
@@ -79,9 +82,14 @@ export function EnquiryCard({
       <GlassContent className="space-y-4">
         <div className="space-y-2 rounded-3xl border border-primary/10 bg-primary/5 p-4">
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {departures.length ? 'Departures listed by the operator' : 'Departures'}
+            {departures.length ? 'Departures listed by the operator' : anyDate ? 'Dates' : 'Departures'}
           </p>
-          {departures.length ? (
+          {!departures.length && anyDate ? (
+            <p className="text-sm text-foreground">
+              <span className="font-semibold">Any date you choose.</span> {operatorName} runs this
+              trip on request — tell them your dates on WhatsApp.
+            </p>
+          ) : departures.length ? (
             <ul className="flex flex-wrap gap-2">
               {departures.slice(0, 8).map((d) => (
                 <li
