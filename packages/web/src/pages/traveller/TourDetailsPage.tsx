@@ -25,6 +25,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { ShareButton } from '@/components/share/ShareButton'
 import { EnquiryCard, enquiryMessage, whatsAppHref } from '@/components/tour/EnquiryCard'
+import { PickupMapPreview } from '@/components/tour/PickupMapPreview'
 import { TourReviewButton } from '@/components/tour/TourReviewButton'
 import { TourSubNav } from '@/components/tour/TourSubNav'
 import { TourGallery } from '@/components/traveller/TourGallery'
@@ -1332,18 +1333,13 @@ export default function TourDetailsPage({
                 >
                   <div className="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
                     <div className="relative min-h-[180px] bg-muted/40">
-                      {previewUrl ? (
-                        <img
-                          src={previewUrl}
-                          alt={pickup.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full min-h-[180px] items-center justify-center bg-muted/40 text-muted-foreground">
-                          <MapPin className="h-8 w-8" />
-                        </div>
-                      )}
+                      <PickupMapPreview
+                        lat={pickup.latitude}
+                        lng={pickup.longitude}
+                        title={pickup.title}
+                        googleUrl={previewUrl}
+                        directionsUrl={directionsUrl}
+                      />
                       <div className="absolute left-4 top-4 flex items-center gap-2">
                         <GlassBadge variant={pickup.is_primary ? 'primary' : 'light'} size="sm">
                           {pickup.is_primary ? 'Primary pickup' : `Stop ${index + 1}`}
@@ -1502,12 +1498,12 @@ export default function TourDetailsPage({
           section actually renders, so no tab is ever dead. */}
       <TourSubNav
         sections={[
+          { id: 'operator', label: 'Operator' },
           ...(tour.description?.trim() ? [{ id: 'overview', label: 'Overview' }] : []),
           ...(tour.itinerary?.length ? [{ id: 'itinerary', label: 'Itinerary' }] : []),
           ...(pickupLocations.length > 0 ? [{ id: 'pickup', label: 'Pickup points' }] : []),
           { id: 'included', label: "What's included" },
           { id: 'details', label: 'Good to know' },
-          { id: 'operator', label: 'Operator' },
           { id: 'reviews', label: 'Reviews' },
         ]}
       />
@@ -1583,6 +1579,10 @@ export default function TourDetailsPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
+            {/* Operator / host leads the trip content: travellers see who runs the trip (and whether
+                they're verified) before reading about it. */}
+            {operatorSection}
+
             {/* Description (glass card like package page). Conditional: the wizard's only writer of
                 description was the physical-requirements textarea (the bug), so once that was
                 rebound a tour can legitimately have no description — don't render an empty card. */}
@@ -1902,10 +1902,6 @@ export default function TourDetailsPage({
                 </div>
               </GlassContent>
             </GlassCard>
-
-            {/* Operator / host — the "who's running this" trust block sits low on the page,
-                next to the reviews, instead of leading before any of the trip content. */}
-            {operatorSection}
 
             {/* Traveler reviews — id/scroll-mt-32 target for the "Reviews" sub-nav tab.
                 Empty-state variant renders below when reviews.length === 0 so the tab always has
