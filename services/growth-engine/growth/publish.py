@@ -171,6 +171,60 @@ def wizard_schedules(rec: dict, today: date) -> list[dict]:
     return out
 
 
+OVERRIDES_PATH = Path(__file__).resolve().parent.parent / "overrides.json"
+
+
+def apply_overrides(trips: list[dict], log=print) -> list[dict]:
+    """Manual decisions (overrides.json) always win over what the AI read, so no re-run undoes them."""
+    if not OVERRIDES_PATH.exists():
+        return trips
+    ov = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8"))
+    held_ops, by_url = ov.get("operators") or {}, ov.get("trips") or {}
+    for t in trips:
+        rec = t.get("tour") or {}
+        if t.get("operator_handle") in held_ops and t.get("decision") == "publish_ready":
+            t["decision"] = "review"
+            t.setdefault("reasons", []).append(held_ops[t["operator_handle"]])
+            continue
+        o = by_url.get(rec.get("source_url"))
+        if not o:
+            continue
+        if o.get("hold") and t.get("decision") == "publish_ready":
+            t["decision"] = "review"
+            t.setdefault("reasons", []).append(o["hold"])
+            continue
+        rec.update(o.get("tour") or {})
+        for key, pp in (o.get("tiers") or {}).items():
+            for tier in (rec.get("accommodation_pricing") or {}).get("tiers") or []:
+                if tier.get("key") == key:
+                    tier["pricePerPerson"] = pp
+        log(f"  override: {rec.get('title', '')[:50]} ({o.get('why', '')[:60]})")
+    return trips
+
+
+def archive_gone(gone_urls: list[str], apply: bool = False, log=print) -> int:
+    """A listed trip whose page the operator removed (404/410) becomes a past trip: its future
+    departures are cleared and it stops counting as an any-date trip. It stays on the operator's
+    profile as a past trip; nothing is deleted."""
+    from dotenv import dotenv_values
+    creds = dotenv_values(Path(__file__).resolve().parent.parent / ".env.publish")
+    sb = Supabase(creds["SUPABASE_URL"], creds["SUPABASE_SERVICE_ROLE_KEY"], apply, log)
+    today = date.today().isoformat()
+    n = 0
+    for url in gone_urls:
+        rows = sb.get("tours", f"source_url=eq.{quote(url, safe='')}&booking_mode=eq.enquiry&select=id,slug")
+        if not rows:
+            continue
+        tid = rows[0]["id"]
+        sb.write("DELETE", "tour_schedules", None, qs=f"tour_id=eq.{tid}&start_time=gte.{today}&booked_count=eq.0",
+                 label="clear future departures")
+        sb.write("PATCH", "tours", {"availability": "scheduled", "source_checked_at": datetime.now(timezone.utc).isoformat()},
+                 qs=f"id=eq.{tid}", label="mark past")
+        log(f"  archived (page gone): /tours/{rows[0]['slug']}  <- {url}")
+        n += 1
+    return n
+
+
 def availability_of(trip: dict) -> str:
     """'on_request' for a trip the traveller can take on any date they choose: the operator sells it
     without fixed departures (trip_kind on_request), or says it runs daily / all year. Otherwise
@@ -349,7 +403,7 @@ def publish_run(run_dir: Path, apply: bool = False, include_review: bool = False
         raise SystemExit("Put SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in services/growth-engine/.env.publish first.")
     sb = Supabase(url, key, apply, log)
     operators = json.loads((run_dir / "operators.json").read_text(encoding="utf-8"))
-    trips = json.loads((run_dir / "trips.json").read_text(encoding="utf-8"))
+    trips = apply_overrides(json.loads((run_dir / "trips.json").read_text(encoding="utf-8")), log)
     wanted = {"publish_ready", "review"} if include_review else {"publish_ready"}
     today = date.today()
     out = {"run": run_dir.name, "applied": apply, "operators": [], "skipped": []}

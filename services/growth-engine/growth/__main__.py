@@ -64,7 +64,23 @@ def main() -> int:
     pb.add_argument("--apply", action="store_true", help="actually write to the database")
     pb.add_argument("--include-review", action="store_true", help="also publish trips marked 'review'")
     pb.add_argument("--only", nargs="*", help="only these operators (substring match)")
+    ar = sub.add_parser("archive", help="mark listed trips whose pages were removed as past (dry run unless --apply)")
+    ar.add_argument("gone_file", help="JSON list of removed source URLs (refresh writes run/gone.json)")
+    ar.add_argument("--apply", action="store_true")
+    rf = sub.add_parser("refresh", help="weekly: re-check sites, re-read, process, publish, archive, ping search")
+    rf.add_argument("--dry-run", action="store_true", help="do everything except write to the database")
     args = ap.parse_args()
+
+    if args.cmd == "refresh":
+        from .refresh import refresh
+        return refresh(dry_run=args.dry_run)
+
+    if args.cmd == "archive":
+        from .publish import archive_gone
+        gone = json.loads(Path(args.gone_file).read_text(encoding="utf-8"))
+        n = archive_gone(gone, apply=args.apply)
+        print(f"{'Archived' if args.apply else 'Dry run:'} {n} trips whose pages were removed")
+        return 0
 
     if args.cmd == "publish":
         from .publish import publish_run
@@ -72,41 +88,9 @@ def main() -> int:
         return 0
 
     if args.cmd == "webscan":
-        import glob
-
-        from .crawl import _safe
-        from .sources.website import fetch_site
-        latest = sorted(glob.glob(str(SETTINGS.out_dir / "directory" / "sites-*.json")))[-1]
-        rows = json.loads(Path(latest).read_text(encoding="utf-8"))
-        want = set(args.status.split(","))
-        picked = [r for r in rows if (r.get("site") or {}).get("status") in want]
-        if args.names:
-            picked = [r for r in picked if any(n.lower() in r["name"].lower() for n in args.names)]
-        if args.fresh_tours:
-            picked = [r for r in picked if ((r.get("site") or {}).get("tour_pages_newest") or "") >= SETTINGS.active_since]
-        # Most tours on the directory first: the busiest operators are the best first listings.
-        picked.sort(key=lambda r: r.get("tours_on_directory") or 0, reverse=True)
-        picked = picked[: args.limit]
-        run_dir = SETTINGS.out_dir / f"run-web-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        (run_dir / "raw").mkdir(parents=True, exist_ok=True)
-        print(f"{len(picked)} operators from {Path(latest).name} -> {run_dir.name}")
-
-        async def crawl_all():
-            sem = asyncio.Semaphore(4)  # four different sites at a time; one request at a time per site
-
-            async def one(r):
-                async with sem:
-                    try:
-                        raw = await fetch_site(r, SETTINGS.active_since, args.tours)
-                    except Exception as e:  # noqa: BLE001
-                        print(f"  {r['name'][:40]}: failed ({type(e).__name__})")
-                        return
-                    if raw and raw.posts:
-                        (run_dir / "raw" / f"{_safe(raw.handle)}.json").write_text(
-                            raw.model_dump_json(indent=1), encoding="utf-8")
-            await asyncio.gather(*(one(r) for r in picked))
-
-        asyncio.run(crawl_all())
+        from .webscan import webscan
+        run_dir = webscan(args.status.split(","), limit=args.limit, tours=args.tours,
+                          names=args.names, fresh_tours=args.fresh_tours)
         crawled = list((run_dir / "raw").glob("*.json"))
         print(f"crawled {len(crawled)} operators with tour pages -> {run_dir}")
         if args.crawl_only:

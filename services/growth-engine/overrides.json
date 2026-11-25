@@ -1,0 +1,41 @@
+{
+  "_about": "Manual decisions the publisher always applies on top of what the AI read, so a re-run or the weekly refresh can never undo them. 'hold' keeps a trip or an operator off the site; 'tour' fields replace the record's; 'tiers' sets room-sharing prices per person by tier key. Every entry says why.",
+  "operators": {
+    "k2trekkingandexpedition.com": "hold: its dates table lists K2 departures in December, which can't happen; the dates can't be trusted",
+    "jasminetours.com": "hold: both trips share one template dates/price table ($1,800 for a Broad Peak expedition)"
+  },
+  "trips": {
+    "https://rozefstourism.com/tour/hunza-honeymoon-tour/": {
+      "tour": {"price": 0, "price_on_request": true},
+      "why": "'From Rs. 190,000' on a couples page; per person vs per couple not stated"
+    },
+    "https://www.0km.com.pk/tour/kashmir-neelum-shogran/": {
+      "tiers": {"double": 27500},
+      "why": "'Double Sharing Rs. 55,000' is for 2 adults, as the same operator labels it on its Mega Trip page"
+    },
+    "https://adventurertreks.pk/packages/by-road-private-tours/4-days-3-nights-swat-kalam-by-road/": {
+      "tour": {"price": 55500, "currency": "PKR", "price_on_request": false},
+      "why": "page: 'Starting From: Rs 111,000 For 02 Persons' (the AI missed it)"
+    },
+    "https://adventurertreks.pk/packages/by-air-private-tours/8-days-7-nights-skardu-hunza-by-air/": {
+      "tour": {"price": 127000, "currency": "PKR", "price_on_request": false},
+      "why": "page: 'Starting From: Rs 254,000 For 02 Persons' (the AI missed it)"
+    },
+    "https://www.tourrangers.pk/tours/rakaposhi-base-camp-trek": {
+      "tour": {"price": 60000, "currency": "PKR", "price_on_request": false},
+      "why": "page offer price PKR 60,000 ('From Rs 60,000 per person'); loaded by the page's booking box"
+    },
+    "https://www.tourrangers.pk/tours/ratti-gali-to-besal-trek": {
+      "tour": {"price": 65000, "currency": "PKR", "price_on_request": false},
+      "why": "page offer price PKR 65,000"
+    },
+    "https://www.tourrangers.pk/tours/dudipatsar-lake-trek": {
+      "tour": {"price": 30000, "currency": "PKR", "price_on_request": false},
+      "why": "page offer price PKR 30,000"
+    },
+    "https://www.tourrangers.pk/tours/malika-parbat-expedition": {
+      "tour": {"price": 199000, "currency": "PKR", "price_on_request": false},
+      "why": "page offer price PKR 199,000"
+    }
+  }
+}
