@@ -56,6 +56,8 @@ export default function LoginPage() {
 
   const notice = searchParams.get('notice')
   const showCheckoutNotice = notice === 'checkout'
+  // From the partner page: a tour operator creating their business account.
+  const showPartnerNotice = notice === 'partner'
 
   // Coming from checkout: keep the trip in view, so signing up doesn't feel like losing the booking.
   const [bookingContext, setBookingContext] = useState<{
@@ -207,12 +209,14 @@ export default function LoginPage() {
       <Card className="w-full max-w-md border border-border/60 shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center text-primary">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            {isLogin ? 'Welcome Back' : showPartnerNotice ? 'Create your operator account' : 'Create Account'}
           </CardTitle>
           <CardDescription className="text-center">
             {showCheckoutNotice && !isLogin
               ? 'Create an account to continue booking. You’ll be returned to checkout after signup.'
-              : isLogin
+              : showPartnerNotice && !isLogin
+                ? 'List your tours on TripAvail. Next, you’ll set up your business profile.'
+                : isLogin
                 ? 'Enter your credentials to access your account'
                 : 'Sign up to start your journey with TripAvail'}
           </CardDescription>

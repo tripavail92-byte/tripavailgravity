@@ -6,7 +6,7 @@ const NAV_ACTIONS = [
   {
     icon: ShieldCheck,
     label: 'Verify Identity',
-    desc: 'Enable bookings with biometric matching',
+    desc: 'Upload your ID and a selfie for our team to check',
     href: '/operator-dashboard/verification',
     accent: true,
   },
@@ -20,7 +20,7 @@ const NAV_ACTIONS = [
   {
     icon: Map,
     label: 'Create Your First Tour',
-    desc: 'Launch a new adventure package',
+    desc: 'Add dates, price and itinerary for your first trip',
     href: '/operator/tours/new',
     accent: false,
   },
@@ -63,7 +63,7 @@ export function CompletionStep() {
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Setup Complete
         </div>
-        <h2 className="text-4xl font-black text-foreground tracking-tighter uppercase italic">
+        <h2 className="text-3xl font-black text-foreground tracking-tighter uppercase italic sm:text-4xl">
           You're All Set!
         </h2>
         <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed font-medium">

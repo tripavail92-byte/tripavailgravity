@@ -9,8 +9,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 export function DashboardHeader() {
-  const { activeRole } = useAuth()
-  const roleTitle =
+  const { user, activeRole } = useAuth()
+  // Signed-out visitors (e.g. an operator reading the partner page) have no role: don't label them
+  // 'Traveler' or show a notification bell they can't use.
+  const roleTitle = !user
+    ? ''
+    :
     activeRole?.role_type === 'tour_operator'
       ? 'Tour Operator'
       : activeRole?.role_type === 'hotel_manager'
@@ -81,8 +85,8 @@ export function DashboardHeader() {
             {/* Dark / light mode toggle */}
             <ThemeToggle inverted={isPartnerChrome} />
 
-            {/* Notifications */}
-            <NotificationBell inverted={isPartnerChrome} />
+            {/* Notifications — only for a signed-in account */}
+            {user ? <NotificationBell inverted={isPartnerChrome} /> : null}
 
             {/* The hamburger drawer is the MOBILE menu only — on desktop the collapsible sidebar
                 (rendered by the layout) replaces it. */}

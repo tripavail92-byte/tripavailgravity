@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Loader2, Save } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-hot-toast'
+import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Logo, LOGO_EMBLEM_SRC } from '@/components/brand/Logo'
@@ -380,7 +381,7 @@ export default function TourOperatorSetupPage() {
 
       {/* Step progress bar */}
       {!isCompletionStep && !isLocked && (
-        <div className="max-w-2xl mx-auto w-full px-6 pt-5 pb-1">
+        <div className="max-w-2xl mx-auto w-full px-4 pt-5 pb-1 sm:px-6">
           {/* One stage, named once, centred — the same rail the create-tour wizard uses. The
               "N of 9" that used to sit here was a second count competing with the card's own. */}
           <StageRail
@@ -401,7 +402,7 @@ export default function TourOperatorSetupPage() {
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto w-full px-6 py-6 pb-16">
+        <div className="max-w-2xl mx-auto w-full px-4 py-6 pb-16 sm:px-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -412,7 +413,7 @@ export default function TourOperatorSetupPage() {
             >
               {/* Glass card shell */}
               <div className="rounded-3xl bg-card/80 backdrop-blur-xl border border-border shadow-xl overflow-hidden">
-                <div className="p-8">
+                <div className="p-5 sm:p-8">
                   {isLocked ? (
                     <LockedSetupView data={setupData} onEdit={() => setIsLocked(false)} />
                   ) : (
@@ -464,13 +465,17 @@ export default function TourOperatorSetupPage() {
                   )}
                 </div>
 
-                {/* Inline footer navigation */}
+                {/* Footer navigation. Phones: a bar pinned to the bottom of the SCREEN (rendered
+                    through a portal — this card animates with a transform, and a fixed element
+                    inside a transformed one is fixed to the card, not the screen). On long steps
+                    Continue was 1,500–1,900px down. Wider screens keep the in-card footer. */}
+                {!isCompletionStep && !isLocked && <div className="h-20 sm:hidden" aria-hidden />}
                 {!isCompletionStep && !isLocked && (
-                  <div className="px-8 pb-8 flex items-center justify-between gap-4 border-t border-border/50 pt-6">
+                  <div className="hidden items-center justify-between gap-4 border-t border-border/50 px-8 pb-8 pt-6 sm:flex">
                     <Button
                       variant="ghost"
                       onClick={handleBack}
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-12 px-6 font-semibold transition-all"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-12 px-3 sm:px-6 font-semibold transition-all"
                     >
                       <ChevronLeft className="w-4 h-4 mr-1.5" />
                       {currentStep === 0 && flow.isFirst ? 'Dashboard' : 'Back'}
@@ -487,6 +492,31 @@ export default function TourOperatorSetupPage() {
                     </Button>
                   </div>
                 )}
+                {!isCompletionStep &&
+                  !isLocked &&
+                  createPortal(
+                    <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t border-border/60 bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:hidden">
+                    <Button
+                      variant="ghost"
+                      onClick={handleBack}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-12 px-3 sm:px-6 font-semibold transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4 mr-1.5" />
+                      {currentStep === 0 && flow.isFirst ? 'Dashboard' : 'Back'}
+                    </Button>
+
+                    <Button
+                      onClick={handleNext}
+                      disabled={isSaving}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 px-8 font-bold shadow-lg shadow-primary/20 flex-1 max-w-[220px] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                      {isLastContentStep && flow.isLast ? 'Finish Setup' : 'Continue'}
+                      {!isSaving && <ChevronRight className="w-4 h-4 ml-1.5" />}
+                    </Button>
+                    </div>,
+                    document.body,
+                  )}
               </div>
             </motion.div>
           </AnimatePresence>

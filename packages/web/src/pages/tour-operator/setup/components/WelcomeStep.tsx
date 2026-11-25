@@ -8,9 +8,9 @@ interface StepProps {
 }
 
 const HIGHLIGHTS = [
-  { icon: Globe, label: 'Global reach', desc: 'Connect with travelers worldwide' },
-  { icon: TrendingUp, label: 'Grow revenue', desc: 'Managed booking & payments' },
-  { icon: CheckCircle2, label: 'Verified profile', desc: 'Instant trust with travelers' },
+  { icon: Globe, label: 'Get found', desc: 'Travellers find your trips on TripAvail and Google' },
+  { icon: TrendingUp, label: 'Take bookings', desc: 'Travellers book online and pay a deposit' },
+  { icon: CheckCircle2, label: 'Verified badge', desc: 'Show travellers your business is checked' },
 ]
 
 export function WelcomeStep({ onNext }: StepProps) {
@@ -47,11 +47,11 @@ export function WelcomeStep({ onNext }: StepProps) {
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           Partner Program
         </div>
-        <h2 className="text-4xl font-black text-foreground tracking-tight leading-tight">
+        <h2 className="text-3xl font-black leading-tight tracking-tight text-foreground sm:text-4xl">
           Welcome to<br />TripAvail
         </h2>
         <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto font-medium">
-          Join elite tour operators creating unforgettable experiences for adventurers around the world.
+          Set up your operator profile, then list your first trip. Travellers can book or enquire as soon as it’s live.
         </p>
       </motion.div>
 

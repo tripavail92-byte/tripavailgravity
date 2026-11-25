@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 
 import { GuidedTour } from '@/components/ui/GuidedTour'
 import { hotelManagerTour, tourOperatorTour, travellerTour } from '@/config/tours'
@@ -17,9 +18,23 @@ export function TourManager() {
     completeTour,
   } = useTourStore()
 
+  const { pathname } = useLocation()
+
   useEffect(() => {
     // Wait for auth to be fully loaded
     if (!initialized || !user || !activeRole) {
+      setIsActive(false)
+      return
+    }
+    // A partner's tour points at their dashboard (stats, bookings…): run it only there. It used to
+    // start on any page — on a phone it covered the operator setup wizard before setup was done.
+    const partnerDashboard =
+      activeRole.role_type === 'tour_operator'
+        ? '/operator/dashboard'
+        : activeRole.role_type === 'hotel_manager'
+          ? '/manager/dashboard'
+          : null
+    if (partnerDashboard && pathname !== partnerDashboard) {
       setIsActive(false)
       return
     }
@@ -54,6 +69,7 @@ export function TourManager() {
     initialized,
     user,
     activeRole,
+    pathname,
     completedTravellerTourVersion,
     completedHotelManagerTourVersion,
     completedTourOperatorTourVersion,

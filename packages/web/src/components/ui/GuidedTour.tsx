@@ -81,10 +81,22 @@ export const GuidedTour = ({ tour, isActive, onComplete, onSkip }: GuidedTourPro
   }, [isActive, currentStepIndex, findTargetElement, tour.id, tour.version])
 
   const calculateTooltipPosition = useCallback(() => {
-    if (!targetElement || !tooltipRef.current) return
+    if (!tooltipRef.current) return
+    const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    // The step's target isn't on this page (yet): don't leave the card stuck at the top-left
+    // corner (0,0) — centre it, or dock it at the bottom on a phone.
+    if (!targetElement) {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      setTooltipPosition(
+        w < 640
+          ? { top: h - tooltipRect.height - 16, left: (w - tooltipRect.width) / 2 }
+          : { top: (h - tooltipRect.height) / 2, left: (w - tooltipRect.width) / 2 },
+      )
+      return
+    }
 
     const targetRect = targetElement.getBoundingClientRect()
-    const tooltipRect = tooltipRef.current.getBoundingClientRect()
     const viewport = {
       width: window.innerWidth,
       height: window.innerHeight,
@@ -116,9 +128,16 @@ export const GuidedTour = ({ tour, isActive, onComplete, onSkip }: GuidedTourPro
         break
     }
 
+    // Phones: there is no room beside the highlighted element, and placing the card above it
+    // covered the header and the very thing being pointed at. Dock it at the bottom instead.
+    if (viewport.width < 640) {
+      top = viewport.height - tooltipRect.height - 16
+      left = (viewport.width - tooltipRect.width) / 2
+    }
+
     // Keep tooltip within viewport bounds (Mobile Safe)
     top = Math.max(20, Math.min(top, viewport.height - tooltipRect.height - 20))
-    left = Math.max(20, Math.min(left, viewport.width - tooltipRect.width - 20))
+    left = Math.max(16, Math.min(left, viewport.width - tooltipRect.width - 16))
 
     setTooltipPosition({ top, left })
   }, [currentStep.position, targetElement])
@@ -154,9 +173,9 @@ export const GuidedTour = ({ tour, isActive, onComplete, onSkip }: GuidedTourPro
   }, [currentStepIndex, onSkip, tour])
 
   useEffect(() => {
-    if (targetElement && tooltipRef.current) {
-      calculateTooltipPosition()
-    }
+    // Position even without a target (it then centres / docks); retry once the card has rendered.
+    const settle = window.setTimeout(calculateTooltipPosition, 60)
+    if (tooltipRef.current) calculateTooltipPosition()
 
     // Reposition on window resize
     const handleResize = () => calculateTooltipPosition()
@@ -169,6 +188,7 @@ export const GuidedTour = ({ tour, isActive, onComplete, onSkip }: GuidedTourPro
     window.addEventListener('keydown', handleKeyDown)
 
     return () => {
+      window.clearTimeout(settle)
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('keydown', handleKeyDown)
     }
@@ -227,7 +247,7 @@ export const GuidedTour = ({ tour, isActive, onComplete, onSkip }: GuidedTourPro
               left: tooltipPosition.left,
             }}
           >
-            <Card className="p-6 w-80 shadow-2xl border-2 border-[#E11D48]/20">
+            <Card className="w-[min(20rem,calc(100vw-2rem))] p-5 shadow-2xl border-2 border-[#E11D48]/20 sm:p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">

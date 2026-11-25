@@ -59,7 +59,8 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {/* Two per row on phones (one-per-row made this step ~2,000px tall). */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-6">
         {SERVICES.map((s) => {
           const isSelected = selected.includes(s.id)
           return (
@@ -67,7 +68,7 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
               key={s.id}
               onClick={() => toggle(s.id)}
               whileTap={{ scale: 0.98 }}
-              className={`p-8 rounded-[28px] border-2 text-left transition-all relative group flex flex-col items-center text-center space-y-4 ${
+              className={`p-4 sm:p-8 rounded-2xl sm:rounded-[28px] border-2 text-left transition-all relative group flex flex-col items-center text-center space-y-3 sm:space-y-4 ${
                 isSelected
                   ? 'border-primary bg-primary/20 shadow-xl shadow-primary/10'
                   : 'border-border/60 bg-background hover:border-border hover:bg-muted/30'
@@ -75,26 +76,26 @@ export function ServicesStep({ onUpdate, data }: StepProps) {
               aria-pressed={isSelected}
             >
               <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
                   isSelected
                     ? 'bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30'
                     : 'bg-muted text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary group-hover:scale-105'
                 }`}
               >
-                <s.icon className={`${isSelected ? 'w-8 h-8' : 'w-7 h-7'}`} aria-hidden="true" />
+                <s.icon className={`${isSelected ? 'w-6 h-6 sm:w-8 sm:h-8' : 'w-5 h-5 sm:w-7 sm:h-7'}`} aria-hidden="true" />
               </div>
               <div className="space-y-1">
                 <p
-                  className={`font-black tracking-tight text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
+                  className={`font-black tracking-tight text-sm sm:text-lg uppercase italic transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
                 >
                   {s.name}
                 </p>
-                <p className="text-xs text-muted-foreground/70 font-bold uppercase tracking-widest leading-none">
+                <p className="text-[10px] sm:text-xs text-muted-foreground/70 font-bold uppercase tracking-wider sm:tracking-widest leading-snug sm:leading-none">
                   {s.desc}
                 </p>
               </div>
               {isSelected && (
-                <div className="absolute top-4 right-4 bg-primary text-primary-foreground rounded-xl p-1.5 shadow-lg border-2 border-background/20">
+                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-primary text-primary-foreground rounded-xl p-1 sm:p-1.5 shadow-lg border-2 border-background/20">
                   <Check className="w-3.5 h-3.5" />
                 </div>
               )}
